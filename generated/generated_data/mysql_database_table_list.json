@@ -1,5 +1,9 @@
 {
   "messages": [
+    "user",
+    "user_oauth",
+    "user_phone",
+    "user_password",
     "user_accounts",
     "account_share_database",
     "player_centre_database",

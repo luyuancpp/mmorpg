@@ -24,7 +24,274 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ///////////         game
+// ------------------- 用户基础信息表 -------------------
+type User struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                     // 全局唯一用户ID
+	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"` // 昵称，可为空
+	IsGuest       bool                   `protobuf:"varint,3,opt,name=is_guest,json=isGuest,proto3" json:"is_guest,omitempty"`            // 是否游客
+	CreateTime    uint64                 `protobuf:"varint,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`   // 创建时间（时间戳）
+	LastLogin     uint64                 `protobuf:"varint,5,opt,name=last_login,json=lastLogin,proto3" json:"last_login,omitempty"`      // 上次登录时间（时间戳）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *User) Reset() {
+	*x = User{}
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *User) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*User) ProtoMessage() {}
+
+func (x *User) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use User.ProtoReflect.Descriptor instead.
+func (*User) Descriptor() ([]byte, []int) {
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *User) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *User) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *User) GetIsGuest() bool {
+	if x != nil {
+		return x.IsGuest
+	}
+	return false
+}
+
+func (x *User) GetCreateTime() uint64 {
+	if x != nil {
+		return x.CreateTime
+	}
+	return 0
+}
+
+func (x *User) GetLastLogin() uint64 {
+	if x != nil {
+		return x.LastLogin
+	}
+	return 0
+}
+
+// ------------------- 第三方绑定表 -------------------
+type UserOauth struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 外键 -> user.id
+	Provider      string                 `protobuf:"bytes,2,opt,name=provider,proto3" json:"provider,omitempty"`                        // weixin/google/apple/qq
+	ProviderId    string                 `protobuf:"bytes,3,opt,name=provider_id,json=providerId,proto3" json:"provider_id,omitempty"`  // openid/sub
+	CreateTime    uint64                 `protobuf:"varint,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // 创建时间
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserOauth) Reset() {
+	*x = UserOauth{}
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserOauth) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserOauth) ProtoMessage() {}
+
+func (x *UserOauth) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserOauth.ProtoReflect.Descriptor instead.
+func (*UserOauth) Descriptor() ([]byte, []int) {
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *UserOauth) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *UserOauth) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+func (x *UserOauth) GetProviderId() string {
+	if x != nil {
+		return x.ProviderId
+	}
+	return ""
+}
+
+func (x *UserOauth) GetCreateTime() uint64 {
+	if x != nil {
+		return x.CreateTime
+	}
+	return 0
+}
+
+// ------------------- 手机号绑定表 -------------------
+type UserPhone struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 外键 -> user.id
+	Phone         string                 `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,omitempty"`                              // 手机号
+	CreateTime    uint64                 `protobuf:"varint,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // 创建时间
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserPhone) Reset() {
+	*x = UserPhone{}
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserPhone) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserPhone) ProtoMessage() {}
+
+func (x *UserPhone) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserPhone.ProtoReflect.Descriptor instead.
+func (*UserPhone) Descriptor() ([]byte, []int) {
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *UserPhone) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *UserPhone) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
+}
+
+func (x *UserPhone) GetCreateTime() uint64 {
+	if x != nil {
+		return x.CreateTime
+	}
+	return 0
+}
+
+// ------------------- 密码表 -------------------
+type UserPassword struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 外键 -> user.id
+	Hash          string                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`                                // 密码哈希
+	CreateTime    uint64                 `protobuf:"varint,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // 创建时间
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserPassword) Reset() {
+	*x = UserPassword{}
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserPassword) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserPassword) ProtoMessage() {}
+
+func (x *UserPassword) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserPassword.ProtoReflect.Descriptor instead.
+func (*UserPassword) Descriptor() ([]byte, []int) {
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UserPassword) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *UserPassword) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *UserPassword) GetCreateTime() uint64 {
+	if x != nil {
+		return x.CreateTime
+	}
+	return 0
+}
+
 type UserAccounts struct {
 	state         protoimpl.MessageState          `protogen:"open.v1"`
 	Account       string                          `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
@@ -36,7 +303,7 @@ type UserAccounts struct {
 
 func (x *UserAccounts) Reset() {
 	*x = UserAccounts{}
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[0]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +315,7 @@ func (x *UserAccounts) String() string {
 func (*UserAccounts) ProtoMessage() {}
 
 func (x *UserAccounts) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[0]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +328,7 @@ func (x *UserAccounts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserAccounts.ProtoReflect.Descriptor instead.
 func (*UserAccounts) Descriptor() ([]byte, []int) {
-	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{0}
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UserAccounts) GetAccount() string {
@@ -94,7 +361,7 @@ type AccountShareDatabase struct {
 
 func (x *AccountShareDatabase) Reset() {
 	*x = AccountShareDatabase{}
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[1]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -106,7 +373,7 @@ func (x *AccountShareDatabase) String() string {
 func (*AccountShareDatabase) ProtoMessage() {}
 
 func (x *AccountShareDatabase) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[1]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -119,7 +386,7 @@ func (x *AccountShareDatabase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountShareDatabase.ProtoReflect.Descriptor instead.
 func (*AccountShareDatabase) Descriptor() ([]byte, []int) {
-	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{1}
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AccountShareDatabase) GetAccount() string {
@@ -140,7 +407,7 @@ type PlayerCentreDatabase struct {
 
 func (x *PlayerCentreDatabase) Reset() {
 	*x = PlayerCentreDatabase{}
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[2]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -152,7 +419,7 @@ func (x *PlayerCentreDatabase) String() string {
 func (*PlayerCentreDatabase) ProtoMessage() {}
 
 func (x *PlayerCentreDatabase) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[2]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -165,7 +432,7 @@ func (x *PlayerCentreDatabase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerCentreDatabase.ProtoReflect.Descriptor instead.
 func (*PlayerCentreDatabase) Descriptor() ([]byte, []int) {
-	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{2}
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PlayerCentreDatabase) GetPlayerId() uint64 {
@@ -198,7 +465,7 @@ type PlayerDatabase struct {
 
 func (x *PlayerDatabase) Reset() {
 	*x = PlayerDatabase{}
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[3]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +477,7 @@ func (x *PlayerDatabase) String() string {
 func (*PlayerDatabase) ProtoMessage() {}
 
 func (x *PlayerDatabase) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[3]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +490,7 @@ func (x *PlayerDatabase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerDatabase.ProtoReflect.Descriptor instead.
 func (*PlayerDatabase) Descriptor() ([]byte, []int) {
-	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{3}
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PlayerDatabase) GetPlayerId() uint64 {
@@ -284,7 +551,7 @@ type PlayerDatabase_1 struct {
 
 func (x *PlayerDatabase_1) Reset() {
 	*x = PlayerDatabase_1{}
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[4]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -296,7 +563,7 @@ func (x *PlayerDatabase_1) String() string {
 func (*PlayerDatabase_1) ProtoMessage() {}
 
 func (x *PlayerDatabase_1) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[4]
+	mi := &file_proto_logic_database_mysql_database_table_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -309,7 +576,7 @@ func (x *PlayerDatabase_1) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerDatabase_1.ProtoReflect.Descriptor instead.
 func (*PlayerDatabase_1) Descriptor() ([]byte, []int) {
-	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{4}
+	return file_proto_logic_database_mysql_database_table_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PlayerDatabase_1) GetPlayerId() uint64 {
@@ -323,7 +590,37 @@ var File_proto_logic_database_mysql_database_table_proto protoreflect.FileDescri
 
 const file_proto_logic_database_mysql_database_table_proto_rawDesc = "" +
 	"\n" +
-	"/proto/logic/database/mysql_database_table.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a proto/common/user_accounts.proto\x1a-proto/logic/component/player_scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a'proto/logic/component/player_comp.proto\x1a-proto/logic/component/player_skill_comp.proto\"\xa6\x01\n" +
+	"/proto/logic/database/mysql_database_table.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a proto/common/user_accounts.proto\x1a-proto/logic/component/player_scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a'proto/logic/component/player_comp.proto\x1a-proto/logic/component/player_skill_comp.proto\"\xb5\x01\n" +
+	"\x04user\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x19\n" +
+	"\bis_guest\x18\x03 \x01(\bR\aisGuest\x12\x1f\n" +
+	"\vcreate_time\x18\x04 \x01(\x04R\n" +
+	"createTime\x12\x1d\n" +
+	"\n" +
+	"last_login\x18\x05 \x01(\x04R\tlastLogin:\x1f\x8a\x92\xf4\x01\x04user\x92\x92\xf4\x01\x02idڒ\xf4\x01\n" +
+	"last_login\"\xc2\x01\n" +
+	"\n" +
+	"user_oauth\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1a\n" +
+	"\bprovider\x18\x02 \x01(\tR\bprovider\x12\x1f\n" +
+	"\vprovider_id\x18\x03 \x01(\tR\n" +
+	"providerId\x12\x1f\n" +
+	"\vcreate_time\x18\x04 \x01(\x04R\n" +
+	"createTime:=\x8a\x92\xf4\x01\n" +
+	"user_oauth\x92\x92\xf4\x01\x10user_id,provider\xe2\x92\xf4\x01\x14provider,provider_id\"\x83\x01\n" +
+	"\n" +
+	"user_phone\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x14\n" +
+	"\x05phone\x18\x02 \x01(\tR\x05phone\x12\x1f\n" +
+	"\vcreate_time\x18\x03 \x01(\x04R\n" +
+	"createTime:%\x8a\x92\xf4\x01\n" +
+	"user_phone\x92\x92\xf4\x01\auser_id\xe2\x92\xf4\x01\x05phone\"}\n" +
+	"\ruser_password\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x12\n" +
+	"\x04hash\x18\x02 \x01(\tR\x04hash\x12\x1f\n" +
+	"\vcreate_time\x18\x03 \x01(\x04R\n" +
+	"createTime:\x1e\x8a\x92\xf4\x01\ruser_password\x92\x92\xf4\x01\auser_id\"\xa6\x01\n" +
 	"\ruser_accounts\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12?\n" +
@@ -359,31 +656,35 @@ func file_proto_logic_database_mysql_database_table_proto_rawDescGZIP() []byte {
 	return file_proto_logic_database_mysql_database_table_proto_rawDescData
 }
 
-var file_proto_logic_database_mysql_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_proto_logic_database_mysql_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_proto_logic_database_mysql_database_table_proto_goTypes = []any{
-	(*UserAccounts)(nil),                            // 0: user_accounts
-	(*AccountShareDatabase)(nil),                    // 1: account_share_database
-	(*PlayerCentreDatabase)(nil),                    // 2: player_centre_database
-	(*PlayerDatabase)(nil),                          // 3: player_database
-	(*PlayerDatabase_1)(nil),                        // 4: player_database_1
-	(*common.AccountSimplePlayerList)(nil),          // 5: AccountSimplePlayerList
-	(*component.PlayerSceneContextPBComponent)(nil), // 6: PlayerSceneContextPBComponent
-	(*component.Transform)(nil),                     // 7: Transform
-	(*component.PlayerUint64PBComponent)(nil),       // 8: PlayerUint64PBComponent
-	(*component.PlayerSkillListPBComponent)(nil),    // 9: PlayerSkillListPBComponent
-	(*component.PlayerUint32PbComponent)(nil),       // 10: PlayerUint32PbComponent
-	(*component.BaseAttributesPbComponent)(nil),     // 11: BaseAttributesPbComponent
-	(*component.LevelPbComponent)(nil),              // 12: LevelPbComponent
+	(*User)(nil),                                    // 0: user
+	(*UserOauth)(nil),                               // 1: user_oauth
+	(*UserPhone)(nil),                               // 2: user_phone
+	(*UserPassword)(nil),                            // 3: user_password
+	(*UserAccounts)(nil),                            // 4: user_accounts
+	(*AccountShareDatabase)(nil),                    // 5: account_share_database
+	(*PlayerCentreDatabase)(nil),                    // 6: player_centre_database
+	(*PlayerDatabase)(nil),                          // 7: player_database
+	(*PlayerDatabase_1)(nil),                        // 8: player_database_1
+	(*common.AccountSimplePlayerList)(nil),          // 9: AccountSimplePlayerList
+	(*component.PlayerSceneContextPBComponent)(nil), // 10: PlayerSceneContextPBComponent
+	(*component.Transform)(nil),                     // 11: Transform
+	(*component.PlayerUint64PBComponent)(nil),       // 12: PlayerUint64PBComponent
+	(*component.PlayerSkillListPBComponent)(nil),    // 13: PlayerSkillListPBComponent
+	(*component.PlayerUint32PbComponent)(nil),       // 14: PlayerUint32PbComponent
+	(*component.BaseAttributesPbComponent)(nil),     // 15: BaseAttributesPbComponent
+	(*component.LevelPbComponent)(nil),              // 16: LevelPbComponent
 }
 var file_proto_logic_database_mysql_database_table_proto_depIdxs = []int32{
-	5,  // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
-	6,  // 1: player_centre_database.scene_info:type_name -> PlayerSceneContextPBComponent
-	7,  // 2: player_database.transform:type_name -> Transform
-	8,  // 3: player_database.uint64_pb_component:type_name -> PlayerUint64PBComponent
-	9,  // 4: player_database.skill_list:type_name -> PlayerSkillListPBComponent
-	10, // 5: player_database.uint32_pb_component:type_name -> PlayerUint32PbComponent
-	11, // 6: player_database.derived_attributes_component:type_name -> BaseAttributesPbComponent
-	12, // 7: player_database.level_component:type_name -> LevelPbComponent
+	9,  // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
+	10, // 1: player_centre_database.scene_info:type_name -> PlayerSceneContextPBComponent
+	11, // 2: player_database.transform:type_name -> Transform
+	12, // 3: player_database.uint64_pb_component:type_name -> PlayerUint64PBComponent
+	13, // 4: player_database.skill_list:type_name -> PlayerSkillListPBComponent
+	14, // 5: player_database.uint32_pb_component:type_name -> PlayerUint32PbComponent
+	15, // 6: player_database.derived_attributes_component:type_name -> BaseAttributesPbComponent
+	16, // 7: player_database.level_component:type_name -> LevelPbComponent
 	8,  // [8:8] is the sub-list for method output_type
 	8,  // [8:8] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
@@ -402,7 +703,7 @@ func file_proto_logic_database_mysql_database_table_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_logic_database_mysql_database_table_proto_rawDesc), len(file_proto_logic_database_mysql_database_table_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
