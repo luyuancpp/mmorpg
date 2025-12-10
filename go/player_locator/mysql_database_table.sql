@@ -1,3 +1,30 @@
+CREATE TABLE IF NOT EXISTS user (
+  id bigint unsigned NOT NULL DEFAULT 0,
+  display_name MEDIUMTEXT,
+  is_guest tinyint(1) NOT NULL DEFAULT 0,
+  create_time bigint unsigned NOT NULL DEFAULT 0,
+  last_login bigint unsigned NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='user';
+
+CREATE TABLE IF NOT EXISTS user_oauth (
+  user_id bigint unsigned NOT NULL DEFAULT 0,
+  provider MEDIUMTEXT,
+  provider_id MEDIUMTEXT,
+  create_time bigint unsigned NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='user_oauth';
+
+CREATE TABLE IF NOT EXISTS user_phone (
+  user_id bigint unsigned NOT NULL DEFAULT 0,
+  phone MEDIUMTEXT,
+  create_time bigint unsigned NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='user_phone';
+
+CREATE TABLE IF NOT EXISTS user_password (
+  user_id bigint unsigned NOT NULL DEFAULT 0,
+  hash MEDIUMTEXT,
+  create_time bigint unsigned NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='user_password';
+
 CREATE TABLE IF NOT EXISTS user_accounts (
   account MEDIUMTEXT,
   password MEDIUMTEXT,
