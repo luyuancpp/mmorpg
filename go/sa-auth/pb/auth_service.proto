@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+import "proto/common/tip.proto";
+import "proto/common/user_accounts.proto";
+
+package authpb;
+
+// ---------------- 游客登录 ----------------
+message GuestLoginRequest {
+  string device_id = 1;  
+}
+
+message GuestLoginResponse {
+  TipInfoMessage error_message = 1;
+  uint64 uid = 2;         
+  string token = 3;       
+}
+
+// ---------------- 密码登录 ----------------
+message PasswordLoginRequest {
+  string account = 1;     
+  string password = 2;    
+}
+
+message PasswordLoginResponse {
+  TipInfoMessage error_message = 1;
+  uint64 uid = 2;
+  string token = 3;
+}
+
+// ---------------- 手机号登录 ----------------
+message PhoneLoginRequest {
+  string phone = 1;
+  string code = 2;       
+}
+
+message PhoneLoginResponse {
+  TipInfoMessage error_message = 1;
+  uint64 uid = 2;
+  string token = 3;
+}
+
+// ---------------- 第三方 OAuth 登录 ----------------
+message OAuthLoginRequest {
+  string provider = 1;    
+  string provider_id = 2; 
+}
+
+message OAuthLoginResponse {
+  TipInfoMessage error_message = 1;
+  uint64 uid = 2;
+  string token = 3;
+}
+
+// ---------------- Token 操作 ----------------
+message LogoutRequest {
+  uint64 uid = 1;
+}
+
+message LogoutResponse {
+  TipInfoMessage error_message = 1;
+}
+
+// ---------------- 服务定义 ----------------
+service AuthService {
+  option (OptionIsClientProtocolService) = true;
+
+  rpc GuestLogin (GuestLoginRequest) returns (GuestLoginResponse);
+  rpc PasswordLogin (PasswordLoginRequest) returns (PasswordLoginResponse);
+  rpc PhoneLogin (PhoneLoginRequest) returns (PhoneLoginResponse);
+  rpc OAuthLogin (OAuthLoginRequest) returns (OAuthLoginResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+}

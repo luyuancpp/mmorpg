@@ -1,0 +1,59 @@
+type (
+	PasswordLoginReq {
+		Account  string `json:"account"`
+		Password string `json:"password"`
+		DeviceId string `json:"device_id,optional"`
+	}
+	PasswordLoginResp {
+		Uid   uint64 `json:"uid"`
+		Token string `json:"token"`
+	}
+	GuestLoginReq {
+		DeviceId string `json:"device_id"`
+	}
+	GuestLoginResp {
+		Uid   uint64 `json:"uid"`
+		Token string `json:"token"`
+	}
+	PhoneLoginReq {
+		Phone    string `json:"phone"`
+		Code     string `json:"code"`
+		DeviceId string `json:"device_id,optional"`
+	}
+	PhoneLoginResp {
+		Uid   uint64 `json:"uid"`
+		Token string `json:"token"`
+	}
+	OAuthLoginReq {
+		Provider   string `json:"provider"` // weixin / google / apple / qq
+		ProviderId string `json:"provider_id"` // openid/sub
+		DeviceId   string `json:"device_id,optional"`
+	}
+	OAuthLoginResp {
+		Uid   uint64 `json:"uid"`
+		Token string `json:"token"`
+	}
+)
+
+// -------- API Routes --------
+@server (
+	prefix: /api/auth
+)
+service login-api {
+	// 密码登录
+	@handler PasswordLogin
+	post /password-login (PasswordLoginReq) returns (PasswordLoginResp)
+
+	// 游客登录
+	@handler GuestLogin
+	post /guest-login (GuestLoginReq) returns (GuestLoginResp)
+
+	// 手机号验证码登录
+	@handler PhoneLogin
+	post /phone-login (PhoneLoginReq) returns (PhoneLoginResp)
+
+	// OAuth 第三方登录
+	@handler OAuthLogin
+	post /oauth-login (OAuthLoginReq) returns (OAuthLoginResp)
+}
+
