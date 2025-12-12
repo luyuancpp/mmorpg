@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: auth_mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpass
+      - MYSQL_DATABASE=authdb
+      - MYSQL_USER=auth
+      - MYSQL_PASSWORD=authpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - auth-net
+
+  redis:
+    image: redis:7
+    container_name: auth_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - auth-net
+
+volumes:
+  mysql-data:
+
+networks:
+  auth-net:
+    driver: bridge
