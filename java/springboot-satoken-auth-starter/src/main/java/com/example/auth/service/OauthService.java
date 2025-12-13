@@ -24,7 +24,7 @@ public class OauthService {
      * 找到绑定用户或创建一个新用户并写入 user_oauth
      */
     public Long findOrCreateAndBind(String provider, String openid, String nickname, String avatar) {
-        Optional<UserOauth> maybe = oauthRepository.findByProviderAndOpenid(provider, openid);
+        Optional<UserOauth> maybe = oauthRepository.findByProviderAndOpenId(provider, openid);
         if (maybe.isPresent()) {
             return maybe.get().getUserId();
         }
@@ -41,7 +41,7 @@ public class OauthService {
         // bind
         UserOauth uo = new UserOauth();
         uo.setProvider(provider);
-        uo.setOpenid(openid);
+        uo.setOpenId(openid);
         uo.setUserId(saved.getId());
         oauthRepository.save(uo);
 

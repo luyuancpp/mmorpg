@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import me.zhyd.oauth.config.AuthConfig;
 import me.zhyd.oauth.enums.AuthResponseStatus;
 import me.zhyd.oauth.model.AuthCallback;
+import me.zhyd.oauth.model.AuthResponse;
 import me.zhyd.oauth.model.AuthUser;
 import me.zhyd.oauth.request.AuthRequest;
 import me.zhyd.oauth.utils.AuthStateUtils;
@@ -25,7 +26,7 @@ public class AuthController {
     @GetMapping("/callback/{provider}")
     public Object login(@PathVariable String provider, AuthCallback callback) {
         AuthRequest authRequest = getAuthRequest(provider);
-        var response = authRequest.login(callback);
+        AuthResponse response = authRequest.login(callback);
 
         if (response.getCode() == AuthResponseStatus.SUCCESS.getCode()) {
 

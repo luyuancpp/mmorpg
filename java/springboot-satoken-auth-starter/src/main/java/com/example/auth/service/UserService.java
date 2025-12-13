@@ -59,12 +59,12 @@ public class UserService {
     public void bindOauthToUser(String provider, String openid, Long userId) {
         UserOauth uo = new UserOauth();
         uo.setProvider(provider);
-        uo.setOpenid(openid);
+        uo.setOpenId(openid);
         uo.setUserId(userId);
         oauthRepository.save(uo);
     }
 
     public Optional<UserOauth> findOauth(String provider, String openid) {
-        return oauthRepository.findByProviderAndOpenid(provider, openid);
+        return oauthRepository.findByProviderAndOpenId(provider, openid);
     }
 }
