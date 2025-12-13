@@ -14,6 +14,10 @@ public class UserPassword {
     @Column(name = "user_id")
     private Long userId;
 
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
     @Column(name = "password_hash")
     private String passwordHash;
 }
