@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import me.zhyd.oauth.config.AuthConfig;
 import me.zhyd.oauth.enums.AuthResponseStatus;
 import me.zhyd.oauth.model.AuthCallback;
+import me.zhyd.oauth.model.AuthUser;
 import me.zhyd.oauth.request.AuthRequest;
 import me.zhyd.oauth.utils.AuthStateUtils;
 import org.springframework.web.bind.annotation.*;
@@ -21,23 +22,27 @@ public class AuthController {
         return authRequest.authorize(AuthStateUtils.createState());
     }
 
-    // 第三方回调
     @GetMapping("/callback/{provider}")
     public Object login(@PathVariable String provider, AuthCallback callback) {
         AuthRequest authRequest = getAuthRequest(provider);
         var response = authRequest.login(callback);
 
         if (response.getCode() == AuthResponseStatus.SUCCESS.getCode()) {
-            // 拿到第三方账号唯一ID
-            String uuid = response.getData().getUuid();
 
-            // 登录 Sa-Token
+            // ⬇⬇⬇ 关键：强转为 AuthUser
+            AuthUser authUser = (AuthUser) response.getData();
+
+            // JustAuth 规范里的三方唯一 ID
+            String uuid = authUser.getUuid();
+
+            // 登录 Sa-Token（临时用 uuid，后面你会换成 userId）
             StpUtil.login(uuid);
 
             return StpUtil.getTokenInfo();
         }
         return response;
     }
+
 
     // 根据 provider 创建 AuthRequest（新版 JustAuth）
     private AuthRequest getAuthRequest(String provider) {
