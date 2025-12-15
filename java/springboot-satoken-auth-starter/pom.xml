@@ -5,6 +5,12 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.8</version>
+        <relativePath/>
+    </parent>
 
     <groupId>com.example</groupId>
     <artifactId>springboot-satoken-auth-starter</artifactId>
@@ -13,55 +19,73 @@
 
     <properties>
         <java.version>21</java.version>
-        <spring.boot.version>4.0.0</spring.boot.version>
         <sa.token.version>1.44.0</sa.token.version>
         <justauth.version>1.16.6</justauth.version>
+        <!-- 复用parent的Jackson 2.x版本（3.5.8默认就是2.x，无需额外指定） -->
+        <jackson.version>2.17.2</jackson.version>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring.boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <!-- 移除冗余的dependencyManagement：parent已包含Jackson 2.x版本锁定 -->
 
     <dependencies>
-
-        <!-- Web -->
+        <!-- Web - 仅排除高版本Jackson，保留基础依赖（简化排除规则） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
-        <!-- JPA -->
+        <!-- 手动引入适配的Jackson 2.x核心依赖 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- JPA - 无需额外排除Jackson（3.5.8的JPA依赖Jackson 2.x） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- H2 -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Redis -->
+        <!-- Redis - 无需额外排除Jackson（3.5.8的Redis依赖Jackson 2.x） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- Sa-Token -->
+        <!-- Sa-Token - 核心修复：直接排除Jackson插件模块 -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-spring-boot3-starter</artifactId>
             <version>${sa.token.version}</version>
+            <exclusions>
+                <!-- 关键：排除Sa-Token的Jackson插件模块（根源解决） -->
+                <exclusion>
+                    <groupId>cn.dev33</groupId>
+                    <artifactId>sa-token-jackson</artifactId>
+                </exclusion>
+                <!-- 兜底：排除所有Jackson相关依赖 -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- JustAuth -->
@@ -90,7 +114,6 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -98,6 +121,31 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <!-- 保留依赖树插件，用于验证Jackson版本 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>tree</goal>
+                        </goals>
+                        <configuration>
+                            <includes>com.fasterxml.jackson.core:*</includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

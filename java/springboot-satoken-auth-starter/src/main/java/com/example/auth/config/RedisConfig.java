@@ -1,3 +1,5 @@
+package com.example.auth.config;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -10,7 +12,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
     @Bean
-    @Primary   // 🔥 非常关键
+    @Primary   // ⭐⭐⭐ 这行是关键
     public RedisTemplate<String, Object> redisTemplate(
             RedisConnectionFactory factory) {
 
