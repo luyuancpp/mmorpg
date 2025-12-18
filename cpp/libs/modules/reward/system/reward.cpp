@@ -7,11 +7,6 @@
 
 #include <threading/registry_manager.h>
 
-void RewardSystem::InitializeActorComponents(entt::entity entityId)
-{
-    tlsRegistryManager.actorRegistry.emplace<RewardComp>(entityId);
-}
-
 uint32_t RewardSystem::ClaimRewardByRewardId(entt::entity entityId, uint32_t rewardId) {
     if (!RewardBitMap.contains(rewardId)) {
         LOG_ERROR << "ClaimRewardByRewardId failed: Invalid Reward ID. Entity ID: " 
