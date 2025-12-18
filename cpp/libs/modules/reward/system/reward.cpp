@@ -7,72 +7,52 @@
 
 #include <threading/registry_manager.h>
 
-uint32_t RewardSystem::ClaimRewardByRewardId(entt::entity entityId, uint32_t rewardId) {
+uint32_t RewardSystem::ClaimRewardByRewardId(uint32_t rewardId, RewardBitset& claimedRewards) {
     if (!RewardBitMap.contains(rewardId)) {
-        LOG_ERROR << "ClaimRewardByRewardId failed: Invalid Reward ID. Entity ID: " 
-                  << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId) << ", Reward ID: " << rewardId;
         return kInvalidTableId;
     }
 
     const auto rewardIndex = RewardBitMap.at(rewardId);
-    const auto result = ClaimRewardByIndex(entityId, rewardIndex);
+    const auto result = ClaimRewardByIndex(rewardIndex, claimedRewards);
 
     if (result == kSuccess) {
-        LOG_INFO << "ClaimRewardByRewardId succeeded. Entity ID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId)
-                 << ", Reward ID: " << rewardId << ", Reward Index: " << rewardIndex;
     }
 
     return result;
 }
 
 
-uint32_t RewardSystem::ClaimRewardByIndex(entt::entity entityId, uint32_t rewardIndex) {
+uint32_t RewardSystem::ClaimRewardByIndex(uint32_t rewardIndex, RewardBitset& claimedRewards) {
     if (rewardIndex < 0 || rewardIndex >= kRewardMaxBitIndex) {
-        LOG_ERROR << "ClaimRewardByIndex failed: Reward index out of range. Entity ID: " 
-                  << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId) << ", Reward Index: " << rewardIndex;
         return kIndexOutOfRange;
     }
 
-    auto& rewards = tlsRegistryManager.actorRegistry.get_or_emplace<RewardComp>(entityId).rewards;
-
-    if (rewards[rewardIndex]) {
-        LOG_ERROR << "ClaimRewardByIndex failed: Reward already claimed. Entity ID: " 
-                  << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId) << ", Reward Index: " << rewardIndex;
+    if (claimedRewards[rewardIndex]) {
         return kRewardAlreadyClaimed;
     }
 
-    rewards.set(rewardIndex);  // 设置该奖励为已领取
-
-    LOG_INFO << "Reward claimed successfully. Entity ID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId) 
-             << ", Reward Index: " << rewardIndex;
+    claimedRewards.set(rewardIndex);  // 设置该奖励为已领取
 
     return kSuccess;
 }
 
-bool RewardSystem::IsRewardClaimedById(entt::entity entityId, uint32_t rewardId)
+bool RewardSystem::IsRewardClaimedById(uint32_t rewardId, RewardBitset& claimedRewards)
 {
     if (!RewardBitMap.contains(rewardId)) {
-        LOG_ERROR << "IsRewardClaimedById failed: Invalid Reward ID. Entity ID: "
-            << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId) << ", Reward ID: " << rewardId;
         return false;
     }
 
     auto rewardIndex = RewardBitMap.at(rewardId);
 
-    return IsRewardClaimedByIndex(entityId, rewardId);
+    return IsRewardClaimedByIndex(rewardId, claimedRewards);
 }
 
-bool RewardSystem::IsRewardClaimedByIndex(entt::entity entityId, uint32_t rewardIndex) {
+bool RewardSystem::IsRewardClaimedByIndex(uint32_t rewardIndex, RewardBitset& claimedRewards) {
     if (rewardIndex < 0 || rewardIndex >= kRewardMaxBitIndex) {
-        LOG_ERROR << "IsRewardClaimed failed: Reward index out of range. Entity ID: " 
-                  << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId) << ", Reward Index: " << rewardIndex;
         return false;
     }
 
-    auto& rewards = tlsRegistryManager.actorRegistry.get_or_emplace<RewardComp>(entityId).rewards;
-    bool claimed = rewards[rewardIndex];
-
-    return claimed;
+    return claimedRewards[rewardIndex];
 }
 
 void RewardSystem::ShowRewardStatus() {
@@ -81,19 +61,17 @@ void RewardSystem::ShowRewardStatus() {
     // 获取所有拥有 RewardComp 的实体
     tlsRegistryManager.actorRegistry.view<RewardComp>().each(
         [](entt::entity entity, const RewardComp& rewardComp) {
-            ShowEntityRewardStatus(entity, rewardComp);
+            ShowEntityRewardStatus(rewardComp.rewards);
         });
 
     LOG_INFO << "=== End of Reward Status Display ===";
 }
 
 // 显示单个实体的奖励状态
-void RewardSystem::ShowEntityRewardStatus(entt::entity entityId, const RewardComp& rewardComp) {
-    LOG_INFO << "Entity ID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId);
-
+void RewardSystem::ShowEntityRewardStatus(const RewardBitset& claimedRewards) {
     // 遍历所有奖励
     for (uint32_t i = 0; i < kRewardMaxBitIndex; ++i) {
-        const bool isClaimed = rewardComp.rewards[i];
+        const bool isClaimed = claimedRewards[i];
         LOG_INFO << "  Reward " << i << ": " << (isClaimed ? "Claimed" : "Not Claimed");
     }
 }
@@ -116,31 +94,26 @@ void RewardSystem::CountRewardStatistics() {
         << ", Unclaimed: " << (totalRewards - totalClaimed);
 }
 
-std::string RewardSystem::FormatRewardStatus(entt::entity entityId, const RewardComp& rewardComp) {
+std::string RewardSystem::FormatRewardStatus(entt::entity entityId, const RewardBitset& claimedRewards) {
     std::ostringstream ss;
     ss << "Entity ID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId) << "\n";
 
     for (uint32_t i = 0; i < kRewardMaxBitIndex; ++i) {
-        ss << "  Reward " << i << ": " << (rewardComp.rewards[i] ? "Claimed" : "Not Claimed") << "\n";
+        ss << "  Reward " << i << ": " << (claimedRewards[i] ? "Claimed" : "Not Claimed") << "\n";
     }
 
     return ss.str();
 }
 
-bool RewardSystem::HasUnclaimedRewards(const RewardComp& rewardComp) {
+bool RewardSystem::HasUnclaimedRewards(const RewardBitset& claimedRewards) {
     for (uint32_t i = 0; i < kRewardMaxBitIndex; ++i) {
-        if (!rewardComp.rewards[i]) {
+        if (!claimedRewards[i]) {
             return true;  // 如果存在未领取的奖励，返回 true
         }
     }
     return false;  // 所有奖励都已领取
 }
 
-bool RewardSystem::HasUnclaimedRewards(entt::entity entityId)
-{
-    auto& rewards = tlsRegistryManager.actorRegistry.get_or_emplace<RewardComp>(entityId);
-    return HasUnclaimedRewards(rewards);
-}
 
 //例如仅显示未领取奖励的实体
 void RewardSystem::ShowUnclaimedRewards() {
@@ -148,7 +121,7 @@ void RewardSystem::ShowUnclaimedRewards() {
 
     tlsRegistryManager.actorRegistry.view<RewardComp>().each(
         [](auto entity, const RewardComp& rewardComp) {
-            if (HasUnclaimedRewards(rewardComp)) {
+            if (HasUnclaimedRewards(rewardComp.rewards)) {
                 LOG_INFO << "Entity ID with unclaimed rewards: " << static_cast<uint32_t>(entity);
             }
         });
@@ -162,7 +135,7 @@ uint32_t RewardSystem::CountEntitiesWithUnclaimedRewards()  {
 
     tlsRegistryManager.actorRegistry.view<RewardComp>().each(
         [&count](const RewardComp& rewardComp) {
-            if (HasUnclaimedRewards(rewardComp)) {
+            if (HasUnclaimedRewards(rewardComp.rewards)) {
                 ++count;
             }
         });
