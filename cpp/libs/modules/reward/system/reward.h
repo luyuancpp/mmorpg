@@ -15,10 +15,10 @@ public:
     // 领取奖励
     static uint32_t ClaimRewardByIndex( uint32_t rewardIndex, RewardBitset& claimedRewards);
 
-    static bool IsRewardClaimedById( uint32_t rewardId, RewardBitset& claimedRewards);
+    static bool IsRewardClaimedById( uint32_t rewardId, const RewardBitset& claimedRewards);
 
     // 检查某个奖励是否已经领取
-    static bool IsRewardClaimedByIndex( uint32_t rewardIndexs, RewardBitset& claimedRewards);
+    static bool IsRewardClaimedByIndex( uint32_t rewardIndexs, const RewardBitset& claimedRewards);
 
     static void ShowRewardStatus();
 
