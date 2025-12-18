@@ -8,7 +8,7 @@
 #include <threading/registry_manager.h>
 #include <sstream>
 
-uint32_t RewardSystem::ClaimRewardByRewardId(uint32_t rewardId, RewardBitset& claimedRewards) {
+uint32_t RewardClaimSystem::ClaimRewardByRewardId(uint32_t rewardId, RewardBitset& claimedRewards) {
 	auto it = RewardBitMap.find(rewardId);
 	if (it == RewardBitMap.end()) {
 		return kInvalidTableId;
@@ -18,7 +18,7 @@ uint32_t RewardSystem::ClaimRewardByRewardId(uint32_t rewardId, RewardBitset& cl
 	return ClaimRewardByIndex(rewardIndex, claimedRewards);
 }
 
-uint32_t RewardSystem::ClaimRewardByIndex(uint32_t rewardIndex, RewardBitset& claimedRewards) {
+uint32_t RewardClaimSystem::ClaimRewardByIndex(uint32_t rewardIndex, RewardBitset& claimedRewards) {
 	if (rewardIndex >= kRewardMaxBitIndex) {
 		return kIndexOutOfRange;
 	}
@@ -31,7 +31,7 @@ uint32_t RewardSystem::ClaimRewardByIndex(uint32_t rewardIndex, RewardBitset& cl
 	return kSuccess;
 }
 
-bool RewardSystem::IsRewardClaimedById(uint32_t rewardId, const RewardBitset& claimedRewards)
+bool RewardClaimSystem::IsRewardClaimedById(uint32_t rewardId, const RewardBitset& claimedRewards)
 {
 	auto it = RewardBitMap.find(rewardId);
 	if (it == RewardBitMap.end()) {
@@ -42,7 +42,7 @@ bool RewardSystem::IsRewardClaimedById(uint32_t rewardId, const RewardBitset& cl
 	return IsRewardClaimedByIndex(rewardIndex, claimedRewards);
 }
 
-bool RewardSystem::IsRewardClaimedByIndex(uint32_t rewardIndex, const RewardBitset& claimedRewards) {
+bool RewardClaimSystem::IsRewardClaimedByIndex(uint32_t rewardIndex, const RewardBitset& claimedRewards) {
 	if (rewardIndex >= kRewardMaxBitIndex) {
 		return false;
 	}
@@ -50,7 +50,7 @@ bool RewardSystem::IsRewardClaimedByIndex(uint32_t rewardIndex, const RewardBits
 	return claimedRewards[rewardIndex];
 }
 
-void RewardSystem::ShowRewardStatus() {
+void RewardClaimSystem::ShowRewardStatus() {
 	LOG_INFO << "=== Displaying Reward Status for All Entities ===";
 
 	// 获取所有拥有 RewardComp 的实体
@@ -63,7 +63,7 @@ void RewardSystem::ShowRewardStatus() {
 }
 
 // 显示单个实体的奖励状态
-void RewardSystem::ShowEntityRewardStatus(const RewardBitset& claimedRewards) {
+void RewardClaimSystem::ShowEntityRewardStatus(const RewardBitset& claimedRewards) {
 	// 遍历所有奖励
 	for (uint32_t i = 0; i < kRewardMaxBitIndex; ++i) {
 		const bool isClaimed = claimedRewards[i];
@@ -71,7 +71,7 @@ void RewardSystem::ShowEntityRewardStatus(const RewardBitset& claimedRewards) {
 	}
 }
 
-void RewardSystem::CountRewardStatistics() {
+void RewardClaimSystem::CountRewardStatistics() {
 	uint64_t totalClaimed = 0;
 	uint64_t totalRewards = 0;
 
@@ -86,7 +86,7 @@ void RewardSystem::CountRewardStatistics() {
 		<< ", Unclaimed: " << (totalRewards - totalClaimed);
 }
 
-std::string RewardSystem::FormatRewardStatus(entt::entity entityId, const RewardBitset& claimedRewards) {
+std::string RewardClaimSystem::FormatRewardStatus(entt::entity entityId, const RewardBitset& claimedRewards) {
 	std::ostringstream ss;
 	ss << "Entity ID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entityId) << "\n";
 
@@ -97,7 +97,7 @@ std::string RewardSystem::FormatRewardStatus(entt::entity entityId, const Reward
 	return ss.str();
 }
 
-bool RewardSystem::HasUnclaimedRewards(const RewardBitset& claimedRewards) {
+bool RewardClaimSystem::HasUnclaimedRewards(const RewardBitset& claimedRewards) {
 	// 如果 RewardBitset 支持 count()
 	if (claimedRewards.count() < kRewardMaxBitIndex) {
 		return true;
@@ -106,7 +106,7 @@ bool RewardSystem::HasUnclaimedRewards(const RewardBitset& claimedRewards) {
 }
 
 // 例如仅显示未领取奖励的实体
-void RewardSystem::ShowUnclaimedRewards() {
+void RewardClaimSystem::ShowUnclaimedRewards() {
 	LOG_INFO << "=== Displaying Entities with Unclaimed Rewards ===";
 
 	tlsRegistryManager.actorRegistry.view<RewardComp>().each(
@@ -120,7 +120,7 @@ void RewardSystem::ShowUnclaimedRewards() {
 }
 
 // 统计未领取奖励的总数量
-uint32_t RewardSystem::CountEntitiesWithUnclaimedRewards() {
+uint32_t RewardClaimSystem::CountEntitiesWithUnclaimedRewards() {
 	uint32_t count = 0;
 
 	tlsRegistryManager.actorRegistry.view<RewardComp>().each(
