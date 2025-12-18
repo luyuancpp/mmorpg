@@ -83,3 +83,23 @@ private:
 };
 
 using PlayerMissionList = std::array<MissionsComponent, MissionListPBComponent::kPlayerMissionSize>;
+
+
+struct MissionsContainerComponent {
+	std::unordered_map<uint32_t, MissionsComponent> map;
+
+	MissionsComponent& GetOrCreate(uint32_t scope) {
+		auto it = map.find(scope);
+		if (it == map.end()) {
+			auto [newIt, _] = map.emplace(scope, MissionsComponent{});
+			return newIt->second;
+		}
+		return it->second;
+	}
+
+	// const 读接口
+	const MissionsComponent* Get(uint32_t scope) const {
+		auto it = map.find(scope);
+		return (it == map.end()) ? nullptr : &it->second;
+	}
+};

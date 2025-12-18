@@ -898,16 +898,16 @@ class MissionListPBComponent final : public ::google::protobuf::Message
 
   ::google::protobuf::Metadata GetMetadata() const;
   // nested types ----------------------------------------------------
-  using eMissionType = MissionListPBComponent_eMissionType;
-  static constexpr eMissionType kPlayerMission = MissionListPBComponent_eMissionType_kPlayerMission;
-  static constexpr eMissionType kPlayerAchievment = MissionListPBComponent_eMissionType_kPlayerAchievment;
-  static constexpr eMissionType kPlayerDailyActivity = MissionListPBComponent_eMissionType_kPlayerDailyActivity;
-  static constexpr eMissionType kPlayerMissionSize = MissionListPBComponent_eMissionType_kPlayerMissionSize;
+  using eMissionScope = MissionListPBComponent_eMissionType;
+  static constexpr eMissionScope kPlayerMission = MissionListPBComponent_eMissionType_kPlayerMission;
+  static constexpr eMissionScope kPlayerAchievment = MissionListPBComponent_eMissionType_kPlayerAchievment;
+  static constexpr eMissionScope kPlayerDailyActivity = MissionListPBComponent_eMissionType_kPlayerDailyActivity;
+  static constexpr eMissionScope kPlayerMissionSize = MissionListPBComponent_eMissionType_kPlayerMissionSize;
   static inline bool eMissionType_IsValid(int value) {
     return MissionListPBComponent_eMissionType_IsValid(value);
   }
-  static constexpr eMissionType eMissionType_MIN = MissionListPBComponent_eMissionType_eMissionType_MIN;
-  static constexpr eMissionType eMissionType_MAX = MissionListPBComponent_eMissionType_eMissionType_MAX;
+  static constexpr eMissionScope eMissionType_MIN = MissionListPBComponent_eMissionType_eMissionType_MIN;
+  static constexpr eMissionScope eMissionType_MAX = MissionListPBComponent_eMissionType_eMissionType_MAX;
   static constexpr int eMissionType_ARRAYSIZE = MissionListPBComponent_eMissionType_eMissionType_ARRAYSIZE;
   static inline const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eMissionType_descriptor() {
     return MissionListPBComponent_eMissionType_descriptor();
@@ -917,7 +917,7 @@ class MissionListPBComponent final : public ::google::protobuf::Message
     return MissionListPBComponent_eMissionType_Name(value);
   }
   static inline bool eMissionType_Parse(
-      ::absl::string_view name, eMissionType* PROTOBUF_NONNULL value) {
+      ::absl::string_view name, eMissionScope* PROTOBUF_NONNULL value) {
     return MissionListPBComponent_eMissionType_Parse(name, value);
   }
 

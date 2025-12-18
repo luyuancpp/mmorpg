@@ -5,6 +5,8 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/system/mission.h"
+#include <threading/registry_manager.h>
+
 ///<<< END WRITING YOUR CODE
 
 
@@ -26,13 +28,19 @@ void MissionEventHandler::UnRegister()
 void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	MissionSystem::AcceptMission(event);
+	entt::entity entity = entt::to_entity(event.entity());
+    auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComponent>(entity);
+    auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	MissionSystem::AcceptMission(event, comp);
 ///<<< END WRITING YOUR CODE
 }
 void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    MissionSystem::HandleMissionConditionEvent(event);
+	entt::entity entity = entt::to_entity(event.entity());
+	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComponent>(entity);
+	auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+    MissionSystem::HandleMissionConditionEvent(event, comp);
 ///<<< END WRITING YOUR CODE
 }
 void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& event)
