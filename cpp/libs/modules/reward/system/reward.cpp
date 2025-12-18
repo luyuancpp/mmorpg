@@ -56,7 +56,7 @@ void RewardClaimSystem::ShowRewardStatus() {
 	// 获取所有拥有 RewardComp 的实体
 	tlsRegistryManager.actorRegistry.view<RewardComp>().each(
 		[](entt::entity entity, const RewardComp& rewardComp) {
-			ShowEntityRewardStatus(rewardComp.rewards);
+			ShowEntityRewardStatus(rewardComp.GlobalRewards());
 		});
 
 	LOG_INFO << "=== End of Reward Status Display ===";
@@ -77,7 +77,7 @@ void RewardClaimSystem::CountRewardStatistics() {
 
 	tlsRegistryManager.actorRegistry.view<RewardComp>().each([&](entt::entity /*entity*/, const RewardComp& rewardComp) {
 		// 如果 RewardBitset 是 std::bitset，可直接使用 count()
-		totalClaimed += static_cast<uint64_t>(rewardComp.rewards.count());
+		totalClaimed += static_cast<uint64_t>(rewardComp.GlobalRewards().count());
 		totalRewards += static_cast<uint64_t>(kRewardMaxBitIndex);
 		});
 
@@ -111,7 +111,7 @@ void RewardClaimSystem::ShowUnclaimedRewards() {
 
 	tlsRegistryManager.actorRegistry.view<RewardComp>().each(
 		[](entt::entity entity, const RewardComp& rewardComp) {
-			if (HasUnclaimedRewards(rewardComp.rewards)) {
+			if (HasUnclaimedRewards(rewardComp.GlobalRewards())) {
 				LOG_INFO << "Entity ID with unclaimed rewards: " << entt::to_integral(entity);
 			}
 		});
@@ -125,7 +125,7 @@ uint32_t RewardClaimSystem::CountEntitiesWithUnclaimedRewards() {
 
 	tlsRegistryManager.actorRegistry.view<RewardComp>().each(
 		[&count](entt::entity /*entity*/, const RewardComp& rewardComp) {
-			if (HasUnclaimedRewards(rewardComp.rewards)) {
+			if (HasUnclaimedRewards(rewardComp.GlobalRewards())) {
 				++count;
 			}
 		});
