@@ -42,13 +42,13 @@ public:
 
 	// 获取或创建对应 instance 的 bitset（返回引用，注意可能被 later insert 导致失效）
 	// 推荐尽量使用下面的封装 API（SetClaimed/IsClaimed 等），不要长期保存引用
-	RewardBitset& GetOrCreateInstance(InstanceId instanceId = kGlobalInstanceId) {
+	RewardBitset& GetOrCreateInstance(InstanceId instanceId) {
 		auto [it, inserted] = instance_rewards.try_emplace(instanceId, RewardBitset{});
 		return it->second;
 	}
 
 	// 只读获取（可能为 nullptr）
-	const RewardBitset* GetInstance(InstanceId instanceId = kGlobalInstanceId) const {
+	const RewardBitset* GetInstance(InstanceId instanceId) const {
 		auto it = instance_rewards.find(instanceId);
 		return (it == instance_rewards.end()) ? nullptr : &it->second;
 	}
