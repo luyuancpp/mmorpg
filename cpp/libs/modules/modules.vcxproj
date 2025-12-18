@@ -34,6 +34,7 @@
     <ClInclude Include="mission\constants\mission.h" />
     <ClInclude Include="mission\system\mission.h" />
     <ClInclude Include="reward\comp\reward.h" />
+    <ClInclude Include="reward\constants\reward.h" />
     <ClInclude Include="reward\system\reward.h" />
     <ClInclude Include="scene\comp\room_node_comp.h" />
     <ClInclude Include="scene\comp\player_scene.h" />
