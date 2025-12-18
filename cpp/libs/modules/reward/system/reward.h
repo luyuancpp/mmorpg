@@ -8,8 +8,6 @@ struct RewardComp;
 
 class RewardSystem {
 public:
-    static void InitializeActorComponents(entt::entity entityId);
-
     static uint32_t ClaimRewardByRewardId(entt::entity entityId, uint32_t rewardId);
 
     // 领取奖励

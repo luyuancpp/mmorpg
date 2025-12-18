@@ -6,7 +6,6 @@
 
 decltype(auto) CreatePlayerEntityWithRewardComponent(){
     const auto playerEntity = tlsRegistryManager.actorRegistry.create();
-    RewardSystem::InitializeActorComponents(playerEntity);
     tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity);
     return playerEntity;
 }
