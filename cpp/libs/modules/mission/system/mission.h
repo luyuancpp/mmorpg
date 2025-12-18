@@ -44,10 +44,10 @@ public:
 	using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
 
 	static uint32_t GetMissionReward(const GetRewardParam& param);
-	static uint32_t AcceptMission(const AcceptMissionEvent& acceptEvent);
-	static uint32_t AbandonMission(const AbandonParam& param);
-	static void CompleteAllMissions(entt::entity player, uint32_t op);
-	static void HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent);
+	static uint32_t AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComponent& comp);
+	static uint32_t AbandonMission(const AbandonParam& param, MissionsComponent& comp);
+	static void CompleteAllMissions(entt::entity player, uint32_t op, MissionsComponent& comp);
+	static void HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComponent& comp);
 
 private:
 	static void DeleteMissionClassification(entt::entity player, uint32_t missionId);
