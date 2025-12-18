@@ -8,7 +8,7 @@
 
 struct RewardComp;
 
-class RewardSystem {
+class RewardClaimSystem {
 public:
     static uint32_t ClaimRewardByRewardId( uint32_t rewardId, RewardBitset& claimedRewards);
 
