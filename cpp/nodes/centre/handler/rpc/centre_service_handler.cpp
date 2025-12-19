@@ -231,7 +231,7 @@ namespace {
 			enterComp.set_enter_gs_type(LOGIN_REPLACE);
 			break;
 		}
-		PlayerLifecycleSystem::BindPlayerRoomToPlayerGate(playerEntity);
+		PlayerLifecycleSystem::RequestGatePlayerEnterScene(playerEntity);
 		PlayerLifecycleSystem::ProcessPlayerSessionState(playerEntity);
 	}
 
@@ -613,7 +613,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	auto& nodeIdMap = *sessionPB->mutable_node_id();
 	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
 
-	PlayerLifecycleSystem::BindPlayerRoomToPlayerGate(player);
+	PlayerLifecycleSystem::RequestGatePlayerEnterScene(player);
 	PlayerChangeRoomUtil::SetCurrentChangeSceneState(player, ChangeRoomInfoPBComponent::eEnterSucceed);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(player);
 
