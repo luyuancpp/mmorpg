@@ -62,7 +62,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 }
 
 //考虑: 没load 完再次进入别的gs
-void PlayerLifecycleSystem::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
+void PlayerLifecycleSystem::EnterRoom(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
 	LOG_INFO << "EnterGs: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering Game Node";
 
 	auto& playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
@@ -71,14 +71,14 @@ void PlayerLifecycleSystem::EnterGs(const entt::entity player, const PlayerGameN
 	LOG_INFO << "Updated PlayerNodeInfo with CentreNodeId: " << enterInfo.centre_node_id();
 
 	// Notify Centre that player has entered the game node successfully
-	NotifyEnterGsSucceed(player, enterInfo.centre_node_id());
+	NotifyEnterRoomSucceed(player, enterInfo.centre_node_id());
 	//todo Centre 重新启动以后
 	//todo gs更新了对应的gate之后 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，
 	//进入game_node a, 再进入game_node b 两个gs的消息到达客户端消息的顺序不一样,所以说game 还要通知game 还要收到gate 的处理完准备离开game的消息
 	//否则两个不同的gs可能离开场景的消息后于进入场景的消息到达客户端
 }
 
-void PlayerLifecycleSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNodeId)
+void PlayerLifecycleSystem::NotifyEnterRoomSucceed(entt::entity player, NodeId centreNodeId)
 {
 	EnterGameNodeSuccessRequest request;
 	request.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player));
@@ -295,7 +295,7 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& p
 	dispatcher.trigger(initPlayerEvent);
 
 	// 9. 进入场景节点
-	EnterGs(player, enterInfo);
+	EnterRoom(player, enterInfo);
 
 	return player;
 }
