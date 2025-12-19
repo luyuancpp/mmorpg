@@ -111,7 +111,7 @@ void PlayerLifecycleSystem::HandlePlayerReconnection(entt::entity player)
 	LOG_INFO << "Handling player reconnection for entity: " << static_cast<uint32_t>(player);
 }
 
-void PlayerLifecycleSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
+void PlayerLifecycleSystem::BindPlayerRoomToPlayerGate(entt::entity playerEntity)
 {
 	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB)
@@ -153,7 +153,7 @@ void PlayerLifecycleSystem::AddGameNodePlayerToGateNode(entt::entity playerEntit
 	LOG_DEBUG << "Called remote method GatePlayerEnterGameNodeMessageId for session_id: " << sessionPB->gate_session_id();
 }
 
-void PlayerLifecycleSystem::HandleRoomNodePlayerRegisteredAtGate(entt::entity playerEntity)
+void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity playerEntity)
 {
 	const auto* const sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB)
