@@ -614,7 +614,6 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
 
 	PlayerLifecycleSystem::BindPlayerRoomToPlayerGate(player);
-
 	PlayerChangeRoomUtil::SetCurrentChangeSceneState(player, ChangeRoomInfoPBComponent::eEnterSucceed);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(player);
 

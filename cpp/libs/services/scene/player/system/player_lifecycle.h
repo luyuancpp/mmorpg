@@ -14,8 +14,8 @@ public:
 	//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖
 	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message, const std::any& extra);
 	static void HandlePlayerAsyncSaved(Guid player_id, PlayerAllData& message);
-	static void EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enter_info);
-	static void NotifyEnterGsSucceed(entt::entity player, NodeId centre_node_id);
+	static void EnterRoom(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enter_info);
+	static void NotifyEnterRoomSucceed(entt::entity player, NodeId centre_node_id);
 	static void LeaveGs(entt::entity player);
 	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);
 	static void HandleBindPlayerToGateOK(entt::entity player);

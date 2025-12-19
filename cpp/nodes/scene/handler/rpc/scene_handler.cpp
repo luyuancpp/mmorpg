@@ -56,7 +56,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 2 检查玩家是否已经在线，若在线则直接进入
 	if (playerIt != tlsPlayerList.end())
 	{
-		PlayerLifecycleSystem::EnterGs(playerIt->second, enterInfo);
+		PlayerLifecycleSystem::EnterRoom(playerIt->second, enterInfo);
 		return;
 	}
 
