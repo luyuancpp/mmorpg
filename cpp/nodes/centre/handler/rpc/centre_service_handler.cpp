@@ -603,11 +603,11 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 		return;
 	}
 
+	// 在 EnterGsSucceed 前确保 sessionPB 有效，然后调用添加到 gate 的逻辑
 	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
-	if (!sessionPB)
-	{
-		LOG_ERROR << "Player session info not found for player: " << playerId;
-		return;
+	if (!sessionPB || sessionPB->gate_session_id() == kInvalidSessionId) {
+	    LOG_ERROR << "EnterGsSucceed: missing or invalid session snapshot for player " << playerId;
+	    return;
 	}
 
 	auto& nodeIdMap = *sessionPB->mutable_node_id();
@@ -616,6 +616,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	PlayerLifecycleSystem::BindPlayerRoomToPlayerGate(player);
 	PlayerChangeRoomUtil::SetCurrentChangeSceneState(player, ChangeRoomInfoPBComponent::eEnterSucceed);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(player);
+
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
 
@@ -829,5 +830,6 @@ void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller,
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 	///<<< END WRITING YOUR CODE
 }
+
 
 
