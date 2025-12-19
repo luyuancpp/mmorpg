@@ -111,29 +111,29 @@ void PlayerLifecycleSystem::HandlePlayerReconnection(entt::entity player)
 	LOG_INFO << "Handling player reconnection for entity: " << static_cast<uint32_t>(player);
 }
 
-void PlayerLifecycleSystem::BindPlayerRoomToPlayerGate(entt::entity playerEntity)
+void PlayerLifecycleSystem::RequestGatePlayerEnterScene(entt::entity playerEntity)
 {
 	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!sessionPB)
 	{
-		LOG_WARN << "PlayerSessionSnapshotPB not found for player: " << tlsRegistryManager.actorRegistry.try_get<Guid>(playerEntity);
+		LOG_WARN << "PlayerSessionSnapshotPB not found for player guid=  " << tlsRegistryManager.actorRegistry.try_get<Guid>(playerEntity);
 		return;
 	}
 
-	LOG_INFO << "Adding game node player to gate node, session_id: " << sessionPB->gate_session_id();
+	LOG_INFO << "session_id: " << sessionPB->gate_session_id();
 
 	entt::entity gateNodeId{ GetGateNodeId(sessionPB->gate_session_id()) };
 	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (!registry.valid(gateNodeId))
 	{
-		LOG_WARN << "Gate node invalid for session_id: " << sessionPB->gate_session_id();
+		LOG_WARN << "Gate node invalid for session_id= " << sessionPB->gate_session_id();
 		return;
 	}
 
 	auto gateNodeScene = registry.try_get<RpcSession>(gateNodeId);
 	if (!gateNodeScene)
 	{
-		LOG_WARN << "Gate node RpcSession not found for session_id: " << sessionPB->gate_session_id();
+		LOG_WARN << " Gate RpcSession not found for session_id=" << sessionPB->gate_session_id();
 		return;
 	}
 
