@@ -13,8 +13,8 @@ public:
     static void ProcessPlayerSessionState(entt::entity player);
     static void HandlePlayerLogin(entt::entity player);
     static void HandlePlayerReconnection(entt::entity player);
-    static void AddGameNodePlayerToGateNode(entt::entity player);
-    static void HandleRoomNodePlayerRegisteredAtGate(entt::entity player);
+    static void BindPlayerRoomToPlayerGate(entt::entity player);
+    static void HandleBindPlayerToGateOK(entt::entity player);
     static void HandleNormalExit(Guid playerID);
     static void HandleAbnormalExit(Guid playerID);
     static void Logout(Guid playerID);

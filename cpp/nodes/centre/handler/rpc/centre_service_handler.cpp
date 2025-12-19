@@ -212,7 +212,6 @@ namespace {
 		sessionPB.set_token_id(Sha256Hex(loginToken));
 		sessionPB.set_token_expiry_ms(tokenExpiryMs);
 		GetPlayerCentreDataRedis()->AsyncLoad(playerGuid, sessionPB);
-		GetPlayerCentreDataRedis()->UpdateExtraData(playerGuid, sessionPB);
 		LOG_INFO << "HandleFirstLogin for player " << playerGuid;
 	}
 
@@ -232,7 +231,7 @@ namespace {
 			enterComp.set_enter_gs_type(LOGIN_REPLACE);
 			break;
 		}
-		PlayerLifecycleSystem::AddGameNodePlayerToGateNode(playerEntity);
+		PlayerLifecycleSystem::BindPlayerRoomToPlayerGate(playerEntity);
 		PlayerLifecycleSystem::ProcessPlayerSessionState(playerEntity);
 	}
 
@@ -614,7 +613,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	auto& nodeIdMap = *sessionPB->mutable_node_id();
 	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
 
-	PlayerLifecycleSystem::AddGameNodePlayerToGateNode(player);
+	PlayerLifecycleSystem::BindPlayerRoomToPlayerGate(player);
 
 	PlayerChangeRoomUtil::SetCurrentChangeSceneState(player, ChangeRoomInfoPBComponent::eEnterSucceed);
 	PlayerChangeRoomUtil::ProgressSceneChangeState(player);
