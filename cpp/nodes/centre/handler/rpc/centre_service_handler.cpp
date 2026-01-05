@@ -269,6 +269,10 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 •	在 GateSessionDisconnect 标记断线（记录 disconnectInfo + snapshot_version）并启动延迟清理；
 •	只在延迟清理确定“超时且未重连”时再删除 GlobalSessionList 显射并执行 PlayerLifecycleSystem::HandleNormalExit（已实现的延时回调应负责）。
 •	保持 GlobalSessionList 的插入（LoginNodeEnterGame）仍可立即写，用于路由；删除统一由延时清理负责，避免 race。*/
+//•	Centre 不必保存 refresh token；access token 在 Login 服务签发并短期有效，Centre 只用于判断重连合法性。
+//•	为安全起见，记录 token id 或 token 哈希到日志/持久化而不是原文 token。
+//•	当 token 有 expiry，DecideEnterGame 里使用 oldTokenValid 防止用已过期 token 判定为 Reconnect
+// 登录的时候在换场景,这时候是不是应该幂等
 
 	const uint64_t session_id = request->session_info().session_id();
 
