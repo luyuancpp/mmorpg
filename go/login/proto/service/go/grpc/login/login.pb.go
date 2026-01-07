@@ -420,8 +420,10 @@ func (x *CreatePlayerResponse) GetPlayers() []*AccountSimplePlayerWrapper {
 }
 
 type EnterGameRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	// 新增：客户端生成的幂等 request id（客户端重试同一次业务请求时必须复用）
+	RequestId     string `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -461,6 +463,13 @@ func (x *EnterGameRequest) GetPlayerId() uint64 {
 		return x.PlayerId
 	}
 	return 0
+}
+
+func (x *EnterGameRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
 }
 
 type EnterGameResponse struct {
@@ -664,9 +673,11 @@ const file_proto_service_go_grpc_login_login_proto_rawDesc = "" +
 	"\x13CreatePlayerRequest\"\x8b\x01\n" +
 	"\x14CreatePlayerResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12=\n" +
-	"\aplayers\x18\x02 \x03(\v2#.loginpb.AccountSimplePlayerWrapperR\aplayers\"/\n" +
+	"\aplayers\x18\x02 \x03(\v2#.loginpb.AccountSimplePlayerWrapperR\aplayers\"N\n" +
 	"\x10EnterGameRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"f\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x02 \x01(\tR\trequestId\"f\n" +
 	"\x11EnterGameResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\"\x12\n" +

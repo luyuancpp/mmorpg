@@ -16,7 +16,6 @@ message LoginSessionInfo {
   string fsm = 7;
 }
 
-
 message AccountSimplePlayerWrapper
 {
   AccountSimplePlayer player = 1;
@@ -44,24 +43,26 @@ message TestResponse
 
 message CreatePlayerRequest
 {
-	
 }
 
 message CreatePlayerResponse
 {
-	TipInfoMessage error_message = 1;
-	repeated AccountSimplePlayerWrapper players = 2;
+  TipInfoMessage error_message = 1;
+  repeated AccountSimplePlayerWrapper players = 2;
 }
 
 message EnterGameRequest
 {
-	uint64 player_id  = 1;
+  uint64 player_id  = 1;
+
+  // 新增：客户端生成的幂等 request id（客户端重试同一次业务请求时必须复用）
+  string request_id = 2;
 }
 
 message EnterGameResponse
 {
-	TipInfoMessage error_message = 1;
-	uint64 player_id  = 2;
+  TipInfoMessage error_message = 1;
+  uint64 player_id  = 2;
 }
 
 message LeaveGameRequest

@@ -76,24 +76,24 @@ func (MissionPBComponentEMissionStatus) EnumDescriptor() ([]byte, []int) {
 	return file_proto_logic_component_mission_comp_proto_rawDescGZIP(), []int{0, 0}
 }
 
-type MissionListPBComponentEMissionType int32
+type MissionListPBComponentEMissionScope int32
 
 const (
-	MissionListPBComponent_kPlayerMission       MissionListPBComponentEMissionType = 0 //普通任务
-	MissionListPBComponent_kPlayerAchievment    MissionListPBComponentEMissionType = 1 //成就
-	MissionListPBComponent_kPlayerDailyActivity MissionListPBComponentEMissionType = 2 //每日活动
-	MissionListPBComponent_kPlayerMissionSize   MissionListPBComponentEMissionType = 3 //最大值
+	MissionListPBComponent_kPlayerMission       MissionListPBComponentEMissionScope = 0 //普通任务
+	MissionListPBComponent_kPlayerAchievment    MissionListPBComponentEMissionScope = 1 //成就
+	MissionListPBComponent_kPlayerDailyActivity MissionListPBComponentEMissionScope = 2 //每日活动
+	MissionListPBComponent_kPlayerMissionSize   MissionListPBComponentEMissionScope = 3 //最大值
 )
 
-// Enum value maps for MissionListPBComponentEMissionType.
+// Enum value maps for MissionListPBComponentEMissionScope.
 var (
-	MissionListPBComponentEMissionType_name = map[int32]string{
+	MissionListPBComponentEMissionScope_name = map[int32]string{
 		0: "kPlayerMission",
 		1: "kPlayerAchievment",
 		2: "kPlayerDailyActivity",
 		3: "kPlayerMissionSize",
 	}
-	MissionListPBComponentEMissionType_value = map[string]int32{
+	MissionListPBComponentEMissionScope_value = map[string]int32{
 		"kPlayerMission":       0,
 		"kPlayerAchievment":    1,
 		"kPlayerDailyActivity": 2,
@@ -101,30 +101,30 @@ var (
 	}
 )
 
-func (x MissionListPBComponentEMissionType) Enum() *MissionListPBComponentEMissionType {
-	p := new(MissionListPBComponentEMissionType)
+func (x MissionListPBComponentEMissionScope) Enum() *MissionListPBComponentEMissionScope {
+	p := new(MissionListPBComponentEMissionScope)
 	*p = x
 	return p
 }
 
-func (x MissionListPBComponentEMissionType) String() string {
+func (x MissionListPBComponentEMissionScope) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (MissionListPBComponentEMissionType) Descriptor() protoreflect.EnumDescriptor {
+func (MissionListPBComponentEMissionScope) Descriptor() protoreflect.EnumDescriptor {
 	return file_proto_logic_component_mission_comp_proto_enumTypes[1].Descriptor()
 }
 
-func (MissionListPBComponentEMissionType) Type() protoreflect.EnumType {
+func (MissionListPBComponentEMissionScope) Type() protoreflect.EnumType {
 	return &file_proto_logic_component_mission_comp_proto_enumTypes[1]
 }
 
-func (x MissionListPBComponentEMissionType) Number() protoreflect.EnumNumber {
+func (x MissionListPBComponentEMissionScope) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use MissionListPBComponentEMissionType.Descriptor instead.
-func (MissionListPBComponentEMissionType) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use MissionListPBComponentEMissionScope.Descriptor instead.
+func (MissionListPBComponentEMissionScope) EnumDescriptor() ([]byte, []int) {
 	return file_proto_logic_component_mission_comp_proto_rawDescGZIP(), []int{1, 0}
 }
 
@@ -323,7 +323,7 @@ const file_proto_logic_component_mission_comp_proto_rawDesc = "" +
 	"\x15E_MISSION_ACHIEVEMENT\x10\x01\x12\x16\n" +
 	"\x12E_MISSION_COMPLETE\x10\x02\x12\x16\n" +
 	"\x12E_MISSION_TIME_OUT\x10\x03\x12\x13\n" +
-	"\x0fE_MISSION_FAILD\x10\x04\"\xfd\x03\n" +
+	"\x0fE_MISSION_FAILD\x10\x04\"\xfe\x03\n" +
 	"\x16MissionListPBComponent\x12A\n" +
 	"\bmissions\x18\x01 \x03(\v2%.MissionListPBComponent.MissionsEntryR\bmissions\x12+\n" +
 	"\x11complete_missions\x18\x02 \x01(\fR\x10completeMissions\x12[\n" +
@@ -334,8 +334,8 @@ const file_proto_logic_component_mission_comp_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x13.MissionPBComponentR\x05value:\x028\x01\x1aC\n" +
 	"\x15MissionBeginTimeEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"k\n" +
-	"\feMissionType\x12\x12\n" +
+	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"l\n" +
+	"\reMissionScope\x12\x12\n" +
 	"\x0ekPlayerMission\x10\x00\x12\x15\n" +
 	"\x11kPlayerAchievment\x10\x01\x12\x18\n" +
 	"\x14kPlayerDailyActivity\x10\x02\x12\x16\n" +
@@ -361,14 +361,14 @@ func file_proto_logic_component_mission_comp_proto_rawDescGZIP() []byte {
 var file_proto_logic_component_mission_comp_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_proto_logic_component_mission_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_logic_component_mission_comp_proto_goTypes = []any{
-	(MissionPBComponentEMissionStatus)(0),   // 0: MissionPBComponent.eMissionStatus
-	(MissionListPBComponentEMissionType)(0), // 1: MissionListPBComponent.eMissionType
-	(*MissionPBComponent)(nil),              // 2: MissionPBComponent
-	(*MissionListPBComponent)(nil),          // 3: MissionListPBComponent
-	(*RewardListPBComponent)(nil),           // 4: RewardListPBComponent
-	nil,                                     // 5: MissionListPBComponent.MissionsEntry
-	nil,                                     // 6: MissionListPBComponent.MissionBeginTimeEntry
-	nil,                                     // 7: RewardListPBComponent.CanRewardMissionIdEntry
+	(MissionPBComponentEMissionStatus)(0),    // 0: MissionPBComponent.eMissionStatus
+	(MissionListPBComponentEMissionScope)(0), // 1: MissionListPBComponent.eMissionScope
+	(*MissionPBComponent)(nil),               // 2: MissionPBComponent
+	(*MissionListPBComponent)(nil),           // 3: MissionListPBComponent
+	(*RewardListPBComponent)(nil),            // 4: RewardListPBComponent
+	nil,                                      // 5: MissionListPBComponent.MissionsEntry
+	nil,                                      // 6: MissionListPBComponent.MissionBeginTimeEntry
+	nil,                                      // 7: RewardListPBComponent.CanRewardMissionIdEntry
 }
 var file_proto_logic_component_mission_comp_proto_depIdxs = []int32{
 	5, // 0: MissionListPBComponent.missions:type_name -> MissionListPBComponent.MissionsEntry
