@@ -57,8 +57,8 @@ struct TableStruct_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto;
 }  // extern "C"
-enum MissionListPBComponent_eMissionType : int;
-extern const uint32_t MissionListPBComponent_eMissionType_internal_data_[];
+enum MissionListPBComponent_eMissionScope : int;
+extern const uint32_t MissionListPBComponent_eMissionScope_internal_data_[];
 enum MissionPBComponent_eMissionStatus : int;
 extern const uint32_t MissionPBComponent_eMissionStatus_internal_data_[];
 class MissionListPBComponent;
@@ -88,8 +88,8 @@ extern const ::google::protobuf::internal::ClassDataFull RewardListPBComponent_C
 namespace google {
 namespace protobuf {
 template <>
-internal::EnumTraitsT<::MissionListPBComponent_eMissionType_internal_data_>
-    internal::EnumTraitsImpl::value<::MissionListPBComponent_eMissionType>;
+internal::EnumTraitsT<::MissionListPBComponent_eMissionScope_internal_data_>
+    internal::EnumTraitsImpl::value<::MissionListPBComponent_eMissionScope>;
 template <>
 internal::EnumTraitsT<::MissionPBComponent_eMissionStatus_internal_data_>
     internal::EnumTraitsImpl::value<::MissionPBComponent_eMissionStatus>;
@@ -135,42 +135,42 @@ inline bool MissionPBComponent_eMissionStatus_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<MissionPBComponent_eMissionStatus>(MissionPBComponent_eMissionStatus_descriptor(), name,
                                            value);
 }
-enum MissionListPBComponent_eMissionType : int {
-  MissionListPBComponent_eMissionType_kPlayerMission = 0,
-  MissionListPBComponent_eMissionType_kPlayerAchievment = 1,
-  MissionListPBComponent_eMissionType_kPlayerDailyActivity = 2,
-  MissionListPBComponent_eMissionType_kPlayerMissionSize = 3,
-  MissionListPBComponent_eMissionType_MissionListPBComponent_eMissionType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+enum MissionListPBComponent_eMissionScope : int {
+  MissionListPBComponent_eMissionScope_kPlayerMission = 0,
+  MissionListPBComponent_eMissionScope_kPlayerAchievment = 1,
+  MissionListPBComponent_eMissionScope_kPlayerDailyActivity = 2,
+  MissionListPBComponent_eMissionScope_kPlayerMissionSize = 3,
+  MissionListPBComponent_eMissionScope_MissionListPBComponent_eMissionScope_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
-  MissionListPBComponent_eMissionType_MissionListPBComponent_eMissionType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  MissionListPBComponent_eMissionScope_MissionListPBComponent_eMissionScope_INT_MAX_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::max(),
 };
 
-extern const uint32_t MissionListPBComponent_eMissionType_internal_data_[];
-inline constexpr MissionListPBComponent_eMissionType MissionListPBComponent_eMissionType_eMissionType_MIN =
-    static_cast<MissionListPBComponent_eMissionType>(0);
-inline constexpr MissionListPBComponent_eMissionType MissionListPBComponent_eMissionType_eMissionType_MAX =
-    static_cast<MissionListPBComponent_eMissionType>(3);
-inline bool MissionListPBComponent_eMissionType_IsValid(int value) {
+extern const uint32_t MissionListPBComponent_eMissionScope_internal_data_[];
+inline constexpr MissionListPBComponent_eMissionScope MissionListPBComponent_eMissionScope_eMissionScope_MIN =
+    static_cast<MissionListPBComponent_eMissionScope>(0);
+inline constexpr MissionListPBComponent_eMissionScope MissionListPBComponent_eMissionScope_eMissionScope_MAX =
+    static_cast<MissionListPBComponent_eMissionScope>(3);
+inline bool MissionListPBComponent_eMissionScope_IsValid(int value) {
   return 0 <= value && value <= 3;
 }
-inline constexpr int MissionListPBComponent_eMissionType_eMissionType_ARRAYSIZE = 3 + 1;
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionListPBComponent_eMissionType_descriptor();
+inline constexpr int MissionListPBComponent_eMissionScope_eMissionScope_ARRAYSIZE = 3 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionListPBComponent_eMissionScope_descriptor();
 template <typename T>
-const ::std::string& MissionListPBComponent_eMissionType_Name(T value) {
-  static_assert(::std::is_same<T, MissionListPBComponent_eMissionType>::value ||
+const ::std::string& MissionListPBComponent_eMissionScope_Name(T value) {
+  static_assert(::std::is_same<T, MissionListPBComponent_eMissionScope>::value ||
                     ::std::is_integral<T>::value,
-                "Incorrect type passed to eMissionType_Name().");
-  return MissionListPBComponent_eMissionType_Name(static_cast<MissionListPBComponent_eMissionType>(value));
+                "Incorrect type passed to eMissionScope_Name().");
+  return MissionListPBComponent_eMissionScope_Name(static_cast<MissionListPBComponent_eMissionScope>(value));
 }
 template <>
-inline const ::std::string& MissionListPBComponent_eMissionType_Name(MissionListPBComponent_eMissionType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<MissionListPBComponent_eMissionType_descriptor, 0, 3>(
+inline const ::std::string& MissionListPBComponent_eMissionScope_Name(MissionListPBComponent_eMissionScope value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<MissionListPBComponent_eMissionScope_descriptor, 0, 3>(
       static_cast<int>(value));
 }
-inline bool MissionListPBComponent_eMissionType_Parse(
-    ::absl::string_view name, MissionListPBComponent_eMissionType* PROTOBUF_NONNULL value) {
-  return ::google::protobuf::internal::ParseNamedEnum<MissionListPBComponent_eMissionType>(MissionListPBComponent_eMissionType_descriptor(), name,
+inline bool MissionListPBComponent_eMissionScope_Parse(
+    ::absl::string_view name, MissionListPBComponent_eMissionScope* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<MissionListPBComponent_eMissionScope>(MissionListPBComponent_eMissionScope_descriptor(), name,
                                            value);
 }
 
@@ -898,27 +898,27 @@ class MissionListPBComponent final : public ::google::protobuf::Message
 
   ::google::protobuf::Metadata GetMetadata() const;
   // nested types ----------------------------------------------------
-  using eMissionScope = MissionListPBComponent_eMissionType;
-  static constexpr eMissionScope kPlayerMission = MissionListPBComponent_eMissionType_kPlayerMission;
-  static constexpr eMissionScope kPlayerAchievment = MissionListPBComponent_eMissionType_kPlayerAchievment;
-  static constexpr eMissionScope kPlayerDailyActivity = MissionListPBComponent_eMissionType_kPlayerDailyActivity;
-  static constexpr eMissionScope kPlayerMissionSize = MissionListPBComponent_eMissionType_kPlayerMissionSize;
-  static inline bool eMissionType_IsValid(int value) {
-    return MissionListPBComponent_eMissionType_IsValid(value);
+  using eMissionScope = MissionListPBComponent_eMissionScope;
+  static constexpr eMissionScope kPlayerMission = MissionListPBComponent_eMissionScope_kPlayerMission;
+  static constexpr eMissionScope kPlayerAchievment = MissionListPBComponent_eMissionScope_kPlayerAchievment;
+  static constexpr eMissionScope kPlayerDailyActivity = MissionListPBComponent_eMissionScope_kPlayerDailyActivity;
+  static constexpr eMissionScope kPlayerMissionSize = MissionListPBComponent_eMissionScope_kPlayerMissionSize;
+  static inline bool eMissionScope_IsValid(int value) {
+    return MissionListPBComponent_eMissionScope_IsValid(value);
   }
-  static constexpr eMissionScope eMissionType_MIN = MissionListPBComponent_eMissionType_eMissionType_MIN;
-  static constexpr eMissionScope eMissionType_MAX = MissionListPBComponent_eMissionType_eMissionType_MAX;
-  static constexpr int eMissionType_ARRAYSIZE = MissionListPBComponent_eMissionType_eMissionType_ARRAYSIZE;
-  static inline const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eMissionType_descriptor() {
-    return MissionListPBComponent_eMissionType_descriptor();
+  static constexpr eMissionScope eMissionScope_MIN = MissionListPBComponent_eMissionScope_eMissionScope_MIN;
+  static constexpr eMissionScope eMissionScope_MAX = MissionListPBComponent_eMissionScope_eMissionScope_MAX;
+  static constexpr int eMissionScope_ARRAYSIZE = MissionListPBComponent_eMissionScope_eMissionScope_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eMissionScope_descriptor() {
+    return MissionListPBComponent_eMissionScope_descriptor();
   }
   template <typename T>
-  static inline const ::std::string& eMissionType_Name(T value) {
-    return MissionListPBComponent_eMissionType_Name(value);
+  static inline const ::std::string& eMissionScope_Name(T value) {
+    return MissionListPBComponent_eMissionScope_Name(value);
   }
-  static inline bool eMissionType_Parse(
+  static inline bool eMissionScope_Parse(
       ::absl::string_view name, eMissionScope* PROTOBUF_NONNULL value) {
-    return MissionListPBComponent_eMissionType_Parse(name, value);
+    return MissionListPBComponent_eMissionScope_Parse(name, value);
   }
 
   // accessors -------------------------------------------------------
@@ -1409,10 +1409,10 @@ inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::MissionPBCompo
   return ::MissionPBComponent_eMissionStatus_descriptor();
 }
 template <>
-struct is_proto_enum<::MissionListPBComponent_eMissionType> : std::true_type {};
+struct is_proto_enum<::MissionListPBComponent_eMissionScope> : std::true_type {};
 template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::MissionListPBComponent_eMissionType>() {
-  return ::MissionListPBComponent_eMissionType_descriptor();
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::MissionListPBComponent_eMissionScope>() {
+  return ::MissionListPBComponent_eMissionScope_descriptor();
 }
 
 }  // namespace protobuf

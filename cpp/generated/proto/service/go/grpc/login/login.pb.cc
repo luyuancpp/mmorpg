@@ -157,6 +157,9 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr EnterGameRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        request_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -393,8 +396,10 @@ const ::uint32_t
         ~0u,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameRequest, _impl_.request_id_),
+        1,
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameResponse, _impl_._has_bits_),
@@ -422,10 +427,10 @@ static const ::_pbi::MigrationSchema
         {47, sizeof(::loginpb::CreatePlayerRequest)},
         {48, sizeof(::loginpb::CreatePlayerResponse)},
         {55, sizeof(::loginpb::EnterGameRequest)},
-        {60, sizeof(::loginpb::EnterGameResponse)},
-        {67, sizeof(::loginpb::LeaveGameRequest)},
-        {68, sizeof(::loginpb::LoginNodeDisconnectRequest)},
-        {73, sizeof(::loginpb::LoginEmptyResponse)},
+        {62, sizeof(::loginpb::EnterGameResponse)},
+        {69, sizeof(::loginpb::LeaveGameRequest)},
+        {70, sizeof(::loginpb::LoginNodeDisconnectRequest)},
+        {75, sizeof(::loginpb::LoginEmptyResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::loginpb::_LoginSessionInfo_default_instance_._instance,
@@ -463,22 +468,22 @@ const char descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2flogin_2flogin
     "reatePlayerRequest\"t\n\024CreatePlayerRespon"
     "se\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessa"
     "ge\0224\n\007players\030\002 \003(\0132#.loginpb.AccountSim"
-    "plePlayerWrapper\"%\n\020EnterGameRequest\022\021\n\t"
-    "player_id\030\001 \001(\004\"N\n\021EnterGameResponse\022&\n\r"
-    "error_message\030\001 \001(\0132\017.TipInfoMessage\022\021\n\t"
-    "player_id\030\002 \001(\004\"\022\n\020LeaveGameRequest\"0\n\032L"
-    "oginNodeDisconnectRequest\022\022\n\nsession_id\030"
-    "\001 \001(\004\"\024\n\022LoginEmptyResponse2\370\002\n\021ClientPl"
-    "ayerLogin\0226\n\005Login\022\025.loginpb.LoginReques"
-    "t\032\026.loginpb.LoginResponse\022K\n\014CreatePlaye"
-    "r\022\034.loginpb.CreatePlayerRequest\032\035.loginp"
-    "b.CreatePlayerResponse\022B\n\tEnterGame\022\031.lo"
-    "ginpb.EnterGameRequest\032\032.loginpb.EnterGa"
-    "meResponse\022C\n\tLeaveGame\022\031.loginpb.LeaveG"
-    "ameRequest\032\033.loginpb.LoginEmptyResponse\022"
-    "N\n\nDisconnect\022#.loginpb.LoginNodeDisconn"
-    "ectRequest\032\033.loginpb.LoginEmptyResponse\032"
-    "\005\210\250\303\001\001b\006proto3"
+    "plePlayerWrapper\"9\n\020EnterGameRequest\022\021\n\t"
+    "player_id\030\001 \001(\004\022\022\n\nrequest_id\030\002 \001(\t\"N\n\021E"
+    "nterGameResponse\022&\n\rerror_message\030\001 \001(\0132"
+    "\017.TipInfoMessage\022\021\n\tplayer_id\030\002 \001(\004\"\022\n\020L"
+    "eaveGameRequest\"0\n\032LoginNodeDisconnectRe"
+    "quest\022\022\n\nsession_id\030\001 \001(\004\"\024\n\022LoginEmptyR"
+    "esponse2\370\002\n\021ClientPlayerLogin\0226\n\005Login\022\025"
+    ".loginpb.LoginRequest\032\026.loginpb.LoginRes"
+    "ponse\022K\n\014CreatePlayer\022\034.loginpb.CreatePl"
+    "ayerRequest\032\035.loginpb.CreatePlayerRespon"
+    "se\022B\n\tEnterGame\022\031.loginpb.EnterGameReque"
+    "st\032\032.loginpb.EnterGameResponse\022C\n\tLeaveG"
+    "ame\022\031.loginpb.LeaveGameRequest\032\033.loginpb"
+    ".LoginEmptyResponse\022N\n\nDisconnect\022#.logi"
+    "npb.LoginNodeDisconnectRequest\032\033.loginpb"
+    ".LoginEmptyResponse\032\005\210\250\303\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fgo_2fgrpc_2flogin_2flogin_2eproto_deps[3] = {
@@ -490,7 +495,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fgo_2fgrpc_2flogin_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fgo_2fgrpc_2flogin_2flogin_2eproto = {
     false,
     false,
-    1414,
+    1434,
     descriptor_table_protodef_proto_2fservice_2fgo_2fgrpc_2flogin_2flogin_2eproto,
     "proto/service/go/grpc/login/login.proto",
     &descriptor_table_proto_2fservice_2fgo_2fgrpc_2flogin_2flogin_2eproto_once,
@@ -2681,21 +2686,36 @@ EnterGameRequest::EnterGameRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE 
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:loginpb.EnterGameRequest)
 }
+PROTOBUF_NDEBUG_INLINE EnterGameRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::loginpb::EnterGameRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        request_id_(arena, from.request_id_) {}
+
 EnterGameRequest::EnterGameRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterGameRequest& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const EnterGameRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, EnterGameRequest_class_data_.base()),
+    : ::google::protobuf::Message(arena, EnterGameRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  EnterGameRequest* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.player_id_ = from._impl_.player_id_;
+
+  // @@protoc_insertion_point(copy_constructor:loginpb.EnterGameRequest)
 }
 PROTOBUF_NDEBUG_INLINE EnterGameRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        request_id_(arena) {}
 
 inline void EnterGameRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -2709,6 +2729,7 @@ inline void EnterGameRequest::SharedDtor(MessageLite& self) {
   EnterGameRequest& this_ = static_cast<EnterGameRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.request_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -2718,7 +2739,7 @@ inline void* PROTOBUF_NONNULL EnterGameRequest::PlacementNew_(
   return ::new (mem) EnterGameRequest(arena);
 }
 constexpr auto EnterGameRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(EnterGameRequest),
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(EnterGameRequest),
                                             alignof(EnterGameRequest));
 }
 constexpr auto EnterGameRequest::InternalGenerateClassData_() {
@@ -2755,16 +2776,16 @@ EnterGameRequest::GetClassData() const {
   return EnterGameRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+const ::_pbi::TcParseTable<1, 2, 0, 43, 2>
 EnterGameRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(EnterGameRequest, _impl_._has_bits_),
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     EnterGameRequest_class_data_.base(),
@@ -2774,18 +2795,27 @@ EnterGameRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::loginpb::EnterGameRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // string request_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(EnterGameRequest, _impl_.request_id_)}},
     // uint64 player_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterGameRequest, _impl_.player_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(EnterGameRequest, _impl_.player_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterGameRequest, _impl_.player_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(EnterGameRequest, _impl_.player_id_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 player_id = 1;
-    {PROTOBUF_FIELD_OFFSET(EnterGameRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterGameRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // string request_id = 2;
+    {PROTOBUF_FIELD_OFFSET(EnterGameRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
+    "\30\0\12\0\0\0\0\0"
+    "loginpb.EnterGameRequest"
+    "request_id"
   }},
 };
 PROTOBUF_NOINLINE void EnterGameRequest::Clear() {
@@ -2795,6 +2825,10 @@ PROTOBUF_NOINLINE void EnterGameRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    _impl_.request_id_.ClearNonDefaultToEmpty();
+  }
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -2816,11 +2850,21 @@ PROTOBUF_NOINLINE void EnterGameRequest::Clear() {
   (void)cached_has_bits;
 
   // uint64 player_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           1, this_._internal_player_id(), target);
+    }
+  }
+
+  // string request_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_request_id().empty()) {
+      const ::std::string& _s = this_._internal_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.EnterGameRequest.request_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
     }
   }
 
@@ -2847,10 +2891,18 @@ PROTOBUF_NOINLINE void EnterGameRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
-    // uint64 player_id = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // string request_id = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_request_id());
+      }
+    }
+    // uint64 player_id = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
@@ -2870,9 +2922,20 @@ void EnterGameRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    if (from._internal_player_id() != 0) {
-      _this->_impl_.player_id_ = from._impl_.player_id_;
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_request_id().empty()) {
+        _this->_internal_set_request_id(from._internal_request_id());
+      } else {
+        if (_this->_impl_.request_id_.IsDefault()) {
+          _this->_internal_set_request_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -2889,8 +2952,11 @@ void EnterGameRequest::CopyFrom(const EnterGameRequest& from) {
 
 void EnterGameRequest::InternalSwap(EnterGameRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_id_, &other->_impl_.request_id_, arena);
   swap(_impl_.player_id_, other->_impl_.player_id_);
 }
 

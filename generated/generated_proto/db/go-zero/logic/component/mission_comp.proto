@@ -21,7 +21,7 @@ message MissionPBComponent
 
 message MissionListPBComponent
 {
-	enum eMissionType
+	enum eMissionScope
 	{
 		kPlayerMission = 0;//普通任务
 		kPlayerAchievment = 1;//成就

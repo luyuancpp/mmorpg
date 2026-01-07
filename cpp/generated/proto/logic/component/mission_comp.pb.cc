@@ -243,7 +243,7 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fmission_5fcomp_
     "\004 \001(\014\"\206\001\n\016eMissionStatus\022\024\n\020E_MISSION_NO"
     "RMAL\020\000\022\031\n\025E_MISSION_ACHIEVEMENT\020\001\022\026\n\022E_M"
     "ISSION_COMPLETE\020\002\022\026\n\022E_MISSION_TIME_OUT\020"
-    "\003\022\023\n\017E_MISSION_FAILD\020\004\"\261\003\n\026MissionListPB"
+    "\003\022\023\n\017E_MISSION_FAILD\020\004\"\262\003\n\026MissionListPB"
     "Component\0227\n\010missions\030\001 \003(\0132%.MissionLis"
     "tPBComponent.MissionsEntry\022\031\n\021complete_m"
     "issions\030\002 \001(\014\022I\n\022mission_begin_time\030\003 \003("
@@ -251,20 +251,20 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fmission_5fcomp_
     "imeEntry\022\014\n\004type\030\004 \001(\r\032D\n\rMissionsEntry\022"
     "\013\n\003key\030\001 \001(\r\022\"\n\005value\030\002 \001(\0132\023.MissionPBC"
     "omponent:\0028\001\0327\n\025MissionBeginTimeEntry\022\013\n"
-    "\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\004:\0028\001\"k\n\014eMissio"
-    "nType\022\022\n\016kPlayerMission\020\000\022\025\n\021kPlayerAchi"
-    "evment\020\001\022\030\n\024kPlayerDailyActivity\020\002\022\026\n\022kP"
-    "layerMissionSize\020\003\"\241\001\n\025RewardListPBCompo"
-    "nent\022M\n\025can_reward_mission_id\030\001 \003(\0132..Re"
-    "wardListPBComponent.CanRewardMissionIdEn"
-    "try\0329\n\027CanRewardMissionIdEntry\022\013\n\003key\030\001 "
-    "\001(\r\022\r\n\005value\030\002 \001(\010:\0028\001b\006proto3"
+    "\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\004:\0028\001\"l\n\reMissio"
+    "nScope\022\022\n\016kPlayerMission\020\000\022\025\n\021kPlayerAch"
+    "ievment\020\001\022\030\n\024kPlayerDailyActivity\020\002\022\026\n\022k"
+    "PlayerMissionSize\020\003\"\241\001\n\025RewardListPBComp"
+    "onent\022M\n\025can_reward_mission_id\030\001 \003(\0132..R"
+    "ewardListPBComponent.CanRewardMissionIdE"
+    "ntry\0329\n\027CanRewardMissionIdEntry\022\013\n\003key\030\001"
+    " \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto = {
     false,
     false,
-    870,
+    871,
     descriptor_table_protodef_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto,
     "proto/logic/component/mission_comp.proto",
     &descriptor_table_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto_once,
@@ -283,11 +283,11 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionPBComponent_eM
 }
 PROTOBUF_CONSTINIT const uint32_t MissionPBComponent_eMissionStatus_internal_data_[] = {
     327680u, 0u, };
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionListPBComponent_eMissionType_descriptor() {
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionListPBComponent_eMissionScope_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto);
   return file_level_enum_descriptors_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto[1];
 }
-PROTOBUF_CONSTINIT const uint32_t MissionListPBComponent_eMissionType_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t MissionListPBComponent_eMissionScope_internal_data_[] = {
     262144u, 0u, };
 // ===================================================================
 
