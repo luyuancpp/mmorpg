@@ -17,15 +17,7 @@
 void ViewSystem::Initialize()
 {
 	// Initialize actor creation and destruction messages in the global registry
-	InitializeActorMessages();
-}
 
-void ViewSystem::InitializeActorMessages()
-{
-	tlsRegistryManager.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
-	tlsRegistryManager.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
-	tlsRegistryManager.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
-	tlsRegistryManager.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
 }
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)

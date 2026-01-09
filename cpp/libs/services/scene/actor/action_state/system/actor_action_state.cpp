@@ -48,11 +48,6 @@ namespace {
     }
 }
 
-void ActorActionStateSystem::InitializeActorComponents(entt::entity entity) {
-    // 初始化实体的状态组件
-    tlsRegistryManager.actorRegistry.emplace<ActorStatePbComponent>(entity);
-}
-
 uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
     // 获取该动作对应的状态表
     FetchAndValidateActorActionStateTable(actorAction);

@@ -6,13 +6,6 @@
 
 #include <threading/registry_manager.h>
 
-void InterestSystem::InitializeActorComponents(const entt::entity entity)
-{
-    tlsRegistryManager.actorRegistry.emplace<FollowerListComp>(entity);
-    tlsRegistryManager.actorRegistry.emplace<FollowingListComp>(entity);
-    tlsRegistryManager.actorRegistry.emplace<AoiListComp>(entity);
-}
-
 void InterestSystem::AddWatcher(const entt::entity watcher, const entt::entity target) {
     if (watcher == entt::null || target == entt::null) return;
 

@@ -12,8 +12,6 @@ class SkillTable;
 class SkillSystem
 {
 public:
-	static void InitializeActorComponents(entt::entity entity);
-
 	static void StartCooldown(const entt::entity casterEntity, const SkillTable* skillTable);
 
 	static uint32_t ReleaseSkill(entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request);

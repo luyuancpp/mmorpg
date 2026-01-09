@@ -39,13 +39,6 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTablePara
     return false;
 }
 
-// 初始化组件
-void BuffSystem::InitializeActorComponents(entt::entity entity)
-{
-    tlsRegistryManager.actorRegistry.emplace<BuffListComp>(entity);
-    tlsRegistryManager.actorRegistry.emplace<BuffPendingRemoveBuffs>(entity);
-}
-
 // 创建 Buff 数据指针
 BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     switch (buffTable->bufftype()) {

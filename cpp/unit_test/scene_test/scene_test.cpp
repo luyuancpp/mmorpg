@@ -732,7 +732,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 	{
 		auto server = CreateMainSceneNode();
 		serverEntities.emplace(server);
-		tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(server).node_id_ = i;
+		tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get_or_emplace<TestNodeId>(server).node_id_ = i;
 	}
 
 	CreateRoomOnNodeRoomParam createServerSceneParam;
@@ -745,9 +745,9 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		{
 			createServerSceneParam.node = it;
 			auto scene1 = RoomCommon::CreateRoomOnRoomNode(createServerSceneParam);
-			tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(scene1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
+			tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get_or_emplace<TestNodeId>(scene1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
 			auto scene2 = RoomCommon::CreateRoomOnRoomNode(createServerSceneParam);
-			tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).emplace<TestNodeId>(scene2, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
+			tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get_or_emplace<TestNodeId>(scene2, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<TestNodeId>(it));
 		}
 	}
 

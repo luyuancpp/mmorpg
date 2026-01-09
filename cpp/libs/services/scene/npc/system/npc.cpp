@@ -7,12 +7,6 @@
 #include <threading/registry_manager.h>
 #include <threading/dispatcher_manager.h>
 
-void NpcSystem::InitializeNpcComponents(entt::entity npc)
-{
-    tlsRegistryManager.actorRegistry.emplace<BaseAttributesPbComponent>(npc);
-    tlsRegistryManager.actorRegistry.emplace<LevelPbComponent>(npc);
-}
-
 void NpcSystem::CreateNpc()
 {
     auto npc = tlsRegistryManager.actorRegistry.create();

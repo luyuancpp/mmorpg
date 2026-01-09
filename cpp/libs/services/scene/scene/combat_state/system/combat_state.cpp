@@ -13,9 +13,6 @@
 #include <threading/registry_manager.h>
 
 // 初始化实体的战斗状态组件
-void CombatStateSystem::InitializeCombatStateComponent(entt::entity entity) {
-    tlsRegistryManager.actorRegistry.emplace<CombatStateCollectionPbComponent>(entity); // 添加战斗状态集合组件
-}
 
 // 添加战斗状态
 void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) {

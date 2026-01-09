@@ -17,11 +17,6 @@
 // 初始化属性计算工具，不执行任何操作，但为将来可能的初始化逻辑预留
 void ActorAttributeCalculatorSystem::Initialize() {}
 
-// 初始化给定实体的属性组件
-void ActorAttributeCalculatorSystem::InitializeActorComponents(entt::entity entity) {
-    tlsRegistryManager.actorRegistry.emplace<AttributeDirtyFlagsComp>(entity);
-}
-
 // 更新速度属性
 void UpdateVelocity(entt::entity entity) {
     return;
