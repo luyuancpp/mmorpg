@@ -82,8 +82,8 @@ void OnSceneInvokePlayerServiceReply(const TcpConnectionPtr& conn, const std::sh
 		return;
 	}
 
-	const auto it = GlobalSessionList().find(replied->header().session_id());
-	if (it == GlobalSessionList().end())
+	const auto it = SessionMap().find(replied->header().session_id());
+	if (it == SessionMap().end())
 	{
 		LOG_ERROR << "can not find session id " << replied->header().session_id();
 		return;

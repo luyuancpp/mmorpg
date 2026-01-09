@@ -38,7 +38,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_
 
 	auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
 
-	if (GlobalSessionList().find(sessionPbComp.gate_session_id()) == GlobalSessionList().end())
+	if (SessionMap().find(sessionPbComp.gate_session_id()) == SessionMap().end())
 	{
 		return;
 	}

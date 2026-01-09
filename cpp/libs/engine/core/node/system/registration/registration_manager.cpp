@@ -31,7 +31,7 @@ void NodeHandshakeManager::TryRegisterNodeSession(uint32_t nodeType, const muduo
 		if (client->GetConnection() == nullptr || client->GetConnection().get() != conn.get()) continue;
 		LOG_INFO << "Peer address match in " << NodeUtils::GetRegistryName(registry)
 			<< ": " << conn->peerAddress().toIpPort();
-		registry.emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, &client]() {
+		registry.get_or_emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, &client]() {
 			NodeHandshakeRequest req;
 			req.mutable_self_node()->CopyFrom(GetNodeInfo());
 			client->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
