@@ -62,7 +62,7 @@ void NodeHandshakeManager::OnNodeHandshake(
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
-			entt::entity created = ResetEntity(registry, nodeEntity);
+			entt::entity created = RecreateEntity(registry, nodeEntity);
 			if (created == entt::null) {
 				LOG_ERROR << "Create node entity failed in " << NodeUtils::GetRegistryName(registry);
 				return false;

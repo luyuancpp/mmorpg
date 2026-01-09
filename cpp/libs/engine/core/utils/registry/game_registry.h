@@ -21,8 +21,8 @@ namespace entt{
 	}
 }//namespace entt
 
-void Destroy(entt::registry& registry, entt::entity entity);
-entt::entity TryCreateEntity(entt::registry& registry, entt::entity entity);
-entt::entity ResetEntity(entt::registry& registry, entt::entity entity);
+void DestroyEntity(entt::registry& registry, entt::entity entity);
+entt::entity CreateEntityIfNotExists(entt::registry& registry, entt::entity entity);
+entt::entity RecreateEntity(entt::registry& registry, entt::entity entity);
 
 

@@ -268,7 +268,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		onNodeRemovePbEvent.set_node_type(deleteNode.node_type());
 		dispatcher.trigger(onNodeRemovePbEvent);
 
-		Destroy(registry, nodeEntity);
+		DestroyEntity(registry, nodeEntity);
 	}
 	LOG_INFO << "Service node stopped : " << deleteNode.DebugString();
 }

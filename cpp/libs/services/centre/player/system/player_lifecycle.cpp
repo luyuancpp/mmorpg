@@ -235,6 +235,6 @@ void PlayerLifecycleSystem::Logout(Guid playerID)
 	GameNodeExitGameRequest exitGameRequest;
 	SendMessageToPlayerOnSceneNode(ScenePlayerExitGameMessageId, exitGameRequest, playerEntity);
 
-	Destroy(tlsRegistryManager.actorRegistry, playerEntity);
+	DestroyEntity(tlsRegistryManager.actorRegistry, playerEntity);
 	LOG_INFO << "Destroyed player entity: " << playerID;
 }

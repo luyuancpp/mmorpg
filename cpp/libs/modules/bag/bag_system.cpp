@@ -19,7 +19,7 @@ Bag::Bag()
 
 Bag::~Bag()
 {
-    Destroy(tlsRegistryManager.itemRegistry, entity);
+    DestroyEntity(tlsRegistryManager.itemRegistry, entity);
 }
 
 
@@ -354,7 +354,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			auto it = items_.emplace(newItemPBComp.item_id(), newItem);
 			if (!it.second)
 			{
-				defer(Destroy(itemRegistry, newItem));
+				defer(DestroyEntity(itemRegistry, newItem));
 				LOG_ERROR << "bag add item" << PlayerGuid();
 				return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 			}
