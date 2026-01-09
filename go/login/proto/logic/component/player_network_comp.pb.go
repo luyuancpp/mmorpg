@@ -31,6 +31,7 @@ type PlayerSessionSnapshotPBComp struct {
 	SessionVersion uint64 `protobuf:"varint,5,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
 	TokenExpiryMs  uint64 `protobuf:"varint,6,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
 	TokenId        string `protobuf:"bytes,7,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"` // server-side token id，Centre 只存 id，不存 secret
+	LastRequestId  string `protobuf:"bytes,8,opt,name=last_request_id,json=lastRequestId,proto3" json:"last_request_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -114,11 +115,18 @@ func (x *PlayerSessionSnapshotPBComp) GetTokenId() string {
 	return ""
 }
 
+func (x *PlayerSessionSnapshotPBComp) GetLastRequestId() string {
+	if x != nil {
+		return x.LastRequestId
+	}
+	return ""
+}
+
 var File_proto_logic_component_player_network_comp_proto protoreflect.FileDescriptor
 
 const file_proto_logic_component_player_network_comp_proto_rawDesc = "" +
 	"\n" +
-	"/proto/logic/component/player_network_comp.proto\"\xed\x02\n" +
+	"/proto/logic/component/player_network_comp.proto\"\x95\x03\n" +
 	"\x1bPlayerSessionSnapshotPBComp\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0fgate_session_id\x18\x02 \x01(\x04R\rgateSessionId\x12A\n" +
@@ -127,7 +135,8 @@ const file_proto_logic_component_player_network_comp_proto_rawDesc = "" +
 	"loginToken\x12'\n" +
 	"\x0fsession_version\x18\x05 \x01(\x04R\x0esessionVersion\x12&\n" +
 	"\x0ftoken_expiry_ms\x18\x06 \x01(\x04R\rtokenExpiryMs\x12\x19\n" +
-	"\btoken_id\x18\a \x01(\tR\atokenId\x1a9\n" +
+	"\btoken_id\x18\a \x01(\tR\atokenId\x12&\n" +
+	"\x0flast_request_id\x18\b \x01(\tR\rlastRequestId\x1a9\n" +
 	"\vNodeIdEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01B'Z%login/proto/logic/component;componentb\x06proto3"

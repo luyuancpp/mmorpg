@@ -188,6 +188,9 @@ inline constexpr CentrePlayerGameNodeEntryRequest::Impl_::Impl_(
         login_token_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        request_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         client_info_{nullptr},
         session_info_{nullptr},
         token_expiry_ms_{::uint64_t{0u}} {}
@@ -267,15 +270,17 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::CentrePlayerGameNodeEntryRequest, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::CentrePlayerGameNodeEntryRequest, _impl_.client_info_),
         PROTOBUF_FIELD_OFFSET(::CentrePlayerGameNodeEntryRequest, _impl_.session_info_),
         PROTOBUF_FIELD_OFFSET(::CentrePlayerGameNodeEntryRequest, _impl_.login_token_),
         PROTOBUF_FIELD_OFFSET(::CentrePlayerGameNodeEntryRequest, _impl_.token_expiry_ms_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::CentrePlayerGameNodeEntryRequest, _impl_.request_id_),
         2,
-        0,
         3,
+        0,
+        4,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::InitSceneNodeRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -304,9 +309,9 @@ static const ::_pbi::MigrationSchema
         {10, sizeof(::EnterGameNodeSuccessRequest)},
         {17, sizeof(::CentreEnterGameRequest)},
         {22, sizeof(::CentrePlayerGameNodeEntryRequest)},
-        {33, sizeof(::InitSceneNodeRequest)},
-        {40, sizeof(::CentreLoginRequest)},
-        {47, sizeof(::CentreLoginResponse)},
+        {35, sizeof(::InitSceneNodeRequest)},
+        {42, sizeof(::CentreLoginRequest)},
+        {49, sizeof(::CentreLoginResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_GateClientMessageRequest_default_instance_._instance,
@@ -332,35 +337,36 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcent
     "ls\"G\n\033EnterGameNodeSuccessRequest\022\021\n\tpla"
     "yer_id\030\001 \001(\004\022\025\n\rscene_node_id\030\002 \001(\r\"+\n\026C"
     "entreEnterGameRequest\022\021\n\tplayer_id\030\001 \001(\004"
-    "\"\245\001\n CentrePlayerGameNodeEntryRequest\022,\n"
+    "\"\271\001\n CentrePlayerGameNodeEntryRequest\022,\n"
     "\013client_info\030\001 \001(\0132\027.CentreEnterGameRequ"
     "est\022%\n\014session_info\030\002 \001(\0132\017.SessionDetai"
     "ls\022\023\n\013login_token\030\003 \001(\t\022\027\n\017token_expiry_"
-    "ms\030\004 \001(\004\"@\n\024InitSceneNodeRequest\022\017\n\007node"
-    "_id\030\001 \001(\r\022\027\n\017scene_node_type\030\002 \001(\r\"7\n\022Ce"
-    "ntreLoginRequest\022\017\n\007account\030\001 \001(\t\022\020\n\010pas"
-    "sword\030\002 \001(\t\"=\n\023CentreLoginResponse\022&\n\rer"
-    "ror_message\030\001 \001(\0132\017.TipInfoMessage2\206\006\n\006C"
-    "entre\0226\n\021GatePlayerService\022\031.GateClientM"
-    "essageRequest\032\006.Empty\022>\n\025GateSessionDisc"
+    "ms\030\004 \001(\004\022\022\n\nrequest_id\030\005 \001(\t\"@\n\024InitScen"
+    "eNodeRequest\022\017\n\007node_id\030\001 \001(\r\022\027\n\017scene_n"
+    "ode_type\030\002 \001(\r\"7\n\022CentreLoginRequest\022\017\n\007"
+    "account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"=\n\023Centr"
+    "eLoginResponse\022&\n\rerror_message\030\001 \001(\0132\017."
+    "TipInfoMessage2\206\006\n\006Centre\0226\n\021GatePlayerS"
+    "ervice\022\031.GateClientMessageRequest\032\006.Empt"
+    "y\022>\n\025GateSessionDisconnect\022\035.GateSession"
+    "DisconnectRequest\032\006.Empty\022B\n\025LoginNodeAc"
+    "countLogin\022\023.CentreLoginRequest\032\024.Centre"
+    "LoginResponse\022\?\n\022LoginNodeEnterGame\022!.Ce"
+    "ntrePlayerGameNodeEntryRequest\032\006.Empty\0228"
+    "\n\022LoginNodeLeaveGame\022\032.LoginNodeLeaveGam"
+    "eRequest\032\006.Empty\022C\n\032LoginNodeSessionDisc"
     "onnect\022\035.GateSessionDisconnectRequest\032\006."
-    "Empty\022B\n\025LoginNodeAccountLogin\022\023.CentreL"
-    "oginRequest\032\024.CentreLoginResponse\022\?\n\022Log"
-    "inNodeEnterGame\022!.CentrePlayerGameNodeEn"
-    "tryRequest\032\006.Empty\0228\n\022LoginNodeLeaveGame"
-    "\022\032.LoginNodeLeaveGameRequest\032\006.Empty\022C\n\032"
-    "LoginNodeSessionDisconnect\022\035.GateSession"
-    "DisconnectRequest\032\006.Empty\022D\n\rPlayerServi"
-    "ce\022\030.NodeRouteMessageRequest\032\031.NodeRoute"
-    "MessageResponse\0226\n\016EnterGsSucceed\022\034.Ente"
-    "rGameNodeSuccessRequest\032\006.Empty\022A\n\022Route"
-    "NodeStringMsg\022\024.RouteMessageRequest\032\025.Ro"
-    "uteMessageResponse\022O\n\024RoutePlayerStringM"
-    "sg\022\032.RoutePlayerMessageRequest\032\033.RoutePl"
-    "ayerMessageResponse\022.\n\rInitSceneNode\022\025.I"
-    "nitSceneNodeRequest\032\006.Empty\022>\n\rNodeHands"
-    "hake\022\025.NodeHandshakeRequest\032\026.NodeHandsh"
-    "akeResponseB\007\200\001\001\230\324a\004b\006proto3"
+    "Empty\022D\n\rPlayerService\022\030.NodeRouteMessag"
+    "eRequest\032\031.NodeRouteMessageResponse\0226\n\016E"
+    "nterGsSucceed\022\034.EnterGameNodeSuccessRequ"
+    "est\032\006.Empty\022A\n\022RouteNodeStringMsg\022\024.Rout"
+    "eMessageRequest\032\025.RouteMessageResponse\022O"
+    "\n\024RoutePlayerStringMsg\022\032.RoutePlayerMess"
+    "ageRequest\032\033.RoutePlayerMessageResponse\022"
+    ".\n\rInitSceneNode\022\025.InitSceneNodeRequest\032"
+    "\006.Empty\022>\n\rNodeHandshake\022\025.NodeHandshake"
+    "Request\032\026.NodeHandshakeResponseB\007\200\001\001\230\324a\004"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_deps[6] = {
@@ -375,7 +381,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1628,
+    1648,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto,
     "proto/service/cpp/rpc/centre/centre_service.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fcentre_2fcentre_5fservice_2eproto_once,
@@ -1444,7 +1450,7 @@ class CentrePlayerGameNodeEntryRequest::_Internal {
 void CentrePlayerGameNodeEntryRequest::clear_session_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.session_info_ != nullptr) _impl_.session_info_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 CentrePlayerGameNodeEntryRequest::CentrePlayerGameNodeEntryRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -1461,7 +1467,8 @@ PROTOBUF_NDEBUG_INLINE CentrePlayerGameNodeEntryRequest::Impl_::Impl_(
     const ::CentrePlayerGameNodeEntryRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        login_token_(arena, from.login_token_) {}
+        login_token_(arena, from.login_token_),
+        request_id_(arena, from.request_id_) {}
 
 CentrePlayerGameNodeEntryRequest::CentrePlayerGameNodeEntryRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -1477,10 +1484,10 @@ CentrePlayerGameNodeEntryRequest::CentrePlayerGameNodeEntryRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.client_info_ = ((cached_has_bits & 0x00000002u) != 0)
+  _impl_.client_info_ = ((cached_has_bits & 0x00000004u) != 0)
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.client_info_)
                 : nullptr;
-  _impl_.session_info_ = ((cached_has_bits & 0x00000004u) != 0)
+  _impl_.session_info_ = ((cached_has_bits & 0x00000008u) != 0)
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.session_info_)
                 : nullptr;
   _impl_.token_expiry_ms_ = from._impl_.token_expiry_ms_;
@@ -1491,7 +1498,8 @@ PROTOBUF_NDEBUG_INLINE CentrePlayerGameNodeEntryRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
-        login_token_(arena) {}
+        login_token_(arena),
+        request_id_(arena) {}
 
 inline void CentrePlayerGameNodeEntryRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -1511,6 +1519,7 @@ inline void CentrePlayerGameNodeEntryRequest::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.login_token_.Destroy();
+  this_._impl_.request_id_.Destroy();
   delete this_._impl_.client_info_;
   delete this_._impl_.session_info_;
   this_._impl_.~Impl_();
@@ -1559,16 +1568,16 @@ CentrePlayerGameNodeEntryRequest::GetClassData() const {
   return CentrePlayerGameNodeEntryRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 2, 52, 2>
+const ::_pbi::TcParseTable<3, 5, 2, 62, 2>
 CentrePlayerGameNodeEntryRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    5,  // num_field_entries
     2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     CentrePlayerGameNodeEntryRequest_class_data_.base(),
@@ -1578,42 +1587,52 @@ CentrePlayerGameNodeEntryRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::CentrePlayerGameNodeEntryRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 token_expiry_ms = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CentrePlayerGameNodeEntryRequest, _impl_.token_expiry_ms_), 3>(),
-     {32, 3, 0, PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.token_expiry_ms_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // .CentreEnterGameRequest client_info = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 1, 0, PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.client_info_)}},
+     {10, 2, 0, PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.client_info_)}},
     // .SessionDetails session_info = 2;
     {::_pbi::TcParser::FastMtS1,
-     {18, 2, 1, PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.session_info_)}},
+     {18, 3, 1, PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.session_info_)}},
     // string login_token = 3;
     {::_pbi::TcParser::FastUS1,
      {26, 0, 0, PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.login_token_)}},
+    // uint64 token_expiry_ms = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CentrePlayerGameNodeEntryRequest, _impl_.token_expiry_ms_), 4>(),
+     {32, 4, 0, PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.token_expiry_ms_)}},
+    // string request_id = 5;
+    {::_pbi::TcParser::FastUS1,
+     {42, 1, 0, PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.request_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
     // .CentreEnterGameRequest client_info = 1;
-    {PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.client_info_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.client_info_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .SessionDetails session_info = 2;
-    {PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.session_info_), _Internal::kHasBitsOffset + 2, 1,
+    {PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.session_info_), _Internal::kHasBitsOffset + 3, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // string login_token = 3;
     {PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.login_token_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // uint64 token_expiry_ms = 4;
-    {PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.token_expiry_ms_), _Internal::kHasBitsOffset + 3, 0,
+    {PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.token_expiry_ms_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // string request_id = 5;
+    {PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::CentreEnterGameRequest>()},
       {::_pbi::TcParser::GetTable<::SessionDetails>()},
   }},
   {{
-    "\40\0\0\13\0\0\0\0"
+    "\40\0\0\13\0\12\0\0"
     "CentrePlayerGameNodeEntryRequest"
     "login_token"
+    "request_id"
   }},
 };
 PROTOBUF_NOINLINE void CentrePlayerGameNodeEntryRequest::Clear() {
@@ -1624,15 +1643,18 @@ PROTOBUF_NOINLINE void CentrePlayerGameNodeEntryRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       _impl_.login_token_.ClearNonDefaultToEmpty();
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.request_id_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
       ABSL_DCHECK(_impl_.client_info_ != nullptr);
       _impl_.client_info_->Clear();
     }
-    if ((cached_has_bits & 0x00000004u) != 0) {
+    if ((cached_has_bits & 0x00000008u) != 0) {
       ABSL_DCHECK(_impl_.session_info_ != nullptr);
       _impl_.session_info_->Clear();
     }
@@ -1659,14 +1681,14 @@ PROTOBUF_NOINLINE void CentrePlayerGameNodeEntryRequest::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .CentreEnterGameRequest client_info = 1;
-  if ((cached_has_bits & 0x00000002u) != 0) {
+  if ((cached_has_bits & 0x00000004u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *this_._impl_.client_info_, this_._impl_.client_info_->GetCachedSize(), target,
         stream);
   }
 
   // .SessionDetails session_info = 2;
-  if ((cached_has_bits & 0x00000004u) != 0) {
+  if ((cached_has_bits & 0x00000008u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *this_._impl_.session_info_, this_._impl_.session_info_->GetCachedSize(), target,
         stream);
@@ -1683,11 +1705,21 @@ PROTOBUF_NOINLINE void CentrePlayerGameNodeEntryRequest::Clear() {
   }
 
   // uint64 token_expiry_ms = 4;
-  if ((cached_has_bits & 0x00000008u) != 0) {
+  if ((cached_has_bits & 0x00000010u) != 0) {
     if (this_._internal_token_expiry_ms() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           4, this_._internal_token_expiry_ms(), target);
+    }
+  }
+
+  // string request_id = 5;
+  if ((cached_has_bits & 0x00000002u) != 0) {
+    if (!this_._internal_request_id().empty()) {
+      const ::std::string& _s = this_._internal_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "CentrePlayerGameNodeEntryRequest.request_id");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
     }
   }
 
@@ -1716,7 +1748,7 @@ PROTOBUF_NOINLINE void CentrePlayerGameNodeEntryRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
+  if ((cached_has_bits & 0x0000001fu) != 0) {
     // string login_token = 3;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_login_token().empty()) {
@@ -1724,18 +1756,25 @@ PROTOBUF_NOINLINE void CentrePlayerGameNodeEntryRequest::Clear() {
                                         this_._internal_login_token());
       }
     }
-    // .CentreEnterGameRequest client_info = 1;
+    // string request_id = 5;
     if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_request_id());
+      }
+    }
+    // .CentreEnterGameRequest client_info = 1;
+    if ((cached_has_bits & 0x00000004u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.client_info_);
     }
     // .SessionDetails session_info = 2;
-    if ((cached_has_bits & 0x00000004u) != 0) {
+    if ((cached_has_bits & 0x00000008u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.session_info_);
     }
     // uint64 token_expiry_ms = 4;
-    if ((cached_has_bits & 0x00000008u) != 0) {
+    if ((cached_has_bits & 0x00000010u) != 0) {
       if (this_._internal_token_expiry_ms() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_token_expiry_ms());
@@ -1756,7 +1795,7 @@ void CentrePlayerGameNodeEntryRequest::MergeImpl(::google::protobuf::MessageLite
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
+  if ((cached_has_bits & 0x0000001fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_login_token().empty()) {
         _this->_internal_set_login_token(from._internal_login_token());
@@ -1767,6 +1806,15 @@ void CentrePlayerGameNodeEntryRequest::MergeImpl(::google::protobuf::MessageLite
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_request_id().empty()) {
+        _this->_internal_set_request_id(from._internal_request_id());
+      } else {
+        if (_this->_impl_.request_id_.IsDefault()) {
+          _this->_internal_set_request_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
       ABSL_DCHECK(from._impl_.client_info_ != nullptr);
       if (_this->_impl_.client_info_ == nullptr) {
         _this->_impl_.client_info_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.client_info_);
@@ -1774,7 +1822,7 @@ void CentrePlayerGameNodeEntryRequest::MergeImpl(::google::protobuf::MessageLite
         _this->_impl_.client_info_->MergeFrom(*from._impl_.client_info_);
       }
     }
-    if ((cached_has_bits & 0x00000004u) != 0) {
+    if ((cached_has_bits & 0x00000008u) != 0) {
       ABSL_DCHECK(from._impl_.session_info_ != nullptr);
       if (_this->_impl_.session_info_ == nullptr) {
         _this->_impl_.session_info_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.session_info_);
@@ -1782,7 +1830,7 @@ void CentrePlayerGameNodeEntryRequest::MergeImpl(::google::protobuf::MessageLite
         _this->_impl_.session_info_->MergeFrom(*from._impl_.session_info_);
       }
     }
-    if ((cached_has_bits & 0x00000008u) != 0) {
+    if ((cached_has_bits & 0x00000010u) != 0) {
       if (from._internal_token_expiry_ms() != 0) {
         _this->_impl_.token_expiry_ms_ = from._impl_.token_expiry_ms_;
       }
@@ -1807,6 +1855,7 @@ void CentrePlayerGameNodeEntryRequest::InternalSwap(CentrePlayerGameNodeEntryReq
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.login_token_, &other->_impl_.login_token_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_id_, &other->_impl_.request_id_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(CentrePlayerGameNodeEntryRequest, _impl_.token_expiry_ms_)
       + sizeof(CentrePlayerGameNodeEntryRequest::_impl_.token_expiry_ms_)
