@@ -121,9 +121,9 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 namespace {
 
 	enum class EnterGameDecision {
-		FirstLogin,
-		Reconnect,
-		ReplaceLogin
+		FirstLogin,        // 没有 player
+		ShortReconnect,    // < ReconnectWindow
+		ReplaceLogin       // 其他一切情况
 	};
 
 	// 修改：DecideEnterGame 增加 oldTokenValid 参数
@@ -134,7 +134,7 @@ namespace {
 	{
 		if (!hasOldSession) return EnterGameDecision::FirstLogin;
 		// 只有在旧 token 未过期且与新 token 相同的情况下认为是 Reconnect
-		if (oldTokenValid && oldLoginToken == newLoginToken) return EnterGameDecision::Reconnect;
+		if (oldTokenValid && oldLoginToken == newLoginToken) return EnterGameDecision::ShortReconnect;
 		return EnterGameDecision::ReplaceLogin;
 	}
 
@@ -262,7 +262,7 @@ namespace {
 		case EnterGameDecision::FirstLogin:
 			enterComp.set_enter_gs_type(LOGIN_FIRST);
 			break;
-		case EnterGameDecision::Reconnect:
+		case EnterGameDecision::ShortReconnect:
 			enterComp.set_enter_gs_type(LOGIN_RECONNECT);
 			break;
 		case EnterGameDecision::ReplaceLogin:
@@ -381,6 +381,12 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 
 	LOG_INFO << "LoginNodeEnterGame request: player=" << playerId << " session=" << sessionId << " req=" << requestId;
 
+	//A session login → 写入 SessionMap
+	//	旧 session 的 Disconnect 延迟到达
+	//	→ DelayedCleanupTimer 触发
+	//	→ erase SessionMap(新 session) ❌
+
+
 	// 快速路由表更新（单线程模型下直接写）
 	SessionMap()[sessionId] = playerId;
 
@@ -426,7 +432,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 			SessionMap().erase(oldSessionId);
 		}
 	}
-	else if (decision == EnterGameDecision::Reconnect) {
+	else if (decision == EnterGameDecision::ShortReconnect) {
 		// 重连（不再依赖 session_id 相等判幂等）
 		CancelDelayedCleanupTimer(playerEntity);
 		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
