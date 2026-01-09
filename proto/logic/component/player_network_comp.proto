@@ -9,4 +9,5 @@ message PlayerSessionSnapshotPBComp {
 	uint64 session_version = 5;
 	uint64 token_expiry_ms = 6;
 	string token_id = 7; // server-side token id，Centre 只存 id，不存 secret
+	string last_request_id = 8;
 }

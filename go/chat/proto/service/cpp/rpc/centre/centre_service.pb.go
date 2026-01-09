@@ -213,6 +213,7 @@ type CentrePlayerGameNodeEntryRequest struct {
 	SessionInfo   *common.SessionDetails  `protobuf:"bytes,2,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
 	LoginToken    string                  `protobuf:"bytes,3,opt,name=login_token,json=loginToken,proto3" json:"login_token,omitempty"`
 	TokenExpiryMs uint64                  `protobuf:"varint,4,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
+	RequestId     string                  `protobuf:"bytes,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -273,6 +274,13 @@ func (x *CentrePlayerGameNodeEntryRequest) GetTokenExpiryMs() uint64 {
 		return x.TokenExpiryMs
 	}
 	return 0
+}
+
+func (x *CentrePlayerGameNodeEntryRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
 }
 
 // 新增：SceneNode 初始化请求
@@ -438,14 +446,16 @@ const file_proto_service_cpp_rpc_centre_centre_service_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\"\n" +
 	"\rscene_node_id\x18\x02 \x01(\rR\vsceneNodeId\"5\n" +
 	"\x16CentreEnterGameRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\xd9\x01\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\xf8\x01\n" +
 	" CentrePlayerGameNodeEntryRequest\x128\n" +
 	"\vclient_info\x18\x01 \x01(\v2\x17.CentreEnterGameRequestR\n" +
 	"clientInfo\x122\n" +
 	"\fsession_info\x18\x02 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\x12\x1f\n" +
 	"\vlogin_token\x18\x03 \x01(\tR\n" +
 	"loginToken\x12&\n" +
-	"\x0ftoken_expiry_ms\x18\x04 \x01(\x04R\rtokenExpiryMs\"W\n" +
+	"\x0ftoken_expiry_ms\x18\x04 \x01(\x04R\rtokenExpiryMs\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x05 \x01(\tR\trequestId\"W\n" +
 	"\x14InitSceneNodeRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12&\n" +
 	"\x0fscene_node_type\x18\x02 \x01(\rR\rsceneNodeType\"J\n" +

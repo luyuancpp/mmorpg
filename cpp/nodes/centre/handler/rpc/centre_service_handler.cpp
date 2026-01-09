@@ -178,33 +178,55 @@ namespace {
 		}
 		uint64_t oldVersion = sessionPB.session_version();
 
-		// 幂等性：如果传入了 requestId，且与记录的 last_request_id 相同，则视为重复请求，直接返回旧状态
-		// 注意：需要在 PlayerSessionSnapshotPBComp 的 proto 中新增 string last_request_id 字段并 regen pb
-		// 在检测到 duplicate request_id 的分支里，改为仍处理 session 绑定
-		if (!requestId.empty() && sessionPB.has_last_request_id() && sessionPB.last_request_id() == requestId) {
+		// 计算 incoming token id（hash）
+		const std::string newTokenId = Sha256Hex(newLoginToken);
+
+		// 1) 重复 request_id：幂等处理，但若 sessionId 变化仍需绑定新的 session（不 ++version）
+		if (!requestId.empty() && sessionPB.last_request_id() == requestId) {
 			LOG_DEBUG << "Duplicate request_id detected: " << requestId;
-			// 如果 session id 不同，仍需通知 Gate 绑定新的 session（不一定要 ++version）
 			if (oldSessionId != newSessionId) {
-				// 更新 snapshot 的 session id（保持 session_version 不变以避免重复的逻辑版本变更）
+				// 仅更新绑定，不改变逻辑版本
 				sessionPB.set_gate_session_id(newSessionId);
-				// 持久化更新（异步）
 				GetPlayerCentreDataRedis()->UpdateExtraData(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity), sessionPB);
-				// 通知 Gate 绑定新的 session（使用当前版本 oldVersion）
+
 				BindSessionToGateRequest bindReq;
 				bindReq.set_session_id(newSessionId);
 				bindReq.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity));
 				bindReq.set_session_version(oldVersion);
 				SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(newSessionId));
+
 				LOG_INFO << "Duplicate request: updated gate binding only for player entity " << entt::to_integral(playerEntity)
 					<< " oldSession=" << oldSessionId << " newSession=" << newSessionId << " ver=" << oldVersion;
 			}
 			return { oldSessionId, oldTokenId, oldVersion };
 		}
 
+		// 2) 判断是否真正需要更新（session 或 token 有变化）
+		const bool sessionChanged = (oldSessionId != newSessionId);
+		const bool tokenChanged = (oldTokenId != newTokenId);
+
+		if (!sessionChanged && !tokenChanged && requestId.empty()) {
+			// 无变化且无 requestId 指定：幂等无操作
+			LOG_DEBUG << "UpdatePlayerSessionSnapshot: no-op (no change) for player entity " << entt::to_integral(playerEntity)
+				<< " session=" << newSessionId;
+			return { oldSessionId, oldTokenId, oldVersion };
+		}
+
+		// 3) 真正变化：递增版本并更新 snapshot
+		uint64_t newVersion = oldVersion + 1;
+		sessionPB.set_gate_session_id(newSessionId);
+		sessionPB.set_token_id(newTokenId);
+		sessionPB.set_token_expiry_ms(tokenExpiryMs);
+		sessionPB.set_session_version(newVersion);
+
+		if (!requestId.empty()) {
+			sessionPB.set_last_request_id(requestId);
+		}
+
 		// 持久化 snapshot（异步）
 		GetPlayerCentreDataRedis()->UpdateExtraData(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity), sessionPB);
 
-		// 通知 Gate：绑定 session（Centre->Gate 的 BindSession RPC）
+		// 通知 Gate：绑定 session（Centre->Gate 的 BindSession RPC）使用 newVersion
 		BindSessionToGateRequest bindReq;
 		bindReq.set_session_id(newSessionId);
 		bindReq.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity));
@@ -267,6 +289,66 @@ void CentreHandler::GatePlayerService(::google::protobuf::RpcController* control
 
 
 void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
+	::Empty* response,
+	::google::protobuf::Closure* done)
+{
+	///<<< BEGIN WRITING YOUR CODE
+	const uint64_t session_id = request->session_info().session_id();
+
+	const auto player_id = GetPlayerIDBySessionId(session_id);
+	if (player_id == kInvalidGuid) return;
+
+	auto playerIt = tlsPlayerList.find(player_id);
+	if (playerIt == tlsPlayerList.end()) return;
+	auto playerEntity = playerIt->second;
+
+	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!sessionPB) return;
+
+	// 如果不是 snapshot 记录的当前 session，忽略（可能是旧断开）
+	if (sessionPB->gate_session_id() != session_id) {
+		LOG_INFO << "GateSessionDisconnect ignored: mismatch session id for player " << player_id;
+		return;
+	}
+
+	// 标记离线并记录版本（便于延迟清理时再次校验）
+	auto& enterComp = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity);
+	enterComp.set_enter_gs_type(LOGIN_DISCONNECTED);
+
+	auto& disconnectInfo = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerDisconnectInfoComp>(playerEntity);
+	disconnectInfo.set_disconnected_at(TimeSystem::NowMilliseconds());
+	disconnectInfo.set_snapshot_version(sessionPB->session_version());
+
+	// 启动延迟清理（例如 30s）
+	StartDelayedCleanupTimer(playerEntity, 30000);
+
+	///<<< END WRITING YOUR CODE
+}
+
+
+
+void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller, const ::CentreLoginRequest* request,
+	::CentreLoginResponse* response,
+	::google::protobuf::Closure* done)
+{
+	///<<< BEGIN WRITING YOUR CODE
+
+	if (tlsPlayerList.size() >= kMaxPlayerSize)
+	{
+		//如果登录的是新账号,满了得去排队,是帳號排隊，還是角色排隊>???
+		response->mutable_error_message()->set_id(kLoginAccountPlayerFull);
+		return;
+	}
+	//排队
+	//todo 排队队列里面有同一個人的兩個鏈接
+	//如果不是同一個登錄服務器,踢掉已經登錄的賬號
+	//告訴客戶端登錄中
+///<<< END WRITING YOUR CODE
+}
+
+
+
+void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* controller, const ::CentrePlayerGameNodeEntryRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
@@ -348,119 +430,6 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 		// 重连（不再依赖 session_id 相等判幂等）
 		CancelDelayedCleanupTimer(playerEntity);
 		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
-		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-			GlobalSessionList().erase(oldSessionId);
-			SendKickForOldSession(oldSessionId, oldVersion);
-		}
-	}
-	else {
-		// FirstLogin 已在上层处理
-	}
-
-	// 执行进入场景相关副作用（保持原有流程）
-	ApplyEnterGameDecision(playerEntity, decision);
-
-	///<<< END WRITING YOUR CODE
-}
-
-
-
-void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller, const ::CentreLoginRequest* request,
-	::CentreLoginResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-
-	if (tlsPlayerList.size() >= kMaxPlayerSize)
-	{
-		//如果登录的是新账号,满了得去排队,是帳號排隊，還是角色排隊>???
-		response->mutable_error_message()->set_id(kLoginAccountPlayerFull);
-		return;
-	}
-	//排队
-	//todo 排队队列里面有同一個人的兩個鏈接
-	//如果不是同一個登錄服務器,踢掉已經登錄的賬號
-	//告訴客戶端登錄中
-///<<< END WRITING YOUR CODE
-}
-
-
-
-void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* controller, const ::CentrePlayerGameNodeEntryRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-// 替换 LoginNodeEnterGame 内处理登录进入的核心逻辑为：
-// 1. 先读取旧 snapshot（如果有），并基于旧值做 DecideEnterGame
-// 2. 根据决策有选择地更新 snapshot（递增 version）并在必要时发送 kick
-// 3. 执行进入场景副作用
-	//•	当网络 / 消息乱序时（Gate 先发 Disconnect，再 Login 的 EnterGame 到达 Centre），会产生竞态：Centre 可能错误删除映射或 Login 再插入时覆盖不一致 snapshot，导致误判、重复清理或无法正确重连；
-	/*•	Centre 不必保存 refresh token；access token 在 Login 服务签发并短期有效，Centre 只用于判断重连合法性。
-•	为安全起见，记录 token id 或 token 哈希到日志/持久化而不是原文 token。
-•	当 token 有 expiry，DecideEnterGame 里使用 oldTokenValid 防止用已过期 token 判定为 Reconnec*/
-	const auto& clientInfo = request->client_info();
-	const auto& sessionInfo = request->session_info();
-	Guid playerId = clientInfo.player_id();
-	uint64_t sessionId = sessionInfo.session_id();
-	auto& loginToken = request->login_token();
-
-	LOG_INFO << "LoginNodeEnterGame request: player=" << playerId << " session=" << sessionId;
-
-	// 快速路由表更新（单线程模型下直接写）
-	GlobalSessionList()[sessionId] = playerId;
-
-	// 是否在内存中已有 player 对象
-	auto it = tlsPlayerList.find(playerId);
-	if (it == tlsPlayerList.end()) {
-		// 首次登录：异步加载/创建玩家数据
-		HandleFirstLogin(playerId, sessionId, loginToken);
-		return;
-	}
-
-	entt::entity playerEntity = it->second;
-
-	// 若客户端/登陆服务同时提供 token_expiry_ms 在 clientMsg，请读取；否则传 0（表示未知/不过期）
-	uint64_t incomingTokenExpiryMs = request->token_expiry_ms();
-
-	// 读取旧 snapshot（只读，决策基于旧数据）
-	auto* oldSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
-	const bool hasOldSession = (oldSessionPB != nullptr);
-	uint64_t oldSessionId = hasOldSession ? oldSessionPB->gate_session_id() : kInvalidSessionId;
-	std::string oldTokenId = hasOldSession ? oldSessionPB->token_id() : std::string{};
-	uint64_t oldVersion = hasOldSession ? oldSessionPB->session_version() : 0;
-
-	// 计算 oldTokenValid：如果 proto 中 token_expiry_ms == 0 表示不过期/未知
-	uint64_t now_ms = TimeSystem::NowMilliseconds();
-	bool oldTokenValid = false;
-	if (oldSessionPB) {
-	    uint64_t expiry = oldSessionPB->token_expiry_ms();
-	    oldTokenValid = (expiry == 0 || expiry > now_ms);
-	}
-
-	// 计算 incoming token id
-	std::string incomingTokenId = Sha256Hex(loginToken);
-
-	// 决策：只有旧 token 未过期且 token_id 相等才判为重连
-	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldTokenId, incomingTokenId, oldTokenValid);
-
-	// 根据决策决定是否更新 snapshot 并是否踢人
-	if (decision == EnterGameDecision::ReplaceLogin) {
-		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs);
-		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-			SendKickForOldSession(oldSessionId, oldVersion);
-			GlobalSessionList().erase(oldSessionId);
-		}
-	}
-	else if (decision == EnterGameDecision::Reconnect) {
-		// 重连（不再依赖 session_id 相等判幂等）
-		// 1) 取消可能存在的延迟清理定时器（短重连取消清理）
-		CancelDelayedCleanupTimer(playerEntity);
-
-		// 2) 始终将 snapshot 绑定到当前 session（递增版本）
-		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs);
-
-		// 3) 如果存在不同的旧 session id，清理全局映射并请求 Gate 断开旧会话
 		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
 			GlobalSessionList().erase(oldSessionId);
 			SendKickForOldSession(oldSessionId, oldVersion);

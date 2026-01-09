@@ -37,6 +37,7 @@ message CentrePlayerGameNodeEntryRequest
   SessionDetails session_info = 2;
   string login_token = 3;
   uint64 token_expiry_ms = 4;
+  string request_id = 5;
 }
 
 // 新增：SceneNode 初始化请求
