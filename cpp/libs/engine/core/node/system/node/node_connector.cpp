@@ -40,7 +40,7 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo& info) {
 	auto& registry = NodeUtils::GetRegistryForNodeType(info.node_type());
 
 	const entt::entity entityId{ info.node_id() };
-	auto createdId = ResetEntity(registry, entityId);
+	auto createdId = RecreateEntity(registry, entityId);
 	if (createdId == entt::null) {
 		LOG_ERROR << "Login node not found: " << entt::to_integral(createdId);
 		return;
@@ -81,7 +81,7 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& info) {
 		}
 	}
 
-	const auto createdId = ResetEntity(registry, entityId);
+	const auto createdId = RecreateEntity(registry, entityId);
 	if (createdId == entt::null) {
 		LOG_ERROR << "Failed to create node entity: " << entt::to_integral(entityId);
 		return;

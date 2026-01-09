@@ -256,7 +256,7 @@ entt::entity RoomCommon::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& p
 		roomInfo.set_guid(RoomCommon::GenRoomGuid());
 	}
 
-	const auto room = TryCreateEntity(tlsRegistryManager.roomRegistry, entt::entity{ roomInfo.guid() });
+	const auto room = CreateEntityIfNotExists(tlsRegistryManager.roomRegistry, entt::entity{ roomInfo.guid() });
 	if (room == entt::null) {
 		LOG_ERROR << "Failed to create room in registry";
 		return entt::null;

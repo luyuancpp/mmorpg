@@ -91,7 +91,7 @@ void RoomSystem::HandleDestroyRoomNode(entt::entity node) {
 	}
 
 	// Destroy the server node itself
-	Destroy(registry, node);
+	DestroyEntity(registry, node);
 
 	// Log server destruction
 	LOG_INFO << "Destroyed server with ID: " << entt::to_integral(node);
@@ -152,7 +152,7 @@ void RoomSystem::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destN
 		}
 	}
 
-	Destroy(roomRegistry, crashNode);
+	DestroyEntity(roomRegistry, crashNode);
 	LOG_INFO << "Replaced crashed server with new node: " << entt::to_integral(destNode);
 }
 

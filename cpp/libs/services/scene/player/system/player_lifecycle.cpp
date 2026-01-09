@@ -160,7 +160,7 @@ void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 	LOG_INFO << "Destroying player: " << playerId;
 
 	defer(tlsPlayerList.erase(playerId));
-	Destroy(tlsRegistryManager.actorRegistry, GetPlayer(playerId));
+	DestroyEntity(tlsRegistryManager.actorRegistry, GetPlayer(playerId));
 }
 
 void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)

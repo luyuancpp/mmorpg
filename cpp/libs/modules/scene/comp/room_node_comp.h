@@ -61,7 +61,7 @@ public:
 			it->second.erase(roomEntity);
 		}
 
-		Destroy(tlsRegistryManager.roomRegistry, roomEntity);
+		DestroyEntity(tlsRegistryManager.roomRegistry, roomEntity);
 	}
 
 private:
