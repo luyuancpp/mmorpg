@@ -63,7 +63,7 @@ void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeoutMs) {
 			// 仍为断线状态：先移除全局 session 映射，再真正下线
 			const uint64_t gateSessionId = sessionPB->gate_session_id();
 			if (gateSessionId != kInvalidSessionId) {
-				GlobalSessionList().erase(gateSessionId);
+				SessionMap().erase(gateSessionId);
 				LOG_INFO << "Delayed cleanup: removed GlobalSessionList entry for session " << gateSessionId;
 			}
 			Guid playerGuid = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
@@ -88,8 +88,8 @@ static void CancelDelayedCleanupTimer(entt::entity playerEntity) {
 
 Guid GetPlayerIDBySessionId(const uint64_t session_id)
 {
-	const auto session_it = GlobalSessionList().find(session_id);
-	if (session_it == GlobalSessionList().end())
+	const auto session_it = SessionMap().find(session_id);
+	if (session_it == SessionMap().end())
 	{
 		LOG_DEBUG << "Cannot find session ID " << session_id << GetStackTraceAsString();
 		return kInvalidGuid;
@@ -382,7 +382,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	LOG_INFO << "LoginNodeEnterGame request: player=" << playerId << " session=" << sessionId << " req=" << requestId;
 
 	// 快速路由表更新（单线程模型下直接写）
-	GlobalSessionList()[sessionId] = playerId;
+	SessionMap()[sessionId] = playerId;
 
 	// 是否在内存中已有 player 对象
 	auto it = tlsPlayerList.find(playerId);
@@ -423,7 +423,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
 		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
 			SendKickForOldSession(oldSessionId, oldVersion);
-			GlobalSessionList().erase(oldSessionId);
+			SessionMap().erase(oldSessionId);
 		}
 	}
 	else if (decision == EnterGameDecision::Reconnect) {
@@ -431,7 +431,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 		CancelDelayedCleanupTimer(playerEntity);
 		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
 		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-			GlobalSessionList().erase(oldSessionId);
+			SessionMap().erase(oldSessionId);
 			SendKickForOldSession(oldSessionId, oldVersion);
 		}
 	}
@@ -451,11 +451,11 @@ void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (GlobalSessionList().find(request->session_info().session_id()) == GlobalSessionList().end()) {
+	if (SessionMap().find(request->session_info().session_id()) == SessionMap().end()) {
 		return;
 	}
 
-	defer(GlobalSessionList().erase(request->session_info().session_id()));
+	defer(SessionMap().erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerLifecycleSystem::HandleNormalExit(player_id);
 	//todo statistics
@@ -470,11 +470,11 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 {
 	///<<< BEGIN WRITING YOUR CODE
 
-	if (GlobalSessionList().find(request->session_info().session_id()) == GlobalSessionList().end()) {
+	if (SessionMap().find(request->session_info().session_id()) == SessionMap().end()) {
 		return;
 	}
 
-	defer(GlobalSessionList().erase(request->session_info().session_id()));
+	defer(SessionMap().erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerLifecycleSystem::HandleNormalExit(player_id);
 	///<<< END WRITING YOUR CODE
@@ -487,8 +487,8 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto it = GlobalSessionList().find(request->header().session_id());
-	if (it == GlobalSessionList().end())
+	const auto it = SessionMap().find(request->header().session_id());
+	if (it == SessionMap().end())
 	{
 		if (request->message_content().message_id() != CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId)
 		{

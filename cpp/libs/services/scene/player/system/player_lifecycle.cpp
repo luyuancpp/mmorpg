@@ -141,7 +141,7 @@ void PlayerLifecycleSystem::RemovePlayerSession(entt::entity player)
 
 	LOG_INFO << "Removing player session: sessionId = " << playerSessionSnapshotPB->gate_session_id();
 
-	defer(GlobalSessionList().erase(playerSessionSnapshotPB->gate_session_id()));
+	defer(SessionMap().erase(playerSessionSnapshotPB->gate_session_id()));
 	playerSessionSnapshotPB->set_gate_session_id(kInvalidSessionId);
 }
 

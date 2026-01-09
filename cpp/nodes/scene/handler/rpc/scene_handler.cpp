@@ -76,8 +76,8 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 	LOG_TRACE << "Handling message routing for session ID: " << request->header().session_id()
 		<< ", message ID: " << request->message_content().message_id();
 
-	const auto it = GlobalSessionList().find(request->header().session_id());
-	if (it == GlobalSessionList().end())
+	const auto it = SessionMap().find(request->header().session_id());
+	if (it == SessionMap().end())
 	{
 		LOG_ERROR << "Session ID not found: " << request->header().session_id()
 			<< ", message ID: " << request->message_content().message_id();
@@ -165,8 +165,8 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 		return;
 	}
 
-	const auto it = GlobalSessionList().find(request->session_id());
-	if (it == GlobalSessionList().end())
+	const auto it = SessionMap().find(request->session_id());
+	if (it == SessionMap().end())
 	{
 		LOG_ERROR << "session id not found " << request->session_id() << ","
 			<< " message id " << request->message_content().message_id();
@@ -207,8 +207,8 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto it = GlobalSessionList().find(request->header().session_id());
-	if (it == GlobalSessionList().end())
+	const auto it = SessionMap().find(request->header().session_id());
+	if (it == SessionMap().end())
 	{
 		LOG_ERROR << "session id not found " << request->header().session_id() << ","
 			<< " message id " << request->message_content().message_id();
@@ -233,8 +233,8 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto it = GlobalSessionList().find(request->header().session_id());
-	if (it == GlobalSessionList().end())
+	const auto it = SessionMap().find(request->header().session_id());
+	if (it == SessionMap().end())
 	{
 		LOG_ERROR << "session id not found " << request->header().session_id() << ","
 			<< " message id " << request->message_content().message_id();
@@ -373,7 +373,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	GlobalSessionList().emplace(request->session_id(), request->player_id());
+	SessionMap().emplace(request->session_id(), request->player_id());
 
 	tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
 

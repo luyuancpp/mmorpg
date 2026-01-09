@@ -8,7 +8,7 @@
 
 using SessionList = std::unordered_map<Guid, Guid>;
 
-inline SessionList& GlobalSessionList()
+inline SessionList& SessionMap()
 {
 	auto& list = tlsRegistryManager.globalRegistry.get_or_emplace<SessionList>(GlobalEntity());
 	return list;
