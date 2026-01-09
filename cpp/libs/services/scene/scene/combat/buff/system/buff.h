@@ -22,8 +22,6 @@ class BuffSystem
 public:
     static void Update(double delta);
 
-    static void InitializeActorComponents(entt::entity entity);
-
     static std::tuple<uint32_t, uint64_t>  AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     static std::tuple<uint32_t, uint64_t> AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId);

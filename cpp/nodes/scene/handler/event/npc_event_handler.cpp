@@ -21,15 +21,14 @@ void NpcEventHandler::UnRegister()
 void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto npc = entt::to_entity(event.actor_entity());
+	auto npc = entt::to_entity(event.actor_entity());
 
-    if (!tlsRegistryManager.actorRegistry.valid(npc))
-    {
-        LOG_ERROR << "Npc Not Found :" << event.actor_entity();
-        return;
-    }
-    
-    NpcSystem::InitializeNpcComponents(npc);
-    
+	if (!tlsRegistryManager.actorRegistry.valid(npc))
+	{
+		LOG_ERROR << "Npc Not Found :" << event.actor_entity();
+		return;
+	}
+
+
 ///<<< END WRITING YOUR CODE
 }

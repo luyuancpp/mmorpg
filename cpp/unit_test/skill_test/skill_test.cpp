@@ -84,7 +84,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
     EXPECT_CALL(*mockCooldownTimeUtil, IsInCooldown(_))
         .WillRepeatedly(Return(true));
 
-    auto & cooldownList = tlsRegistryManager.actorRegistry.emplace<CooldownTimeListComp>(caster);
+    auto & cooldownList = tlsRegistryManager.actorRegistry.get_or_emplace<CooldownTimeListComp>(caster);
     cooldownTimeComp.set_cooldown_table_id(1);
     CoolDownTimeMillisecondSystem::Reset(cooldownTimeComp);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
@@ -105,7 +105,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     EXPECT_CALL(*mockCooldownTimeUtil, IsInCooldown(_))
         .WillRepeatedly(Return(false));
 
-    auto& cooldownList = tlsRegistryManager.actorRegistry.emplace<CooldownTimeListComp>(caster);
+    auto& cooldownList = tlsRegistryManager.actorRegistry.get_or_emplace<CooldownTimeListComp>(caster);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
 
     uint32_t result = skillUtil->CheckCooldown(caster, tableSkill.get());
@@ -187,7 +187,6 @@ TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
 TEST_F(SkillUtilTest, HandleSkillSpell_TriggersEffect) {
     entt::entity caster = tlsRegistryManager.actorRegistry.create();
 
-    SkillSystem::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -201,7 +200,6 @@ TEST_F(SkillUtilTest, HandleSkillSpell_TriggersEffect) {
 TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
     entt::entity caster = tlsRegistryManager.actorRegistry.create();
 
-    SkillSystem::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_recoverytime(1000); // Set recovery time to 1000ms
@@ -215,8 +213,6 @@ TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
 TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
     entt::entity caster = tlsRegistryManager.actorRegistry.create();
 
-    SkillSystem::InitializeActorComponents(caster);
-
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
 
@@ -228,8 +224,6 @@ TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
 
 TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
     entt::entity caster = tlsRegistryManager.actorRegistry.create();
-    
-    SkillSystem::InitializeActorComponents(caster);
     
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -243,8 +237,6 @@ TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
 TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
     entt::entity caster = tlsRegistryManager.actorRegistry.create();
 
-    SkillSystem::InitializeActorComponents(caster);
-
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
 
@@ -257,8 +249,6 @@ TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
 TEST_F(SkillUtilTest, HandleSkillDeactivate_RemovesEffect) {
     entt::entity caster = tlsRegistryManager.actorRegistry.create();
 
-    SkillSystem::InitializeActorComponents(caster);
-    
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
 

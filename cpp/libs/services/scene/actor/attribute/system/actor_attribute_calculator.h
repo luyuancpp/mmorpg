@@ -12,7 +12,6 @@ struct AttributeCalculatorConfig {
 class ActorAttributeCalculatorSystem {
 public:
     static void Initialize();
-    static void InitializeActorComponents(entt::entity entity);
     static void MarkAttributeForUpdate(entt::entity actorEntity, uint32_t attributeBit);
     static void ImmediateCalculateAttributes(entt::entity actorEntity, uint32_t attributeBit);
     static void Update(double delta);

@@ -41,7 +41,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	// AddBuffTableToRegistry(buffTableId, mockBuffTable);
 
 	// Set up a BuffListComp for the parent entity
-	BuffListComp& buffListComp = tlsRegistryManager.actorRegistry.emplace<BuffListComp>(parent);
+	BuffListComp& buffListComp = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
 	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the AddOrUpdateBuff method
@@ -67,7 +67,7 @@ TEST_F(BuffUtilTest, CanCreateBuffSuccess) {
 	// AddBuffTableToRegistry(buffTableId, mockBuffTable);
 
 	// Set up a BuffListComp for the parent entity
-	BuffListComp& buffListComp = tlsRegistryManager.actorRegistry.emplace<BuffListComp>(parent);
+	BuffListComp& buffListComp = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
 	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the CanCreateBuff method

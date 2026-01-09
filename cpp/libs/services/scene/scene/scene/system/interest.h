@@ -4,7 +4,6 @@
 
 class InterestSystem {
 public:
-    static void InitializeActorComponents(entt::entity entity);
     
     static void AddWatcher(const entt::entity watcher, const entt::entity target);
 

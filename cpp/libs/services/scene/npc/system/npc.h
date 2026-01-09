@@ -5,7 +5,5 @@
 class  NpcSystem
 {
 public:
-    static void InitializeNpcComponents(entt::entity npc);
-
     static void CreateNpc();
 };

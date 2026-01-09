@@ -5,8 +5,6 @@
 class ActorActionStateSystem
 {
 public:
-    static void InitializeActorComponents(entt::entity entity);
-
     static uint32_t TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState);
 
     static uint32_t CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction);

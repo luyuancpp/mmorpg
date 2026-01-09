@@ -43,7 +43,6 @@ public:
     static void LookAtPosition(entt::entity entity, const Vector3& pos);
 private:
     // 初始化Actor消息
-    static void InitializeActorMessages();
 
     // 检查观察者和参与者是否都是NPC
     static bool BothAreNpcs(entt::entity observer, entt::entity entrant);

@@ -37,11 +37,6 @@ uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const 
 	return newSkillId;
 }
 
-void SkillSystem::InitializeActorComponents(entt::entity entity) {
-	tlsRegistryManager.actorRegistry.emplace<SkillContextCompMap>(entity);
-	tlsRegistryManager.actorRegistry.emplace<CooldownTimeListComp>(entity);
-}
-
 void SkillSystem::StartCooldown(entt::entity caster, const SkillTable* skillTable) {
 	auto& coolDownComp = tlsRegistryManager.actorRegistry.get_or_emplace<CooldownTimeListComp>(caster);
 	CooldownTimeComp comp;

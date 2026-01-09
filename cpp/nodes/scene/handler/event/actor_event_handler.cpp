@@ -30,13 +30,6 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const entt::entity actorEntity = entt::to_entity(event.actor_entity());
-
-	BuffSystem::InitializeActorComponents(actorEntity);
-	InterestSystem::InitializeActorComponents(actorEntity);
-	ActorAttributeCalculatorSystem::InitializeActorComponents(actorEntity);
-	ActorActionStateSystem::InitializeActorComponents(actorEntity);
-	CombatStateSystem::InitializeCombatStateComponent(actorEntity);
-	SkillSystem::InitializeActorComponents(actorEntity);
 ///<<< END WRITING YOUR CODE
 }
 void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurrentStatePbEvent& event)
