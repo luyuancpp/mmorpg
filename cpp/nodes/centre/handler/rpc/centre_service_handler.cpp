@@ -60,6 +60,7 @@ void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeoutMs) {
 				// 已经重连/被替换，取消清理
 				return;
 			}
+
 			// 仍为断线状态：先移除全局 session 映射，再真正下线
 			const uint64_t gateSessionId = sessionPB->gate_session_id();
 			if (gateSessionId != kInvalidSessionId) {
@@ -223,13 +224,15 @@ namespace {
 			sessionPB.set_last_request_id(requestId);
 		}
 
+		auto playerId = registry.get_or_emplace<Guid>(playerEntity);
+
 		// 持久化 snapshot（异步）
-		GetPlayerCentreDataRedis()->UpdateExtraData(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity), sessionPB);
+		GetPlayerCentreDataRedis()->UpdateExtraData(playerId, sessionPB);
 
 		// 通知 Gate：绑定 session（Centre->Gate 的 BindSession RPC）使用 newVersion
 		BindSessionToGateRequest bindReq;
 		bindReq.set_session_id(newSessionId);
-		bindReq.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity));
+		bindReq.set_player_id(playerId);
 		bindReq.set_session_version(newVersion);
 		SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(newSessionId));
 
@@ -431,6 +434,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 			SendKickForOldSession(oldSessionId, oldVersion);
 			SessionMap().erase(oldSessionId);
 		}
+		SessionMap()[sessionId] = playerId;
 	}
 	else if (decision == EnterGameDecision::ShortReconnect) {
 		// 重连（不再依赖 session_id 相等判幂等）
@@ -440,6 +444,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 			SessionMap().erase(oldSessionId);
 			SendKickForOldSession(oldSessionId, oldVersion);
 		}
+		SessionMap()[sessionId] = playerId;
 	}
 	else {
 		// FirstLogin 已在上层处理
