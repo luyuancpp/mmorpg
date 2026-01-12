@@ -390,9 +390,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	//	→ erase SessionMap(新 session) ❌
 
 
-	// 快速路由表更新（单线程模型下直接写）
-	SessionMap()[sessionId] = playerId;
-
 	// 是否在内存中已有 player 对象
 	auto it = tlsPlayerList.find(playerId);
 	if (it == tlsPlayerList.end()) {
