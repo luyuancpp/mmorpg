@@ -28,7 +28,7 @@ void InitGateReply()
         std::bind(&OnGateBroadcastToPlayersReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::NodeHandshakeResponse>(GateNodeHandshakeMessageId,
         std::bind(&OnGateNodeHandshakeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gRpcResponseDispatcher.registerMessageCallback<::Empty>(GateBindSessionToGateMessageId,
+    gRpcResponseDispatcher.registerMessageCallback<::BindSessionToGateResponse>(GateBindSessionToGateMessageId,
         std::bind(&OnGateBindSessionToGateReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
@@ -74,7 +74,7 @@ void OnGateNodeHandshakeReply(const TcpConnectionPtr& conn, const std::shared_pt
 ///<<< END WRITING YOUR CODE
 }
 
-void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
+void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

@@ -843,7 +843,6 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 	{
 		registry.remove<MainRoomNode>(sceneNodeId);
 		registry.get_or_emplace<CrossMainSceneNode>(sceneNodeId);
-
 	}
 	else if (request->scene_node_type() == eSceneNodeType::kRoomNode)
 	{

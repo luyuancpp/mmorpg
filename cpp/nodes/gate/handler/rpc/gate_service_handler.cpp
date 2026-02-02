@@ -150,7 +150,7 @@ void GateHandler::NodeHandshake(::google::protobuf::RpcController* controller, c
 
 
 void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controller, const ::BindSessionToGateRequest* request,
-	::Empty* response,
+	::BindSessionToGateResponse* response,
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -158,6 +158,10 @@ void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controlle
 	info.playerId = request->player_id();
 	info.sessionVersion = request->session_version();
 	tlsSessionManager.sessions()[request->session_id()] = info;
+
+	response->set_session_id(request->session_id());
+	response->set_session_version(request->session_version());
+	response->set_player_id(request->player_id());
 ///<<< END WRITING YOUR CODE
 }
 

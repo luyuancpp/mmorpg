@@ -163,7 +163,7 @@ void InitMessageInfo()
     gRpcServiceRegistry[GateRoutePlayerMessageMessageId] = RpcService{"Gate", "RoutePlayerMessage", std::make_unique_for_overwrite<::RoutePlayerMessageRequest>(), std::make_unique_for_overwrite<::RoutePlayerMessageResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
     gRpcServiceRegistry[GateBroadcastToPlayersMessageId] = RpcService{"Gate", "BroadcastToPlayers", std::make_unique_for_overwrite<::BroadcastToPlayersRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
     gRpcServiceRegistry[GateNodeHandshakeMessageId] = RpcService{"Gate", "NodeHandshake", std::make_unique_for_overwrite<::NodeHandshakeRequest>(), std::make_unique_for_overwrite<::NodeHandshakeResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
-    gRpcServiceRegistry[GateBindSessionToGateMessageId] = RpcService{"Gate", "BindSessionToGate", std::make_unique_for_overwrite<::BindSessionToGateRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
+    gRpcServiceRegistry[GateBindSessionToGateMessageId] = RpcService{"Gate", "BindSessionToGate", std::make_unique_for_overwrite<::BindSessionToGateRequest>(), std::make_unique_for_overwrite<::BindSessionToGateResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
 
 
     gClientMessageIdWhitelist.emplace(ClientPlayerLoginLoginMessageId);

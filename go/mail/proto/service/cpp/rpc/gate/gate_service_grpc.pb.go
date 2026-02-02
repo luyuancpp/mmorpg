@@ -41,7 +41,7 @@ type GateClient interface {
 	RoutePlayerMessage(ctx context.Context, in *common.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*common.RoutePlayerMessageResponse, error)
 	BroadcastToPlayers(ctx context.Context, in *BroadcastToPlayersRequest, opts ...grpc.CallOption) (*common.Empty, error)
 	NodeHandshake(ctx context.Context, in *common.NodeHandshakeRequest, opts ...grpc.CallOption) (*common.NodeHandshakeResponse, error)
-	BindSessionToGate(ctx context.Context, in *BindSessionToGateRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	BindSessionToGate(ctx context.Context, in *BindSessionToGateRequest, opts ...grpc.CallOption) (*BindSessionToGateResponse, error)
 }
 
 type gateClient struct {
@@ -122,9 +122,9 @@ func (c *gateClient) NodeHandshake(ctx context.Context, in *common.NodeHandshake
 	return out, nil
 }
 
-func (c *gateClient) BindSessionToGate(ctx context.Context, in *BindSessionToGateRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *gateClient) BindSessionToGate(ctx context.Context, in *BindSessionToGateRequest, opts ...grpc.CallOption) (*BindSessionToGateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(BindSessionToGateResponse)
 	err := c.cc.Invoke(ctx, Gate_BindSessionToGate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ type GateServer interface {
 	RoutePlayerMessage(context.Context, *common.RoutePlayerMessageRequest) (*common.RoutePlayerMessageResponse, error)
 	BroadcastToPlayers(context.Context, *BroadcastToPlayersRequest) (*common.Empty, error)
 	NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error)
-	BindSessionToGate(context.Context, *BindSessionToGateRequest) (*common.Empty, error)
+	BindSessionToGate(context.Context, *BindSessionToGateRequest) (*BindSessionToGateResponse, error)
 	mustEmbedUnimplementedGateServer()
 }
 
@@ -175,7 +175,7 @@ func (UnimplementedGateServer) BroadcastToPlayers(context.Context, *BroadcastToP
 func (UnimplementedGateServer) NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NodeHandshake not implemented")
 }
-func (UnimplementedGateServer) BindSessionToGate(context.Context, *BindSessionToGateRequest) (*common.Empty, error) {
+func (UnimplementedGateServer) BindSessionToGate(context.Context, *BindSessionToGateRequest) (*BindSessionToGateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BindSessionToGate not implemented")
 }
 func (UnimplementedGateServer) mustEmbedUnimplementedGateServer() {}
