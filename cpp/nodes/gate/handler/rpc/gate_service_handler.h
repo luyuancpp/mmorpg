@@ -35,7 +35,7 @@ public:
 
 
 
-	void BindSessionToGate(::google::protobuf::RpcController* controller,  const ::BindSessionToGateRequest* request, ::Empty* response, ::google::protobuf::Closure* done) override;
+	void BindSessionToGate(::google::protobuf::RpcController* controller,  const ::BindSessionToGateRequest* request, ::BindSessionToGateResponse* response, ::google::protobuf::Closure* done) override;
 
 
 };

@@ -136,6 +136,66 @@ func (x *BindSessionToGateRequest) GetSessionVersion() uint64 {
 	return 0
 }
 
+type BindSessionToGateResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SessionVersion uint64                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *BindSessionToGateResponse) Reset() {
+	*x = BindSessionToGateResponse{}
+	mi := &file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindSessionToGateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindSessionToGateResponse) ProtoMessage() {}
+
+func (x *BindSessionToGateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindSessionToGateResponse.ProtoReflect.Descriptor instead.
+func (*BindSessionToGateResponse) Descriptor() ([]byte, []int) {
+	return file_proto_service_cpp_rpc_gate_gate_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *BindSessionToGateResponse) GetSessionId() uint64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *BindSessionToGateResponse) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *BindSessionToGateResponse) GetSessionVersion() uint64 {
+	if x != nil {
+		return x.SessionVersion
+	}
+	return 0
+}
+
 type BroadcastToPlayersRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SessionList    []uint64               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
@@ -146,7 +206,7 @@ type BroadcastToPlayersRequest struct {
 
 func (x *BroadcastToPlayersRequest) Reset() {
 	*x = BroadcastToPlayersRequest{}
-	mi := &file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes[2]
+	mi := &file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +218,7 @@ func (x *BroadcastToPlayersRequest) String() string {
 func (*BroadcastToPlayersRequest) ProtoMessage() {}
 
 func (x *BroadcastToPlayersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes[2]
+	mi := &file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,7 +231,7 @@ func (x *BroadcastToPlayersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BroadcastToPlayersRequest.ProtoReflect.Descriptor instead.
 func (*BroadcastToPlayersRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_cpp_rpc_gate_gate_service_proto_rawDescGZIP(), []int{2}
+	return file_proto_service_cpp_rpc_gate_gate_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BroadcastToPlayersRequest) GetSessionList() []uint64 {
@@ -201,10 +261,15 @@ const file_proto_service_cpp_rpc_gate_gate_service_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
+	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersion\"\x80\x01\n" +
+	"\x19BindSessionToGateResponse\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
 	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersion\"x\n" +
 	"\x19BroadcastToPlayersRequest\x12!\n" +
 	"\fsession_list\x18\x01 \x03(\x04R\vsessionList\x128\n" +
-	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent2\x8f\x04\n" +
+	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xa3\x04\n" +
 	"\x04Gate\x12X\n" +
 	"\x13PlayerEnterGameNode\x12\x1f.RegisterGameNodeSessionRequest\x1a .RegisterGameNodeSessionResponse\x127\n" +
 	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x06.Empty\x122\n" +
@@ -212,8 +277,8 @@ const file_proto_service_cpp_rpc_gate_gate_service_proto_rawDesc = "" +
 	"\x10RouteNodeMessage\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12M\n" +
 	"\x12RoutePlayerMessage\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x128\n" +
 	"\x12BroadcastToPlayers\x12\x1a.BroadcastToPlayersRequest\x1a\x06.Empty\x12>\n" +
-	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponse\x126\n" +
-	"\x11BindSessionToGate\x12\x19.BindSessionToGateRequest\x1a\x06.EmptyB-\x98\xd4a\x02Z$mail/proto/service/cpp/rpc/gate;gate\x80\x01\x01b\x06proto3"
+	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponse\x12J\n" +
+	"\x11BindSessionToGate\x12\x19.BindSessionToGateRequest\x1a\x1a.BindSessionToGateResponseB-\x98\xd4a\x02Z$mail/proto/service/cpp/rpc/gate;gate\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_service_cpp_rpc_gate_gate_service_proto_rawDescOnce sync.Once
@@ -227,41 +292,42 @@ func file_proto_service_cpp_rpc_gate_gate_service_proto_rawDescGZIP() []byte {
 	return file_proto_service_cpp_rpc_gate_gate_service_proto_rawDescData
 }
 
-var file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_service_cpp_rpc_gate_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_service_cpp_rpc_gate_gate_service_proto_goTypes = []any{
 	(*KickSessionRequest)(nil),                     // 0: KickSessionRequest
 	(*BindSessionToGateRequest)(nil),               // 1: BindSessionToGateRequest
-	(*BroadcastToPlayersRequest)(nil),              // 2: BroadcastToPlayersRequest
-	(*common.MessageContent)(nil),                  // 3: MessageContent
-	(*common.RegisterGameNodeSessionRequest)(nil),  // 4: RegisterGameNodeSessionRequest
-	(*common.NodeRouteMessageRequest)(nil),         // 5: NodeRouteMessageRequest
-	(*common.RouteMessageRequest)(nil),             // 6: RouteMessageRequest
-	(*common.RoutePlayerMessageRequest)(nil),       // 7: RoutePlayerMessageRequest
-	(*common.NodeHandshakeRequest)(nil),            // 8: NodeHandshakeRequest
-	(*common.RegisterGameNodeSessionResponse)(nil), // 9: RegisterGameNodeSessionResponse
-	(*common.Empty)(nil),                           // 10: Empty
-	(*common.RouteMessageResponse)(nil),            // 11: RouteMessageResponse
-	(*common.RoutePlayerMessageResponse)(nil),      // 12: RoutePlayerMessageResponse
-	(*common.NodeHandshakeResponse)(nil),           // 13: NodeHandshakeResponse
+	(*BindSessionToGateResponse)(nil),              // 2: BindSessionToGateResponse
+	(*BroadcastToPlayersRequest)(nil),              // 3: BroadcastToPlayersRequest
+	(*common.MessageContent)(nil),                  // 4: MessageContent
+	(*common.RegisterGameNodeSessionRequest)(nil),  // 5: RegisterGameNodeSessionRequest
+	(*common.NodeRouteMessageRequest)(nil),         // 6: NodeRouteMessageRequest
+	(*common.RouteMessageRequest)(nil),             // 7: RouteMessageRequest
+	(*common.RoutePlayerMessageRequest)(nil),       // 8: RoutePlayerMessageRequest
+	(*common.NodeHandshakeRequest)(nil),            // 9: NodeHandshakeRequest
+	(*common.RegisterGameNodeSessionResponse)(nil), // 10: RegisterGameNodeSessionResponse
+	(*common.Empty)(nil),                           // 11: Empty
+	(*common.RouteMessageResponse)(nil),            // 12: RouteMessageResponse
+	(*common.RoutePlayerMessageResponse)(nil),      // 13: RoutePlayerMessageResponse
+	(*common.NodeHandshakeResponse)(nil),           // 14: NodeHandshakeResponse
 }
 var file_proto_service_cpp_rpc_gate_gate_service_proto_depIdxs = []int32{
-	3,  // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent
-	4,  // 1: Gate.PlayerEnterGameNode:input_type -> RegisterGameNodeSessionRequest
-	5,  // 2: Gate.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
+	4,  // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent
+	5,  // 1: Gate.PlayerEnterGameNode:input_type -> RegisterGameNodeSessionRequest
+	6,  // 2: Gate.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
 	0,  // 3: Gate.KickSessionByCentre:input_type -> KickSessionRequest
-	6,  // 4: Gate.RouteNodeMessage:input_type -> RouteMessageRequest
-	7,  // 5: Gate.RoutePlayerMessage:input_type -> RoutePlayerMessageRequest
-	2,  // 6: Gate.BroadcastToPlayers:input_type -> BroadcastToPlayersRequest
-	8,  // 7: Gate.NodeHandshake:input_type -> NodeHandshakeRequest
+	7,  // 4: Gate.RouteNodeMessage:input_type -> RouteMessageRequest
+	8,  // 5: Gate.RoutePlayerMessage:input_type -> RoutePlayerMessageRequest
+	3,  // 6: Gate.BroadcastToPlayers:input_type -> BroadcastToPlayersRequest
+	9,  // 7: Gate.NodeHandshake:input_type -> NodeHandshakeRequest
 	1,  // 8: Gate.BindSessionToGate:input_type -> BindSessionToGateRequest
-	9,  // 9: Gate.PlayerEnterGameNode:output_type -> RegisterGameNodeSessionResponse
-	10, // 10: Gate.SendMessageToPlayer:output_type -> Empty
-	10, // 11: Gate.KickSessionByCentre:output_type -> Empty
-	11, // 12: Gate.RouteNodeMessage:output_type -> RouteMessageResponse
-	12, // 13: Gate.RoutePlayerMessage:output_type -> RoutePlayerMessageResponse
-	10, // 14: Gate.BroadcastToPlayers:output_type -> Empty
-	13, // 15: Gate.NodeHandshake:output_type -> NodeHandshakeResponse
-	10, // 16: Gate.BindSessionToGate:output_type -> Empty
+	10, // 9: Gate.PlayerEnterGameNode:output_type -> RegisterGameNodeSessionResponse
+	11, // 10: Gate.SendMessageToPlayer:output_type -> Empty
+	11, // 11: Gate.KickSessionByCentre:output_type -> Empty
+	12, // 12: Gate.RouteNodeMessage:output_type -> RouteMessageResponse
+	13, // 13: Gate.RoutePlayerMessage:output_type -> RoutePlayerMessageResponse
+	11, // 14: Gate.BroadcastToPlayers:output_type -> Empty
+	14, // 15: Gate.NodeHandshake:output_type -> NodeHandshakeResponse
+	2,  // 16: Gate.BindSessionToGate:output_type -> BindSessionToGateResponse
 	9,  // [9:17] is the sub-list for method output_type
 	1,  // [1:9] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
@@ -280,7 +346,7 @@ func file_proto_service_cpp_rpc_gate_gate_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_cpp_rpc_gate_gate_service_proto_rawDesc), len(file_proto_service_cpp_rpc_gate_gate_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
