@@ -180,6 +180,58 @@ struct GameNodeConnectRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameNodeConnectRequestDefaultTypeInternal _GameNodeConnectRequest_default_instance_;
 
+inline constexpr ProcessClientPlayerMessageResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        message_content_{nullptr},
+        session_id_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ProcessClientPlayerMessageResponse::ProcessClientPlayerMessageResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ProcessClientPlayerMessageResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ProcessClientPlayerMessageResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ProcessClientPlayerMessageResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ProcessClientPlayerMessageResponseDefaultTypeInternal() {}
+  union {
+    ProcessClientPlayerMessageResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProcessClientPlayerMessageResponseDefaultTypeInternal _ProcessClientPlayerMessageResponse_default_instance_;
+
+inline constexpr ProcessClientPlayerMessageRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        message_content_{nullptr},
+        session_id_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ProcessClientPlayerMessageRequest::ProcessClientPlayerMessageRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ProcessClientPlayerMessageRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ProcessClientPlayerMessageRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ProcessClientPlayerMessageRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ProcessClientPlayerMessageRequestDefaultTypeInternal() {}
+  union {
+    ProcessClientPlayerMessageRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProcessClientPlayerMessageRequestDefaultTypeInternal _ProcessClientPlayerMessageRequest_default_instance_;
+
 inline constexpr CreateSceneResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -204,58 +256,6 @@ struct CreateSceneResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CreateSceneResponseDefaultTypeInternal _CreateSceneResponse_default_instance_;
-
-inline constexpr ClientSendMessageToPlayerResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        message_content_{nullptr},
-        session_id_{::uint64_t{0u}} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR ClientSendMessageToPlayerResponse::ClientSendMessageToPlayerResponse(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(ClientSendMessageToPlayerResponse_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct ClientSendMessageToPlayerResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ClientSendMessageToPlayerResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ClientSendMessageToPlayerResponseDefaultTypeInternal() {}
-  union {
-    ClientSendMessageToPlayerResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClientSendMessageToPlayerResponseDefaultTypeInternal _ClientSendMessageToPlayerResponse_default_instance_;
-
-inline constexpr ClientSendMessageToPlayerRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        message_content_{nullptr},
-        session_id_{::uint64_t{0u}} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR ClientSendMessageToPlayerRequest::ClientSendMessageToPlayerRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(ClientSendMessageToPlayerRequest_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct ClientSendMessageToPlayerRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ClientSendMessageToPlayerRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ClientSendMessageToPlayerRequestDefaultTypeInternal() {}
-  union {
-    ClientSendMessageToPlayerRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClientSendMessageToPlayerRequestDefaultTypeInternal _ClientSendMessageToPlayerRequest_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto = nullptr;
 static const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL
@@ -273,17 +273,17 @@ const ::uint32_t
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ProcessClientPlayerMessageRequest, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerRequest, _impl_.message_content_),
-        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerRequest, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::ProcessClientPlayerMessageRequest, _impl_.message_content_),
+        PROTOBUF_FIELD_OFFSET(::ProcessClientPlayerMessageRequest, _impl_.session_id_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ProcessClientPlayerMessageResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerResponse, _impl_.message_content_),
-        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerResponse, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::ProcessClientPlayerMessageResponse, _impl_.message_content_),
+        PROTOBUF_FIELD_OFFSET(::ProcessClientPlayerMessageResponse, _impl_.session_id_),
         0,
         1,
         0x081, // bitmap
@@ -327,8 +327,8 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::PlayerEnterGameNodeRequest)},
-        {9, sizeof(::ClientSendMessageToPlayerRequest)},
-        {16, sizeof(::ClientSendMessageToPlayerResponse)},
+        {9, sizeof(::ProcessClientPlayerMessageRequest)},
+        {16, sizeof(::ProcessClientPlayerMessageResponse)},
         {23, sizeof(::SessionDisconnectRequest)},
         {28, sizeof(::GameNodeConnectRequest)},
         {35, sizeof(::RegisterPlayerSessionRequest)},
@@ -338,8 +338,8 @@ static const ::_pbi::MigrationSchema
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_PlayerEnterGameNodeRequest_default_instance_._instance,
-    &::_ClientSendMessageToPlayerRequest_default_instance_._instance,
-    &::_ClientSendMessageToPlayerResponse_default_instance_._instance,
+    &::_ProcessClientPlayerMessageRequest_default_instance_._instance,
+    &::_ProcessClientPlayerMessageResponse_default_instance_._instance,
     &::_SessionDisconnectRequest_default_instance_._instance,
     &::_GameNodeConnectRequest_default_instance_._instance,
     &::_RegisterPlayerSessionRequest_default_instance_._instance,
@@ -355,41 +355,41 @@ const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fscene
     "common/common.proto\032\032proto/common/messag"
     "e.proto\"[\n\032PlayerEnterGameNodeRequest\022\021\n"
     "\tplayer_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\004\022\026\n\016"
-    "centre_node_id\030\003 \001(\r\"`\n ClientSendMessag"
-    "eToPlayerRequest\022(\n\017message_content\030\001 \001("
-    "\0132\017.MessageContent\022\022\n\nsession_id\030\002 \001(\004\"a"
-    "\n!ClientSendMessageToPlayerResponse\022(\n\017m"
-    "essage_content\030\001 \001(\0132\017.MessageContent\022\022\n"
-    "\nsession_id\030\002 \001(\004\"-\n\030SessionDisconnectRe"
-    "quest\022\021\n\tplayer_id\030\001 \001(\004\"S\n\026GameNodeConn"
-    "ectRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Network"
-    "Address\022\024\n\014gate_node_id\030\002 \001(\r\"E\n\034Registe"
-    "rPlayerSessionRequest\022\022\n\nsession_id\030\001 \001("
-    "\004\022\021\n\tplayer_id\030\002 \001(\004\"A\n\032Centre2GsEnterSc"
-    "eneRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_i"
-    "d\030\002 \001(\004\"\'\n\022CreateSceneRequest\022\021\n\tconfig_"
-    "id\030\001 \001(\r\"\?\n\023CreateSceneResponse\022(\n\nscene"
-    "_info\030\001 \001(\0132\024.RoomInfoPBComponent2\201\006\n\005Sc"
-    "ene\022:\n\023PlayerEnterGameNode\022\033.PlayerEnter"
-    "GameNodeRequest\032\006.Empty\022J\n\023SendMessageTo"
-    "Player\022\030.NodeRouteMessageRequest\032\031.NodeR"
-    "outeMessageResponse\022b\n\031ClientSendMessage"
-    "ToPlayer\022!.ClientSendMessageToPlayerRequ"
-    "est\032\".ClientSendMessageToPlayerResponse\022"
-    "A\n\035CentreSendToPlayerViaGameNode\022\030.NodeR"
-    "outeMessageRequest\032\006.Empty\022J\n\023InvokePlay"
-    "erService\022\030.NodeRouteMessageRequest\032\031.No"
-    "deRouteMessageResponse\022A\n\022RouteNodeStrin"
-    "gMsg\022\024.RouteMessageRequest\032\025.RouteMessag"
-    "eResponse\022O\n\024RoutePlayerStringMsg\022\032.Rout"
-    "ePlayerMessageRequest\032\033.RoutePlayerMessa"
-    "geResponse\022<\n\023UpdateSessionDetail\022\035.Regi"
-    "sterPlayerSessionRequest\032\006.Empty\0221\n\nEnte"
-    "rScene\022\033.Centre2GsEnterSceneRequest\032\006.Em"
-    "pty\0228\n\013CreateScene\022\023.CreateSceneRequest\032"
-    "\024.CreateSceneResponse\022>\n\rNodeHandshake\022\025"
-    ".NodeHandshakeRequest\032\026.NodeHandshakeRes"
-    "ponseB\007\200\001\001\230\324a\003b\006proto3"
+    "centre_node_id\030\003 \001(\r\"a\n!ProcessClientPla"
+    "yerMessageRequest\022(\n\017message_content\030\001 \001"
+    "(\0132\017.MessageContent\022\022\n\nsession_id\030\002 \001(\004\""
+    "b\n\"ProcessClientPlayerMessageResponse\022(\n"
+    "\017message_content\030\001 \001(\0132\017.MessageContent\022"
+    "\022\n\nsession_id\030\002 \001(\004\"-\n\030SessionDisconnect"
+    "Request\022\021\n\tplayer_id\030\001 \001(\004\"S\n\026GameNodeCo"
+    "nnectRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Netwo"
+    "rkAddress\022\024\n\014gate_node_id\030\002 \001(\r\"E\n\034Regis"
+    "terPlayerSessionRequest\022\022\n\nsession_id\030\001 "
+    "\001(\004\022\021\n\tplayer_id\030\002 \001(\004\"A\n\032Centre2GsEnter"
+    "SceneRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene"
+    "_id\030\002 \001(\004\"\'\n\022CreateSceneRequest\022\021\n\tconfi"
+    "g_id\030\001 \001(\r\"\?\n\023CreateSceneResponse\022(\n\nsce"
+    "ne_info\030\001 \001(\0132\024.RoomInfoPBComponent2\204\006\n\005"
+    "Scene\022:\n\023PlayerEnterGameNode\022\033.PlayerEnt"
+    "erGameNodeRequest\032\006.Empty\022J\n\023SendMessage"
+    "ToPlayer\022\030.NodeRouteMessageRequest\032\031.Nod"
+    "eRouteMessageResponse\022e\n\032ProcessClientPl"
+    "ayerMessage\022\".ProcessClientPlayerMessage"
+    "Request\032#.ProcessClientPlayerMessageResp"
+    "onse\022A\n\035CentreSendToPlayerViaGameNode\022\030."
+    "NodeRouteMessageRequest\032\006.Empty\022J\n\023Invok"
+    "ePlayerService\022\030.NodeRouteMessageRequest"
+    "\032\031.NodeRouteMessageResponse\022A\n\022RouteNode"
+    "StringMsg\022\024.RouteMessageRequest\032\025.RouteM"
+    "essageResponse\022O\n\024RoutePlayerStringMsg\022\032"
+    ".RoutePlayerMessageRequest\032\033.RoutePlayer"
+    "MessageResponse\022<\n\023UpdateSessionDetail\022\035"
+    ".RegisterPlayerSessionRequest\032\006.Empty\0221\n"
+    "\nEnterScene\022\033.Centre2GsEnterSceneRequest"
+    "\032\006.Empty\0228\n\013CreateScene\022\023.CreateSceneReq"
+    "uest\032\024.CreateSceneResponse\022>\n\rNodeHandsh"
+    "ake\022\025.NodeHandshakeRequest\032\026.NodeHandsha"
+    "keResponseB\007\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_deps[4] = {
@@ -402,7 +402,7 @@ static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2f
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto = {
     false,
     false,
-    1622,
+    1627,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto,
     "proto/service/cpp/rpc/scene/scene.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto_once,
@@ -725,44 +725,44 @@ void PlayerEnterGameNodeRequest::InternalSwap(PlayerEnterGameNodeRequest* PROTOB
 }
 // ===================================================================
 
-class ClientSendMessageToPlayerRequest::_Internal {
+class ProcessClientPlayerMessageRequest::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<ClientSendMessageToPlayerRequest>()._impl_._has_bits_);
+      decltype(::std::declval<ProcessClientPlayerMessageRequest>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_._has_bits_);
 };
 
-void ClientSendMessageToPlayerRequest::clear_message_content() {
+void ProcessClientPlayerMessageRequest::clear_message_content() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.message_content_ != nullptr) _impl_.message_content_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-ClientSendMessageToPlayerRequest::ClientSendMessageToPlayerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ProcessClientPlayerMessageRequest::ProcessClientPlayerMessageRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClientSendMessageToPlayerRequest_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ProcessClientPlayerMessageRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ClientSendMessageToPlayerRequest)
+  // @@protoc_insertion_point(arena_constructor:ProcessClientPlayerMessageRequest)
 }
-PROTOBUF_NDEBUG_INLINE ClientSendMessageToPlayerRequest::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ProcessClientPlayerMessageRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::ClientSendMessageToPlayerRequest& from_msg)
+    const ::ProcessClientPlayerMessageRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
-ClientSendMessageToPlayerRequest::ClientSendMessageToPlayerRequest(
+ProcessClientPlayerMessageRequest::ProcessClientPlayerMessageRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const ClientSendMessageToPlayerRequest& from)
+    const ProcessClientPlayerMessageRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClientSendMessageToPlayerRequest_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ProcessClientPlayerMessageRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  ClientSendMessageToPlayerRequest* const _this = this;
+  ProcessClientPlayerMessageRequest* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -773,14 +773,14 @@ ClientSendMessageToPlayerRequest::ClientSendMessageToPlayerRequest(
                 : nullptr;
   _impl_.session_id_ = from._impl_.session_id_;
 
-  // @@protoc_insertion_point(copy_constructor:ClientSendMessageToPlayerRequest)
+  // @@protoc_insertion_point(copy_constructor:ProcessClientPlayerMessageRequest)
 }
-PROTOBUF_NDEBUG_INLINE ClientSendMessageToPlayerRequest::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ProcessClientPlayerMessageRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void ClientSendMessageToPlayerRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ProcessClientPlayerMessageRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, message_content_),
@@ -789,65 +789,65 @@ inline void ClientSendMessageToPlayerRequest::SharedCtor(::_pb::Arena* PROTOBUF_
                offsetof(Impl_, message_content_) +
                sizeof(Impl_::session_id_));
 }
-ClientSendMessageToPlayerRequest::~ClientSendMessageToPlayerRequest() {
-  // @@protoc_insertion_point(destructor:ClientSendMessageToPlayerRequest)
+ProcessClientPlayerMessageRequest::~ProcessClientPlayerMessageRequest() {
+  // @@protoc_insertion_point(destructor:ProcessClientPlayerMessageRequest)
   SharedDtor(*this);
 }
-inline void ClientSendMessageToPlayerRequest::SharedDtor(MessageLite& self) {
-  ClientSendMessageToPlayerRequest& this_ = static_cast<ClientSendMessageToPlayerRequest&>(self);
+inline void ProcessClientPlayerMessageRequest::SharedDtor(MessageLite& self) {
+  ProcessClientPlayerMessageRequest& this_ = static_cast<ProcessClientPlayerMessageRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   delete this_._impl_.message_content_;
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL ClientSendMessageToPlayerRequest::PlacementNew_(
+inline void* PROTOBUF_NONNULL ProcessClientPlayerMessageRequest::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ClientSendMessageToPlayerRequest(arena);
+  return ::new (mem) ProcessClientPlayerMessageRequest(arena);
 }
-constexpr auto ClientSendMessageToPlayerRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ClientSendMessageToPlayerRequest),
-                                            alignof(ClientSendMessageToPlayerRequest));
+constexpr auto ProcessClientPlayerMessageRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ProcessClientPlayerMessageRequest),
+                                            alignof(ProcessClientPlayerMessageRequest));
 }
-constexpr auto ClientSendMessageToPlayerRequest::InternalGenerateClassData_() {
+constexpr auto ProcessClientPlayerMessageRequest::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ClientSendMessageToPlayerRequest_default_instance_._instance,
+          &_ProcessClientPlayerMessageRequest_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ClientSendMessageToPlayerRequest::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ClientSendMessageToPlayerRequest>(),
+          &ProcessClientPlayerMessageRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ProcessClientPlayerMessageRequest>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ClientSendMessageToPlayerRequest::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<ClientSendMessageToPlayerRequest>(), &ClientSendMessageToPlayerRequest::ByteSizeLong,
-              &ClientSendMessageToPlayerRequest::_InternalSerialize,
+          &ProcessClientPlayerMessageRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ProcessClientPlayerMessageRequest>(), &ProcessClientPlayerMessageRequest::ByteSizeLong,
+              &ProcessClientPlayerMessageRequest::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_._cached_size_),
           false,
       },
-      &ClientSendMessageToPlayerRequest::kDescriptorMethods,
+      &ProcessClientPlayerMessageRequest::kDescriptorMethods,
       &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ClientSendMessageToPlayerRequest_class_data_ =
-        ClientSendMessageToPlayerRequest::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ProcessClientPlayerMessageRequest_class_data_ =
+        ProcessClientPlayerMessageRequest::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ClientSendMessageToPlayerRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ClientSendMessageToPlayerRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ClientSendMessageToPlayerRequest_class_data_.tc_table);
-  return ClientSendMessageToPlayerRequest_class_data_.base();
+ProcessClientPlayerMessageRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ProcessClientPlayerMessageRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ProcessClientPlayerMessageRequest_class_data_.tc_table);
+  return ProcessClientPlayerMessageRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 1, 0, 2>
-ClientSendMessageToPlayerRequest::_table_ = {
+ProcessClientPlayerMessageRequest::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -856,27 +856,27 @@ ClientSendMessageToPlayerRequest::_table_ = {
     2,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    ClientSendMessageToPlayerRequest_class_data_.base(),
+    ProcessClientPlayerMessageRequest_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ClientSendMessageToPlayerRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ProcessClientPlayerMessageRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 session_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ClientSendMessageToPlayerRequest, _impl_.session_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ProcessClientPlayerMessageRequest, _impl_.session_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_.session_id_)}},
     // .MessageContent message_content = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_content_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_.message_content_)}},
   }}, {{
     65535, 65535
   }}, {{
     // .MessageContent message_content = 1;
-    {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 session_id = 2;
-    {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   {{
@@ -885,8 +885,8 @@ ClientSendMessageToPlayerRequest::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void ClientSendMessageToPlayerRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:ClientSendMessageToPlayerRequest)
+PROTOBUF_NOINLINE void ProcessClientPlayerMessageRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:ProcessClientPlayerMessageRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -903,17 +903,17 @@ PROTOBUF_NOINLINE void ClientSendMessageToPlayerRequest::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ClientSendMessageToPlayerRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ProcessClientPlayerMessageRequest::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ClientSendMessageToPlayerRequest& this_ = static_cast<const ClientSendMessageToPlayerRequest&>(base);
+  const ProcessClientPlayerMessageRequest& this_ = static_cast<const ProcessClientPlayerMessageRequest&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ClientSendMessageToPlayerRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ProcessClientPlayerMessageRequest::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ClientSendMessageToPlayerRequest& this_ = *this;
+  const ProcessClientPlayerMessageRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:ClientSendMessageToPlayerRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:ProcessClientPlayerMessageRequest)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -939,18 +939,18 @@ PROTOBUF_NOINLINE void ClientSendMessageToPlayerRequest::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ClientSendMessageToPlayerRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:ProcessClientPlayerMessageRequest)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ClientSendMessageToPlayerRequest::ByteSizeLong(const MessageLite& base) {
-  const ClientSendMessageToPlayerRequest& this_ = static_cast<const ClientSendMessageToPlayerRequest&>(base);
+::size_t ProcessClientPlayerMessageRequest::ByteSizeLong(const MessageLite& base) {
+  const ProcessClientPlayerMessageRequest& this_ = static_cast<const ProcessClientPlayerMessageRequest&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ClientSendMessageToPlayerRequest::ByteSizeLong() const {
-  const ClientSendMessageToPlayerRequest& this_ = *this;
+::size_t ProcessClientPlayerMessageRequest::ByteSizeLong() const {
+  const ProcessClientPlayerMessageRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:ClientSendMessageToPlayerRequest)
+  // @@protoc_insertion_point(message_byte_size_start:ProcessClientPlayerMessageRequest)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -977,11 +977,11 @@ PROTOBUF_NOINLINE void ClientSendMessageToPlayerRequest::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void ClientSendMessageToPlayerRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ClientSendMessageToPlayerRequest*>(&to_msg);
-  auto& from = static_cast<const ClientSendMessageToPlayerRequest&>(from_msg);
+void ProcessClientPlayerMessageRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ProcessClientPlayerMessageRequest*>(&to_msg);
+  auto& from = static_cast<const ProcessClientPlayerMessageRequest&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:ClientSendMessageToPlayerRequest)
+  // @@protoc_insertion_point(class_specific_merge_from_start:ProcessClientPlayerMessageRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1006,69 +1006,69 @@ void ClientSendMessageToPlayerRequest::MergeImpl(::google::protobuf::MessageLite
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ClientSendMessageToPlayerRequest::CopyFrom(const ClientSendMessageToPlayerRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ClientSendMessageToPlayerRequest)
+void ProcessClientPlayerMessageRequest::CopyFrom(const ProcessClientPlayerMessageRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ProcessClientPlayerMessageRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void ClientSendMessageToPlayerRequest::InternalSwap(ClientSendMessageToPlayerRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ProcessClientPlayerMessageRequest::InternalSwap(ProcessClientPlayerMessageRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_)
-      + sizeof(ClientSendMessageToPlayerRequest::_impl_.session_id_)
-      - PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_content_)>(
+      PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_.session_id_)
+      + sizeof(ProcessClientPlayerMessageRequest::_impl_.session_id_)
+      - PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageRequest, _impl_.message_content_)>(
           reinterpret_cast<char*>(&_impl_.message_content_),
           reinterpret_cast<char*>(&other->_impl_.message_content_));
 }
 
-::google::protobuf::Metadata ClientSendMessageToPlayerRequest::GetMetadata() const {
+::google::protobuf::Metadata ProcessClientPlayerMessageRequest::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class ClientSendMessageToPlayerResponse::_Internal {
+class ProcessClientPlayerMessageResponse::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<ClientSendMessageToPlayerResponse>()._impl_._has_bits_);
+      decltype(::std::declval<ProcessClientPlayerMessageResponse>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_._has_bits_);
 };
 
-void ClientSendMessageToPlayerResponse::clear_message_content() {
+void ProcessClientPlayerMessageResponse::clear_message_content() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.message_content_ != nullptr) _impl_.message_content_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-ClientSendMessageToPlayerResponse::ClientSendMessageToPlayerResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ProcessClientPlayerMessageResponse::ProcessClientPlayerMessageResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClientSendMessageToPlayerResponse_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ProcessClientPlayerMessageResponse_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ClientSendMessageToPlayerResponse)
+  // @@protoc_insertion_point(arena_constructor:ProcessClientPlayerMessageResponse)
 }
-PROTOBUF_NDEBUG_INLINE ClientSendMessageToPlayerResponse::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ProcessClientPlayerMessageResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::ClientSendMessageToPlayerResponse& from_msg)
+    const ::ProcessClientPlayerMessageResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
-ClientSendMessageToPlayerResponse::ClientSendMessageToPlayerResponse(
+ProcessClientPlayerMessageResponse::ProcessClientPlayerMessageResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const ClientSendMessageToPlayerResponse& from)
+    const ProcessClientPlayerMessageResponse& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ClientSendMessageToPlayerResponse_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ProcessClientPlayerMessageResponse_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  ClientSendMessageToPlayerResponse* const _this = this;
+  ProcessClientPlayerMessageResponse* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -1079,14 +1079,14 @@ ClientSendMessageToPlayerResponse::ClientSendMessageToPlayerResponse(
                 : nullptr;
   _impl_.session_id_ = from._impl_.session_id_;
 
-  // @@protoc_insertion_point(copy_constructor:ClientSendMessageToPlayerResponse)
+  // @@protoc_insertion_point(copy_constructor:ProcessClientPlayerMessageResponse)
 }
-PROTOBUF_NDEBUG_INLINE ClientSendMessageToPlayerResponse::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ProcessClientPlayerMessageResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void ClientSendMessageToPlayerResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ProcessClientPlayerMessageResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, message_content_),
@@ -1095,65 +1095,65 @@ inline void ClientSendMessageToPlayerResponse::SharedCtor(::_pb::Arena* PROTOBUF
                offsetof(Impl_, message_content_) +
                sizeof(Impl_::session_id_));
 }
-ClientSendMessageToPlayerResponse::~ClientSendMessageToPlayerResponse() {
-  // @@protoc_insertion_point(destructor:ClientSendMessageToPlayerResponse)
+ProcessClientPlayerMessageResponse::~ProcessClientPlayerMessageResponse() {
+  // @@protoc_insertion_point(destructor:ProcessClientPlayerMessageResponse)
   SharedDtor(*this);
 }
-inline void ClientSendMessageToPlayerResponse::SharedDtor(MessageLite& self) {
-  ClientSendMessageToPlayerResponse& this_ = static_cast<ClientSendMessageToPlayerResponse&>(self);
+inline void ProcessClientPlayerMessageResponse::SharedDtor(MessageLite& self) {
+  ProcessClientPlayerMessageResponse& this_ = static_cast<ProcessClientPlayerMessageResponse&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   delete this_._impl_.message_content_;
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL ClientSendMessageToPlayerResponse::PlacementNew_(
+inline void* PROTOBUF_NONNULL ProcessClientPlayerMessageResponse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ClientSendMessageToPlayerResponse(arena);
+  return ::new (mem) ProcessClientPlayerMessageResponse(arena);
 }
-constexpr auto ClientSendMessageToPlayerResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ClientSendMessageToPlayerResponse),
-                                            alignof(ClientSendMessageToPlayerResponse));
+constexpr auto ProcessClientPlayerMessageResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ProcessClientPlayerMessageResponse),
+                                            alignof(ProcessClientPlayerMessageResponse));
 }
-constexpr auto ClientSendMessageToPlayerResponse::InternalGenerateClassData_() {
+constexpr auto ProcessClientPlayerMessageResponse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ClientSendMessageToPlayerResponse_default_instance_._instance,
+          &_ProcessClientPlayerMessageResponse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ClientSendMessageToPlayerResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ClientSendMessageToPlayerResponse>(),
+          &ProcessClientPlayerMessageResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ProcessClientPlayerMessageResponse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ClientSendMessageToPlayerResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<ClientSendMessageToPlayerResponse>(), &ClientSendMessageToPlayerResponse::ByteSizeLong,
-              &ClientSendMessageToPlayerResponse::_InternalSerialize,
+          &ProcessClientPlayerMessageResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ProcessClientPlayerMessageResponse>(), &ProcessClientPlayerMessageResponse::ByteSizeLong,
+              &ProcessClientPlayerMessageResponse::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_._cached_size_),
           false,
       },
-      &ClientSendMessageToPlayerResponse::kDescriptorMethods,
+      &ProcessClientPlayerMessageResponse::kDescriptorMethods,
       &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ClientSendMessageToPlayerResponse_class_data_ =
-        ClientSendMessageToPlayerResponse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ProcessClientPlayerMessageResponse_class_data_ =
+        ProcessClientPlayerMessageResponse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ClientSendMessageToPlayerResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ClientSendMessageToPlayerResponse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ClientSendMessageToPlayerResponse_class_data_.tc_table);
-  return ClientSendMessageToPlayerResponse_class_data_.base();
+ProcessClientPlayerMessageResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ProcessClientPlayerMessageResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ProcessClientPlayerMessageResponse_class_data_.tc_table);
+  return ProcessClientPlayerMessageResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 1, 0, 2>
-ClientSendMessageToPlayerResponse::_table_ = {
+ProcessClientPlayerMessageResponse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -1162,27 +1162,27 @@ ClientSendMessageToPlayerResponse::_table_ = {
     2,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    ClientSendMessageToPlayerResponse_class_data_.base(),
+    ProcessClientPlayerMessageResponse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ClientSendMessageToPlayerResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ProcessClientPlayerMessageResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 session_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ClientSendMessageToPlayerResponse, _impl_.session_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ProcessClientPlayerMessageResponse, _impl_.session_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_.session_id_)}},
     // .MessageContent message_content = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_content_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_.message_content_)}},
   }}, {{
     65535, 65535
   }}, {{
     // .MessageContent message_content = 1;
-    {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 session_id = 2;
-    {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   {{
@@ -1191,8 +1191,8 @@ ClientSendMessageToPlayerResponse::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void ClientSendMessageToPlayerResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:ClientSendMessageToPlayerResponse)
+PROTOBUF_NOINLINE void ProcessClientPlayerMessageResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:ProcessClientPlayerMessageResponse)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1209,17 +1209,17 @@ PROTOBUF_NOINLINE void ClientSendMessageToPlayerResponse::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ClientSendMessageToPlayerResponse::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ProcessClientPlayerMessageResponse::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ClientSendMessageToPlayerResponse& this_ = static_cast<const ClientSendMessageToPlayerResponse&>(base);
+  const ProcessClientPlayerMessageResponse& this_ = static_cast<const ProcessClientPlayerMessageResponse&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ClientSendMessageToPlayerResponse::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ProcessClientPlayerMessageResponse::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ClientSendMessageToPlayerResponse& this_ = *this;
+  const ProcessClientPlayerMessageResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:ClientSendMessageToPlayerResponse)
+  // @@protoc_insertion_point(serialize_to_array_start:ProcessClientPlayerMessageResponse)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1245,18 +1245,18 @@ PROTOBUF_NOINLINE void ClientSendMessageToPlayerResponse::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ClientSendMessageToPlayerResponse)
+  // @@protoc_insertion_point(serialize_to_array_end:ProcessClientPlayerMessageResponse)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ClientSendMessageToPlayerResponse::ByteSizeLong(const MessageLite& base) {
-  const ClientSendMessageToPlayerResponse& this_ = static_cast<const ClientSendMessageToPlayerResponse&>(base);
+::size_t ProcessClientPlayerMessageResponse::ByteSizeLong(const MessageLite& base) {
+  const ProcessClientPlayerMessageResponse& this_ = static_cast<const ProcessClientPlayerMessageResponse&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ClientSendMessageToPlayerResponse::ByteSizeLong() const {
-  const ClientSendMessageToPlayerResponse& this_ = *this;
+::size_t ProcessClientPlayerMessageResponse::ByteSizeLong() const {
+  const ProcessClientPlayerMessageResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:ClientSendMessageToPlayerResponse)
+  // @@protoc_insertion_point(message_byte_size_start:ProcessClientPlayerMessageResponse)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1283,11 +1283,11 @@ PROTOBUF_NOINLINE void ClientSendMessageToPlayerResponse::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void ClientSendMessageToPlayerResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ClientSendMessageToPlayerResponse*>(&to_msg);
-  auto& from = static_cast<const ClientSendMessageToPlayerResponse&>(from_msg);
+void ProcessClientPlayerMessageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ProcessClientPlayerMessageResponse*>(&to_msg);
+  auto& from = static_cast<const ProcessClientPlayerMessageResponse&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:ClientSendMessageToPlayerResponse)
+  // @@protoc_insertion_point(class_specific_merge_from_start:ProcessClientPlayerMessageResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1312,27 +1312,27 @@ void ClientSendMessageToPlayerResponse::MergeImpl(::google::protobuf::MessageLit
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ClientSendMessageToPlayerResponse::CopyFrom(const ClientSendMessageToPlayerResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ClientSendMessageToPlayerResponse)
+void ProcessClientPlayerMessageResponse::CopyFrom(const ProcessClientPlayerMessageResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ProcessClientPlayerMessageResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void ClientSendMessageToPlayerResponse::InternalSwap(ClientSendMessageToPlayerResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ProcessClientPlayerMessageResponse::InternalSwap(ProcessClientPlayerMessageResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_)
-      + sizeof(ClientSendMessageToPlayerResponse::_impl_.session_id_)
-      - PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_content_)>(
+      PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_.session_id_)
+      + sizeof(ProcessClientPlayerMessageResponse::_impl_.session_id_)
+      - PROTOBUF_FIELD_OFFSET(ProcessClientPlayerMessageResponse, _impl_.message_content_)>(
           reinterpret_cast<char*>(&_impl_.message_content_),
           reinterpret_cast<char*>(&other->_impl_.message_content_));
 }
 
-::google::protobuf::Metadata ClientSendMessageToPlayerResponse::GetMetadata() const {
+::google::protobuf::Metadata ProcessClientPlayerMessageResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -2960,11 +2960,11 @@ void Scene::SendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULL
   controller->SetFailed("Method SendMessageToPlayer() not implemented.");
   done->Run();
 }
-void Scene::ClientSendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL,
-                         ::ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL,
+void Scene::ProcessClientPlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                         const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL,
+                         ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL,
                          ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method ClientSendMessageToPlayer() not implemented.");
+  controller->SetFailed("Method ProcessClientPlayerMessage() not implemented.");
   done->Run();
 }
 void Scene::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -3040,8 +3040,8 @@ void Scene::CallMethod(
                    ::google::protobuf::DownCastMessage<::NodeRouteMessageResponse>(response), done);
       break;
     case 2:
-      this->ClientSendMessageToPlayer(controller, ::google::protobuf::DownCastMessage<::ClientSendMessageToPlayerRequest>(request),
-                   ::google::protobuf::DownCastMessage<::ClientSendMessageToPlayerResponse>(response), done);
+      this->ProcessClientPlayerMessage(controller, ::google::protobuf::DownCastMessage<::ProcessClientPlayerMessageRequest>(request),
+                   ::google::protobuf::DownCastMessage<::ProcessClientPlayerMessageResponse>(response), done);
       break;
     case 3:
       this->CentreSendToPlayerViaGameNode(controller, ::google::protobuf::DownCastMessage<::NodeRouteMessageRequest>(request),
@@ -3091,7 +3091,7 @@ const ::google::protobuf::Message& Scene::GetRequestPrototype(
     case 1:
       return ::NodeRouteMessageRequest::default_instance();
     case 2:
-      return ::ClientSendMessageToPlayerRequest::default_instance();
+      return ::ProcessClientPlayerMessageRequest::default_instance();
     case 3:
       return ::NodeRouteMessageRequest::default_instance();
     case 4:
@@ -3125,7 +3125,7 @@ const ::google::protobuf::Message& Scene::GetResponsePrototype(
     case 1:
       return ::NodeRouteMessageResponse::default_instance();
     case 2:
-      return ::ClientSendMessageToPlayerResponse::default_instance();
+      return ::ProcessClientPlayerMessageResponse::default_instance();
     case 3:
       return ::Empty::default_instance();
     case 4:
@@ -3177,9 +3177,9 @@ void Scene_Stub::SendMessageToPlayer(
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void Scene_Stub::ClientSendMessageToPlayer(
+void Scene_Stub::ProcessClientPlayerMessage(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL request, ::ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL response,
+    const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL request, ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);

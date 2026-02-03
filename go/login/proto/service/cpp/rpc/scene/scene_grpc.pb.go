@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Scene_PlayerEnterGameNode_FullMethodName           = "/Scene/PlayerEnterGameNode"
 	Scene_SendMessageToPlayer_FullMethodName           = "/Scene/SendMessageToPlayer"
-	Scene_ClientSendMessageToPlayer_FullMethodName     = "/Scene/ClientSendMessageToPlayer"
+	Scene_ProcessClientPlayerMessage_FullMethodName    = "/Scene/ProcessClientPlayerMessage"
 	Scene_CentreSendToPlayerViaGameNode_FullMethodName = "/Scene/CentreSendToPlayerViaGameNode"
 	Scene_InvokePlayerService_FullMethodName           = "/Scene/InvokePlayerService"
 	Scene_RouteNodeStringMsg_FullMethodName            = "/Scene/RouteNodeStringMsg"
@@ -39,7 +39,7 @@ const (
 type SceneClient interface {
 	PlayerEnterGameNode(ctx context.Context, in *PlayerEnterGameNodeRequest, opts ...grpc.CallOption) (*common.Empty, error)
 	SendMessageToPlayer(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.NodeRouteMessageResponse, error)
-	ClientSendMessageToPlayer(ctx context.Context, in *ClientSendMessageToPlayerRequest, opts ...grpc.CallOption) (*ClientSendMessageToPlayerResponse, error)
+	ProcessClientPlayerMessage(ctx context.Context, in *ProcessClientPlayerMessageRequest, opts ...grpc.CallOption) (*ProcessClientPlayerMessageResponse, error)
 	CentreSendToPlayerViaGameNode(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.Empty, error)
 	InvokePlayerService(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.NodeRouteMessageResponse, error)
 	RouteNodeStringMsg(ctx context.Context, in *common.RouteMessageRequest, opts ...grpc.CallOption) (*common.RouteMessageResponse, error)
@@ -78,10 +78,10 @@ func (c *sceneClient) SendMessageToPlayer(ctx context.Context, in *common.NodeRo
 	return out, nil
 }
 
-func (c *sceneClient) ClientSendMessageToPlayer(ctx context.Context, in *ClientSendMessageToPlayerRequest, opts ...grpc.CallOption) (*ClientSendMessageToPlayerResponse, error) {
+func (c *sceneClient) ProcessClientPlayerMessage(ctx context.Context, in *ProcessClientPlayerMessageRequest, opts ...grpc.CallOption) (*ProcessClientPlayerMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ClientSendMessageToPlayerResponse)
-	err := c.cc.Invoke(ctx, Scene_ClientSendMessageToPlayer_FullMethodName, in, out, cOpts...)
+	out := new(ProcessClientPlayerMessageResponse)
+	err := c.cc.Invoke(ctx, Scene_ProcessClientPlayerMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (c *sceneClient) NodeHandshake(ctx context.Context, in *common.NodeHandshak
 type SceneServer interface {
 	PlayerEnterGameNode(context.Context, *PlayerEnterGameNodeRequest) (*common.Empty, error)
 	SendMessageToPlayer(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error)
-	ClientSendMessageToPlayer(context.Context, *ClientSendMessageToPlayerRequest) (*ClientSendMessageToPlayerResponse, error)
+	ProcessClientPlayerMessage(context.Context, *ProcessClientPlayerMessageRequest) (*ProcessClientPlayerMessageResponse, error)
 	CentreSendToPlayerViaGameNode(context.Context, *common.NodeRouteMessageRequest) (*common.Empty, error)
 	InvokePlayerService(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error)
 	RouteNodeStringMsg(context.Context, *common.RouteMessageRequest) (*common.RouteMessageResponse, error)
@@ -199,8 +199,8 @@ func (UnimplementedSceneServer) PlayerEnterGameNode(context.Context, *PlayerEnte
 func (UnimplementedSceneServer) SendMessageToPlayer(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMessageToPlayer not implemented")
 }
-func (UnimplementedSceneServer) ClientSendMessageToPlayer(context.Context, *ClientSendMessageToPlayerRequest) (*ClientSendMessageToPlayerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ClientSendMessageToPlayer not implemented")
+func (UnimplementedSceneServer) ProcessClientPlayerMessage(context.Context, *ProcessClientPlayerMessageRequest) (*ProcessClientPlayerMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessClientPlayerMessage not implemented")
 }
 func (UnimplementedSceneServer) CentreSendToPlayerViaGameNode(context.Context, *common.NodeRouteMessageRequest) (*common.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CentreSendToPlayerViaGameNode not implemented")
@@ -283,20 +283,20 @@ func _Scene_SendMessageToPlayer_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Scene_ClientSendMessageToPlayer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ClientSendMessageToPlayerRequest)
+func _Scene_ProcessClientPlayerMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessClientPlayerMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SceneServer).ClientSendMessageToPlayer(ctx, in)
+		return srv.(SceneServer).ProcessClientPlayerMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Scene_ClientSendMessageToPlayer_FullMethodName,
+		FullMethod: Scene_ProcessClientPlayerMessage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneServer).ClientSendMessageToPlayer(ctx, req.(*ClientSendMessageToPlayerRequest))
+		return srv.(SceneServer).ProcessClientPlayerMessage(ctx, req.(*ProcessClientPlayerMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -461,8 +461,8 @@ var Scene_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Scene_SendMessageToPlayer_Handler,
 		},
 		{
-			MethodName: "ClientSendMessageToPlayer",
-			Handler:    _Scene_ClientSendMessageToPlayer_Handler,
+			MethodName: "ProcessClientPlayerMessage",
+			Handler:    _Scene_ProcessClientPlayerMessage_Handler,
 		},
 		{
 			MethodName: "CentreSendToPlayerViaGameNode",

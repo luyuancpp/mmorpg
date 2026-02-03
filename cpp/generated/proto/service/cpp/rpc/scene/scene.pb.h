@@ -61,14 +61,6 @@ class Centre2GsEnterSceneRequest;
 struct Centre2GsEnterSceneRequestDefaultTypeInternal;
 extern Centre2GsEnterSceneRequestDefaultTypeInternal _Centre2GsEnterSceneRequest_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull Centre2GsEnterSceneRequest_class_data_;
-class ClientSendMessageToPlayerRequest;
-struct ClientSendMessageToPlayerRequestDefaultTypeInternal;
-extern ClientSendMessageToPlayerRequestDefaultTypeInternal _ClientSendMessageToPlayerRequest_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull ClientSendMessageToPlayerRequest_class_data_;
-class ClientSendMessageToPlayerResponse;
-struct ClientSendMessageToPlayerResponseDefaultTypeInternal;
-extern ClientSendMessageToPlayerResponseDefaultTypeInternal _ClientSendMessageToPlayerResponse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull ClientSendMessageToPlayerResponse_class_data_;
 class CreateSceneRequest;
 struct CreateSceneRequestDefaultTypeInternal;
 extern CreateSceneRequestDefaultTypeInternal _CreateSceneRequest_default_instance_;
@@ -85,6 +77,14 @@ class PlayerEnterGameNodeRequest;
 struct PlayerEnterGameNodeRequestDefaultTypeInternal;
 extern PlayerEnterGameNodeRequestDefaultTypeInternal _PlayerEnterGameNodeRequest_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull PlayerEnterGameNodeRequest_class_data_;
+class ProcessClientPlayerMessageRequest;
+struct ProcessClientPlayerMessageRequestDefaultTypeInternal;
+extern ProcessClientPlayerMessageRequestDefaultTypeInternal _ProcessClientPlayerMessageRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ProcessClientPlayerMessageRequest_class_data_;
+class ProcessClientPlayerMessageResponse;
+struct ProcessClientPlayerMessageResponseDefaultTypeInternal;
+extern ProcessClientPlayerMessageResponseDefaultTypeInternal _ProcessClientPlayerMessageResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ProcessClientPlayerMessageResponse_class_data_;
 class RegisterPlayerSessionRequest;
 struct RegisterPlayerSessionRequestDefaultTypeInternal;
 extern RegisterPlayerSessionRequestDefaultTypeInternal _RegisterPlayerSessionRequest_default_instance_;
@@ -1315,6 +1315,422 @@ class GameNodeConnectRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull GameNodeConnectRequest_class_data_;
 // -------------------------------------------------------------------
 
+class ProcessClientPlayerMessageResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ProcessClientPlayerMessageResponse) */ {
+ public:
+  inline ProcessClientPlayerMessageResponse() : ProcessClientPlayerMessageResponse(nullptr) {}
+  ~ProcessClientPlayerMessageResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ProcessClientPlayerMessageResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ProcessClientPlayerMessageResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline ProcessClientPlayerMessageResponse(const ProcessClientPlayerMessageResponse& from) : ProcessClientPlayerMessageResponse(nullptr, from) {}
+  inline ProcessClientPlayerMessageResponse(ProcessClientPlayerMessageResponse&& from) noexcept
+      : ProcessClientPlayerMessageResponse(nullptr, ::std::move(from)) {}
+  inline ProcessClientPlayerMessageResponse& operator=(const ProcessClientPlayerMessageResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ProcessClientPlayerMessageResponse& operator=(ProcessClientPlayerMessageResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ProcessClientPlayerMessageResponse& default_instance() {
+    return *reinterpret_cast<const ProcessClientPlayerMessageResponse*>(
+        &_ProcessClientPlayerMessageResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(ProcessClientPlayerMessageResponse& a, ProcessClientPlayerMessageResponse& b) { a.Swap(&b); }
+  inline void Swap(ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ProcessClientPlayerMessageResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ProcessClientPlayerMessageResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ProcessClientPlayerMessageResponse& from) { ProcessClientPlayerMessageResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "ProcessClientPlayerMessageResponse"; }
+
+ protected:
+  explicit ProcessClientPlayerMessageResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ProcessClientPlayerMessageResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ProcessClientPlayerMessageResponse& from);
+  ProcessClientPlayerMessageResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ProcessClientPlayerMessageResponse&& from) noexcept
+      : ProcessClientPlayerMessageResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kMessageContentFieldNumber = 1,
+    kSessionIdFieldNumber = 2,
+  };
+  // .MessageContent message_content = 1;
+  bool has_message_content() const;
+  void clear_message_content() ;
+  const ::MessageContent& message_content() const;
+  [[nodiscard]] ::MessageContent* PROTOBUF_NULLABLE release_message_content();
+  ::MessageContent* PROTOBUF_NONNULL mutable_message_content();
+  void set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
+  ::MessageContent* PROTOBUF_NULLABLE unsafe_arena_release_message_content();
+
+  private:
+  const ::MessageContent& _internal_message_content() const;
+  ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
+
+  public:
+  // uint64 session_id = 2;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:ProcessClientPlayerMessageResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const ProcessClientPlayerMessageResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::MessageContent* PROTOBUF_NULLABLE message_content_;
+    ::uint64_t session_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull ProcessClientPlayerMessageResponse_class_data_;
+// -------------------------------------------------------------------
+
+class ProcessClientPlayerMessageRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ProcessClientPlayerMessageRequest) */ {
+ public:
+  inline ProcessClientPlayerMessageRequest() : ProcessClientPlayerMessageRequest(nullptr) {}
+  ~ProcessClientPlayerMessageRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ProcessClientPlayerMessageRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ProcessClientPlayerMessageRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline ProcessClientPlayerMessageRequest(const ProcessClientPlayerMessageRequest& from) : ProcessClientPlayerMessageRequest(nullptr, from) {}
+  inline ProcessClientPlayerMessageRequest(ProcessClientPlayerMessageRequest&& from) noexcept
+      : ProcessClientPlayerMessageRequest(nullptr, ::std::move(from)) {}
+  inline ProcessClientPlayerMessageRequest& operator=(const ProcessClientPlayerMessageRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ProcessClientPlayerMessageRequest& operator=(ProcessClientPlayerMessageRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ProcessClientPlayerMessageRequest& default_instance() {
+    return *reinterpret_cast<const ProcessClientPlayerMessageRequest*>(
+        &_ProcessClientPlayerMessageRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(ProcessClientPlayerMessageRequest& a, ProcessClientPlayerMessageRequest& b) { a.Swap(&b); }
+  inline void Swap(ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ProcessClientPlayerMessageRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ProcessClientPlayerMessageRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ProcessClientPlayerMessageRequest& from) { ProcessClientPlayerMessageRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "ProcessClientPlayerMessageRequest"; }
+
+ protected:
+  explicit ProcessClientPlayerMessageRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ProcessClientPlayerMessageRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ProcessClientPlayerMessageRequest& from);
+  ProcessClientPlayerMessageRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ProcessClientPlayerMessageRequest&& from) noexcept
+      : ProcessClientPlayerMessageRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kMessageContentFieldNumber = 1,
+    kSessionIdFieldNumber = 2,
+  };
+  // .MessageContent message_content = 1;
+  bool has_message_content() const;
+  void clear_message_content() ;
+  const ::MessageContent& message_content() const;
+  [[nodiscard]] ::MessageContent* PROTOBUF_NULLABLE release_message_content();
+  ::MessageContent* PROTOBUF_NONNULL mutable_message_content();
+  void set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
+  ::MessageContent* PROTOBUF_NULLABLE unsafe_arena_release_message_content();
+
+  private:
+  const ::MessageContent& _internal_message_content() const;
+  ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
+
+  public:
+  // uint64 session_id = 2;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:ProcessClientPlayerMessageRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const ProcessClientPlayerMessageRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::MessageContent* PROTOBUF_NULLABLE message_content_;
+    ::uint64_t session_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull ProcessClientPlayerMessageRequest_class_data_;
+// -------------------------------------------------------------------
+
 class CreateSceneResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:CreateSceneResponse) */ {
  public:
@@ -1509,422 +1925,6 @@ class CreateSceneResponse final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull CreateSceneResponse_class_data_;
-// -------------------------------------------------------------------
-
-class ClientSendMessageToPlayerResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ClientSendMessageToPlayerResponse) */ {
- public:
-  inline ClientSendMessageToPlayerResponse() : ClientSendMessageToPlayerResponse(nullptr) {}
-  ~ClientSendMessageToPlayerResponse() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(ClientSendMessageToPlayerResponse));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ClientSendMessageToPlayerResponse(::google::protobuf::internal::ConstantInitialized);
-
-  inline ClientSendMessageToPlayerResponse(const ClientSendMessageToPlayerResponse& from) : ClientSendMessageToPlayerResponse(nullptr, from) {}
-  inline ClientSendMessageToPlayerResponse(ClientSendMessageToPlayerResponse&& from) noexcept
-      : ClientSendMessageToPlayerResponse(nullptr, ::std::move(from)) {}
-  inline ClientSendMessageToPlayerResponse& operator=(const ClientSendMessageToPlayerResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline ClientSendMessageToPlayerResponse& operator=(ClientSendMessageToPlayerResponse&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const ClientSendMessageToPlayerResponse& default_instance() {
-    return *reinterpret_cast<const ClientSendMessageToPlayerResponse*>(
-        &_ClientSendMessageToPlayerResponse_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(ClientSendMessageToPlayerResponse& a, ClientSendMessageToPlayerResponse& b) { a.Swap(&b); }
-  inline void Swap(ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<ClientSendMessageToPlayerResponse>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ClientSendMessageToPlayerResponse& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ClientSendMessageToPlayerResponse& from) { ClientSendMessageToPlayerResponse::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "ClientSendMessageToPlayerResponse"; }
-
- protected:
-  explicit ClientSendMessageToPlayerResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  ClientSendMessageToPlayerResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ClientSendMessageToPlayerResponse& from);
-  ClientSendMessageToPlayerResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ClientSendMessageToPlayerResponse&& from) noexcept
-      : ClientSendMessageToPlayerResponse(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kMessageContentFieldNumber = 1,
-    kSessionIdFieldNumber = 2,
-  };
-  // .MessageContent message_content = 1;
-  bool has_message_content() const;
-  void clear_message_content() ;
-  const ::MessageContent& message_content() const;
-  [[nodiscard]] ::MessageContent* PROTOBUF_NULLABLE release_message_content();
-  ::MessageContent* PROTOBUF_NONNULL mutable_message_content();
-  void set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
-  ::MessageContent* PROTOBUF_NULLABLE unsafe_arena_release_message_content();
-
-  private:
-  const ::MessageContent& _internal_message_content() const;
-  ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
-
-  public:
-  // uint64 session_id = 2;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:ClientSendMessageToPlayerResponse)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   1, 0,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const ClientSendMessageToPlayerResponse& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::MessageContent* PROTOBUF_NULLABLE message_content_;
-    ::uint64_t session_id_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull ClientSendMessageToPlayerResponse_class_data_;
-// -------------------------------------------------------------------
-
-class ClientSendMessageToPlayerRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ClientSendMessageToPlayerRequest) */ {
- public:
-  inline ClientSendMessageToPlayerRequest() : ClientSendMessageToPlayerRequest(nullptr) {}
-  ~ClientSendMessageToPlayerRequest() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(ClientSendMessageToPlayerRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ClientSendMessageToPlayerRequest(::google::protobuf::internal::ConstantInitialized);
-
-  inline ClientSendMessageToPlayerRequest(const ClientSendMessageToPlayerRequest& from) : ClientSendMessageToPlayerRequest(nullptr, from) {}
-  inline ClientSendMessageToPlayerRequest(ClientSendMessageToPlayerRequest&& from) noexcept
-      : ClientSendMessageToPlayerRequest(nullptr, ::std::move(from)) {}
-  inline ClientSendMessageToPlayerRequest& operator=(const ClientSendMessageToPlayerRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline ClientSendMessageToPlayerRequest& operator=(ClientSendMessageToPlayerRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const ClientSendMessageToPlayerRequest& default_instance() {
-    return *reinterpret_cast<const ClientSendMessageToPlayerRequest*>(
-        &_ClientSendMessageToPlayerRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(ClientSendMessageToPlayerRequest& a, ClientSendMessageToPlayerRequest& b) { a.Swap(&b); }
-  inline void Swap(ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<ClientSendMessageToPlayerRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ClientSendMessageToPlayerRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ClientSendMessageToPlayerRequest& from) { ClientSendMessageToPlayerRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "ClientSendMessageToPlayerRequest"; }
-
- protected:
-  explicit ClientSendMessageToPlayerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  ClientSendMessageToPlayerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ClientSendMessageToPlayerRequest& from);
-  ClientSendMessageToPlayerRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ClientSendMessageToPlayerRequest&& from) noexcept
-      : ClientSendMessageToPlayerRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kMessageContentFieldNumber = 1,
-    kSessionIdFieldNumber = 2,
-  };
-  // .MessageContent message_content = 1;
-  bool has_message_content() const;
-  void clear_message_content() ;
-  const ::MessageContent& message_content() const;
-  [[nodiscard]] ::MessageContent* PROTOBUF_NULLABLE release_message_content();
-  ::MessageContent* PROTOBUF_NONNULL mutable_message_content();
-  void set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
-  ::MessageContent* PROTOBUF_NULLABLE unsafe_arena_release_message_content();
-
-  private:
-  const ::MessageContent& _internal_message_content() const;
-  ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
-
-  public:
-  // uint64 session_id = 2;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:ClientSendMessageToPlayerRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   1, 0,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const ClientSendMessageToPlayerRequest& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::MessageContent* PROTOBUF_NULLABLE message_content_;
-    ::uint64_t session_id_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fservice_2fcpp_2frpc_2fscene_2fscene_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull ClientSendMessageToPlayerRequest_class_data_;
 
 // ===================================================================
 
@@ -1953,9 +1953,9 @@ class Scene : public ::google::protobuf::Service {
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
                         ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void ClientSendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL request,
-                        ::ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL response,
+  virtual void ProcessClientPlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL request,
+                        ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
@@ -2029,9 +2029,9 @@ class Scene_Stub final : public Scene {
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
                         ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void ClientSendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::ClientSendMessageToPlayerRequest* PROTOBUF_NONNULL request,
-                        ::ClientSendMessageToPlayerResponse* PROTOBUF_NONNULL response,
+  void ProcessClientPlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL request,
+                        ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
@@ -2159,24 +2159,24 @@ inline void PlayerEnterGameNodeRequest::_internal_set_centre_node_id(::uint32_t 
 
 // -------------------------------------------------------------------
 
-// ClientSendMessageToPlayerRequest
+// ProcessClientPlayerMessageRequest
 
 // .MessageContent message_content = 1;
-inline bool ClientSendMessageToPlayerRequest::has_message_content() const {
+inline bool ProcessClientPlayerMessageRequest::has_message_content() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.message_content_ != nullptr);
   return value;
 }
-inline const ::MessageContent& ClientSendMessageToPlayerRequest::_internal_message_content() const {
+inline const ::MessageContent& ProcessClientPlayerMessageRequest::_internal_message_content() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::MessageContent* p = _impl_.message_content_;
   return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
-inline const ::MessageContent& ClientSendMessageToPlayerRequest::message_content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.message_content)
+inline const ::MessageContent& ProcessClientPlayerMessageRequest::message_content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ProcessClientPlayerMessageRequest.message_content)
   return _internal_message_content();
 }
-inline void ClientSendMessageToPlayerRequest::unsafe_arena_set_allocated_message_content(
+inline void ProcessClientPlayerMessageRequest::unsafe_arena_set_allocated_message_content(
     ::MessageContent* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -2188,9 +2188,9 @@ inline void ClientSendMessageToPlayerRequest::unsafe_arena_set_allocated_message
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ClientSendMessageToPlayerRequest.message_content)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ProcessClientPlayerMessageRequest.message_content)
 }
-inline ::MessageContent* PROTOBUF_NULLABLE ClientSendMessageToPlayerRequest::release_message_content() {
+inline ::MessageContent* PROTOBUF_NULLABLE ProcessClientPlayerMessageRequest::release_message_content() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -2209,16 +2209,16 @@ inline ::MessageContent* PROTOBUF_NULLABLE ClientSendMessageToPlayerRequest::rel
   }
   return released;
 }
-inline ::MessageContent* PROTOBUF_NULLABLE ClientSendMessageToPlayerRequest::unsafe_arena_release_message_content() {
+inline ::MessageContent* PROTOBUF_NULLABLE ProcessClientPlayerMessageRequest::unsafe_arena_release_message_content() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerRequest.message_content)
+  // @@protoc_insertion_point(field_release:ProcessClientPlayerMessageRequest.message_content)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::MessageContent* temp = _impl_.message_content_;
   _impl_.message_content_ = nullptr;
   return temp;
 }
-inline ::MessageContent* PROTOBUF_NONNULL ClientSendMessageToPlayerRequest::_internal_mutable_message_content() {
+inline ::MessageContent* PROTOBUF_NONNULL ProcessClientPlayerMessageRequest::_internal_mutable_message_content() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.message_content_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageContent>(GetArena());
@@ -2226,14 +2226,14 @@ inline ::MessageContent* PROTOBUF_NONNULL ClientSendMessageToPlayerRequest::_int
   }
   return _impl_.message_content_;
 }
-inline ::MessageContent* PROTOBUF_NONNULL ClientSendMessageToPlayerRequest::mutable_message_content()
+inline ::MessageContent* PROTOBUF_NONNULL ProcessClientPlayerMessageRequest::mutable_message_content()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::MessageContent* _msg = _internal_mutable_message_content();
-  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerRequest.message_content)
+  // @@protoc_insertion_point(field_mutable:ProcessClientPlayerMessageRequest.message_content)
   return _msg;
 }
-inline void ClientSendMessageToPlayerRequest::set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value) {
+inline void ProcessClientPlayerMessageRequest::set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -2251,53 +2251,53 @@ inline void ClientSendMessageToPlayerRequest::set_allocated_message_content(::Me
   }
 
   _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerRequest.message_content)
+  // @@protoc_insertion_point(field_set_allocated:ProcessClientPlayerMessageRequest.message_content)
 }
 
 // uint64 session_id = 2;
-inline void ClientSendMessageToPlayerRequest::clear_session_id() {
+inline void ProcessClientPlayerMessageRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t ClientSendMessageToPlayerRequest::session_id() const {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.session_id)
+inline ::uint64_t ProcessClientPlayerMessageRequest::session_id() const {
+  // @@protoc_insertion_point(field_get:ProcessClientPlayerMessageRequest.session_id)
   return _internal_session_id();
 }
-inline void ClientSendMessageToPlayerRequest::set_session_id(::uint64_t value) {
+inline void ProcessClientPlayerMessageRequest::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:ClientSendMessageToPlayerRequest.session_id)
+  // @@protoc_insertion_point(field_set:ProcessClientPlayerMessageRequest.session_id)
 }
-inline ::uint64_t ClientSendMessageToPlayerRequest::_internal_session_id() const {
+inline ::uint64_t ProcessClientPlayerMessageRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void ClientSendMessageToPlayerRequest::_internal_set_session_id(::uint64_t value) {
+inline void ProcessClientPlayerMessageRequest::_internal_set_session_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// ClientSendMessageToPlayerResponse
+// ProcessClientPlayerMessageResponse
 
 // .MessageContent message_content = 1;
-inline bool ClientSendMessageToPlayerResponse::has_message_content() const {
+inline bool ProcessClientPlayerMessageResponse::has_message_content() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.message_content_ != nullptr);
   return value;
 }
-inline const ::MessageContent& ClientSendMessageToPlayerResponse::_internal_message_content() const {
+inline const ::MessageContent& ProcessClientPlayerMessageResponse::_internal_message_content() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::MessageContent* p = _impl_.message_content_;
   return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
-inline const ::MessageContent& ClientSendMessageToPlayerResponse::message_content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.message_content)
+inline const ::MessageContent& ProcessClientPlayerMessageResponse::message_content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ProcessClientPlayerMessageResponse.message_content)
   return _internal_message_content();
 }
-inline void ClientSendMessageToPlayerResponse::unsafe_arena_set_allocated_message_content(
+inline void ProcessClientPlayerMessageResponse::unsafe_arena_set_allocated_message_content(
     ::MessageContent* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -2309,9 +2309,9 @@ inline void ClientSendMessageToPlayerResponse::unsafe_arena_set_allocated_messag
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ClientSendMessageToPlayerResponse.message_content)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ProcessClientPlayerMessageResponse.message_content)
 }
-inline ::MessageContent* PROTOBUF_NULLABLE ClientSendMessageToPlayerResponse::release_message_content() {
+inline ::MessageContent* PROTOBUF_NULLABLE ProcessClientPlayerMessageResponse::release_message_content() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -2330,16 +2330,16 @@ inline ::MessageContent* PROTOBUF_NULLABLE ClientSendMessageToPlayerResponse::re
   }
   return released;
 }
-inline ::MessageContent* PROTOBUF_NULLABLE ClientSendMessageToPlayerResponse::unsafe_arena_release_message_content() {
+inline ::MessageContent* PROTOBUF_NULLABLE ProcessClientPlayerMessageResponse::unsafe_arena_release_message_content() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerResponse.message_content)
+  // @@protoc_insertion_point(field_release:ProcessClientPlayerMessageResponse.message_content)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::MessageContent* temp = _impl_.message_content_;
   _impl_.message_content_ = nullptr;
   return temp;
 }
-inline ::MessageContent* PROTOBUF_NONNULL ClientSendMessageToPlayerResponse::_internal_mutable_message_content() {
+inline ::MessageContent* PROTOBUF_NONNULL ProcessClientPlayerMessageResponse::_internal_mutable_message_content() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.message_content_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageContent>(GetArena());
@@ -2347,14 +2347,14 @@ inline ::MessageContent* PROTOBUF_NONNULL ClientSendMessageToPlayerResponse::_in
   }
   return _impl_.message_content_;
 }
-inline ::MessageContent* PROTOBUF_NONNULL ClientSendMessageToPlayerResponse::mutable_message_content()
+inline ::MessageContent* PROTOBUF_NONNULL ProcessClientPlayerMessageResponse::mutable_message_content()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::MessageContent* _msg = _internal_mutable_message_content();
-  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerResponse.message_content)
+  // @@protoc_insertion_point(field_mutable:ProcessClientPlayerMessageResponse.message_content)
   return _msg;
 }
-inline void ClientSendMessageToPlayerResponse::set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value) {
+inline void ProcessClientPlayerMessageResponse::set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -2372,29 +2372,29 @@ inline void ClientSendMessageToPlayerResponse::set_allocated_message_content(::M
   }
 
   _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerResponse.message_content)
+  // @@protoc_insertion_point(field_set_allocated:ProcessClientPlayerMessageResponse.message_content)
 }
 
 // uint64 session_id = 2;
-inline void ClientSendMessageToPlayerResponse::clear_session_id() {
+inline void ProcessClientPlayerMessageResponse::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t ClientSendMessageToPlayerResponse::session_id() const {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.session_id)
+inline ::uint64_t ProcessClientPlayerMessageResponse::session_id() const {
+  // @@protoc_insertion_point(field_get:ProcessClientPlayerMessageResponse.session_id)
   return _internal_session_id();
 }
-inline void ClientSendMessageToPlayerResponse::set_session_id(::uint64_t value) {
+inline void ProcessClientPlayerMessageResponse::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:ClientSendMessageToPlayerResponse.session_id)
+  // @@protoc_insertion_point(field_set:ProcessClientPlayerMessageResponse.session_id)
 }
-inline ::uint64_t ClientSendMessageToPlayerResponse::_internal_session_id() const {
+inline ::uint64_t ProcessClientPlayerMessageResponse::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void ClientSendMessageToPlayerResponse::_internal_set_session_id(::uint64_t value) {
+inline void ProcessClientPlayerMessageResponse::_internal_set_session_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
