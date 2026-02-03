@@ -12,9 +12,9 @@ constexpr uint32_t SceneSendMessageToPlayerMessageId = 1;
 constexpr uint32_t SceneSendMessageToPlayerIndex = 1;
 #define SceneSendMessageToPlayerMethod  ::Scene_Stub::descriptor()->method(1)
 
-constexpr uint32_t SceneClientSendMessageToPlayerMessageId = 10;
-constexpr uint32_t SceneClientSendMessageToPlayerIndex = 2;
-#define SceneClientSendMessageToPlayerMethod  ::Scene_Stub::descriptor()->method(2)
+constexpr uint32_t SceneProcessClientPlayerMessageMessageId = 10;
+constexpr uint32_t SceneProcessClientPlayerMessageIndex = 2;
+#define SceneProcessClientPlayerMessageMethod  ::Scene_Stub::descriptor()->method(2)
 
 constexpr uint32_t SceneCentreSendToPlayerViaGameNodeMessageId = 57;
 constexpr uint32_t SceneCentreSendToPlayerViaGameNodeIndex = 3;

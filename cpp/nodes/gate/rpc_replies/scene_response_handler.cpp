@@ -21,8 +21,8 @@ void InitSceneReply()
         std::bind(&OnScenePlayerEnterGameNodeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(SceneSendMessageToPlayerMessageId,
         std::bind(&OnSceneSendMessageToPlayerReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gRpcResponseDispatcher.registerMessageCallback<::ClientSendMessageToPlayerResponse>(SceneClientSendMessageToPlayerMessageId,
-        std::bind(&OnSceneClientSendMessageToPlayerReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gRpcResponseDispatcher.registerMessageCallback<::ProcessClientPlayerMessageResponse>(SceneProcessClientPlayerMessageMessageId,
+        std::bind(&OnSceneProcessClientPlayerMessageReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(SceneCentreSendToPlayerViaGameNodeMessageId,
         std::bind(&OnSceneCentreSendToPlayerViaGameNodeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(SceneInvokePlayerServiceMessageId,
@@ -53,16 +53,9 @@ void OnSceneSendMessageToPlayerReply(const TcpConnectionPtr& conn, const std::sh
 ///<<< END WRITING YOUR CODE
 }
 
-void OnSceneClientSendMessageToPlayerReply(const TcpConnectionPtr& conn, const std::shared_ptr<::ClientSendMessageToPlayerResponse>& replied, Timestamp timestamp)
+void OnSceneProcessClientPlayerMessageReply(const TcpConnectionPtr& conn, const std::shared_ptr<::ProcessClientPlayerMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto it = tlsSessionManager.sessions().find(replied->session_id());
-	if (it == tlsSessionManager.sessions().end())
-	{
-		LOG_ERROR << "conn id not found  session id " << "," << replied->session_id();
-		return;
-	}
-	gGateNode->Codec().send(it->second.conn, replied->message_content());
 ///<<< END WRITING YOUR CODE
 }
 
