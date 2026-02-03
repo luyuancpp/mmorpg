@@ -15,13 +15,13 @@ message PlayerEnterGameNodeRequest
   uint32 centre_node_id = 3;
 }
 
-message ClientSendMessageToPlayerRequest
+message ProcessClientPlayerMessageRequest
 {
   MessageContent message_content = 1;
   uint64 session_id = 2;
 }
 
-message ClientSendMessageToPlayerResponse
+message ProcessClientPlayerMessageResponse
 {
   MessageContent message_content = 1;
   uint64 session_id = 2;
@@ -63,7 +63,7 @@ message CreateSceneResponse
 service Scene {
   rpc PlayerEnterGameNode (PlayerEnterGameNodeRequest) returns (Empty);
   rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
-  rpc ClientSendMessageToPlayer (ClientSendMessageToPlayerRequest) returns (ClientSendMessageToPlayerResponse);
+  rpc ProcessClientPlayerMessage (ProcessClientPlayerMessageRequest) returns (ProcessClientPlayerMessageResponse);
   rpc CentreSendToPlayerViaGameNode (NodeRouteMessageRequest) returns (Empty);
   rpc InvokePlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc RouteNodeStringMsg (RouteMessageRequest) returns (RouteMessageResponse);

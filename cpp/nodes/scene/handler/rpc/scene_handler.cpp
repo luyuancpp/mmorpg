@@ -153,82 +153,98 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 
 
 
-void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* controller, const ::ClientSendMessageToPlayerRequest* request,
-	::ClientSendMessageToPlayerResponse* response,
+void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController* controller, const ::ProcessClientPlayerMessageRequest* request,
+	::ProcessClientPlayerMessageResponse* response,
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-    if (request->message_content().message_id() >= gRpcServiceRegistry.size())
-    {
-        LOG_ERROR << "message_id not found " << request->message_content().message_id();
-        return;
-    }
+  // 新增：语义化的内部处理函数（处理客户端发来的玩家消息包）
+		if (!request) return;
 
-    const auto& messageInfo = gRpcServiceRegistry.at(request->message_content().message_id());
-    const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
-    if (serviceIt == gPlayerService.end())
-    {
-        LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
-        return;
-    }
+		const auto& msg = request->message_content();
+		const uint64_t sessionId = request->session_id();
 
-    google::protobuf::Service* service = serviceIt->second->service();
-    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-    if (nullptr == method)
-    {
-        LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
-        return;
-    }
+		if (msg.message_id() >= gRpcServiceRegistry.size())
+		{
+			LOG_ERROR << "ProcessClientPlayerMessage: message_id not found " << msg.message_id();
+			return;
+		}
 
-    const auto it = SessionMap().find(request->session_id());
-    if (it == SessionMap().end())
-    {
-        LOG_ERROR << "session id not found " << request->session_id() << ","
-            << " message id " << request->message_content().message_id();
-        return;
-    }
+		const auto& messageInfo = gRpcServiceRegistry.at(msg.message_id());
+		const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+		if (serviceIt == gPlayerService.end())
+		{
+			LOG_ERROR << "ProcessClientPlayerMessage: player service not found for message id " << msg.message_id();
+			return;
+		}
 
-    const auto player = GetPlayer(it->second);
-    if (entt::null == player)
-    {
-        LOG_ERROR << "GatePlayerService player not loading " << request->message_content().message_id()
-            << " player_id=" << it->second;
-        return;
-    }
+		google::protobuf::Service* service = serviceIt->second->service();
+		const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+		if (nullptr == method)
+		{
+			LOG_ERROR << "ProcessClientPlayerMessage: method not found " << messageInfo.methodName;
+			return;
+		}
 
-    const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-    if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(),
-            static_cast<int32_t>(request->message_content().serialized_message().size())))
-    {
-        LOG_ERROR << "Failed to parse client-sent request for message id " << request->message_content().message_id()
-                  << " session=" << request->session_id();
-        return;
-    }
+		const auto it = SessionMap().find(sessionId);
+		if (it == SessionMap().end())
+		{
+			LOG_ERROR << "ProcessClientPlayerMessage: session id not found " << sessionId << ", message id " << msg.message_id();
+			return;
+		}
 
-    std::string errorDetails;
-    if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
-        LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
-                  << " session=" << request->session_id();
-        return;
-    }
-    if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
-        LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
-                  << " session=" << request->session_id();
-        return;
-    }
+		const auto player = GetPlayer(it->second);
+		if (entt::null == player)
+		{
+			LOG_ERROR << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
+				<< " message_id=" << msg.message_id();
+			return;
+		}
 
-    const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-    serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
+		// 解析请求并做字段检查
+		const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
+		if (!playerRequest->ParsePartialFromArray(msg.serialized_message().data(),
+			static_cast<int32_t>(msg.serialized_message().size())))
+		{
+			LOG_ERROR << "ProcessClientPlayerMessage: failed to parse client-sent request message_id=" << msg.message_id()
+				<< " session=" << sessionId;
+			return;
+		}
 
-    response->mutable_message_content()->set_message_id(request->message_content().message_id());
-    response->mutable_message_content()->set_id(request->message_content().id());
-    response->set_session_id(request->session_id());
+		std::string errorDetails;
+		if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
+			LOG_ERROR << "ProcessClientPlayerMessage: " << errorDetails << " message_id=" << msg.message_id()
+				<< " session=" << sessionId;
+			return;
+		}
+		if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
+			LOG_ERROR << "ProcessClientPlayerMessage: " << errorDetails << " message_id=" << msg.message_id()
+				<< " session=" << sessionId;
+			return;
+		}
 
-    if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
-        return;
-    }
+		// 调用具体的 player service 方法
+		const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+		serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-    response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
+		// 填充同步响应（如果调用方需要）
+		if (response != nullptr && Empty::GetDescriptor() != playerResponse->GetDescriptor()) {
+			response->mutable_message_content()->set_message_id(msg.message_id());
+			response->mutable_message_content()->set_id(msg.id());
+			response->set_session_id(sessionId);
+
+			// 序列化响应
+			const auto byte_size = playerResponse->ByteSizeLong();
+			response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
+			if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
+				static_cast<int32_t>(byte_size)))
+			{
+				LOG_ERROR << "ProcessClientPlayerMessage: Failed to serialize response for message ID: " << msg.message_id();
+				// 若需要，可在此填充 error message
+			}
+		}
+
+
 ///<<< END WRITING YOUR CODE
 }
 

@@ -15,7 +15,7 @@ public:
 
 
 
-	void ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,  const ::ClientSendMessageToPlayerRequest* request, ::ClientSendMessageToPlayerResponse* response, ::google::protobuf::Closure* done) override;
+	void ProcessClientPlayerMessage(::google::protobuf::RpcController* controller,  const ::ProcessClientPlayerMessageRequest* request, ::ProcessClientPlayerMessageResponse* response, ::google::protobuf::Closure* done) override;
 
 
 
