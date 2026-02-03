@@ -272,7 +272,7 @@ void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr&
 			<< ", node_type: " << handlerMeta.targetNodeType
 			<< ", registry: " << NodeUtils::GetRegistryName(registry);
 
-		RpcClientSessionHandler::SendTipToClient(conn, kServerCrashed);
+		RpcClientSessionHandler::SendTipToClient(conn, kServiceUnavailable);
 		return;
 	}
 
