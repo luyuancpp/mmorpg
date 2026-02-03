@@ -121,6 +121,30 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 // helpers for login / reconnect / kick decision (single-threaded simplified)
 namespace {
 
+// In-memory idempotency map: playerId -> (last_request_id, expiry_ms)
+static std::unordered_map<Guid, std::pair<std::string, uint64_t>> g_inmemory_last_request_map;
+constexpr uint64_t kIdempotencyTtlMs = 300000; // 5 minutes
+
+static void SetInMemoryLastRequestId(Guid playerId, const std::string& requestId) {
+    if (playerId == kInvalidGuid || requestId.empty()) return;
+    const uint64_t expireAt = TimeSystem::NowMilliseconds() + kIdempotencyTtlMs;
+    g_inmemory_last_request_map[playerId] = { requestId, expireAt };
+}
+
+static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& requestId) {
+    if (playerId == kInvalidGuid || requestId.empty()) return false;
+    const auto it = g_inmemory_last_request_map.find(playerId);
+    if (it == g_inmemory_last_request_map.end()) return false;
+    const auto& [storedId, expireMs] = it->second;
+    const uint64_t now = TimeSystem::NowMilliseconds();
+    if (now > expireMs) { // expired
+        g_inmemory_last_request_map.erase(it);
+        return false;
+    }
+    return storedId == requestId;
+}
+
+
 	enum class EnterGameDecision {
 		FirstLogin,        // 没有 player
 		ShortReconnect,    // < ReconnectWindow
@@ -259,12 +283,14 @@ namespace {
         sessionPB.set_token_expiry_ms(tokenExpiryMs);
         // 初次登录版本从1开始
         sessionPB.set_session_version(1);
-        if (!requestId.empty()) {
-            sessionPB.set_last_request_id(requestId);
-        }
-
-        // 持久化 snapshot 到 centre 的持久层（异步写入或同步接口）
+        // 不持久化 last_request_id 时，改为将 request_id 保存在内存中
+        // 持久化其他 snapshot 字段到 centre 的持久层（异步写入或同步接口）
         GetPlayerCentreDataRedis()->UpdateExtraData(playerGuid, sessionPB);
+
+        // 保存到内存的 idempotency map（TTL）以支持非持久化方案
+        if (!requestId.empty()) {
+            SetInMemoryLastRequestId(playerGuid, requestId);
+        }
 
         // 更新全局 SessionMap 以便后续路由（Centre 为权威）
         SessionMap()[sessionId] = playerGuid;
@@ -444,24 +470,60 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldTokenId, incomingTokenId, oldTokenValid);
 
 	// 根据决策决定是否更新 snapshot 并是否踢人
-	if (decision == EnterGameDecision::ReplaceLogin) {
-		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
-		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-			SendKickForOldSession(oldSessionId, oldVersion);
-			SessionMap().erase(oldSessionId);
-		}
-		SessionMap()[sessionId] = playerId;
-	}
-	else if (decision == EnterGameDecision::ShortReconnect) {
-		// 重连（不再依赖 session_id 相等判幂等）
-		CancelDelayedCleanupTimer(playerEntity);
-		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
-		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-			SessionMap().erase(oldSessionId);
-			SendKickForOldSession(oldSessionId, oldVersion);
-		}
-		SessionMap()[sessionId] = playerId;
-	}
+    if (decision == EnterGameDecision::ReplaceLogin) {
+        // If using in-memory idempotency, short-circuit duplicate requests here
+        if (!requestId.empty() && IsDuplicateInMemoryRequest(playerId, requestId)) {
+            LOG_DEBUG << "Duplicate in-memory request detected for player: " << playerId << " req=" << requestId;
+            if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
+                // update binding only, do not bump version
+                auto& registry = tlsRegistryManager.actorRegistry;
+                auto& sessionPBRef = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
+                sessionPBRef.set_gate_session_id(sessionId);
+                GetPlayerCentreDataRedis()->UpdateExtraData(registry.get_or_emplace<Guid>(playerEntity), sessionPBRef);
+
+                BindSessionToGateRequest bindReq;
+                bindReq.set_session_id(sessionId);
+                bindReq.set_player_id(registry.get_or_emplace<Guid>(playerEntity));
+                bindReq.set_session_version(oldVersion);
+                SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(sessionId));
+
+                LOG_INFO << "Duplicate request: updated gate binding only for player entity " << entt::to_integral(playerEntity)
+                    << " oldSession=" << oldSessionId << " newSession=" << sessionId << " ver=" << oldVersion;
+            }
+            return;
+        }
+
+        auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
+        // record in-memory last_request_id for non-persistent idempotency
+        if (!requestId.empty()) SetInMemoryLastRequestId(playerId, requestId);
+        if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
+            SendKickForOldSession(oldSessionId, oldVersion);
+            SessionMap().erase(oldSessionId);
+        }
+        SessionMap()[sessionId] = playerId;
+    }
+    else if (decision == EnterGameDecision::ShortReconnect) {
+        // 重连（不再依赖 session_id 相等判幂等）
+        CancelDelayedCleanupTimer(playerEntity);
+
+        if (!requestId.empty() && IsDuplicateInMemoryRequest(playerId, requestId)) {
+            LOG_DEBUG << "Duplicate in-memory request detected for player: " << playerId << " req=" << requestId;
+            if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
+                SessionMap().erase(oldSessionId);
+                SendKickForOldSession(oldSessionId, oldVersion);
+            }
+            SessionMap()[sessionId] = playerId;
+            return;
+        }
+
+        auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
+        if (!requestId.empty()) SetInMemoryLastRequestId(playerId, requestId);
+        if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
+            SessionMap().erase(oldSessionId);
+            SendKickForOldSession(oldSessionId, oldVersion);
+        }
+        SessionMap()[sessionId] = playerId;
+    }
 	else {
 		// FirstLogin 已在上层处理
 	}
