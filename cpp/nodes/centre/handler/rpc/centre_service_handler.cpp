@@ -244,17 +244,36 @@ namespace {
 		return { oldSessionId, oldTokenId, oldVersion };
 	}
 
-	// 修改：HandleFirstLogin 改为存 token_id 与 expiry（expiry 可为 0）
-	void HandleFirstLogin(Guid playerGuid, uint64_t sessionId, const std::string& loginToken, uint64_t tokenExpiryMs = 0)
-	{
-		PlayerSessionSnapshotPBComp sessionPB;
-		sessionPB.set_gate_session_id(sessionId);
-		// 不保存明文 token，保存 token_id（hash）
-		sessionPB.set_token_id(Sha256Hex(loginToken));
-		sessionPB.set_token_expiry_ms(tokenExpiryMs);
-		GetPlayerCentreDataRedis()->AsyncLoad(playerGuid, sessionPB);
-		LOG_INFO << "HandleFirstLogin for player " << playerGuid;
-	}
+    // 修改：HandleFirstLogin 改为存 token_id 与 expiry（expiry 可为 0）
+    // 并在首次登录时将 snapshot 持久化并绑定 session 到 Gate（包括可选的 requestId	用于幂等）
+    void HandleFirstLogin(Guid playerGuid, uint64_t sessionId, const std::string& loginToken, uint64_t tokenExpiryMs = 0, const std::string& requestId = "")
+    {
+        // 首次登录：在内存创建 player entity（如果尚不存在），然后使用统一的 UpdatePlayerSessionSnapshot
+        // 来完成持久化、去重与 Gate 绑定。随后异步加载玩家数据并在回调中填充其他组件。
+
+        // 不在这里创建 player entity（遵循现有流程：在 AsyncLoad 完成后创建实体）
+        // 构建初始 snapshot 并持久化（包含 requestId 用于幂等）
+        PlayerSessionSnapshotPBComp sessionPB;
+        sessionPB.set_gate_session_id(sessionId);
+        sessionPB.set_token_id(Sha256Hex(loginToken));
+        sessionPB.set_token_expiry_ms(tokenExpiryMs);
+        // 初次登录版本从1开始
+        sessionPB.set_session_version(1);
+        if (!requestId.empty()) {
+            sessionPB.set_last_request_id(requestId);
+        }
+
+        // 持久化 snapshot 到 centre 的持久层（异步写入或同步接口）
+        GetPlayerCentreDataRedis()->UpdateExtraData(playerGuid, sessionPB);
+
+        // 更新全局 SessionMap 以便后续路由（Centre 为权威）
+        SessionMap()[sessionId] = playerGuid;
+
+        // 异步加载玩家 Centre 数据，完成后回调将创建 player 实体并使用 sessionPB（作为 extra）
+        GetPlayerCentreDataRedis()->AsyncLoad(playerGuid, sessionPB);
+
+        LOG_INFO << "HandleFirstLogin persisted snapshot and initiated async load for player " << playerGuid << " session=" << sessionId << " req=" << (requestId.empty() ? "<none>" : requestId);
+    }
 
 	// 已有 player 的后续执行（设置进入类型并触发进入场景流程）
 	void ApplyEnterGameDecision(entt::entity playerEntity, EnterGameDecision decision)
@@ -392,11 +411,11 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 
 	// 是否在内存中已有 player 对象
 	auto it = tlsPlayerList.find(playerId);
-	if (it == tlsPlayerList.end()) {
-		// 首次登录：异步加载/创建玩家数据
-		HandleFirstLogin(playerId, sessionId, loginToken);
-		return;
-	}
+    if (it == tlsPlayerList.end()) {
+        // 首次登录：异步加载/创建玩家数据
+        HandleFirstLogin(playerId, sessionId, loginToken, request->token_expiry_ms(), requestId);
+        return;
+    }
 
 	entt::entity playerEntity = it->second;
 
@@ -407,7 +426,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	auto* oldSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	const bool hasOldSession = (oldSessionPB != nullptr);
 	uint64_t oldSessionId = hasOldSession ? oldSessionPB->gate_session_id() : kInvalidSessionId;
-	std::string oldTokenId = hasOldSession ? oldSessionPB->token_id() : std::string{};
+	auto& oldTokenId = hasOldSession ? oldSessionPB->token_id() : std::string{};
 	uint64_t oldVersion = hasOldSession ? oldSessionPB->session_version() : 0;
 
 	// 计算 oldTokenValid：如果 proto 中 token_expiry_ms == 0 表示不过期/未知
