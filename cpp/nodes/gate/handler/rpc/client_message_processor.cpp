@@ -277,12 +277,12 @@ void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr&
 	}
 
     auto& tcpNode = registry.get<RpcClientPtr>(tcpNodeId);
-    ClientSendMessageToPlayerRequest message;
+	ProcessClientPlayerMessageRequest message;
     message.mutable_message_content()->set_serialized_message(request->body());
     message.set_session_id(sessionId);
     message.mutable_message_content()->set_id(request->id());
     message.mutable_message_content()->set_message_id(request->message_id());
-    tcpNode->CallRemoteMethod(SceneClientSendMessageToPlayerMessageId, message);
+    tcpNode->CallRemoteMethod(SceneProcessClientPlayerMessageMessageId, message);
 
     LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }
