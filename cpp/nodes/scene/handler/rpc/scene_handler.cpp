@@ -158,60 +158,77 @@ void SceneHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* 
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
-	{
-		LOG_ERROR << "message_id not found " << request->message_content().message_id();
-		return;
-	}
+    if (request->message_content().message_id() >= gRpcServiceRegistry.size())
+    {
+        LOG_ERROR << "message_id not found " << request->message_content().message_id();
+        return;
+    }
 
-	const auto& messageInfo = gRpcServiceRegistry.at(request->message_content().message_id());
-	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
-	if (serviceIt == gPlayerService.end())
-	{
-		LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
-		return;
-	}
+    const auto& messageInfo = gRpcServiceRegistry.at(request->message_content().message_id());
+    const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+    if (serviceIt == gPlayerService.end())
+    {
+        LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
+        return;
+    }
 
-	google::protobuf::Service* service = serviceIt->second->service();
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-	if (nullptr == method)
-	{
-		LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
-		return;
-	}
+    google::protobuf::Service* service = serviceIt->second->service();
+    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+    if (nullptr == method)
+    {
+        LOG_ERROR << "GatePlayerService message id not found " << request->message_content().message_id();
+        return;
+    }
 
-	const auto it = SessionMap().find(request->session_id());
-	if (it == SessionMap().end())
-	{
-		LOG_ERROR << "session id not found " << request->session_id() << ","
-			<< " message id " << request->message_content().message_id();
-		return;
-	}
+    const auto it = SessionMap().find(request->session_id());
+    if (it == SessionMap().end())
+    {
+        LOG_ERROR << "session id not found " << request->session_id() << ","
+            << " message id " << request->message_content().message_id();
+        return;
+    }
 
-	const auto player = GetPlayer(it->second);
-	if (entt::null == player)
-	{
-		LOG_ERROR << "GatePlayerService player not loading " << request->message_content().message_id()
-			<< "player_id" << it->second;
-		return;
-	}
+    const auto player = GetPlayer(it->second);
+    if (entt::null == player)
+    {
+        LOG_ERROR << "GatePlayerService player not loading " << request->message_content().message_id()
+            << " player_id=" << it->second;
+        return;
+    }
 
-	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-	playerRequest->ParseFromArray(request->message_content().serialized_message().data(), static_cast<int32_t>(request->message_content().serialized_message().size()));
+    const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
+    if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(),
+            static_cast<int32_t>(request->message_content().serialized_message().size())))
+    {
+        LOG_ERROR << "Failed to parse client-sent request for message id " << request->message_content().message_id()
+                  << " session=" << request->session_id();
+        return;
+    }
 
-	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-	serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
+    std::string errorDetails;
+    if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
+        LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
+                  << " session=" << request->session_id();
+        return;
+    }
+    if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
+        LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
+                  << " session=" << request->session_id();
+        return;
+    }
 
-	
-	response->mutable_message_content()->set_message_id(request->message_content().message_id());
-	response->mutable_message_content()->set_id(request->message_content().id());
-	response->set_session_id(request->session_id());
+    const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+    serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-	if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
-		return;
-	}
+    response->mutable_message_content()->set_message_id(request->message_content().message_id());
+    response->mutable_message_content()->set_id(request->message_content().id());
+    response->set_session_id(request->session_id());
 
-	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
+    if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
+        return;
+    }
+
+    response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 ///<<< END WRITING YOUR CODE
 }
 
@@ -402,23 +419,27 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
-    //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-	auto player = GetPlayer(request->player_id());
-	if (player == entt::null)
-	{
-		LOG_ERROR << "Error: Player entity not found for player_id " << request->player_id();
-		return;
-	}
+	///<<< BEGIN WRITING YOUR CODE
 
-	LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
+    auto player = GetPlayer(request->player_id());
+    if (player == entt::null)
+    {
+        LOG_ERROR << "EnterScene: Player entity not found for player_id " << request->player_id();
+        return;
+    }
 
-	entt::entity roomEntity{ request->scene_id() };
-	RoomCommon::EnterRoom({ .room = roomEntity, .enter = player });
-	
-	PlayerSceneSystem::HandleEnterScene(player, roomEntity);
+    LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
 
-///<<< END WRITING YOUR CODE
+    entt::entity roomEntity{ request->scene_id() };
+    // 可选：检查 roomEntity 是否有效（RoomCommon 内部通常会校验）
+    if (!tlsRegistryManager.actorRegistry.valid(roomEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(roomEntity)) {
+        LOG_ERROR << "EnterScene: invalid room entity " << request->scene_id();
+        return;
+    }
+
+    RoomCommon::EnterRoom({ .room = roomEntity, .enter = player });
+    PlayerSceneSystem::HandleEnterScene(player, roomEntity);
+	///<<< END WRITING YOUR CODE
 }
 
 
