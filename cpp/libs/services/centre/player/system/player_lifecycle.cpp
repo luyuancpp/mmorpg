@@ -33,33 +33,55 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_
 {
 	//load 回来之前断开连接了,然后又加到redis了 这种怎么办,session id 变了咋办
 
-	LOG_INFO << "Handling async load for player: " << playerId;
-	assert(tlsPlayerList.find(playerId) == tlsPlayerList.end());
+    LOG_INFO << "Handling async load for player: " << playerId;
 
-	auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
+    auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
 
-	if (SessionMap().find(sessionPbComp.gate_session_id()) == SessionMap().end())
-	{
-		return;
-	}
+    // 如果 SessionMap 中没有记录当前 session，说明已经断开或无效
+    if (SessionMap().find(sessionPbComp.gate_session_id()) == SessionMap().end())
+    {
+        return;
+    }
 
-	auto playerEntity = tlsRegistryManager.actorRegistry.create();
-	if (const auto [first, success] = tlsPlayerList.emplace(playerId, playerEntity); !success)
-	{
-		LOG_ERROR << "Error emplacing player in player list: " << playerId;
-		return;
-	}
+    // 如果 player 已存在（例如我们在 HandleFirstLogin 里已预写 snapshot），则复用该实体并更新组件；否则新建实体
+    entt::entity playerEntity = entt::null;
+    auto it = tlsPlayerList.find(playerId);
+    if (it == tlsPlayerList.end()) {
+        // 创建新实体并注册到 tlsPlayerList
+        playerEntity = tlsRegistryManager.actorRegistry.create();
+        if (const auto [first, success] = tlsPlayerList.emplace(playerId, playerEntity); !success)
+        {
+            LOG_ERROR << "Error emplacing player in player list: " << playerId;
+            return;
+        }
 
-	auto& sessionPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity, std::move(sessionPbComp));
+        // 填充必要组件
+        tlsRegistryManager.actorRegistry.emplace<Player>(playerEntity);
+        tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity, playerId);
+        tlsRegistryManager.actorRegistry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
+        tlsRegistryManager.actorRegistry.emplace<PlayerSessionSnapshotPBComp>(playerEntity, std::move(sessionPbComp));
+        tlsRegistryManager.actorRegistry.emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
-	tlsRegistryManager.actorRegistry.emplace<Player>(playerEntity);
-	tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity, playerId);
-	tlsRegistryManager.actorRegistry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
+        PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
+        LOG_INFO << "Player login enter scene handled (created): " << playerId;
+    }
+    else {
+        // 实体已存在，更新或填充缺失的组件
+        playerEntity = it->second;
+        auto& registry = tlsRegistryManager.actorRegistry;
 
-	tlsRegistryManager.actorRegistry.emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+        // 更新 snapshot
+        registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity) = sessionPbComp;
 
-	PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
-	LOG_INFO << "Player login enter scene handled: " << playerId;
+        if (!registry.try_get<Player>(playerEntity)) registry.emplace<Player>(playerEntity);
+        if (!registry.try_get<Guid>(playerEntity)) registry.emplace<Guid>(playerEntity, playerId);
+        if (!registry.try_get<PlayerSceneContextPBComponent>(playerEntity)) registry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
+
+        registry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+
+        PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
+        LOG_INFO << "Player login enter scene handled (updated): " << playerId;
+    }
 }
 
 void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
