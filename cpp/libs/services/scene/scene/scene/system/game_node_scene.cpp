@@ -29,19 +29,6 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 	}
 }
 
-void GameNodeSceneSystem::RegisterSceneToAllCentre(entt::entity scene) {
-	const auto sceneInfo = tlsRegistryManager.roomRegistry.try_get<RoomInfoPBComponent>(scene);
-	if (!sceneInfo) {
-		return;
-	}
-
-	RegisterSceneRequest request;
-	request.set_scene_node_id(GetNodeInfo().node_id());
-	request.mutable_scenes_info()->Add()->CopyFrom(*sceneInfo);
-
-	BroadcastToNodes(CentreSceneRegisterSceneMessageId, request, eNodeType::CentreNodeService);
-}
-
 void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 {
 	RegisterSceneRequest request;

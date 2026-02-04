@@ -122,7 +122,7 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 namespace {
 
 // In-memory idempotency map: playerId -> (last_request_id, expiry_ms)
-static std::unordered_map<Guid, std::pair<std::string, uint64_t>> g_inmemory_last_request_map;
+thread_local std::unordered_map<Guid, std::pair<std::string, uint64_t>> g_inmemory_last_request_map;
 constexpr uint64_t kIdempotencyTtlMs = 300000; // 5 minutes
 
 static void SetInMemoryLastRequestId(Guid playerId, const std::string& requestId) {
