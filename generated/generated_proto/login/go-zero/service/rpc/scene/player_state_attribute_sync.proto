@@ -1,0 +1,76 @@
+syntax = "proto3";
+option go_package = "service/rpc/scene";
+
+import "proto/service/grpc/db/proto_option.proto";
+import "proto/logic/component/actor_comp.proto";
+import "proto/common/empty.proto";
+import "proto/logic/component/actor_attribute_state_comp.proto";
+
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_ROOM;
+
+
+// 消息定义，用于同步实体的基础属性增量
+message ActorBaseAttributesS2C   
+{
+  option (OptionAttributeSync) = true;
+
+  uint64 entity_id = 1;  // 实体的唯一ID
+  Transform transform = 2;  // 速度信息
+  Velocity velocity = 3;
+  CombatStateFlagsPbComponent combat_state_flags = 4;//战斗状态
+}
+
+// 各种帧率同步消息
+message AttributeDelta2FramesS2C 
+{
+  option (OptionAttributeSync) = true;
+
+  uint64 entity_id = 1;  // 实体的唯一ID
+  // 可以在这里添加更多属性
+}
+
+message AttributeDelta5FramesS2C 
+{
+  option (OptionAttributeSync) = true;
+
+  uint64 entity_id = 1;  // 实体的唯一ID
+  // 可以在这里添加更多属性
+}
+
+message AttributeDelta10FramesS2C 
+{
+  option (OptionAttributeSync) = true;
+
+  uint64 entity_id = 1;  // 实体的唯一ID
+  // 可以在这里添加更多属性
+}
+
+message AttributeDelta30FramesS2C 
+{
+  option (OptionAttributeSync) = true;
+
+  uint64 entity_id = 1;  // 实体的唯一ID
+  // 可以在这里添加更多属性
+}
+
+message AttributeDelta60FramesS2C 
+{
+  option (OptionAttributeSync) = true;
+
+  uint64 entity_id = 1;  // 实体的唯一ID
+  // 可以在这里添加更多属性
+}
+
+// 服务定义，用于处理实体属性的同步
+service ScenePlayerSync
+{
+  option (OptionIsPlayerService) = true;
+
+  rpc SyncBaseAttribute (ActorBaseAttributesS2C) returns (Empty); 
+  rpc SyncAttribute2Frames (AttributeDelta2FramesS2C) returns (Empty);  
+  rpc SyncAttribute5Frames (AttributeDelta5FramesS2C) returns (Empty);  
+  rpc SyncAttribute10Frames (AttributeDelta10FramesS2C) returns (Empty); 
+  rpc SyncAttribute30Frames (AttributeDelta30FramesS2C) returns (Empty); 
+  rpc SyncAttribute60Frames (AttributeDelta60FramesS2C) returns (Empty); 
+}

@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/service/cpp/rpc/scene/player_state_attribute_sync.pb.h"
+#include "proto/service/rpc/scene/player_state_attribute_sync.pb.h"
 
 
 constexpr uint32_t ScenePlayerSyncSyncBaseAttributeMessageId = 66;

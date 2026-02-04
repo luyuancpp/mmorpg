@@ -1,0 +1,21 @@
+syntax = "proto3";
+option go_package = "player_locator/proto/service/rpc/scene;scene";
+
+import "proto/service/grpc/db/proto_option.proto";
+import "proto/common/empty.proto";
+
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_ROOM;
+
+
+message GameSceneTest
+{
+}
+
+
+//正常或者顶号进入场景
+//断线重连进入场景,断线重连分时间
+service SceneScene
+{
+  rpc Test (GameSceneTest) returns (Empty);
+}
