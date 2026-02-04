@@ -26,8 +26,7 @@ func GetGrpcLanguageFromPath(protoPath string) string {
 
 // HasGrpcService 检查proto路径是否包含gRPC服务定义
 func HasGrpcService(protoPath string) bool {
-	// 利用提取语言的函数来判断是否存在gRPC服务
-	return GetGrpcLanguageFromPath(protoPath) != ""
+	return strings.Contains(strings.ToLower(protoPath), "/grpc/")
 }
 
 func HasEtcdService(protoPath string) bool {
