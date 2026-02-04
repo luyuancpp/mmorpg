@@ -189,7 +189,7 @@ path_lists:
     - "logic/database/"
 
   # robot专用Proto目录列表
-  robot_protoectories:
+  robot_proto_directories:
     - "{{robot_proto}}common/"
     - "{{robot_proto}}rpc/"
     - "{{robot_proto}}message/"
