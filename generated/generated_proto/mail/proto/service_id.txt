@@ -8,7 +8,7 @@
 7=CentreSceneRegisterScene
 8=CentreGateSessionDisconnect
 9=ScenePlayerExitGame
-10=SceneClientSendMessageToPlayer
+10=SceneProcessClientPlayerMessage
 11=CentreRoutePlayerStringMsg
 12=CentreEnterGsSucceed
 13=LeaseLeaseKeepAlive
