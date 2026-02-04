@@ -1,9 +1,0 @@
-syntax = "proto3";
-option go_package = "team/proto/logic/component;component";
-
-
-
-message TeamId
-{
-  uint64 team_id = 1;
-}

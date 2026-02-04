@@ -242,45 +242,45 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n=proto/service/cpp/rpc/scene/player_sta"
-    "te_attribute_sync.proto\032+proto/service/g"
-    "o/grpc/db/proto_option.proto\032&proto/logi"
-    "c/component/actor_comp.proto\032\030proto/comm"
-    "on/empty.proto\0326proto/logic/component/ac"
-    "tor_attribute_state_comp.proto\"\250\001\n\026Actor"
-    "BaseAttributesS2C\022\021\n\tentity_id\030\001 \001(\004\022\035\n\t"
-    "transform\030\002 \001(\0132\n.Transform\022\033\n\010velocity\030"
-    "\003 \001(\0132\t.Velocity\0228\n\022combat_state_flags\030\004"
-    " \001(\0132\034.CombatStateFlagsPbComponent:\005\200\346\325\002"
-    "\001\"4\n\030AttributeDelta2FramesS2C\022\021\n\tentity_"
-    "id\030\001 \001(\004:\005\200\346\325\002\001\"4\n\030AttributeDelta5Frames"
-    "S2C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002\001\"5\n\031Attribu"
-    "teDelta10FramesS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200"
-    "\346\325\002\001\"5\n\031AttributeDelta30FramesS2C\022\021\n\tent"
-    "ity_id\030\001 \001(\004:\005\200\346\325\002\001\"5\n\031AttributeDelta60F"
-    "ramesS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002\0012\373\002\n\017S"
-    "cenePlayerSync\0224\n\021SyncBaseAttribute\022\027.Ac"
-    "torBaseAttributesS2C\032\006.Empty\0229\n\024SyncAttr"
-    "ibute2Frames\022\031.AttributeDelta2FramesS2C\032"
-    "\006.Empty\0229\n\024SyncAttribute5Frames\022\031.Attrib"
-    "uteDelta5FramesS2C\032\006.Empty\022;\n\025SyncAttrib"
-    "ute10Frames\022\032.AttributeDelta10FramesS2C\032"
-    "\006.Empty\022;\n\025SyncAttribute30Frames\022\032.Attri"
-    "buteDelta30FramesS2C\032\006.Empty\022;\n\025SyncAttr"
-    "ibute60Frames\022\032.AttributeDelta60FramesS2"
-    "C\032\006.Empty\032\005\200\250\303\001\001B\007\200\001\001\230\324a\003b\006proto3"
+    "te_attribute_sync.proto\032(proto/service/g"
+    "rpc/db/proto_option.proto\032&proto/logic/c"
+    "omponent/actor_comp.proto\032\030proto/common/"
+    "empty.proto\0326proto/logic/component/actor"
+    "_attribute_state_comp.proto\"\250\001\n\026ActorBas"
+    "eAttributesS2C\022\021\n\tentity_id\030\001 \001(\004\022\035\n\ttra"
+    "nsform\030\002 \001(\0132\n.Transform\022\033\n\010velocity\030\003 \001"
+    "(\0132\t.Velocity\0228\n\022combat_state_flags\030\004 \001("
+    "\0132\034.CombatStateFlagsPbComponent:\005\200\346\325\002\001\"4"
+    "\n\030AttributeDelta2FramesS2C\022\021\n\tentity_id\030"
+    "\001 \001(\004:\005\200\346\325\002\001\"4\n\030AttributeDelta5FramesS2C"
+    "\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002\001\"5\n\031AttributeD"
+    "elta10FramesS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002"
+    "\001\"5\n\031AttributeDelta30FramesS2C\022\021\n\tentity"
+    "_id\030\001 \001(\004:\005\200\346\325\002\001\"5\n\031AttributeDelta60Fram"
+    "esS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002\0012\373\002\n\017Scen"
+    "ePlayerSync\0224\n\021SyncBaseAttribute\022\027.Actor"
+    "BaseAttributesS2C\032\006.Empty\0229\n\024SyncAttribu"
+    "te2Frames\022\031.AttributeDelta2FramesS2C\032\006.E"
+    "mpty\0229\n\024SyncAttribute5Frames\022\031.Attribute"
+    "Delta5FramesS2C\032\006.Empty\022;\n\025SyncAttribute"
+    "10Frames\022\032.AttributeDelta10FramesS2C\032\006.E"
+    "mpty\022;\n\025SyncAttribute30Frames\022\032.Attribut"
+    "eDelta30FramesS2C\032\006.Empty\022;\n\025SyncAttribu"
+    "te60Frames\022\032.AttributeDelta60FramesS2C\032\006"
+    ".Empty\032\005\200\250\303\001\001B\007\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[4] = {
         &::descriptor_table_proto_2fcommon_2fempty_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto,
-        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
+        &::descriptor_table_proto_2fservice_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto = {
     false,
     false,
-    1073,
+    1070,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto,
     "proto/service/cpp/rpc/scene/player_state_attribute_sync.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,

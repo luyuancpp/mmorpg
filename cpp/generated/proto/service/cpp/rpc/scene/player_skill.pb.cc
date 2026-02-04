@@ -259,34 +259,34 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n.proto/service/cpp/rpc/scene/player_ski"
-    "ll.proto\032+proto/service/go/grpc/db/proto"
-    "_option.proto\032\026proto/common/tip.proto\032 p"
-    "roto/logic/component/comp.proto\032\030proto/c"
-    "ommon/empty.proto\032-proto/logic/component"
-    "/player_skill_comp.proto\032&proto/logic/co"
-    "mponent/actor_comp.proto\"~\n\030ReleaseSkill"
-    "SkillRequest\022\026\n\016skill_table_id\030\001 \001(\r\022\021\n\t"
-    "target_id\030\002 \001(\004\022\032\n\010position\030\003 \001(\0132\010.Vect"
-    "or3\022\033\n\010rotation\030\004 \001(\0132\t.Rotation\"C\n\031Rele"
-    "aseSkillSkillResponse\022&\n\rerror_message\030\001"
-    " \001(\0132\017.TipInfoMessage\"{\n\023SkillInterrupte"
-    "dS2C\022\016\n\006entity\030\001 \001(\004\022\025\n\rtarget_entity\030\002 "
-    "\001(\004\022\026\n\016skill_table_id\030\003 \001(\r\022\023\n\013reason_co"
-    "de\030\004 \001(\r\022\020\n\010skill_id\030\005 \001(\004\"}\n\014SkillUsedS"
-    "2C\022\016\n\006entity\030\001 \001(\004\022\025\n\rtarget_entity\030\002 \003("
-    "\004\022\026\n\016skill_table_id\030\003 \001(\r\022\032\n\010position\030\004 "
-    "\001(\0132\010.Vector3\022\022\n\ntime_stamp\030\005 \001(\004\"\025\n\023Get"
-    "SkillListRequest\"o\n\024GetSkillListResponse"
-    "\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage"
-    "\022/\n\nskill_list\030\002 \001(\0132\033.PlayerSkillListPB"
-    "Component2\212\002\n\026SceneSkillClientPlayer\022E\n\014"
-    "ReleaseSkill\022\031.ReleaseSkillSkillRequest\032"
-    "\032.ReleaseSkillSkillResponse\022(\n\017NotifySki"
-    "llUsed\022\r.SkillUsedS2C\032\006.Empty\0226\n\026NotifyS"
-    "killInterrupted\022\024.SkillInterruptedS2C\032\006."
-    "Empty\022;\n\014GetSkillList\022\024.GetSkillListRequ"
-    "est\032\025.GetSkillListResponse\032\n\200\250\303\001\001\210\250\303\001\001B\007"
-    "\200\001\001\230\324a\003b\006proto3"
+    "ll.proto\032(proto/service/grpc/db/proto_op"
+    "tion.proto\032\026proto/common/tip.proto\032 prot"
+    "o/logic/component/comp.proto\032\030proto/comm"
+    "on/empty.proto\032-proto/logic/component/pl"
+    "ayer_skill_comp.proto\032&proto/logic/compo"
+    "nent/actor_comp.proto\"~\n\030ReleaseSkillSki"
+    "llRequest\022\026\n\016skill_table_id\030\001 \001(\r\022\021\n\ttar"
+    "get_id\030\002 \001(\004\022\032\n\010position\030\003 \001(\0132\010.Vector3"
+    "\022\033\n\010rotation\030\004 \001(\0132\t.Rotation\"C\n\031Release"
+    "SkillSkillResponse\022&\n\rerror_message\030\001 \001("
+    "\0132\017.TipInfoMessage\"{\n\023SkillInterruptedS2"
+    "C\022\016\n\006entity\030\001 \001(\004\022\025\n\rtarget_entity\030\002 \001(\004"
+    "\022\026\n\016skill_table_id\030\003 \001(\r\022\023\n\013reason_code\030"
+    "\004 \001(\r\022\020\n\010skill_id\030\005 \001(\004\"}\n\014SkillUsedS2C\022"
+    "\016\n\006entity\030\001 \001(\004\022\025\n\rtarget_entity\030\002 \003(\004\022\026"
+    "\n\016skill_table_id\030\003 \001(\r\022\032\n\010position\030\004 \001(\013"
+    "2\010.Vector3\022\022\n\ntime_stamp\030\005 \001(\004\"\025\n\023GetSki"
+    "llListRequest\"o\n\024GetSkillListResponse\022&\n"
+    "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022/\n"
+    "\nskill_list\030\002 \001(\0132\033.PlayerSkillListPBCom"
+    "ponent2\212\002\n\026SceneSkillClientPlayer\022E\n\014Rel"
+    "easeSkill\022\031.ReleaseSkillSkillRequest\032\032.R"
+    "eleaseSkillSkillResponse\022(\n\017NotifySkillU"
+    "sed\022\r.SkillUsedS2C\032\006.Empty\0226\n\026NotifySkil"
+    "lInterrupted\022\024.SkillInterruptedS2C\032\006.Emp"
+    "ty\022;\n\014GetSkillList\022\024.GetSkillListRequest"
+    "\032\025.GetSkillListResponse\032\n\200\250\303\001\001\210\250\303\001\001B\007\200\001\001"
+    "\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto_deps[6] = {
@@ -295,13 +295,13 @@ static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
         &::descriptor_table_proto_2flogic_2fcomponent_2factor_5fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fcomp_2eproto,
         &::descriptor_table_proto_2flogic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
-        &::descriptor_table_proto_2fservice_2fgo_2fgrpc_2fdb_2fproto_5foption_2eproto,
+        &::descriptor_table_proto_2fservice_2fgrpc_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto = {
     false,
     false,
-    1135,
+    1132,
     descriptor_table_protodef_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto,
     "proto/service/cpp/rpc/scene/player_skill.proto",
     &descriptor_table_proto_2fservice_2fcpp_2frpc_2fscene_2fplayer_5fskill_2eproto_once,

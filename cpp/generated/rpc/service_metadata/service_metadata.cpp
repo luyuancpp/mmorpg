@@ -2,11 +2,11 @@
 #include "service_metadata.h"
 #include "proto/common/node.pb.h"
 
-#include "proto/service/go/grpc/player_locator/player_locator.grpc.pb.h"
+#include "proto/service/grpc/player_locator/player_locator.grpc.pb.h"
 #include "proto/middleware/etcd/etcd.grpc.pb.h"
 #include "proto/middleware/etcd/etcd.grpc.pb.h"
 #include "proto/middleware/etcd/etcd.grpc.pb.h"
-#include "proto/service/go/grpc/login/login.grpc.pb.h"
+#include "proto/service/grpc/login/login.grpc.pb.h"
 #include "proto/service/cpp/rpc/centre/centre_player.pb.h"
 #include "proto/service/cpp/rpc/centre/centre_player_scene.pb.h"
 #include "proto/service/cpp/rpc/centre/centre_scene.pb.h"
