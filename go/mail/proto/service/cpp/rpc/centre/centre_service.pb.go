@@ -436,7 +436,7 @@ var File_proto_service_cpp_rpc_centre_centre_service_proto protoreflect.FileDesc
 
 const file_proto_service_cpp_rpc_centre_centre_service_proto_rawDesc = "" +
 	"\n" +
-	"1proto/service/cpp/rpc/centre/centre_service.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/session.proto\x1a\x1aproto/common/message.proto\x1a\x16proto/common/tip.proto\"J\n" +
+	"1proto/service/cpp/rpc/centre/centre_service.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/session.proto\x1a\x1aproto/common/message.proto\x1a\x16proto/common/tip.proto\"J\n" +
 	"\x18GateClientMessageRequest\x12.\n" +
 	"\n" +
 	"rpc_client\x18\x01 \x01(\v2\x0f.NetworkAddressR\trpcClient\"O\n" +

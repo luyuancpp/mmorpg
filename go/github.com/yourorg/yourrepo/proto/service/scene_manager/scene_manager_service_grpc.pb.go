@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.31.1
-// source: proto/service/go/grpc/scene_manager/scene_manager_service.proto
+// source: proto/service/grpc/scene_manager/scene_manager_service.proto
 
 package scene_managerpb
 
@@ -244,5 +244,5 @@ var SceneManager_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/service/go/grpc/scene_manager/scene_manager_service.proto",
+	Metadata: "proto/service/grpc/scene_manager/scene_manager_service.proto",
 }

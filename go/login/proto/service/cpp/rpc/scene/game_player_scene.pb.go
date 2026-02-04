@@ -205,7 +205,7 @@ var File_proto_service_cpp_rpc_scene_game_player_scene_proto protoreflect.FileDe
 
 const file_proto_service_cpp_rpc_scene_game_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"3proto/service/cpp/rpc/scene/game_player_scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a&proto/logic/component/scene_comp.proto\"O\n" +
+	"3proto/service/cpp/rpc/scene/game_player_scene.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a&proto/logic/component/scene_comp.proto\"O\n" +
 	"\x13GsEnterSceneRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x19\n" +

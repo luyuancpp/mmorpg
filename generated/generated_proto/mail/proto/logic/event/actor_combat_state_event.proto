@@ -1,0 +1,19 @@
+syntax = "proto3";
+option go_package = "mail/proto/logic/event;event";
+
+
+
+
+message CombatStateAddedPbEvent 
+{
+    uint64 actor_entity = 1;
+    uint64 source_buff_id = 2;
+	uint32 state_type = 3;
+}
+
+message CombatStateRemovedPbEvent 
+{
+    uint64 actor_entity = 1;
+    uint64 source_buff_id = 2;
+	uint32 state_type = 3;
+}

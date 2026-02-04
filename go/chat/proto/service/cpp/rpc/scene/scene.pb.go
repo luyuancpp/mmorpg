@@ -479,7 +479,7 @@ var File_proto_service_cpp_rpc_scene_scene_proto protoreflect.FileDescriptor
 
 const file_proto_service_cpp_rpc_scene_scene_proto_rawDesc = "" +
 	"\n" +
-	"'proto/service/cpp/rpc/scene/scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\x1a\x1aproto/common/message.proto\"~\n" +
+	"'proto/service/cpp/rpc/scene/scene.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\x1a\x1aproto/common/message.proto\"~\n" +
 	"\x1aPlayerEnterGameNodeRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +

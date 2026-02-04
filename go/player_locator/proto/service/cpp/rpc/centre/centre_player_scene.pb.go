@@ -180,7 +180,7 @@ var File_proto_service_cpp_rpc_centre_centre_player_scene_proto protoreflect.Fil
 
 const file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"6proto/service/cpp/rpc/centre/centre_player_scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19proto/common/common.proto\"N\n" +
+	"6proto/service/cpp/rpc/centre/centre_player_scene.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19proto/common/common.proto\"N\n" +
 	"\x17CentreEnterSceneRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"\x19\n" +

@@ -1,0 +1,79 @@
+syntax = "proto3";
+option go_package = "mail/proto/service/cpp/rpc/scene;scene";
+
+import "proto/service/grpc/db/proto_option.proto";
+import "proto/common/tip.proto";
+import "proto/common/common.proto";
+import "proto/common/empty.proto";
+import "proto/logic/component/actor_comp.proto";
+
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_ROOM;
+
+message EnterSceneC2SRequest
+{
+  RoomInfoPBComponent scene_info = 1;
+}
+
+message EnterSceneC2SResponse
+{
+	TipInfoMessage error_message = 1;
+}
+
+message EnterSceneS2C
+{
+  RoomInfoPBComponent scene_info = 1;
+}
+
+message SceneInfoS2C
+{
+  repeated RoomInfoPBComponent scene_info = 1;
+}
+
+message SceneInfoRequest
+{
+}
+
+message SceneInfoResponse
+{
+  repeated RoomInfoPBComponent scene_info = 1;
+}
+
+message ActorCreateS2C
+{
+	uint64 entity = 1;
+	Transform transform = 2;
+	uint32 entity_type = 3;
+	uint64 guid = 4;
+	uint64 config_id = 5;
+}
+
+message ActorDestroyS2C
+{
+	uint64 entity = 1;
+}
+
+message ActorListCreateS2C
+{
+	repeated ActorCreateS2C actor_list = 1;
+}
+
+message ActorListDestroyS2C
+{
+	repeated uint64 entity = 1;
+}
+
+service SceneSceneClientPlayer
+{
+  option (OptionIsPlayerService) = true;
+  option (OptionIsClientProtocolService) = true;
+
+  rpc EnterScene (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
+  rpc NotifyEnterScene (EnterSceneS2C) returns (Empty);
+  rpc SceneInfoC2S (SceneInfoRequest) returns (Empty);
+  rpc NotifySceneInfo (SceneInfoS2C) returns (Empty);
+  rpc NotifyActorCreate (ActorCreateS2C) returns (Empty);
+  rpc NotifyActorDestroy (ActorDestroyS2C) returns (Empty);
+  rpc NotifyActorListCreate (ActorListCreateS2C) returns (Empty);
+  rpc NotifyActorListDestroy (ActorListDestroyS2C) returns (Empty);
+}
