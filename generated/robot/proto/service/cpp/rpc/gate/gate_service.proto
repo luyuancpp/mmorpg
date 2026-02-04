@@ -1,7 +1,7 @@
 syntax = "proto3";
 option go_package = "robot/proto/service/cpp/rpc/gate;gate";
 
-import "proto/service/go/grpc/db/proto_option.proto";
+import "proto/service/grpc/db/proto_option.proto";
 import "proto/common/empty.proto";
 import "proto/common/message.proto";
 

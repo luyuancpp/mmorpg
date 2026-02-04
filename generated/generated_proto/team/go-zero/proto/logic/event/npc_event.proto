@@ -1,9 +1,0 @@
-syntax = "proto3";
-option go_package = "logic/event/team";
-
-
-
-message InitializeNpcComponentsEvent
-{
-  uint64 actor_entity = 1;
-}
