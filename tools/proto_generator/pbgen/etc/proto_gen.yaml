@@ -210,18 +210,6 @@ path_lists:
     gate_node_player: "{{gate_node_dir}}handler/rpc/player/"
     gate_node_player_replied: "{{gate_node_dir}}rpc_replies/player/"
 
-  # gRPC支持的语言列表
-  grpc_languages:
-    - "go"
-    - "python"
-    - "java"
-    - "csharp"
-    - "ruby"
-    - "node"
-    - "php"
-    - "objc"
-    - "swift"
-
   # Proto目录索引配置
   proto_directory_indexes:
     common_proto_dir_index: 0
