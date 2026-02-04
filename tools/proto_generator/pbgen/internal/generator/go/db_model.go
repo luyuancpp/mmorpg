@@ -203,7 +203,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 			continue
 		}
 
-		sqlDir := utils2.BuildModelPath(protoDir)
+		sqlDir := utils2.BuildModelGoPath(protoDir)
 		if err := os.MkdirAll(sqlDir, 0755); err != nil {
 			logger.Global.Error("创建SQL目录失败",
 				zap.String("sql_dir", sqlDir),

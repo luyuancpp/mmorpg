@@ -14,7 +14,6 @@ class GameNodeSceneSystem
 {
 public:
     static void InitializeNodeScenes();
-    static void RegisterSceneToAllCentre(entt::entity scene);
 	static void RegisterAllSceneToCentre(entt::entity centre);
     static void HandleSceneCreation(const OnRoomCreated& message);
     static void HandleAfterEnterSceneEvent(const AfterEnterRoom& message);

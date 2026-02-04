@@ -35,9 +35,9 @@ func HasEtcdService(protoPath string) bool {
 	return strings.Contains(protoPath, _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirectoryIndexes.EtcdProtoDirIndex])
 }
 
-func BuildModelPath(protoPath string) string {
+func BuildModelGoPath(protoPath string) string {
 	basePath := strings.ToLower(path.Base(protoPath))
-	language := GetGrpcLanguageFromPath(protoPath)
+	language := "go" // 写死为 go
 	return _config.Global.Paths.OutputRoot + "/" + language + "/" + basePath + "/" + _config.Global.Naming.Model
 }
 
