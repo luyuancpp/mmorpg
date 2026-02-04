@@ -1,0 +1,31 @@
+syntax = "proto3";
+option go_package = "mail/proto/common;common";
+
+enum GameMessageType
+{
+  REQUEST = 0;
+  RESPONSE = 1;
+  RPC_CLIENT_REQUEST = 2;//服务器到客户端
+  NODE_ROUTE = 3;//服务器间传递
+  RPC_ERROR = 4; // not used
+}
+
+enum GameErrorCode
+{
+  RPC_NO_ERROR = 0;
+  WRONG_PROTO = 1;
+  NO_SERVICE = 2;
+  NO_METHOD = 3;
+  INVALID_REQUEST = 4;
+  INVALID_RESPONSE = 5;
+  TIMEOUT = 6;
+}
+
+message GameRpcMessage
+{
+  GameMessageType type = 1;
+  bytes request = 2;
+  bytes response = 3;
+  GameErrorCode error = 4;
+  uint32 message_id = 5;
+}

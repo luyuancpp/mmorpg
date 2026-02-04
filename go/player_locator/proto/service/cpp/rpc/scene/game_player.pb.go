@@ -107,7 +107,7 @@ var File_proto_service_cpp_rpc_scene_game_player_proto protoreflect.FileDescript
 
 const file_proto_service_cpp_rpc_scene_game_player_proto_rawDesc = "" +
 	"\n" +
-	"-proto/service/cpp/rpc/scene/game_player.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\";\n" +
+	"-proto/service/cpp/rpc/scene/game_player.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\";\n" +
 	"\x15Centre2GsLoginRequest\x12\"\n" +
 	"\renter_gs_type\x18\x01 \x01(\rR\venterGsType\"\x19\n" +
 	"\x17GameNodeExitGameRequest2\x94\x01\n" +

@@ -175,7 +175,7 @@ var File_proto_service_cpp_rpc_centre_centre_scene_proto protoreflect.FileDescri
 
 const file_proto_service_cpp_rpc_centre_centre_scene_proto_rawDesc = "" +
 	"\n" +
-	"/proto/service/cpp/rpc/centre/centre_scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\"q\n" +
+	"/proto/service/cpp/rpc/centre/centre_scene.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\"q\n" +
 	"\x14RegisterSceneRequest\x12\"\n" +
 	"\rscene_node_id\x18\x01 \x01(\rR\vsceneNodeId\x125\n" +
 	"\vscenes_info\x18\x02 \x03(\v2\x14.RoomInfoPBComponentR\n" +

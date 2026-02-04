@@ -79,7 +79,7 @@ var File_proto_service_cpp_rpc_scene_game_client_player_proto protoreflect.FileD
 
 const file_proto_service_cpp_rpc_scene_game_client_player_proto_rawDesc = "" +
 	"\n" +
-	"4proto/service/cpp/rpc/scene/game_client_player.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"\\\n" +
+	"4proto/service/cpp/rpc/scene/game_client_player.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"\\\n" +
 	"\x15GameKickPlayerRequest\x12'\n" +
 	"\x06reason\x18\x01 \x01(\v2\x0f.TipInfoMessageR\x06reason\x12\x1a\n" +
 	"\boperator\x18\x02 \x01(\tR\boperator2\x7f\n" +
