@@ -196,7 +196,6 @@ type PathLists struct {
 	ProtoDirectories         []string          `yaml:"proto_directories"`
 	RobotProtoDirectories    []string          `yaml:"robot_proto_directories"`
 	MethodHandlerDirectories MethodHandlerDirs `yaml:"method_handler_directories"`
-	GrpcLanguages            []string          `yaml:"grpc_languages"`
 	ProtoDirectoryIndexes    ProtoDirIndexes   `yaml:"proto_directory_indexes"`
 	NodeTypes                NodeTypes         `yaml:"node_types"`
 }
