@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/service/cpp/rpc/centre/centre_service.pb.h"
+#include "proto/service/rpc/centre/centre_service.pb.h"
 
 
 constexpr uint32_t CentreGatePlayerServiceMessageId = 35;

@@ -1,6 +1,6 @@
 
 #pragma once
-#include "proto/service/cpp/rpc/scene/game_player_scene.pb.h"
+#include "proto/service/rpc/scene/game_player_scene.pb.h"
 
 #include "rpc/player_rpc_response_handler.h"
 
