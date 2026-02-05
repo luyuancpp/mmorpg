@@ -5,6 +5,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"robot/generated/pb/game"
 	"robot/proto/common"
+	"robot/proto/service/grpc/login"
+	"robot/proto/service/rpc/scene"
 
 	"robot/logic/gameobject"
 	"robot/pkg"
@@ -67,25 +69,25 @@ func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent)
 	}
 }
 func handleClientPlayerLoginLogin(player *gameobject.Player, body []byte) {
-	message := &LoginResponse{}
+	message := &login.LoginResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal LoginResponse", zap.Error(err))
+		zap.L().Error("Failed to unmarshal login.LoginResponse", zap.Error(err))
 		return
 	}
 	ClientPlayerLoginLoginHandler(player, message)
 }
 func handleClientPlayerLoginCreatePlayer(player *gameobject.Player, body []byte) {
-	message := &CreatePlayerResponse{}
+	message := &login.CreatePlayerResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal CreatePlayerResponse", zap.Error(err))
+		zap.L().Error("Failed to unmarshal login.CreatePlayerResponse", zap.Error(err))
 		return
 	}
 	ClientPlayerLoginCreatePlayerHandler(player, message)
 }
 func handleClientPlayerLoginEnterGame(player *gameobject.Player, body []byte) {
-	message := &EnterGameResponse{}
+	message := &login.EnterGameResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal EnterGameResponse", zap.Error(err))
+		zap.L().Error("Failed to unmarshal login.EnterGameResponse", zap.Error(err))
 		return
 	}
 	ClientPlayerLoginEnterGameHandler(player, message)
