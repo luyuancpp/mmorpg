@@ -6,7 +6,7 @@
 #include "scene_node.h"
 #include "core/network/message_system.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "proto/service/cpp/rpc/centre/centre_player_scene.pb.h"
+#include "proto/service/rpc/centre/centre_player_scene.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "rpc/service_metadata/centre_player_scene_service_metadata.h"
 #include "proto/common/node.pb.h"

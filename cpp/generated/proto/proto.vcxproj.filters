@@ -15,45 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="service\cpp\rpc\centre\centre_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\centre\centre_player_scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\centre\centre_scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\centre\centre_service.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\gate\gate_service.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\scene\game_client_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\scene\game_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\scene\game_player_scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\scene\game_scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\scene\player_scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\scene\player_skill.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\scene\player_state_attribute_sync.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\cpp\rpc\scene\scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="common\common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -210,12 +171,6 @@
     <ClCompile Include="middleware\etcd\version.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\login\login.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="service\go\grpc\player_locator\player_locator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="middleware\etcd\etcd.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -225,71 +180,77 @@
     <ClCompile Include="middleware\etcd\version.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\login\login.grpc.pb.cc">
+    <ClCompile Include="service\grpc\db\db.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\player_locator\player_locator.grpc.pb.cc">
+    <ClCompile Include="service\grpc\db\db.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\db\db.grpc.pb.cc">
+    <ClCompile Include="service\grpc\db\db_task.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\db\db.pb.cc">
+    <ClCompile Include="service\grpc\db\db_task.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\db\db_task.grpc.pb.cc">
+    <ClCompile Include="service\grpc\db\proto_option.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\db\db_task.pb.cc">
+    <ClCompile Include="service\grpc\db\proto_option.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\db\proto_option.grpc.pb.cc">
+    <ClCompile Include="service\grpc\login\login.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="service\go\grpc\db\proto_option.pb.cc">
+    <ClCompile Include="service\grpc\login\login.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\grpc\player_locator\player_locator.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\grpc\player_locator\player_locator.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\centre\centre_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\centre\centre_player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\centre\centre_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\centre\centre_service.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\gate\gate_service.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\scene\game_client_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\scene\game_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\scene\game_player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\scene\game_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\scene\player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\scene\player_skill.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\scene\player_state_attribute_sync.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="service\rpc\scene\scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="service\cpp\rpc\centre\centre_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\centre\centre_player_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\centre\centre_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\centre\centre_service.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\gate\gate_service.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\scene\game_client_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\scene\game_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\scene\game_player_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\scene\game_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\scene\player_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\scene\player_skill.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\scene\player_state_attribute_sync.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\cpp\rpc\scene\scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="common\common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -446,12 +407,6 @@
     <ClInclude Include="middleware\etcd\version.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\login\login.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service\go\grpc\player_locator\player_locator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="middleware\etcd\etcd.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -461,28 +416,73 @@
     <ClInclude Include="middleware\etcd\version.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\login\login.grpc.pb.h">
+    <ClInclude Include="service\grpc\db\db.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\player_locator\player_locator.grpc.pb.h">
+    <ClInclude Include="service\grpc\db\db.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\db\db.grpc.pb.h">
+    <ClInclude Include="service\grpc\db\db_task.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\db\db.pb.h">
+    <ClInclude Include="service\grpc\db\db_task.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\db\db_task.grpc.pb.h">
+    <ClInclude Include="service\grpc\db\proto_option.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\db\db_task.pb.h">
+    <ClInclude Include="service\grpc\db\proto_option.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\db\proto_option.pb.h">
+    <ClInclude Include="service\grpc\login\login.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service\go\grpc\db\proto_option.grpc.pb.h">
+    <ClInclude Include="service\grpc\login\login.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\grpc\player_locator\player_locator.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\grpc\player_locator\player_locator.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\centre\centre_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\centre\centre_player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\centre\centre_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\centre\centre_service.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\gate\gate_service.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\scene\game_client_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\scene\game_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\scene\game_player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\scene\game_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\scene\player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\scene\player_skill.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\scene\player_state_attribute_sync.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service\rpc\scene\scene.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
