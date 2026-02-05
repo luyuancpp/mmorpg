@@ -63,15 +63,15 @@ func runClientLogic(account string, serverAddr string, globalWg *sync.WaitGroup)
 		switch d.Name() {
 		case "LoginResponse":
 			resp := msg.(*login.LoginResponse)
-			handler.ClientPlayerLoginLoginHandler(gameClient, resp)
+			handler.ClientPlayerLoginLoginClientHandler(gameClient, resp)
 			gameClient.TickBehaviorTree()
 		case "CreatePlayerResponse":
 			resp := msg.(*login.CreatePlayerResponse)
-			handler.ClientPlayerLoginCreatePlayerHandler(gameClient, resp)
+			handler.ClientPlayerLoginCreatePlayerClientHandler(gameClient, resp)
 			gameClient.TickBehaviorTree()
 		case "EnterGameResponse":
 			resp := msg.(*login.EnterGameResponse)
-			handler.ClientPlayerLoginEnterGameHandler(gameClient, resp)
+			handler.ClientPlayerLoginEnterGameClientHandler(gameClient, resp)
 		case "MessageContent":
 			resp := msg.(*common.MessageContent)
 			handler.MessageBodyHandler(gameClient, resp)

@@ -9,7 +9,7 @@ import (
 	"robot/proto/service/grpc/login"
 )
 
-func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *login.EnterGameResponse) {
+func ClientPlayerLoginEnterGameClientHandler(client *pkg.GameClient, response *login.EnterGameResponse) {
 	if response.ErrorMessage.Id != 0 {
 		zap.L().Error("received error response",
 			zap.Uint32("error_id", response.ErrorMessage.Id),
@@ -36,4 +36,7 @@ func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *login.E
 	player.Blackboard.SetMem(behaviortree.ClientBoardKey, client)
 	player.Blackboard.SetMem(behaviortree.PlayerBoardKey, player)
 	client.Blackboard.SetMem(behaviortree.PlayerBoardKey, player)
+}
+
+func ClientPlayerLoginEnterGameHandler(player *gameobject.Player, response *login.EnterGameResponse) {
 }
