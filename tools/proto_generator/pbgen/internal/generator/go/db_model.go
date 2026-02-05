@@ -134,7 +134,6 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 		return true
 	})
 
-	internal.DescriptorsLoaded = true
 	logger.Global.Info("描述符激活完成",
 		zap.Int("cached_message_count", len(internal.ActiveMsgDescCache)),
 		zap.Int("processed_file_count", len(internal.FileDescCache)),
