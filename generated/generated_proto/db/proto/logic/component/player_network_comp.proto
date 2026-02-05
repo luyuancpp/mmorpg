@@ -1,4 +1,5 @@
 syntax = "proto3";
+option go_package = "db/proto/logic/component;component";
 
 message PlayerSessionSnapshotPBComp {
     uint64 player_id = 1;

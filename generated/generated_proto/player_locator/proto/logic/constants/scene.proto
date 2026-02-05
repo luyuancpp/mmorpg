@@ -1,3 +1,4 @@
 syntax = "proto3";
+option go_package = "player_locator/proto/logic/constants;constants";
 
 

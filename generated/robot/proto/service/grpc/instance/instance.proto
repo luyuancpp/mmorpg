@@ -4,6 +4,7 @@ syntax = "proto3";
 
 import "proto/common/tip.proto";
 
+option go_package = "robot/proto/service/grpc/instance;instance";
 package instance;
 
 service Instance {

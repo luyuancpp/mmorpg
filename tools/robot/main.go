@@ -14,7 +14,7 @@ import (
 	"robot/logic/handler"
 	"robot/pkg"
 	"robot/proto/common"
-	"robot/proto/service/go/grpc/login"
+	"robot/proto/service/grpc/login"
 	"strconv"
 	"sync"
 	"time"

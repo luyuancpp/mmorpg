@@ -6,7 +6,7 @@ import (
 	"robot/logic/gameobject"
 	"robot/pkg"
 	"robot/proto/logic/component"
-	"robot/proto/service/cpp/rpc/scene"
+	"robot/proto/service/rpc/scene"
 )
 
 func SceneSkillClientPlayerGetSkillListHandler(player *gameobject.Player, response *scene.GetSkillListResponse) {

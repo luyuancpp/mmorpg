@@ -6,7 +6,7 @@ import (
 	"robot/logic/btree"
 	"robot/logic/gameobject"
 	"robot/pkg"
-	"robot/proto/service/go/grpc/login"
+	"robot/proto/service/grpc/login"
 )
 
 func ClientPlayerLoginEnterGameHandler(client *pkg.GameClient, response *login.EnterGameResponse) {

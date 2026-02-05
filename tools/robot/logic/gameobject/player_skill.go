@@ -2,7 +2,7 @@ package gameobject
 
 import (
 	"robot/generated/pb/game"
-	"robot/proto/service/cpp/rpc/scene"
+	"robot/proto/service/rpc/scene"
 )
 
 func (player *Player) SetupPlayerSkillsOnLogin() {
