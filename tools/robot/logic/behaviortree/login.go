@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap"
 	"robot/generated/pb/game"
 	"robot/interfaces"
-	"robot/proto/service/go/grpc/login"
+	"robot/proto/service/grpc/login"
 
 	//. "github.com/magicsea/behavior3go/actions"
 	//. "github.com/magicsea/behavior3go/composites"
