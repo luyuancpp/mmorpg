@@ -4,11 +4,12 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 	"robot/logic/behaviortree"
+	"robot/logic/gameobject"
 	"robot/pkg"
 	"robot/proto/service/grpc/login"
 )
 
-func ClientPlayerLoginCreatePlayerHandler(client *pkg.GameClient, response *login.CreatePlayerResponse) {
+func ClientPlayerLoginCreatePlayerClientHandler(client *pkg.GameClient, response *login.CreatePlayerResponse) {
 	if response.ErrorMessage != nil && response.ErrorMessage.Id > 0 {
 		zap.L().Error("failed to create player",
 			zap.Uint32("error_id", response.ErrorMessage.Id),
@@ -25,4 +26,7 @@ func ClientPlayerLoginCreatePlayerHandler(client *pkg.GameClient, response *logi
 	} else {
 		zap.L().Info("create player success", zap.String("response", string(jsonData)))
 	}
+}
+
+func ClientPlayerLoginCreatePlayerHandler(player *gameobject.Player, response *login.CreatePlayerResponse) {
 }
