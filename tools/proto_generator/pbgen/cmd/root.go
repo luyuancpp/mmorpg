@@ -284,6 +284,7 @@ func main() {
 	trackGroupTime("ConstantsMessageIdsAndOptionBuilding", map[string]func(*sync.WaitGroup){
 		"internal.GenerateServiceConstants": internal.GenerateServiceConstants,
 		"internal.WriteGoMessageId":         internal.WriteGoMessageId,
+		" _go2.LoadAllDescriptors":          _go2.LoadAllDescriptors,
 		"_go_option.BuildOption": func(wg *sync.WaitGroup) {
 			localWg := sync.WaitGroup{}
 			localWg.Add(1)

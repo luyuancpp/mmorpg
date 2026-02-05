@@ -67,12 +67,12 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 
 // LoadAllDescriptors 激活描述符（v1.36.6 专用，无需 protoregistry.NewFiles()）
 // LoadAllDescriptors 适配你的 protoregistry 版本：用 Files 管理 + protodesc 激活
-func LoadAllDescriptors() error {
-	internal.LoadMutex.Lock()
-	defer internal.LoadMutex.Unlock()
+func LoadAllDescriptors(wg *sync.WaitGroup) {
+	wg.Add(1)
+	defer wg.Done()
 
 	if internal.DescriptorsLoaded {
-		return nil
+		return
 	}
 
 	logger.Global.Info("开始激活描述符",
@@ -143,15 +143,11 @@ func LoadAllDescriptors() error {
 		zap.Int("cached_message_count", len(internal.ActiveMsgDescCache)),
 		zap.Int("processed_file_count", len(internal.FileDescCache)),
 	)
-	return nil
+	return
 }
 
 // 以下函数保持不变（GenerateMergedTableSQL、verifyMessageValidity 等）
 func GenerateMergedTableSQL(messageNames []string) error {
-	if err := LoadAllDescriptors(); err != nil {
-		return err
-	}
-
 	sqlGenerator := proto2mysql.NewPbMysqlDB()
 	var mergedSQL strings.Builder
 
