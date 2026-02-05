@@ -75,9 +75,6 @@ var FileMaxMessageId = uint64(0)
 var (
 	ActiveMsgDescCache map[protoreflect.FullName]protoreflect.MessageDescriptor
 	FileDescCache      map[string]protoreflect.FileDescriptor
-
-	DescriptorsLoaded bool
-	LoadMutex         sync.Mutex
 )
 
 // 初始化缓存

@@ -71,10 +71,6 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
 
-	if internal.DescriptorsLoaded {
-		return
-	}
-
 	logger.Global.Info("开始激活描述符",
 		zap.Int("total_files", len(internal.FdSet.GetFile())),
 	)
