@@ -5,6 +5,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"robot/generated/pb/game"
 	"robot/proto/common"
+	"robot/proto/service/grpc/login"
+	"robot/proto/service/rpc/scene"
 
 	"robot/logic/gameobject"
 	"robot/pkg"
@@ -91,17 +93,17 @@ func handleClientPlayerLoginEnterGame(player *gameobject.Player, body []byte) {
 	ClientPlayerLoginEnterGameHandler(player, message)
 }
 func handleClientPlayerLoginLeaveGame(player *gameobject.Player, body []byte) {
-	message := &LeaveGameRequest{}
+	message := &login.LeaveGameRequest{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal LeaveGameRequest", zap.Error(err))
+		zap.L().Error("Failed to unmarshal login.LeaveGameRequest", zap.Error(err))
 		return
 	}
 	ClientPlayerLoginLeaveGameHandler(player, message)
 }
 func handleClientPlayerLoginDisconnect(player *gameobject.Player, body []byte) {
-	message := &LoginNodeDisconnectRequest{}
+	message := &login.LoginNodeDisconnectRequest{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal LoginNodeDisconnectRequest", zap.Error(err))
+		zap.L().Error("Failed to unmarshal login.LoginNodeDisconnectRequest", zap.Error(err))
 		return
 	}
 	ClientPlayerLoginDisconnectHandler(player, message)
