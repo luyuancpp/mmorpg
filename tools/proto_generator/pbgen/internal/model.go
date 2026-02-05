@@ -340,26 +340,27 @@ func (info *MethodInfo) CppResponse() string {
 }
 
 func (info *MethodInfo) GoRequest() string {
-	// 获取 OutputType
-	inputType := info.MethodDescriptorProto.GetInputType()
 
-	// .package.TypeName => 提取 TypeName
-	lastDot := strings.LastIndex(inputType, ".")
-	if lastDot >= 0 && lastDot < len(inputType)-1 {
-		inputType = inputType[lastDot+1:]
+	// 1. 取完整输入类型
+	fullType := info.MethodDescriptorProto.GetInputType()
+	fullType = strings.TrimPrefix(fullType, ".")
+
+	// 2. 提取短类型名
+	typeName := fullType
+	if idx := strings.LastIndex(fullType, "."); idx >= 0 {
+		typeName = fullType[idx+1:]
 	}
 
 	var fileDir string
-	activeMsgDesc, ok := ActiveMsgDescCache[protoreflect.FullName(inputType)]
+
+	// 3. 用完整名查缓存
+	activeMsgDesc, ok := ActiveMsgDescCache[protoreflect.FullName(fullType)]
 	if ok {
-		// 获取消息所在文件的完整路径
 		filePath := activeMsgDesc.ParentFile().Path()
-		// 提取文件所在目录
 		fileDir = filepath.Base(filepath.Dir(filePath)) + "."
 	}
 
-	// 返回目录和类型名（根据需要调整返回内容）
-	return fileDir + inputType
+	return fileDir + typeName
 }
 
 func (info *MethodInfo) GoResponse() string {
