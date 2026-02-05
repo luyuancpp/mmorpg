@@ -3,7 +3,7 @@ package handler
 import (
 	"robot/logic/behaviortree"
 	"robot/pkg"
-	"robot/proto/service/go/grpc/login"
+	"robot/proto/service/grpc/login"
 )
 
 func ClientPlayerLoginLoginHandler(client *pkg.GameClient, response *login.LoginResponse) {

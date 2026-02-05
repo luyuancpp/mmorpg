@@ -6,7 +6,7 @@ import (
 	"robot/generated/pb/game"
 	"robot/logic/gameobject"
 	"robot/proto/logic/component"
-	"robot/proto/service/cpp/rpc/scene"
+	"robot/proto/service/rpc/scene"
 
 	//. "github.com/magicsea/behavior3go/actions"
 	//. "github.com/magicsea/behavior3go/composites"

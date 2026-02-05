@@ -4,7 +4,7 @@ import (
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
 	"robot/pkg"
-	"robot/proto/service/cpp/rpc/scene"
+	"robot/proto/service/rpc/scene"
 )
 
 func SceneSceneClientPlayerNotifyActorListDestroyHandler(player *gameobject.Player, response *scene.ActorListDestroyS2C) {

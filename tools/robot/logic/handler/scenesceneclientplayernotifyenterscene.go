@@ -3,7 +3,7 @@ package handler
 import (
 	"robot/generated/pb/game"
 	"robot/logic/gameobject"
-	"robot/proto/service/cpp/rpc/scene"
+	"robot/proto/service/rpc/scene"
 )
 
 func SceneSceneClientPlayerNotifyEnterSceneHandler(player *gameobject.Player, response *scene.EnterSceneS2C) {

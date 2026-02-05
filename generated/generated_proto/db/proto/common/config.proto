@@ -1,4 +1,5 @@
 syntax = "proto3";
+option go_package = "db/proto/common;common";
 
 // 服务配置，避免与 protobuf 的 Service 冲突
 message ServiceConfig {

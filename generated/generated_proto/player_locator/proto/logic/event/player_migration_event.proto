@@ -1,4 +1,5 @@
 syntax = "proto3";
+option go_package = "player_locator/proto/logic/event;event";
 
 import "proto/logic/component/scene_comp.proto";
 

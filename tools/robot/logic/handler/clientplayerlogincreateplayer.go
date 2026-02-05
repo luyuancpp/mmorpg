@@ -5,7 +5,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"robot/logic/behaviortree"
 	"robot/pkg"
-	"robot/proto/service/go/grpc/login"
+	"robot/proto/service/grpc/login"
 )
 
 func ClientPlayerLoginCreatePlayerHandler(client *pkg.GameClient, response *login.CreatePlayerResponse) {

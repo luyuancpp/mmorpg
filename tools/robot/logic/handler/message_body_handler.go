@@ -5,7 +5,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"robot/generated/pb/game"
 	"robot/proto/common"
-	"robot/proto/service/grpc/login"
 
 	"robot/logic/gameobject"
 	"robot/pkg"
@@ -68,7 +67,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent)
 	}
 }
 func handleClientPlayerLoginLogin(player *gameobject.Player, body []byte) {
-	message := &login.LoginResponse{}
+	message := &LoginResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal LoginResponse", zap.Error(err))
 		return

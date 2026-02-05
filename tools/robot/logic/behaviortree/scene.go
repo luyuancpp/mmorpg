@@ -9,7 +9,7 @@ import (
 	"robot/generated/pb/game"
 	"robot/logic/gameobject"
 	"robot/proto/common"
-	"robot/proto/service/cpp/rpc/scene"
+	"robot/proto/service/rpc/scene"
 )
 
 type RandomEnterScene struct {

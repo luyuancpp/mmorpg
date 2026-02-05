@@ -5,7 +5,7 @@ import (
 	"robot/logic/behaviortree"
 	"robot/logic/gameobject"
 	"robot/pkg"
-	"robot/proto/service/cpp/rpc/scene"
+	"robot/proto/service/rpc/scene"
 )
 
 func SceneSceneClientPlayerNotifyActorCreateHandler(player *gameobject.Player, response *scene.ActorCreateS2C) {
