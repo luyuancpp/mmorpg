@@ -297,31 +297,55 @@ domain_meta:
     source: "login"
     rpc: grpc
     output:
-      cpp: "cpp/generated/services/login"
-      go:  "go/generated/services/login"
+      cpp:
+        proto: "cpp/generated/services/login/proto"
+        handler: "cpp/generated/services/login/handler"
+        grpc_client: "cpp/generated/services/login/grpc_client"
+      go:
+        proto: "go/generated/services/login/proto"
+        handler: "go/generated/services/login/handler"
 
   player:
     source: "player"
     rpc: grpc
     output:
-      cpp: "cpp/generated/services/player"
-      go:  "go/generated/services/player"
+      cpp:
+        proto: "cpp/generated/services/player/proto"
+        handler: "cpp/generated/services/player/handler"
+        grpc_client: "cpp/generated/services/player/grpc_client"
+      go:
+        proto: "go/generated/services/player/proto"
+        handler: "go/generated/services/player/handler"
 
   scene:
     source: "scene"
     rpc: rpc
     output:
-      cpp: "cpp/generated/nodes/scene"
+      cpp:
+        proto: "cpp/generated/nodes/scene/proto"
+        handler: "cpp/generated/nodes/scene/handler"
+        attribute_sync: "cpp/generated/nodes/scene/generated/attribute"
 
   chat:
     source: "chat"
     rpc: grpc
     output:
-      cpp: "cpp/generated/services/chat"
-      go:  "go/generated/services/chat"
+      cpp:
+        proto: "cpp/generated/services/chat/proto"
+        handler: "cpp/generated/services/chat/handler"
+        grpc_client: "cpp/generated/services/chat/grpc_client"
+      go:
+        proto: "go/generated/services/chat/proto"
+        handler: "go/generated/services/chat/handler"
 
   db:
     source: "db"
     rpc: grpc
     output:
-      cpp: "cpp/generated/backend/db"
+      cpp:
+        proto: "cpp/generated/backend/db/proto"
+        handler: "cpp/generated/backend/db/handler"
+        grpc_client: "cpp/generated/backend/db/grpc_client"
+      go:
+        proto: "go/generated/backend/db/proto"
+        handler: "go/generated/backend/db/handler"

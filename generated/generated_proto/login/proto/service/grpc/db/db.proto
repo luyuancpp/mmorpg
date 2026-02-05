@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "login/proto/service/grpc/db;db";
 
 import "proto/service/grpc/db/proto_option.proto";
 

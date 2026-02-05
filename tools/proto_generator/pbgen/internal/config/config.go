@@ -278,9 +278,9 @@ type LogConfig struct {
 }
 
 type DomainMeta struct {
-	Source string            `yaml:"source"`
-	Rpc    string            `yaml:"rpc"`    // grpc | rpc | both | none
-	Output map[string]string `yaml:"output"` // lang -> dir
+	Source string                       `yaml:"source"`
+	Rpc    string                       `yaml:"rpc"`    // grpc | rpc | both | none
+	Output map[string]map[string]string `yaml:"output"` // lang -> type -> dir
 }
 
 var (

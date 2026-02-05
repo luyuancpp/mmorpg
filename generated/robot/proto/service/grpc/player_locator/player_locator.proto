@@ -2,7 +2,6 @@ syntax = "proto3";
 
 
 
-option go_package = "robot/proto/service/grpc/player_locator;player_locator";
 package playerlocator;
 
 import "proto/common/empty.proto";

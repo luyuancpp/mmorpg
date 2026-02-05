@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "login/proto/common;common";
 
 enum GameMessageType
 {
