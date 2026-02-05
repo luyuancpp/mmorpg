@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "robot/proto/logic/database;database";
 
 import "proto/logic/database/mysql_database_table.proto";
 

@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "player_locator/proto/service/rpc/centre;centre";
 
 import "proto/service/grpc/db/proto_option.proto";
 import "proto/common/empty.proto";

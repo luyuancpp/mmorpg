@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "robot/proto/service/rpc/scene;scene";
 
 import "proto/service/grpc/db/proto_option.proto";
 import "proto/common/tip.proto";

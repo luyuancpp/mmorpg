@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "player_locator/proto/logic/component;component";
 
 
 import "proto/logic/component/actor_comp.proto";
