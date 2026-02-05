@@ -5,7 +5,7 @@
 #include "Detour/DetourCommon.h"
 #include "core/network/message_system.h"
 #include "scene/scene/constants/view.h"
-#include "proto/service/cpp/rpc/scene/player_scene.pb.h"
+#include "proto/service/rpc/scene/player_scene.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 

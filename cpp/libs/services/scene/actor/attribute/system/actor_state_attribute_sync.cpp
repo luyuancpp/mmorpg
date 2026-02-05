@@ -1,7 +1,7 @@
 #include "actor_state_attribute_sync.h"
 
 // 引入必要的头文件
-#include "proto/service/cpp/rpc/scene/player_state_attribute_sync.pb.h"
+#include "proto/service/rpc/scene/player_state_attribute_sync.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/actor_attribute_state_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_constants.h"

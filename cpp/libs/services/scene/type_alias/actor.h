@@ -3,7 +3,7 @@
 
 #include "engine/core/type_define/type_define.h"
 #include "engine/threading/entity_manager.h"
-#include "proto/service/cpp/rpc/scene/player_scene.pb.h"
+#include "proto/service/rpc/scene/player_scene.pb.h"
 
 #define actorCreateMessage tlsRegistryManager.globalRegistry.get<ActorCreateS2C>(GlobalEntity())
 #define actorDestroyMessage tlsRegistryManager.globalRegistry.get<ActorDestroyS2C>(GlobalEntity())
