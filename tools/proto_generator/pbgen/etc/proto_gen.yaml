@@ -290,3 +290,38 @@ log:
   level: "info"
   output: "stdout"
   file_path: "pbgen.log"
+
+domain_meta:
+
+  login:
+    source: "login"
+    rpc: grpc
+    output:
+      cpp: "cpp/generated/services/login"
+      go:  "go/generated/services/login"
+
+  player:
+    source: "player"
+    rpc: grpc
+    output:
+      cpp: "cpp/generated/services/player"
+      go:  "go/generated/services/player"
+
+  scene:
+    source: "scene"
+    rpc: rpc
+    output:
+      cpp: "cpp/generated/nodes/scene"
+
+  chat:
+    source: "chat"
+    rpc: grpc
+    output:
+      cpp: "cpp/generated/services/chat"
+      go:  "go/generated/services/chat"
+
+  db:
+    source: "db"
+    rpc: grpc
+    output:
+      cpp: "cpp/generated/backend/db"

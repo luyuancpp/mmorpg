@@ -18,15 +18,16 @@ import (
 
 // Config 代码生成器全局配置
 type Config struct {
-	Paths          Paths              `yaml:"paths"`
-	DirectoryNames DirectoryNames     `yaml:"directory_names"` // 新增：目录命名常量
-	FileExtensions FileExtensions     `yaml:"file_extensions"`
-	Naming         Naming             `yaml:"naming"`
-	PathLists      PathLists          `yaml:"path_lists"`
-	Generators     Generators         `yaml:"generators"`
-	Mappings       map[string]Mapping `yaml:"mappings"`
-	Parser         Parser             `yaml:"parser"`
-	Log            LogConfig          `yaml:"log"`
+	Paths          Paths                 `yaml:"paths"`
+	DirectoryNames DirectoryNames        `yaml:"directory_names"` // 新增：目录命名常量
+	FileExtensions FileExtensions        `yaml:"file_extensions"`
+	Naming         Naming                `yaml:"naming"`
+	PathLists      PathLists             `yaml:"path_lists"`
+	Generators     Generators            `yaml:"generators"`
+	Mappings       map[string]Mapping    `yaml:"mappings"`
+	Parser         Parser                `yaml:"parser"`
+	Log            LogConfig             `yaml:"log"`
+	DomainMeta     map[string]DomainMeta `yaml:"domain_meta"`
 }
 
 // DirectoryNames 目录命名常量（对应YAML中的directory_names节点）
@@ -274,6 +275,12 @@ type LogConfig struct {
 	Level    string `yaml:"level"`
 	Output   string `yaml:"output"`
 	FilePath string `yaml:"file_path"`
+}
+
+type DomainMeta struct {
+	Source string            `yaml:"source"`
+	Rpc    string            `yaml:"rpc"`    // grpc | rpc | both | none
+	Output map[string]string `yaml:"output"` // lang -> dir
 }
 
 var (
