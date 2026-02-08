@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"os"
 	"path"
+	"pbgen/global_value"
 	"strings"
 	"sync"
 
 	"go.uber.org/zap" // 引入zap结构化日志字段
-	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
 	"pbgen/logger" // 引入全局logger包

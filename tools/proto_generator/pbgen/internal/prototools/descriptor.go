@@ -5,10 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"pbgen/global_value"
 	"sync"
 
 	"go.uber.org/zap" // 引入zap结构化日志字段
-	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"pbgen/logger" // 引入全局logger包
