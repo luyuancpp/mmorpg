@@ -326,6 +326,24 @@ domain_meta:
         handler: "cpp/generated/nodes/scene/handler"
         attribute_sync: "cpp/generated/nodes/scene/generated/attribute"
 
+  centre:
+    source: "centre"
+    rpc: rpc
+    output:
+      cpp:
+        proto: "cpp/generated/nodes/centre/proto"
+        handler: "cpp/generated/nodes/centre/handler"
+        attribute_sync: "cpp/generated/nodes/centre/generated/attribute"
+
+  gate:
+    source: "gate"
+    rpc: rpc
+    output:
+      cpp:
+        proto: "cpp/generated/nodes/gate/proto"
+        handler: "cpp/generated/nodes/gate/handler"
+        attribute_sync: "cpp/generated/nodes/gate/generated/attribute"
+
   chat:
     source: "chat"
     rpc: grpc
