@@ -199,6 +199,29 @@ type PathLists struct {
 	MethodHandlerDirectories MethodHandlerDirs `yaml:"method_handler_directories"`
 	ProtoDirectoryIndexes    ProtoDirIndexes   `yaml:"proto_directory_indexes"`
 	NodeTypes                NodeTypes         `yaml:"node_types"`
+	ProtoDirs                ProtoDirs         `yaml:"proto_dirs"`
+}
+
+type ProtoDirs struct {
+	Common         string `yaml:"common"`
+	LogicComponent string `yaml:"logic_component"`
+	LogicEvent     string `yaml:"logic_event"`
+	Logic          string `yaml:"logic"`
+	Constants      string `yaml:"constants"`
+	Database       string `yaml:"database"`
+
+	PlayerLocator string `yaml:"player_locator"`
+	Login         string `yaml:"login"`
+	DB            string `yaml:"db"`
+	Chat          string `yaml:"chat"`
+	Team          string `yaml:"team"`
+	Mail          string `yaml:"mail"`
+
+	Centre string `yaml:"centre"`
+	Scene  string `yaml:"scene"`
+	Gate   string `yaml:"gate"`
+
+	Etcd string `yaml:"etcd"`
 }
 
 // ProtoDirIndexes Proto目录索引配置
@@ -772,7 +795,6 @@ func setDefaults() {
 			"scene/generated/attribute/",
 		)
 	}
-
 }
 
 // validateConfig 验证配置的完整性和正确性
