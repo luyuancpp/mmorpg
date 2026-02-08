@@ -367,3 +367,14 @@ domain_meta:
       go:
         proto: "go/generated/backend/db/proto"
         handler: "go/generated/backend/db/handler"
+  etcd:
+    source: "etcd"
+    rpc: etcd
+    output:
+      cpp:
+        proto: "cpp/generated/backend/db/proto"
+        handler: "cpp/generated/backend/db/handler"
+        grpc_client: "cpp/generated/backend/db/grpc_client"
+      go:
+        proto: "go/generated/backend/db/proto"
+        handler: "go/generated/backend/db/handler"
