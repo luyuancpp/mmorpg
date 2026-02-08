@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-// HasGrpcService 检查proto路径是否包含gRPC服务定义
-//func HasGrpcService(protoPath string) bool {
-//	return strings.Contains(strings.ToLower(protoPath), "/grpc/")
-//}
-
 func GetDomainByProtoPath(protoPath string) (string, bool) {
 	lower := strings.ToLower(protoPath)
 
@@ -39,8 +34,12 @@ func HasGrpcService(protoPath string) bool {
 }
 
 func HasEtcdService(protoPath string) bool {
-	// 利用提取语言的函数来判断是否存在gRPC服务
-	return strings.Contains(protoPath, _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirectoryIndexes.EtcdProtoDirIndex])
+	domain, ok := GetDomainByProtoPath(protoPath)
+	if !ok {
+		return false
+	}
+
+	return domain == "etcd"
 }
 
 func BuildModelGoPath(protoPath string) string {
