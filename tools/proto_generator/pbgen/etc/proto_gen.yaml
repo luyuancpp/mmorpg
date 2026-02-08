@@ -210,26 +210,6 @@ path_lists:
     gate_node_player: "{{gate_node_dir}}handler/rpc/player/"
     gate_node_player_replied: "{{gate_node_dir}}rpc_replies/player/"
 
-  # Proto目录索引配置
-  proto_directory_indexes:
-    common_proto_dir_index: 0
-    logic_component_proto_dir_index: 1
-    logic_event_proto_dir_index: 2
-    logic_shared_proto_dir_index: 3
-    logic_proto_dir_index: 4
-    player_locator_dir_index: 5
-    constants_dir_index: 6
-    etcd_proto_dir_index: 7
-    login_proto_dir_index: 8
-    db_proto_dir_index: 9
-    center_proto_dir_index: 10
-    room_proto_dir_index: 11
-    gate_proto_dir_index: 12
-    chat_proto_dir_index: 13
-    team_proto_dir_index: 14
-    mail_proto_dir_index: 15
-    robot_proto_index: 17
-
   # 节点类型配置
   node_types:
     tcp_node: 0
@@ -237,23 +217,23 @@ path_lists:
     http_node: 2
 
   proto_dirs:
-    common: "proto/common/"
-    logic_component: "proto/logic/component/"
-    logic_event: "proto/logic/event/"
-    logic: "proto/logic/"
-    constants: "proto/logic/constants/"
-    database: "proto/logic/database/"
+    common: "common/"
+    logic_component: "logic/component/"
+    logic_event: "logic/event/"
+    logic: "logic/"
+    constants: "logic/constants/"
+    database: "logic/database/"
 
-    player_locator: "proto/service/grpc/player_locator/"
-    login: "proto/service/grpc/login/"
-    db: "proto/service/grpc/db/"
-    chat: "proto//service/grpc/chat/"
-    team: "proto//service/grpc/team/"
-    mail: "proto//service/grpc/mail/"
+    player_locator: "service/grpc/player_locator/"
+    login: "service/grpc/login/"
+    db: "service/grpc/db/"
+    chat: "service/grpc/chat/"
+    team: "service/grpc/team/"
+    mail: "service/grpc/mail/"
 
-    centre: "proto/service/rpc/centre/"
-    scene: "proto/service/rpc/scene/"
-    gate: "proto/service/rpc/gate/"
+    centre: "service/rpc/centre/"
+    scene: "service/rpc/scene/"
+    gate: "service/rpc/gate/"
 
     etcd: "middleware/etcd/"
 
