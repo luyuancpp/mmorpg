@@ -237,23 +237,23 @@ path_lists:
     http_node: 2
 
   proto_dirs:
-    common: "common/"
-    logic_component: "logic/component/"
-    logic_event: "logic/event/"
-    logic: "logic/"
-    constants: "logic/constants/"
-    database: "logic/database/"
+    common: "proto/common/"
+    logic_component: "proto/logic/component/"
+    logic_event: "proto/logic/event/"
+    logic: "proto/logic/"
+    constants: "proto/logic/constants/"
+    database: "proto/logic/database/"
 
-    player_locator: "service/grpc/player_locator/"
-    login: "service/grpc/login/"
-    db: "service/grpc/db/"
-    chat: "service/grpc/chat/"
-    team: "service/grpc/team/"
-    mail: "service/grpc/mail/"
+    player_locator: "proto/service/grpc/player_locator/"
+    login: "proto/service/grpc/login/"
+    db: "proto/service/grpc/db/"
+    chat: "proto//service/grpc/chat/"
+    team: "proto//service/grpc/team/"
+    mail: "proto//service/grpc/mail/"
 
-    centre: "service/rpc/centre/"
-    scene: "service/rpc/scene/"
-    gate: "service/rpc/gate/"
+    centre: "proto/service/rpc/centre/"
+    scene: "proto/service/rpc/scene/"
+    gate: "proto/service/rpc/gate/"
 
     etcd: "middleware/etcd/"
 

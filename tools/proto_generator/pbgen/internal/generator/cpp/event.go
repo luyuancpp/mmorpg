@@ -12,7 +12,6 @@ import (
 
 	"go.uber.org/zap" // 引入zap，用于日志字段
 
-	"pbgen/global_value"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"pbgen/logger" // 引入全局logger包
@@ -155,7 +154,7 @@ type EventTemplateData struct {
 func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir string) {
 	defer wg.Done()
 
-	protoFilePath := global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex] + file.Name()
+	protoFilePath := _config.Global.PathLists.ProtoDirs.LogicEvent + file.Name()
 	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
 		logger.Global.Error("解析proto文件失败",
@@ -192,7 +191,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
-		ProtoInclude:        _config.Global.DirectoryNames.ProtoDirName + _config.Global.PathLists.ProtoDirectories[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex] + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
+		ProtoInclude:        _config.Global.DirectoryNames.ProtoDirName + _config.Global.PathLists.ProtoDirs.LogicEvent + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
 		EventMessages:       eventMessages,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,
@@ -216,10 +215,10 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 
 // generateAllEventHandlers 生成所有事件处理器
 func GenerateAllEventHandlers(wg *sync.WaitGroup) {
-	files, err := os.ReadDir(global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex])
+	files, err := os.ReadDir(_config.Global.PathLists.ProtoDirs.LogicEvent)
 	if err != nil {
 		logger.Global.Fatal("读取proto目录失败",
-			zap.String("dir", global_value.ProtoDirs[_config.Global.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex]),
+			zap.String("dir", _config.Global.PathLists.ProtoDirs.LogicEvent),
 			zap.Error(err),
 		)
 	}
