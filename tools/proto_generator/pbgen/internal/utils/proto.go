@@ -7,8 +7,35 @@ import (
 )
 
 // HasGrpcService 检查proto路径是否包含gRPC服务定义
+//func HasGrpcService(protoPath string) bool {
+//	return strings.Contains(strings.ToLower(protoPath), "/grpc/")
+//}
+
+func GetDomainByProtoPath(protoPath string) (string, bool) {
+	lower := strings.ToLower(protoPath)
+
+	for domain, meta := range _config.Global.DomainMeta {
+		if meta.Source == "" {
+			continue
+		}
+
+		key := "/" + strings.ToLower(meta.Source) + "/"
+		if strings.Contains(lower, key) {
+			return domain, true
+		}
+	}
+
+	return "", false
+}
+
 func HasGrpcService(protoPath string) bool {
-	return strings.Contains(strings.ToLower(protoPath), "/grpc/")
+	domain, ok := GetDomainByProtoPath(protoPath)
+	if !ok {
+		return false
+	}
+
+	meta := _config.Global.DomainMeta[domain]
+	return strings.ToLower(meta.Rpc) == "grpc"
 }
 
 func HasEtcdService(protoPath string) bool {
