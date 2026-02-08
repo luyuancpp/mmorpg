@@ -189,7 +189,7 @@ type Naming struct {
 	YourCodeBegin                   string `yaml:"your_code_begin"`
 	YourCodeEnd                     string `yaml:"your_code_end"`
 	YourCodePair                    string `yaml:"your_code_pair"`
-	Model                           string `yaml:"model"`
+	Model                           string `yaml:"model_dir_name"`
 }
 
 // PathLists 路径列表配置
