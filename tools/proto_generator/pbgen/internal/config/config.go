@@ -1103,48 +1103,6 @@ func (c *Config) ShouldIgnoreFile(filename string) bool {
 
 // ========== 原有配置的兼容方法 ==========
 
-// GetProtoDirIndex 获取Proto目录索引
-func (c *Config) GetProtoDirIndex(name string) int {
-	switch name {
-	case "common":
-		return c.PathLists.ProtoDirectoryIndexes.CommonProtoDirIndex
-	case "logic_component":
-		return c.PathLists.ProtoDirectoryIndexes.LogicComponentProtoDirIndex
-	case "logic_event":
-		return c.PathLists.ProtoDirectoryIndexes.LogicEventProtoDirIndex
-	case "logic_shared":
-		return c.PathLists.ProtoDirectoryIndexes.LogicSharedProtoDirIndex
-	case "logic":
-		return c.PathLists.ProtoDirectoryIndexes.LogicProtoDirIndex
-	case "player_locator":
-		return c.PathLists.ProtoDirectoryIndexes.PlayerLocatorDirIndex
-	case "constants":
-		return c.PathLists.ProtoDirectoryIndexes.ConstantsDirIndex
-	case "etcd":
-		return c.PathLists.ProtoDirectoryIndexes.EtcdProtoDirIndex
-	case "login":
-		return c.PathLists.ProtoDirectoryIndexes.LoginProtoDirIndex
-	case "db":
-		return c.PathLists.ProtoDirectoryIndexes.DbProtoDirIndex
-	case "center":
-		return c.PathLists.ProtoDirectoryIndexes.CenterProtoDirIndex
-	case "room":
-		return c.PathLists.ProtoDirectoryIndexes.RoomProtoDirIndex
-	case "gate":
-		return c.PathLists.ProtoDirectoryIndexes.GateProtoDirIndex
-	case "chat":
-		return c.PathLists.ProtoDirectoryIndexes.ChatProtoDirIndex
-	case "team":
-		return c.PathLists.ProtoDirectoryIndexes.TeamProtoDirIndex
-	case "mail":
-		return c.PathLists.ProtoDirectoryIndexes.MailProtoDirIndex
-	case "robot":
-		return c.PathLists.ProtoDirectoryIndexes.RobotProtoDirIndex
-	default:
-		return -1
-	}
-}
-
 // GetNodeType 获取节点类型值
 func (c *Config) GetNodeType(name string) uint32 {
 	switch name {
