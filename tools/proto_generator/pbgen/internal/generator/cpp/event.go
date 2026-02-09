@@ -215,7 +215,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 
 // generateAllEventHandlers 生成所有事件处理器
 func GenerateAllEventHandlers(wg *sync.WaitGroup) {
-	files, err := os.ReadDir(_config.Global.PathLists.ProtoDirs.LogicEvent)
+	files, err := os.ReadDir(_config.Global.Paths.ProtoDir + _config.Global.PathLists.ProtoDirs.LogicEvent)
 	if err != nil {
 		logger.Global.Fatal("读取proto目录失败",
 			zap.String("dir", _config.Global.PathLists.ProtoDirs.LogicEvent),

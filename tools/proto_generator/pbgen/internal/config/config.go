@@ -489,11 +489,6 @@ func replaceVariablesInAllStructs(vars map[string]string) error {
 		return err
 	}
 
-	// 替换 ProtoDirs 中的变量
-	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.PathLists.ProtoDirs).Elem(), vars); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -605,11 +600,6 @@ func resolveAbsolutePaths() error {
 	}
 
 	if err := resolveAbsolutePathsInSlice(reflect.ValueOf(&Global.Parser.IncludePaths)); err != nil {
-		return err
-	}
-
-	// 转换 ProtoDirs 为绝对路径
-	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.PathLists.ProtoDirs).Elem()); err != nil {
 		return err
 	}
 
