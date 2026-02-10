@@ -7,15 +7,13 @@ import (
 )
 
 func GetDomainByProtoPath(protoPath string) (string, bool) {
-	lower := strings.ToLower(protoPath)
-
 	for domain, meta := range _config.Global.DomainMeta {
 		if meta.Source == "" {
 			continue
 		}
 
 		key := "/" + strings.ToLower(meta.Source) + "/"
-		if strings.Contains(key, lower) {
+		if strings.Contains(key, protoPath) {
 			return domain, true
 		}
 	}
