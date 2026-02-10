@@ -1,13 +1,11 @@
 syntax = "proto3";
 option go_package = "db/proto/common;common";
 
-
-
 enum eNodeType {
     DeployNodeService      = 0;  // 部署节点服务
     DbNodeService          = 1;  // 数据库节点服务
     CentreNodeService      = 2;  // 场景切换中心服务器服务
-    SceneNodeService       = 3;  // 场景服务器服务
+    RoomNodeService       = 3;  // 场景服务器服务
     GateNodeService        = 4;  // 网关节点服务
     LoginNodeService       = 5;  // 登录服务器节点服务
     RedisNodeService       = 6;  // Redis 节点服务
