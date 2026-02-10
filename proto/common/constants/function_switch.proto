@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+
+enum eFunctionSwitchBitType
+{
+	kFunctionSwitchTeam = 0;//
+	kFunctionSwitchFriends = 1;//
+};
+
+

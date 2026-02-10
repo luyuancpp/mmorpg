@@ -3,7 +3,7 @@ syntax = "proto3";
 import "proto/db/proto_option.proto";
 import "proto/common/base/empty.proto";
 import "proto/common/base/common.proto";
-import "proto/common/message.proto";
+import "proto/common/base/message.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_ROOM;
