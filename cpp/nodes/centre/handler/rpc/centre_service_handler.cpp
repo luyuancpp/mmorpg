@@ -730,7 +730,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	}
 
 	auto& nodeIdMap = *sessionPB->mutable_node_id();
-	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
+	nodeIdMap[eNodeType::RoomNodeService] = request->scene_node_id();
 
 	PlayerLifecycleSystem::RequestGatePlayerEnterScene(player);
 	PlayerChangeRoomUtil::SetCurrentChangeSceneState(player, ChangeRoomInfoPBComponent::eEnterSucceed);
@@ -846,7 +846,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case GateNodeService:
 	{
 		entt::entity gate_node_id{ tlsMessageContext.GetNextRouteNodeId() };
-		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 		if (!registry.valid(gate_node_id))
 		{
 			LOG_ERROR << "Gate node not found: " << tlsMessageContext.GetNextRouteNodeId();
@@ -864,7 +864,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case SceneNodeService:
 	{
 		entt::entity game_node_id{ tlsMessageContext.GetNextRouteNodeId() };
-		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 		if (!registry.valid(game_node_id))
 		{
 			LOG_ERROR << "Game node not found: " << tlsMessageContext.GetNextRouteNodeId() << ", " << request->DebugString();
@@ -906,7 +906,7 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sceneNodeId = entt::entity{ request->node_id() };
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 
 	// Check if the scene node ID is valid
 	if (!registry.valid(sceneNodeId))

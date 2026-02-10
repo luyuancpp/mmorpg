@@ -105,9 +105,9 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
     }
 
 	const auto& nodeIdMap = sessionPB->node_id();
-	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
+	auto it = nodeIdMap.find(eNodeType::RoomNodeService);
 	if (it == nodeIdMap.end()) {
-		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::RoomNodeService
 			<< ", player entity: " << entt::to_integral(playerEntity);
 		return;
 	}
@@ -115,7 +115,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
     Centre2GsEnterSceneRequest request;
     request.set_scene_id(sceneInfo->guid());
     request.set_player_id(playerId);
-	CallRemoteMethodOnSession(SceneEnterSceneMessageId, request, it->second, eNodeType::SceneNodeService);
+	CallRemoteMethodOnSession(SceneEnterSceneMessageId, request, it->second, eNodeType::RoomNodeService);
 
     LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << it->second;
 }
@@ -133,7 +133,7 @@ void PlayerSceneSystem::ProcessPlayerEnterSceneNode(entt::entity playerEntity, N
     request.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity));
     request.set_session_id(info->gate_session_id());
     request.set_centre_node_id(GetNodeInfo().node_id());
-	CallRemoteMethodOnSession(ScenePlayerEnterGameNodeMessageId, request, nodeId, eNodeType::SceneNodeService);
+	CallRemoteMethodOnSession(ScenePlayerEnterGameNodeMessageId, request, nodeId, eNodeType::RoomNodeService);
 }
 
 bool PlayerSceneSystem::VerifyChangeSceneRequest(entt::entity playerEntity)
@@ -223,7 +223,7 @@ bool PlayerSceneSystem::ValidateSceneSwitch(entt::entity playerEntity, entt::ent
 		return false;
 	}
 
-	auto& sceneNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& sceneNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	if (!sceneNodeRegistry.valid(RoomCommon::GetRoomNodeEntityId(fromSceneInfo->guid())) ||
 		!sceneNodeRegistry.valid(RoomCommon::GetRoomNodeEntityId(toSceneInfo->guid())))
 	{

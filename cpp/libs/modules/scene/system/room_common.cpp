@@ -33,7 +33,7 @@ void RoomCommon::ClearAllRoomData()
 	LOG_TRACE << "Clearing room system data";
 	tlsRegistryManager.roomRegistry.clear();
 	tlsRegistryManager.actorRegistry.clear();
-	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
+	tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService).clear();
 }
 
 uint32_t RoomCommon::GenRoomGuid() {
@@ -55,7 +55,7 @@ bool RoomCommon::IsRoomEmpty() {
 // Get total number of rooms associated with a specific configuration ID
 std::size_t RoomCommon::GetRoomsSize(uint32_t roomConfigId) {
 	std::size_t roomSize = 0;
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	for (auto node : registry.view<RoomRegistryComp>()) {
 		auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
 		roomSize += nodeRoomComp.GetRoomsByConfig(roomConfigId).size();
@@ -72,7 +72,7 @@ std::size_t RoomCommon::GetRoomsSize() {
 }
 
 bool RoomCommon::ConfigRoomListNotEmpty(uint32_t roomConfigId) {
-	auto& roomNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& roomNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	for (auto nodeEid : roomNodeRegistry.view<RoomRegistryComp>()) {
 		auto& nodeRoomComp = roomNodeRegistry.get<RoomRegistryComp>(nodeEid);
 		if (!nodeRoomComp.GetRoomsByConfig(roomConfigId).empty()) {
@@ -223,7 +223,7 @@ void RoomCommon::DestroyRoom(const DestroyRoomParam& param) {
 		return;
 	}
 
-	auto* pServerComp = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<RoomRegistryComp>(param.node);
+	auto* pServerComp = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService).try_get<RoomRegistryComp>(param.node);
 	if (!pServerComp) {
 		LOG_ERROR << "ServerComp not found for node";
 		return;
@@ -265,7 +265,7 @@ entt::entity RoomCommon::CreateRoomOnRoomNode(const CreateRoomOnNodeRoomParam& p
 	tlsRegistryManager.roomRegistry.emplace<RoomInfoPBComponent>(room, std::move(roomInfo));
 	tlsRegistryManager.roomRegistry.emplace<RoomPlayers>(room);
 
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	auto* serverPlayerInfo = registry.try_get<RoomNodePlayerStatsPtrPbComponent>(param.node);
 	if (serverPlayerInfo) {
 		tlsRegistryManager.roomRegistry.emplace<RoomNodePlayerStatsPtrPbComponent>(room, *serverPlayerInfo);

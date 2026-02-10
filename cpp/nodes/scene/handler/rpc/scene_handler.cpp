@@ -449,7 +449,7 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 
     entt::entity roomEntity{ request->scene_id() };
     // 可选：检查 roomEntity 是否有效（RoomCommon 内部通常会校验）
-    if (!tlsRegistryManager.actorRegistry.valid(roomEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(roomEntity)) {
+    if (!tlsRegistryManager.actorRegistry.valid(roomEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService).valid(roomEntity)) {
         LOG_ERROR << "EnterScene: invalid room entity " << request->scene_id();
         return;
     }

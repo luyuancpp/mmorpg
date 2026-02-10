@@ -79,7 +79,7 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 		return;
 	}
 
-	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::SceneNodeService);
+	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::RoomNodeService);
 	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, RoomCommon::GetGameNodeIdFromGuid(toScene));
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 	///<<< END WRITING YOUR CODE
