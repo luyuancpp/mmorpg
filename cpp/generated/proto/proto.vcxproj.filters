@@ -162,6 +162,60 @@
     <ClCompile Include="logic\event\skill_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="centre\centre_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="centre\centre_player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="centre\centre_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="centre\centre_service.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="etcd\etcd.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="etcd\kv.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="etcd\version.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="gate\gate_service.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="login\login.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="player\player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="room\game_client_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="room\game_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="room\game_player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="room\game_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="room\player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="room\player_skill.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="room\player_state_attribute_sync.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="room\scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.pb.h">
@@ -309,6 +363,60 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="logic\event\skill_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="centre\centre_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="centre\centre_player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="centre\centre_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="centre\centre_service.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="etcd\etcd.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="etcd\kv.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="etcd\version.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="gate\gate_service.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="login\login.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="player\player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="room\game_client_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="room\game_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="room\game_player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="room\game_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="room\player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="room\player_skill.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="room\player_state_attribute_sync.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="room\scene.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
