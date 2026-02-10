@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/middleware/etcd/etcd.pb.h"
+#include "proto/etcd/etcd.pb.h"
 
 
 constexpr uint32_t KVRangeMessageId = 59;

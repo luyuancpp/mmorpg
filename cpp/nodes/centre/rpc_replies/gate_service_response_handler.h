@@ -1,6 +1,6 @@
 #pragma once
 #include "muduo/net/TcpConnection.h"
-#include "proto/service/rpc/gate/gate_service.pb.h"
+#include "proto/gate/gate_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/service/rpc/scene/game_client_player.pb.h"
+#include "proto/room/game_client_player.pb.h"
 
 
 constexpr uint32_t SceneClientPlayerCommonSendTipToClientMessageId = 23;

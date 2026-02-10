@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/service/rpc/scene/scene.pb.h"
+#include "proto/room/scene.pb.h"
 
 
 constexpr uint32_t ScenePlayerEnterGameNodeMessageId = 83;
