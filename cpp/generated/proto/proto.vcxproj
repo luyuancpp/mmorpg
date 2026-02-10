@@ -72,6 +72,7 @@
     <ClCompile Include="common\event\scene_event.pb.cc" />
     <ClCompile Include="common\event\server_event.pb.cc" />
     <ClCompile Include="common\event\skill_event.pb.cc" />
+    <ClCompile Include="db\proto_option.pb.cc" />
     <ClCompile Include="etcd\etcd.grpc.pb.cc" />
     <ClCompile Include="etcd\etcd.pb.cc" />
     <ClCompile Include="etcd\kv.grpc.pb.cc" />
@@ -79,6 +80,7 @@
     <ClCompile Include="etcd\version.grpc.pb.cc" />
     <ClCompile Include="etcd\version.pb.cc" />
     <ClCompile Include="gate\gate_service.pb.cc" />
+    <ClCompile Include="login\login.grpc.pb.cc" />
     <ClCompile Include="login\login.pb.cc" />
     <ClCompile Include="player\player.pb.cc" />
     <ClCompile Include="room\game_client_player.pb.cc" />
@@ -144,6 +146,7 @@
     <ClInclude Include="common\event\scene_event.pb.h" />
     <ClInclude Include="common\event\server_event.pb.h" />
     <ClInclude Include="common\event\skill_event.pb.h" />
+    <ClInclude Include="db\proto_option.pb.h" />
     <ClInclude Include="etcd\etcd.grpc.pb.h" />
     <ClInclude Include="etcd\etcd.pb.h" />
     <ClInclude Include="etcd\kv.grpc.pb.h" />
@@ -151,6 +154,7 @@
     <ClInclude Include="etcd\version.grpc.pb.h" />
     <ClInclude Include="etcd\version.pb.h" />
     <ClInclude Include="gate\gate_service.pb.h" />
+    <ClInclude Include="login\login.grpc.pb.h" />
     <ClInclude Include="login\login.pb.h" />
     <ClInclude Include="player\player.pb.h" />
     <ClInclude Include="room\game_client_player.pb.h" />

@@ -4,7 +4,7 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
 #include "network/message_statistics.h"
-#include "proto/common/empty.pb.h"
+#include "proto/common/base/empty.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "core/utils/stat/stat.h"
 #include "network/codec/message_response_dispatcher.h"

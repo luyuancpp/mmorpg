@@ -15,7 +15,7 @@
 #include <threading/registry_manager.h>
 #include <threading/entity_manager.h>
 #include <threading/rpc_manager.h>
-#include "proto/common/message.pb.h"
+#include "proto/common/base/message.pb.h"
 
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,

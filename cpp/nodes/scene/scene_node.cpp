@@ -13,7 +13,7 @@
 #include "threading/redis_manager.h"
 #include "frame/manager/frame_time.h"
 #include "world/world.h"
-#include "proto/service/rpc/centre/centre_service.pb.h"
+#include "proto/centre/centre_service.pb.h"
 #include "core/network/message_system.h"
 #include "kafka/system/kafka.h"
 #include "core/system/redis.h"
@@ -23,7 +23,7 @@ using namespace muduo::net;
 SceneNode::SceneNode(muduo::net::EventLoop* loop)
     :Node(loop, "logs/scene")
 {
-	GetNodeInfo().set_node_type(SceneNodeService);
+	GetNodeInfo().set_node_type(RoomNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService };
 
 	tlsRedisSystem.Initialize();

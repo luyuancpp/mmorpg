@@ -83,7 +83,7 @@ bool IsZoneSingletonNodeType(uint32_t nodeType) {
 
 		// 非 zone-singleton 的 nodeType：
 	case LoginNodeService:
-	case SceneNodeService:
+	case RoomNodeService:
 		return false;
 
 	default:
