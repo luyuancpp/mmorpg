@@ -13,7 +13,7 @@ import (
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	common "robot/proto/common"
-	component "robot/proto/logic/component"
+	component "robot/proto/common/logic/component"
 	sync "sync"
 	unsafe "unsafe"
 )
@@ -205,7 +205,7 @@ var File_proto_room_game_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_room_game_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"\"proto/room/game_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a&proto/logic/component/scene_comp.proto\"O\n" +
+	"\"proto/room/game_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a-proto/common/logic/component/scene_comp.proto\"O\n" +
 	"\x13GsEnterSceneRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x19\n" +

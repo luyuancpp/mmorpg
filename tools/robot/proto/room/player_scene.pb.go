@@ -12,7 +12,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	common "robot/proto/common"
-	component "robot/proto/logic/component"
+	component "robot/proto/common/logic/component"
 	sync "sync"
 	unsafe "unsafe"
 )
@@ -492,7 +492,7 @@ var File_proto_room_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_room_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/room/player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
+	"\x1dproto/room/player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a-proto/common/logic/component/actor_comp.proto\"K\n" +
 	"\x14EnterSceneC2SRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"M\n" +
