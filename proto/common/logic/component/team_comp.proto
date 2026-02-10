@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-
-
-message TeamId
-{
-  uint64 team_id = 1;
-}
