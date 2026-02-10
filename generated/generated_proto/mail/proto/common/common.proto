@@ -1,0 +1,42 @@
+syntax = "proto3";
+option go_package = "mail/proto/common;common";
+
+
+
+message EndpointPBComponent
+{
+  string ip = 1;
+  uint32 port = 2;
+}
+
+message NodeInfo {
+  uint32 node_id = 1;
+  uint32 node_type = 2;
+  uint64 launch_time = 3;
+  uint32 scene_node_type = 4;
+  EndpointPBComponent endpoint = 5;
+  uint32 zone_id = 6;
+  uint32 protocol_type = 7; // 节点通信协议类型
+  string node_uuid = 8;
+}
+
+message NodeInfoListPBComponent
+{
+  repeated NodeInfo node_list = 1;
+}
+
+message NetworkAddress
+{
+  string ip = 1;
+  uint32 port = 2;
+}
+
+message RoomInfoPBComponent
+{
+  uint32 scene_confid = 1;//场景id
+  uint32 guid = 2;//场景唯一id
+  uint32 mirror_confid = 3;//镜像id
+  uint32 dungen_confid = 4;//副本id
+  map<uint64, bool> creators = 5;//创建者
+}
+

@@ -590,7 +590,7 @@ var File_proto_logic_database_mysql_database_table_proto protoreflect.FileDescri
 
 const file_proto_logic_database_mysql_database_table_proto_rawDesc = "" +
 	"\n" +
-	"/proto/logic/database/mysql_database_table.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a proto/common/user_accounts.proto\x1a-proto/logic/component/player_scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a'proto/logic/component/player_comp.proto\x1a-proto/logic/component/player_skill_comp.proto\"\xb5\x01\n" +
+	"/proto/logic/database/mysql_database_table.proto\x1a\x1bproto/db/proto_option.proto\x1a proto/common/user_accounts.proto\x1a-proto/logic/component/player_scene_comp.proto\x1a&proto/logic/component/actor_comp.proto\x1a'proto/logic/component/player_comp.proto\x1a-proto/logic/component/player_skill_comp.proto\"\xb5\x01\n" +
 	"\x04user\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x19\n" +

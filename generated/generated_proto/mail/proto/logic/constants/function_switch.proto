@@ -1,0 +1,11 @@
+syntax = "proto3";
+option go_package = "mail/proto/logic/constants;constants";
+
+
+enum eFunctionSwitchBitType
+{
+	kFunctionSwitchTeam = 0;//
+	kFunctionSwitchFriends = 1;//
+};
+
+

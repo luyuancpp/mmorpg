@@ -1,0 +1,3 @@
+syntax = "proto3";
+option go_package = "team/proto/logic/component;component";
+
