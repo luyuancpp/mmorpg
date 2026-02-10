@@ -15,7 +15,7 @@ func GetDomainByProtoPath(protoPath string) (string, bool) {
 		}
 
 		key := "/" + strings.ToLower(meta.Source) + "/"
-		if strings.Contains(lower, key) {
+		if strings.Contains(key, lower) {
 			return domain, true
 		}
 	}

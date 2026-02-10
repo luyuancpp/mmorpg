@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"sort"
-	"strings"
 	"sync"
 	"text/template"
 
@@ -131,7 +130,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			protoPath := firstService.Path()
 
 			// 如果既不是gRPC服务也不是etcd服务，则返回（不继续处理）
-			if !utils2.HasGrpcService(strings.ToLower(protoPath)) && !utils2.HasEtcdService(strings.ToLower(protoPath)) {
+			if !(utils2.HasGrpcService(protoPath) || utils2.HasEtcdService(protoPath)) {
 				return
 			}
 
