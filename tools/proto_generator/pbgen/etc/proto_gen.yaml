@@ -293,7 +293,6 @@ log:
   file_path: "pbgen.log"
 
 domain_meta:
-
   login:
     source: "login"
     rpc: grpc

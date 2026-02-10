@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"pbgen/global_value"
 	"sync"
 
 	"go.uber.org/zap" // 引入zap结构化日志字段
@@ -78,11 +77,11 @@ func collectUniqueProtoFiles() ([]string, error) {
 	protoFileSet := make(map[string]struct{}) // 用于去重
 	var allProtoFiles []string
 
-	for _, dir := range global_value.ProtoDirs {
-		fileEntries, err := os.ReadDir(dir)
+	for _, meta := range _config.Global.DomainMeta {
+		fileEntries, err := os.ReadDir(meta.Source)
 		if err != nil {
 			logger.Global.Warn("描述符生成: 读取目录失败，跳过",
-				zap.String("dir", dir),
+				zap.String("dir", meta.Source),
 				zap.Error(err),
 			)
 			continue
@@ -90,11 +89,11 @@ func collectUniqueProtoFiles() ([]string, error) {
 
 		for _, entry := range fileEntries {
 			if utils2.IsProtoFile(entry) {
-				absPath, err := filepath.Abs(filepath.Join(dir, entry.Name()))
+				absPath, err := filepath.Abs(filepath.Join(meta.Source, entry.Name()))
 				if err != nil {
 					logger.Global.Warn("描述符生成: 获取文件绝对路径失败，跳过",
 						zap.String("file_name", entry.Name()),
-						zap.String("dir", dir),
+						zap.String("dir", meta.Source),
 						zap.Error(err),
 					)
 					continue

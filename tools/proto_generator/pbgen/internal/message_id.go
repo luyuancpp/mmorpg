@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"os"
 	"path"
-	"pbgen/global_value"
 	"strings"
 	"sync"
 
@@ -192,20 +191,21 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 			_config.Global.Paths.RobotMessageIdFile,
 		}
 
-		for i := 0; i < len(global_value.ProtoDirs); i++ {
-			if !utils.HasGrpcService(global_value.ProtoDirs[i]) {
+		for domain, meta := range _config.Global.DomainMeta {
+			if !utils.IsGRPC(meta) {
 				logger.Global.Debug("目录无GRPC服务，跳过MessageId文件生成",
-					zap.String("dir", global_value.ProtoDirs[i]),
+					zap.String("domain", domain),
+					zap.String("dir", meta.Source),
 				)
 				continue
 			}
-			basePath := strings.ToLower(path.Base(global_value.ProtoDirs[i]))
+			basePath := strings.ToLower(path.Base(meta.Source))
 			outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + _config.Global.Naming.GoPackage
 			filePath := outputDir + "/" + _config.Global.FileExtensions.MessageIdGoFile
 			filePaths = append(filePaths, filePath)
 
 			logger.Global.Debug("添加MessageId文件输出路径",
-				zap.String("dir", global_value.ProtoDirs[i]),
+				zap.String("dir", meta.Source),
 				zap.String("output_path", filePath),
 			)
 		}
