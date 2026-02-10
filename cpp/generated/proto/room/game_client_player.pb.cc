@@ -78,26 +78,26 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2froom_2fgame_5fclient_5fplayer_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n#proto/room/game_client_player.proto\032\033p"
-    "roto/db/proto_option.proto\032\026proto/common"
-    "/tip.proto\032\030proto/common/empty.proto\"J\n\025"
-    "GameKickPlayerRequest\022\037\n\006reason\030\001 \001(\0132\017."
-    "TipInfoMessage\022\020\n\010operator\030\002 \001(\t2\177\n\027Scen"
-    "eClientPlayerCommon\022*\n\017SendTipToClient\022\017"
-    ".TipInfoMessage\032\006.Empty\022,\n\nKickPlayer\022\026."
-    "GameKickPlayerRequest\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001"
-    "\001B\007\200\001\001\230\324a\003b\006proto3"
+    "roto/db/proto_option.proto\032\033proto/common"
+    "/base/tip.proto\032\035proto/common/base/empty"
+    ".proto\"J\n\025GameKickPlayerRequest\022\037\n\006reaso"
+    "n\030\001 \001(\0132\017.TipInfoMessage\022\020\n\010operator\030\002 \001"
+    "(\t2\177\n\027SceneClientPlayerCommon\022*\n\017SendTip"
+    "ToClient\022\017.TipInfoMessage\032\006.Empty\022,\n\nKic"
+    "kPlayer\022\026.GameKickPlayerRequest\032\006.Empty\032"
+    "\n\200\250\303\001\001\210\250\303\001\001B\007\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2froom_2fgame_5fclient_5fplayer_2eproto_deps[3] = {
-        &::descriptor_table_proto_2fcommon_2fempty_2eproto,
-        &::descriptor_table_proto_2fcommon_2ftip_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2froom_2fgame_5fclient_5fplayer_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2froom_2fgame_5fclient_5fplayer_2eproto = {
     false,
     false,
-    338,
+    348,
     descriptor_table_protodef_proto_2froom_2fgame_5fclient_5fplayer_2eproto,
     "proto/room/game_client_player.proto",
     &descriptor_table_proto_2froom_2fgame_5fclient_5fplayer_2eproto_once,

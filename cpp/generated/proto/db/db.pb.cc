@@ -105,22 +105,22 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fdb_2fdb_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\021proto/db/db.proto\032\033proto/db/proto_opti"
-    "on.proto\032\030proto/common/empty.proto\"$\n\013Te"
-    "stRequest\022\025\n\005empty\030\001 \001(\0132\006.Empty\"%\n\014Test"
-    "Response\022\025\n\005empty\030\001 \001(\0132\006.Empty2)\n\002db\022#\n"
-    "\004Test\022\014.TestRequest\032\r.TestResponseB\004\230\324a\005"
-    "b\006proto3"
+    "on.proto\032\035proto/common/base/empty.proto\""
+    "$\n\013TestRequest\022\025\n\005empty\030\001 \001(\0132\006.Empty\"%\n"
+    "\014TestResponse\022\025\n\005empty\030\001 \001(\0132\006.Empty2)\n\002"
+    "db\022#\n\004Test\022\014.TestRequest\032\r.TestResponseB"
+    "\004\230\324a\005b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fdb_2fdb_2eproto_deps[2] = {
-        &::descriptor_table_proto_2fcommon_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fdb_2fdb_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fdb_2eproto = {
     false,
     false,
-    208,
+    213,
     descriptor_table_protodef_proto_2fdb_2fdb_2eproto,
     "proto/db/db.proto",
     &descriptor_table_proto_2fdb_2fdb_2eproto_once,

@@ -107,9 +107,9 @@ func handleClientPlayerLoginDisconnect(player *gameobject.Player, body []byte) {
 	ClientPlayerLoginDisconnectHandler(player, message)
 }
 func handleSceneClientPlayerCommonSendTipToClient(player *gameobject.Player, body []byte) {
-	message := &common.TipInfoMessage{}
+	message := &base.TipInfoMessage{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal common.TipInfoMessage", zap.Error(err))
+		zap.L().Error("Failed to unmarshal base.TipInfoMessage", zap.Error(err))
 		return
 	}
 	SceneClientPlayerCommonSendTipToClientHandler(player, message)

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "proto/common//database/mysql_database_table.proto";
+import "proto/common/database/mysql_database_table.proto";
 
 message PlayerAllData {
   player_database player_database_data = 2;

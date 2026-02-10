@@ -449,53 +449,53 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2flogin_2flogin_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\027proto/login/login.proto\022\007loginpb\032\033prot"
-    "o/db/proto_option.proto\032\026proto/common/ti"
-    "p.proto\032 proto/common/user_accounts.prot"
-    "o\"\215\001\n\020LoginSessionInfo\022\017\n\007account\030\001 \001(\t\022"
-    "\017\n\007role_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\004\022\017\n\007"
-    "gate_id\030\004 \001(\004\022\021\n\tdevice_id\030\005 \001(\t\022\022\n\nlogi"
-    "n_time\030\006 \001(\003\022\013\n\003fsm\030\007 \001(\t\"B\n\032AccountSimp"
-    "lePlayerWrapper\022$\n\006player\030\001 \001(\0132\024.Accoun"
-    "tSimplePlayer\"1\n\014LoginRequest\022\017\n\007account"
-    "\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"m\n\rLoginRespons"
-    "e\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessag"
-    "e\0224\n\007players\030\002 \003(\0132#.loginpb.AccountSimp"
-    "lePlayerWrapper\"\221\001\n\014TestResponse\022&\n\rerro"
-    "r_message\030\001 \001(\0132\017.TipInfoMessage\0224\n\007play"
-    "ers\030\002 \003(\0132#.loginpb.AccountSimplePlayerW"
-    "rapper\022\022\n\nteststring\030\003 \003(\t\022\017\n\007testint\030\004 "
-    "\003(\005\"\025\n\023CreatePlayerRequest\"t\n\024CreatePlay"
-    "erResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipI"
-    "nfoMessage\0224\n\007players\030\002 \003(\0132#.loginpb.Ac"
-    "countSimplePlayerWrapper\"9\n\020EnterGameReq"
-    "uest\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\nrequest_id\030\002 "
-    "\001(\t\"N\n\021EnterGameResponse\022&\n\rerror_messag"
-    "e\030\001 \001(\0132\017.TipInfoMessage\022\021\n\tplayer_id\030\002 "
-    "\001(\004\"\022\n\020LeaveGameRequest\"0\n\032LoginNodeDisc"
-    "onnectRequest\022\022\n\nsession_id\030\001 \001(\004\"\024\n\022Log"
-    "inEmptyResponse2\370\002\n\021ClientPlayerLogin\0226\n"
-    "\005Login\022\025.loginpb.LoginRequest\032\026.loginpb."
-    "LoginResponse\022K\n\014CreatePlayer\022\034.loginpb."
-    "CreatePlayerRequest\032\035.loginpb.CreatePlay"
-    "erResponse\022B\n\tEnterGame\022\031.loginpb.EnterG"
-    "ameRequest\032\032.loginpb.EnterGameResponse\022C"
-    "\n\tLeaveGame\022\031.loginpb.LeaveGameRequest\032\033"
-    ".loginpb.LoginEmptyResponse\022N\n\nDisconnec"
-    "t\022#.loginpb.LoginNodeDisconnectRequest\032\033"
-    ".loginpb.LoginEmptyResponse\032\005\210\250\303\001\001b\006prot"
-    "o3"
+    "o/db/proto_option.proto\032\033proto/common/ba"
+    "se/tip.proto\032%proto/common/base/user_acc"
+    "ounts.proto\"\215\001\n\020LoginSessionInfo\022\017\n\007acco"
+    "unt\030\001 \001(\t\022\017\n\007role_id\030\002 \001(\004\022\022\n\nsession_id"
+    "\030\003 \001(\004\022\017\n\007gate_id\030\004 \001(\004\022\021\n\tdevice_id\030\005 \001"
+    "(\t\022\022\n\nlogin_time\030\006 \001(\003\022\013\n\003fsm\030\007 \001(\t\"B\n\032A"
+    "ccountSimplePlayerWrapper\022$\n\006player\030\001 \001("
+    "\0132\024.AccountSimplePlayer\"1\n\014LoginRequest\022"
+    "\017\n\007account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"m\n\rLo"
+    "ginResponse\022&\n\rerror_message\030\001 \001(\0132\017.Tip"
+    "InfoMessage\0224\n\007players\030\002 \003(\0132#.loginpb.A"
+    "ccountSimplePlayerWrapper\"\221\001\n\014TestRespon"
+    "se\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessa"
+    "ge\0224\n\007players\030\002 \003(\0132#.loginpb.AccountSim"
+    "plePlayerWrapper\022\022\n\nteststring\030\003 \003(\t\022\017\n\007"
+    "testint\030\004 \003(\005\"\025\n\023CreatePlayerRequest\"t\n\024"
+    "CreatePlayerResponse\022&\n\rerror_message\030\001 "
+    "\001(\0132\017.TipInfoMessage\0224\n\007players\030\002 \003(\0132#."
+    "loginpb.AccountSimplePlayerWrapper\"9\n\020En"
+    "terGameRequest\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\nreq"
+    "uest_id\030\002 \001(\t\"N\n\021EnterGameResponse\022&\n\rer"
+    "ror_message\030\001 \001(\0132\017.TipInfoMessage\022\021\n\tpl"
+    "ayer_id\030\002 \001(\004\"\022\n\020LeaveGameRequest\"0\n\032Log"
+    "inNodeDisconnectRequest\022\022\n\nsession_id\030\001 "
+    "\001(\004\"\024\n\022LoginEmptyResponse2\370\002\n\021ClientPlay"
+    "erLogin\0226\n\005Login\022\025.loginpb.LoginRequest\032"
+    "\026.loginpb.LoginResponse\022K\n\014CreatePlayer\022"
+    "\034.loginpb.CreatePlayerRequest\032\035.loginpb."
+    "CreatePlayerResponse\022B\n\tEnterGame\022\031.logi"
+    "npb.EnterGameRequest\032\032.loginpb.EnterGame"
+    "Response\022C\n\tLeaveGame\022\031.loginpb.LeaveGam"
+    "eRequest\032\033.loginpb.LoginEmptyResponse\022N\n"
+    "\nDisconnect\022#.loginpb.LoginNodeDisconnec"
+    "tRequest\032\033.loginpb.LoginEmptyResponse\032\005\210"
+    "\250\303\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2flogin_2flogin_2eproto_deps[3] = {
-        &::descriptor_table_proto_2fcommon_2ftip_2eproto,
-        &::descriptor_table_proto_2fcommon_2fuser_5faccounts_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fuser_5faccounts_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2flogin_2flogin_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_2flogin_2eproto = {
     false,
     false,
-    1402,
+    1412,
     descriptor_table_protodef_proto_2flogin_2flogin_2eproto,
     "proto/login/login.proto",
     &descriptor_table_proto_2flogin_2flogin_2eproto_once,

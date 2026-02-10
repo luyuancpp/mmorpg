@@ -62,21 +62,21 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2froom_2fgame_5fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\033proto/room/game_scene.proto\032\033proto/db/"
-    "proto_option.proto\032\030proto/common/empty.p"
-    "roto\"\017\n\rGameSceneTest2,\n\nSceneScene\022\036\n\004T"
-    "est\022\016.GameSceneTest\032\006.EmptyB\007\200\001\001\230\324a\003b\006pr"
-    "oto3"
+    "proto_option.proto\032\035proto/common/base/em"
+    "pty.proto\"\017\n\rGameSceneTest2,\n\nSceneScene"
+    "\022\036\n\004Test\022\016.GameSceneTest\032\006.EmptyB\007\200\001\001\230\324a"
+    "\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2froom_2fgame_5fscene_2eproto_deps[2] = {
-        &::descriptor_table_proto_2fcommon_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2froom_2fgame_5fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2froom_2fgame_5fscene_2eproto = {
     false,
     false,
-    164,
+    169,
     descriptor_table_protodef_proto_2froom_2fgame_5fscene_2eproto,
     "proto/room/game_scene.proto",
     &descriptor_table_proto_2froom_2fgame_5fscene_2eproto_once,

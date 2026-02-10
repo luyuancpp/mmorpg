@@ -33,7 +33,7 @@
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/db/proto_option.pb.h"
 #include "google/protobuf/empty.pb.h"
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
