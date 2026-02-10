@@ -2,9 +2,9 @@ syntax = "proto3";
 option go_package = "room";
 
 import "proto/db/proto_option.proto";
-import "proto/logic/component/actor_comp.proto";
+import "proto/common/logic/component/actor_comp.proto";
 import "proto/common/empty.proto";
-import "proto/logic/component/actor_attribute_state_comp.proto";
+import "proto/common/logic/component/actor_attribute_state_comp.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_ROOM;

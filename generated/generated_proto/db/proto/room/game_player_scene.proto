@@ -4,7 +4,7 @@ option go_package = "db/proto/room;room";
 import "proto/db/proto_option.proto";
 import "proto/common/tip.proto";
 import "google/protobuf/empty.proto";
-import "proto/logic/component/scene_comp.proto";
+import "proto/common/logic/component/scene_comp.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_ROOM;
