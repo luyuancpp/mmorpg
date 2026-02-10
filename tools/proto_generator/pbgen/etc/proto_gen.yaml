@@ -294,7 +294,7 @@ log:
 
 domain_meta:
   login:
-    source: "{{proto_dir}}/login"
+    source: "{{proto_dir}}login/"
     rpc: grpc
     output:
       cpp:
@@ -307,7 +307,7 @@ domain_meta:
 
 
   scene:
-    source: "{{proto_dir}}/room/"
+    source: "{{proto_dir}}room/"
     rpc: rpc
     output:
       cpp:
@@ -316,7 +316,7 @@ domain_meta:
         attribute_sync: "cpp/generated/nodes/scene/generated/attribute"
 
   centre:
-    source: "{{proto_dir}}/centre"
+    source: "{{proto_dir}}centre/"
     rpc: rpc
     output:
       cpp:
@@ -325,7 +325,7 @@ domain_meta:
         attribute_sync: "cpp/generated/nodes/centre/generated/attribute"
 
   gate:
-    source: "{{proto_dir}}/gate"
+    source: "{{proto_dir}}gate/"
     rpc: rpc
     output:
       cpp:
@@ -334,7 +334,7 @@ domain_meta:
         attribute_sync: "cpp/generated/nodes/gate/generated/attribute"
 
   chat:
-    source: "{{proto_dir}}/chat"
+    source: "{{proto_dir}}chat/"
     rpc: grpc
     output:
       cpp:
@@ -346,7 +346,7 @@ domain_meta:
         handler: "go/generated/services/chat/handler"
 
   db:
-    source: "{{proto_dir}}/db"
+    source: "{{proto_dir}}db/"
     rpc: grpc
     output:
       cpp:
@@ -357,7 +357,7 @@ domain_meta:
         proto: "go/generated/backend/db/proto"
         handler: "go/generated/backend/db/handler"
   etcd:
-    source: "{{proto_dir}}/etcd"
+    source: "{{proto_dir}}etcd/"
     rpc: etcd
     output:
       cpp:
