@@ -9,7 +9,7 @@
 #include "proto/service/rpc/centre/centre_player_scene.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "rpc/service_metadata/centre_player_scene_service_metadata.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "network/node_message_utils.h"
 ///<<< END WRITING YOUR CODE
 

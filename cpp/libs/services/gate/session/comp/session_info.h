@@ -3,7 +3,7 @@
 #include "message_limiter/message_limiter.h"
 #include "muduo/net/TcpConnection.h"
 #include "engine/core/type_define/type_define.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include <muduo/base/Logging.h>
 
 #include <unordered_map>

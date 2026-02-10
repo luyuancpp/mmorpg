@@ -1,5 +1,5 @@
 #pragma once
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "entt/src/entt/entt.hpp"
 #include <cstdint>
 

@@ -7,7 +7,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 
 #include "proto/logic/component/game_node_comp.pb.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>

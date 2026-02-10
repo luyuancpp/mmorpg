@@ -18,7 +18,7 @@
 #include "network/rpc_session.h"
 #include "node/system/node/node_util.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "proto/logic/event/node_event.pb.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"

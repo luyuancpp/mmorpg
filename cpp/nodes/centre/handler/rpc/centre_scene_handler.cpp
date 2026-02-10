@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
 #include <modules/scene/system/room_common.h>

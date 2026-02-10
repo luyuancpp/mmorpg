@@ -9,8 +9,8 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
 
-#include "proto/logic/component/mission_comp.pb.h"
-#include "proto/logic/event/mission_event.pb.h"
+#include "proto/common/component/mission_comp.pb.h"
+#include "proto/common/event/mission_event.pb.h"
 
 MissionsComponent::MissionsComponent()
 {

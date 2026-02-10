@@ -5,7 +5,7 @@
 #include "player/system/player_scene.h"
 #include "scene/scene/comp/grid.h"
 #include "proto/logic/event/scene_event.pb.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "modules/scene/system/room_param.h"
 #include "rpc/service_metadata/centre_scene_service_metadata.h"

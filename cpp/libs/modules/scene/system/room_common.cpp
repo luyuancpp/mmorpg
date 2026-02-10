@@ -3,7 +3,7 @@
 #include <muduo/base/Logging.h>
 #include <registry_manager.h>
 #include <node_context_manager.h>
-#include <proto/common/common.pb.h>
+#include <proto/common/base/common.pb.h>
 #include <scene/comp/room_node_comp.h>
 #include <table/proto/tip/scene_error_tip.pb.h>
 #include <table/proto/tip/common_error_tip.pb.h>

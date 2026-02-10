@@ -8,7 +8,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "engine/threading/node_context_manager.h"
 #include "engine/threading/dispatcher_manager.h"
 

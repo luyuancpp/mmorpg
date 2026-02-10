@@ -6,7 +6,7 @@
 #include "handler/event/event_handler.h"
 #include "muduo/net/EventLoop.h"
 #include "network/rpc_session.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "kafka/system/kafka.h"
 #include "redis/system/redis.h"
 
