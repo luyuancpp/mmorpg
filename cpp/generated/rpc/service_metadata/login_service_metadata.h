@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "proto/service/grpc/login/login.pb.h"
+#include "proto/login/login.pb.h"
 
 
 constexpr uint32_t ClientPlayerLoginLoginMessageId = 48;

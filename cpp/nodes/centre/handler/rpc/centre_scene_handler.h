@@ -1,5 +1,5 @@
 #pragma once
-#include "proto/service/rpc/centre/centre_scene.pb.h"
+#include "proto/centre/centre_scene.pb.h"
 
 
 class CentreSceneHandler : public ::CentreScene

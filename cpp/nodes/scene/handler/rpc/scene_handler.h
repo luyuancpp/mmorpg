@@ -1,5 +1,5 @@
 #pragma once
-#include "proto/service/rpc/scene/scene.pb.h"
+#include "proto/room/scene.pb.h"
 
 
 class SceneHandler : public ::Scene

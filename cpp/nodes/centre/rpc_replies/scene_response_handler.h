@@ -1,6 +1,6 @@
 #pragma once
 #include "muduo/net/TcpConnection.h"
-#include "proto/service/rpc/scene/scene.pb.h"
+#include "proto/room/scene.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
