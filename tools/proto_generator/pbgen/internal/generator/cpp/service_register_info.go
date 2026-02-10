@@ -241,7 +241,7 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 
 	const serviceInfoCppTemplate = `#include <array>
 #include "service_metadata.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 
 {{range .Includes -}}
 {{ . }}
