@@ -74,7 +74,7 @@ enum eNodeType : int {
   DeployNodeService = 0,
   DbNodeService = 1,
   CentreNodeService = 2,
-  SceneNodeService = 3,
+  RoomNodeService = 3,
   GateNodeService = 4,
   LoginNodeService = 5,
   RedisNodeService = 6,

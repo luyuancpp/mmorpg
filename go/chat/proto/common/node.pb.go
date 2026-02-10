@@ -27,7 +27,7 @@ const (
 	ENodeType_DeployNodeService        ENodeType = 0  // 部署节点服务
 	ENodeType_DbNodeService            ENodeType = 1  // 数据库节点服务
 	ENodeType_CentreNodeService        ENodeType = 2  // 场景切换中心服务器服务
-	ENodeType_SceneNodeService         ENodeType = 3  // 场景服务器服务
+	ENodeType_RoomNodeService          ENodeType = 3  // 场景服务器服务
 	ENodeType_GateNodeService          ENodeType = 4  // 网关节点服务
 	ENodeType_LoginNodeService         ENodeType = 5  // 登录服务器节点服务
 	ENodeType_RedisNodeService         ENodeType = 6  // Redis 节点服务
@@ -57,7 +57,7 @@ var (
 		0:  "DeployNodeService",
 		1:  "DbNodeService",
 		2:  "CentreNodeService",
-		3:  "SceneNodeService",
+		3:  "RoomNodeService",
 		4:  "GateNodeService",
 		5:  "LoginNodeService",
 		6:  "RedisNodeService",
@@ -84,7 +84,7 @@ var (
 		"DeployNodeService":        0,
 		"DbNodeService":            1,
 		"CentreNodeService":        2,
-		"SceneNodeService":         3,
+		"RoomNodeService":          3,
 		"GateNodeService":          4,
 		"LoginNodeService":         5,
 		"RedisNodeService":         6,
@@ -242,12 +242,12 @@ var File_proto_common_node_proto protoreflect.FileDescriptor
 
 const file_proto_common_node_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/common/node.proto*\xbb\x04\n" +
+	"\x17proto/common/node.proto*\xba\x04\n" +
 	"\teNodeType\x12\x15\n" +
 	"\x11DeployNodeService\x10\x00\x12\x11\n" +
 	"\rDbNodeService\x10\x01\x12\x15\n" +
-	"\x11CentreNodeService\x10\x02\x12\x14\n" +
-	"\x10SceneNodeService\x10\x03\x12\x13\n" +
+	"\x11CentreNodeService\x10\x02\x12\x13\n" +
+	"\x0fRoomNodeService\x10\x03\x12\x13\n" +
 	"\x0fGateNodeService\x10\x04\x12\x14\n" +
 	"\x10LoginNodeService\x10\x05\x12\x14\n" +
 	"\x10RedisNodeService\x10\x06\x12\x13\n" +

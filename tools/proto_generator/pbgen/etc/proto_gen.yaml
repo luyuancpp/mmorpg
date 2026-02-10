@@ -367,3 +367,17 @@ domain_meta:
       go:
         proto: "go/generated/backend/db/proto"
         handler: "go/generated/backend/db/handler"
+  common:
+    source: "{{proto_dir}}common/"
+    rpc: rpc   # 或者 rpc，根据用途
+    output:
+      cpp:
+        proto: "cpp/generated/common/proto"
+        handler: "cpp/generated/common/handler"   # 如果有 handler
+        grpc_client: "cpp/generated/common/grpc_client" # 如果需要
+        attribute_sync: ""  # 如果没有 attribute_sync
+      go:
+        proto: "go/generated/common/proto"
+        handler: "go/generated/common/handler"
+        grpc_client: ""
+        attribute_sync: ""
