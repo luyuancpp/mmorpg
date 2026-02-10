@@ -20,7 +20,7 @@
 decltype(auto) CreatePlayerEntityWithMissionComponent()
 {
     const auto playerEntity = tlsRegistryManager.actorRegistry.create();
-    tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
+	auto& reward = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
     auto& missionsComponent = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
     missionsComponent.set_event_owner(playerEntity);
     MissionEventHandler::Register();
@@ -548,7 +548,7 @@ TEST(MissionsComponent, MissionRewardList)
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComponent>(playerEntity);
 	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
 
-	tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(playerEntity);
+	auto& reward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(playerEntity);
 
 	// Accept mission
 	uint32_t missionId = 12;
