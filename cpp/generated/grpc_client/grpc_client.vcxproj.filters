@@ -3,16 +3,10 @@
   <ItemGroup>
     <ClCompile Include="grpc_init_client.cpp" />
     <ClCompile Include="middleware\etcd\etcd_grpc_client.cpp" />
-    <ClCompile Include="service\grpc\db\db_grpc_client.cpp" />
-    <ClCompile Include="service\grpc\login\login_grpc_client.cpp" />
-    <ClCompile Include="service\grpc\player_locator\player_locator_grpc_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="grpc_init_client.h" />
     <ClInclude Include="grpc_call_tag.h" />
     <ClInclude Include="middleware\etcd\etcd_grpc_client.h" />
-    <ClInclude Include="service\grpc\db\db_grpc_client.h" />
-    <ClInclude Include="service\grpc\login\login_grpc_client.h" />
-    <ClInclude Include="service\grpc\player_locator\player_locator_grpc_client.h" />
   </ItemGroup>
 </Project>
