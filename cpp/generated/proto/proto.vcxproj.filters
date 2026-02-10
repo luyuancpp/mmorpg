@@ -216,6 +216,15 @@
     <ClCompile Include="room\scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="etcd\etcd.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="etcd\kv.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="etcd\version.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.pb.h">
@@ -417,6 +426,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="room\scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="etcd\etcd.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="etcd\kv.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="etcd\version.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
