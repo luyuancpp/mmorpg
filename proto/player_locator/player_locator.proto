@@ -4,7 +4,7 @@ syntax = "proto3";
 
 package playerlocator;
 
-import "proto/common/empty.proto";
+import "proto/common/base/empty.proto";
 
 // 玩家位置结构
 message PlayerLocation {

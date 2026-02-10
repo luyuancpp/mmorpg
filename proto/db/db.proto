@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "proto/db/proto_option.proto";
 
-import "proto/common/empty.proto";
+import "proto/common/base/empty.proto";
 
 option (OptionFileDefaultNode) = NODE_DB;
 

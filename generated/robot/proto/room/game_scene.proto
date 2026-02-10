@@ -2,7 +2,7 @@ syntax = "proto3";
 option go_package = "robot/proto/room;room";
 
 import "proto/db/proto_option.proto";
-import "proto/common/empty.proto";
+import "proto/common/base/empty.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_ROOM;

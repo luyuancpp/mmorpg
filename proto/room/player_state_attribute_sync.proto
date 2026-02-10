@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "proto/db/proto_option.proto";
 import "proto/common/logic/component/actor_comp.proto";
-import "proto/common/empty.proto";
+import "proto/common/base/empty.proto";
 import "proto/common/logic/component/actor_attribute_state_comp.proto";
 
 option cc_generic_services = true;

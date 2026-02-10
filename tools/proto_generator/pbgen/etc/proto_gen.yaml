@@ -56,7 +56,7 @@ paths:
   generator_proto_dir: "{{output_root}}{{generator_dir}}generated_proto/"
   project_generated_dir: "{{output_root}}generated/"
   table_generator_dir: "{{project_generated_dir}}generated_data/"
-  game_rpc_proto_path: "{{proto_dir}}common/"
+  game_rpc_proto_path: "{{proto_dir}}common/base/"
   tools_dir: "{{output_root}}{{tool_dir}}"
 
   # 特定文件路径
@@ -170,11 +170,11 @@ naming:
 path_lists:
   # Proto目录列表（按原顺序保留）
   proto_directories:
-    - "common/"
+    - "common/base/"
     - "common/component/"
     - "common/event/"
-    - "common/"
-    - "common/"
+    - "common/base/"
+    - "common/base/"
     - "player_locator/"
     - "common/constants/"
     - "etcd/"
@@ -190,7 +190,7 @@ path_lists:
 
   # robot专用Proto目录列表
   robot_proto_directories:
-    - "{{robot_proto}}common/"
+    - "{{robot_proto}}common/base/"
     - "{{robot_proto}}rpc/"
     - "{{robot_proto}}message/"
 
@@ -368,7 +368,7 @@ domain_meta:
         proto: "go/generated/backend/db/proto"
         handler: "go/generated/backend/db/handler"
   common:
-    source: "{{proto_dir}}common/"
+    source: "{{proto_dir}}common/base/"
     rpc: rpc   # 或者 rpc，根据用途
     output:
       cpp:
