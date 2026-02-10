@@ -3,7 +3,6 @@ package cpp
 import (
 	"fmt"
 	"path/filepath"
-	"pbgen/global_value"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	_proto "pbgen/internal/prototools"
@@ -18,30 +17,30 @@ import (
 
 // BuildProtocCpp 并发处理所有目录的C++代码生成
 func BuildProtocCpp(wg *sync.WaitGroup) {
-	for i := 0; i < len(global_value.ProtoDirs); i++ {
+	for _, meta := range _config.Global.DomainMeta {
 		wg.Add(1)
-		go func(dirIndex int) {
+		go func(meta _config.DomainMeta) {
 			defer wg.Done()
-			dir := global_value.ProtoDirs[dirIndex]
+			dir := meta.Source
 			if err := BuildProtoCpp(wg, dir); err != nil {
 				logger.Global.Warn("C++批量构建失败",
 					zap.String("目录", dir),
 					zap.Error(err),
 				)
 			}
-		}(i)
+		}(meta)
 
 		wg.Add(1)
-		go func(dirIndex int) {
+		go func(meta _config.DomainMeta) {
 			defer wg.Done()
-			dir := global_value.ProtoDirs[dirIndex]
+			dir := meta.Source
 			if err := BuildProtoGrpcCpp(wg, dir); err != nil {
 				logger.Global.Warn("GRPC C++批量构建失败",
 					zap.String("目录", dir),
 					zap.Error(err),
 				)
 			}
-		}(i)
+		}(meta)
 	}
 }
 

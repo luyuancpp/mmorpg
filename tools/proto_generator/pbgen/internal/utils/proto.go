@@ -23,6 +23,14 @@ func GetDomainByProtoPath(protoPath string) (string, bool) {
 	return "", false
 }
 
+// IsGRPC 判断传入的元数据是否使用 gRPC 协议
+// 入参：meta - 业务域的元数据对象（类型与 _config.Global.DomainMeta[domain] 一致）
+// 出参：bool - true 表示是 gRPC，false 表示不是
+func IsGRPC(meta _config.DomainMeta) bool { // 注意：DomainMeta 需要替换成你实际的元数据类型
+	return strings.ToLower(meta.Rpc) == "grpc"
+}
+
+// 原函数改造后
 func HasGrpcService(protoPath string) bool {
 	domain, ok := GetDomainByProtoPath(protoPath)
 	if !ok {
@@ -30,7 +38,8 @@ func HasGrpcService(protoPath string) bool {
 	}
 
 	meta := _config.Global.DomainMeta[domain]
-	return strings.ToLower(meta.Rpc) == "grpc"
+	// 直接调用抽离后的函数，逻辑更清晰
+	return IsGRPC(meta)
 }
 
 func HasEtcdService(protoPath string) bool {

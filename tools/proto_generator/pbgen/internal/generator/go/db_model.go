@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"pbgen/global_value"
 	"strings"
 	"sync"
 
@@ -189,16 +188,16 @@ func GenerateMergedTableSQL(messageNames []string) error {
 		return nil
 	}
 
-	for _, protoDir := range global_value.ProtoDirs {
-		if !utils2.HasGrpcService(protoDir) {
+	for _, meta := range _config.Global.DomainMeta {
+		if !utils2.HasGrpcService(meta.Source) {
 			continue
 		}
 
-		sqlDir := utils2.BuildModelGoPath(protoDir)
+		sqlDir := utils2.BuildModelGoPath(meta.Source)
 		if err := os.MkdirAll(sqlDir, 0755); err != nil {
 			logger.Global.Error("创建SQL目录失败",
 				zap.String("sql_dir", sqlDir),
-				zap.String("proto_dir", protoDir),
+				zap.String("proto_dir", meta.Source),
 				zap.Error(err),
 			)
 			return err
@@ -216,7 +215,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 		}
 		logger.Global.Info("SQL文件生成成功",
 			zap.String("sql_path", sqlPath),
-			zap.String("proto_dir", protoDir),
+			zap.String("proto_dir", meta.Source),
 			zap.Int("sql_length", mergedSQL.Len()),
 		)
 	}
