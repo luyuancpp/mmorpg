@@ -163,7 +163,7 @@ func CopyCppOutputs(wg *sync.WaitGroup, protoFiles []string, tempDir, destDir st
 // BuildProtoGrpcCpp 生成指定目录下Proto文件的C++ GRPC服务代码
 func BuildProtoGrpcCpp(wg *sync.WaitGroup, protoDir string) error {
 	// 1. 检查是否包含GRPC服务定义
-	if !utils2.HasGrpcService(strings.ToLower(protoDir)) {
+	if !(utils2.HasGrpcService(strings.ToLower(protoDir)) || utils2.HasEtcdService(protoDir)) {
 		logger.Global.Info("GRPC C++生成: 无GRPC服务定义，跳过",
 			zap.String("目录", protoDir),
 		)
