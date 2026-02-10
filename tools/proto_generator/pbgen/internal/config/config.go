@@ -420,6 +420,24 @@ func calculateDerivedConstants() {
 	}
 }
 
+func replaceVariablesInDomainMeta(vars map[string]string) error {
+	for domain, meta := range Global.DomainMeta {
+
+		// 替换 Source
+		meta.Source = replaceVariables(meta.Source, vars)
+
+		// 替换 Output
+		for lang, outputs := range meta.Output {
+			for k, v := range outputs {
+				meta.Output[lang][k] = replaceVariables(v, vars)
+			}
+		}
+
+		Global.DomainMeta[domain] = meta
+	}
+	return nil
+}
+
 // resolvePathVariables 处理路径中的变量替换（支持嵌套变量）
 func resolvePathVariables() error {
 	// 收集所有可替换的变量
@@ -486,6 +504,10 @@ func replaceVariablesInAllStructs(vars map[string]string) error {
 
 	// 替换MethodHandlerDirectories中的变量
 	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem(), vars); err != nil {
+		return err
+	}
+
+	if err := replaceVariablesInDomainMeta(vars); err != nil {
 		return err
 	}
 
