@@ -45,7 +45,7 @@ void RoomSystem::ClearAllRoomData() {
 	LOG_TRACE << "Clearing room system data";
 	tlsRegistryManager.roomRegistry.clear();
 	tlsRegistryManager.actorRegistry.clear();
-	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
+	tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService).clear();
 }
 
 // Get game node ID associated with a room entity
@@ -78,7 +78,7 @@ NodeId RoomSystem::GetGameNodeIdFromRoomEntity(entt::entity room) {
 
 // Handle server node destruction
 void RoomSystem::HandleDestroyRoomNode(entt::entity node) {
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 
 	auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
 	auto roomList = nodeRoomComp.GetRoomMap();
@@ -136,7 +136,7 @@ void RoomSystem::CompelPlayerChangeRoom(const CompelChangeRoomParam& param) {
 
 // Replace a crashed server node with a new node
 void RoomSystem::ReplaceCrashRoomNode(entt::entity crashNode, entt::entity destNode) {
-	auto& roomRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& roomRegistry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	auto& crashNodeRoom = roomRegistry.get<RoomRegistryComp>(crashNode);
 	auto roomList = crashNodeRoom.GetRoomMap();
 
@@ -165,7 +165,7 @@ entt::entity RoomSystem::FindOrCreateRoom(uint32_t roomConfId) {
 		return entt::null;
 	}
 
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	auto& nodeRoomComp = registry.get<RoomRegistryComp>(node);
 
 	// 查找已有房间
@@ -187,7 +187,7 @@ entt::entity RoomSystem::FindOrCreateRoom(uint32_t roomConfId) {
 }
 
 entt::entity RoomSystem::SelectBestNodeForRoom(uint32_t roomConfId) {
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	entt::entity bestNode = entt::null;
 	std::size_t minPlayerCount = std::numeric_limits<std::size_t>::max();
 

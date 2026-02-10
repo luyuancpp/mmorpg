@@ -17,7 +17,7 @@ entt::entity FindBestNode(uint32_t configId, NodePressureState desiredPressure, 
 	entt::entity bestNode{ entt::null };
 	std::size_t bestLoad = kInvalidPlayerCount;
 
-	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 
 	for (auto entity : nodeRegistry.view<ServerType>()) {
 		const auto& roomRegistry = nodeRegistry.get<RoomRegistryComp>(entity);
@@ -57,7 +57,7 @@ entt::entity FindBestNode(uint32_t configId, NodePressureState desiredPressure, 
 
 // 在节点中选择玩家最少的房间
 entt::entity FindRoomWithMinPlayers(entt::entity nodeEntity, uint32_t configId) {
-	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	const auto& roomRegistry = nodeRegistry.get<RoomRegistryComp>(nodeEntity);
 
 	auto room = RoomSelectorSystem::SelectRoomWithMinPlayers(roomRegistry, configId);
@@ -71,7 +71,7 @@ entt::entity FindRoomWithMinPlayers(entt::entity nodeEntity, uint32_t configId) 
 
 // 在节点中选择一个未满的房间
 entt::entity FindFirstAvailableRoom(entt::entity nodeEntity, uint32_t configId) {
-	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto& nodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
 	const auto& roomRegistry = nodeRegistry.get<RoomRegistryComp>(nodeEntity);
 
 	for (const auto& room : roomRegistry.GetRoomsByConfig(configId)) {

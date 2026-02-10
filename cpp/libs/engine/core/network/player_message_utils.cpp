@@ -215,7 +215,7 @@ void SendMessageToPlayerOnSceneNode(uint32_t messageId,
 {
 	SendMessageToPlayerOnNode(
 		/* wrappedMessageId */ SceneSendMessageToPlayerMessageId,
-		/* nodeType */ eNodeType::SceneNodeService,
+		/* nodeType */ eNodeType::RoomNodeService,
 		/* messageId */ messageId,
 		message,
 		playerEntity);

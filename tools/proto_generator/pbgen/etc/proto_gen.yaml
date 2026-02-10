@@ -347,7 +347,7 @@ domain_meta:
 
   db:
     source: "{{proto_dir}}db/"
-    rpc: grpc
+    rpc: rpc
     output:
       cpp:
         proto: "cpp/generated/backend/db/proto"

@@ -160,9 +160,9 @@ void PlayerLifecycleSystem::RequestGatePlayerEnterScene(entt::entity playerEntit
 	}
 
 	const auto& nodeIdMap = sessionPB->node_id();
-	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
+	auto it = nodeIdMap.find(eNodeType::RoomNodeService);
 	if (it == nodeIdMap.end()) {
-		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::RoomNodeService
 			<< ", player entity: " << entt::to_integral(playerEntity);
 		return;
 	}
@@ -190,9 +190,9 @@ void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity playerEntity)
 		return;
 	}
 	const auto& nodeIdMap = sessionPB->node_id();
-	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
+	auto it = nodeIdMap.find(eNodeType::RoomNodeService);
 	if (it == nodeIdMap.end()) {
-		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::RoomNodeService
 			<< ", player entity: " << entt::to_integral(playerEntity);
 		return;
 	}
@@ -202,7 +202,7 @@ void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity playerEntity)
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(sessionPB->gate_session_id());
 	request.set_player_id(*playerId);
-	SendMessageToSessionNode(SceneUpdateSessionDetailMessageId, request, it->second, eNodeType::SceneNodeService);
+	SendMessageToSessionNode(SceneUpdateSessionDetailMessageId, request, it->second, eNodeType::RoomNodeService);
 	LOG_DEBUG << "Sent session update to scene node";
 }
 
