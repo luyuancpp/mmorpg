@@ -14,7 +14,6 @@
 13=LeaseLeaseKeepAlive
 14=ClientPlayerLoginCreatePlayer
 15=CentrePlayerUtilitySendTipToClient
-16=PlayerLocatorSetLocation
 17=ClientPlayerLoginLeaveGame
 18=SceneSceneTest
 19=CentreRouteNodeStringMsg
@@ -42,9 +41,7 @@
 41=GateRouteNodeMessage
 42=GatePlayerEnterGameNode
 43=SceneSceneClientPlayerSceneInfoC2S
-44=PlayerLocatorMarkOffline
 45=GateNodeHandshake
-46=PlayerLocatorGetLocation
 47=SceneSceneClientPlayerNotifyActorListCreate
 48=ClientPlayerLoginLogin
 49=CentreSceneUnRegisterScene
