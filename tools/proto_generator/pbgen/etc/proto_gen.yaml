@@ -177,11 +177,11 @@ path_lists:
     - "logic/"
     - "service/grpc/player_locator/"
     - "logic/constants/"
-    - "middleware/etcd/"
+    - "etcd/"
     - "service/grpc/login/"
     - "service/grpc/db/"
     - "service/rpc/centre/"
-    - "service/rpc/scene/"
+    - "room/"
     - "service/rpc/gate/"
     - "service/grpc/chat/"
     - "service/grpc/team/"
@@ -232,10 +232,10 @@ path_lists:
     mail: "service/grpc/mail/"
 
     centre: "service/rpc/centre/"
-    scene: "service/rpc/scene/"
+    scene: "room/"
     gate: "service/rpc/gate/"
 
-    etcd: "middleware/etcd/"
+    etcd: "etcd/"
 
 # 生成器开关配置
 generators:
@@ -318,7 +318,7 @@ domain_meta:
         handler: "go/generated/services/player/handler"
 
   scene:
-    source: "{{proto_dir}}/scene"
+    source: "{{proto_dir}}/room/"
     rpc: rpc
     output:
       cpp:
