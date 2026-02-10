@@ -4,7 +4,7 @@
 
 #include "hexagons_grid.h"
 #include "view.h"
-#include "proto/logic/component/actor_comp.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
 
 #include <threading/registry_manager.h>
 #include <modules/scene/comp/scene_comp.h>

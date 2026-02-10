@@ -9,7 +9,7 @@
 #include <network/rpc_session.h>
 #include "node/system/node/node.h"
 #include <network/node_utils.h>
-#include "proto/logic/event/server_event.pb.h"
+#include "proto/common/event/server_event.pb.h"
 #include <proto_helpers/proto_util.h>
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>

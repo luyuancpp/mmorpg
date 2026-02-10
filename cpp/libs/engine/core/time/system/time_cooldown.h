@@ -3,7 +3,7 @@
 #include <chrono>
 #include "table/code/cooldown_table.h"
 #include "time.h"
-#include "proto/logic/component/time_comp.pb.h"
+#include "proto/common/component/time_comp.pb.h"
 
 class CoolDownTimeMillisecondSystem {
 public:

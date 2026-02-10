@@ -17,7 +17,7 @@
 #include "proto/common/base/node.pb.h"
 #include "node/system/node/node_util.h"
 #include "google/protobuf/descriptor.h"
-#include "proto/logic/event/node_event.pb.h"
+#include "proto/common/event/node_event.pb.h"
 #include "threading/node_context_manager.h"
 #include <session/manager/session_manager.h>
 #include "threading/dispatcher_manager.h"

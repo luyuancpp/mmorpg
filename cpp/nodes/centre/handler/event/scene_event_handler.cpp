@@ -1,10 +1,10 @@
 #include "scene_event_handler.h"
-#include "proto/logic/event/scene_event.pb.h"
+#include "proto/common/event/scene_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE 
 
-#include "proto/logic/component/player_network_comp.pb.h"
+#include "proto/common/component/player_network_comp.pb.h"
 #include "muduo/base/Logging.h"
 
 #include "modules/scene/comp/scene_comp.h"
@@ -13,7 +13,7 @@
 #include "scene/system/player_room.h"
 #include "engine/core/type_define/type_define.h"
 #include "rpc/service_metadata/game_player_service_metadata.h"
-#include "proto/logic/component/scene_comp.pb.h"
+#include "proto/common/component/scene_comp.pb.h"
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
 #include "proto/common/base/common.pb.h"

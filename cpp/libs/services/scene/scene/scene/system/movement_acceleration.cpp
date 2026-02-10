@@ -1,7 +1,7 @@
 #include "movement_acceleration.h"
 
-#include "proto/logic/component/comp.pb.h"
-#include "proto/logic/component/actor_comp.pb.h"
+#include "proto/common/component/comp.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
 
 #include <threading/registry_manager.h>
 

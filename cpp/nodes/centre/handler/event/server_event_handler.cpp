@@ -1,5 +1,5 @@
 #include "server_event_handler.h"
-#include "proto/logic/event/server_event.pb.h"
+#include "proto/common/event/server_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE

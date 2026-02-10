@@ -10,7 +10,7 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 ///<<< BEGIN WRITING YOUR CODE
 #include "scene/scene/system/game_node_scene.h"
 #include "proto/common/base/node.pb.h"
-#include "proto/logic/event/server_event.pb.h"
+#include "proto/common/event/server_event.pb.h"
 
 #include "scene_node.h"
 ///<<< END WRITING YOUR CODE

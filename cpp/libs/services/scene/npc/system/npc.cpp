@@ -1,8 +1,8 @@
 #include "npc.h"
 
-#include "proto/logic/component/actor_comp.pb.h"
-#include "proto/logic/event/actor_event.pb.h"
-#include "proto/logic/event/npc_event.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
+#include "proto/common/event/actor_event.pb.h"
+#include "proto/common/event/npc_event.pb.h"
 
 #include <threading/registry_manager.h>
 #include <threading/dispatcher_manager.h>

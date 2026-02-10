@@ -1,6 +1,6 @@
 #pragma once
 
-#include "proto/logic/component/frame_comp.pb.h"
+#include "proto/common/component/frame_comp.pb.h"
 
 class FrameTimeManager 
 {

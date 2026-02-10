@@ -17,7 +17,7 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include "rpc/player_rpc_response_handler.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
-#include "proto/logic/component/player_network_comp.pb.h"
+#include "proto/common/component/player_network_comp.pb.h"
 #include "threading/player_manager.h"
 ///<<< END WRITING YOUR CODE
 

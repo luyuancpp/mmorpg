@@ -1,5 +1,5 @@
 #include "skill_event_handler.h"
-#include "proto/logic/event/skill_event.pb.h"
+#include "proto/common/event/skill_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE

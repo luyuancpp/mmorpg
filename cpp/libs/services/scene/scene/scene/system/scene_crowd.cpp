@@ -5,8 +5,8 @@
 #include "modules/scene/comp/scene_comp.h"
 #include "scene/scene/constants/dt_crowd.h"
 
-#include "proto/logic/event/scene_event.pb.h"
-#include <proto/logic/component/actor_comp.pb.h>
+#include "proto/common/event/scene_event.pb.h"
+#include <proto/common/component/actor_comp.pb.h>
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>
 

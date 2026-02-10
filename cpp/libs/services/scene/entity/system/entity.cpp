@@ -1,7 +1,7 @@
 #include "entity.h"
 
-#include "proto/logic/component/npc_comp.pb.h"
-#include "proto/logic/component/player_comp.pb.h"
+#include "proto/common/component/npc_comp.pb.h"
+#include "proto/common/component/player_comp.pb.h"
 
 #include <threading/registry_manager.h>
 

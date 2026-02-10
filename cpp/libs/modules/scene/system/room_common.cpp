@@ -7,7 +7,7 @@
 #include <scene/comp/room_node_comp.h>
 #include <table/proto/tip/scene_error_tip.pb.h>
 #include <table/proto/tip/common_error_tip.pb.h>
-#include <proto/logic/event/scene_event.pb.h>
+#include <proto/common/event/scene_event.pb.h>
 #include <dispatcher_manager.h>
 #include <scene/comp/scene_comp.h>
 #include "room_param.h"

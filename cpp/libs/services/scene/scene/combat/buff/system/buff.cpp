@@ -2,7 +2,7 @@
 #include <ranges>
 #include "table/code/buff_table.h"
 #include "scene/combat/buff/system/buff_impl.h"
-#include "proto/logic/component/buff_comp.pb.h"
+#include "proto/common/component/buff_comp.pb.h"
 #include <ranges>
 #include <muduo/base/Logging.h>
 #include "table/proto/tip/buff_error_tip.pb.h"
@@ -11,7 +11,7 @@
 #include "motion_modifier_impl.h"
 #include "scene/combat/buff/comp/buff.h"
 #include "scene/combat/buff/constants/buff.h"
-#include "proto/logic/event/skill_event.pb.h"
+#include "proto/common/event/skill_event.pb.h"
 #include "core/utils/utility/utility.h"
 #include "core/system/id_generator.h"
 

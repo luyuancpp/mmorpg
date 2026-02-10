@@ -6,7 +6,7 @@
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
 #include "muduo/base/Logging.h"
-#include "proto/logic/component/player_login_comp.pb.h"
+#include "proto/common/component/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
 

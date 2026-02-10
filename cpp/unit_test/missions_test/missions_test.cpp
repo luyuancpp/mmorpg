@@ -10,8 +10,8 @@
 #include "../../nodes/scene/handler/event/mission_event_handler.h"
 #include "engine/core/utils/random/random.h"
 
-#include "proto/logic/component/mission_comp.pb.h"
-#include "proto/logic/event/mission_event.pb.h"
+#include "proto/common/component/mission_comp.pb.h"
+#include "proto/common/event/mission_event.pb.h"
 #include <threading/registry_manager.h>
 #include <threading/dispatcher_manager.h>
 #include <config.h>

@@ -2,7 +2,7 @@
 #include "player/constants/player.h"
 #include <muduo/base/Logging.h>
 #include "player/system/player_lifecycle.h"
-#include "proto/logic/event/player_migration_event.pb.h"
+#include "proto/common/event/player_migration_event.pb.h"
 
 void KafkaSystem::KafkaMessageHandler(const std::string& topic, const std::string& message)
 {

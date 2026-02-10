@@ -6,7 +6,7 @@
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "engine/session/comp/session_comp.h"
 #include "engine/session/system/session.h"
-#include "proto/logic/component/player_network_comp.pb.h"
+#include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/base/node.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "network/network_utils.h"

@@ -4,7 +4,7 @@
 #include "core/network/message_system.h"
 #include "player/system/player_scene.h"
 #include "scene/scene/comp/grid.h"
-#include "proto/logic/event/scene_event.pb.h"
+#include "proto/common/event/scene_event.pb.h"
 #include "proto/common/base/node.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "modules/scene/system/room_param.h"
