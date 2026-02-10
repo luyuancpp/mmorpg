@@ -171,12 +171,12 @@ path_lists:
   # Proto目录列表（按原顺序保留）
   proto_directories:
     - "common/"
-    - "common/logic/component/"
-    - "common/logic/event/"
-    - "common/logic/"
-    - "common/logic/"
+    - "common/component/"
+    - "common/event/"
+    - "common/"
+    - "common/"
     - "player_locator/"
-    - "common/logic/constants/"
+    - "common/constants/"
     - "etcd/"
     - "login/"
     - "db/"
@@ -217,12 +217,12 @@ path_lists:
     http_node: 2
 
   proto_dirs:
-    common: "common/"
-    logic_component: "common/logic/component/"
-    logic_event: "common/logic/event/"
-    logic: "common/logic/"
-    constants: "common/logic/constants/"
-    database: "common/logic/database/"
+    common: "common/base/"
+    logic_component: "common/component/"
+    logic_event: "common/event/"
+    logic: "common/"
+    constants: "common/constants/"
+    database: "common/database/"
 
     player_locator: "player_locator/"
     login: "login/"
