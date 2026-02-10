@@ -1,7 +1,7 @@
 ﻿#include "node_util.h"
 #include <muduo/base/Logging.h>
 
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 #include <network/rpc_client.h>
 #include "threading/node_context_manager.h"
 

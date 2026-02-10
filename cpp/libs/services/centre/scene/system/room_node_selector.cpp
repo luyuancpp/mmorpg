@@ -3,7 +3,7 @@
 #include "modules/scene/comp/room_node_comp.h"
 
 #include "proto/logic/component/game_node_comp.pb.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "muduo/base/Logging.h"
 #include "threading/node_context_manager.h"
 #include "room_selector.h"

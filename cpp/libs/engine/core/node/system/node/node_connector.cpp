@@ -1,5 +1,5 @@
 ﻿#include "node_connector.h"
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 #include "node_util.h"
 #include <muduo/base/Logging.h>
 #include <network/rpc_client.h>

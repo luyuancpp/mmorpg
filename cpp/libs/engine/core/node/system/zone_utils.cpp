@@ -1,6 +1,6 @@
 ﻿#include "zone_utils.h"
 #include "node/system/node/node_util.h"
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 
 uint32_t GetZoneIdFromNodeId(NodeId nodeId) {
 	entt::entity nodeEntity{ nodeId };

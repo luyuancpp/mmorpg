@@ -1,7 +1,7 @@
 #pragma once
 
 #include <entt/src/entt/entity/entity.hpp>
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 
 struct EnterDefaultRoomParam
 {

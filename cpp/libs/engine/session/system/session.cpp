@@ -1,6 +1,6 @@
 ﻿#include "session.h"
 
-#include "proto/common/session.pb.h"
+#include "proto/common/base/session.pb.h"
 #include <muduo/base/Logging.h>
 #include <grpcpp/grpcpp.h>
 #include "core/utils/encode/base64.h"

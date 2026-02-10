@@ -1,6 +1,6 @@
 #include "etcd_manager.h"
-#include "proto/common/common.pb.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/common.pb.h"
+#include "proto/common/base/node.pb.h"
 #include <muduo/base/Logging.h>
 #include "etcd_helper.h"
 #include <threading/redis_manager.h>

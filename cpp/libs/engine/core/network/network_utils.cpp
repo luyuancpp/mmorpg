@@ -2,8 +2,8 @@
 
 #include <boost/asio.hpp>
 #include <iostream>
-#include "proto/common/node.pb.h"
-#include "proto/common/session.pb.h"
+#include "proto/common/base/node.pb.h"
+#include "proto/common/base/session.pb.h"
 
 
 NodeId GetGateNodeId(Guid session_id)

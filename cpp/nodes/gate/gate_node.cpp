@@ -5,7 +5,7 @@
 #include "grpc_client/service/grpc/login/login_grpc_client.h"
 #include "core/network/rpc_session.h"
 #include "proto/service/grpc/login/login.grpc.pb.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "node/system/node/node_util.h"
 #include "session/system/session.h"

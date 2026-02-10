@@ -16,7 +16,7 @@
 #include "proto/logic/component/scene_comp.pb.h"
 #include "network/player_message_utils.h"
 #include <threading/registry_manager.h>
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 
 ///<<< END WRITING YOUR CODE
 

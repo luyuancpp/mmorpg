@@ -5,7 +5,7 @@
 #include <muduo/net/TcpServer.h>
 #include "network/rpc_client.h"
 #include "network/rpc_server.h"
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 #include "time/comp/timer_task_comp.h"
 #include "type_define/type_define.h"
 #include <boost/uuid/uuid.hpp>

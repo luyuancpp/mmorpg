@@ -1,6 +1,6 @@
 #pragma once
 
-#include "proto/logic/component/scene_comp.pb.h"
+#include "proto/common/component/scene_comp.pb.h"
 #include "core/utils/data_structures/fast_queue.h"
 
 

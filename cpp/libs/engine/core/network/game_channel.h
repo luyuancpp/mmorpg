@@ -9,7 +9,7 @@
 #include <map>
 #include <memory>
 
-#include "proto/common/game_rpc.pb.h"
+#include "proto/common/base/game_rpc.pb.h"
 
 // RPC 消息类型定义
 using RpcMessagePtr = std::shared_ptr<GameRpcMessage>;

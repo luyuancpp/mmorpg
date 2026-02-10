@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <string>
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 
 namespace EtcdHelper {
 	void PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& key);

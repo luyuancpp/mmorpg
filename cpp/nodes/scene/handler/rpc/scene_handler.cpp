@@ -18,7 +18,7 @@
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "modules/scene/system/room_common.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"

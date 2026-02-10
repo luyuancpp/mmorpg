@@ -14,7 +14,7 @@
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/game_client_player_service_metadata.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "node/system/node/node_util.h"
 #include "google/protobuf/descriptor.h"
 #include "proto/logic/event/node_event.pb.h"

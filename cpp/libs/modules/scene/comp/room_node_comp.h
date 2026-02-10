@@ -6,7 +6,7 @@
 #include "engine/core/type_define/type_define.h"
 #include "engine/core/node/constants/node_constants.h"
 
-#include "proto/common/common.pb.h"
+#include "proto/common/base/common.pb.h"
 #include "engine/threading/registry_manager.h"
 #include "proto/logic/component/game_node_comp.pb.h"
 

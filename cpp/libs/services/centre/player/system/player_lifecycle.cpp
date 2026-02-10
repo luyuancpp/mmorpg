@@ -15,7 +15,7 @@
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "engine/threading/redis_manager.h"
 #include "engine/core/utils/defer/defer.h"
-#include "proto/common/node.pb.h"
+#include "proto/common/base/node.pb.h"
 #include "table/code/constants/global_abnormal_logout_table_id_constants.h"
 #include "table/code/globalvariable_table.h"
 #include "proto/logic/component/player_scene_comp.pb.h"

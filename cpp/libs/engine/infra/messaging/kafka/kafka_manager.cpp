@@ -1,5 +1,5 @@
 ﻿#include "kafka_manager.h"
-#include "proto/common/config.pb.h"
+#include "proto/common/base/config.pb.h"
 #include <muduo/base/Logging.h>
 #include <boost/algorithm/string/join.hpp>
 #include "threading/redis_manager.h"

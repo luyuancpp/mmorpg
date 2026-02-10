@@ -4,7 +4,7 @@
 
 #include "rpc/service_metadata/service_metadata.h"
 
-#include "proto/common/statistics.pb.h"
+#include "proto/common/base/statistics.pb.h"
 
 extern std::array<MessageStatistics, kMaxMessageLen> gMessageStatistics;
 
