@@ -2,7 +2,7 @@ syntax = "proto3";
 package scene_manager;
 
 import "google/protobuf/empty.proto";
-import "proto/common/node.proto";
+import "proto/common/base/node.proto";
 
 option go_package = "github.com/yourorg/yourrepo/proto/service/scene_manager;scene_managerpb";
 

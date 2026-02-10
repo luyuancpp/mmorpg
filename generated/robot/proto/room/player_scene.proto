@@ -3,7 +3,7 @@ option go_package = "robot/proto/room;room";
 
 import "proto/db/proto_option.proto";
 import "proto/common/base/tip.proto";
-import "proto/common/common.proto";
+import "proto/common/base/common.proto";
 import "proto/common/base/empty.proto";
 import "proto/common/logic/component/actor_comp.proto";
 
