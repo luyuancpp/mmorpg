@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-import "proto/middleware/etcd/kv.proto";
+import "proto/etcd/kv.proto";
 
-import "proto/middleware/etcd/version.proto";
+import "proto/etcd/version.proto";
 
 
 package etcdserverpb;
