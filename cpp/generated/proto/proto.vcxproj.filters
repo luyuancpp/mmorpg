@@ -15,36 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="common\common.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\empty.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\game_rpc.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\message.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\node.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\session.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\statistics.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\user_accounts.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="logic\component\actor_attribute_state_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -227,36 +197,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="common\common.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\empty.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\game_rpc.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\message.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\node.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\session.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\statistics.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\user_accounts.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="logic\component\actor_attribute_state_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>

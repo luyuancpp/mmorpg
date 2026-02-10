@@ -8,7 +8,7 @@
 // 静态映射表定义（可放在 .cpp 中）//todo
 const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
 	{ eNodeType::DeployNodeService,  eNodeType_Name(DeployNodeService) },
-	{ eNodeType::RoomNodeService,   eNodeType_Name(SceneNodeService) },
+	{ eNodeType::RoomNodeService,   eNodeType_Name(RoomNodeService) },
 	{ eNodeType::GateNodeService,    eNodeType_Name(GateNodeService) },
 	{ eNodeType::CentreNodeService,  eNodeType_Name(CentreNodeService) },
 	{ eNodeType::LoginNodeService,   eNodeType_Name(LoginNodeService) },
