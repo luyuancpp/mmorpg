@@ -6,8 +6,8 @@
 #include <google/protobuf/message.h>
 #include "muduo/base/Logging.h"
 #include "grpc_client/grpc_call_tag.h"
-#include <proto/common/node.pb.h>
-#include <proto/common/common.pb.h>
+#include <proto/common/base/node.pb.h>
+#include <proto/common/base/common.pb.h>
 
 using grpc::ClientContext;
 using grpc::Status;
