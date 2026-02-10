@@ -15,123 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="logic\component\actor_attribute_state_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\actor_combat_state_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\actor_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\buff_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\frame_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\game_node_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\item_base_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\item_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\mission_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\npc_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\player_async_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\player_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\player_login_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\player_network_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\player_scene_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\player_skill_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\scene_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\skill_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\team_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\component\time_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\constants\etcd_grpc.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\constants\function_switch.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\constants\scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\constants\test_switch.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\database\mysql_database_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\database\player_cache.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\actor_combat_state_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\actor_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\buff_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\combat_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\mission_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\node_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\npc_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\player_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\player_migration_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\scene_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\server_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="logic\event\skill_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="centre\centre_player.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -195,125 +78,38 @@
     <ClCompile Include="etcd\version.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="common\base\common.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\empty.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\game_rpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\message.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\node.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\session.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\statistics.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\user_accounts.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="logic\component\actor_attribute_state_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\actor_combat_state_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\actor_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\buff_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\frame_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\game_node_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\item_base_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\item_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\mission_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\npc_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\player_async_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\player_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\player_login_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\player_network_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\player_scene_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\player_skill_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\scene_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\skill_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\team_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\component\time_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\constants\etcd_grpc.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\constants\function_switch.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\constants\scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\constants\test_switch.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\database\mysql_database_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\database\player_cache.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\actor_combat_state_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\actor_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\buff_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\combat_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\mission_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\node_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\npc_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\player_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\player_migration_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\scene_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\server_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="logic\event\skill_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="centre\centre_player.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -375,6 +171,36 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="etcd\version.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\user_accounts.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\common.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\empty.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\game_rpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\message.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\node.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\session.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\statistics.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
