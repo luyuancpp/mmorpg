@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+
+
+import "proto/common/tip.proto";
+
+option go_package = "team/proto/instance;instance";
+package instance;
+
+service Instance {
+  // 创建副本
+  rpc CreateInstance(CreateInstanceRequest) returns (CreateInstanceResponse);
+}
+
+message CreateInstanceRequest {
+  uint64 player_id = 1;         // 发起者玩家ID
+  uint32 template_id = 2;       // 副本模板ID，对应副本类型（如 dungeon_001）
+  repeated uint64 team_member_ids = 3; // 队伍成员（多人副本用）
+  map<string, string> metadata = 4;    // 扩展字段：如活动ID、限时等
+}
+
+message CreateInstanceResponse {
+  uint64 instance_id = 1;       // 创建成功的副本ID
+  int64 expire_time = 2;        // 副本过期时间（Unix时间戳）
+  TipInfoMessage error_message = 4;           // 错误信息或成功提示
+}

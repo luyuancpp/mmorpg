@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "chat/proto/logic/database;database";
+
+import "proto/logic/database/mysql_database_table.proto";
+
+message PlayerAllData {
+  player_database player_database_data = 2;
+  player_database_1 player_database_1_data = 3;
+}

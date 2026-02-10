@@ -2,15 +2,15 @@
 // versions:
 // 	protoc-gen-go v1.36.9
 // 	protoc        v6.31.1
-// source: proto/service/grpc/scene_manager/scene_manager_service.proto
+// source: proto/scene_manager/scene_manager_service.proto
 
 package scene_managerpb
 
 import (
+	_ "db/proto/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	_ "player_locator/proto/common"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -35,7 +35,7 @@ type CreateSceneRequest struct {
 
 func (x *CreateSceneRequest) Reset() {
 	*x = CreateSceneRequest{}
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[0]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +47,7 @@ func (x *CreateSceneRequest) String() string {
 func (*CreateSceneRequest) ProtoMessage() {}
 
 func (x *CreateSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[0]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +60,7 @@ func (x *CreateSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSceneRequest.ProtoReflect.Descriptor instead.
 func (*CreateSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{0}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CreateSceneRequest) GetSceneConfId() uint64 {
@@ -90,7 +90,7 @@ type CreateSceneResponse struct {
 
 func (x *CreateSceneResponse) Reset() {
 	*x = CreateSceneResponse{}
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[1]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -102,7 +102,7 @@ func (x *CreateSceneResponse) String() string {
 func (*CreateSceneResponse) ProtoMessage() {}
 
 func (x *CreateSceneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[1]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -115,7 +115,7 @@ func (x *CreateSceneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSceneResponse.ProtoReflect.Descriptor instead.
 func (*CreateSceneResponse) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{1}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateSceneResponse) GetSceneId() uint64 {
@@ -148,7 +148,7 @@ type DestroySceneRequest struct {
 
 func (x *DestroySceneRequest) Reset() {
 	*x = DestroySceneRequest{}
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[2]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -160,7 +160,7 @@ func (x *DestroySceneRequest) String() string {
 func (*DestroySceneRequest) ProtoMessage() {}
 
 func (x *DestroySceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[2]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -173,7 +173,7 @@ func (x *DestroySceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DestroySceneRequest.ProtoReflect.Descriptor instead.
 func (*DestroySceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{2}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *DestroySceneRequest) GetSceneId() uint64 {
@@ -197,7 +197,7 @@ type EnterSceneByCentreRequest struct {
 
 func (x *EnterSceneByCentreRequest) Reset() {
 	*x = EnterSceneByCentreRequest{}
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[3]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -209,7 +209,7 @@ func (x *EnterSceneByCentreRequest) String() string {
 func (*EnterSceneByCentreRequest) ProtoMessage() {}
 
 func (x *EnterSceneByCentreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[3]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -222,7 +222,7 @@ func (x *EnterSceneByCentreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneByCentreRequest.ProtoReflect.Descriptor instead.
 func (*EnterSceneByCentreRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{3}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *EnterSceneByCentreRequest) GetPlayerId() uint64 {
@@ -270,7 +270,7 @@ type EnterSceneByCentreResponse struct {
 
 func (x *EnterSceneByCentreResponse) Reset() {
 	*x = EnterSceneByCentreResponse{}
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[4]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -282,7 +282,7 @@ func (x *EnterSceneByCentreResponse) String() string {
 func (*EnterSceneByCentreResponse) ProtoMessage() {}
 
 func (x *EnterSceneByCentreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[4]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -295,7 +295,7 @@ func (x *EnterSceneByCentreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneByCentreResponse.ProtoReflect.Descriptor instead.
 func (*EnterSceneByCentreResponse) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{4}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EnterSceneByCentreResponse) GetErrorCode() uint32 {
@@ -324,7 +324,7 @@ type LeaveSceneByCentreRequest struct {
 
 func (x *LeaveSceneByCentreRequest) Reset() {
 	*x = LeaveSceneByCentreRequest{}
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[5]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -336,7 +336,7 @@ func (x *LeaveSceneByCentreRequest) String() string {
 func (*LeaveSceneByCentreRequest) ProtoMessage() {}
 
 func (x *LeaveSceneByCentreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes[5]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -349,7 +349,7 @@ func (x *LeaveSceneByCentreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveSceneByCentreRequest.ProtoReflect.Descriptor instead.
 func (*LeaveSceneByCentreRequest) Descriptor() ([]byte, []int) {
-	return file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{5}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LeaveSceneByCentreRequest) GetPlayerId() uint64 {
@@ -380,11 +380,11 @@ func (x *LeaveSceneByCentreRequest) GetRequestId() string {
 	return ""
 }
 
-var File_proto_service_grpc_scene_manager_scene_manager_service_proto protoreflect.FileDescriptor
+var File_proto_scene_manager_scene_manager_service_proto protoreflect.FileDescriptor
 
-const file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDesc = "" +
+const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\n" +
-	"<proto/service/grpc/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1bgoogle/protobuf/empty.proto\x1a\x17proto/common/node.proto\"i\n" +
+	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1bgoogle/protobuf/empty.proto\x1a\x17proto/common/node.proto\"i\n" +
 	"\x12CreateSceneRequest\x12\"\n" +
 	"\rscene_conf_id\x18\x01 \x01(\x04R\vsceneConfId\x12/\n" +
 	"\x14target_scene_node_id\x18\x02 \x01(\x04R\x11targetSceneNodeId\"t\n" +
@@ -420,19 +420,19 @@ const file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDesc 
 	"\x12LeaveSceneByCentre\x12(.scene_manager.LeaveSceneByCentreRequest\x1a\x16.google.protobuf.Empty\"\x00BIZGgithub.com/yourorg/yourrepo/proto/service/scene_manager;scene_managerpbb\x06proto3"
 
 var (
-	file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescOnce sync.Once
-	file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescData []byte
+	file_proto_scene_manager_scene_manager_service_proto_rawDescOnce sync.Once
+	file_proto_scene_manager_scene_manager_service_proto_rawDescData []byte
 )
 
-func file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescGZIP() []byte {
-	file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescOnce.Do(func() {
-		file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDesc), len(file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDesc)))
+func file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP() []byte {
+	file_proto_scene_manager_scene_manager_service_proto_rawDescOnce.Do(func() {
+		file_proto_scene_manager_scene_manager_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_scene_manager_scene_manager_service_proto_rawDesc), len(file_proto_scene_manager_scene_manager_service_proto_rawDesc)))
 	})
-	return file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDescData
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescData
 }
 
-var file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_proto_service_grpc_scene_manager_scene_manager_service_proto_goTypes = []any{
+var file_proto_scene_manager_scene_manager_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_scene_manager_scene_manager_service_proto_goTypes = []any{
 	(*CreateSceneRequest)(nil),         // 0: scene_manager.CreateSceneRequest
 	(*CreateSceneResponse)(nil),        // 1: scene_manager.CreateSceneResponse
 	(*DestroySceneRequest)(nil),        // 2: scene_manager.DestroySceneRequest
@@ -441,7 +441,7 @@ var file_proto_service_grpc_scene_manager_scene_manager_service_proto_goTypes = 
 	(*LeaveSceneByCentreRequest)(nil),  // 5: scene_manager.LeaveSceneByCentreRequest
 	(*emptypb.Empty)(nil),              // 6: google.protobuf.Empty
 }
-var file_proto_service_grpc_scene_manager_scene_manager_service_proto_depIdxs = []int32{
+var file_proto_scene_manager_scene_manager_service_proto_depIdxs = []int32{
 	0, // 0: scene_manager.SceneManager.CreateScene:input_type -> scene_manager.CreateSceneRequest
 	2, // 1: scene_manager.SceneManager.DestroyScene:input_type -> scene_manager.DestroySceneRequest
 	3, // 2: scene_manager.SceneManager.EnterSceneByCentre:input_type -> scene_manager.EnterSceneByCentreRequest
@@ -457,26 +457,26 @@ var file_proto_service_grpc_scene_manager_scene_manager_service_proto_depIdxs = 
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_proto_service_grpc_scene_manager_scene_manager_service_proto_init() }
-func file_proto_service_grpc_scene_manager_scene_manager_service_proto_init() {
-	if File_proto_service_grpc_scene_manager_scene_manager_service_proto != nil {
+func init() { file_proto_scene_manager_scene_manager_service_proto_init() }
+func file_proto_scene_manager_scene_manager_service_proto_init() {
+	if File_proto_scene_manager_scene_manager_service_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDesc), len(file_proto_service_grpc_scene_manager_scene_manager_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_manager_scene_manager_service_proto_rawDesc), len(file_proto_scene_manager_scene_manager_service_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_service_grpc_scene_manager_scene_manager_service_proto_goTypes,
-		DependencyIndexes: file_proto_service_grpc_scene_manager_scene_manager_service_proto_depIdxs,
-		MessageInfos:      file_proto_service_grpc_scene_manager_scene_manager_service_proto_msgTypes,
+		GoTypes:           file_proto_scene_manager_scene_manager_service_proto_goTypes,
+		DependencyIndexes: file_proto_scene_manager_scene_manager_service_proto_depIdxs,
+		MessageInfos:      file_proto_scene_manager_scene_manager_service_proto_msgTypes,
 	}.Build()
-	File_proto_service_grpc_scene_manager_scene_manager_service_proto = out.File
-	file_proto_service_grpc_scene_manager_scene_manager_service_proto_goTypes = nil
-	file_proto_service_grpc_scene_manager_scene_manager_service_proto_depIdxs = nil
+	File_proto_scene_manager_scene_manager_service_proto = out.File
+	file_proto_scene_manager_scene_manager_service_proto_goTypes = nil
+	file_proto_scene_manager_scene_manager_service_proto_depIdxs = nil
 }

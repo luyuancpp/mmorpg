@@ -305,17 +305,6 @@ domain_meta:
         proto: "go/generated/services/login/proto"
         handler: "go/generated/services/login/handler"
 
-  player:
-    source: "{{proto_dir}}/player"
-    rpc: grpc
-    output:
-      cpp:
-        proto: "cpp/generated/services/player/proto"
-        handler: "cpp/generated/services/player/handler"
-        grpc_client: "cpp/generated/services/player/grpc_client"
-      go:
-        proto: "go/generated/services/player/proto"
-        handler: "go/generated/services/player/handler"
 
   scene:
     source: "{{proto_dir}}/room/"

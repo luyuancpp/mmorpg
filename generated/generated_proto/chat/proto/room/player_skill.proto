@@ -1,0 +1,62 @@
+syntax = "proto3";
+option go_package = "chat/proto/room;room";
+
+
+import "proto/db/proto_option.proto";
+import "proto/common/tip.proto";
+import "proto/logic/component/comp.proto";
+import "proto/common/empty.proto";
+import "proto/logic/component/player_skill_comp.proto";
+import "proto/logic/component/actor_comp.proto";
+
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_ROOM;
+
+message ReleaseSkillSkillRequest {
+  uint32 skill_table_id = 1;
+  uint64 target_id = 2;
+  Vector3 position = 3;  
+  Rotation rotation = 4;
+}
+
+message ReleaseSkillSkillResponse {
+  TipInfoMessage error_message = 1;  
+}
+
+message SkillInterruptedS2C
+{
+  uint64 entity = 1;
+  uint64 target_entity = 2;
+  uint32 skill_table_id = 3;
+  uint32 reason_code = 4;
+  uint64 skill_id = 5;
+}
+
+message SkillUsedS2C
+{
+  uint64 entity = 1;
+  repeated uint64 target_entity = 2;
+  uint32 skill_table_id = 3;
+  Vector3 position = 4;
+  uint64 time_stamp = 5;
+}
+
+// 获取技能列表请求
+message GetSkillListRequest {
+}
+
+// 获取技能列表响应
+message GetSkillListResponse {
+  TipInfoMessage error_message = 1;  
+  PlayerSkillListPBComponent skill_list = 2;
+}
+
+service SceneSkillClientPlayer { 
+  option (OptionIsPlayerService) = true;
+  option (OptionIsClientProtocolService) = true;
+  
+  rpc ReleaseSkill (ReleaseSkillSkillRequest) returns (ReleaseSkillSkillResponse);
+  rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
+  rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
+  rpc GetSkillList (GetSkillListRequest) returns (GetSkillListResponse);
+}
