@@ -2,10 +2,10 @@ syntax = "proto3";
 
 import "proto/db/proto_option.proto";
 import "proto/common/common.proto";
-import "proto/common/empty.proto";
-import "proto/common/session.proto";
+import "proto/common/base/empty.proto";
+import "proto/common/base/session.proto";
 import "proto/common/message.proto";
-import "proto/common/tip.proto";
+import "proto/common/base/tip.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_CENTRE;

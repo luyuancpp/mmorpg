@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 import "proto/db/proto_option.proto";
-import "proto/common/tip.proto";
+import "proto/common/base/tip.proto";
 import "google/protobuf/empty.proto";
 import "proto/common/logic/component/scene_comp.proto";
 

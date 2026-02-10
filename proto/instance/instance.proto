@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 
-import "proto/common/tip.proto";
+import "proto/common/base/tip.proto";
 
 package instance;
 
