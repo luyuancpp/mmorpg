@@ -1,5 +1,5 @@
 #include "node_event_handler.h"
-#include "proto/logic/event/node_event.pb.h"
+#include "proto/common/event/node_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE

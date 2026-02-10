@@ -1,5 +1,5 @@
 #include "npc_event_handler.h"
-#include "proto/logic/event/npc_event.pb.h"
+#include "proto/common/event/npc_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE

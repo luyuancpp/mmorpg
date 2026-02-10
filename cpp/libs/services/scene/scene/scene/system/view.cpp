@@ -1,13 +1,13 @@
 ﻿#include "view.h"
 
 #include "grid.h"
-#include "proto/logic/component/comp.pb.h"
+#include "proto/common/component/comp.pb.h"
 #include "Detour/DetourCommon.h"
 #include "core/network/message_system.h"
 #include "scene/scene/constants/view.h"
 #include "proto/service/rpc/scene/player_scene.pb.h"
-#include "proto/logic/component/actor_comp.pb.h"
-#include "proto/logic/component/npc_comp.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
+#include "proto/common/component/npc_comp.pb.h"
 
 #include "engine/core/type_define/type_define.h"
 #include "network/player_message_utils.h"

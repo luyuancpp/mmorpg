@@ -6,7 +6,7 @@
 #include "proto/common/tip.pb.h"
 #include "scene/combat/skill/system/skill.h"
 #include "macros/return_define.h"
-#include "proto/logic/component/player_skill_comp.pb.h"
+#include "proto/common/component/player_skill_comp.pb.h"
 
 ///<<< END WRITING YOUR CODE
 

@@ -2,7 +2,7 @@
 
 #include "table/code/buff_table.h"
 #include "table/proto/buff_table.pb.h"
-#include "proto/logic/component/actor_attribute_state_comp.pb.h"
+#include "proto/common/component/actor_attribute_state_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator.h"
 #include "scene/combat/buff/comp/buff.h"

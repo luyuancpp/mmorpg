@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "proto/logic/component/actor_comp.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
 #include <threading/registry_manager.h>
 
 void MovementSystem::Update(const double delta)

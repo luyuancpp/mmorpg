@@ -1,5 +1,5 @@
 #include "actor_event_handler.h"
-#include "proto/logic/event/actor_event.pb.h"
+#include "proto/common/event/actor_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE

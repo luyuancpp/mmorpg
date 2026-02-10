@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <google/protobuf/repeated_field.h>
 
-#include "proto/logic/component/mission_comp.pb.h"
+#include "proto/common/component/mission_comp.pb.h"
 #include "core/type_define/type_define.h"
 #include "modules/mission/comp/missions_config_comp.h"
 #include "core/utils/registry/game_registry.h"

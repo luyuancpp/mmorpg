@@ -7,7 +7,7 @@
 #include "gate_node.h"
 #include "network/network_constants.h"
 
-#include "proto/logic/component/player_network_comp.pb.h"
+#include "proto/common/component/player_network_comp.pb.h"
 #include <session/manager/session_manager.h>
 
 bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)

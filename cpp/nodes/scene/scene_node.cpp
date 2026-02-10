@@ -9,7 +9,7 @@
 #include "muduo/net/InetAddress.h"
 #include "network/rpc_session.h"
 #include "proto/common/base/node.pb.h"
-#include "proto/logic/event/server_event.pb.h"
+#include "proto/common/event/server_event.pb.h"
 #include "threading/redis_manager.h"
 #include "frame/manager/frame_time.h"
 #include "world/world.h"

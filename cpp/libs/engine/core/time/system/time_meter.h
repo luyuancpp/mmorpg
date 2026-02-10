@@ -2,7 +2,7 @@
 
 #include <chrono>
 #include "time.h"
-#include "proto/logic/component/time_comp.pb.h"
+#include "proto/common/component/time_comp.pb.h"
 
 class TimeMeterSecondSystem {
 public:

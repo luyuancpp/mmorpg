@@ -1,5 +1,5 @@
 #include "scene_event_handler.h"
-#include "proto/logic/event/scene_event.pb.h"
+#include "proto/common/event/scene_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE

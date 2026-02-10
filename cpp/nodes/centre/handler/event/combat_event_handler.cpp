@@ -1,5 +1,5 @@
 #include "combat_event_handler.h"
-#include "proto/logic/event/combat_event.pb.h"
+#include "proto/common/event/combat_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE

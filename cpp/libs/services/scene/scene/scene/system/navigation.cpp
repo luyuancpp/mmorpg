@@ -7,7 +7,7 @@
 #include "DetourCrowd/DetourCrowd.h"
 #include "core/network/message_system.h"
 #include "scene/scene/system/recast.h"
-#include "proto/logic/event/scene_event.pb.h"
+#include "proto/common/event/scene_event.pb.h"
 #include "scene/scene/constants/nav.h"
 #include "scene/scene/mananger/scene_nav.h"
 

@@ -11,7 +11,7 @@
 #include "Recast/Recast.h"
 #include "frame/manager/frame_time.h"
 #include "type_alias/player_session_type_alias.h"
-#include "proto/logic/component/frame_comp.pb.h"
+#include "proto/common/component/frame_comp.pb.h"
 #include "core/system/id_generator.h"
 #include "node/system/node/node.h"
 #include "network/node_utils.h"

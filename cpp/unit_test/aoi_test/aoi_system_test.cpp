@@ -6,7 +6,7 @@
 #include "core/network/message_system.h"
 #include "scene/scene/comp/grid.h"
 #include "scene/scene/system/grid.h"
-#include "proto/logic/component/actor_comp.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 
 #include "type_alias/actor.h"

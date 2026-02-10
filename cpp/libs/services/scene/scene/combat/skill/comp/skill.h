@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "time/comp/timer_task_comp.h"
-#include "proto/logic/component/skill_comp.pb.h"
+#include "proto/common/component/skill_comp.pb.h"
 
 
 //前摇技能timer

@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "core/utils/id/node_id_generator.h"
-#include "proto/logic/component/scene_comp.pb.h"
+#include "proto/common/component/scene_comp.pb.h"
 #include <proto/common/base/common.pb.h>
 #include "entt/src/entt/entity/entity.hpp"
 #include "core/type_define/type_define.h"
