@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "proto/service/grpc/db/proto_option.proto";
+import "proto/db/proto_option.proto";
 import "google/protobuf/empty.proto";
 
 option cc_generic_services = true;
