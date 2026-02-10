@@ -1,9 +1,0 @@
-syntax = "proto3";
-option go_package = "chat/proto/common/logic/event;event";
-
-
-
-message InitializeNpcComponentsEvent
-{
-  uint64 actor_entity = 1;
-}

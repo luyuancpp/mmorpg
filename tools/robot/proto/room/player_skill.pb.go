@@ -12,7 +12,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	common "robot/proto/common"
-	component "robot/proto/logic/component"
+	component "robot/proto/common/logic/component"
 	sync "sync"
 	unsafe "unsafe"
 )
@@ -382,7 +382,7 @@ var File_proto_room_player_skill_proto protoreflect.FileDescriptor
 
 const file_proto_room_player_skill_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/room/player_skill.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a proto/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a-proto/logic/component/player_skill_comp.proto\x1a&proto/logic/component/actor_comp.proto\"\xaa\x01\n" +
+	"\x1dproto/room/player_skill.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a'proto/common/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a4proto/common/logic/component/player_skill_comp.proto\x1a-proto/common/logic/component/actor_comp.proto\"\xaa\x01\n" +
 	"\x18ReleaseSkillSkillRequest\x12$\n" +
 	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\x12\x1b\n" +
 	"\ttarget_id\x18\x02 \x01(\x04R\btargetId\x12$\n" +

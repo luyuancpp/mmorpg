@@ -1,9 +1,0 @@
-syntax = "proto3";
-option go_package = "common/logic/component";
-
-
-
-message PlayerGameNodeEnteryInfoPBComponent
-{
-  uint32 centre_node_id = 1;
-}

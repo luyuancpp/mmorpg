@@ -34,7 +34,7 @@
 #include "proto/db/proto_option.pb.h"
 #include "proto/common/tip.pb.h"
 #include "google/protobuf/empty.pb.h"
-#include "proto/logic/component/scene_comp.pb.h"
+#include "proto/common/logic/component/scene_comp.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
