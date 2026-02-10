@@ -135,29 +135,29 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\037proto/centre/centre_scene.proto\032\033proto"
-    "/db/proto_option.proto\032\030proto/common/emp"
-    "ty.proto\032\031proto/common/common.proto\"X\n\024R"
-    "egisterSceneRequest\022\025\n\rscene_node_id\030\001 \001"
-    "(\r\022)\n\013scenes_info\030\002 \003(\0132\024.RoomInfoPBComp"
-    "onent\"\027\n\025RegisterSceneResponse\"N\n\026UnRegi"
-    "sterSceneRequest\022\025\n\rscene_node_id\030\001 \001(\r\022"
-    "\r\n\005scene\030\002 \001(\r\022\016\n\006reason\030\003 \001(\r2\201\001\n\013Centr"
-    "eScene\022>\n\rRegisterScene\022\025.RegisterSceneR"
-    "equest\032\026.RegisterSceneResponse\0222\n\017UnRegi"
-    "sterScene\022\027.UnRegisterSceneRequest\032\006.Emp"
-    "tyB\007\200\001\001\230\324a\004b\006proto3"
+    "/db/proto_option.proto\032\035proto/common/bas"
+    "e/empty.proto\032\036proto/common/base/common."
+    "proto\"X\n\024RegisterSceneRequest\022\025\n\rscene_n"
+    "ode_id\030\001 \001(\r\022)\n\013scenes_info\030\002 \003(\0132\024.Room"
+    "InfoPBComponent\"\027\n\025RegisterSceneResponse"
+    "\"N\n\026UnRegisterSceneRequest\022\025\n\rscene_node"
+    "_id\030\001 \001(\r\022\r\n\005scene\030\002 \001(\r\022\016\n\006reason\030\003 \001(\r"
+    "2\201\001\n\013CentreScene\022>\n\rRegisterScene\022\025.Regi"
+    "sterSceneRequest\032\026.RegisterSceneResponse"
+    "\0222\n\017UnRegisterScene\022\027.UnRegisterSceneReq"
+    "uest\032\006.EmptyB\007\200\001\001\230\324a\004b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto_deps[3] = {
-        &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
-        &::descriptor_table_proto_2fcommon_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto = {
     false,
     false,
-    459,
+    469,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fscene_2eproto,
     "proto/centre/centre_scene.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fscene_2eproto_once,

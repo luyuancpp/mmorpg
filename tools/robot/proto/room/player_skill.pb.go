@@ -11,8 +11,8 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	common "robot/proto/common"
-	component "robot/proto/common/logic/component"
+	base "robot/proto/common/base"
+	component "robot/proto/common/component"
 	sync "sync"
 	unsafe "unsafe"
 )
@@ -94,7 +94,7 @@ func (x *ReleaseSkillSkillRequest) GetRotation() *component.Rotation {
 
 type ReleaseSkillSkillResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -129,7 +129,7 @@ func (*ReleaseSkillSkillResponse) Descriptor() ([]byte, []int) {
 	return file_proto_room_player_skill_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ReleaseSkillSkillResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *ReleaseSkillSkillResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -328,7 +328,7 @@ func (*GetSkillListRequest) Descriptor() ([]byte, []int) {
 // 获取技能列表响应
 type GetSkillListResponse struct {
 	state         protoimpl.MessageState                `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage                `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage                  `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	SkillList     *component.PlayerSkillListPBComponent `protobuf:"bytes,2,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -364,7 +364,7 @@ func (*GetSkillListResponse) Descriptor() ([]byte, []int) {
 	return file_proto_room_player_skill_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetSkillListResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *GetSkillListResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -382,7 +382,7 @@ var File_proto_room_player_skill_proto protoreflect.FileDescriptor
 
 const file_proto_room_player_skill_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/room/player_skill.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a'proto/common/logic/component/comp.proto\x1a\x18proto/common/empty.proto\x1a4proto/common/logic/component/player_skill_comp.proto\x1a-proto/common/logic/component/actor_comp.proto\"\xaa\x01\n" +
+	"\x1dproto/room/player_skill.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a!proto/common/component/comp.proto\x1a\x1dproto/common/base/empty.proto\x1a.proto/common/component/player_skill_comp.proto\x1a'proto/common/component/actor_comp.proto\"\xaa\x01\n" +
 	"\x18ReleaseSkillSkillRequest\x12$\n" +
 	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\x12\x1b\n" +
 	"\ttarget_id\x18\x02 \x01(\x04R\btargetId\x12$\n" +
@@ -438,9 +438,9 @@ var file_proto_room_player_skill_proto_goTypes = []any{
 	(*GetSkillListResponse)(nil),                 // 5: GetSkillListResponse
 	(*component.Vector3)(nil),                    // 6: Vector3
 	(*component.Rotation)(nil),                   // 7: Rotation
-	(*common.TipInfoMessage)(nil),                // 8: TipInfoMessage
+	(*base.TipInfoMessage)(nil),                  // 8: TipInfoMessage
 	(*component.PlayerSkillListPBComponent)(nil), // 9: PlayerSkillListPBComponent
-	(*common.Empty)(nil),                         // 10: Empty
+	(*base.Empty)(nil),                           // 10: Empty
 }
 var file_proto_room_player_skill_proto_depIdxs = []int32{
 	6,  // 0: ReleaseSkillSkillRequest.position:type_name -> Vector3

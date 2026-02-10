@@ -161,34 +161,34 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2froom_2fgame_5fplayer_5fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\"proto/room/game_player_scene.proto\032\033pr"
-    "oto/db/proto_option.proto\032\026proto/common/"
-    "tip.proto\032\033google/protobuf/empty.proto\032-"
-    "proto/common/logic/component/scene_comp."
-    "proto\";\n\023GsEnterSceneRequest\022\022\n\nsession_"
-    "id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"L\n\023GsLeaveSce"
-    "neRequest\0225\n\021change_scene_info\030\002 \001(\0132\032.C"
-    "hangeRoomInfoPBComponent\"\026\n\024EnterSceneS2"
-    "CRequest\"@\n\026EnterScenerS2CResponse\022&\n\rer"
-    "ror_message\030\001 \001(\0132\017.TipInfoMessage2\322\001\n\020S"
-    "ceneScenePlayer\022:\n\nEnterScene\022\024.GsEnterS"
-    "ceneRequest\032\026.google.protobuf.Empty\022:\n\nL"
-    "eaveScene\022\024.GsLeaveSceneRequest\032\026.google"
-    ".protobuf.Empty\022\?\n\rEnterSceneS2C\022\025.Enter"
-    "SceneS2CRequest\032\027.EnterScenerS2CResponse"
-    "\032\005\200\250\303\001\001B\007\200\001\001\230\324a\003b\006proto3"
+    "oto/db/proto_option.proto\032\033proto/common/"
+    "base/tip.proto\032\033google/protobuf/empty.pr"
+    "oto\032\'proto/common/component/scene_comp.p"
+    "roto\";\n\023GsEnterSceneRequest\022\022\n\nsession_i"
+    "d\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"L\n\023GsLeaveScen"
+    "eRequest\0225\n\021change_scene_info\030\002 \001(\0132\032.Ch"
+    "angeRoomInfoPBComponent\"\026\n\024EnterSceneS2C"
+    "Request\"@\n\026EnterScenerS2CResponse\022&\n\rerr"
+    "or_message\030\001 \001(\0132\017.TipInfoMessage2\322\001\n\020Sc"
+    "eneScenePlayer\022:\n\nEnterScene\022\024.GsEnterSc"
+    "eneRequest\032\026.google.protobuf.Empty\022:\n\nLe"
+    "aveScene\022\024.GsLeaveSceneRequest\032\026.google."
+    "protobuf.Empty\022\?\n\rEnterSceneS2C\022\025.EnterS"
+    "ceneS2CRequest\032\027.EnterScenerS2CResponse\032"
+    "\005\200\250\303\001\001B\007\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2froom_2fgame_5fplayer_5fscene_2eproto_deps[4] = {
         &::descriptor_table_google_2fprotobuf_2fempty_2eproto,
-        &::descriptor_table_proto_2fcommon_2flogic_2fcomponent_2fscene_5fcomp_2eproto,
-        &::descriptor_table_proto_2fcommon_2ftip_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
+        &::descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2froom_2fgame_5fplayer_5fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2froom_2fgame_5fplayer_5fscene_2eproto = {
     false,
     false,
-    624,
+    623,
     descriptor_table_protodef_proto_2froom_2fgame_5fplayer_5fscene_2eproto,
     "proto/room/game_player_scene.proto",
     &descriptor_table_proto_2froom_2fgame_5fplayer_5fscene_2eproto_once,

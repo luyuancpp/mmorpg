@@ -11,7 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	common "robot/proto/common"
+	base "robot/proto/common/base"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -35,13 +35,13 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SceneSceneClientPlayerClient interface {
 	EnterScene(ctx context.Context, in *EnterSceneC2SRequest, opts ...grpc.CallOption) (*EnterSceneC2SResponse, error)
-	NotifyEnterScene(ctx context.Context, in *EnterSceneS2C, opts ...grpc.CallOption) (*common.Empty, error)
-	SceneInfoC2S(ctx context.Context, in *SceneInfoRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	NotifySceneInfo(ctx context.Context, in *SceneInfoS2C, opts ...grpc.CallOption) (*common.Empty, error)
-	NotifyActorCreate(ctx context.Context, in *ActorCreateS2C, opts ...grpc.CallOption) (*common.Empty, error)
-	NotifyActorDestroy(ctx context.Context, in *ActorDestroyS2C, opts ...grpc.CallOption) (*common.Empty, error)
-	NotifyActorListCreate(ctx context.Context, in *ActorListCreateS2C, opts ...grpc.CallOption) (*common.Empty, error)
-	NotifyActorListDestroy(ctx context.Context, in *ActorListDestroyS2C, opts ...grpc.CallOption) (*common.Empty, error)
+	NotifyEnterScene(ctx context.Context, in *EnterSceneS2C, opts ...grpc.CallOption) (*base.Empty, error)
+	SceneInfoC2S(ctx context.Context, in *SceneInfoRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	NotifySceneInfo(ctx context.Context, in *SceneInfoS2C, opts ...grpc.CallOption) (*base.Empty, error)
+	NotifyActorCreate(ctx context.Context, in *ActorCreateS2C, opts ...grpc.CallOption) (*base.Empty, error)
+	NotifyActorDestroy(ctx context.Context, in *ActorDestroyS2C, opts ...grpc.CallOption) (*base.Empty, error)
+	NotifyActorListCreate(ctx context.Context, in *ActorListCreateS2C, opts ...grpc.CallOption) (*base.Empty, error)
+	NotifyActorListDestroy(ctx context.Context, in *ActorListDestroyS2C, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type sceneSceneClientPlayerClient struct {
@@ -62,9 +62,9 @@ func (c *sceneSceneClientPlayerClient) EnterScene(ctx context.Context, in *Enter
 	return out, nil
 }
 
-func (c *sceneSceneClientPlayerClient) NotifyEnterScene(ctx context.Context, in *EnterSceneS2C, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneSceneClientPlayerClient) NotifyEnterScene(ctx context.Context, in *EnterSceneS2C, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_NotifyEnterScene_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -72,9 +72,9 @@ func (c *sceneSceneClientPlayerClient) NotifyEnterScene(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *sceneSceneClientPlayerClient) SceneInfoC2S(ctx context.Context, in *SceneInfoRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneSceneClientPlayerClient) SceneInfoC2S(ctx context.Context, in *SceneInfoRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_SceneInfoC2S_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -82,9 +82,9 @@ func (c *sceneSceneClientPlayerClient) SceneInfoC2S(ctx context.Context, in *Sce
 	return out, nil
 }
 
-func (c *sceneSceneClientPlayerClient) NotifySceneInfo(ctx context.Context, in *SceneInfoS2C, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneSceneClientPlayerClient) NotifySceneInfo(ctx context.Context, in *SceneInfoS2C, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_NotifySceneInfo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -92,9 +92,9 @@ func (c *sceneSceneClientPlayerClient) NotifySceneInfo(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *sceneSceneClientPlayerClient) NotifyActorCreate(ctx context.Context, in *ActorCreateS2C, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneSceneClientPlayerClient) NotifyActorCreate(ctx context.Context, in *ActorCreateS2C, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_NotifyActorCreate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -102,9 +102,9 @@ func (c *sceneSceneClientPlayerClient) NotifyActorCreate(ctx context.Context, in
 	return out, nil
 }
 
-func (c *sceneSceneClientPlayerClient) NotifyActorDestroy(ctx context.Context, in *ActorDestroyS2C, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneSceneClientPlayerClient) NotifyActorDestroy(ctx context.Context, in *ActorDestroyS2C, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_NotifyActorDestroy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -112,9 +112,9 @@ func (c *sceneSceneClientPlayerClient) NotifyActorDestroy(ctx context.Context, i
 	return out, nil
 }
 
-func (c *sceneSceneClientPlayerClient) NotifyActorListCreate(ctx context.Context, in *ActorListCreateS2C, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneSceneClientPlayerClient) NotifyActorListCreate(ctx context.Context, in *ActorListCreateS2C, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_NotifyActorListCreate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -122,9 +122,9 @@ func (c *sceneSceneClientPlayerClient) NotifyActorListCreate(ctx context.Context
 	return out, nil
 }
 
-func (c *sceneSceneClientPlayerClient) NotifyActorListDestroy(ctx context.Context, in *ActorListDestroyS2C, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneSceneClientPlayerClient) NotifyActorListDestroy(ctx context.Context, in *ActorListDestroyS2C, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_NotifyActorListDestroy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -137,13 +137,13 @@ func (c *sceneSceneClientPlayerClient) NotifyActorListDestroy(ctx context.Contex
 // for forward compatibility.
 type SceneSceneClientPlayerServer interface {
 	EnterScene(context.Context, *EnterSceneC2SRequest) (*EnterSceneC2SResponse, error)
-	NotifyEnterScene(context.Context, *EnterSceneS2C) (*common.Empty, error)
-	SceneInfoC2S(context.Context, *SceneInfoRequest) (*common.Empty, error)
-	NotifySceneInfo(context.Context, *SceneInfoS2C) (*common.Empty, error)
-	NotifyActorCreate(context.Context, *ActorCreateS2C) (*common.Empty, error)
-	NotifyActorDestroy(context.Context, *ActorDestroyS2C) (*common.Empty, error)
-	NotifyActorListCreate(context.Context, *ActorListCreateS2C) (*common.Empty, error)
-	NotifyActorListDestroy(context.Context, *ActorListDestroyS2C) (*common.Empty, error)
+	NotifyEnterScene(context.Context, *EnterSceneS2C) (*base.Empty, error)
+	SceneInfoC2S(context.Context, *SceneInfoRequest) (*base.Empty, error)
+	NotifySceneInfo(context.Context, *SceneInfoS2C) (*base.Empty, error)
+	NotifyActorCreate(context.Context, *ActorCreateS2C) (*base.Empty, error)
+	NotifyActorDestroy(context.Context, *ActorDestroyS2C) (*base.Empty, error)
+	NotifyActorListCreate(context.Context, *ActorListCreateS2C) (*base.Empty, error)
+	NotifyActorListDestroy(context.Context, *ActorListDestroyS2C) (*base.Empty, error)
 	mustEmbedUnimplementedSceneSceneClientPlayerServer()
 }
 
@@ -157,25 +157,25 @@ type UnimplementedSceneSceneClientPlayerServer struct{}
 func (UnimplementedSceneSceneClientPlayerServer) EnterScene(context.Context, *EnterSceneC2SRequest) (*EnterSceneC2SResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnterScene not implemented")
 }
-func (UnimplementedSceneSceneClientPlayerServer) NotifyEnterScene(context.Context, *EnterSceneS2C) (*common.Empty, error) {
+func (UnimplementedSceneSceneClientPlayerServer) NotifyEnterScene(context.Context, *EnterSceneS2C) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyEnterScene not implemented")
 }
-func (UnimplementedSceneSceneClientPlayerServer) SceneInfoC2S(context.Context, *SceneInfoRequest) (*common.Empty, error) {
+func (UnimplementedSceneSceneClientPlayerServer) SceneInfoC2S(context.Context, *SceneInfoRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SceneInfoC2S not implemented")
 }
-func (UnimplementedSceneSceneClientPlayerServer) NotifySceneInfo(context.Context, *SceneInfoS2C) (*common.Empty, error) {
+func (UnimplementedSceneSceneClientPlayerServer) NotifySceneInfo(context.Context, *SceneInfoS2C) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifySceneInfo not implemented")
 }
-func (UnimplementedSceneSceneClientPlayerServer) NotifyActorCreate(context.Context, *ActorCreateS2C) (*common.Empty, error) {
+func (UnimplementedSceneSceneClientPlayerServer) NotifyActorCreate(context.Context, *ActorCreateS2C) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyActorCreate not implemented")
 }
-func (UnimplementedSceneSceneClientPlayerServer) NotifyActorDestroy(context.Context, *ActorDestroyS2C) (*common.Empty, error) {
+func (UnimplementedSceneSceneClientPlayerServer) NotifyActorDestroy(context.Context, *ActorDestroyS2C) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyActorDestroy not implemented")
 }
-func (UnimplementedSceneSceneClientPlayerServer) NotifyActorListCreate(context.Context, *ActorListCreateS2C) (*common.Empty, error) {
+func (UnimplementedSceneSceneClientPlayerServer) NotifyActorListCreate(context.Context, *ActorListCreateS2C) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyActorListCreate not implemented")
 }
-func (UnimplementedSceneSceneClientPlayerServer) NotifyActorListDestroy(context.Context, *ActorListDestroyS2C) (*common.Empty, error) {
+func (UnimplementedSceneSceneClientPlayerServer) NotifyActorListDestroy(context.Context, *ActorListDestroyS2C) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyActorListDestroy not implemented")
 }
 func (UnimplementedSceneSceneClientPlayerServer) mustEmbedUnimplementedSceneSceneClientPlayerServer() {

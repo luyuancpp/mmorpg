@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "robot/proto/common/event;event";
+
+
+
+message InitializeNpcComponentsEvent
+{
+  uint64 actor_entity = 1;
+}

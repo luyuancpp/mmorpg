@@ -188,43 +188,44 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\035proto/gate/gate_service.proto\032\033proto/d"
-    "b/proto_option.proto\032\030proto/common/empty"
-    ".proto\032\032proto/common/message.proto\"J\n\022Ki"
-    "ckSessionRequest\022\022\n\nsession_id\030\001 \001(\004\022 \n\030"
-    "expected_session_version\030\002 \001(\004\"Z\n\030BindSe"
-    "ssionToGateRequest\022\022\n\nsession_id\030\001 \001(\004\022\021"
-    "\n\tplayer_id\030\002 \001(\004\022\027\n\017session_version\030\003 \001"
-    "(\004\"[\n\031BindSessionToGateResponse\022\022\n\nsessi"
-    "on_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017sessio"
-    "n_version\030\003 \001(\004\"[\n\031BroadcastToPlayersReq"
-    "uest\022\024\n\014session_list\030\001 \003(\004\022(\n\017message_co"
-    "ntent\030\002 \001(\0132\017.MessageContent2\243\004\n\004Gate\022X\n"
-    "\023PlayerEnterGameNode\022\037.RegisterGameNodeS"
-    "essionRequest\032 .RegisterGameNodeSessionR"
-    "esponse\0227\n\023SendMessageToPlayer\022\030.NodeRou"
-    "teMessageRequest\032\006.Empty\0222\n\023KickSessionB"
-    "yCentre\022\023.KickSessionRequest\032\006.Empty\022\?\n\020"
-    "RouteNodeMessage\022\024.RouteMessageRequest\032\025"
-    ".RouteMessageResponse\022M\n\022RoutePlayerMess"
-    "age\022\032.RoutePlayerMessageRequest\032\033.RouteP"
-    "layerMessageResponse\0228\n\022BroadcastToPlaye"
-    "rs\022\032.BroadcastToPlayersRequest\032\006.Empty\022>"
-    "\n\rNodeHandshake\022\025.NodeHandshakeRequest\032\026"
-    ".NodeHandshakeResponse\022J\n\021BindSessionToG"
-    "ate\022\031.BindSessionToGateRequest\032\032.BindSes"
-    "sionToGateResponseB\007\200\001\001\230\324a\002b\006proto3"
+    "b/proto_option.proto\032\035proto/common/base/"
+    "empty.proto\032\037proto/common/base/message.p"
+    "roto\"J\n\022KickSessionRequest\022\022\n\nsession_id"
+    "\030\001 \001(\004\022 \n\030expected_session_version\030\002 \001(\004"
+    "\"Z\n\030BindSessionToGateRequest\022\022\n\nsession_"
+    "id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017session_v"
+    "ersion\030\003 \001(\004\"[\n\031BindSessionToGateRespons"
+    "e\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004"
+    "\022\027\n\017session_version\030\003 \001(\004\"[\n\031BroadcastTo"
+    "PlayersRequest\022\024\n\014session_list\030\001 \003(\004\022(\n\017"
+    "message_content\030\002 \001(\0132\017.MessageContent2\243"
+    "\004\n\004Gate\022X\n\023PlayerEnterGameNode\022\037.Registe"
+    "rGameNodeSessionRequest\032 .RegisterGameNo"
+    "deSessionResponse\0227\n\023SendMessageToPlayer"
+    "\022\030.NodeRouteMessageRequest\032\006.Empty\0222\n\023Ki"
+    "ckSessionByCentre\022\023.KickSessionRequest\032\006"
+    ".Empty\022\?\n\020RouteNodeMessage\022\024.RouteMessag"
+    "eRequest\032\025.RouteMessageResponse\022M\n\022Route"
+    "PlayerMessage\022\032.RoutePlayerMessageReques"
+    "t\032\033.RoutePlayerMessageResponse\0228\n\022Broadc"
+    "astToPlayers\022\032.BroadcastToPlayersRequest"
+    "\032\006.Empty\022>\n\rNodeHandshake\022\025.NodeHandshak"
+    "eRequest\032\026.NodeHandshakeResponse\022J\n\021Bind"
+    "SessionToGate\022\031.BindSessionToGateRequest"
+    "\032\032.BindSessionToGateResponseB\007\200\001\001\230\324a\002b\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] = {
-        &::descriptor_table_proto_2fcommon_2fempty_2eproto,
-        &::descriptor_table_proto_2fcommon_2fmessage_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    1035,
+    1045,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,

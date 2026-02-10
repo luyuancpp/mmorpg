@@ -11,8 +11,8 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	common "robot/proto/common"
-	component "robot/proto/common/logic/component"
+	base "robot/proto/common/base"
+	component "robot/proto/common/component"
 	sync "sync"
 	unsafe "unsafe"
 )
@@ -318,7 +318,7 @@ var File_proto_room_player_state_attribute_sync_proto protoreflect.FileDescripto
 
 const file_proto_room_player_state_attribute_sync_proto_rawDesc = "" +
 	"\n" +
-	",proto/room/player_state_attribute_sync.proto\x1a\x1bproto/db/proto_option.proto\x1a-proto/common/logic/component/actor_comp.proto\x1a\x18proto/common/empty.proto\x1a=proto/common/logic/component/actor_attribute_state_comp.proto\"\xd9\x01\n" +
+	",proto/room/player_state_attribute_sync.proto\x1a\x1bproto/db/proto_option.proto\x1a'proto/common/component/actor_comp.proto\x1a\x1dproto/common/base/empty.proto\x1a7proto/common/component/actor_attribute_state_comp.proto\"\xd9\x01\n" +
 	"\x16ActorBaseAttributesS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -366,7 +366,7 @@ var file_proto_room_player_state_attribute_sync_proto_goTypes = []any{
 	(*component.Transform)(nil),                   // 6: Transform
 	(*component.Velocity)(nil),                    // 7: Velocity
 	(*component.CombatStateFlagsPbComponent)(nil), // 8: CombatStateFlagsPbComponent
-	(*common.Empty)(nil),                          // 9: Empty
+	(*base.Empty)(nil),                            // 9: Empty
 }
 var file_proto_room_player_state_attribute_sync_proto_depIdxs = []int32{
 	6, // 0: ActorBaseAttributesS2C.transform:type_name -> Transform

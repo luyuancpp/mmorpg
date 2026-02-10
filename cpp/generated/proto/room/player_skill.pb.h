@@ -32,11 +32,11 @@
 #include "google/protobuf/service.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/db/proto_option.pb.h"
-#include "proto/common/tip.pb.h"
-#include "proto/common/logic/component/comp.pb.h"
-#include "proto/common/empty.pb.h"
-#include "proto/common/logic/component/player_skill_comp.pb.h"
-#include "proto/common/logic/component/actor_comp.pb.h"
+#include "proto/common/base/tip.pb.h"
+#include "proto/common/component/comp.pb.h"
+#include "proto/common/base/empty.pb.h"
+#include "proto/common/component/player_skill_comp.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.

@@ -137,33 +137,33 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2e
     protodesc_cold) = {
     "\n&proto/centre/centre_player_scene.proto"
     "\032\033proto/db/proto_option.proto\032\033google/pr"
-    "otobuf/empty.proto\032\031proto/common/common."
-    "proto\"C\n\027CentreEnterSceneRequest\022(\n\nscen"
-    "e_info\030\001 \001(\0132\024.RoomInfoPBComponent\"\031\n\027Ce"
-    "ntreLeaveSceneRequest\"0\n.CentreLeaveScen"
-    "eAsyncSavePlayerCompleteRequest\"\030\n\026Centr"
-    "eSceneInfoRequest2\311\002\n\021CentrePlayerScene\022"
-    ">\n\nEnterScene\022\030.CentreEnterSceneRequest\032"
-    "\026.google.protobuf.Empty\022>\n\nLeaveScene\022\030."
-    "CentreLeaveSceneRequest\032\026.google.protobu"
-    "f.Empty\022l\n!LeaveSceneAsyncSavePlayerComp"
-    "lete\022/.CentreLeaveSceneAsyncSavePlayerCo"
-    "mpleteRequest\032\026.google.protobuf.Empty\022\?\n"
-    "\014SceneInfoC2S\022\027.CentreSceneInfoRequest\032\026"
-    ".google.protobuf.Empty\032\005\200\250\303\001\001B\007\200\001\001\230\324a\004b\006"
-    "proto3"
+    "otobuf/empty.proto\032\036proto/common/base/co"
+    "mmon.proto\"C\n\027CentreEnterSceneRequest\022(\n"
+    "\nscene_info\030\001 \001(\0132\024.RoomInfoPBComponent\""
+    "\031\n\027CentreLeaveSceneRequest\"0\n.CentreLeav"
+    "eSceneAsyncSavePlayerCompleteRequest\"\030\n\026"
+    "CentreSceneInfoRequest2\311\002\n\021CentrePlayerS"
+    "cene\022>\n\nEnterScene\022\030.CentreEnterSceneReq"
+    "uest\032\026.google.protobuf.Empty\022>\n\nLeaveSce"
+    "ne\022\030.CentreLeaveSceneRequest\032\026.google.pr"
+    "otobuf.Empty\022l\n!LeaveSceneAsyncSavePlaye"
+    "rComplete\022/.CentreLeaveSceneAsyncSavePla"
+    "yerCompleteRequest\032\026.google.protobuf.Emp"
+    "ty\022\?\n\014SceneInfoC2S\022\027.CentreSceneInfoRequ"
+    "est\032\026.google.protobuf.Empty\032\005\200\250\303\001\001B\007\200\001\001\230"
+    "\324a\004b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_deps[3] = {
         &::descriptor_table_google_2fprotobuf_2fempty_2eproto,
-        &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto = {
     false,
     false,
-    646,
+    651,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto,
     "proto/centre/centre_player_scene.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_once,
