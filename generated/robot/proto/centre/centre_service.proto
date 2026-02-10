@@ -2,7 +2,7 @@ syntax = "proto3";
 option go_package = "robot/proto/centre;centre";
 
 import "proto/db/proto_option.proto";
-import "proto/common/common.proto";
+import "proto/common/base/common.proto";
 import "proto/common/base/empty.proto";
 import "proto/common/base/session.proto";
 import "proto/common/message.proto";

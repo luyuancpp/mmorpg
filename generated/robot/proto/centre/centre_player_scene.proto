@@ -3,7 +3,7 @@ option go_package = "robot/proto/centre;centre";
 
 import "proto/db/proto_option.proto";
 import "google/protobuf/empty.proto";
-import "proto/common/common.proto";
+import "proto/common/base/common.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_CENTRE;
