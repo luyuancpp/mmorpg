@@ -1,0 +1,12 @@
+syntax = "proto3";
+option go_package = "mail/proto/common/logic/event;event";
+
+
+
+message SkillExecutedEvent 
+{
+  uint64 skill_id = 1;
+  uint32 skill_table_id = 2;
+  uint64 caster = 3;
+  uint64 target = 4;
+}

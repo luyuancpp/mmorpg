@@ -1,0 +1,4 @@
+syntax = "proto3";
+option go_package = "team/proto/common/logic/constants;constants";
+
+

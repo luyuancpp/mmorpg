@@ -1,0 +1,40 @@
+syntax = "proto3";
+option go_package = "robot/proto/common/logic/component;component";
+
+
+
+message MissionPBComponent
+{
+	enum eMissionStatus
+	{
+	    E_MISSION_NORMAL = 0;
+	    E_MISSION_ACHIEVEMENT = 1;
+	    E_MISSION_COMPLETE = 2;
+	    E_MISSION_TIME_OUT = 3;
+	    E_MISSION_FAILD = 4;
+	};
+	uint32 id = 1;
+	uint32 status = 2;
+	repeated uint32 progress = 3;
+	bytes data = 4; // 各种类型buff的各种数据
+}
+
+message MissionListPBComponent
+{
+	enum eMissionScope
+	{
+		kPlayerMission = 0;//普通任务
+		kPlayerAchievment = 1;//成就
+		kPlayerDailyActivity = 2;//每日活动
+		kPlayerMissionSize = 3;//最大值
+	}
+	map<uint32, MissionPBComponent> missions = 1;
+	bytes complete_missions = 2;
+	map<uint32, uint64> mission_begin_time = 3;
+	uint32 type = 4;
+}
+
+message RewardListPBComponent
+{
+	map<uint32, bool> can_reward_mission_id = 1;
+}

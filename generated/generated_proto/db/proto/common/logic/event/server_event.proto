@@ -1,0 +1,18 @@
+syntax = "proto3";
+option go_package = "db/proto/common/logic/event;event";
+
+
+
+message OnConnect2CentrePbEvent
+{
+  uint64 entity = 1;
+}
+
+message OnConnect2Login
+{
+  uint64 entity = 1;
+}
+
+message OnServerStart
+{
+}

@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "chat/proto/common/logic/component;component";
+
+
+
+message PlayerGameNodeEnteryInfoPBComponent
+{
+  uint32 centre_node_id = 1;
+}

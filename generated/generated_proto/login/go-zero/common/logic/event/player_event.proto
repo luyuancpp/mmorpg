@@ -1,0 +1,20 @@
+syntax = "proto3";
+option go_package = "common/logic/event";
+
+
+
+message RegisterPlayerEvent
+{
+  uint64 actor_entity = 1;
+}
+
+message PlayerUpgradeEvent
+{
+  uint64 actor_entity = 1;
+  uint32 new_level = 2;
+}
+
+message InitializePlayerComponentsEvent
+{
+  uint64 actor_entity = 1;
+}

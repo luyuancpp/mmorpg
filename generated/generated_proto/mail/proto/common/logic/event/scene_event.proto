@@ -1,0 +1,39 @@
+syntax = "proto3";
+option go_package = "mail/proto/common/logic/event;event";
+
+
+
+message OnRoomCreated
+{
+  uint64 entity = 1;
+}
+
+message OnRoomDestroyed
+{
+  uint64 entity = 1;
+}
+
+message BeforeEnterRoom
+{
+  uint64 entity = 1;
+}
+
+message AfterEnterRoom
+{
+  uint64 entity = 1;
+}
+
+message BeforeLeaveRoom
+{
+  uint64 entity = 1;
+}
+
+message AfterLeaveRoom
+{
+  uint64 entity = 1;
+}
+
+message S2CEnterRoom
+{
+  uint64 entity = 1;
+}
