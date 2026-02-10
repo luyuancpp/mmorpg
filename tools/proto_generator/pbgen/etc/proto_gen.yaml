@@ -368,7 +368,7 @@ domain_meta:
         proto: "go/generated/backend/db/proto"
         handler: "go/generated/backend/db/handler"
   common:
-    source: "{{proto_dir}}common/base/"
+    source: "{{proto_dir}}common/"
     rpc: rpc   # 或者 rpc，根据用途
     output:
       cpp:

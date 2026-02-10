@@ -4,31 +4,6 @@
 
 bool IsTcpNodeType(uint32_t nodeType) {
 	static const std::unordered_set<uint32_t> validTypes = {
-		eNodeType::DeployNodeService,
-		eNodeType::DbNodeService,
-		eNodeType::CentreNodeService,
-		eNodeType::RoomNodeService,
-		eNodeType::GateNodeService,
-		eNodeType::LoginNodeService,
-		eNodeType::RedisNodeService,
-		eNodeType::EtcdNodeService,
-		eNodeType::MailNodeService,
-		eNodeType::ChatNodeService,
-		eNodeType::TeamNodeService,
-		eNodeType::ActivityNodeService,
-		eNodeType::TradeNodeService,
-		eNodeType::RankNodeService,
-		eNodeType::TaskNodeService,
-		eNodeType::GuildNodeService,
-		eNodeType::MatchNodeService,
-		eNodeType::AiNodeService,
-		eNodeType::LogNodeService,
-		eNodeType::PaymentNodeService,
-		eNodeType::SecurityNodeService,
-		eNodeType::CrossServerNodeService,
-		eNodeType::AnalyticsNodeService,
-		eNodeType::GmNodeService,
-		eNodeType::PlayerLocatorNodeService,
 	};
 
 	return validTypes.contains(nodeType);

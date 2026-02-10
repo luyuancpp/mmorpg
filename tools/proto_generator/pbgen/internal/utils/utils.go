@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"go.uber.org/zap" // 引入zap用于结构化日志字段
 	"pbgen/logger"    // 引入封装的logger包
@@ -23,29 +24,29 @@ func EnsureDir(dirPath string) error {
 
 // CollectProtoFiles 收集指定目录下所有.proto文件（返回绝对路径）
 func CollectProtoFiles(dirPath string) ([]string, error) {
-	fileEntries, err := os.ReadDir(dirPath)
-	if err != nil {
-		logger.Global.Fatal("读取目录失败",
-			zap.String("目录路径", dirPath),
-			zap.Error(err),
-		)
-	}
-
 	var protoFiles []string
-	for _, entry := range fileEntries {
-		if IsProtoFile(entry) {
-			absPath, err := filepath.Abs(filepath.Join(dirPath, entry.Name()))
+
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(info.Name(), ".proto") {
+			absPath, err := filepath.Abs(path)
 			if err != nil {
 				logger.Global.Warn("Proto收集: 获取绝对路径失败，跳过",
-					zap.String("文件名", entry.Name()),
-					zap.String("目录", dirPath),
+					zap.String("文件路径", path),
 					zap.Error(err),
 				)
-				continue
+				return nil
 			}
 			protoFiles = append(protoFiles, absPath)
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
+
 	return protoFiles, nil
 }
 
