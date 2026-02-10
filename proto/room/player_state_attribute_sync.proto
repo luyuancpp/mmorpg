@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "proto/service/grpc/db/proto_option.proto";
+import "proto/db/proto_option.proto";
 import "proto/logic/component/actor_comp.proto";
 import "proto/common/empty.proto";
 import "proto/logic/component/actor_attribute_state_comp.proto";
