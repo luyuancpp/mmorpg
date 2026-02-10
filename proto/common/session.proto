@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-
-
-message SessionDetails
-{
-  uint64 session_id = 1;
-  uint64 player_id = 2;
-}
