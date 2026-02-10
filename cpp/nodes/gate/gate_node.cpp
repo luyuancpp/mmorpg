@@ -2,9 +2,9 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "grpc_client/service/grpc/login/login_grpc_client.h"
+#include "grpc_client/login/login_grpc_client.h"
 #include "core/network/rpc_session.h"
-#include "proto/service/grpc/login/login.grpc.pb.h"
+#include "proto/login/login.grpc.pb.h"
 #include "proto/common/base/node.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "node/system/node/node_util.h"
@@ -22,7 +22,7 @@ GateNode::GateNode(EventLoop* loop)
 {
 	gGateNode = this;
 	GetNodeInfo().set_node_type(GateNodeService);
-	targetNodeTypeWhitelist = { CentreNodeService, SceneNodeService, LoginNodeService };
+	targetNodeTypeWhitelist = { CentreNodeService, RoomNodeService, LoginNodeService };
 
 	auto sendGrpcResponseToClientSession = [](const ClientContext& context, const ::google::protobuf::Message& reply) {
 		auto sessionDetails = GetSessionDetailsByClientContext(context);

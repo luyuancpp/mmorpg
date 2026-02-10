@@ -5,7 +5,7 @@
 #include "network/rpc_client.h"
 #include "network/codec/dispatcher.h"
 #include "engine/core/type_define/type_define.h"
-#include "proto/common/message.pb.h"
+#include "proto/common/base/message.pb.h"
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 

@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "proto/common/tip.pb.h"
+#include "proto/common/base/tip.pb.h"
 #include "scene/combat/skill/system/skill.h"
 #include "macros/return_define.h"
 #include "proto/common/component/player_skill_comp.pb.h"

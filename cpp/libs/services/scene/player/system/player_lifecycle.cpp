@@ -1,7 +1,7 @@
 #include "player_lifecycle.h"
 #include "proto/common/event/actor_event.pb.h"
 #include "core/network/message_system.h"
-#include "proto/service/rpc/centre/centre_service.pb.h"
+#include "proto/centre/centre_service.pb.h"
 #include "proto/common/component/player_async_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_login_comp.pb.h"

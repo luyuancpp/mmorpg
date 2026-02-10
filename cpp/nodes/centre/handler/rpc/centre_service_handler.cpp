@@ -861,7 +861,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 		sceneNodeSession->RouteMessageToNode(GateRouteNodeMessageMessageId, *mutable_request);
 		break;
 	}
-	case SceneNodeService:
+	case RoomNodeService:
 	{
 		entt::entity game_node_id{ tlsMessageContext.GetNextRouteNodeId() };
 		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
