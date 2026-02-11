@@ -15,6 +15,9 @@
 #include "core/utils/utility/utility.h"
 #include "core/system/id_generator.h"
 
+
+//todo  不能用 timer 战斗逻辑走帧，这样能保证buff的触发和结束都在帧逻辑里，避免timer回调时实体已经被销毁或者buff已经被移除等问题，效果对比明显，后续可以考虑把timer改成帧逻辑里统一处理buff的过期和周期触发等逻辑
+
 // Buff ID生成逻辑
 uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 {
