@@ -69,10 +69,6 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 
     auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
 
-    if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
-        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
-    }
-
     BuffComp newBuff;
     if (nullptr != abilityContext)
     {
@@ -92,6 +88,10 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 
     auto [fst, snd] = buffList.emplace(newBuffId, std::move(newBuff));
     OnBuffStart(parent, fst->second, buffTable);
+
+	if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
+		return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
+	}
 
     if (buffTable->duration() > 0) {
         fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
