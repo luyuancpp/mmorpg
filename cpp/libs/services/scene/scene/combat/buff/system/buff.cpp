@@ -95,12 +95,10 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 
     if (buffTable->duration() > 0) {
         fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
-
             if (!tlsRegistryManager.actorRegistry.valid(parent))
             {
                 return;
             }
-
             OnBuffExpire(parent, newBuffId);
             });
     }
