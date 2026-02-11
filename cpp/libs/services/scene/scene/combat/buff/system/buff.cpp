@@ -80,7 +80,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     }
     newBuff.buffPb.set_processed_caster(buffTable->nocaster() ? entt::null : (abilityContext ? abilityContext->caster() : entt::null));
 
-    if (!OnBuffAwake(parent, buffTableId)) {
+    if (kSuccess == OnBuffAwake(parent, buffTableId)) {
         return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
     }
 
