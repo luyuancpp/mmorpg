@@ -7,7 +7,7 @@
 package room
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -30,7 +30,7 @@ const (
 // 正常或者顶号进入场景
 // 断线重连进入场景,断线重连分时间
 type SceneSceneClient interface {
-	Test(ctx context.Context, in *GameSceneTest, opts ...grpc.CallOption) (*common.Empty, error)
+	Test(ctx context.Context, in *GameSceneTest, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type sceneSceneClient struct {
@@ -41,9 +41,9 @@ func NewSceneSceneClient(cc grpc.ClientConnInterface) SceneSceneClient {
 	return &sceneSceneClient{cc}
 }
 
-func (c *sceneSceneClient) Test(ctx context.Context, in *GameSceneTest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneSceneClient) Test(ctx context.Context, in *GameSceneTest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneScene_Test_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (c *sceneSceneClient) Test(ctx context.Context, in *GameSceneTest, opts ...
 // 正常或者顶号进入场景
 // 断线重连进入场景,断线重连分时间
 type SceneSceneServer interface {
-	Test(context.Context, *GameSceneTest) (*common.Empty, error)
+	Test(context.Context, *GameSceneTest) (*base.Empty, error)
 	mustEmbedUnimplementedSceneSceneServer()
 }
 
@@ -69,7 +69,7 @@ type SceneSceneServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSceneSceneServer struct{}
 
-func (UnimplementedSceneSceneServer) Test(context.Context, *GameSceneTest) (*common.Empty, error) {
+func (UnimplementedSceneSceneServer) Test(context.Context, *GameSceneTest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Test not implemented")
 }
 func (UnimplementedSceneSceneServer) mustEmbedUnimplementedSceneSceneServer() {}

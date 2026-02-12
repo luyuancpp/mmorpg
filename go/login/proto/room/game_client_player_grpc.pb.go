@@ -11,7 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	common "login/proto/common"
+	base "login/proto/common/base"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -28,8 +28,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SceneClientPlayerCommonClient interface {
-	SendTipToClient(ctx context.Context, in *common.TipInfoMessage, opts ...grpc.CallOption) (*common.Empty, error)
-	KickPlayer(ctx context.Context, in *GameKickPlayerRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	SendTipToClient(ctx context.Context, in *base.TipInfoMessage, opts ...grpc.CallOption) (*base.Empty, error)
+	KickPlayer(ctx context.Context, in *GameKickPlayerRequest, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type sceneClientPlayerCommonClient struct {
@@ -40,9 +40,9 @@ func NewSceneClientPlayerCommonClient(cc grpc.ClientConnInterface) SceneClientPl
 	return &sceneClientPlayerCommonClient{cc}
 }
 
-func (c *sceneClientPlayerCommonClient) SendTipToClient(ctx context.Context, in *common.TipInfoMessage, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneClientPlayerCommonClient) SendTipToClient(ctx context.Context, in *base.TipInfoMessage, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneClientPlayerCommon_SendTipToClient_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -50,9 +50,9 @@ func (c *sceneClientPlayerCommonClient) SendTipToClient(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *sceneClientPlayerCommonClient) KickPlayer(ctx context.Context, in *GameKickPlayerRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneClientPlayerCommonClient) KickPlayer(ctx context.Context, in *GameKickPlayerRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, SceneClientPlayerCommon_KickPlayer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ func (c *sceneClientPlayerCommonClient) KickPlayer(ctx context.Context, in *Game
 // All implementations must embed UnimplementedSceneClientPlayerCommonServer
 // for forward compatibility.
 type SceneClientPlayerCommonServer interface {
-	SendTipToClient(context.Context, *common.TipInfoMessage) (*common.Empty, error)
-	KickPlayer(context.Context, *GameKickPlayerRequest) (*common.Empty, error)
+	SendTipToClient(context.Context, *base.TipInfoMessage) (*base.Empty, error)
+	KickPlayer(context.Context, *GameKickPlayerRequest) (*base.Empty, error)
 	mustEmbedUnimplementedSceneClientPlayerCommonServer()
 }
 
@@ -76,10 +76,10 @@ type SceneClientPlayerCommonServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSceneClientPlayerCommonServer struct{}
 
-func (UnimplementedSceneClientPlayerCommonServer) SendTipToClient(context.Context, *common.TipInfoMessage) (*common.Empty, error) {
+func (UnimplementedSceneClientPlayerCommonServer) SendTipToClient(context.Context, *base.TipInfoMessage) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTipToClient not implemented")
 }
-func (UnimplementedSceneClientPlayerCommonServer) KickPlayer(context.Context, *GameKickPlayerRequest) (*common.Empty, error) {
+func (UnimplementedSceneClientPlayerCommonServer) KickPlayer(context.Context, *GameKickPlayerRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method KickPlayer not implemented")
 }
 func (UnimplementedSceneClientPlayerCommonServer) mustEmbedUnimplementedSceneClientPlayerCommonServer() {
@@ -105,7 +105,7 @@ func RegisterSceneClientPlayerCommonServer(s grpc.ServiceRegistrar, srv SceneCli
 }
 
 func _SceneClientPlayerCommon_SendTipToClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.TipInfoMessage)
+	in := new(base.TipInfoMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func _SceneClientPlayerCommon_SendTipToClient_Handler(srv interface{}, ctx conte
 		FullMethod: SceneClientPlayerCommon_SendTipToClient_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneClientPlayerCommonServer).SendTipToClient(ctx, req.(*common.TipInfoMessage))
+		return srv.(SceneClientPlayerCommonServer).SendTipToClient(ctx, req.(*base.TipInfoMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }

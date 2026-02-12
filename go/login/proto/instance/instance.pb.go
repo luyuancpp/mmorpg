@@ -9,7 +9,7 @@ package instance
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	common "login/proto/common"
+	base "login/proto/common/base"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -94,7 +94,7 @@ type CreateInstanceResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	InstanceId    uint64                 `protobuf:"varint,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`      // 创建成功的副本ID
 	ExpireTime    int64                  `protobuf:"varint,2,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`      // 副本过期时间（Unix时间戳）
-	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误信息或成功提示
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误信息或成功提示
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -143,7 +143,7 @@ func (x *CreateInstanceResponse) GetExpireTime() int64 {
 	return 0
 }
 
-func (x *CreateInstanceResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *CreateInstanceResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -154,7 +154,7 @@ var File_proto_instance_instance_proto protoreflect.FileDescriptor
 
 const file_proto_instance_instance_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/instance/instance.proto\x12\binstance\x1a\x16proto/common/tip.proto\"\x85\x02\n" +
+	"\x1dproto/instance/instance.proto\x12\binstance\x1a\x1bproto/common/base/tip.proto\"\x85\x02\n" +
 	"\x15CreateInstanceRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1f\n" +
 	"\vtemplate_id\x18\x02 \x01(\rR\n" +
@@ -190,7 +190,7 @@ var file_proto_instance_instance_proto_goTypes = []any{
 	(*CreateInstanceRequest)(nil),  // 0: instance.CreateInstanceRequest
 	(*CreateInstanceResponse)(nil), // 1: instance.CreateInstanceResponse
 	nil,                            // 2: instance.CreateInstanceRequest.MetadataEntry
-	(*common.TipInfoMessage)(nil),  // 3: TipInfoMessage
+	(*base.TipInfoMessage)(nil),    // 3: TipInfoMessage
 }
 var file_proto_instance_instance_proto_depIdxs = []int32{
 	2, // 0: instance.CreateInstanceRequest.metadata:type_name -> instance.CreateInstanceRequest.MetadataEntry

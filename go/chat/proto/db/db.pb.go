@@ -7,7 +7,7 @@
 package db
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -26,7 +26,7 @@ const (
 type TestRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 可以嵌套导入的message，但外层必须是当前proto的message
-	Empty         *common.Empty `protobuf:"bytes,1,opt,name=empty,proto3" json:"empty,omitempty"`
+	Empty         *base.Empty `protobuf:"bytes,1,opt,name=empty,proto3" json:"empty,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,7 +61,7 @@ func (*TestRequest) Descriptor() ([]byte, []int) {
 	return file_proto_db_db_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *TestRequest) GetEmpty() *common.Empty {
+func (x *TestRequest) GetEmpty() *base.Empty {
 	if x != nil {
 		return x.Empty
 	}
@@ -70,7 +70,7 @@ func (x *TestRequest) GetEmpty() *common.Empty {
 
 type TestResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Empty         *common.Empty          `protobuf:"bytes,1,opt,name=empty,proto3" json:"empty,omitempty"`
+	Empty         *base.Empty            `protobuf:"bytes,1,opt,name=empty,proto3" json:"empty,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -105,7 +105,7 @@ func (*TestResponse) Descriptor() ([]byte, []int) {
 	return file_proto_db_db_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *TestResponse) GetEmpty() *common.Empty {
+func (x *TestResponse) GetEmpty() *base.Empty {
 	if x != nil {
 		return x.Empty
 	}
@@ -116,7 +116,7 @@ var File_proto_db_db_proto protoreflect.FileDescriptor
 
 const file_proto_db_db_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/db/db.proto\x1a\x1bproto/db/proto_option.proto\x1a\x18proto/common/empty.proto\"+\n" +
+	"\x11proto/db/db.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\"+\n" +
 	"\vTestRequest\x12\x1c\n" +
 	"\x05empty\x18\x01 \x01(\v2\x06.EmptyR\x05empty\",\n" +
 	"\fTestResponse\x12\x1c\n" +
@@ -140,7 +140,7 @@ var file_proto_db_db_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_db_db_proto_goTypes = []any{
 	(*TestRequest)(nil),  // 0: TestRequest
 	(*TestResponse)(nil), // 1: TestResponse
-	(*common.Empty)(nil), // 2: Empty
+	(*base.Empty)(nil),   // 2: Empty
 }
 var file_proto_db_db_proto_depIdxs = []int32{
 	2, // 0: TestRequest.empty:type_name -> Empty

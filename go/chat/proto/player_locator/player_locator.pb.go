@@ -7,7 +7,7 @@
 package player_locator
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -163,7 +163,7 @@ var File_proto_player_locator_player_locator_proto protoreflect.FileDescriptor
 
 const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\n" +
-	")proto/player_locator/player_locator.proto\x12\rplayerlocator\x1a\x18proto/common/empty.proto\"\xb6\x01\n" +
+	")proto/player_locator/player_locator.proto\x12\rplayerlocator\x1a\x1dproto/common/base/empty.proto\"\xb6\x01\n" +
 	"\x0ePlayerLocation\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\x03R\x03uid\x12\x1b\n" +
 	"\tserver_id\x18\x02 \x01(\tR\bserverId\x12\x16\n" +
@@ -195,7 +195,7 @@ var file_proto_player_locator_player_locator_proto_msgTypes = make([]protoimpl.M
 var file_proto_player_locator_player_locator_proto_goTypes = []any{
 	(*PlayerLocation)(nil), // 0: playerlocator.PlayerLocation
 	(*PlayerId)(nil),       // 1: playerlocator.PlayerId
-	(*common.Empty)(nil),   // 2: Empty
+	(*base.Empty)(nil),     // 2: Empty
 }
 var file_proto_player_locator_player_locator_proto_depIdxs = []int32{
 	0, // 0: playerlocator.PlayerLocator.SetLocation:input_type -> playerlocator.PlayerLocation

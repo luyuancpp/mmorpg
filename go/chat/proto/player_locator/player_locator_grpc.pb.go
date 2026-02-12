@@ -7,7 +7,7 @@
 package player_locator
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -29,9 +29,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PlayerLocatorClient interface {
-	SetLocation(ctx context.Context, in *PlayerLocation, opts ...grpc.CallOption) (*common.Empty, error)
+	SetLocation(ctx context.Context, in *PlayerLocation, opts ...grpc.CallOption) (*base.Empty, error)
 	GetLocation(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*PlayerLocation, error)
-	MarkOffline(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*common.Empty, error)
+	MarkOffline(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type playerLocatorClient struct {
@@ -42,9 +42,9 @@ func NewPlayerLocatorClient(cc grpc.ClientConnInterface) PlayerLocatorClient {
 	return &playerLocatorClient{cc}
 }
 
-func (c *playerLocatorClient) SetLocation(ctx context.Context, in *PlayerLocation, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *playerLocatorClient) SetLocation(ctx context.Context, in *PlayerLocation, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, PlayerLocator_SetLocation_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -62,9 +62,9 @@ func (c *playerLocatorClient) GetLocation(ctx context.Context, in *PlayerId, opt
 	return out, nil
 }
 
-func (c *playerLocatorClient) MarkOffline(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *playerLocatorClient) MarkOffline(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, PlayerLocator_MarkOffline_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -76,9 +76,9 @@ func (c *playerLocatorClient) MarkOffline(ctx context.Context, in *PlayerId, opt
 // All implementations must embed UnimplementedPlayerLocatorServer
 // for forward compatibility.
 type PlayerLocatorServer interface {
-	SetLocation(context.Context, *PlayerLocation) (*common.Empty, error)
+	SetLocation(context.Context, *PlayerLocation) (*base.Empty, error)
 	GetLocation(context.Context, *PlayerId) (*PlayerLocation, error)
-	MarkOffline(context.Context, *PlayerId) (*common.Empty, error)
+	MarkOffline(context.Context, *PlayerId) (*base.Empty, error)
 	mustEmbedUnimplementedPlayerLocatorServer()
 }
 
@@ -89,13 +89,13 @@ type PlayerLocatorServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPlayerLocatorServer struct{}
 
-func (UnimplementedPlayerLocatorServer) SetLocation(context.Context, *PlayerLocation) (*common.Empty, error) {
+func (UnimplementedPlayerLocatorServer) SetLocation(context.Context, *PlayerLocation) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetLocation not implemented")
 }
 func (UnimplementedPlayerLocatorServer) GetLocation(context.Context, *PlayerId) (*PlayerLocation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLocation not implemented")
 }
-func (UnimplementedPlayerLocatorServer) MarkOffline(context.Context, *PlayerId) (*common.Empty, error) {
+func (UnimplementedPlayerLocatorServer) MarkOffline(context.Context, *PlayerId) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarkOffline not implemented")
 }
 func (UnimplementedPlayerLocatorServer) mustEmbedUnimplementedPlayerLocatorServer() {}

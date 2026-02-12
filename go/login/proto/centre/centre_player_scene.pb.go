@@ -11,7 +11,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	common "login/proto/common"
+	base "login/proto/common/base"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -25,8 +25,8 @@ const (
 )
 
 type CentreEnterSceneRequest struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	SceneInfo     *base.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,7 +61,7 @@ func (*CentreEnterSceneRequest) Descriptor() ([]byte, []int) {
 	return file_proto_centre_centre_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CentreEnterSceneRequest) GetSceneInfo() *common.RoomInfoPBComponent {
+func (x *CentreEnterSceneRequest) GetSceneInfo() *base.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -180,7 +180,7 @@ var File_proto_centre_centre_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_centre_centre_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"&proto/centre/centre_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19proto/common/common.proto\"N\n" +
+	"&proto/centre/centre_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1eproto/common/base/common.proto\"N\n" +
 	"\x17CentreEnterSceneRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"\x19\n" +
@@ -213,7 +213,7 @@ var file_proto_centre_centre_player_scene_proto_goTypes = []any{
 	(*CentreLeaveSceneRequest)(nil),                        // 1: CentreLeaveSceneRequest
 	(*CentreLeaveSceneAsyncSavePlayerCompleteRequest)(nil), // 2: CentreLeaveSceneAsyncSavePlayerCompleteRequest
 	(*CentreSceneInfoRequest)(nil),                         // 3: CentreSceneInfoRequest
-	(*common.RoomInfoPBComponent)(nil),                     // 4: RoomInfoPBComponent
+	(*base.RoomInfoPBComponent)(nil),                       // 4: RoomInfoPBComponent
 	(*emptypb.Empty)(nil),                                  // 5: google.protobuf.Empty
 }
 var file_proto_centre_centre_player_scene_proto_depIdxs = []int32{

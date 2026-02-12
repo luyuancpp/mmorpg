@@ -1,0 +1,23 @@
+syntax = "proto3";
+option go_package = "login/proto/common/component;component";
+
+
+
+enum EnterGsType
+{
+	  LOGIN_NONE = 0;//正常进入，换场景进入
+	  LOGIN_FIRST= 1;//第一次登录
+	  LOGIN_REPLACE = 2;//顶号
+	  LOGIN_RECONNECT = 3;//断线重连
+	  LOGIN_DISCONNECTED = 4;// 标记离线并记录版本（便于延迟清理时再次校验
+}
+	
+message PlayerEnterGameStatePbComp
+{
+	uint32 enter_gs_type = 1;
+}
+
+message PlayerDisconnectInfoComp{
+	uint64 disconnected_at = 1;
+	uint64 snapshot_version = 2;
+}

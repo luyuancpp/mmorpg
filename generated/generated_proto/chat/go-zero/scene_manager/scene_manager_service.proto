@@ -1,0 +1,62 @@
+syntax = "proto3";
+package scene_manager;
+
+import "google/protobuf/empty.proto";
+import "proto/common/base/node.proto";
+
+option go_package = "github.com/yourorg/yourrepo/proto/service/scene_manager;scene_managerpb";
+
+// SceneManager 服务：负责场景创建/销毁与 Centre -> Scene 的路由
+service SceneManager {
+  // 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+  rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}
+
+  // 销毁场景
+  rpc DestroyScene(DestroySceneRequest) returns (google.protobuf.Empty) {}
+
+  // Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+  rpc EnterSceneByCentre(EnterSceneByCentreRequest) returns (EnterSceneByCentreResponse) {}
+
+  // Centre 请求玩家离开场景（或切换场景前的离开）
+  rpc LeaveSceneByCentre(LeaveSceneByCentreRequest) returns (google.protobuf.Empty) {}
+}
+
+message CreateSceneRequest {
+  // 场景配置 id
+  uint64 scene_conf_id = 1;
+  // 可选：指定在某个 Scene 节点创建
+  uint64 target_scene_node_id = 2;
+}
+
+message CreateSceneResponse {
+  // 全局场景 id（由 Scene 节点分配）
+  uint64 scene_id = 1;
+  // 创建结果：0 成功，非0 错误码
+  uint32 error_code = 2;
+  string error_message = 3;
+}
+
+message DestroySceneRequest {
+  uint64 scene_id = 1;
+}
+
+message EnterSceneByCentreRequest {
+  // 来自 Centre 的调用，包含 player 与 session 元数据
+  uint64 player_id = 1;
+  uint64 scene_id = 2; // 目标场景
+  uint64 centre_node_id = 3; // 源 Centre 节点 id
+  uint64 session_id = 4; // Gate session id（可为0，表示托管）
+  string request_id = 5; // 幂等 id（可选）
+}
+
+message EnterSceneByCentreResponse {
+  uint32 error_code = 1;
+  string error_message = 2;
+}
+
+message LeaveSceneByCentreRequest {
+  uint64 player_id = 1;
+  uint64 scene_id = 2;
+  uint64 centre_node_id = 3;
+  string request_id = 4;
+}
