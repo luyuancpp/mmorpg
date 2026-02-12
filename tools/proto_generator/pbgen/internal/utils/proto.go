@@ -79,15 +79,16 @@ func GetGRPCSubdirectories() []string {
 // 返回示例：["player_locator", "login", "db", "chat", "team", "mail"]
 func GetGRPCSubdirectoryNames() []string {
 	var names []string
-	grpcBase := _config.Global.DirectoryNames.GoGrpcBaseDirName
 
-	for _, dir := range GetGRPCSubdirectories() {
-		// 去除基础路径前缀
-		relative := strings.TrimPrefix(dir, grpcBase)
-		// 去除末尾的/
-		name := strings.TrimSuffix(relative, "/")
-		if name != "" {
-			names = append(names, name)
+	for domain, meta := range _config.Global.DomainMeta {
+
+		// 是否支持 grpc
+		if meta.Rpc != "grpc" && meta.Rpc != "both" {
+			continue
+		}
+
+		if domain != "" {
+			names = append(names, domain)
 		}
 	}
 

@@ -23,6 +23,16 @@ func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent)
 
 	// Handle different message types
 	switch response.MessageId {
+	case game.ClientPlayerLoginLoginMessageId:
+		handleClientPlayerLoginLogin(player, response.SerializedMessage)
+	case game.ClientPlayerLoginCreatePlayerMessageId:
+		handleClientPlayerLoginCreatePlayer(player, response.SerializedMessage)
+	case game.ClientPlayerLoginEnterGameMessageId:
+		handleClientPlayerLoginEnterGame(player, response.SerializedMessage)
+	case game.ClientPlayerLoginLeaveGameMessageId:
+		handleClientPlayerLoginLeaveGame(player, response.SerializedMessage)
+	case game.ClientPlayerLoginDisconnectMessageId:
+		handleClientPlayerLoginDisconnect(player, response.SerializedMessage)
 	case game.SceneClientPlayerCommonSendTipToClientMessageId:
 		handleSceneClientPlayerCommonSendTipToClient(player, response.SerializedMessage)
 	case game.SceneClientPlayerCommonKickPlayerMessageId:
@@ -51,20 +61,50 @@ func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent)
 		handleSceneSkillClientPlayerNotifySkillInterrupted(player, response.SerializedMessage)
 	case game.SceneSkillClientPlayerGetSkillListMessageId:
 		handleSceneSkillClientPlayerGetSkillList(player, response.SerializedMessage)
-	case game.ClientPlayerLoginLoginMessageId:
-		handleClientPlayerLoginLogin(player, response.SerializedMessage)
-	case game.ClientPlayerLoginCreatePlayerMessageId:
-		handleClientPlayerLoginCreatePlayer(player, response.SerializedMessage)
-	case game.ClientPlayerLoginEnterGameMessageId:
-		handleClientPlayerLoginEnterGame(player, response.SerializedMessage)
-	case game.ClientPlayerLoginLeaveGameMessageId:
-		handleClientPlayerLoginLeaveGame(player, response.SerializedMessage)
-	case game.ClientPlayerLoginDisconnectMessageId:
-		handleClientPlayerLoginDisconnect(player, response.SerializedMessage)
 	default:
 		// Handle unknown message IDs
 		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId), zap.String("response", response.String()))
 	}
+}
+func handleClientPlayerLoginLogin(player *gameobject.Player, body []byte) {
+	message := &login.LoginResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal login.LoginResponse", zap.Error(err))
+		return
+	}
+	ClientPlayerLoginLoginHandler(player, message)
+}
+func handleClientPlayerLoginCreatePlayer(player *gameobject.Player, body []byte) {
+	message := &login.CreatePlayerResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal login.CreatePlayerResponse", zap.Error(err))
+		return
+	}
+	ClientPlayerLoginCreatePlayerHandler(player, message)
+}
+func handleClientPlayerLoginEnterGame(player *gameobject.Player, body []byte) {
+	message := &login.EnterGameResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal login.EnterGameResponse", zap.Error(err))
+		return
+	}
+	ClientPlayerLoginEnterGameHandler(player, message)
+}
+func handleClientPlayerLoginLeaveGame(player *gameobject.Player, body []byte) {
+	message := &login.LeaveGameRequest{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal login.LeaveGameRequest", zap.Error(err))
+		return
+	}
+	ClientPlayerLoginLeaveGameHandler(player, message)
+}
+func handleClientPlayerLoginDisconnect(player *gameobject.Player, body []byte) {
+	message := &login.LoginNodeDisconnectRequest{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal login.LoginNodeDisconnectRequest", zap.Error(err))
+		return
+	}
+	ClientPlayerLoginDisconnectHandler(player, message)
 }
 func handleSceneClientPlayerCommonSendTipToClient(player *gameobject.Player, body []byte) {
 	message := &base.TipInfoMessage{}
@@ -177,44 +217,4 @@ func handleSceneSkillClientPlayerGetSkillList(player *gameobject.Player, body []
 		return
 	}
 	SceneSkillClientPlayerGetSkillListHandler(player, message)
-}
-func handleClientPlayerLoginLogin(player *gameobject.Player, body []byte) {
-	message := &login.LoginResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal login.LoginResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginLoginHandler(player, message)
-}
-func handleClientPlayerLoginCreatePlayer(player *gameobject.Player, body []byte) {
-	message := &login.CreatePlayerResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal login.CreatePlayerResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginCreatePlayerHandler(player, message)
-}
-func handleClientPlayerLoginEnterGame(player *gameobject.Player, body []byte) {
-	message := &login.EnterGameResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal login.EnterGameResponse", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginEnterGameHandler(player, message)
-}
-func handleClientPlayerLoginLeaveGame(player *gameobject.Player, body []byte) {
-	message := &login.LeaveGameRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal login.LeaveGameRequest", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginLeaveGameHandler(player, message)
-}
-func handleClientPlayerLoginDisconnect(player *gameobject.Player, body []byte) {
-	message := &login.LoginNodeDisconnectRequest{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal login.LoginNodeDisconnectRequest", zap.Error(err))
-		return
-	}
-	ClientPlayerLoginDisconnectHandler(player, message)
 }
