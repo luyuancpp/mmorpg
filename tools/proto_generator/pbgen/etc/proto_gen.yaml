@@ -291,25 +291,28 @@ log:
   level: "info"
   output: "stdout"
   file_path: "pbgen.log"
-
+  
 domain_meta:
+
   login:
     source: "{{proto_dir}}login/"
-    rpc: grpc
-    output:
-      cpp:
-        proto: "cpp/generated/services/login/proto"
-        handler: "cpp/generated/services/login/handler"
-        grpc_client: "cpp/generated/services/login/grpc_client"
+    rpc:
+      type: grpc
+    outputs:
       go:
-        proto: "go/generated/services/login/proto"
-        handler: "go/generated/services/login/handler"
-
+        proto:   "go/generated/login/proto"
+        handler: "go/generated/login/handler"
+        grpc:    "go/generated/login/grpc"
+      cpp:
+        proto:   "cpp/generated/login/proto"
+        handler: "cpp/generated/login/handler"
+        grpc:    "cpp/generated/login/grpc"
 
   scene:
-    source: "{{proto_dir}}room/"
-    rpc: rpc
-    output:
+    source: "{{proto_dir}}scene/"
+    rpc:
+      type: rpc
+    outputs:
       cpp:
         proto: "cpp/generated/nodes/scene/proto"
         handler: "cpp/generated/nodes/scene/handler"
@@ -317,8 +320,9 @@ domain_meta:
 
   centre:
     source: "{{proto_dir}}centre/"
-    rpc: rpc
-    output:
+    rpc:
+      type: rpc
+    outputs:
       cpp:
         proto: "cpp/generated/nodes/centre/proto"
         handler: "cpp/generated/nodes/centre/handler"
@@ -326,8 +330,9 @@ domain_meta:
 
   gate:
     source: "{{proto_dir}}gate/"
-    rpc: rpc
-    output:
+    rpc:
+      type: rpc
+    outputs:
       cpp:
         proto: "cpp/generated/nodes/gate/proto"
         handler: "cpp/generated/nodes/gate/handler"
@@ -335,49 +340,48 @@ domain_meta:
 
   chat:
     source: "{{proto_dir}}chat/"
-    rpc: grpc
-    output:
-      cpp:
-        proto: "cpp/generated/services/chat/proto"
-        handler: "cpp/generated/services/chat/handler"
-        grpc_client: "cpp/generated/services/chat/grpc_client"
+    rpc:
+      type: grpc
+    outputs:
       go:
-        proto: "go/generated/services/chat/proto"
-        handler: "go/generated/services/chat/handler"
+        proto:   "go/generated/chat/proto"
+        handler: "go/generated/chat/handler"
+        grpc:    "go/generated/chat/grpc"
+      cpp:
+        proto:   "cpp/generated/chat/proto"
+        handler: "cpp/generated/chat/handler"
+        grpc:    "cpp/generated/chat/grpc"
 
   db:
     source: "{{proto_dir}}db/"
-    rpc: rpc
-    output:
-      cpp:
-        proto: "cpp/generated/backend/db/proto"
-        handler: "cpp/generated/backend/db/handler"
-        grpc_client: "cpp/generated/backend/db/grpc_client"
+    rpc:
+      type: rpc
+    outputs:
       go:
-        proto: "go/generated/backend/db/proto"
-        handler: "go/generated/backend/db/handler"
+        proto:   "go/generated/db/proto"
+        handler: "go/generated/db/handler"
+      cpp:
+        proto:   "cpp/generated/db/proto"
+        handler: "cpp/generated/db/handler"
+
   etcd:
     source: "{{proto_dir}}etcd/"
-    rpc: etcd
-    output:
-      cpp:
-        proto: "cpp/generated/backend/db/proto"
-        handler: "cpp/generated/backend/db/handler"
-        grpc_client: "cpp/generated/backend/db/grpc_client"
+    rpc:
+      type: etcd
+    outputs:
       go:
-        proto: "go/generated/backend/db/proto"
-        handler: "go/generated/backend/db/handler"
+        proto:   "go/generated/etcd/proto"
+        handler: "go/generated/etcd/handler"
+      cpp:
+        proto:   "cpp/generated/etcd/proto"
+        handler: "cpp/generated/etcd/handler"
+
   common:
     source: "{{proto_dir}}common/"
-    rpc: rpc   # 或者 rpc，根据用途
-    output:
-      cpp:
-        proto: "cpp/generated/common/proto"
-        handler: "cpp/generated/common/handler"   # 如果有 handler
-        grpc_client: "cpp/generated/common/grpc_client" # 如果需要
-        attribute_sync: ""  # 如果没有 attribute_sync
+    rpc:
+      type: none
+    outputs:
       go:
         proto: "go/generated/common/proto"
-        handler: "go/generated/common/handler"
-        grpc_client: ""
-        attribute_sync: ""
+      cpp:
+        proto: "cpp/generated/common/proto"
