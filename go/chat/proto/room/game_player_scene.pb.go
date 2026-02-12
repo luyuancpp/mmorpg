@@ -7,8 +7,8 @@
 package room
 
 import (
-	common "chat/proto/common"
-	component "chat/proto/logic/component"
+	base "chat/proto/common/base"
+	component "chat/proto/common/component"
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -159,7 +159,7 @@ func (*EnterSceneS2CRequest) Descriptor() ([]byte, []int) {
 
 type EnterScenerS2CResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -194,7 +194,7 @@ func (*EnterScenerS2CResponse) Descriptor() ([]byte, []int) {
 	return file_proto_room_game_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *EnterScenerS2CResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *EnterScenerS2CResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -205,7 +205,7 @@ var File_proto_room_game_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_room_game_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"\"proto/room/game_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a&proto/logic/component/scene_comp.proto\"O\n" +
+	"\"proto/room/game_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a'proto/common/component/scene_comp.proto\"O\n" +
 	"\x13GsEnterSceneRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x19\n" +
@@ -241,7 +241,7 @@ var file_proto_room_game_player_scene_proto_goTypes = []any{
 	(*EnterSceneS2CRequest)(nil),                // 2: EnterSceneS2CRequest
 	(*EnterScenerS2CResponse)(nil),              // 3: EnterScenerS2CResponse
 	(*component.ChangeRoomInfoPBComponent)(nil), // 4: ChangeRoomInfoPBComponent
-	(*common.TipInfoMessage)(nil),               // 5: TipInfoMessage
+	(*base.TipInfoMessage)(nil),                 // 5: TipInfoMessage
 	(*emptypb.Empty)(nil),                       // 6: google.protobuf.Empty
 }
 var file_proto_room_game_player_scene_proto_depIdxs = []int32{

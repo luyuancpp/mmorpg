@@ -7,7 +7,7 @@
 package gate
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -199,7 +199,7 @@ func (x *BindSessionToGateResponse) GetSessionVersion() uint64 {
 type BroadcastToPlayersRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SessionList    []uint64               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
-	MessageContent *common.MessageContent `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
+	MessageContent *base.MessageContent   `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -241,7 +241,7 @@ func (x *BroadcastToPlayersRequest) GetSessionList() []uint64 {
 	return nil
 }
 
-func (x *BroadcastToPlayersRequest) GetMessageContent() *common.MessageContent {
+func (x *BroadcastToPlayersRequest) GetMessageContent() *base.MessageContent {
 	if x != nil {
 		return x.MessageContent
 	}
@@ -252,7 +252,7 @@ var File_proto_gate_gate_service_proto protoreflect.FileDescriptor
 
 const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/gate/gate_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/message.proto\"m\n" +
+	"\x1dproto/gate/gate_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1fproto/common/base/message.proto\"m\n" +
 	"\x12KickSessionRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x128\n" +
@@ -294,21 +294,21 @@ func file_proto_gate_gate_service_proto_rawDescGZIP() []byte {
 
 var file_proto_gate_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_gate_gate_service_proto_goTypes = []any{
-	(*KickSessionRequest)(nil),                     // 0: KickSessionRequest
-	(*BindSessionToGateRequest)(nil),               // 1: BindSessionToGateRequest
-	(*BindSessionToGateResponse)(nil),              // 2: BindSessionToGateResponse
-	(*BroadcastToPlayersRequest)(nil),              // 3: BroadcastToPlayersRequest
-	(*common.MessageContent)(nil),                  // 4: MessageContent
-	(*common.RegisterGameNodeSessionRequest)(nil),  // 5: RegisterGameNodeSessionRequest
-	(*common.NodeRouteMessageRequest)(nil),         // 6: NodeRouteMessageRequest
-	(*common.RouteMessageRequest)(nil),             // 7: RouteMessageRequest
-	(*common.RoutePlayerMessageRequest)(nil),       // 8: RoutePlayerMessageRequest
-	(*common.NodeHandshakeRequest)(nil),            // 9: NodeHandshakeRequest
-	(*common.RegisterGameNodeSessionResponse)(nil), // 10: RegisterGameNodeSessionResponse
-	(*common.Empty)(nil),                           // 11: Empty
-	(*common.RouteMessageResponse)(nil),            // 12: RouteMessageResponse
-	(*common.RoutePlayerMessageResponse)(nil),      // 13: RoutePlayerMessageResponse
-	(*common.NodeHandshakeResponse)(nil),           // 14: NodeHandshakeResponse
+	(*KickSessionRequest)(nil),                   // 0: KickSessionRequest
+	(*BindSessionToGateRequest)(nil),             // 1: BindSessionToGateRequest
+	(*BindSessionToGateResponse)(nil),            // 2: BindSessionToGateResponse
+	(*BroadcastToPlayersRequest)(nil),            // 3: BroadcastToPlayersRequest
+	(*base.MessageContent)(nil),                  // 4: MessageContent
+	(*base.RegisterGameNodeSessionRequest)(nil),  // 5: RegisterGameNodeSessionRequest
+	(*base.NodeRouteMessageRequest)(nil),         // 6: NodeRouteMessageRequest
+	(*base.RouteMessageRequest)(nil),             // 7: RouteMessageRequest
+	(*base.RoutePlayerMessageRequest)(nil),       // 8: RoutePlayerMessageRequest
+	(*base.NodeHandshakeRequest)(nil),            // 9: NodeHandshakeRequest
+	(*base.RegisterGameNodeSessionResponse)(nil), // 10: RegisterGameNodeSessionResponse
+	(*base.Empty)(nil),                           // 11: Empty
+	(*base.RouteMessageResponse)(nil),            // 12: RouteMessageResponse
+	(*base.RoutePlayerMessageResponse)(nil),      // 13: RoutePlayerMessageResponse
+	(*base.NodeHandshakeResponse)(nil),           // 14: NodeHandshakeResponse
 }
 var file_proto_gate_gate_service_proto_depIdxs = []int32{
 	4,  // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent

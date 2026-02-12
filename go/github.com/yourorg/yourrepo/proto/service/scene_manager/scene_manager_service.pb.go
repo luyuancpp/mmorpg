@@ -7,7 +7,7 @@
 package scene_managerpb
 
 import (
-	_ "chat/proto/common"
+	_ "chat/proto/common/base"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -384,7 +384,7 @@ var File_proto_scene_manager_scene_manager_service_proto protoreflect.FileDescri
 
 const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\n" +
-	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1bgoogle/protobuf/empty.proto\x1a\x17proto/common/node.proto\"i\n" +
+	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cproto/common/base/node.proto\"i\n" +
 	"\x12CreateSceneRequest\x12\"\n" +
 	"\rscene_conf_id\x18\x01 \x01(\x04R\vsceneConfId\x12/\n" +
 	"\x14target_scene_node_id\x18\x02 \x01(\x04R\x11targetSceneNodeId\"t\n" +

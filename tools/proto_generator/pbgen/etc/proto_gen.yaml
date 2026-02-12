@@ -291,7 +291,7 @@ log:
   level: "info"
   output: "stdout"
   file_path: "pbgen.log"
-  
+
 domain_meta:
 
   login:
@@ -308,8 +308,8 @@ domain_meta:
         handler: "cpp/generated/login/handler"
         grpc:    "cpp/generated/login/grpc"
 
-  scene:
-    source: "{{proto_dir}}scene/"
+  room:
+    source: "{{proto_dir}}room/"
     rpc:
       type: rpc
     outputs:

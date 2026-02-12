@@ -25,7 +25,7 @@ func GetDomainByProtoPath(protoPath string) (string, bool) {
 // 入参：meta - 业务域的元数据对象（类型与 _config.Global.DomainMeta[domain] 一致）
 // 出参：bool - true 表示是 gRPC，false 表示不是
 func IsGRPC(meta _config.DomainMeta) bool { // 注意：DomainMeta 需要替换成你实际的元数据类型
-	return strings.ToLower(meta.Rpc) == "grpc"
+	return strings.ToLower(meta.Rpc.Type) == "grpc"
 }
 
 // 原函数改造后
@@ -83,7 +83,7 @@ func GetGRPCSubdirectoryNames() []string {
 	for domain, meta := range _config.Global.DomainMeta {
 
 		// 是否支持 grpc
-		if meta.Rpc != "grpc" && meta.Rpc != "both" {
+		if meta.Rpc.Type != "grpc" && meta.Rpc.Type != "both" {
 			continue
 		}
 

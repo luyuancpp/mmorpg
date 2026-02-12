@@ -7,7 +7,7 @@
 package room
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -63,7 +63,7 @@ var File_proto_room_game_scene_proto protoreflect.FileDescriptor
 
 const file_proto_room_game_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/room/game_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x18proto/common/empty.proto\"\x0f\n" +
+	"\x1bproto/room/game_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\"\x0f\n" +
 	"\rGameSceneTest2,\n" +
 	"\n" +
 	"SceneScene\x12\x1e\n" +
@@ -84,7 +84,7 @@ func file_proto_room_game_scene_proto_rawDescGZIP() []byte {
 var file_proto_room_game_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_room_game_scene_proto_goTypes = []any{
 	(*GameSceneTest)(nil), // 0: GameSceneTest
-	(*common.Empty)(nil),  // 1: Empty
+	(*base.Empty)(nil),    // 1: Empty
 }
 var file_proto_room_game_scene_proto_depIdxs = []int32{
 	0, // 0: SceneScene.Test:input_type -> GameSceneTest

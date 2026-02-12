@@ -7,7 +7,7 @@
 package centre
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -32,7 +32,7 @@ const (
 // 断线重连进入场景,断线重连分时间
 type CentreSceneClient interface {
 	RegisterScene(ctx context.Context, in *RegisterSceneRequest, opts ...grpc.CallOption) (*RegisterSceneResponse, error)
-	UnRegisterScene(ctx context.Context, in *UnRegisterSceneRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	UnRegisterScene(ctx context.Context, in *UnRegisterSceneRequest, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type centreSceneClient struct {
@@ -53,9 +53,9 @@ func (c *centreSceneClient) RegisterScene(ctx context.Context, in *RegisterScene
 	return out, nil
 }
 
-func (c *centreSceneClient) UnRegisterScene(ctx context.Context, in *UnRegisterSceneRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *centreSceneClient) UnRegisterScene(ctx context.Context, in *UnRegisterSceneRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, CentreScene_UnRegisterScene_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (c *centreSceneClient) UnRegisterScene(ctx context.Context, in *UnRegisterS
 // 断线重连进入场景,断线重连分时间
 type CentreSceneServer interface {
 	RegisterScene(context.Context, *RegisterSceneRequest) (*RegisterSceneResponse, error)
-	UnRegisterScene(context.Context, *UnRegisterSceneRequest) (*common.Empty, error)
+	UnRegisterScene(context.Context, *UnRegisterSceneRequest) (*base.Empty, error)
 	mustEmbedUnimplementedCentreSceneServer()
 }
 
@@ -85,7 +85,7 @@ type UnimplementedCentreSceneServer struct{}
 func (UnimplementedCentreSceneServer) RegisterScene(context.Context, *RegisterSceneRequest) (*RegisterSceneResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterScene not implemented")
 }
-func (UnimplementedCentreSceneServer) UnRegisterScene(context.Context, *UnRegisterSceneRequest) (*common.Empty, error) {
+func (UnimplementedCentreSceneServer) UnRegisterScene(context.Context, *UnRegisterSceneRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnRegisterScene not implemented")
 }
 func (UnimplementedCentreSceneServer) mustEmbedUnimplementedCentreSceneServer() {}

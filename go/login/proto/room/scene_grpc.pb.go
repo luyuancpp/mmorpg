@@ -11,7 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	common "login/proto/common"
+	base "login/proto/common/base"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -37,17 +37,17 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SceneClient interface {
-	PlayerEnterGameNode(ctx context.Context, in *PlayerEnterGameNodeRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	SendMessageToPlayer(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.NodeRouteMessageResponse, error)
+	PlayerEnterGameNode(ctx context.Context, in *PlayerEnterGameNodeRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	SendMessageToPlayer(ctx context.Context, in *base.NodeRouteMessageRequest, opts ...grpc.CallOption) (*base.NodeRouteMessageResponse, error)
 	ProcessClientPlayerMessage(ctx context.Context, in *ProcessClientPlayerMessageRequest, opts ...grpc.CallOption) (*ProcessClientPlayerMessageResponse, error)
-	CentreSendToPlayerViaGameNode(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	InvokePlayerService(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.NodeRouteMessageResponse, error)
-	RouteNodeStringMsg(ctx context.Context, in *common.RouteMessageRequest, opts ...grpc.CallOption) (*common.RouteMessageResponse, error)
-	RoutePlayerStringMsg(ctx context.Context, in *common.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*common.RoutePlayerMessageResponse, error)
-	UpdateSessionDetail(ctx context.Context, in *RegisterPlayerSessionRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	EnterScene(ctx context.Context, in *Centre2GsEnterSceneRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	CentreSendToPlayerViaGameNode(ctx context.Context, in *base.NodeRouteMessageRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	InvokePlayerService(ctx context.Context, in *base.NodeRouteMessageRequest, opts ...grpc.CallOption) (*base.NodeRouteMessageResponse, error)
+	RouteNodeStringMsg(ctx context.Context, in *base.RouteMessageRequest, opts ...grpc.CallOption) (*base.RouteMessageResponse, error)
+	RoutePlayerStringMsg(ctx context.Context, in *base.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*base.RoutePlayerMessageResponse, error)
+	UpdateSessionDetail(ctx context.Context, in *RegisterPlayerSessionRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	EnterScene(ctx context.Context, in *Centre2GsEnterSceneRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	CreateScene(ctx context.Context, in *CreateSceneRequest, opts ...grpc.CallOption) (*CreateSceneResponse, error)
-	NodeHandshake(ctx context.Context, in *common.NodeHandshakeRequest, opts ...grpc.CallOption) (*common.NodeHandshakeResponse, error)
+	NodeHandshake(ctx context.Context, in *base.NodeHandshakeRequest, opts ...grpc.CallOption) (*base.NodeHandshakeResponse, error)
 }
 
 type sceneClient struct {
@@ -58,9 +58,9 @@ func NewSceneClient(cc grpc.ClientConnInterface) SceneClient {
 	return &sceneClient{cc}
 }
 
-func (c *sceneClient) PlayerEnterGameNode(ctx context.Context, in *PlayerEnterGameNodeRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneClient) PlayerEnterGameNode(ctx context.Context, in *PlayerEnterGameNodeRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Scene_PlayerEnterGameNode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -68,9 +68,9 @@ func (c *sceneClient) PlayerEnterGameNode(ctx context.Context, in *PlayerEnterGa
 	return out, nil
 }
 
-func (c *sceneClient) SendMessageToPlayer(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.NodeRouteMessageResponse, error) {
+func (c *sceneClient) SendMessageToPlayer(ctx context.Context, in *base.NodeRouteMessageRequest, opts ...grpc.CallOption) (*base.NodeRouteMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.NodeRouteMessageResponse)
+	out := new(base.NodeRouteMessageResponse)
 	err := c.cc.Invoke(ctx, Scene_SendMessageToPlayer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -88,9 +88,9 @@ func (c *sceneClient) ProcessClientPlayerMessage(ctx context.Context, in *Proces
 	return out, nil
 }
 
-func (c *sceneClient) CentreSendToPlayerViaGameNode(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneClient) CentreSendToPlayerViaGameNode(ctx context.Context, in *base.NodeRouteMessageRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Scene_CentreSendToPlayerViaGameNode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -98,9 +98,9 @@ func (c *sceneClient) CentreSendToPlayerViaGameNode(ctx context.Context, in *com
 	return out, nil
 }
 
-func (c *sceneClient) InvokePlayerService(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.NodeRouteMessageResponse, error) {
+func (c *sceneClient) InvokePlayerService(ctx context.Context, in *base.NodeRouteMessageRequest, opts ...grpc.CallOption) (*base.NodeRouteMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.NodeRouteMessageResponse)
+	out := new(base.NodeRouteMessageResponse)
 	err := c.cc.Invoke(ctx, Scene_InvokePlayerService_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -108,9 +108,9 @@ func (c *sceneClient) InvokePlayerService(ctx context.Context, in *common.NodeRo
 	return out, nil
 }
 
-func (c *sceneClient) RouteNodeStringMsg(ctx context.Context, in *common.RouteMessageRequest, opts ...grpc.CallOption) (*common.RouteMessageResponse, error) {
+func (c *sceneClient) RouteNodeStringMsg(ctx context.Context, in *base.RouteMessageRequest, opts ...grpc.CallOption) (*base.RouteMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.RouteMessageResponse)
+	out := new(base.RouteMessageResponse)
 	err := c.cc.Invoke(ctx, Scene_RouteNodeStringMsg_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -118,9 +118,9 @@ func (c *sceneClient) RouteNodeStringMsg(ctx context.Context, in *common.RouteMe
 	return out, nil
 }
 
-func (c *sceneClient) RoutePlayerStringMsg(ctx context.Context, in *common.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*common.RoutePlayerMessageResponse, error) {
+func (c *sceneClient) RoutePlayerStringMsg(ctx context.Context, in *base.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*base.RoutePlayerMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.RoutePlayerMessageResponse)
+	out := new(base.RoutePlayerMessageResponse)
 	err := c.cc.Invoke(ctx, Scene_RoutePlayerStringMsg_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -128,9 +128,9 @@ func (c *sceneClient) RoutePlayerStringMsg(ctx context.Context, in *common.Route
 	return out, nil
 }
 
-func (c *sceneClient) UpdateSessionDetail(ctx context.Context, in *RegisterPlayerSessionRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneClient) UpdateSessionDetail(ctx context.Context, in *RegisterPlayerSessionRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Scene_UpdateSessionDetail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -138,9 +138,9 @@ func (c *sceneClient) UpdateSessionDetail(ctx context.Context, in *RegisterPlaye
 	return out, nil
 }
 
-func (c *sceneClient) EnterScene(ctx context.Context, in *Centre2GsEnterSceneRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *sceneClient) EnterScene(ctx context.Context, in *Centre2GsEnterSceneRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Scene_EnterScene_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -158,9 +158,9 @@ func (c *sceneClient) CreateScene(ctx context.Context, in *CreateSceneRequest, o
 	return out, nil
 }
 
-func (c *sceneClient) NodeHandshake(ctx context.Context, in *common.NodeHandshakeRequest, opts ...grpc.CallOption) (*common.NodeHandshakeResponse, error) {
+func (c *sceneClient) NodeHandshake(ctx context.Context, in *base.NodeHandshakeRequest, opts ...grpc.CallOption) (*base.NodeHandshakeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.NodeHandshakeResponse)
+	out := new(base.NodeHandshakeResponse)
 	err := c.cc.Invoke(ctx, Scene_NodeHandshake_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -172,17 +172,17 @@ func (c *sceneClient) NodeHandshake(ctx context.Context, in *common.NodeHandshak
 // All implementations must embed UnimplementedSceneServer
 // for forward compatibility.
 type SceneServer interface {
-	PlayerEnterGameNode(context.Context, *PlayerEnterGameNodeRequest) (*common.Empty, error)
-	SendMessageToPlayer(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error)
+	PlayerEnterGameNode(context.Context, *PlayerEnterGameNodeRequest) (*base.Empty, error)
+	SendMessageToPlayer(context.Context, *base.NodeRouteMessageRequest) (*base.NodeRouteMessageResponse, error)
 	ProcessClientPlayerMessage(context.Context, *ProcessClientPlayerMessageRequest) (*ProcessClientPlayerMessageResponse, error)
-	CentreSendToPlayerViaGameNode(context.Context, *common.NodeRouteMessageRequest) (*common.Empty, error)
-	InvokePlayerService(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error)
-	RouteNodeStringMsg(context.Context, *common.RouteMessageRequest) (*common.RouteMessageResponse, error)
-	RoutePlayerStringMsg(context.Context, *common.RoutePlayerMessageRequest) (*common.RoutePlayerMessageResponse, error)
-	UpdateSessionDetail(context.Context, *RegisterPlayerSessionRequest) (*common.Empty, error)
-	EnterScene(context.Context, *Centre2GsEnterSceneRequest) (*common.Empty, error)
+	CentreSendToPlayerViaGameNode(context.Context, *base.NodeRouteMessageRequest) (*base.Empty, error)
+	InvokePlayerService(context.Context, *base.NodeRouteMessageRequest) (*base.NodeRouteMessageResponse, error)
+	RouteNodeStringMsg(context.Context, *base.RouteMessageRequest) (*base.RouteMessageResponse, error)
+	RoutePlayerStringMsg(context.Context, *base.RoutePlayerMessageRequest) (*base.RoutePlayerMessageResponse, error)
+	UpdateSessionDetail(context.Context, *RegisterPlayerSessionRequest) (*base.Empty, error)
+	EnterScene(context.Context, *Centre2GsEnterSceneRequest) (*base.Empty, error)
 	CreateScene(context.Context, *CreateSceneRequest) (*CreateSceneResponse, error)
-	NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error)
+	NodeHandshake(context.Context, *base.NodeHandshakeRequest) (*base.NodeHandshakeResponse, error)
 	mustEmbedUnimplementedSceneServer()
 }
 
@@ -193,37 +193,37 @@ type SceneServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSceneServer struct{}
 
-func (UnimplementedSceneServer) PlayerEnterGameNode(context.Context, *PlayerEnterGameNodeRequest) (*common.Empty, error) {
+func (UnimplementedSceneServer) PlayerEnterGameNode(context.Context, *PlayerEnterGameNodeRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PlayerEnterGameNode not implemented")
 }
-func (UnimplementedSceneServer) SendMessageToPlayer(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error) {
+func (UnimplementedSceneServer) SendMessageToPlayer(context.Context, *base.NodeRouteMessageRequest) (*base.NodeRouteMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMessageToPlayer not implemented")
 }
 func (UnimplementedSceneServer) ProcessClientPlayerMessage(context.Context, *ProcessClientPlayerMessageRequest) (*ProcessClientPlayerMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessClientPlayerMessage not implemented")
 }
-func (UnimplementedSceneServer) CentreSendToPlayerViaGameNode(context.Context, *common.NodeRouteMessageRequest) (*common.Empty, error) {
+func (UnimplementedSceneServer) CentreSendToPlayerViaGameNode(context.Context, *base.NodeRouteMessageRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CentreSendToPlayerViaGameNode not implemented")
 }
-func (UnimplementedSceneServer) InvokePlayerService(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error) {
+func (UnimplementedSceneServer) InvokePlayerService(context.Context, *base.NodeRouteMessageRequest) (*base.NodeRouteMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InvokePlayerService not implemented")
 }
-func (UnimplementedSceneServer) RouteNodeStringMsg(context.Context, *common.RouteMessageRequest) (*common.RouteMessageResponse, error) {
+func (UnimplementedSceneServer) RouteNodeStringMsg(context.Context, *base.RouteMessageRequest) (*base.RouteMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RouteNodeStringMsg not implemented")
 }
-func (UnimplementedSceneServer) RoutePlayerStringMsg(context.Context, *common.RoutePlayerMessageRequest) (*common.RoutePlayerMessageResponse, error) {
+func (UnimplementedSceneServer) RoutePlayerStringMsg(context.Context, *base.RoutePlayerMessageRequest) (*base.RoutePlayerMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RoutePlayerStringMsg not implemented")
 }
-func (UnimplementedSceneServer) UpdateSessionDetail(context.Context, *RegisterPlayerSessionRequest) (*common.Empty, error) {
+func (UnimplementedSceneServer) UpdateSessionDetail(context.Context, *RegisterPlayerSessionRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSessionDetail not implemented")
 }
-func (UnimplementedSceneServer) EnterScene(context.Context, *Centre2GsEnterSceneRequest) (*common.Empty, error) {
+func (UnimplementedSceneServer) EnterScene(context.Context, *Centre2GsEnterSceneRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnterScene not implemented")
 }
 func (UnimplementedSceneServer) CreateScene(context.Context, *CreateSceneRequest) (*CreateSceneResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateScene not implemented")
 }
-func (UnimplementedSceneServer) NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error) {
+func (UnimplementedSceneServer) NodeHandshake(context.Context, *base.NodeHandshakeRequest) (*base.NodeHandshakeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NodeHandshake not implemented")
 }
 func (UnimplementedSceneServer) mustEmbedUnimplementedSceneServer() {}
@@ -266,7 +266,7 @@ func _Scene_PlayerEnterGameNode_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _Scene_SendMessageToPlayer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.NodeRouteMessageRequest)
+	in := new(base.NodeRouteMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func _Scene_SendMessageToPlayer_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: Scene_SendMessageToPlayer_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneServer).SendMessageToPlayer(ctx, req.(*common.NodeRouteMessageRequest))
+		return srv.(SceneServer).SendMessageToPlayer(ctx, req.(*base.NodeRouteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -302,7 +302,7 @@ func _Scene_ProcessClientPlayerMessage_Handler(srv interface{}, ctx context.Cont
 }
 
 func _Scene_CentreSendToPlayerViaGameNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.NodeRouteMessageRequest)
+	in := new(base.NodeRouteMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -314,13 +314,13 @@ func _Scene_CentreSendToPlayerViaGameNode_Handler(srv interface{}, ctx context.C
 		FullMethod: Scene_CentreSendToPlayerViaGameNode_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneServer).CentreSendToPlayerViaGameNode(ctx, req.(*common.NodeRouteMessageRequest))
+		return srv.(SceneServer).CentreSendToPlayerViaGameNode(ctx, req.(*base.NodeRouteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Scene_InvokePlayerService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.NodeRouteMessageRequest)
+	in := new(base.NodeRouteMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -332,13 +332,13 @@ func _Scene_InvokePlayerService_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: Scene_InvokePlayerService_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneServer).InvokePlayerService(ctx, req.(*common.NodeRouteMessageRequest))
+		return srv.(SceneServer).InvokePlayerService(ctx, req.(*base.NodeRouteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Scene_RouteNodeStringMsg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.RouteMessageRequest)
+	in := new(base.RouteMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -350,13 +350,13 @@ func _Scene_RouteNodeStringMsg_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: Scene_RouteNodeStringMsg_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneServer).RouteNodeStringMsg(ctx, req.(*common.RouteMessageRequest))
+		return srv.(SceneServer).RouteNodeStringMsg(ctx, req.(*base.RouteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Scene_RoutePlayerStringMsg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.RoutePlayerMessageRequest)
+	in := new(base.RoutePlayerMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -368,7 +368,7 @@ func _Scene_RoutePlayerStringMsg_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: Scene_RoutePlayerStringMsg_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneServer).RoutePlayerStringMsg(ctx, req.(*common.RoutePlayerMessageRequest))
+		return srv.(SceneServer).RoutePlayerStringMsg(ctx, req.(*base.RoutePlayerMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -428,7 +428,7 @@ func _Scene_CreateScene_Handler(srv interface{}, ctx context.Context, dec func(i
 }
 
 func _Scene_NodeHandshake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.NodeHandshakeRequest)
+	in := new(base.NodeHandshakeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -440,7 +440,7 @@ func _Scene_NodeHandshake_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: Scene_NodeHandshake_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneServer).NodeHandshake(ctx, req.(*common.NodeHandshakeRequest))
+		return srv.(SceneServer).NodeHandshake(ctx, req.(*base.NodeHandshakeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

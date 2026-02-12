@@ -10,7 +10,7 @@ import (
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	common "login/proto/common"
+	base "login/proto/common/base"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -116,8 +116,8 @@ func (x *LoginSessionInfo) GetFsm() string {
 }
 
 type AccountSimplePlayerWrapper struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Player        *common.AccountSimplePlayer `protobuf:"bytes,1,opt,name=player,proto3" json:"player,omitempty"`
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Player        *base.AccountSimplePlayer `protobuf:"bytes,1,opt,name=player,proto3" json:"player,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -152,7 +152,7 @@ func (*AccountSimplePlayerWrapper) Descriptor() ([]byte, []int) {
 	return file_proto_login_login_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *AccountSimplePlayerWrapper) GetPlayer() *common.AccountSimplePlayer {
+func (x *AccountSimplePlayerWrapper) GetPlayer() *base.AccountSimplePlayer {
 	if x != nil {
 		return x.Player
 	}
@@ -213,7 +213,7 @@ func (x *LoginRequest) GetPassword() string {
 
 type LoginResponse struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage          `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	Players       []*AccountSimplePlayerWrapper `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -249,7 +249,7 @@ func (*LoginResponse) Descriptor() ([]byte, []int) {
 	return file_proto_login_login_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *LoginResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *LoginResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -265,7 +265,7 @@ func (x *LoginResponse) GetPlayers() []*AccountSimplePlayerWrapper {
 
 type TestResponse struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage          `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	Players       []*AccountSimplePlayerWrapper `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	Teststring    []string                      `protobuf:"bytes,3,rep,name=teststring,proto3" json:"teststring,omitempty"`
 	Testint       []int32                       `protobuf:"varint,4,rep,packed,name=testint,proto3" json:"testint,omitempty"`
@@ -303,7 +303,7 @@ func (*TestResponse) Descriptor() ([]byte, []int) {
 	return file_proto_login_login_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *TestResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *TestResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -369,7 +369,7 @@ func (*CreatePlayerRequest) Descriptor() ([]byte, []int) {
 
 type CreatePlayerResponse struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage          `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	Players       []*AccountSimplePlayerWrapper `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -405,7 +405,7 @@ func (*CreatePlayerResponse) Descriptor() ([]byte, []int) {
 	return file_proto_login_login_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *CreatePlayerResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *CreatePlayerResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -474,7 +474,7 @@ func (x *EnterGameRequest) GetRequestId() string {
 
 type EnterGameResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -510,7 +510,7 @@ func (*EnterGameResponse) Descriptor() ([]byte, []int) {
 	return file_proto_login_login_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *EnterGameResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *EnterGameResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -644,7 +644,7 @@ var File_proto_login_login_proto protoreflect.FileDescriptor
 
 const file_proto_login_login_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/login/login.proto\x12\aloginpb\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a proto/common/user_accounts.proto\"\xcb\x01\n" +
+	"\x17proto/login/login.proto\x12\aloginpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a%proto/common/base/user_accounts.proto\"\xcb\x01\n" +
 	"\x10LoginSessionInfo\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x17\n" +
 	"\arole_id\x18\x02 \x01(\x04R\x06roleId\x12\x1d\n" +
@@ -720,8 +720,8 @@ var file_proto_login_login_proto_goTypes = []any{
 	(*LeaveGameRequest)(nil),           // 9: loginpb.LeaveGameRequest
 	(*LoginNodeDisconnectRequest)(nil), // 10: loginpb.LoginNodeDisconnectRequest
 	(*LoginEmptyResponse)(nil),         // 11: loginpb.LoginEmptyResponse
-	(*common.AccountSimplePlayer)(nil), // 12: AccountSimplePlayer
-	(*common.TipInfoMessage)(nil),      // 13: TipInfoMessage
+	(*base.AccountSimplePlayer)(nil),   // 12: AccountSimplePlayer
+	(*base.TipInfoMessage)(nil),        // 13: TipInfoMessage
 }
 var file_proto_login_login_proto_depIdxs = []int32{
 	12, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer

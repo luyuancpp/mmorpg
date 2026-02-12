@@ -299,10 +299,16 @@ type LogConfig struct {
 	FilePath string `yaml:"file_path"`
 }
 
+// RpcMeta 代表 RPC 类型
+type RpcMeta struct {
+	Type string `yaml:"type"` // grpc | rpc | both | none | etcd
+}
+
+// DomainMeta 领域元数据
 type DomainMeta struct {
-	Source string                       `yaml:"source"`
-	Rpc    string                       `yaml:"rpc"`    // grpc | rpc | both | none
-	Output map[string]map[string]string `yaml:"output"` // lang -> type -> dir
+	Source  string                       `yaml:"source"`
+	Rpc     RpcMeta                      `yaml:"rpc"`     // 统一对象
+	Outputs map[string]map[string]string `yaml:"outputs"` // lang -> type -> dir
 }
 
 var (
@@ -427,9 +433,9 @@ func replaceVariablesInDomainMeta(vars map[string]string) error {
 		meta.Source = replaceVariables(meta.Source, vars)
 
 		// 替换 Output
-		for lang, outputs := range meta.Output {
+		for lang, outputs := range meta.Outputs {
 			for k, v := range outputs {
-				meta.Output[lang][k] = replaceVariables(v, vars)
+				meta.Outputs[lang][k] = replaceVariables(v, vars)
 			}
 		}
 

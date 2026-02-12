@@ -7,7 +7,7 @@
 package room
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -85,7 +85,7 @@ func (x *PlayerEnterGameNodeRequest) GetCentreNodeId() uint32 {
 
 type ProcessClientPlayerMessageRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	MessageContent *common.MessageContent `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
+	MessageContent *base.MessageContent   `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
 	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -121,7 +121,7 @@ func (*ProcessClientPlayerMessageRequest) Descriptor() ([]byte, []int) {
 	return file_proto_room_scene_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ProcessClientPlayerMessageRequest) GetMessageContent() *common.MessageContent {
+func (x *ProcessClientPlayerMessageRequest) GetMessageContent() *base.MessageContent {
 	if x != nil {
 		return x.MessageContent
 	}
@@ -137,7 +137,7 @@ func (x *ProcessClientPlayerMessageRequest) GetSessionId() uint64 {
 
 type ProcessClientPlayerMessageResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	MessageContent *common.MessageContent `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
+	MessageContent *base.MessageContent   `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
 	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -173,7 +173,7 @@ func (*ProcessClientPlayerMessageResponse) Descriptor() ([]byte, []int) {
 	return file_proto_room_scene_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ProcessClientPlayerMessageResponse) GetMessageContent() *common.MessageContent {
+func (x *ProcessClientPlayerMessageResponse) GetMessageContent() *base.MessageContent {
 	if x != nil {
 		return x.MessageContent
 	}
@@ -233,7 +233,7 @@ func (x *SessionDisconnectRequest) GetPlayerId() uint64 {
 
 type GameNodeConnectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcClient     *common.NetworkAddress `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`
+	RpcClient     *base.NetworkAddress   `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`
 	GateNodeId    uint32                 `protobuf:"varint,2,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -269,7 +269,7 @@ func (*GameNodeConnectRequest) Descriptor() ([]byte, []int) {
 	return file_proto_room_scene_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GameNodeConnectRequest) GetRpcClient() *common.NetworkAddress {
+func (x *GameNodeConnectRequest) GetRpcClient() *base.NetworkAddress {
 	if x != nil {
 		return x.RpcClient
 	}
@@ -432,8 +432,8 @@ func (x *CreateSceneRequest) GetConfigId() uint32 {
 }
 
 type CreateSceneResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	SceneInfo     *base.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -468,7 +468,7 @@ func (*CreateSceneResponse) Descriptor() ([]byte, []int) {
 	return file_proto_room_scene_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *CreateSceneResponse) GetSceneInfo() *common.RoomInfoPBComponent {
+func (x *CreateSceneResponse) GetSceneInfo() *base.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -479,7 +479,7 @@ var File_proto_room_scene_proto protoreflect.FileDescriptor
 
 const file_proto_room_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x16proto/room/scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\x1a\x1aproto/common/message.proto\"~\n" +
+	"\x16proto/room/scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/message.proto\"~\n" +
 	"\x1aPlayerEnterGameNodeRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
@@ -549,18 +549,18 @@ var file_proto_room_scene_proto_goTypes = []any{
 	(*Centre2GsEnterSceneRequest)(nil),         // 6: Centre2GsEnterSceneRequest
 	(*CreateSceneRequest)(nil),                 // 7: CreateSceneRequest
 	(*CreateSceneResponse)(nil),                // 8: CreateSceneResponse
-	(*common.MessageContent)(nil),              // 9: MessageContent
-	(*common.NetworkAddress)(nil),              // 10: NetworkAddress
-	(*common.RoomInfoPBComponent)(nil),         // 11: RoomInfoPBComponent
-	(*common.NodeRouteMessageRequest)(nil),     // 12: NodeRouteMessageRequest
-	(*common.RouteMessageRequest)(nil),         // 13: RouteMessageRequest
-	(*common.RoutePlayerMessageRequest)(nil),   // 14: RoutePlayerMessageRequest
-	(*common.NodeHandshakeRequest)(nil),        // 15: NodeHandshakeRequest
-	(*common.Empty)(nil),                       // 16: Empty
-	(*common.NodeRouteMessageResponse)(nil),    // 17: NodeRouteMessageResponse
-	(*common.RouteMessageResponse)(nil),        // 18: RouteMessageResponse
-	(*common.RoutePlayerMessageResponse)(nil),  // 19: RoutePlayerMessageResponse
-	(*common.NodeHandshakeResponse)(nil),       // 20: NodeHandshakeResponse
+	(*base.MessageContent)(nil),                // 9: MessageContent
+	(*base.NetworkAddress)(nil),                // 10: NetworkAddress
+	(*base.RoomInfoPBComponent)(nil),           // 11: RoomInfoPBComponent
+	(*base.NodeRouteMessageRequest)(nil),       // 12: NodeRouteMessageRequest
+	(*base.RouteMessageRequest)(nil),           // 13: RouteMessageRequest
+	(*base.RoutePlayerMessageRequest)(nil),     // 14: RoutePlayerMessageRequest
+	(*base.NodeHandshakeRequest)(nil),          // 15: NodeHandshakeRequest
+	(*base.Empty)(nil),                         // 16: Empty
+	(*base.NodeRouteMessageResponse)(nil),      // 17: NodeRouteMessageResponse
+	(*base.RouteMessageResponse)(nil),          // 18: RouteMessageResponse
+	(*base.RoutePlayerMessageResponse)(nil),    // 19: RoutePlayerMessageResponse
+	(*base.NodeHandshakeResponse)(nil),         // 20: NodeHandshakeResponse
 }
 var file_proto_room_scene_proto_depIdxs = []int32{
 	9,  // 0: ProcessClientPlayerMessageRequest.message_content:type_name -> MessageContent

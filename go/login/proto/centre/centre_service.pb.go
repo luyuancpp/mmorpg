@@ -10,7 +10,7 @@ import (
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	common "login/proto/common"
+	base "login/proto/common/base"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -25,7 +25,7 @@ const (
 
 type GateClientMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcClient     *common.NetworkAddress `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`
+	RpcClient     *base.NetworkAddress   `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -60,7 +60,7 @@ func (*GateClientMessageRequest) Descriptor() ([]byte, []int) {
 	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GateClientMessageRequest) GetRpcClient() *common.NetworkAddress {
+func (x *GateClientMessageRequest) GetRpcClient() *base.NetworkAddress {
 	if x != nil {
 		return x.RpcClient
 	}
@@ -69,7 +69,7 @@ func (x *GateClientMessageRequest) GetRpcClient() *common.NetworkAddress {
 
 type LoginNodeLeaveGameRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *common.SessionDetails `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
+	SessionInfo   *base.SessionDetails   `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -104,7 +104,7 @@ func (*LoginNodeLeaveGameRequest) Descriptor() ([]byte, []int) {
 	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *LoginNodeLeaveGameRequest) GetSessionInfo() *common.SessionDetails {
+func (x *LoginNodeLeaveGameRequest) GetSessionInfo() *base.SessionDetails {
 	if x != nil {
 		return x.SessionInfo
 	}
@@ -210,7 +210,7 @@ func (x *CentreEnterGameRequest) GetPlayerId() uint64 {
 type CentrePlayerGameNodeEntryRequest struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	ClientInfo    *CentreEnterGameRequest `protobuf:"bytes,1,opt,name=client_info,json=clientInfo,proto3" json:"client_info,omitempty"`
-	SessionInfo   *common.SessionDetails  `protobuf:"bytes,2,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
+	SessionInfo   *base.SessionDetails    `protobuf:"bytes,2,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`
 	LoginToken    string                  `protobuf:"bytes,3,opt,name=login_token,json=loginToken,proto3" json:"login_token,omitempty"`
 	TokenExpiryMs uint64                  `protobuf:"varint,4,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
 	RequestId     string                  `protobuf:"bytes,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
@@ -255,7 +255,7 @@ func (x *CentrePlayerGameNodeEntryRequest) GetClientInfo() *CentreEnterGameReque
 	return nil
 }
 
-func (x *CentrePlayerGameNodeEntryRequest) GetSessionInfo() *common.SessionDetails {
+func (x *CentrePlayerGameNodeEntryRequest) GetSessionInfo() *base.SessionDetails {
 	if x != nil {
 		return x.SessionInfo
 	}
@@ -390,7 +390,7 @@ func (x *CentreLoginRequest) GetPassword() string {
 
 type CentreLoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -425,7 +425,7 @@ func (*CentreLoginResponse) Descriptor() ([]byte, []int) {
 	return file_proto_centre_centre_service_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *CentreLoginResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *CentreLoginResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -436,7 +436,7 @@ var File_proto_centre_centre_service_proto protoreflect.FileDescriptor
 
 const file_proto_centre_centre_service_proto_rawDesc = "" +
 	"\n" +
-	"!proto/centre/centre_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a\x1aproto/common/session.proto\x1a\x1aproto/common/message.proto\x1a\x16proto/common/tip.proto\"J\n" +
+	"!proto/centre/centre_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1eproto/common/base/common.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1fproto/common/base/session.proto\x1a\x1fproto/common/base/message.proto\x1a\x1bproto/common/base/tip.proto\"J\n" +
 	"\x18GateClientMessageRequest\x12.\n" +
 	"\n" +
 	"rpc_client\x18\x01 \x01(\v2\x0f.NetworkAddressR\trpcClient\"O\n" +
@@ -492,27 +492,27 @@ func file_proto_centre_centre_service_proto_rawDescGZIP() []byte {
 
 var file_proto_centre_centre_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_proto_centre_centre_service_proto_goTypes = []any{
-	(*GateClientMessageRequest)(nil),            // 0: GateClientMessageRequest
-	(*LoginNodeLeaveGameRequest)(nil),           // 1: LoginNodeLeaveGameRequest
-	(*EnterGameNodeSuccessRequest)(nil),         // 2: EnterGameNodeSuccessRequest
-	(*CentreEnterGameRequest)(nil),              // 3: CentreEnterGameRequest
-	(*CentrePlayerGameNodeEntryRequest)(nil),    // 4: CentrePlayerGameNodeEntryRequest
-	(*InitSceneNodeRequest)(nil),                // 5: InitSceneNodeRequest
-	(*CentreLoginRequest)(nil),                  // 6: CentreLoginRequest
-	(*CentreLoginResponse)(nil),                 // 7: CentreLoginResponse
-	(*common.NetworkAddress)(nil),               // 8: NetworkAddress
-	(*common.SessionDetails)(nil),               // 9: SessionDetails
-	(*common.TipInfoMessage)(nil),               // 10: TipInfoMessage
-	(*common.GateSessionDisconnectRequest)(nil), // 11: GateSessionDisconnectRequest
-	(*common.NodeRouteMessageRequest)(nil),      // 12: NodeRouteMessageRequest
-	(*common.RouteMessageRequest)(nil),          // 13: RouteMessageRequest
-	(*common.RoutePlayerMessageRequest)(nil),    // 14: RoutePlayerMessageRequest
-	(*common.NodeHandshakeRequest)(nil),         // 15: NodeHandshakeRequest
-	(*common.Empty)(nil),                        // 16: Empty
-	(*common.NodeRouteMessageResponse)(nil),     // 17: NodeRouteMessageResponse
-	(*common.RouteMessageResponse)(nil),         // 18: RouteMessageResponse
-	(*common.RoutePlayerMessageResponse)(nil),   // 19: RoutePlayerMessageResponse
-	(*common.NodeHandshakeResponse)(nil),        // 20: NodeHandshakeResponse
+	(*GateClientMessageRequest)(nil),          // 0: GateClientMessageRequest
+	(*LoginNodeLeaveGameRequest)(nil),         // 1: LoginNodeLeaveGameRequest
+	(*EnterGameNodeSuccessRequest)(nil),       // 2: EnterGameNodeSuccessRequest
+	(*CentreEnterGameRequest)(nil),            // 3: CentreEnterGameRequest
+	(*CentrePlayerGameNodeEntryRequest)(nil),  // 4: CentrePlayerGameNodeEntryRequest
+	(*InitSceneNodeRequest)(nil),              // 5: InitSceneNodeRequest
+	(*CentreLoginRequest)(nil),                // 6: CentreLoginRequest
+	(*CentreLoginResponse)(nil),               // 7: CentreLoginResponse
+	(*base.NetworkAddress)(nil),               // 8: NetworkAddress
+	(*base.SessionDetails)(nil),               // 9: SessionDetails
+	(*base.TipInfoMessage)(nil),               // 10: TipInfoMessage
+	(*base.GateSessionDisconnectRequest)(nil), // 11: GateSessionDisconnectRequest
+	(*base.NodeRouteMessageRequest)(nil),      // 12: NodeRouteMessageRequest
+	(*base.RouteMessageRequest)(nil),          // 13: RouteMessageRequest
+	(*base.RoutePlayerMessageRequest)(nil),    // 14: RoutePlayerMessageRequest
+	(*base.NodeHandshakeRequest)(nil),         // 15: NodeHandshakeRequest
+	(*base.Empty)(nil),                        // 16: Empty
+	(*base.NodeRouteMessageResponse)(nil),     // 17: NodeRouteMessageResponse
+	(*base.RouteMessageResponse)(nil),         // 18: RouteMessageResponse
+	(*base.RoutePlayerMessageResponse)(nil),   // 19: RoutePlayerMessageResponse
+	(*base.NodeHandshakeResponse)(nil),        // 20: NodeHandshakeResponse
 }
 var file_proto_centre_centre_service_proto_depIdxs = []int32{
 	8,  // 0: GateClientMessageRequest.rpc_client:type_name -> NetworkAddress

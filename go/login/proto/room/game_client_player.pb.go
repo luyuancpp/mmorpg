@@ -10,7 +10,7 @@ import (
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	common "login/proto/common"
+	base "login/proto/common/base"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -25,7 +25,7 @@ const (
 
 type GameKickPlayerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reason        *common.TipInfoMessage `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
+	Reason        *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
 	Operator      string                 `protobuf:"bytes,2,opt,name=operator,proto3" json:"operator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -61,7 +61,7 @@ func (*GameKickPlayerRequest) Descriptor() ([]byte, []int) {
 	return file_proto_room_game_client_player_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GameKickPlayerRequest) GetReason() *common.TipInfoMessage {
+func (x *GameKickPlayerRequest) GetReason() *base.TipInfoMessage {
 	if x != nil {
 		return x.Reason
 	}
@@ -79,7 +79,7 @@ var File_proto_room_game_client_player_proto protoreflect.FileDescriptor
 
 const file_proto_room_game_client_player_proto_rawDesc = "" +
 	"\n" +
-	"#proto/room/game_client_player.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x18proto/common/empty.proto\"\\\n" +
+	"#proto/room/game_client_player.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1dproto/common/base/empty.proto\"\\\n" +
 	"\x15GameKickPlayerRequest\x12'\n" +
 	"\x06reason\x18\x01 \x01(\v2\x0f.TipInfoMessageR\x06reason\x12\x1a\n" +
 	"\boperator\x18\x02 \x01(\tR\boperator2\x7f\n" +
@@ -104,8 +104,8 @@ func file_proto_room_game_client_player_proto_rawDescGZIP() []byte {
 var file_proto_room_game_client_player_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_room_game_client_player_proto_goTypes = []any{
 	(*GameKickPlayerRequest)(nil), // 0: GameKickPlayerRequest
-	(*common.TipInfoMessage)(nil), // 1: TipInfoMessage
-	(*common.Empty)(nil),          // 2: Empty
+	(*base.TipInfoMessage)(nil),   // 1: TipInfoMessage
+	(*base.Empty)(nil),            // 2: Empty
 }
 var file_proto_room_game_client_player_proto_depIdxs = []int32{
 	1, // 0: GameKickPlayerRequest.reason:type_name -> TipInfoMessage

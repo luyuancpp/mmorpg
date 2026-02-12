@@ -7,8 +7,8 @@
 package room
 
 import (
-	common "chat/proto/common"
-	component "chat/proto/logic/component"
+	base "chat/proto/common/base"
+	component "chat/proto/common/component"
 	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -25,8 +25,8 @@ const (
 )
 
 type EnterSceneC2SRequest struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	SceneInfo     *base.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,7 +61,7 @@ func (*EnterSceneC2SRequest) Descriptor() ([]byte, []int) {
 	return file_proto_room_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EnterSceneC2SRequest) GetSceneInfo() *common.RoomInfoPBComponent {
+func (x *EnterSceneC2SRequest) GetSceneInfo() *base.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -70,7 +70,7 @@ func (x *EnterSceneC2SRequest) GetSceneInfo() *common.RoomInfoPBComponent {
 
 type EnterSceneC2SResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *common.TipInfoMessage `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -105,7 +105,7 @@ func (*EnterSceneC2SResponse) Descriptor() ([]byte, []int) {
 	return file_proto_room_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EnterSceneC2SResponse) GetErrorMessage() *common.TipInfoMessage {
+func (x *EnterSceneC2SResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -113,8 +113,8 @@ func (x *EnterSceneC2SResponse) GetErrorMessage() *common.TipInfoMessage {
 }
 
 type EnterSceneS2C struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	SceneInfo     *base.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -149,7 +149,7 @@ func (*EnterSceneS2C) Descriptor() ([]byte, []int) {
 	return file_proto_room_player_scene_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *EnterSceneS2C) GetSceneInfo() *common.RoomInfoPBComponent {
+func (x *EnterSceneS2C) GetSceneInfo() *base.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -157,8 +157,8 @@ func (x *EnterSceneS2C) GetSceneInfo() *common.RoomInfoPBComponent {
 }
 
 type SceneInfoS2C struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	SceneInfo     []*common.RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	SceneInfo     []*base.RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -193,7 +193,7 @@ func (*SceneInfoS2C) Descriptor() ([]byte, []int) {
 	return file_proto_room_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SceneInfoS2C) GetSceneInfo() []*common.RoomInfoPBComponent {
+func (x *SceneInfoS2C) GetSceneInfo() []*base.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -237,8 +237,8 @@ func (*SceneInfoRequest) Descriptor() ([]byte, []int) {
 }
 
 type SceneInfoResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	SceneInfo     []*common.RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	SceneInfo     []*base.RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -273,7 +273,7 @@ func (*SceneInfoResponse) Descriptor() ([]byte, []int) {
 	return file_proto_room_player_scene_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *SceneInfoResponse) GetSceneInfo() []*common.RoomInfoPBComponent {
+func (x *SceneInfoResponse) GetSceneInfo() []*base.RoomInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -492,7 +492,7 @@ var File_proto_room_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_room_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/room/player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
+	"\x1dproto/room/player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1eproto/common/base/common.proto\x1a\x1dproto/common/base/empty.proto\x1a'proto/common/component/actor_comp.proto\"K\n" +
 	"\x14EnterSceneC2SRequest\x123\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"M\n" +
@@ -549,20 +549,20 @@ func file_proto_room_player_scene_proto_rawDescGZIP() []byte {
 
 var file_proto_room_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_room_player_scene_proto_goTypes = []any{
-	(*EnterSceneC2SRequest)(nil),       // 0: EnterSceneC2SRequest
-	(*EnterSceneC2SResponse)(nil),      // 1: EnterSceneC2SResponse
-	(*EnterSceneS2C)(nil),              // 2: EnterSceneS2C
-	(*SceneInfoS2C)(nil),               // 3: SceneInfoS2C
-	(*SceneInfoRequest)(nil),           // 4: SceneInfoRequest
-	(*SceneInfoResponse)(nil),          // 5: SceneInfoResponse
-	(*ActorCreateS2C)(nil),             // 6: ActorCreateS2C
-	(*ActorDestroyS2C)(nil),            // 7: ActorDestroyS2C
-	(*ActorListCreateS2C)(nil),         // 8: ActorListCreateS2C
-	(*ActorListDestroyS2C)(nil),        // 9: ActorListDestroyS2C
-	(*common.RoomInfoPBComponent)(nil), // 10: RoomInfoPBComponent
-	(*common.TipInfoMessage)(nil),      // 11: TipInfoMessage
-	(*component.Transform)(nil),        // 12: Transform
-	(*common.Empty)(nil),               // 13: Empty
+	(*EnterSceneC2SRequest)(nil),     // 0: EnterSceneC2SRequest
+	(*EnterSceneC2SResponse)(nil),    // 1: EnterSceneC2SResponse
+	(*EnterSceneS2C)(nil),            // 2: EnterSceneS2C
+	(*SceneInfoS2C)(nil),             // 3: SceneInfoS2C
+	(*SceneInfoRequest)(nil),         // 4: SceneInfoRequest
+	(*SceneInfoResponse)(nil),        // 5: SceneInfoResponse
+	(*ActorCreateS2C)(nil),           // 6: ActorCreateS2C
+	(*ActorDestroyS2C)(nil),          // 7: ActorDestroyS2C
+	(*ActorListCreateS2C)(nil),       // 8: ActorListCreateS2C
+	(*ActorListDestroyS2C)(nil),      // 9: ActorListDestroyS2C
+	(*base.RoomInfoPBComponent)(nil), // 10: RoomInfoPBComponent
+	(*base.TipInfoMessage)(nil),      // 11: TipInfoMessage
+	(*component.Transform)(nil),      // 12: Transform
+	(*base.Empty)(nil),               // 13: Empty
 }
 var file_proto_room_player_scene_proto_depIdxs = []int32{
 	10, // 0: EnterSceneC2SRequest.scene_info:type_name -> RoomInfoPBComponent

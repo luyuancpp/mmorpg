@@ -7,7 +7,7 @@
 package centre
 
 import (
-	common "chat/proto/common"
+	base "chat/proto/common/base"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -38,18 +38,18 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CentreClient interface {
-	GatePlayerService(ctx context.Context, in *GateClientMessageRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	GateSessionDisconnect(ctx context.Context, in *common.GateSessionDisconnectRequest, opts ...grpc.CallOption) (*common.Empty, error)
+	GatePlayerService(ctx context.Context, in *GateClientMessageRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	GateSessionDisconnect(ctx context.Context, in *base.GateSessionDisconnectRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	LoginNodeAccountLogin(ctx context.Context, in *CentreLoginRequest, opts ...grpc.CallOption) (*CentreLoginResponse, error)
-	LoginNodeEnterGame(ctx context.Context, in *CentrePlayerGameNodeEntryRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	LoginNodeLeaveGame(ctx context.Context, in *LoginNodeLeaveGameRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	LoginNodeSessionDisconnect(ctx context.Context, in *common.GateSessionDisconnectRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	PlayerService(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.NodeRouteMessageResponse, error)
-	EnterGsSucceed(ctx context.Context, in *EnterGameNodeSuccessRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	RouteNodeStringMsg(ctx context.Context, in *common.RouteMessageRequest, opts ...grpc.CallOption) (*common.RouteMessageResponse, error)
-	RoutePlayerStringMsg(ctx context.Context, in *common.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*common.RoutePlayerMessageResponse, error)
-	InitSceneNode(ctx context.Context, in *InitSceneNodeRequest, opts ...grpc.CallOption) (*common.Empty, error)
-	NodeHandshake(ctx context.Context, in *common.NodeHandshakeRequest, opts ...grpc.CallOption) (*common.NodeHandshakeResponse, error)
+	LoginNodeEnterGame(ctx context.Context, in *CentrePlayerGameNodeEntryRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	LoginNodeLeaveGame(ctx context.Context, in *LoginNodeLeaveGameRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	LoginNodeSessionDisconnect(ctx context.Context, in *base.GateSessionDisconnectRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	PlayerService(ctx context.Context, in *base.NodeRouteMessageRequest, opts ...grpc.CallOption) (*base.NodeRouteMessageResponse, error)
+	EnterGsSucceed(ctx context.Context, in *EnterGameNodeSuccessRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	RouteNodeStringMsg(ctx context.Context, in *base.RouteMessageRequest, opts ...grpc.CallOption) (*base.RouteMessageResponse, error)
+	RoutePlayerStringMsg(ctx context.Context, in *base.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*base.RoutePlayerMessageResponse, error)
+	InitSceneNode(ctx context.Context, in *InitSceneNodeRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	NodeHandshake(ctx context.Context, in *base.NodeHandshakeRequest, opts ...grpc.CallOption) (*base.NodeHandshakeResponse, error)
 }
 
 type centreClient struct {
@@ -60,9 +60,9 @@ func NewCentreClient(cc grpc.ClientConnInterface) CentreClient {
 	return &centreClient{cc}
 }
 
-func (c *centreClient) GatePlayerService(ctx context.Context, in *GateClientMessageRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *centreClient) GatePlayerService(ctx context.Context, in *GateClientMessageRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Centre_GatePlayerService_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -70,9 +70,9 @@ func (c *centreClient) GatePlayerService(ctx context.Context, in *GateClientMess
 	return out, nil
 }
 
-func (c *centreClient) GateSessionDisconnect(ctx context.Context, in *common.GateSessionDisconnectRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *centreClient) GateSessionDisconnect(ctx context.Context, in *base.GateSessionDisconnectRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Centre_GateSessionDisconnect_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -90,9 +90,9 @@ func (c *centreClient) LoginNodeAccountLogin(ctx context.Context, in *CentreLogi
 	return out, nil
 }
 
-func (c *centreClient) LoginNodeEnterGame(ctx context.Context, in *CentrePlayerGameNodeEntryRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *centreClient) LoginNodeEnterGame(ctx context.Context, in *CentrePlayerGameNodeEntryRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Centre_LoginNodeEnterGame_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -100,9 +100,9 @@ func (c *centreClient) LoginNodeEnterGame(ctx context.Context, in *CentrePlayerG
 	return out, nil
 }
 
-func (c *centreClient) LoginNodeLeaveGame(ctx context.Context, in *LoginNodeLeaveGameRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *centreClient) LoginNodeLeaveGame(ctx context.Context, in *LoginNodeLeaveGameRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Centre_LoginNodeLeaveGame_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -110,9 +110,9 @@ func (c *centreClient) LoginNodeLeaveGame(ctx context.Context, in *LoginNodeLeav
 	return out, nil
 }
 
-func (c *centreClient) LoginNodeSessionDisconnect(ctx context.Context, in *common.GateSessionDisconnectRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *centreClient) LoginNodeSessionDisconnect(ctx context.Context, in *base.GateSessionDisconnectRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Centre_LoginNodeSessionDisconnect_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -120,9 +120,9 @@ func (c *centreClient) LoginNodeSessionDisconnect(ctx context.Context, in *commo
 	return out, nil
 }
 
-func (c *centreClient) PlayerService(ctx context.Context, in *common.NodeRouteMessageRequest, opts ...grpc.CallOption) (*common.NodeRouteMessageResponse, error) {
+func (c *centreClient) PlayerService(ctx context.Context, in *base.NodeRouteMessageRequest, opts ...grpc.CallOption) (*base.NodeRouteMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.NodeRouteMessageResponse)
+	out := new(base.NodeRouteMessageResponse)
 	err := c.cc.Invoke(ctx, Centre_PlayerService_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -130,9 +130,9 @@ func (c *centreClient) PlayerService(ctx context.Context, in *common.NodeRouteMe
 	return out, nil
 }
 
-func (c *centreClient) EnterGsSucceed(ctx context.Context, in *EnterGameNodeSuccessRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *centreClient) EnterGsSucceed(ctx context.Context, in *EnterGameNodeSuccessRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Centre_EnterGsSucceed_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -140,9 +140,9 @@ func (c *centreClient) EnterGsSucceed(ctx context.Context, in *EnterGameNodeSucc
 	return out, nil
 }
 
-func (c *centreClient) RouteNodeStringMsg(ctx context.Context, in *common.RouteMessageRequest, opts ...grpc.CallOption) (*common.RouteMessageResponse, error) {
+func (c *centreClient) RouteNodeStringMsg(ctx context.Context, in *base.RouteMessageRequest, opts ...grpc.CallOption) (*base.RouteMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.RouteMessageResponse)
+	out := new(base.RouteMessageResponse)
 	err := c.cc.Invoke(ctx, Centre_RouteNodeStringMsg_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -150,9 +150,9 @@ func (c *centreClient) RouteNodeStringMsg(ctx context.Context, in *common.RouteM
 	return out, nil
 }
 
-func (c *centreClient) RoutePlayerStringMsg(ctx context.Context, in *common.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*common.RoutePlayerMessageResponse, error) {
+func (c *centreClient) RoutePlayerStringMsg(ctx context.Context, in *base.RoutePlayerMessageRequest, opts ...grpc.CallOption) (*base.RoutePlayerMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.RoutePlayerMessageResponse)
+	out := new(base.RoutePlayerMessageResponse)
 	err := c.cc.Invoke(ctx, Centre_RoutePlayerStringMsg_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -160,9 +160,9 @@ func (c *centreClient) RoutePlayerStringMsg(ctx context.Context, in *common.Rout
 	return out, nil
 }
 
-func (c *centreClient) InitSceneNode(ctx context.Context, in *InitSceneNodeRequest, opts ...grpc.CallOption) (*common.Empty, error) {
+func (c *centreClient) InitSceneNode(ctx context.Context, in *InitSceneNodeRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.Empty)
+	out := new(base.Empty)
 	err := c.cc.Invoke(ctx, Centre_InitSceneNode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -170,9 +170,9 @@ func (c *centreClient) InitSceneNode(ctx context.Context, in *InitSceneNodeReque
 	return out, nil
 }
 
-func (c *centreClient) NodeHandshake(ctx context.Context, in *common.NodeHandshakeRequest, opts ...grpc.CallOption) (*common.NodeHandshakeResponse, error) {
+func (c *centreClient) NodeHandshake(ctx context.Context, in *base.NodeHandshakeRequest, opts ...grpc.CallOption) (*base.NodeHandshakeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(common.NodeHandshakeResponse)
+	out := new(base.NodeHandshakeResponse)
 	err := c.cc.Invoke(ctx, Centre_NodeHandshake_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -184,18 +184,18 @@ func (c *centreClient) NodeHandshake(ctx context.Context, in *common.NodeHandsha
 // All implementations must embed UnimplementedCentreServer
 // for forward compatibility.
 type CentreServer interface {
-	GatePlayerService(context.Context, *GateClientMessageRequest) (*common.Empty, error)
-	GateSessionDisconnect(context.Context, *common.GateSessionDisconnectRequest) (*common.Empty, error)
+	GatePlayerService(context.Context, *GateClientMessageRequest) (*base.Empty, error)
+	GateSessionDisconnect(context.Context, *base.GateSessionDisconnectRequest) (*base.Empty, error)
 	LoginNodeAccountLogin(context.Context, *CentreLoginRequest) (*CentreLoginResponse, error)
-	LoginNodeEnterGame(context.Context, *CentrePlayerGameNodeEntryRequest) (*common.Empty, error)
-	LoginNodeLeaveGame(context.Context, *LoginNodeLeaveGameRequest) (*common.Empty, error)
-	LoginNodeSessionDisconnect(context.Context, *common.GateSessionDisconnectRequest) (*common.Empty, error)
-	PlayerService(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error)
-	EnterGsSucceed(context.Context, *EnterGameNodeSuccessRequest) (*common.Empty, error)
-	RouteNodeStringMsg(context.Context, *common.RouteMessageRequest) (*common.RouteMessageResponse, error)
-	RoutePlayerStringMsg(context.Context, *common.RoutePlayerMessageRequest) (*common.RoutePlayerMessageResponse, error)
-	InitSceneNode(context.Context, *InitSceneNodeRequest) (*common.Empty, error)
-	NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error)
+	LoginNodeEnterGame(context.Context, *CentrePlayerGameNodeEntryRequest) (*base.Empty, error)
+	LoginNodeLeaveGame(context.Context, *LoginNodeLeaveGameRequest) (*base.Empty, error)
+	LoginNodeSessionDisconnect(context.Context, *base.GateSessionDisconnectRequest) (*base.Empty, error)
+	PlayerService(context.Context, *base.NodeRouteMessageRequest) (*base.NodeRouteMessageResponse, error)
+	EnterGsSucceed(context.Context, *EnterGameNodeSuccessRequest) (*base.Empty, error)
+	RouteNodeStringMsg(context.Context, *base.RouteMessageRequest) (*base.RouteMessageResponse, error)
+	RoutePlayerStringMsg(context.Context, *base.RoutePlayerMessageRequest) (*base.RoutePlayerMessageResponse, error)
+	InitSceneNode(context.Context, *InitSceneNodeRequest) (*base.Empty, error)
+	NodeHandshake(context.Context, *base.NodeHandshakeRequest) (*base.NodeHandshakeResponse, error)
 	mustEmbedUnimplementedCentreServer()
 }
 
@@ -206,40 +206,40 @@ type CentreServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCentreServer struct{}
 
-func (UnimplementedCentreServer) GatePlayerService(context.Context, *GateClientMessageRequest) (*common.Empty, error) {
+func (UnimplementedCentreServer) GatePlayerService(context.Context, *GateClientMessageRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GatePlayerService not implemented")
 }
-func (UnimplementedCentreServer) GateSessionDisconnect(context.Context, *common.GateSessionDisconnectRequest) (*common.Empty, error) {
+func (UnimplementedCentreServer) GateSessionDisconnect(context.Context, *base.GateSessionDisconnectRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GateSessionDisconnect not implemented")
 }
 func (UnimplementedCentreServer) LoginNodeAccountLogin(context.Context, *CentreLoginRequest) (*CentreLoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginNodeAccountLogin not implemented")
 }
-func (UnimplementedCentreServer) LoginNodeEnterGame(context.Context, *CentrePlayerGameNodeEntryRequest) (*common.Empty, error) {
+func (UnimplementedCentreServer) LoginNodeEnterGame(context.Context, *CentrePlayerGameNodeEntryRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginNodeEnterGame not implemented")
 }
-func (UnimplementedCentreServer) LoginNodeLeaveGame(context.Context, *LoginNodeLeaveGameRequest) (*common.Empty, error) {
+func (UnimplementedCentreServer) LoginNodeLeaveGame(context.Context, *LoginNodeLeaveGameRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginNodeLeaveGame not implemented")
 }
-func (UnimplementedCentreServer) LoginNodeSessionDisconnect(context.Context, *common.GateSessionDisconnectRequest) (*common.Empty, error) {
+func (UnimplementedCentreServer) LoginNodeSessionDisconnect(context.Context, *base.GateSessionDisconnectRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginNodeSessionDisconnect not implemented")
 }
-func (UnimplementedCentreServer) PlayerService(context.Context, *common.NodeRouteMessageRequest) (*common.NodeRouteMessageResponse, error) {
+func (UnimplementedCentreServer) PlayerService(context.Context, *base.NodeRouteMessageRequest) (*base.NodeRouteMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PlayerService not implemented")
 }
-func (UnimplementedCentreServer) EnterGsSucceed(context.Context, *EnterGameNodeSuccessRequest) (*common.Empty, error) {
+func (UnimplementedCentreServer) EnterGsSucceed(context.Context, *EnterGameNodeSuccessRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnterGsSucceed not implemented")
 }
-func (UnimplementedCentreServer) RouteNodeStringMsg(context.Context, *common.RouteMessageRequest) (*common.RouteMessageResponse, error) {
+func (UnimplementedCentreServer) RouteNodeStringMsg(context.Context, *base.RouteMessageRequest) (*base.RouteMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RouteNodeStringMsg not implemented")
 }
-func (UnimplementedCentreServer) RoutePlayerStringMsg(context.Context, *common.RoutePlayerMessageRequest) (*common.RoutePlayerMessageResponse, error) {
+func (UnimplementedCentreServer) RoutePlayerStringMsg(context.Context, *base.RoutePlayerMessageRequest) (*base.RoutePlayerMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RoutePlayerStringMsg not implemented")
 }
-func (UnimplementedCentreServer) InitSceneNode(context.Context, *InitSceneNodeRequest) (*common.Empty, error) {
+func (UnimplementedCentreServer) InitSceneNode(context.Context, *InitSceneNodeRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitSceneNode not implemented")
 }
-func (UnimplementedCentreServer) NodeHandshake(context.Context, *common.NodeHandshakeRequest) (*common.NodeHandshakeResponse, error) {
+func (UnimplementedCentreServer) NodeHandshake(context.Context, *base.NodeHandshakeRequest) (*base.NodeHandshakeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NodeHandshake not implemented")
 }
 func (UnimplementedCentreServer) mustEmbedUnimplementedCentreServer() {}
@@ -282,7 +282,7 @@ func _Centre_GatePlayerService_Handler(srv interface{}, ctx context.Context, dec
 }
 
 func _Centre_GateSessionDisconnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.GateSessionDisconnectRequest)
+	in := new(base.GateSessionDisconnectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func _Centre_GateSessionDisconnect_Handler(srv interface{}, ctx context.Context,
 		FullMethod: Centre_GateSessionDisconnect_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentreServer).GateSessionDisconnect(ctx, req.(*common.GateSessionDisconnectRequest))
+		return srv.(CentreServer).GateSessionDisconnect(ctx, req.(*base.GateSessionDisconnectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -354,7 +354,7 @@ func _Centre_LoginNodeLeaveGame_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _Centre_LoginNodeSessionDisconnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.GateSessionDisconnectRequest)
+	in := new(base.GateSessionDisconnectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -366,13 +366,13 @@ func _Centre_LoginNodeSessionDisconnect_Handler(srv interface{}, ctx context.Con
 		FullMethod: Centre_LoginNodeSessionDisconnect_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentreServer).LoginNodeSessionDisconnect(ctx, req.(*common.GateSessionDisconnectRequest))
+		return srv.(CentreServer).LoginNodeSessionDisconnect(ctx, req.(*base.GateSessionDisconnectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Centre_PlayerService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.NodeRouteMessageRequest)
+	in := new(base.NodeRouteMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -384,7 +384,7 @@ func _Centre_PlayerService_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: Centre_PlayerService_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentreServer).PlayerService(ctx, req.(*common.NodeRouteMessageRequest))
+		return srv.(CentreServer).PlayerService(ctx, req.(*base.NodeRouteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -408,7 +408,7 @@ func _Centre_EnterGsSucceed_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _Centre_RouteNodeStringMsg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.RouteMessageRequest)
+	in := new(base.RouteMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -420,13 +420,13 @@ func _Centre_RouteNodeStringMsg_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: Centre_RouteNodeStringMsg_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentreServer).RouteNodeStringMsg(ctx, req.(*common.RouteMessageRequest))
+		return srv.(CentreServer).RouteNodeStringMsg(ctx, req.(*base.RouteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Centre_RoutePlayerStringMsg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.RoutePlayerMessageRequest)
+	in := new(base.RoutePlayerMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -438,7 +438,7 @@ func _Centre_RoutePlayerStringMsg_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: Centre_RoutePlayerStringMsg_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentreServer).RoutePlayerStringMsg(ctx, req.(*common.RoutePlayerMessageRequest))
+		return srv.(CentreServer).RoutePlayerStringMsg(ctx, req.(*base.RoutePlayerMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -462,7 +462,7 @@ func _Centre_InitSceneNode_Handler(srv interface{}, ctx context.Context, dec fun
 }
 
 func _Centre_NodeHandshake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(common.NodeHandshakeRequest)
+	in := new(base.NodeHandshakeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -474,7 +474,7 @@ func _Centre_NodeHandshake_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: Centre_NodeHandshake_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentreServer).NodeHandshake(ctx, req.(*common.NodeHandshakeRequest))
+		return srv.(CentreServer).NodeHandshake(ctx, req.(*base.NodeHandshakeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
