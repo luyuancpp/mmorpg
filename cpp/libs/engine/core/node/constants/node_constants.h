@@ -4,7 +4,7 @@
 #include <cstddef>
 
 inline static constexpr std::size_t kMaxServerPlayerSize = 2000;
-inline static constexpr std::size_t kMaxPlayersPerRoom = 1000;
+inline static constexpr std::size_t kMaxPlayersPerScene = 1000;
 
 enum class NodeState : uint8_t
 {
@@ -30,8 +30,8 @@ enum class ServerSceneType : uint8_t
 	kMainSceneServer,
 	//跨服大世界
 	kCrossMainSceneServer,
-	//本服普通房间场景
-	kRoomSceneServer,
-	//跨服房间场景
-	kCrossRoomSceneServer
+	//本服普通场景
+	kSceneServer,
+	//跨服场景
+	kCrossSceneServer
 };

@@ -22,14 +22,10 @@ public:
     // Clear all scenes and related data
     void ClearAllSceneData();
 
-	// 查找已有房间或在最优节点创建房间
+	// Find or create a scene
 	static entt::entity FindOrCreateScene(uint32_t sceneConfId);
 
-	// 创建房间时根据策略选节点
-	static entt::entity SelectBestNodeForScene(uint32_t sceneConfId);
-
-
-    static NodeId GetGameNodeIdFromSceneEntity(entt::entity scene);
+	static NodeId GetGameNodeIdFromSceneEntity(entt::entity scene);
 
     static void HandleDestroySceneNode(entt::entity node);
 

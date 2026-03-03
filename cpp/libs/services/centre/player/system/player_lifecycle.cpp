@@ -31,7 +31,8 @@
 
 void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
-	//load 回来之前断开连接了,然后又加到redis了 这种怎么办,session id 变了咋办
+	// TODO: Handle edge case where connection is lost before load completes, or session ID changes.
+	// Current logic checks SessionMap below to see if session is still valid.
 
     LOG_INFO << "Handling async load for player: " << playerId;
 
