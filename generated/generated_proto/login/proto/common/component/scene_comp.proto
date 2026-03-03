@@ -3,7 +3,7 @@ option go_package = "login/proto/common/component;component";
 
 
 
-message ChangeRoomInfoPBComponent
+message ChangeSceneInfoPBComponent
 {
 
   enum eChangeGsType

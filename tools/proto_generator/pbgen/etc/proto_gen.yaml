@@ -16,8 +16,8 @@ paths:
   node_pkg_dir: "cpp/libs/"
   node_libs_engine: "{{node_pkg_dir}}engine/"
   node_lib_game: "{{node_pkg_dir}}services/"
-  node_pkg_logic_room: "{{node_lib_game}}scene/"
-  room_node_dir: "{{node_cpp_dir}}nodes/scene/"
+  node_pkg_logic_scene: "{{node_lib_game}}scene/"
+  scene_node_dir: "{{node_cpp_dir}}nodes/scene/"
   centre_node_dir: "{{node_cpp_dir}}nodes/centre/"
   gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
   robot: "tools/robot/"
@@ -72,16 +72,16 @@ paths:
   gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"
   gen_util_head_file: "{{util_generator_dir}}proto_util.h"
   robot_msg_body_handler_file: "{{output_root}}{{robot}}logic/handler/message_body_handler.go"
-  player_storage_system_dir: "{{output_root}}{{node_pkg_logic_room}}player/system/"
+  player_storage_system_dir: "{{output_root}}{{node_pkg_logic_scene}}player/system/"
   player_data_loader_file: "{{player_storage_system_dir}}player_data_loader.h"
   protoc_path: "protoc"
 
   event_handler_source_directory: "handler/event/"
-  room_node_event_handler_directory: "{{room_node_dir}}{{event_handler_source_directory}}"
+  scene_node_event_handler_directory: "{{scene_node_dir}}{{event_handler_source_directory}}"
   centre_node_event_handler_directory: "{{centre_node_dir}}{{event_handler_source_directory}}"
 
   # Scene 属性同步生成目录
-  room_attribute_sync_dir: "{{output_root}}{{node_pkg_dir}}/services/scene/generated/attribute/"
+  scene_attribute_sync_dir: "{{output_root}}{{node_pkg_dir}}/services/scene/generated/attribute/"
 
 
 # 目录命名常量（专门存放目录名/路径片段常量）
@@ -181,7 +181,7 @@ path_lists:
     - "login/"
     - "db/"
     - "centre/"
-    - "room/"
+    - "scene/"
     - "gate/"
     - "chat/"
     - "team/"
@@ -197,10 +197,10 @@ path_lists:
   # 方法处理器目录列表
   method_handler_directories:
     robot: "{{output_root}}{{robot}}logic/handler/"
-    room_node: "{{room_node_dir}}handler/rpc/"
-    room_node_player: "{{room_node_dir}}handler/rpc/player/"
-    room_node_replied: "{{room_node_dir}}rpc_replies/"
-    room_node_player_replied: "{{room_node_dir}}rpc_replies/player/"
+    scene_node: "{{scene_node_dir}}handler/rpc/"
+    scene_node_player: "{{scene_node_dir}}handler/rpc/player/"
+    scene_node_replied: "{{scene_node_dir}}rpc_replies/"
+    scene_node_player_replied: "{{scene_node_dir}}rpc_replies/player/"
     centre_node: "{{centre_node_dir}}handler/rpc/"
     centre_node_player: "{{centre_node_dir}}handler/rpc/player/"
     centre_node_replied: "{{centre_node_dir}}rpc_replies/"
@@ -232,7 +232,7 @@ path_lists:
     mail: "mail/"
 
     centre: "centre/"
-    scene: "room/"
+    scene: "scene/"
     gate: "gate/"
 
     etcd: "etcd/"
@@ -308,8 +308,8 @@ domain_meta:
         handler: "cpp/generated/login/handler"
         grpc:    "cpp/generated/login/grpc"
 
-  room:
-    source: "{{proto_dir}}room/"
+  scene:
+    source: "{{proto_dir}}scene/"
     rpc:
       type: rpc
     outputs:
