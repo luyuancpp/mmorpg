@@ -1265,7 +1265,7 @@ type Compare_Value struct {
 
 type Compare_Lease struct {
 	// lease is the lease id of the given key.
-	Lease int64 `protobuf:"varint,8,opt,name=lease,proto3,oneof"` // leave room for more target_union field tags, jump to 64
+	Lease int64 `protobuf:"varint,8,opt,name=lease,proto3,oneof"` // leave scene for more target_union field tags, jump to 64
 }
 
 func (*Compare_Version) isCompare_TargetUnion() {}

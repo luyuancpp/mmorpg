@@ -74,7 +74,7 @@ enum eNodeType : int {
   DeployNodeService = 0,
   DbNodeService = 1,
   CentreNodeService = 2,
-  RoomNodeService = 3,
+  SceneNodeService = 3,
   GateNodeService = 4,
   LoginNodeService = 5,
   RedisNodeService = 6,
@@ -131,9 +131,9 @@ inline bool eNodeType_Parse(
 }
 enum eSceneNodeType : int {
   kMainSceneNode = 0,
-  kRoomNode = 1,
+  kSceneNode = 1,
   kMainSceneCrossNode = 2,
-  kRoomSceneCrossNode = 3,
+  kSceneSceneCrossNode = 3,
   eSceneNodeType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   eSceneNodeType_INT_MAX_SENTINEL_DO_NOT_USE_ =

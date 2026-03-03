@@ -1,0 +1,39 @@
+syntax = "proto3";
+option go_package = "login/proto/common/event;event";
+
+
+
+message OnSceneCreated
+{
+  uint64 entity = 1;
+}
+
+message OnSceneDestroyed
+{
+  uint64 entity = 1;
+}
+
+message BeforeEnterScene
+{
+  uint64 entity = 1;
+}
+
+message AfterEnterScene
+{
+  uint64 entity = 1;
+}
+
+message BeforeLeaveScene
+{
+  uint64 entity = 1;
+}
+
+message AfterLeaveScene
+{
+  uint64 entity = 1;
+}
+
+message S2CEnterScene
+{
+  uint64 entity = 1;
+}

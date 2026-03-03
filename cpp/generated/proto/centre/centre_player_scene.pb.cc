@@ -138,20 +138,20 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2e
     "\n&proto/centre/centre_player_scene.proto"
     "\032\033proto/db/proto_option.proto\032\033google/pr"
     "otobuf/empty.proto\032\036proto/common/base/co"
-    "mmon.proto\"C\n\027CentreEnterSceneRequest\022(\n"
-    "\nscene_info\030\001 \001(\0132\024.RoomInfoPBComponent\""
-    "\031\n\027CentreLeaveSceneRequest\"0\n.CentreLeav"
-    "eSceneAsyncSavePlayerCompleteRequest\"\030\n\026"
-    "CentreSceneInfoRequest2\311\002\n\021CentrePlayerS"
-    "cene\022>\n\nEnterScene\022\030.CentreEnterSceneReq"
-    "uest\032\026.google.protobuf.Empty\022>\n\nLeaveSce"
-    "ne\022\030.CentreLeaveSceneRequest\032\026.google.pr"
-    "otobuf.Empty\022l\n!LeaveSceneAsyncSavePlaye"
-    "rComplete\022/.CentreLeaveSceneAsyncSavePla"
-    "yerCompleteRequest\032\026.google.protobuf.Emp"
-    "ty\022\?\n\014SceneInfoC2S\022\027.CentreSceneInfoRequ"
-    "est\032\026.google.protobuf.Empty\032\005\200\250\303\001\001B\007\200\001\001\230"
-    "\324a\004b\006proto3"
+    "mmon.proto\"D\n\027CentreEnterSceneRequest\022)\n"
+    "\nscene_info\030\001 \001(\0132\025.SceneInfoPBComponent"
+    "\"\031\n\027CentreLeaveSceneRequest\"0\n.CentreLea"
+    "veSceneAsyncSavePlayerCompleteRequest\"\030\n"
+    "\026CentreSceneInfoRequest2\311\002\n\021CentrePlayer"
+    "Scene\022>\n\nEnterScene\022\030.CentreEnterSceneRe"
+    "quest\032\026.google.protobuf.Empty\022>\n\nLeaveSc"
+    "ene\022\030.CentreLeaveSceneRequest\032\026.google.p"
+    "rotobuf.Empty\022l\n!LeaveSceneAsyncSavePlay"
+    "erComplete\022/.CentreLeaveSceneAsyncSavePl"
+    "ayerCompleteRequest\032\026.google.protobuf.Em"
+    "pty\022\?\n\014SceneInfoC2S\022\027.CentreSceneInfoReq"
+    "uest\032\026.google.protobuf.Empty\032\005\200\250\303\001\001B\007\200\001\001"
+    "\230\324a\004b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_deps[3] = {
@@ -163,7 +163,7 @@ static ::absl::once_flag descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fsce
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto = {
     false,
     false,
-    651,
+    652,
     descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto,
     "proto/centre/centre_player_scene.proto",
     &descriptor_table_proto_2fcentre_2fcentre_5fplayer_5fscene_2eproto_once,
@@ -310,18 +310,18 @@ CentreEnterSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::CentreEnterSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .RoomInfoPBComponent scene_info = 1;
+    // .SceneInfoPBComponent scene_info = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(CentreEnterSceneRequest, _impl_.scene_info_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .RoomInfoPBComponent scene_info = 1;
+    // .SceneInfoPBComponent scene_info = 1;
     {PROTOBUF_FIELD_OFFSET(CentreEnterSceneRequest, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::RoomInfoPBComponent>()},
+      {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
   }},
   {{
   }},
@@ -358,7 +358,7 @@ PROTOBUF_NOINLINE void CentreEnterSceneRequest::Clear() {
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // .RoomInfoPBComponent scene_info = 1;
+  // .SceneInfoPBComponent scene_info = 1;
   if ((cached_has_bits & 0x00000001u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *this_._impl_.scene_info_, this_._impl_.scene_info_->GetCachedSize(), target,
@@ -389,7 +389,7 @@ PROTOBUF_NOINLINE void CentreEnterSceneRequest::Clear() {
   (void)cached_has_bits;
 
    {
-    // .RoomInfoPBComponent scene_info = 1;
+    // .SceneInfoPBComponent scene_info = 1;
     cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       total_size += 1 +

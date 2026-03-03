@@ -33,25 +33,25 @@ const (
 	NodeType_NODE_CLIENT      NodeType = 1 // 客户端节点
 	// 核心服务节点
 	NodeType_NODE_GATE       NodeType = 2 // 网关服节点
-	NodeType_NODE_ROOM       NodeType = 3 // 房间服节点
+	NodeType_NODE_SCENE      NodeType = 3 // 房间服节点 确实是scene 节点
 	NodeType_NODE_CENTRE     NodeType = 4 // 中心服节点
 	NodeType_NODE_DB         NodeType = 5 // 数据库节点
 	NodeType_NODE_DEPLOY     NodeType = 6 // 部署节点服务
 	NodeType_NODE_DB_SERVICE NodeType = 7 // 数据库节点服务
 	// 游戏业务节点
-	NodeType_NODE_CENTRE_SCENE NodeType = 8  // 场景切换中心服务器服务
-	NodeType_NODE_SCENE        NodeType = 9  // 场景服务器服务
-	NodeType_NODE_LOGIN        NodeType = 10 // 登录服务器节点服务
-	NodeType_NODE_MAIL         NodeType = 13 // 邮件节点服务
-	NodeType_NODE_CHAT         NodeType = 14 // 聊天节点服务
-	NodeType_NODE_TEAM         NodeType = 15 // 组队节点服务
-	NodeType_NODE_ACTIVITY     NodeType = 16 // 活动节点服务
-	NodeType_NODE_TRADE        NodeType = 17 // 玩家交易或拍卖行服务
-	NodeType_NODE_RANK         NodeType = 18 // 排行榜服务
-	NodeType_NODE_TASK         NodeType = 19 // 任务系统服务
-	NodeType_NODE_GUILD        NodeType = 20 // 公会系统服务
-	NodeType_NODE_MATCH        NodeType = 21 // 匹配系统服务（如组队副本、PVP等）
-	NodeType_NODE_AI           NodeType = 22 // AI/NPC 控制服务
+	NodeType_NODE_CENTRE_SCENE  NodeType = 8  // 场景切换中心服务器服务
+	NodeType_NODE_SCENE_MANAGER NodeType = 9  // 场景管理服 (管理所有游戏玩家不管哪个区都是用场景管理服区切换)
+	NodeType_NODE_LOGIN         NodeType = 10 // 登录服务器节点服务
+	NodeType_NODE_MAIL          NodeType = 13 // 邮件节点服务
+	NodeType_NODE_CHAT          NodeType = 14 // 聊天节点服务
+	NodeType_NODE_TEAM          NodeType = 15 // 组队节点服务
+	NodeType_NODE_ACTIVITY      NodeType = 16 // 活动节点服务
+	NodeType_NODE_TRADE         NodeType = 17 // 玩家交易或拍卖行服务
+	NodeType_NODE_RANK          NodeType = 18 // 排行榜服务
+	NodeType_NODE_TASK          NodeType = 19 // 任务系统服务
+	NodeType_NODE_GUILD         NodeType = 20 // 公会系统服务
+	NodeType_NODE_MATCH         NodeType = 21 // 匹配系统服务（如组队副本、PVP等）
+	NodeType_NODE_AI            NodeType = 22 // AI/NPC 控制服务
 	// 基础设施节点
 	NodeType_NODE_REDIS          NodeType = 11 // Redis 节点服务
 	NodeType_NODE_ETCD           NodeType = 12 // etcd节点
@@ -70,13 +70,13 @@ var (
 		0:  "NODE_UNSPECIFIED",
 		1:  "NODE_CLIENT",
 		2:  "NODE_GATE",
-		3:  "NODE_ROOM",
+		3:  "NODE_SCENE",
 		4:  "NODE_CENTRE",
 		5:  "NODE_DB",
 		6:  "NODE_DEPLOY",
 		7:  "NODE_DB_SERVICE",
 		8:  "NODE_CENTRE_SCENE",
-		9:  "NODE_SCENE",
+		9:  "NODE_SCENE_MANAGER",
 		10: "NODE_LOGIN",
 		13: "NODE_MAIL",
 		14: "NODE_CHAT",
@@ -102,13 +102,13 @@ var (
 		"NODE_UNSPECIFIED":    0,
 		"NODE_CLIENT":         1,
 		"NODE_GATE":           2,
-		"NODE_ROOM":           3,
+		"NODE_SCENE":          3,
 		"NODE_CENTRE":         4,
 		"NODE_DB":             5,
 		"NODE_DEPLOY":         6,
 		"NODE_DB_SERVICE":     7,
 		"NODE_CENTRE_SCENE":   8,
-		"NODE_SCENE":          9,
+		"NODE_SCENE_MANAGER":  9,
 		"NODE_LOGIN":          10,
 		"NODE_MAIL":           13,
 		"NODE_CHAT":           14,
@@ -586,19 +586,19 @@ var File_proto_db_proto_option_proto protoreflect.FileDescriptor
 
 const file_proto_db_proto_option_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/db/proto_option.proto\x1a google/protobuf/descriptor.proto*\x88\x04\n" +
+	"\x1bproto/db/proto_option.proto\x1a google/protobuf/descriptor.proto*\x91\x04\n" +
 	"\bNodeType\x12\x14\n" +
 	"\x10NODE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vNODE_CLIENT\x10\x01\x12\r\n" +
-	"\tNODE_GATE\x10\x02\x12\r\n" +
-	"\tNODE_ROOM\x10\x03\x12\x0f\n" +
+	"\tNODE_GATE\x10\x02\x12\x0e\n" +
+	"\n" +
+	"NODE_SCENE\x10\x03\x12\x0f\n" +
 	"\vNODE_CENTRE\x10\x04\x12\v\n" +
 	"\aNODE_DB\x10\x05\x12\x0f\n" +
 	"\vNODE_DEPLOY\x10\x06\x12\x13\n" +
 	"\x0fNODE_DB_SERVICE\x10\a\x12\x15\n" +
-	"\x11NODE_CENTRE_SCENE\x10\b\x12\x0e\n" +
-	"\n" +
-	"NODE_SCENE\x10\t\x12\x0e\n" +
+	"\x11NODE_CENTRE_SCENE\x10\b\x12\x16\n" +
+	"\x12NODE_SCENE_MANAGER\x10\t\x12\x0e\n" +
 	"\n" +
 	"NODE_LOGIN\x10\n" +
 	"\x12\r\n" +

@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PlayerRoomInfoPBComponent struct {
+type PlayerSceneInfoPBComponent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SceneConfid   uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`
 	Guid          uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"`
@@ -29,20 +29,20 @@ type PlayerRoomInfoPBComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PlayerRoomInfoPBComponent) Reset() {
-	*x = PlayerRoomInfoPBComponent{}
+func (x *PlayerSceneInfoPBComponent) Reset() {
+	*x = PlayerSceneInfoPBComponent{}
 	mi := &file_proto_common_component_player_scene_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerRoomInfoPBComponent) String() string {
+func (x *PlayerSceneInfoPBComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerRoomInfoPBComponent) ProtoMessage() {}
+func (*PlayerSceneInfoPBComponent) ProtoMessage() {}
 
-func (x *PlayerRoomInfoPBComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerSceneInfoPBComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_player_scene_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,19 +54,19 @@ func (x *PlayerRoomInfoPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerRoomInfoPBComponent.ProtoReflect.Descriptor instead.
-func (*PlayerRoomInfoPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerSceneInfoPBComponent.ProtoReflect.Descriptor instead.
+func (*PlayerSceneInfoPBComponent) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_scene_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerRoomInfoPBComponent) GetSceneConfid() uint32 {
+func (x *PlayerSceneInfoPBComponent) GetSceneConfid() uint32 {
 	if x != nil {
 		return x.SceneConfid
 	}
 	return 0
 }
 
-func (x *PlayerRoomInfoPBComponent) GetGuid() uint32 {
+func (x *PlayerSceneInfoPBComponent) GetGuid() uint32 {
 	if x != nil {
 		return x.Guid
 	}
@@ -74,9 +74,9 @@ func (x *PlayerRoomInfoPBComponent) GetGuid() uint32 {
 }
 
 type PlayerSceneContextPBComponent struct {
-	state             protoimpl.MessageState     `protogen:"open.v1"`
-	SceneInfo         *PlayerRoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
-	SceneInfoLastTime *PlayerRoomInfoPBComponent `protobuf:"bytes,2,opt,name=scene_info_last_time,json=sceneInfoLastTime,proto3" json:"scene_info_last_time,omitempty"`
+	state             protoimpl.MessageState      `protogen:"open.v1"`
+	SceneInfo         *PlayerSceneInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfoLastTime *PlayerSceneInfoPBComponent `protobuf:"bytes,2,opt,name=scene_info_last_time,json=sceneInfoLastTime,proto3" json:"scene_info_last_time,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -111,14 +111,14 @@ func (*PlayerSceneContextPBComponent) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_scene_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PlayerSceneContextPBComponent) GetSceneInfo() *PlayerRoomInfoPBComponent {
+func (x *PlayerSceneContextPBComponent) GetSceneInfo() *PlayerSceneInfoPBComponent {
 	if x != nil {
 		return x.SceneInfo
 	}
 	return nil
 }
 
-func (x *PlayerSceneContextPBComponent) GetSceneInfoLastTime() *PlayerRoomInfoPBComponent {
+func (x *PlayerSceneContextPBComponent) GetSceneInfoLastTime() *PlayerSceneInfoPBComponent {
 	if x != nil {
 		return x.SceneInfoLastTime
 	}
@@ -129,14 +129,14 @@ var File_proto_common_component_player_scene_comp_proto protoreflect.FileDescrip
 
 const file_proto_common_component_player_scene_comp_proto_rawDesc = "" +
 	"\n" +
-	".proto/common/component/player_scene_comp.proto\"R\n" +
-	"\x19PlayerRoomInfoPBComponent\x12!\n" +
+	".proto/common/component/player_scene_comp.proto\"S\n" +
+	"\x1aPlayerSceneInfoPBComponent\x12!\n" +
 	"\fscene_confid\x18\x01 \x01(\rR\vsceneConfid\x12\x12\n" +
-	"\x04guid\x18\x02 \x01(\rR\x04guid\"\xa7\x01\n" +
-	"\x1dPlayerSceneContextPBComponent\x129\n" +
+	"\x04guid\x18\x02 \x01(\rR\x04guid\"\xa9\x01\n" +
+	"\x1dPlayerSceneContextPBComponent\x12:\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x1a.PlayerRoomInfoPBComponentR\tsceneInfo\x12K\n" +
-	"\x14scene_info_last_time\x18\x02 \x01(\v2\x1a.PlayerRoomInfoPBComponentR\x11sceneInfoLastTimeB(Z&login/proto/common/component;componentb\x06proto3"
+	"scene_info\x18\x01 \x01(\v2\x1b.PlayerSceneInfoPBComponentR\tsceneInfo\x12L\n" +
+	"\x14scene_info_last_time\x18\x02 \x01(\v2\x1b.PlayerSceneInfoPBComponentR\x11sceneInfoLastTimeB(Z&login/proto/common/component;componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_scene_comp_proto_rawDescOnce sync.Once
@@ -152,12 +152,12 @@ func file_proto_common_component_player_scene_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_player_scene_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_common_component_player_scene_comp_proto_goTypes = []any{
-	(*PlayerRoomInfoPBComponent)(nil),     // 0: PlayerRoomInfoPBComponent
+	(*PlayerSceneInfoPBComponent)(nil),    // 0: PlayerSceneInfoPBComponent
 	(*PlayerSceneContextPBComponent)(nil), // 1: PlayerSceneContextPBComponent
 }
 var file_proto_common_component_player_scene_comp_proto_depIdxs = []int32{
-	0, // 0: PlayerSceneContextPBComponent.scene_info:type_name -> PlayerRoomInfoPBComponent
-	0, // 1: PlayerSceneContextPBComponent.scene_info_last_time:type_name -> PlayerRoomInfoPBComponent
+	0, // 0: PlayerSceneContextPBComponent.scene_info:type_name -> PlayerSceneInfoPBComponent
+	0, // 1: PlayerSceneContextPBComponent.scene_info_last_time:type_name -> PlayerSceneInfoPBComponent
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
