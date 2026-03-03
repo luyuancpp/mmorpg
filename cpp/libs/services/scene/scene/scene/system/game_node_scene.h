@@ -4,19 +4,19 @@
 
 #include "scene/scene/comp/nav.h"
 
-struct EnterRoomParam;
-struct CreateRoomOnNodeRoomParam;
-class OnRoomCreated;
-class AfterEnterRoom;
-class BeforeLeaveRoom;
+struct EnterSceneParam;
+struct CreateSceneOnNodeSceneParam;
+class OnSceneCreated;
+class AfterEnterScene;
+class BeforeLeaveScene;
 
 class GameNodeSceneSystem
 {
 public:
     static void InitializeNodeScenes();
 	static void RegisterAllSceneToCentre(entt::entity centre);
-    static void HandleSceneCreation(const OnRoomCreated& message);
-    static void HandleAfterEnterSceneEvent(const AfterEnterRoom& message);
-    static void HandleBeforeLeaveSceneEvent(const BeforeLeaveRoom& message);
+    static void HandleSceneCreation(const OnSceneCreated& message);
+    static void HandleAfterEnterSceneEvent(const AfterEnterScene& message);
+    static void HandleBeforeLeaveSceneEvent(const BeforeLeaveScene& message);
 private:
 };

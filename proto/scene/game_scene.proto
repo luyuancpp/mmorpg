@@ -4,7 +4,7 @@ import "proto/db/proto_option.proto";
 import "proto/common/base/empty.proto";
 
 option cc_generic_services = true;
-option (OptionFileDefaultNode) = NODE_ROOM;
+option (OptionFileDefaultNode) = NODE_SCENE;
 
 
 message GameSceneTest

@@ -6,7 +6,7 @@ import "proto/common/base/empty.proto";
 import "proto/common/component/actor_attribute_state_comp.proto";
 
 option cc_generic_services = true;
-option (OptionFileDefaultNode) = NODE_ROOM;
+option (OptionFileDefaultNode) = NODE_SCENE;
 
 
 // 消息定义，用于同步实体的基础属性增量

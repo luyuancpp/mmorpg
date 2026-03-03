@@ -23,7 +23,7 @@ using namespace muduo::net;
 SceneNode::SceneNode(muduo::net::EventLoop* loop)
     :Node(loop, "logs/scene")
 {
-	GetNodeInfo().set_node_type(RoomNodeService);
+	GetNodeInfo().set_node_type(SceneNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService };
 
 	tlsRedisSystem.Initialize();

@@ -65,7 +65,7 @@ namespace GameMMR
             const MatchTargetInfo & oMatchTarget = kEmptyMatchTarget
         );
 
-        //custrom room
+        //custrom scene
         MatchUnit(Team::team_id_type team_id, TeamList * p_team_list);
 
         static void TeamToMatchInfo(const TeamInfo & info, pb_player_list_type & players)

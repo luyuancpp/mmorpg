@@ -3,7 +3,7 @@
 #include <entt/src/entt/entity/entity.hpp>
 #include "proto/common/base/common.pb.h"
 
-struct EnterDefaultRoomParam
+struct EnterDefaultSceneParam
 {
 	inline bool CheckValid() const
 	{
@@ -13,7 +13,7 @@ struct EnterDefaultRoomParam
 	entt::entity enter{ entt::null };
 };
 
-struct CreateRoomOnNodeRoomParam
+struct CreateSceneOnNodeSceneParam
 {
 	inline bool CheckValid() const
 	{
@@ -21,10 +21,10 @@ struct CreateRoomOnNodeRoomParam
 	}
 
 	entt::entity node{ entt::null };
-	RoomInfoPBComponent roomInfo;
+	SceneInfoPBComponent sceneInfo;
 };
 
-struct CompelChangeRoomParam
+struct CompelChangeSceneParam
 {
 	inline bool IsNull() const
 	{
@@ -33,5 +33,5 @@ struct CompelChangeRoomParam
 
 	entt::entity player{ entt::null };
 	entt::entity destNode{ entt::null };
-	uint32_t roomConfId{ 0 };
+	uint32_t sceneConfId{ 0 };
 };

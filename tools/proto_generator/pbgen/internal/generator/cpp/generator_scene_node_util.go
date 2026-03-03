@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-// IsRoomNodeHostedProtocolHandler 判断是否是RoomNode节点对外提供的协议服务处理器
-// （RoomNode作为服务端，处理外部调用的客户端协议接口）
-func IsRoomNodeHostedProtocolHandler(methods *internal.RPCMethods) bool {
+// IsSceneNodeHostedProtocolHandler 判断是否是SceneNode节点对外提供的协议服务处理器
+// （SceneNode作为服务端，处理外部调用的客户端协议接口）
+func IsSceneNodeHostedProtocolHandler(methods *internal.RPCMethods) bool {
 	return checkFirstMethod(methods,
 		func(m *internal.MethodInfo) bool {
-			return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_ROOM)
+			return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE)
 		},
 		func(m *internal.MethodInfo) bool {
 			return !internal.IsPlayerService(m.ServiceDescriptorProto)
@@ -23,12 +23,12 @@ func IsRoomNodeHostedProtocolHandler(methods *internal.RPCMethods) bool {
 	)
 }
 
-// IsRoomNodeHostedPlayerProtocolHandler 判断是否是RoomNode节点对外提供的玩家协议服务处理器
-// （RoomNode作为服务端，处理外部调用的玩家相关客户端协议接口）
-func IsRoomNodeHostedPlayerProtocolHandler(methods *internal.RPCMethods) bool {
+// IsSceneNodeHostedPlayerProtocolHandler 判断是否是SceneNode节点对外提供的玩家协议服务处理器
+// （SceneNode作为服务端，处理外部调用的玩家相关客户端协议接口）
+func IsSceneNodeHostedPlayerProtocolHandler(methods *internal.RPCMethods) bool {
 	return checkFirstMethod(methods,
 		func(m *internal.MethodInfo) bool {
-			return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_ROOM)
+			return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE)
 		},
 		func(m *internal.MethodInfo) bool {
 			return !utils.HasGrpcService(m.Path())
@@ -44,15 +44,15 @@ func IsNoOpHandler(methods *internal.RPCMethods) bool {
 	return false
 }
 
-// IsRoomNodeReceivedPlayerResponseHandler 判断是否是RoomNode节点接收的玩家服务响应处理器
-// （RoomNode作为客户端，处理外部服务返回的玩家相关响应）
-func IsRoomNodeReceivedPlayerResponseHandler(methodList *internal.RPCMethods) bool {
+// IsSceneNodeReceivedPlayerResponseHandler 判断是否是SceneNode节点接收的玩家服务响应处理器
+// （SceneNode作为客户端，处理外部服务返回的玩家相关响应）
+func IsSceneNodeReceivedPlayerResponseHandler(methodList *internal.RPCMethods) bool {
 	return checkFirstMethod(methodList,
 		func(m *internal.MethodInfo) bool {
 			return m.CcGenericServices()
 		},
 		func(m *internal.MethodInfo) bool {
-			return !internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_ROOM)
+			return !internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE)
 		},
 		func(m *internal.MethodInfo) bool {
 			return !internal.IsClientProtocolService(m.ServiceDescriptorProto)
@@ -66,15 +66,15 @@ func IsRoomNodeReceivedPlayerResponseHandler(methodList *internal.RPCMethods) bo
 	)
 }
 
-// IsRoomNodeReceivedProtocolResponseHandler 判断是否是RoomNode节点接收的普通协议响应处理器
-// （RoomNode作为客户端，处理外部服务返回的协议相关响应）
-func IsRoomNodeReceivedProtocolResponseHandler(methodList *internal.RPCMethods) bool {
+// IsSceneNodeReceivedProtocolResponseHandler 判断是否是SceneNode节点接收的普通协议响应处理器
+// （SceneNode作为客户端，处理外部服务返回的协议相关响应）
+func IsSceneNodeReceivedProtocolResponseHandler(methodList *internal.RPCMethods) bool {
 	return checkFirstMethod(methodList,
 		func(m *internal.MethodInfo) bool {
 			return m.CcGenericServices()
 		},
 		func(m *internal.MethodInfo) bool {
-			return !internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_ROOM)
+			return !internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE)
 		},
 		func(m *internal.MethodInfo) bool {
 			return !internal.IsClientProtocolService(m.ServiceDescriptorProto)

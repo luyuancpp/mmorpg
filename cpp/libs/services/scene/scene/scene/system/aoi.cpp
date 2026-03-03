@@ -19,14 +19,14 @@
 
 
 void AoiSystem::Update(double delta) {
-    for (auto&& [entity, transform, sceneComp] : tlsRegistryManager.actorRegistry.view<Transform, RoomEntityComp>().each()) {
+    for (auto&& [entity, transform, sceneComp] : tlsRegistryManager.actorRegistry.view<Transform, SceneEntityComp>().each()) {
         // 跳过无效场景
-        if (!tlsRegistryManager.roomRegistry.valid(sceneComp.roomEntity)) {
+        if (!tlsRegistryManager.sceneRegistry.valid(sceneComp.sceneEntity)) {
             LOG_ERROR << "Scene not found for entity " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entity);
             continue;
         }
 
-        auto& gridList = tlsRegistryManager.roomRegistry.get_or_emplace<SceneGridListComp>(sceneComp.roomEntity);
+        auto& gridList = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComp.sceneEntity);
 
         // 获取当前实体所在网格
         const auto currentHex = GridSystem::CalculateHexPosition(transform);
@@ -140,7 +140,7 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
     }
 }
 
-void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveRoom& message) {
+void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
     const auto entity = entt::to_entity(message.entity());
     if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
@@ -150,14 +150,14 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveRoom& message) {
     const auto hex = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hex) return;
 
-	auto roomEntity = tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(entity).roomEntity;
-    if (!tlsRegistryManager.roomRegistry.valid(roomEntity))
+	auto sceneEntity = tlsRegistryManager.actorRegistry.get_or_emplace<SceneEntityComp>(entity).sceneEntity;
+    if (!tlsRegistryManager.sceneRegistry.valid(sceneEntity))
     {
-        LOG_ERROR << "Room entity not found for entity " << entt::to_integral(entity);
+        LOG_ERROR << "Scene entity not found for entity " << entt::to_integral(entity);
 		return;
     }
 
-    auto& gridList = tlsRegistryManager.roomRegistry.get_or_emplace<SceneGridListComp>(roomEntity);
+    auto& gridList = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneEntity);
     GridSet gridsToLeave;
     GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
 

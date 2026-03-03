@@ -10,7 +10,7 @@ option (OptionFileDefaultNode) = NODE_CENTRE;
 
 message CentreEnterSceneRequest
 {
-  RoomInfoPBComponent scene_info = 1;
+  SceneInfoPBComponent scene_info = 1;
 }
 
 message CentreLeaveSceneRequest

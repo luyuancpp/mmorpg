@@ -17,7 +17,7 @@
 #include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/base/node.pb.h"
-#include "scene/system/player_change_room.h"
+#include "scene/system/player_change_scene.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
@@ -34,8 +34,8 @@
 #include "threading/node_context_manager.h"
 #include "threading/player_manager.h"
 #include "threading/message_context.h"
-#include <modules/scene/comp/room_node_comp.h>
-#include <scene/system/room.h>
+#include <modules/scene/comp/scene_node_comp.h>
+#include <scene/system/scene.h>
 #include <time/system/time.h>
 #include <utils/hash/sha.h>
 
@@ -730,11 +730,11 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	}
 
 	auto& nodeIdMap = *sessionPB->mutable_node_id();
-	nodeIdMap[eNodeType::RoomNodeService] = request->scene_node_id();
+	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
 
 	PlayerLifecycleSystem::RequestGatePlayerEnterScene(player);
-	PlayerChangeRoomUtil::SetCurrentChangeSceneState(player, ChangeRoomInfoPBComponent::eEnterSucceed);
-	PlayerChangeRoomUtil::ProgressSceneChangeState(player);
+	PlayerChangeSceneUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoPBComponent::eEnterSucceed);
+	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
 
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
@@ -846,7 +846,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	case GateNodeService:
 	{
 		entt::entity gate_node_id{ tlsMessageContext.GetNextRouteNodeId() };
-		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
+		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(gate_node_id))
 		{
 			LOG_ERROR << "Gate node not found: " << tlsMessageContext.GetNextRouteNodeId();
@@ -861,10 +861,10 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 		sceneNodeSession->RouteMessageToNode(GateRouteNodeMessageMessageId, *mutable_request);
 		break;
 	}
-	case RoomNodeService:
+	case SceneNodeService:
 	{
 		entt::entity game_node_id{ tlsMessageContext.GetNextRouteNodeId() };
-		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
+		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(game_node_id))
 		{
 			LOG_ERROR << "Game node not found: " << tlsMessageContext.GetNextRouteNodeId() << ", " << request->DebugString();
@@ -906,7 +906,7 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sceneNodeId = entt::entity{ request->node_id() };
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService);
+	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	// Check if the scene node ID is valid
 	if (!registry.valid(sceneNodeId))
@@ -916,24 +916,24 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 	}
 
 	// Search for a matching client connection and register the game node
-	AddMainRoomToNodeComponent(registry, sceneNodeId);
+	AddMainSceneToNodeComponent(registry, sceneNodeId);
 
 	LOG_INFO << "Add Scene node " << request->node_id() << " SceneNodeType : " << eSceneNodeType_Name(request->scene_node_type());
 
 	if (request->scene_node_type() == eSceneNodeType::kMainSceneCrossNode)
 	{
-		registry.remove<MainRoomNode>(sceneNodeId);
+		registry.remove<MainSceneNode>(sceneNodeId);
 		registry.get_or_emplace<CrossMainSceneNode>(sceneNodeId);
 	}
-	else if (request->scene_node_type() == eSceneNodeType::kRoomNode)
+	else if (request->scene_node_type() == eSceneNodeType::kSceneNode)
 	{
-		registry.remove<MainRoomNode>(sceneNodeId);
-		registry.get_or_emplace<RoomSceneNode>(sceneNodeId);
+		registry.remove<MainSceneNode>(sceneNodeId);
+		registry.get_or_emplace<SceneSceneNode>(sceneNodeId);
 	}
-	else if (request->scene_node_type() == eSceneNodeType::kRoomSceneCrossNode)
+	else if (request->scene_node_type() == eSceneNodeType::kSceneSceneCrossNode)
 	{
-		registry.remove<MainRoomNode>(sceneNodeId);
-		registry.get_or_emplace<CrossRoomSceneNode>(sceneNodeId);
+		registry.remove<MainSceneNode>(sceneNodeId);
+		registry.get_or_emplace<CrossSceneSceneNode>(sceneNodeId);
 	}
 	///<<< END WRITING YOUR CODE
 }

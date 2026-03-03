@@ -4,12 +4,12 @@
 #include "modules/scene/comp/scene_comp.h"
 #include "session/system/session.h"
 #include "player/comp/player.h"
-#include "scene/system/player_change_room.h"
-#include "scene/system/player_room.h"
+#include "scene/system/player_change_scene.h"
+#include "scene/system/player_scene.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
-#include "scene/system/room.h"
+#include "scene/system/scene.h"
 #include "rpc/service_metadata/game_player_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
@@ -27,7 +27,7 @@
 #include "engine/core/type_alias/player_session_type_alias.h"
 #include "engine/threading/node_context_manager.h"
 #include "engine/threading/player_manager.h"
-#include <modules/scene/system/room_common.h>
+#include <modules/scene/system/scene_common.h>
 
 void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
 {
@@ -160,9 +160,9 @@ void PlayerLifecycleSystem::RequestGatePlayerEnterScene(entt::entity playerEntit
 	}
 
 	const auto& nodeIdMap = sessionPB->node_id();
-	auto it = nodeIdMap.find(eNodeType::RoomNodeService);
+	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
 	if (it == nodeIdMap.end()) {
-		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::RoomNodeService
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
 			<< ", player entity: " << entt::to_integral(playerEntity);
 		return;
 	}
@@ -190,9 +190,9 @@ void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity playerEntity)
 		return;
 	}
 	const auto& nodeIdMap = sessionPB->node_id();
-	auto it = nodeIdMap.find(eNodeType::RoomNodeService);
+	auto it = nodeIdMap.find(eNodeType::SceneNodeService);
 	if (it == nodeIdMap.end()) {
-		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::RoomNodeService
+		LOG_ERROR << "Node type not found in player session snapshot: " << eNodeType::SceneNodeService
 			<< ", player entity: " << entt::to_integral(playerEntity);
 		return;
 	}
@@ -202,7 +202,7 @@ void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity playerEntity)
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(sessionPB->gate_session_id());
 	request.set_player_id(*playerId);
-	SendMessageToSessionNode(SceneUpdateSessionDetailMessageId, request, it->second, eNodeType::RoomNodeService);
+	SendMessageToSessionNode(SceneUpdateSessionDetailMessageId, request, it->second, eNodeType::SceneNodeService);
 	LOG_DEBUG << "Sent session update to scene node";
 }
 
@@ -248,10 +248,10 @@ void PlayerLifecycleSystem::Logout(Guid playerID)
 		return;
 	}
 
-	if (tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(playerEntity))
+	if (tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(playerEntity))
 	{
 		LOG_DEBUG << "Player in scene, removing from scene: " << playerID;
-		RoomCommon::LeaveRoom({ playerEntity });
+		SceneCommon::LeaveScene({ playerEntity });
 	}
 
 	GameNodeExitGameRequest exitGameRequest;

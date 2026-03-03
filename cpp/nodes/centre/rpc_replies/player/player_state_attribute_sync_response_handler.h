@@ -1,6 +1,6 @@
 
 #pragma once
-#include "proto/room/player_state_attribute_sync.pb.h"
+#include "proto/scene/player_state_attribute_sync.pb.h"
 
 #include "rpc/player_rpc_response_handler.h"
 

@@ -6,7 +6,7 @@ import "proto/common/base/common.proto";
 import "proto/common/base/message.proto";
 
 option cc_generic_services = true;
-option (OptionFileDefaultNode) = NODE_ROOM;
+option (OptionFileDefaultNode) = NODE_SCENE;
 
 message PlayerEnterGameNodeRequest
 {
@@ -57,7 +57,7 @@ message CreateSceneRequest
 
 message CreateSceneResponse
 {
-  RoomInfoPBComponent scene_info = 1;
+  SceneInfoPBComponent scene_info = 1;
 }
 
 service Scene {

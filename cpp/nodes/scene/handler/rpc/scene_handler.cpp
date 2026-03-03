@@ -19,7 +19,7 @@
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/base/node.pb.h"
-#include "modules/scene/system/room_common.h"
+#include "modules/scene/system/scene_common.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
@@ -56,7 +56,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 2 检查玩家是否已经在线，若在线则直接进入
 	if (playerIt != tlsPlayerList.end())
 	{
-		PlayerLifecycleSystem::EnterRoom(playerIt->second, enterInfo);
+		PlayerLifecycleSystem::EnterScene(playerIt->second, enterInfo);
 		return;
 	}
 
@@ -447,15 +447,15 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 
     LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
 
-    entt::entity roomEntity{ request->scene_id() };
-    // 可选：检查 roomEntity 是否有效（RoomCommon 内部通常会校验）
-    if (!tlsRegistryManager.actorRegistry.valid(roomEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService).valid(roomEntity)) {
-        LOG_ERROR << "EnterScene: invalid room entity " << request->scene_id();
+    entt::entity sceneEntity{ request->scene_id() };
+    // 可选：检查 sceneEntity 是否有效（SceneCommon 内部通常会校验）
+    if (!tlsRegistryManager.actorRegistry.valid(sceneEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(sceneEntity)) {
+        LOG_ERROR << "EnterScene: invalid scene entity " << request->scene_id();
         return;
     }
 
-    RoomCommon::EnterRoom({ .room = roomEntity, .enter = player });
-    PlayerSceneSystem::HandleEnterScene(player, roomEntity);
+    SceneCommon::EnterScene({ .scene = sceneEntity, .enter = player });
+    PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
 	///<<< END WRITING YOUR CODE
 }
 

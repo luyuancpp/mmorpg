@@ -130,7 +130,7 @@ func registerCallbacks(log *zap.Logger) {
 			// 基础文件名（小写消息名）
 			base := strings.ToLower(msgDesc.GetName())
 			// 输出目录（确保存在）
-			outputDir := _config.Global.Paths.RoomAttributeSyncDir
+			outputDir := _config.Global.Paths.SceneAttributeSyncDir
 			if err := os.MkdirAll(outputDir, 0755); err != nil {
 				return fmt.Errorf("创建输出目录[%s]失败: %w", outputDir, err)
 			}

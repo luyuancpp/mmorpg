@@ -7,13 +7,13 @@
 #include "proto/common/event/scene_event.pb.h"
 #include "proto/common/base/node.pb.h"
 #include "modules/scene/comp/scene_comp.h"
-#include "modules/scene/system/room_param.h"
+#include "modules/scene/system/scene_param.h"
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
 #include "scene/scene/mananger/scene_nav.h"
 #include <threading/registry_manager.h>
-#include <modules/scene/system/room_common.h>
+#include <modules/scene/system/scene_common.h>
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
 	if (!(GetNodeInfo().scene_node_type() == eSceneNodeType::kMainSceneNode ||
@@ -23,9 +23,9 @@ void GameNodeSceneSystem::InitializeNodeScenes() {
 
 	const auto& mainSceneConf = GetMainSceneAllTable();
 	for (auto& item : mainSceneConf.data()) {
-		CreateRoomOnNodeRoomParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
-		params.roomInfo.set_scene_confid(item.id());
-		RoomCommon::CreateRoomOnRoomNode(params);
+		CreateSceneOnNodeSceneParam params{ .node = entt::entity{GetNodeInfo().node_id()}};
+		params.sceneInfo.set_scene_confid(item.id());
+		SceneCommon::CreateSceneOnSceneNode(params);
 	}
 }
 
@@ -34,7 +34,7 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 	RegisterSceneRequest request;
 	request.set_scene_node_id(GetNodeInfo().node_id());
 
-	for (auto&& [entity, sceneInfo] : tlsRegistryManager.roomRegistry.view<RoomInfoPBComponent>().each()) {
+	for (auto&& [entity, sceneInfo] : tlsRegistryManager.sceneRegistry.view<SceneInfoPBComponent>().each()) {
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
@@ -44,10 +44,10 @@ void GameNodeSceneSystem::RegisterAllSceneToCentre(entt::entity centre)
 	CallRemoteMethodOnClient(CentreSceneRegisterSceneMessageId, request, entt::to_integral(centre), eNodeType::CentreNodeService);
 }
 
-void GameNodeSceneSystem::HandleSceneCreation(const OnRoomCreated& message) {
+void GameNodeSceneSystem::HandleSceneCreation(const OnSceneCreated& message) {
 	entt::entity scene = entt::to_entity(message.entity());
 
-	auto& sceneInfo = tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(scene);
+	auto& sceneInfo = tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(scene);
 	if (SceneNavManager::Instance().Contains(sceneInfo.scene_confid())) {
 		// Auto-generated crowd handling
 		// auto& dtCrowd = tlsRegistryManager.sceneRegistry.emplace<dtCrowd>(scene);
@@ -55,10 +55,10 @@ void GameNodeSceneSystem::HandleSceneCreation(const OnRoomCreated& message) {
 	}
 }
 
-void GameNodeSceneSystem::HandleAfterEnterSceneEvent(const AfterEnterRoom& message) {
+void GameNodeSceneSystem::HandleAfterEnterSceneEvent(const AfterEnterScene& message) {
 	// Placeholder for future implementations
 }
 
-void GameNodeSceneSystem::HandleBeforeLeaveSceneEvent(const BeforeLeaveRoom& message) {
+void GameNodeSceneSystem::HandleBeforeLeaveSceneEvent(const BeforeLeaveScene& message) {
 	// Placeholder for future implementations
 }

@@ -228,7 +228,7 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 			continue
 		}
 		wg.Add(2)
-		go generateEventHandlerFiles(wg, file, _config.Global.Paths.RoomNodeEventHandlerDirectory)
+		go generateEventHandlerFiles(wg, file, _config.Global.Paths.SceneNodeEventHandlerDirectory)
 		go generateEventHandlerFiles(wg, file, _config.Global.Paths.CentreNodeEventHandlerDirectory)
 	}
 
@@ -252,7 +252,7 @@ type Config struct {
 	HandlerHeaderExtension          string
 	EventHandlerHeaderFileName      string
 	EventHandlerCppFileName         string
-	RoomNodeEventHandlerDirectory   string
+	SceneNodeEventHandlerDirectory   string
 	CentreNodeEventHandlerDirectory string
 	IncludeBegin                    string
 	IncludeEndLine                  string
@@ -308,8 +308,8 @@ public:
 		UnRegisterData:             unRegisterData,
 	}
 
-	headerFilePath := _config.Global.Paths.RoomNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header
-	cppFilePath := _config.Global.Paths.RoomNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Cpp
+	headerFilePath := _config.Global.Paths.SceneNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header
+	cppFilePath := _config.Global.Paths.SceneNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Cpp
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		logger.Global.Error("生成总头文件失败",
 			zap.String("header_file", headerFilePath),

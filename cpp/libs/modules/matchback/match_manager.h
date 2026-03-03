@@ -45,7 +45,7 @@ namespace GameMMR
         int32_t CancelMatch(GUID_t  playerguid);
         int32_t SendMatchToClient(GUID_t  playerguid);
 
-        MatchMaking::room_type  ComeOutRestult(int32_t matchType);
+        MatchMaking::scene_type  ComeOutRestult(int32_t matchType);
 
         int32_t CheckMatchType(int32_t matchType);
 
@@ -54,23 +54,23 @@ namespace GameMMR
         std::size_t GetPlayerSize();
 
 
-        std::size_t GetRoomSize(int32_t matchType);
-        std::size_t GetNotInPlayerRoomSize(int32_t matchType);
-        std::size_t GetRoomSize();
-        std::size_t GetRoomPlayerSize(int32_t matchType, GUID_t nRoomId);
+        std::size_t GetSceneSize(int32_t matchType);
+        std::size_t GetNotInPlayerSceneSize(int32_t matchType);
+        std::size_t GetSceneSize();
+        std::size_t GetScenePlayerSize(int32_t matchType, GUID_t nSceneId);
 
-        uint64_t GetRoomId( GUID_t playerid);
-        MatchMaking::room_type GetRoom(GUID_t playerid);
-        ui64_set_type GetRoomPlayeridsByPlayerId(GUID_t playerid);
-        MatchMaking::room_type GetRoomFromRoomId(uint64_t roomId);
+        uint64_t GetSceneId( GUID_t playerid);
+        MatchMaking::scene_type GetScene(GUID_t playerid);
+        ui64_set_type GetScenePlayeridsByPlayerId(GUID_t playerid);
+        MatchMaking::scene_type GetSceneFromSceneId(uint64_t sceneId);
 
-        int32_t RoomCancel(int32_t matchType, uint64_t roomId, GUID_t playerid);
-        int32_t RoomReady(int32_t matchType, uint64_t roomId, GUID_t playerid);
-        int32_t CustomRoomCancel(GUID_t playerid);
-        int32_t CustomRoomReady(GUID_t playerid);
-        void NotifyRoomInfo(GUID_t guid);
+        int32_t SceneCancel(int32_t matchType, uint64_t sceneId, GUID_t playerid);
+        int32_t SceneReady(int32_t matchType, uint64_t sceneId, GUID_t playerid);
+        int32_t CustomSceneCancel(GUID_t playerid);
+        int32_t CustomSceneReady(GUID_t playerid);
+        void NotifySceneInfo(GUID_t guid);
 
-        int32_t OnEnterDungeon(int32_t matchType, uint64_t roomId);
+        int32_t OnEnterDungeon(int32_t matchType, uint64_t sceneId);
 
         void SetWithoutRepetitionProfession(bool bCheckProfession)
         {
@@ -84,10 +84,10 @@ namespace GameMMR
         std::size_t GetAllMatchUnitSize(int32_t matchType);
 #ifdef __TEST__
 
-        MatchMaking::roome_list_type & GetRooms(int32_t matchType)
+        MatchMaking::scenee_list_type & GetScenes(int32_t matchType)
         {
             
-            return m_vMatchList[matchType]->GetRooms();
+            return m_vMatchList[matchType]->GetScenes();
         }
 
         MatchMaking::sort_match_map_type GetMatchListForTest(int32_t nMatchType, int32_t nGroup)
@@ -143,9 +143,9 @@ namespace GameMMR
 		}
         
 
-        int32_t CreateCustomRoom(int32_t nType, player_ptr_type & p);
-        int32_t CreateCustomRoom(CreateMatchRoomParam & p);
-        int32_t CreateCustomRoomFromTeamId(CreateMatchRoomParam & p);
+        int32_t CreateCustomScene(int32_t nType, player_ptr_type & p);
+        int32_t CreateCustomScene(CreateMatchRoomParam & p);
+        int32_t CreateCustomSceneFromTeamId(CreateMatchRoomParam & p);
 
         void ChangeProfession(GUID_t roleId, int32_t p);
         void UpdatePlayer(MatchInfo & mi);

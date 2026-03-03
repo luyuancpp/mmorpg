@@ -57,8 +57,8 @@ type Paths struct {
 	NodePkgDir                      string `yaml:"node_pkg_dir"`
 	NodeLibsEngine                  string `yaml:"node_libs_engine"`
 	NodeLibGame                     string `yaml:"node_lib_game"`
-	NodePkgLogicRoom                string `yaml:"node_pkg_logic_room"`
-	RoomNodeDir                     string `yaml:"room_node_dir"`
+	NodePkgLogicScene                string `yaml:"node_pkg_logic_scene"`
+	SceneNodeDir                     string `yaml:"scene_node_dir"`
 	CentreNodeDir                   string `yaml:"centre_node_dir"`
 	GateNodeDir                     string `yaml:"gate_node_dir"`
 	Robot                           string `yaml:"robot"`
@@ -114,9 +114,9 @@ type Paths struct {
 
 	// 原有配置中的路径
 	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
-	RoomNodeEventHandlerDirectory   string `yaml:"room_node_event_handler_directory"`
+	SceneNodeEventHandlerDirectory   string `yaml:"scene_node_event_handler_directory"`
 	CentreNodeEventHandlerDirectory string `yaml:"centre_node_event_handler_directory"`
-	RoomAttributeSyncDir            string `yaml:"room_attribute_sync_dir"`
+	SceneAttributeSyncDir            string `yaml:"scene_attribute_sync_dir"`
 }
 
 // FileExtensions 文件扩展名配置（仅存放文件后缀/扩展名）
@@ -236,7 +236,7 @@ type ProtoDirIndexes struct {
 	LoginProtoDirIndex          int `yaml:"login_proto_dir_index"`
 	DbProtoDirIndex             int `yaml:"db_proto_dir_index"`
 	CenterProtoDirIndex         int `yaml:"center_proto_dir_index"`
-	RoomProtoDirIndex           int `yaml:"room_proto_dir_index"`
+	SceneProtoDirIndex           int `yaml:"scene_proto_dir_index"`
 	GateProtoDirIndex           int `yaml:"gate_proto_dir_index"`
 	ChatProtoDirIndex           int `yaml:"chat_proto_dir_index"`
 	TeamProtoDirIndex           int `yaml:"team_proto_dir_index"`
@@ -254,10 +254,10 @@ type NodeTypes struct {
 // MethodHandlerDirs 方法处理器目录映射
 type MethodHandlerDirs struct {
 	Robot                   string `yaml:"robot"`
-	RoomNode                string `yaml:"room_node"`
-	RoomNodePlayer          string `yaml:"room_node_player"`
-	RoomNodeReplied         string `yaml:"room_node_replied"`
-	RoomNodePlayerReplied   string `yaml:"room_node_player_replied"`
+	SceneNode                string `yaml:"scene_node"`
+	SceneNodePlayer          string `yaml:"scene_node_player"`
+	SceneNodeReplied         string `yaml:"scene_node_replied"`
+	SceneNodePlayerReplied   string `yaml:"scene_node_player_replied"`
 	CentreNode              string `yaml:"centre_node"`
 	CentreNodePlayer        string `yaml:"centre_node_player"`
 	CentreNodeReplied       string `yaml:"centre_node_replied"`
@@ -809,15 +809,15 @@ func setDefaults() {
 	if Global.Paths.EventHandlerSourceDirectory == "" {
 		Global.Paths.EventHandlerSourceDirectory = "handler/event/"
 	}
-	if Global.Paths.RoomNodeEventHandlerDirectory == "" && Global.Paths.RoomNodeDir != "" {
-		Global.Paths.RoomNodeEventHandlerDirectory = filepath.Join(Global.Paths.RoomNodeDir, Global.Paths.EventHandlerSourceDirectory)
+	if Global.Paths.SceneNodeEventHandlerDirectory == "" && Global.Paths.SceneNodeDir != "" {
+		Global.Paths.SceneNodeEventHandlerDirectory = filepath.Join(Global.Paths.SceneNodeDir, Global.Paths.EventHandlerSourceDirectory)
 	}
 	if Global.Paths.CentreNodeEventHandlerDirectory == "" && Global.Paths.CentreNodeDir != "" {
 		Global.Paths.CentreNodeEventHandlerDirectory = filepath.Join(Global.Paths.CentreNodeDir, Global.Paths.EventHandlerSourceDirectory)
 	}
-	if Global.Paths.RoomAttributeSyncDir == "" {
+	if Global.Paths.SceneAttributeSyncDir == "" {
 		// 和 YAML 中一致：cpp/libs/services/scene/generated/attribute/
-		Global.Paths.RoomAttributeSyncDir = filepath.Join(
+		Global.Paths.SceneAttributeSyncDir = filepath.Join(
 			Global.Paths.NodeLibGame,
 			"scene/generated/attribute/",
 		)
@@ -937,7 +937,7 @@ func createRequiredDirs() error {
 		Global.Paths.ProtoBufCLuaDir,
 		Global.Paths.TempFileGenDir,
 		Global.Paths.ProtoBufDescDir,
-		Global.Paths.RoomNodeEventHandlerDirectory,
+		Global.Paths.SceneNodeEventHandlerDirectory,
 		Global.Paths.CentreNodeEventHandlerDirectory,
 	}
 

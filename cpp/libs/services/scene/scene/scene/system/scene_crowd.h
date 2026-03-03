@@ -1,12 +1,12 @@
 #pragma once
 
-class OnRoomCreated;
-class AfterEnterRoom;
-class BeforeLeaveRoom;
+class OnSceneCreated;
+class AfterEnterScene;
+class BeforeLeaveScene;
 
 class SceneCrowdSystem
 {
 public:
-    static void AfterEnterSceneHandler(const AfterEnterRoom& message);
-    static void BeforeLeaveSceneHandler(const BeforeLeaveRoom& message);
+    static void AfterEnterSceneHandler(const AfterEnterScene& message);
+    static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
 };

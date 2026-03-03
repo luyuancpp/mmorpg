@@ -1,22 +1,22 @@
 #pragma once
-class OnRoomCreated;
-class OnRoomDestroyed;
-class BeforeEnterRoom;
-class AfterEnterRoom;
-class BeforeLeaveRoom;
-class AfterLeaveRoom;
-class S2CEnterRoom;
+class OnSceneCreated;
+class OnSceneDestroyed;
+class BeforeEnterScene;
+class AfterEnterScene;
+class BeforeLeaveScene;
+class AfterLeaveScene;
+class S2CEnterScene;
 
 class SceneEventHandler
 {
 public:
     static void Register();
     static void UnRegister();
-    static void OnRoomCreatedHandler(const OnRoomCreated& event);
-    static void OnRoomDestroyedHandler(const OnRoomDestroyed& event);
-    static void BeforeEnterRoomHandler(const BeforeEnterRoom& event);
-    static void AfterEnterRoomHandler(const AfterEnterRoom& event);
-    static void BeforeLeaveRoomHandler(const BeforeLeaveRoom& event);
-    static void AfterLeaveRoomHandler(const AfterLeaveRoom& event);
-    static void S2CEnterRoomHandler(const S2CEnterRoom& event);
+    static void OnSceneCreatedHandler(const OnSceneCreated& event);
+    static void OnSceneDestroyedHandler(const OnSceneDestroyed& event);
+    static void BeforeEnterSceneHandler(const BeforeEnterScene& event);
+    static void AfterEnterSceneHandler(const AfterEnterScene& event);
+    static void BeforeLeaveSceneHandler(const BeforeLeaveScene& event);
+    static void AfterLeaveSceneHandler(const AfterLeaveScene& event);
+    static void S2CEnterSceneHandler(const S2CEnterScene& event);
 };
