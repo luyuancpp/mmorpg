@@ -12,7 +12,7 @@ option (OptionFileDefaultNode) = NODE_CENTRE;
 message RegisterSceneRequest
 {
 	uint32 scene_node_id = 1;
-	repeated RoomInfoPBComponent scenes_info = 2;
+	repeated SceneInfoPBComponent scenes_info = 2;
 }
 
 message RegisterSceneResponse

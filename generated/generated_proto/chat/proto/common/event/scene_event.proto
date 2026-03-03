@@ -3,37 +3,37 @@ option go_package = "chat/proto/common/event;event";
 
 
 
-message OnRoomCreated
+message OnSceneCreated
 {
   uint64 entity = 1;
 }
 
-message OnRoomDestroyed
+message OnSceneDestroyed
 {
   uint64 entity = 1;
 }
 
-message BeforeEnterRoom
+message BeforeEnterScene
 {
   uint64 entity = 1;
 }
 
-message AfterEnterRoom
+message AfterEnterScene
 {
   uint64 entity = 1;
 }
 
-message BeforeLeaveRoom
+message BeforeLeaveScene
 {
   uint64 entity = 1;
 }
 
-message AfterLeaveRoom
+message AfterLeaveScene
 {
   uint64 entity = 1;
 }
 
-message S2CEnterRoom
+message S2CEnterScene
 {
   uint64 entity = 1;
 }

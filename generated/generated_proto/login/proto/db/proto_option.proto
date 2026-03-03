@@ -15,7 +15,7 @@ enum NodeType {
 
 	// 核心服务节点
 	NODE_GATE = 2;                             // 网关服节点
-	NODE_ROOM = 3;                             // 房间服节点
+	NODE_SCENE = 3;                             // 房间服节点
 	NODE_CENTRE = 4;                           // 中心服节点
 	NODE_DB = 5;                               // 数据库节点
 	NODE_DEPLOY = 6;                           // 部署节点服务
