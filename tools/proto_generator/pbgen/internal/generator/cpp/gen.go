@@ -381,9 +381,9 @@ func GeneratorHandler(wg *sync.WaitGroup) {
 func WriteMethodFile(wg *sync.WaitGroup) {
 	// Concurrent operations for game, centre, and gate registers
 	wg.Add(1)
-	go internal.GenRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.RoomNode+_config.Global.FileExtensions.RegisterHandlerCppExtension, IsRoomNodeHostedProtocolHandler)
+	go internal.GenRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.SceneNode+_config.Global.FileExtensions.RegisterHandlerCppExtension, IsSceneNodeHostedProtocolHandler)
 	wg.Add(1)
-	go internal.WriteRepliedRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.RoomNodeReplied+_config.Global.FileExtensions.RegisterRepliedHandlerCppExtension, IsRoomNodeReceivedProtocolResponseHandler)
+	go internal.WriteRepliedRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.SceneNodeReplied+_config.Global.FileExtensions.RegisterRepliedHandlerCppExtension, IsSceneNodeReceivedProtocolResponseHandler)
 
 	wg.Add(1)
 	go internal.GenRegisterFile(wg, _config.Global.PathLists.MethodHandlerDirectories.CentreNode+_config.Global.FileExtensions.RegisterHandlerCppExtension, IsCentreHostedServiceHandler)

@@ -10,7 +10,7 @@
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>
 
-void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterRoom& message)
+void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 {
 	const auto playerEntity = entt::to_entity(message.entity());
 
@@ -20,7 +20,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterRoom& message)
 		return;
 	}
 
-	auto dtCrowd = tlsRegistryManager.roomRegistry.try_get<DtCrowdPtr>(playerEntity);
+	auto dtCrowd = tlsRegistryManager.sceneRegistry.try_get<DtCrowdPtr>(playerEntity);
 	if (dtCrowd == nullptr)
 	{
 		return;
@@ -59,7 +59,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterRoom& message)
 	int agentIndex = (*dtCrowd)->addAgent(position, agentParams, nullptr);
 }
 
-void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveRoom& message)
+void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 	// Placeholder for any necessary cleanup or handling before leaving the scene
 	// No implementation needed currently

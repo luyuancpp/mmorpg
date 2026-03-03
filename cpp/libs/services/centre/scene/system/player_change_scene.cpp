@@ -1,19 +1,19 @@
-#include "player_change_room.h"
+#include "player_change_scene.h"
 
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "scene/system/room.h"
+#include "scene/system/scene.h"
 
 #include "muduo/base/Logging.h"
 #include "proto/common/event/scene_event.pb.h"
 #include "time/system/time.h"
 #include <engine/threading/registry_manager.h>
 #include <engine/threading/dispatcher_manager.h>
-#include <modules/scene/system/room_common.h>
+#include <modules/scene/system/scene_common.h>
 
 
 // 添加切换场景信息到队列
-uint32_t PlayerChangeRoomUtil::PushChangeSceneInfo(entt::entity player, const ChangeRoomInfoPBComponent& changeInfo) {
+uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	changeSceneQueue.enqueue(changeInfo);
 	changeSceneQueue.front()->set_change_time(TimeSystem::NowSecondsUTC());
@@ -21,13 +21,13 @@ uint32_t PlayerChangeRoomUtil::PushChangeSceneInfo(entt::entity player, const Ch
 }
 
 // 移除队列中首个切换场景信息
-void PlayerChangeRoomUtil::PopFrontChangeSceneQueue(entt::entity player) {
+void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	changeSceneQueue.dequeue();
 }
 
 // 设置当前切换场景信息的切换状态
-void PlayerChangeRoomUtil::SetCurrentChangeSceneState(entt::entity player, ChangeRoomInfoPBComponent::eChangeSceneState s) {
+void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (changeSceneQueue.empty()) {
 		return;
@@ -36,7 +36,7 @@ void PlayerChangeRoomUtil::SetCurrentChangeSceneState(entt::entity player, Chang
 }
 
 // 将场景信息复制到切换场景信息中
-void PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(ChangeRoomInfoPBComponent& changeInfo, const RoomInfoPBComponent& sceneInfo) {
+void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo) {
 	changeInfo.set_scene_confid(sceneInfo.scene_confid());
 	changeInfo.set_dungen_confid(sceneInfo.dungen_confid());
 	changeInfo.set_guid(sceneInfo.guid());
@@ -103,51 +103,51 @@ void PlayerChangeRoomUtil::CopySceneInfoToChangeInfo(ChangeRoomInfoPBComponent& 
 
 
 // 目标GS或Gate回调中心
-void PlayerChangeRoomUtil::OnTargetSceneNodeEnterComplete(entt::entity player) {
+void PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(entt::entity player) {
 	auto& queue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
 	auto& task = *queue.front();
-	if (task.state() == ChangeRoomInfoPBComponent::eEnterSucceed) {
-		task.set_state(ChangeRoomInfoPBComponent::eGateEnterSucceed);
+	if (task.state() == ChangeSceneInfoPBComponent::eEnterSucceed) {
+		task.set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
 		LOG_INFO << "[SceneChange] Player " << entt::to_integral(player) << " fully entered target scene";
 	}
 }
 
 
 // 确认玩家成功进入场景后的操作
-void PlayerChangeRoomUtil::OnEnterRoomOk(entt::entity player) {
-	S2CEnterRoom ev;
+void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
+	S2CEnterScene ev;
 	ev.set_entity(entt::to_integral(player));
 	dispatcher.trigger(ev);
 }
 
-void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
+void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 	auto& queue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (queue.empty()) return;
 
 	auto& task = *queue.front();
 
 	switch (task.state()) {
-	case ChangeRoomInfoPBComponent::ePendingLeave:
-		if (task.change_gs_type() == ChangeRoomInfoPBComponent::eSameGs) {
+	case ChangeSceneInfoPBComponent::ePendingLeave:
+		if (task.change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
 			auto destScene = entt::entity{ task.guid() };
 			if (destScene == entt::null) {
 				queue.dequeue();
 				return;
 			}
 
-			RoomCommon::LeaveRoom({ player });
-			RoomCommon::EnterRoom({ destScene, player });
+			SceneCommon::LeaveScene({ player });
+			SceneCommon::EnterScene({ destScene, player });
 			queue.dequeue();
-			OnEnterRoomOk(player);
+			OnEnterSceneOk(player);
 		}
 		else {
-			RoomCommon::LeaveRoom({ player });
-			task.set_state(ChangeRoomInfoPBComponent::eLeaving);
+			SceneCommon::LeaveScene({ player });
+			task.set_state(ChangeSceneInfoPBComponent::eLeaving);
 		}
 		break;
-	case ChangeRoomInfoPBComponent::eLeaving:
+	case ChangeSceneInfoPBComponent::eLeaving:
 		// 等待中心节点收到【离开成功的通知】，再调用 SetState(player, eWaitingEnter);
 		//当前的系统没有处理因网络/RPC超时卡在某个状态的逻辑，例如：
 		//todo 
@@ -156,24 +156,24 @@ void PlayerChangeRoomUtil::ProgressSceneChangeState(entt::entity player) {
 
 		//	eWaitingEnter：目标GS没有及时回复“我加载好了”。
 		break;
-	case ChangeRoomInfoPBComponent::eWaitingEnter:
+	case ChangeSceneInfoPBComponent::eWaitingEnter:
 		// 等待中心服务器或目标节点 RPC 通知我们切换完成
 		break;
 
-	case ChangeRoomInfoPBComponent::eEnterSucceed: {
+	case ChangeSceneInfoPBComponent::eEnterSucceed: {
 		auto destScene = entt::entity{ task.guid() };
 		if (destScene == entt::null) {
-			RoomSystem::EnterDefaultRoom({ player });
+			SceneSystem::EnterDefaultScene({ player });
 		}
 		else {
-			RoomCommon::EnterRoom({ destScene, player });
+			SceneCommon::EnterScene({ destScene, player });
 		}
 		break;
 	}
 
-	case ChangeRoomInfoPBComponent::eGateEnterSucceed:
+	case ChangeSceneInfoPBComponent::eGateEnterSucceed:
 		queue.dequeue();
-		OnEnterRoomOk(player);
+		OnEnterSceneOk(player);
 		break;
 
 	default:

@@ -281,7 +281,7 @@ message Compare {
     bytes value = 7;
     // lease is the lease id of the given key.
     int64 lease = 8 [(versionpb.etcd_version_field)="3.3"];
-    // leave room for more target_union field tags, jump to 64
+    // leave scene for more target_union field tags, jump to 64
   }
 
   // range_end compares the given target to all keys in the range [key, range_end).

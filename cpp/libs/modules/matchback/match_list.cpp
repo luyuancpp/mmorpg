@@ -33,9 +33,9 @@ namespace GameMMR
         }
 
 
-        if (NULL != m_pMatchElement && m_pMatchElement->per_room_camp_size > 0)
+        if (NULL != m_pMatchElement && m_pMatchElement->per_scene_camp_size > 0)
         {
-            m_nkMaxRoomCampSize = (std::size_t)m_pMatchElement->per_room_camp_size;
+            m_nkMaxSceneCampSize = (std::size_t)m_pMatchElement->per_scene_camp_size;
         }
 
         if (NULL != m_pMatchElement && m_pMatchElement->profession_size > 0)
@@ -133,7 +133,7 @@ namespace GameMMR
 
         if (m_vPlayers.find(playerguid) != m_vPlayers.end())
         {
-            return InGroupTestMatch(playerguid) || InRoom(playerguid);
+            return InGroupTestMatch(playerguid) || InScene(playerguid);
         }
         else
         {
@@ -169,18 +169,18 @@ namespace GameMMR
 
     }
 
-    bool MatchMaking::InRoom(GUID_t  playerguid)
+    bool MatchMaking::InScene(GUID_t  playerguid)
     {
-        bool roomRet = false;
-        for (roome_list_type::iterator it = m_vRooms.begin(); it != m_vRooms.end(); ++it)
+        bool sceneRet = false;
+        for (scenee_list_type::iterator it = m_vScenes.begin(); it != m_vScenes.end(); ++it)
         {
             if (it->second->HasPlayer(playerguid))
             {
-                roomRet = true;
+                sceneRet = true;
                 break;
             }
         }
-        return roomRet;
+        return sceneRet;
     }
 
     int32_t MatchMaking::CancelMatch(GUID_t  playerguid, int32_t nCancelSelfMatchUnitTeam)
@@ -200,7 +200,7 @@ namespace GameMMR
         match_queue_type::iterator matchUnitIt = groupIt->second.find(allPlayerIt->second.m_nMatchUnitId);
         if (matchUnitIt == groupIt->second.end())
         {
-            OR_CHECK_RESULT(RoomCancel(GetRoomId(playerguid), playerguid));
+            OR_CHECK_RESULT(SceneCancel(GetSceneId(playerguid), playerguid));
         }
 
         if (matchUnitIt == groupIt->second.end())
@@ -349,12 +349,12 @@ namespace GameMMR
     {
         std::size_t matchsize = 0;
 
-        room_camps_vec_type roomcamps(GetMaxRoomCampSize());//15v15: 2ÕóÓª
+        scene_camps_vec_type scenecamps(GetMaxSceneCampSize());//15v15: 2ÕóÓª
         std::size_t nTeamSize = GetPerCampPlayerSize() / GetPerTeamMemberMaxSize();//15v15: 3¶ÓÎé
 
         match_queue_type successList;
         i32_v_type  vEraseIndex;
-        for (auto && it : roomcamps)
+        for (auto && it : scenecamps)
         {
             for (std::size_t i = 0; i < nTeamSize; ++i)
             {
@@ -384,7 +384,7 @@ namespace GameMMR
             }
         }
 
-        if (matchsize < GetRoomMaxPlayerSize())
+        if (matchsize < GetSceneMaxPlayerSize())
         {
             return false;
         }
@@ -393,7 +393,7 @@ namespace GameMMR
         CreateMatchRoomParam cp
         {
             nullptr,
-            roomcamps,
+            scenecamps,
             eloValue,
             m_nType,
             std::bind(&MatchMaking::ReMatch, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
@@ -405,10 +405,10 @@ namespace GameMMR
         };
 
       
-        room_type r(new MatchRoom(cp));
+        scene_type r(new MatchRoom(cp));
 
 
-        AddRoom(r);
+        AddScene(r);
 
         for (auto && sIt : successList)
         {
@@ -420,7 +420,7 @@ namespace GameMMR
                 {
                     continue;
                 }
-                ji->second.m_nRoomId = r->GetRoomId();
+                ji->second.m_nSceneId = r->GetSceneId();
             }
 
         }
@@ -434,7 +434,7 @@ namespace GameMMR
         {
             return false;
         }
-        if (m_pMatchElement->rank_strategy == E_MATCH_SUCCESS_CREATE_ROOM)
+        if (m_pMatchElement->rank_strategy == E_MATCH_SUCCESS_CREATE_SCENE)
         {
             return UpdateMatchRankQueue(eloValue);
         }
@@ -619,14 +619,14 @@ namespace GameMMR
         return matched;
     }
 
-    MatchMaking::room_type  MatchMaking::ComeOutARoom()
+    MatchMaking::scene_type  MatchMaking::ComeOutAScene()
     {
-        if (m_vRooms.empty())
+        if (m_vScenes.empty())
         {
             return NULL;
         }
-        MatchMaking::room_type v = m_vRooms.begin()->second;
-		RemoveRoom(m_vRooms.begin()->first);
+        MatchMaking::scene_type v = m_vScenes.begin()->second;
+		RemoveScene(m_vScenes.begin()->first);
         return v;
     }
 
@@ -653,10 +653,10 @@ namespace GameMMR
         }
     }
 
-    void MatchMaking::RemoveRoom(room_id_type roomId)
+    void MatchMaking::RemoveScene(scene_id_type sceneId)
     {
-        roome_list_type::iterator it = m_vRooms.find(roomId);
-        if (it == m_vRooms.end())
+        scenee_list_type::iterator it = m_vScenes.find(sceneId);
+        if (it == m_vScenes.end())
         {
             return;
         }
@@ -669,49 +669,49 @@ namespace GameMMR
 				auto pi = m_vPlayers.erase(ji.first);
 			}
 		}
-        m_vRooms.erase(roomId);
+        m_vScenes.erase(sceneId);
     }
 
-    void MatchMaking::RoomTimeOut(room_id_type roomId)
+    void MatchMaking::SceneTimeOut(scene_id_type sceneId)
     {
-        roome_list_type::iterator it = m_vRooms.find(roomId);
-        if (it == m_vRooms.end())
+        scenee_list_type::iterator it = m_vScenes.find(sceneId);
+        if (it == m_vScenes.end())
         {
             return;
         }
         it->second->TimeOut();
-		RemoveRoom(roomId);
+		RemoveScene(sceneId);
     }
 
-    void MatchMaking::NotifyRoomInfo(GUID_t guid)
+    void MatchMaking::NotifySceneInfo(GUID_t guid)
     {
-        roome_list_type::iterator it = m_vRooms.find(GetRoomId(guid));
-        if (it == m_vRooms.end())
+        scenee_list_type::iterator it = m_vScenes.find(GetSceneId(guid));
+        if (it == m_vScenes.end())
         {
             return;
         }
-        it->second->NotifyRoomInfo(guid);
+        it->second->NotifySceneInfo(guid);
     }
 
 
-    std::size_t MatchMaking::GetRoomPlayerSize()
+    std::size_t MatchMaking::GetScenePlayerSize()
     {
         std::size_t rPlayerSize = 0;
-        for (auto & it : m_vRooms)
+        for (auto & it : m_vScenes)
         {
-            rPlayerSize += it.second->GetRoomPlayerSize();
+            rPlayerSize += it.second->GetScenePlayerSize();
         }
         return rPlayerSize;
     }
 
-    std::size_t MatchMaking::GetRoomPlayerSize(GUID_t nRoomId)
+    std::size_t MatchMaking::GetScenePlayerSize(GUID_t nSceneId)
     {
-        roome_list_type::iterator it = m_vRooms.find(nRoomId);
-        if (it == m_vRooms.end())
+        scenee_list_type::iterator it = m_vScenes.find(nSceneId);
+        if (it == m_vScenes.end())
         {
             return 0;
         }
-        return it->second->GetRoomPlayerSize();
+        return it->second->GetScenePlayerSize();
     }
 
     std::size_t MatchMaking::GetPlayerSize()
@@ -719,34 +719,34 @@ namespace GameMMR
         return m_vPlayers.size();
     }
 
-    uint64_t MatchMaking::GetRoomId(GUID_t playerid)
+    uint64_t MatchMaking::GetSceneId(GUID_t playerid)
     {
         palyers_type::iterator pi = m_vPlayers.find(playerid);
         if (pi == m_vPlayers.end())
         {
-            if (m_pMatchElement->custom_room <= 0)
+            if (m_pMatchElement->custom_scene <= 0)
             {
                 return 0;
             }
-            for (auto && ri : m_vRooms)
+            for (auto && ri : m_vScenes)
             {
                 if (ri.second->HasPlayer(playerid))
                 {
-                    return ri.second->GetRoomId();
+                    return ri.second->GetSceneId();
                 }
             }
             return 0;
         }
-        auto ji = m_vRooms.find(pi->second.m_nRoomId);
-        if (ji == m_vRooms.end())
+        auto ji = m_vScenes.find(pi->second.m_nSceneId);
+        if (ji == m_vScenes.end())
         {
             return 0;
         }
 
-        return pi->second.m_nRoomId;
+        return pi->second.m_nSceneId;
     }
 
-    MatchMaking::room_type MatchMaking::GetRoom(GUID_t playerid)
+    MatchMaking::scene_type MatchMaking::GetScene(GUID_t playerid)
     {
         palyers_type::iterator it = m_vPlayers.find(playerid);
         if (it == m_vPlayers.end())
@@ -754,9 +754,9 @@ namespace GameMMR
             return NULL;
         }
 
-        roome_list_type::iterator ri = m_vRooms.find(it->second.m_nRoomId);
+        scenee_list_type::iterator ri = m_vScenes.find(it->second.m_nSceneId);
 
-        if (ri == m_vRooms.end())
+        if (ri == m_vScenes.end())
         {
             return NULL;
 
@@ -764,11 +764,11 @@ namespace GameMMR
         return ri->second;
     }
 
-    MatchMaking::room_type MatchMaking::GetRoomFromRoomId(GUID_t nRoomId)
+    MatchMaking::scene_type MatchMaking::GetSceneFromSceneId(GUID_t nSceneId)
     {
-        roome_list_type::iterator ri = m_vRooms.find(nRoomId);
+        scenee_list_type::iterator ri = m_vScenes.find(nSceneId);
 
-        if (ri == m_vRooms.end())
+        if (ri == m_vScenes.end())
         {
             return NULL;
 
@@ -782,7 +782,7 @@ namespace GameMMR
         {
             return OR_MATCH_UNIT_TABLE_ERROR;
         }
-        if (m_pMatchElement->rank_strategy == E_MATCH_SUCCESS_CREATE_ROOM)
+        if (m_pMatchElement->rank_strategy == E_MATCH_SUCCESS_CREATE_SCENE)
         {
             if (IsRank())
             {
@@ -810,54 +810,54 @@ namespace GameMMR
         return OR_OK;
     }
 
-    int32_t MatchMaking::RoomCancel(room_id_type roomId, GUID_t playerid)
+    int32_t MatchMaking::SceneCancel(scene_id_type sceneId, GUID_t playerid)
     {
-        roome_list_type::iterator rit = m_vRooms.find(roomId);
-        if (rit == m_vRooms.end())
+        scenee_list_type::iterator rit = m_vScenes.find(sceneId);
+        if (rit == m_vScenes.end())
         {
-            return OR_MATCH_ROOM_ERROR;
+            return OR_MATCH_SCENE_ERROR;
         }
-        room_type p = rit->second;
+        scene_type p = rit->second;
         OR_CHECK_RESULT(p->Cancel(playerid));
-        RemoveRoom(roomId);
+        RemoveScene(sceneId);
         return OR_OK;
     }
 
-    int32_t MatchMaking::RoomReady(room_id_type roomId, GUID_t playerid)
+    int32_t MatchMaking::SceneReady(scene_id_type sceneId, GUID_t playerid)
     {
-        roome_list_type::iterator rit = m_vRooms.find(roomId);
-        if (rit == m_vRooms.end())
+        scenee_list_type::iterator rit = m_vScenes.find(sceneId);
+        if (rit == m_vScenes.end())
         {
-            return OR_MATCH_ROOM_ERROR;
+            return OR_MATCH_SCENE_ERROR;
         }
-        room_type p = rit->second;
+        scene_type p = rit->second;
         OR_CHECK_RESULT(p->Ready(playerid));
         if (rit->second->IsAllReady())
         {
-            RemoveRoom(roomId);
+            RemoveScene(sceneId);
         }
         return OR_OK;
     }
 
-    int32_t MatchMaking::OnEnterDungeon(room_id_type roomId)
+    int32_t MatchMaking::OnEnterDungeon(scene_id_type sceneId)
     {
-        roome_list_type::iterator rit = m_vRooms.find(roomId);
-        if (rit == m_vRooms.end())
+        scenee_list_type::iterator rit = m_vScenes.find(sceneId);
+        if (rit == m_vScenes.end())
         {
-            return OR_MATCH_ROOM_ERROR;
+            return OR_MATCH_SCENE_ERROR;
         }
 
         rit->second->OnEnterDungeon();
-		RemoveRoom(roomId);
+		RemoveScene(sceneId);
         return OR_OK;
     }
 
-    std::size_t MatchMaking::GetNotInPlayerRoomSize()
+    std::size_t MatchMaking::GetNotInPlayerSceneSize()
     {
         std::size_t queueSize = 0;
         for (auto & it : m_vPlayers)
         {
-            if (it.second.m_nRoomId == 0)
+            if (it.second.m_nSceneId == 0)
             {
                 ++queueSize;
             }
@@ -969,7 +969,7 @@ namespace GameMMR
         }
     }
 
-    int32_t MatchMaking::CreateCustomRoom(match_unit_type & p)
+    int32_t MatchMaking::CreateCustomScene(match_unit_type & p)
     {
         OR_CHECK_RESULT(CheckRobot(p));
         CreateMatchRoomParam cp{ 
@@ -985,19 +985,19 @@ namespace GameMMR
             m_oSendGameCallBack,
 			m_oMirrorMatchCallBack};
      
-        return CreateCustomRoom(cp);
+        return CreateCustomScene(cp);
     }
 
-    int32_t MatchMaking::CreateCustomRoom(CreateMatchRoomParam & cmp)
+    int32_t MatchMaking::CreateCustomScene(CreateMatchRoomParam & cmp)
     {
         OR_CHECK_RESULT(CheckRobot(cmp.p_match_unit_));
        
-        room_type r(new MatchRoom(cmp));
-        AddRoom(r);
+        scene_type r(new MatchRoom(cmp));
+        AddScene(r);
         return OR_OK;
     }
 
-    int32_t MatchMaking::CreateCustomRoomFromTeamId(CreateMatchRoomParam & pp)
+    int32_t MatchMaking::CreateCustomSceneFromTeamId(CreateMatchRoomParam & pp)
     {
         pp.p_team_list_ = m_pTeamList;
         MatchMaking::match_unit_type p_match_unint(new MatchUnit(pp.team_id_, m_pTeamList));
@@ -1008,7 +1008,7 @@ namespace GameMMR
             p_match_unint->SetMatchTarget(*pp.p_target_);
         }
         
-        return CreateCustomRoom(pp);
+        return CreateCustomScene(pp);
     }
 
     int32_t MatchMaking::CheckRobot(match_unit_type & p)
@@ -1019,11 +1019,11 @@ namespace GameMMR
         }
         if (NULL == m_pMatchElement)
         {
-            return OR_MATCH_CUSTOM_ROOM_TABLE_ERROR_ERRO;
+            return OR_MATCH_CUSTOM_SCENE_TABLE_ERROR_ERRO;
         }
-        if (m_pMatchElement->custom_room <= 0)
+        if (m_pMatchElement->custom_scene <= 0)
         {
-            return OR_MATCH_CUSTOM_ROOM_TYPE_ERRO;
+            return OR_MATCH_CUSTOM_SCENE_TYPE_ERRO;
         }
 
         bool use_robot = false;
@@ -1106,16 +1106,16 @@ namespace GameMMR
         return OR_OK;
     }
 
-    void MatchMaking::AddRoom(room_type & pr)
+    void MatchMaking::AddScene(scene_type & pr)
     {
         pr->SetEnterDungeonCallback(m_oEnterDungeonCallBack);
         pr->SetSendMsgCallback(m_oSendCallBack);
-        m_vRooms.emplace(pr->GetRoomId(), pr);
+        m_vScenes.emplace(pr->GetSceneId(), pr);
         if (BaseModule::GetThreadLocalStorageLoop() == NULL)
         {
             return;
         }
-        BaseModule::GetThreadLocalStorageLoop()->runAfter(kPrepareTime, std::bind(&MatchMaking::RoomTimeOut, this, pr->GetRoomId()));
+        BaseModule::GetThreadLocalStorageLoop()->runAfter(kPrepareTime, std::bind(&MatchMaking::SceneTimeOut, this, pr->GetSceneId()));
     }
 
     MatchMaking::match_unit_type MatchMaking::GetMatchUnit(GUID_t  playerguid)

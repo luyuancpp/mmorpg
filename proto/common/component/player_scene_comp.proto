@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 
-message PlayerRoomInfoPBComponent
+message PlayerSceneInfoPBComponent
 {
   uint32 scene_confid = 1;
   uint32 guid = 2;
@@ -10,7 +10,7 @@ message PlayerRoomInfoPBComponent
 
 message PlayerSceneContextPBComponent
 {
-	PlayerRoomInfoPBComponent scene_info = 1;
-	PlayerRoomInfoPBComponent scene_info_last_time = 2;
+	PlayerSceneInfoPBComponent scene_info = 1;
+	PlayerSceneInfoPBComponent scene_info_last_time = 2;
 }
 

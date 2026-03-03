@@ -9,7 +9,7 @@ import "proto/common/component/player_skill_comp.proto";
 import "proto/common/component/actor_comp.proto";
 
 option cc_generic_services = true;
-option (OptionFileDefaultNode) = NODE_ROOM;
+option (OptionFileDefaultNode) = NODE_SCENE;
 
 message ReleaseSkillSkillRequest {
   uint32 skill_table_id = 1;

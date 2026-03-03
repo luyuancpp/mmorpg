@@ -9,7 +9,7 @@
 #include "scene/scene/system/game_node_scene.h"
 #include "network/node_message_utils.h"
 #include <proto/common/base/node.pb.h>
-#include <modules/scene/system/room_common.h>
+#include <modules/scene/system/scene_common.h>
 ///<<< END WRITING YOUR CODE
 
 
@@ -46,7 +46,7 @@ void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    RoomCommon::SetSequenceNodeId(gNode->GetNodeId());
+    SceneCommon::SetSequenceNodeId(gNode->GetNodeId());
     GameNodeSceneSystem::InitializeNodeScenes();
 ///<<< END WRITING YOUR CODE
 }

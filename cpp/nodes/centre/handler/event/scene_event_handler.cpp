@@ -9,8 +9,8 @@
 
 #include "modules/scene/comp/scene_comp.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
-#include "scene/system/player_change_room.h"
-#include "scene/system/player_room.h"
+#include "scene/system/player_change_scene.h"
+#include "scene/system/player_scene.h"
 #include "engine/core/type_define/type_define.h"
 #include "rpc/service_metadata/game_player_service_metadata.h"
 #include "proto/common/component/scene_comp.pb.h"
@@ -23,48 +23,48 @@
 
 void SceneEventHandler::Register()
 {
-    dispatcher.sink<OnRoomCreated>().connect<&SceneEventHandler::OnRoomCreatedHandler>();
-    dispatcher.sink<OnRoomDestroyed>().connect<&SceneEventHandler::OnRoomDestroyedHandler>();
-    dispatcher.sink<BeforeEnterRoom>().connect<&SceneEventHandler::BeforeEnterRoomHandler>();
-    dispatcher.sink<AfterEnterRoom>().connect<&SceneEventHandler::AfterEnterRoomHandler>();
-    dispatcher.sink<BeforeLeaveRoom>().connect<&SceneEventHandler::BeforeLeaveRoomHandler>();
-    dispatcher.sink<AfterLeaveRoom>().connect<&SceneEventHandler::AfterLeaveRoomHandler>();
-    dispatcher.sink<S2CEnterRoom>().connect<&SceneEventHandler::S2CEnterRoomHandler>();
+    dispatcher.sink<OnSceneCreated>().connect<&SceneEventHandler::OnSceneCreatedHandler>();
+    dispatcher.sink<OnSceneDestroyed>().connect<&SceneEventHandler::OnSceneDestroyedHandler>();
+    dispatcher.sink<BeforeEnterScene>().connect<&SceneEventHandler::BeforeEnterSceneHandler>();
+    dispatcher.sink<AfterEnterScene>().connect<&SceneEventHandler::AfterEnterSceneHandler>();
+    dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventHandler::BeforeLeaveSceneHandler>();
+    dispatcher.sink<AfterLeaveScene>().connect<&SceneEventHandler::AfterLeaveSceneHandler>();
+    dispatcher.sink<S2CEnterScene>().connect<&SceneEventHandler::S2CEnterSceneHandler>();
 }
 
 void SceneEventHandler::UnRegister()
 {
-    dispatcher.sink<OnRoomCreated>().disconnect<&SceneEventHandler::OnRoomCreatedHandler>();
-    dispatcher.sink<OnRoomDestroyed>().disconnect<&SceneEventHandler::OnRoomDestroyedHandler>();
-    dispatcher.sink<BeforeEnterRoom>().disconnect<&SceneEventHandler::BeforeEnterRoomHandler>();
-    dispatcher.sink<AfterEnterRoom>().disconnect<&SceneEventHandler::AfterEnterRoomHandler>();
-    dispatcher.sink<BeforeLeaveRoom>().disconnect<&SceneEventHandler::BeforeLeaveRoomHandler>();
-    dispatcher.sink<AfterLeaveRoom>().disconnect<&SceneEventHandler::AfterLeaveRoomHandler>();
-    dispatcher.sink<S2CEnterRoom>().disconnect<&SceneEventHandler::S2CEnterRoomHandler>();
+    dispatcher.sink<OnSceneCreated>().disconnect<&SceneEventHandler::OnSceneCreatedHandler>();
+    dispatcher.sink<OnSceneDestroyed>().disconnect<&SceneEventHandler::OnSceneDestroyedHandler>();
+    dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventHandler::BeforeEnterSceneHandler>();
+    dispatcher.sink<AfterEnterScene>().disconnect<&SceneEventHandler::AfterEnterSceneHandler>();
+    dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventHandler::BeforeLeaveSceneHandler>();
+    dispatcher.sink<AfterLeaveScene>().disconnect<&SceneEventHandler::AfterLeaveSceneHandler>();
+    dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventHandler::S2CEnterSceneHandler>();
 }
-void SceneEventHandler::OnRoomCreatedHandler(const OnRoomCreated& event)
+void SceneEventHandler::OnSceneCreatedHandler(const OnSceneCreated& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::OnRoomDestroyedHandler(const OnRoomDestroyed& event)
+void SceneEventHandler::OnSceneDestroyedHandler(const OnSceneDestroyed& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::BeforeEnterRoomHandler(const BeforeEnterRoom& event)
+void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 
 ///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::AfterEnterRoomHandler(const AfterEnterRoom& event)
+void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
   
 ///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::BeforeLeaveRoomHandler(const BeforeLeaveRoom& event)
+void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
 	///<<< BEGIN WRITING YOUR CODE
 		const auto player = entt::to_entity(event.entity());
@@ -84,16 +84,16 @@ void SceneEventHandler::BeforeLeaveRoomHandler(const BeforeLeaveRoom& event)
 	LOG_INFO << "Player is leaving scene "
 		<< tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player)
 		<< ", Scene GUID: "
-		<< tlsRegistryManager.roomRegistry.get<RoomInfoPBComponent>(tlsRegistryManager.actorRegistry.get_or_emplace<RoomEntityComp>(player).roomEntity).guid();
+		<< tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(tlsRegistryManager.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity).guid();
 
 	///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::AfterLeaveRoomHandler(const AfterLeaveRoom& event)
+void SceneEventHandler::AfterLeaveSceneHandler(const AfterLeaveScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void SceneEventHandler::S2CEnterRoomHandler(const S2CEnterRoom& event)
+void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
     PlayerSceneSystem::SendToGameNodeEnterScene(entt::to_entity(event.entity()));

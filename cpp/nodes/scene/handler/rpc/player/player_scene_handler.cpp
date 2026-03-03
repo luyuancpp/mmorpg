@@ -23,8 +23,8 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		<< ", scene_info: " << request->scene_info().DebugString();
 
 	auto game_node_type = gNode->GetNodeInfo().scene_node_type();
-	if (game_node_type == eSceneNodeType::kRoomNode ||
-		game_node_type == eSceneNodeType::kRoomSceneCrossNode)
+	if (game_node_type == eSceneNodeType::kSceneNode ||
+		game_node_type == eSceneNodeType::kSceneSceneCrossNode)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to server type: " << game_node_type;
 		response->mutable_error_message()->set_id(kEnterSceneServerType);
@@ -39,9 +39,9 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		return;
 	}
 
-	if (auto current_scene_comp = tlsRegistryManager.actorRegistry.try_get<RoomEntityComp>(player))
+	if (auto current_scene_comp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player))
 	{
-		const auto current_scene_info = tlsRegistryManager.actorRegistry.try_get<RoomInfoPBComponent>(current_scene_comp->roomEntity);
+		const auto current_scene_info = tlsRegistryManager.actorRegistry.try_get<SceneInfoPBComponent>(current_scene_comp->sceneEntity);
 		if (current_scene_info && current_scene_info->guid() == scene_info.guid() && scene_info.guid() > 0)
 		{
 			LOG_WARN << "Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " is already in the requested scene: " << scene_info.guid();

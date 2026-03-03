@@ -574,7 +574,7 @@ TEST(MatchMaking, JoinTeamCancelMatch_AgreeInvite)
     EXPECT_FALSE(o.InMatch(teamMem.roleid()));
 }
 
-TEST(MatchMaking, CreateCustomRoom)
+TEST(MatchMaking, CreateCustomScene)
 {
 
     TeamList teamList;
@@ -601,14 +601,14 @@ TEST(MatchMaking, CreateCustomRoom)
     {
         EXPECT_FALSE(o.InMatch(t.members(i).roleid()));
     }
-    EXPECT_EQ(OR_MATCH_CUSTOM_ROOM_TYPE_ERRO, o.CreateCustomRoom(E_TEST_NOMAL_TEAM_RANK_MATCH, p));
+    EXPECT_EQ(OR_MATCH_CUSTOM_SCENE_TYPE_ERRO, o.CreateCustomScene(E_TEST_NOMAL_TEAM_RANK_MATCH, p));
     p.reset(new MatchUnit(0, E_NOMAL_TEAM_MATCH, t, iv));
 
     for (int32_t i = 0; i < t.members_size(); ++i)
     {
         EXPECT_FALSE(o.InMatch(t.members(i).roleid()));
     }
-    //EXPECT_EQ(OR_MATCH_CUSTOM_ROOM_TEAM_MEMBER_ERRO, o.CreateCustomRoom(E_NOMAL_TEAM_MATCH, p));
+    //EXPECT_EQ(OR_MATCH_CUSTOM_SCENE_TEAM_MEMBER_ERRO, o.CreateCustomScene(E_NOMAL_TEAM_MATCH, p));
     for (INT i = 1; i < 3; ++i)
     {
         teamMem.set_roleid(++nRoleId);
@@ -616,23 +616,23 @@ TEST(MatchMaking, CreateCustomRoom)
     }
     o.GetTeamList().CopyTo(nTeamTypeTeamId, t);
     p.reset(new MatchUnit(0, E_NOMAL_TEAM_MATCH, t, iv));
-    EXPECT_EQ(OR_OK, o.CreateCustomRoom(E_NOMAL_TEAM_MATCH, p));
+    EXPECT_EQ(OR_OK, o.CreateCustomScene(E_NOMAL_TEAM_MATCH, p));
     for (int32_t i = 0; i < t.members_size(); ++i)
     {
         EXPECT_FALSE(o.InMatch(t.members(i).roleid()));
     }
-    EXPECT_EQ(1, o.GetRoomSize(E_NOMAL_TEAM_MATCH));
+    EXPECT_EQ(1, o.GetSceneSize(E_NOMAL_TEAM_MATCH));
 
-    GUID_t roomRoleId = o.GetRoomId(t.members(0).roleid());
+    GUID_t sceneRoleId = o.GetSceneId(t.members(0).roleid());
     for (int32_t i = 0; i < t.members_size(); ++i)
     {
-        EXPECT_EQ(OR_OK, o.RoomReady(E_NOMAL_TEAM_MATCH, roomRoleId, t.members(i).roleid()));
+        EXPECT_EQ(OR_OK, o.SceneReady(E_NOMAL_TEAM_MATCH, sceneRoleId, t.members(i).roleid()));
     }
     for (int32_t i = 0; i < t.members_size(); ++i)
     {
         EXPECT_FALSE(o.InMatch(t.members(i).roleid()));
     }
-    EXPECT_EQ(0, o.GetRoomSize(E_NOMAL_TEAM_MATCH));
+    EXPECT_EQ(0, o.GetSceneSize(E_NOMAL_TEAM_MATCH));
 
 }
 
@@ -753,7 +753,7 @@ TEST(MatchMaking, NormalOrder)
         MatchMaking::match_unit_type p4(new MatchUnit(0, E_MATCH_3V3, info, iv));
         EXPECT_EQ(OR_OK, o.Match(E_MATCH_3V3, p4));
     }
-    std::cout << "room size : " << o.GetRoomSize(E_MATCH_3V3) << " remain player size : " << o.GetNotInPlayerRoomSize(E_MATCH_3V3) << std::endl;
+    std::cout << "scene size : " << o.GetSceneSize(E_MATCH_3V3) << " remain player size : " << o.GetNotInPlayerSceneSize(E_MATCH_3V3) << std::endl;
 
 
     for (auto && it : o.GetMatchListForTest(E_MATCH_3V3, 0))
@@ -796,14 +796,14 @@ TEST(MatchTest, MatchPlayerMatchGroupPlayer)
         EXPECT_TRUE(o.InMatch(i));
         EXPECT_TRUE(o.InGroupMatch(i));
         EXPECT_EQ(OR_MATCH_IN_MATCH_ERROR, o.Match(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, test));
-        MatchMaking::room_type r = o.GetRoom(playerguid);
+        MatchMaking::scene_type r = o.GetScene(playerguid);
         EXPECT_EQ(NULL, r.get());
     }
 
     
 
    
-    MatchMaking::room_type r =  o.ComeOutRestult(E_MATCH_MAX);
+    MatchMaking::scene_type r =  o.ComeOutRestult(E_MATCH_MAX);
 
     EXPECT_EQ(NULL, r.get());
     r = o.ComeOutRestult(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
@@ -817,7 +817,7 @@ TEST(MatchTest, MatchPlayerMatchGroupPlayer)
     EXPECT_EQ(OR_OK, o.Match(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, testfive));
    
     EXPECT_TRUE(o.InMatch(playerguid));
-    r = o.GetRoom(playerguid);
+    r = o.GetScene(playerguid);
     EXPECT_EQ(NULL, r.get());
 
     playerguid = 105;
@@ -827,7 +827,7 @@ TEST(MatchTest, MatchPlayerMatchGroupPlayer)
   
     EXPECT_EQ(OR_MATCH_IN_MATCH_ERROR, o.Match(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, testfive1));
     EXPECT_TRUE(o.InMatch(playerguid));
-    r = o.GetRoom(playerguid);
+    r = o.GetScene(playerguid);
     EXPECT_EQ(NULL, r.get());
 
     playerguid = 5;
@@ -851,8 +851,8 @@ TEST(MatchTest, MatchPlayerMatchGroupPlayer)
         EXPECT_TRUE(o.InMatch(i));
     }
 
-    r = o.GetRoom(playerguid);
-    EXPECT_EQ(5, r->GetRoomPlayerSize());
+    r = o.GetScene(playerguid);
+    EXPECT_EQ(5, r->GetScenePlayerSize());
     
 
 
@@ -861,7 +861,7 @@ TEST(MatchTest, MatchPlayerMatchGroupPlayer)
         EXPECT_TRUE(o.InMatch(i));
     }
 
-    o.OnEnterDungeon(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, r->GetRoomId());
+    o.OnEnterDungeon(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, r->GetSceneId());
 
 
     for (uint64_t i = 1; i < 6; ++i)
@@ -964,12 +964,12 @@ TEST(MatchTest, MatchPlayerMatchGroupPlayerReady)
     MatchMaking::match_unit_type p(new MatchUnit(0, E_CROSS_SERVER_MATCH_DUNGEON_TYPE, info));
     EXPECT_EQ(OR_OK, o.Match(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, p));
 
-    GUID_t roomId = o.GetRoomId(nRoleId);
-    EXPECT_EQ(5, o.GetRoomPlayerSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, roomId));
+    GUID_t sceneId = o.GetSceneId(nRoleId);
+    EXPECT_EQ(5, o.GetScenePlayerSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, sceneId));
 
     for (INT i = 1; i < 6; ++i)
     {
-        EXPECT_EQ(OR_OK, o.RoomReady(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, roomId, i));
+        EXPECT_EQ(OR_OK, o.SceneReady(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, sceneId, i));
     }
     for (INT i = 1; i < 6; ++i)
     {
@@ -1013,14 +1013,14 @@ TEST(MatchTest, MatchGroupPlayerCancle)
     EXPECT_EQ(OR_OK, o.Match(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, p));
     EXPECT_TRUE(o.InMatch(nRoleId));
     EXPECT_EQ(5, o.GetPlayerSize());
-    MatchMaking::room_type r = o.GetRoom(nRoleId);
-    EXPECT_EQ(5, r->GetRoomPlayerSize());
+    MatchMaking::scene_type r = o.GetScene(nRoleId);
+    EXPECT_EQ(5, r->GetScenePlayerSize());
 
     for (INT i = 1; i < 5; ++i)
     {
-        EXPECT_EQ(OR_OK, o.RoomReady(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, r->GetRoomId(), i));
+        EXPECT_EQ(OR_OK, o.SceneReady(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, r->GetSceneId(), i));
     }
-    o.RoomCancel(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, r->GetRoomId(), nRoleId);
+    o.SceneCancel(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, r->GetSceneId(), nRoleId);
     
     EXPECT_FALSE(o.InMatch(nRoleId));
     for (uint64_t i = 1; i < 5; ++i)
@@ -1029,9 +1029,9 @@ TEST(MatchTest, MatchGroupPlayerCancle)
     }
 
     EXPECT_EQ(OR_OK, o.Match(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, p));
-    r = o.GetRoom(nRoleId);
-    EXPECT_EQ(5, r->GetRoomPlayerSize());
-    o.RoomCancel(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, r->GetRoomId(), 4);
+    r = o.GetScene(nRoleId);
+    EXPECT_EQ(5, r->GetScenePlayerSize());
+    o.SceneCancel(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, r->GetSceneId(), 4);
     EXPECT_TRUE(o.InMatch(5));
     for (uint64_t i = 1; i < 5; ++i)
     {
@@ -1112,8 +1112,8 @@ TEST(MatchMaking, MatchPlayerTeam24221)
     MatchMaking::match_unit_type p4(new MatchUnit(0, E_CROSS_SERVER_MATCH_DUNGEON_TYPE, info));
     EXPECT_EQ(OR_OK, o.Match(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, p4));
 
-    MatchMaking::room_type r = o.ComeOutRestult(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
-    EXPECT_EQ(5, r->GetRoomPlayerSize());
+    MatchMaking::scene_type r = o.ComeOutRestult(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
+    EXPECT_EQ(5, r->GetScenePlayerSize());
 
     EXPECT_EQ(6, o.GetPlayerSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE));
 
@@ -1181,42 +1181,42 @@ TEST(MatchMaking, MatchPlayerTeamRandomPvp)
             EXPECT_EQ(OR_OK, o.Match(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, p4));
         }
 
-        std::size_t setremianplayersize = vRoles.size() - o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5;
-        std::size_t managersetremianplayersize = o.GetNotInPlayerRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
+        std::size_t setremianplayersize = vRoles.size() - o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5;
+        std::size_t managersetremianplayersize = o.GetNotInPlayerSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
        
         EXPECT_EQ(setremianplayersize, managersetremianplayersize);
     }
 
-    std::size_t matchsize = o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5 + o.GetNotInPlayerRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
+    std::size_t matchsize = o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5 + o.GetNotInPlayerSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
     EXPECT_EQ(matchsize, vRoles.size());
     EXPECT_EQ(o.GetPlayerSize(), vRoles.size());
 
-    std::cout << "room size : " <<  o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << "player size : " << o.GetPlayerSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE)  << std::endl;
+    std::cout << "scene size : " <<  o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << "player size : " << o.GetPlayerSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE)  << std::endl;
     std::cout << " team size" << teamids.size() << std::endl;
 
-    // test teammember in same room
+    // test teammember in same scene
 
     for (auto & it : teamids)
     {
         TeamInfo t;
         o.GetTeamList().CopyTo(it, t);
-        std::unordered_set<uint64_t> roomset;
+        std::unordered_set<uint64_t> sceneset;
         for (int32_t i = 0; i < t.members_size(); ++i)
         {
-            uint64_t roomId = o.GetRoomId(t.members(i).roleid());
-            if (roomId > 0)
+            uint64_t sceneId = o.GetSceneId(t.members(i).roleid());
+            if (sceneId > 0)
             {
-                roomset.emplace(roomId);
+                sceneset.emplace(sceneId);
             }
-            if (!roomset.empty())
+            if (!sceneset.empty())
             {
-                EXPECT_TRUE(roomset.find(roomId) != roomset.end());
+                EXPECT_TRUE(sceneset.find(sceneId) != sceneset.end());
             }
         }
 
-        if (!roomset.empty())
+        if (!sceneset.empty())
         {
-            EXPECT_EQ(1, roomset.size());
+            EXPECT_EQ(1, sceneset.size());
         }
         
     }
@@ -1227,9 +1227,9 @@ TEST(MatchMaking, MatchPlayerTeamRandomPvp)
         if (std::rand() % 3 == 0)
         {
 
-            uint64_t roomId = o.GetRoomId(it);
+            uint64_t sceneId = o.GetSceneId(it);
             std::size_t cancelsize = 0;
-            if (roomId > 0)
+            if (sceneId > 0)
             {
                 Team::team_id_type cteamid = o.GetTeamList().GetTeamId(it);
                 if (cteamid > 0)
@@ -1244,9 +1244,9 @@ TEST(MatchMaking, MatchPlayerTeamRandomPvp)
                     cancelsize = 1;
                 }
 
-                std::size_t oldroomsize = o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
-                EXPECT_EQ(OR_OK, o.RoomCancel(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, roomId, it));
-                std::size_t newroomsize = o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
+                std::size_t oldscenesize = o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
+                EXPECT_EQ(OR_OK, o.SceneCancel(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, sceneId, it));
+                std::size_t newscenesize = o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
 
                 rolesize -= cancelsize;
 
@@ -1259,18 +1259,18 @@ TEST(MatchMaking, MatchPlayerTeamRandomPvp)
 
        
 
-        std::size_t remainplayersize = rolesize - o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5;
-        std::size_t managersetremianplayersize = o.GetNotInPlayerRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
+        std::size_t remainplayersize = rolesize - o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5;
+        std::size_t managersetremianplayersize = o.GetNotInPlayerSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
 
         EXPECT_EQ(remainplayersize, managersetremianplayersize);
     }
 
-    matchsize = o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5 + o.GetNotInPlayerRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
+    matchsize = o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5 + o.GetNotInPlayerSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
     EXPECT_EQ(matchsize, rolesize);
     EXPECT_EQ(matchsize, o.GetPlayerSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) );
-    std::cout << "room size : " << o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << "remain player size : " << o.GetNotInPlayerRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << std::endl;
+    std::cout << "scene size : " << o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << "remain player size : " << o.GetNotInPlayerSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << std::endl;
  
-    for (auto & ri : o.GetRooms(E_CROSS_SERVER_MATCH_DUNGEON_TYPE))
+    for (auto & ri : o.GetScenes(E_CROSS_SERVER_MATCH_DUNGEON_TYPE))
     {
         PBMatchRoom pb;
         ri.second->ToClientPb(pb);
@@ -1335,22 +1335,22 @@ TEST(MatchMaking, MatchPlayer3V3)
             EXPECT_EQ(OR_OK, o.Match(E_MATCH_3V3, p4));
         }
 
-        std::size_t setremianplayersize = vRoles.size() - o.GetRoomSize(E_MATCH_3V3) * 6;
-        std::size_t managersetremianplayersize = o.GetNotInPlayerRoomSize(E_MATCH_3V3);
+        std::size_t setremianplayersize = vRoles.size() - o.GetSceneSize(E_MATCH_3V3) * 6;
+        std::size_t managersetremianplayersize = o.GetNotInPlayerSceneSize(E_MATCH_3V3);
 
         EXPECT_EQ(setremianplayersize, managersetremianplayersize);
     }
 
-    std::size_t matchsize = o.GetRoomSize(E_MATCH_3V3) * 6 + o.GetNotInPlayerRoomSize(E_MATCH_3V3);
+    std::size_t matchsize = o.GetSceneSize(E_MATCH_3V3) * 6 + o.GetNotInPlayerSceneSize(E_MATCH_3V3);
     EXPECT_EQ(matchsize, vRoles.size());
 
-    std::cout << "room size : " << o.GetRoomSize(E_MATCH_3V3) << "remain player size : " << o.GetNotInPlayerRoomSize(E_MATCH_3V3) << std::endl;
+    std::cout << "scene size : " << o.GetSceneSize(E_MATCH_3V3) << "remain player size : " << o.GetNotInPlayerSceneSize(E_MATCH_3V3) << std::endl;
     std::cout << " team size" << teamids.size() << std::endl;
 
 
-    for (auto & it : o.GetRooms(E_MATCH_3V3))
+    for (auto & it : o.GetScenes(E_MATCH_3V3))
     {
-        EXPECT_EQ(3 * 2, it.second->GetRoomPlayerSize());
+        EXPECT_EQ(3 * 2, it.second->GetScenePlayerSize());
         PBMatchRoom pb;
         it.second->ToClientPb(pb);
         for (int32_t i = 0; i < pb.camps_size(); ++i)
@@ -1424,22 +1424,22 @@ TEST(MatchMaking, MatchPlayer15V15)
             EXPECT_EQ(OR_OK, o.Match(E_MATCH_15V15, p4));
         }
 
-        std::size_t setremianplayersize = vRoles.size() - o.GetRoomSize(E_MATCH_15V15) * 15 * 2;
-        std::size_t managersetremianplayersize = o.GetNotInPlayerRoomSize(E_MATCH_15V15);
+        std::size_t setremianplayersize = vRoles.size() - o.GetSceneSize(E_MATCH_15V15) * 15 * 2;
+        std::size_t managersetremianplayersize = o.GetNotInPlayerSceneSize(E_MATCH_15V15);
 
         EXPECT_EQ(setremianplayersize, managersetremianplayersize);
     }
 
-    std::size_t matchsize = o.GetRoomSize(E_MATCH_15V15) * 15 * 2 + o.GetNotInPlayerRoomSize(E_MATCH_15V15);
+    std::size_t matchsize = o.GetSceneSize(E_MATCH_15V15) * 15 * 2 + o.GetNotInPlayerSceneSize(E_MATCH_15V15);
     EXPECT_EQ(matchsize, vRoles.size());
 
-    std::cout << "room size : " << o.GetRoomSize(E_MATCH_15V15) << "remain player size : " << o.GetNotInPlayerRoomSize(E_MATCH_15V15) << std::endl;
+    std::cout << "scene size : " << o.GetSceneSize(E_MATCH_15V15) << "remain player size : " << o.GetNotInPlayerSceneSize(E_MATCH_15V15) << std::endl;
     std::cout << " team size" << teamids.size() << std::endl;
 
 
-    for (auto it : o.GetRooms(E_MATCH_15V15))
+    for (auto it : o.GetScenes(E_MATCH_15V15))
     {
-        EXPECT_EQ(15 * 2, it.second->GetRoomPlayerSize());
+        EXPECT_EQ(15 * 2, it.second->GetScenePlayerSize());
         PBMatchRoom pb;
         it.second->ToClientPb(pb);
         for (int32_t i = 0; i < pb.camps_size(); ++i)
@@ -1537,9 +1537,9 @@ TEST(MatchMaking, MatchMatchPlayerCancelExitProfession)
             std::uniform_int_distribution<int32_t> dis(0, vecRoles.size() - 1);
 
             int32_t rpos = dis(gen);
-            uint64_t roomId = o.GetRoomId(vecRoles[rpos]);
+            uint64_t sceneId = o.GetSceneId(vecRoles[rpos]);
             std::size_t cancelsize = 0;
-            if (roomId > 0)
+            if (sceneId > 0)
             {
                 Team::team_id_type cteamid = o.GetTeamList().GetTeamId(vecRoles[rpos]);
                 if (cteamid > 0)
@@ -1560,7 +1560,7 @@ TEST(MatchMaking, MatchMatchPlayerCancelExitProfession)
                     exitrole.push_back(vecRoles[rpos]);
                 }
 
-                o.RoomCancel(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, roomId, vecRoles[rpos]);
+                o.SceneCancel(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, sceneId, vecRoles[rpos]);
                 rolesize -= cancelsize;
             }
 
@@ -1602,15 +1602,15 @@ TEST(MatchMaking, MatchMatchPlayerCancelExitProfession)
         }
     }
 
-    std::size_t matchsize = o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5 + o.GetNotInPlayerRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
+    std::size_t matchsize = o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) * 5 + o.GetNotInPlayerSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE);
     EXPECT_EQ(matchsize, vRoles.size() - exitrole.size());
-    std::cout << "room size : " << o.GetRoomSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << "player size : " << o.GetPlayerSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << std::endl;
+    std::cout << "scene size : " << o.GetSceneSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << "player size : " << o.GetPlayerSize(E_CROSS_SERVER_MATCH_DUNGEON_TYPE) << std::endl;
     std::cout << " team size" << teamids.size() << std::endl;
     int32_t t = 0;
-    for (auto it : o.GetRooms(E_CROSS_SERVER_MATCH_DUNGEON_TYPE))
+    for (auto it : o.GetScenes(E_CROSS_SERVER_MATCH_DUNGEON_TYPE))
     {
 
-        EXPECT_EQ(5, it.second->GetRoomPlayerSize());
+        EXPECT_EQ(5, it.second->GetScenePlayerSize());
         if (it.second->GetMatchUnit().size() >= 3)
         {
             EXPECT_EQ(3, it.second->GetPrefession().size());
@@ -1724,7 +1724,7 @@ TEST(MatchMaking, NormalTeamMatch)
 
    
 
-    EXPECT_EQ(0, o.GetRoomSize(E_NOMAL_TEAM_MATCH));
+    EXPECT_EQ(0, o.GetSceneSize(E_NOMAL_TEAM_MATCH));
     EXPECT_EQ(0, o.GetPlayerSize(E_NOMAL_TEAM_MATCH));
     EXPECT_EQ(0, o.GetAllMatchUnitSize(E_NOMAL_TEAM_MATCH));
 
@@ -1880,11 +1880,11 @@ TEST(MatchMaking, MatchPlayerMatchCancelTimeOutExit)
     std::size_t matchsize = o.GetPlayerSize(E_MATCH_15V15);
     EXPECT_EQ(matchsize, vRoles.size() - exitrole.size());
 
-    std::cout << "room size : " << o.GetRoomSize(E_MATCH_15V15) << "remain player size : " << o.GetNotInPlayerRoomSize(E_MATCH_15V15) << std::endl;
+    std::cout << "scene size : " << o.GetSceneSize(E_MATCH_15V15) << "remain player size : " << o.GetNotInPlayerSceneSize(E_MATCH_15V15) << std::endl;
 
-    rolevec roomexitrole;
+    rolevec sceneexitrole;
 
-    MatchMaking::roome_list_type rs = o.GetRooms(E_MATCH_15V15);
+    MatchMaking::scenee_list_type rs = o.GetScenes(E_MATCH_15V15);
     for (auto  & ri : rs)
     {
         ri.second->SetAllReady();
@@ -1893,7 +1893,7 @@ TEST(MatchMaking, MatchPlayerMatchCancelTimeOutExit)
 
         ri.second->SetNone(g);
         
-        MatchRoom::room_guids_type gs;
+        MatchRoom::scene_guids_type gs;
 
         Team::team_id_type tid = teamList.GetTeamId(g);
         if (tid > Team::EmptyTeamId)
@@ -1904,7 +1904,7 @@ TEST(MatchMaking, MatchPlayerMatchCancelTimeOutExit)
             for (int32_t i = 0; i < t.members_size(); ++i)
             {
                 GUID_t rid = t.members(i).roleid();
-                roomexitrole.push_back(rid);
+                sceneexitrole.push_back(rid);
                 vRoles.erase(rid);
                 EXPECT_TRUE(gs.find(rid) != gs.end());
             }
@@ -1917,7 +1917,7 @@ TEST(MatchMaking, MatchPlayerMatchCancelTimeOutExit)
             gs = ri.second->GetTeamGuid(g);
 
          
-                roomexitrole.push_back(g);
+                sceneexitrole.push_back(g);
                 vRoles.erase(g);
      
         }
@@ -1929,7 +1929,7 @@ TEST(MatchMaking, MatchPlayerMatchCancelTimeOutExit)
     }
 
 
-    for (auto it : roomexitrole)
+    for (auto it : sceneexitrole)
     {
         EXPECT_FALSE(o.InMatch(it));
     }
@@ -2032,7 +2032,7 @@ TEST(MatchMaking, MatchSection)
     p4.reset(new MatchUnit(0, E_TEST_NOMAL_TEAM_RANK_MATCH, info));
     EXPECT_EQ(OR_OK, o.Match(E_TEST_NOMAL_TEAM_RANK_MATCH, p4));
 
-    MatchMaking::room_type r = o.ComeOutRestult(E_TEST_NOMAL_TEAM_RANK_MATCH);
+    MatchMaking::scene_type r = o.ComeOutRestult(E_TEST_NOMAL_TEAM_RANK_MATCH);
     EXPECT_TRUE(NULL != r);
 
     for (auto && rit : roleVec)
@@ -2091,8 +2091,8 @@ TEST(MatchMaking, MatchRandomSection)
         
     }
 
-    std::size_t matchsize = o.GetRoomSize(E_TEST_NOMAL_TEAM_RANK_MATCH) * 15 * 2 + o.GetNotInPlayerRoomSize(E_TEST_NOMAL_TEAM_RANK_MATCH);
-    std::cout << "room size : " << o.GetRoomSize(E_TEST_NOMAL_TEAM_RANK_MATCH) << " remain player size : " << o.GetNotInPlayerRoomSize(E_TEST_NOMAL_TEAM_RANK_MATCH) << std::endl;
+    std::size_t matchsize = o.GetSceneSize(E_TEST_NOMAL_TEAM_RANK_MATCH) * 15 * 2 + o.GetNotInPlayerSceneSize(E_TEST_NOMAL_TEAM_RANK_MATCH);
+    std::cout << "scene size : " << o.GetSceneSize(E_TEST_NOMAL_TEAM_RANK_MATCH) << " remain player size : " << o.GetNotInPlayerSceneSize(E_TEST_NOMAL_TEAM_RANK_MATCH) << std::endl;
 }
 
 TEST(MatchMaking, MatchRandomSectionProfession)
@@ -2179,15 +2179,15 @@ TEST(MatchMaking, MatchRandomSectionProfession)
     }
 
 
-    std::size_t matchsize = o.GetRoomSize(E_MATCH_15V15) * 15 * 2 + o.GetNotInPlayerRoomSize(E_MATCH_15V15);
+    std::size_t matchsize = o.GetSceneSize(E_MATCH_15V15) * 15 * 2 + o.GetNotInPlayerSceneSize(E_MATCH_15V15);
     EXPECT_EQ(matchsize, vRoles.size() - exitrole.size());
-    std::cout << "room size : " << o.GetRoomSize(E_MATCH_15V15) << " remain player size : " << o.GetNotInPlayerRoomSize(E_MATCH_15V15) << std::endl;
+    std::cout << "scene size : " << o.GetSceneSize(E_MATCH_15V15) << " remain player size : " << o.GetNotInPlayerSceneSize(E_MATCH_15V15) << std::endl;
     std::cout << " team size" << teamids.size() << std::endl;
     int32_t t = 0;
-    for (auto it : o.GetRooms(E_MATCH_15V15))
+    for (auto it : o.GetScenes(E_MATCH_15V15))
     {
 
-        EXPECT_EQ(30, it.second->GetRoomPlayerSize());
+        EXPECT_EQ(30, it.second->GetScenePlayerSize());
         if (it.second->GetMatchUnit().size() >= std::size_t(pMatchElement->profession_size))
         {
             EXPECT_EQ(pMatchElement->profession_size, it.second->GetPrefession().size());

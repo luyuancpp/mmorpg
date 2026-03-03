@@ -4,7 +4,7 @@ import "proto/db/proto_option.proto";
 import "google/protobuf/empty.proto";
 
 option cc_generic_services = true;
-option (OptionFileDefaultNode) = NODE_ROOM;
+option (OptionFileDefaultNode) = NODE_SCENE;
 
 message Centre2GsLoginRequest
 {

@@ -5,8 +5,8 @@
 #include "engine/core/type_define/type_define.h"
 
 class PlayerSceneContextPBComponent;
-class RoomInfoPBComponent;
-class ChangeRoomInfoPBComponent;
+class SceneInfoPBComponent;
+class ChangeSceneInfoPBComponent;
 
 class PlayerSceneSystem
 {
@@ -23,7 +23,7 @@ public:
     static entt::entity ResolveTargetScene(entt::entity playerEntity);
     static bool ValidateSceneSwitch(entt::entity playerEntity, entt::entity toScene);
     static void ProcessSceneChange(entt::entity playerEntity, entt::entity toScene);
-    static void HandleEnterScene(entt::entity playerEntity, const RoomInfoPBComponent& sceneInfo);
+    static void HandleEnterScene(entt::entity playerEntity, const SceneInfoPBComponent& sceneInfo);
 };
 
 

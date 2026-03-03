@@ -3,7 +3,7 @@
 #include "entt/src/entt/entity/entity.hpp"
 #include "engine/core/node/constants/node_constants.h"
 
-class RoomNodeStateSystem
+class SceneNodeStateSystem
 {
 public:
 

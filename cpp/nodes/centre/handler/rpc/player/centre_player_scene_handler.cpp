@@ -7,16 +7,16 @@
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "centre_node.h"
-#include "scene/system/player_room.h"
+#include "scene/system/player_scene.h"
 #include "player/system/player_tip.h"
-#include "scene/system/player_change_room.h"
+#include "scene/system/player_change_scene.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "network/player_message_utils.h"
 #include "proto/common/component/player_network_comp.pb.h"
 #include "node/system/node/node_util.h"
 #include "threading/redis_manager.h"
 #include "engine/core/node/system/zone_utils.h"
-#include <modules/scene/system/room_common.h>
+#include <modules/scene/system/scene_common.h>
 ///<<< END WRITING YOUR CODE
 
 
@@ -75,12 +75,12 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
-		PlayerChangeRoomUtil::PopFrontChangeSceneQueue(player);
+		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(player);
 		return;
 	}
 
-	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::RoomNodeService);
-	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, RoomCommon::GetGameNodeIdFromGuid(toScene));
+	playerSessionSnapshotPB->mutable_node_id()->erase(eNodeType::SceneNodeService);
+	PlayerSceneSystem::ProcessPlayerEnterSceneNode(player, SceneCommon::GetGameNodeIdFromGuid(toScene));
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 	///<<< END WRITING YOUR CODE
 
@@ -93,7 +93,7 @@ void CentrePlayerSceneHandler::SceneInfoC2S(entt::entity player,const ::CentreSc
 	///<<< BEGIN WRITING YOUR CODE
 		//给客户端发所有场景消息
 	SceneInfoS2C message;
-	for (const auto& [entity, info] : tlsRegistryManager.roomRegistry.view<RoomInfoPBComponent>().each())
+	for (const auto& [entity, info] : tlsRegistryManager.sceneRegistry.view<SceneInfoPBComponent>().each())
 	{
 		message.mutable_scene_info()->Add()->CopyFrom(info);
 	}

@@ -6,8 +6,8 @@
 #include "proto/common/base/node.pb.h"
 #include "threading/node_context_manager.h"
 #include <threading/registry_manager.h>
-#include <modules/scene/system/room_common.h>
-#include "modules/scene/system/room_param.h"
+#include <modules/scene/system/scene_common.h>
+#include "modules/scene/system/scene_param.h"
 ///<<< END WRITING YOUR CODE
 
 
@@ -16,12 +16,12 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	for (auto&& roomInfo : request->scenes_info())
+	for (auto&& sceneInfo : request->scenes_info())
 	{
-		RoomCommon::CreateRoomOnRoomNode(
-			{ .node = entt::entity{request->scene_node_id()}, .roomInfo = roomInfo });
+		SceneCommon::CreateSceneOnSceneNode(
+			{ .node = entt::entity{request->scene_node_id()}, .sceneInfo = sceneInfo });
 
-		LOG_INFO << "Scene " << roomInfo.DebugString()
+		LOG_INFO << "Scene " << sceneInfo.DebugString()
 			<< " successfully created and attached to SceneNode ["
 			<< request->scene_node_id() << "].";
 	}
@@ -37,21 +37,21 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const entt::entity room{ request->scene() };
-	if (!tlsRegistryManager.roomRegistry.valid(room))
+	const entt::entity scene{ request->scene() };
+	if (!tlsRegistryManager.sceneRegistry.valid(scene))
 	{
-		LOG_ERROR << "Room not found: " << request->scene();
+		LOG_ERROR << "Scene not found: " << request->scene();
 		return;
 	}
 
 	const entt::entity gameNode{ request->scene_node_id() };
-	if (!tlsNodeContextManager.GetRegistry(eNodeType::RoomNodeService).valid(gameNode))
+	if (!tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(gameNode))
 	{
 		LOG_ERROR << "Node not found: " << request->scene_node_id();
 		return;
 	}
 
-	RoomCommon::DestroyRoom({ gameNode, room });
+	SceneCommon::DestroyScene({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
 }
 

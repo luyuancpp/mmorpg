@@ -11,7 +11,7 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include "muduo/base/Logging.h"
 #include "engine/core/type_define/type_define.h"
 
-#include "scene/system/player_change_room.h"
+#include "scene/system/player_change_scene.h"
 #include "core/utils/registry/game_registry.h"
 #include "player/system/player_lifecycle.h"
 #include "proto/common/component/player_network_comp.pb.h"
@@ -57,8 +57,8 @@ void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::sha
 	
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
 	PlayerLifecycleSystem::ProcessPlayerSessionState(player);
-	PlayerChangeRoomUtil::OnTargetSceneNodeEnterComplete(player);
-	PlayerChangeRoomUtil::ProgressSceneChangeState(player);
+	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(player);
+	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
 ///<<< END WRITING YOUR CODE
 }
 
