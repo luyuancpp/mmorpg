@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type OnRoomCreated struct {
+type OnSceneCreated struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OnRoomCreated) Reset() {
-	*x = OnRoomCreated{}
+func (x *OnSceneCreated) Reset() {
+	*x = OnSceneCreated{}
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OnRoomCreated) String() string {
+func (x *OnSceneCreated) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OnRoomCreated) ProtoMessage() {}
+func (*OnSceneCreated) ProtoMessage() {}
 
-func (x *OnRoomCreated) ProtoReflect() protoreflect.Message {
+func (x *OnSceneCreated) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,39 +53,39 @@ func (x *OnRoomCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OnRoomCreated.ProtoReflect.Descriptor instead.
-func (*OnRoomCreated) Descriptor() ([]byte, []int) {
+// Deprecated: Use OnSceneCreated.ProtoReflect.Descriptor instead.
+func (*OnSceneCreated) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_scene_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *OnRoomCreated) GetEntity() uint64 {
+func (x *OnSceneCreated) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-type OnRoomDestroyed struct {
+type OnSceneDestroyed struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OnRoomDestroyed) Reset() {
-	*x = OnRoomDestroyed{}
+func (x *OnSceneDestroyed) Reset() {
+	*x = OnSceneDestroyed{}
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OnRoomDestroyed) String() string {
+func (x *OnSceneDestroyed) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OnRoomDestroyed) ProtoMessage() {}
+func (*OnSceneDestroyed) ProtoMessage() {}
 
-func (x *OnRoomDestroyed) ProtoReflect() protoreflect.Message {
+func (x *OnSceneDestroyed) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -97,39 +97,39 @@ func (x *OnRoomDestroyed) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OnRoomDestroyed.ProtoReflect.Descriptor instead.
-func (*OnRoomDestroyed) Descriptor() ([]byte, []int) {
+// Deprecated: Use OnSceneDestroyed.ProtoReflect.Descriptor instead.
+func (*OnSceneDestroyed) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_scene_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *OnRoomDestroyed) GetEntity() uint64 {
+func (x *OnSceneDestroyed) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-type BeforeEnterRoom struct {
+type BeforeEnterScene struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BeforeEnterRoom) Reset() {
-	*x = BeforeEnterRoom{}
+func (x *BeforeEnterScene) Reset() {
+	*x = BeforeEnterScene{}
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BeforeEnterRoom) String() string {
+func (x *BeforeEnterScene) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BeforeEnterRoom) ProtoMessage() {}
+func (*BeforeEnterScene) ProtoMessage() {}
 
-func (x *BeforeEnterRoom) ProtoReflect() protoreflect.Message {
+func (x *BeforeEnterScene) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -141,39 +141,39 @@ func (x *BeforeEnterRoom) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BeforeEnterRoom.ProtoReflect.Descriptor instead.
-func (*BeforeEnterRoom) Descriptor() ([]byte, []int) {
+// Deprecated: Use BeforeEnterScene.ProtoReflect.Descriptor instead.
+func (*BeforeEnterScene) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_scene_event_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *BeforeEnterRoom) GetEntity() uint64 {
+func (x *BeforeEnterScene) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-type AfterEnterRoom struct {
+type AfterEnterScene struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AfterEnterRoom) Reset() {
-	*x = AfterEnterRoom{}
+func (x *AfterEnterScene) Reset() {
+	*x = AfterEnterScene{}
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AfterEnterRoom) String() string {
+func (x *AfterEnterScene) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AfterEnterRoom) ProtoMessage() {}
+func (*AfterEnterScene) ProtoMessage() {}
 
-func (x *AfterEnterRoom) ProtoReflect() protoreflect.Message {
+func (x *AfterEnterScene) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -185,39 +185,39 @@ func (x *AfterEnterRoom) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AfterEnterRoom.ProtoReflect.Descriptor instead.
-func (*AfterEnterRoom) Descriptor() ([]byte, []int) {
+// Deprecated: Use AfterEnterScene.ProtoReflect.Descriptor instead.
+func (*AfterEnterScene) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_scene_event_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *AfterEnterRoom) GetEntity() uint64 {
+func (x *AfterEnterScene) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-type BeforeLeaveRoom struct {
+type BeforeLeaveScene struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BeforeLeaveRoom) Reset() {
-	*x = BeforeLeaveRoom{}
+func (x *BeforeLeaveScene) Reset() {
+	*x = BeforeLeaveScene{}
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BeforeLeaveRoom) String() string {
+func (x *BeforeLeaveScene) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BeforeLeaveRoom) ProtoMessage() {}
+func (*BeforeLeaveScene) ProtoMessage() {}
 
-func (x *BeforeLeaveRoom) ProtoReflect() protoreflect.Message {
+func (x *BeforeLeaveScene) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -229,39 +229,39 @@ func (x *BeforeLeaveRoom) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BeforeLeaveRoom.ProtoReflect.Descriptor instead.
-func (*BeforeLeaveRoom) Descriptor() ([]byte, []int) {
+// Deprecated: Use BeforeLeaveScene.ProtoReflect.Descriptor instead.
+func (*BeforeLeaveScene) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_scene_event_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *BeforeLeaveRoom) GetEntity() uint64 {
+func (x *BeforeLeaveScene) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-type AfterLeaveRoom struct {
+type AfterLeaveScene struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AfterLeaveRoom) Reset() {
-	*x = AfterLeaveRoom{}
+func (x *AfterLeaveScene) Reset() {
+	*x = AfterLeaveScene{}
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AfterLeaveRoom) String() string {
+func (x *AfterLeaveScene) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AfterLeaveRoom) ProtoMessage() {}
+func (*AfterLeaveScene) ProtoMessage() {}
 
-func (x *AfterLeaveRoom) ProtoReflect() protoreflect.Message {
+func (x *AfterLeaveScene) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -273,39 +273,39 @@ func (x *AfterLeaveRoom) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AfterLeaveRoom.ProtoReflect.Descriptor instead.
-func (*AfterLeaveRoom) Descriptor() ([]byte, []int) {
+// Deprecated: Use AfterLeaveScene.ProtoReflect.Descriptor instead.
+func (*AfterLeaveScene) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_scene_event_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *AfterLeaveRoom) GetEntity() uint64 {
+func (x *AfterLeaveScene) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-type S2CEnterRoom struct {
+type S2CEnterScene struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *S2CEnterRoom) Reset() {
-	*x = S2CEnterRoom{}
+func (x *S2CEnterScene) Reset() {
+	*x = S2CEnterScene{}
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *S2CEnterRoom) String() string {
+func (x *S2CEnterScene) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*S2CEnterRoom) ProtoMessage() {}
+func (*S2CEnterScene) ProtoMessage() {}
 
-func (x *S2CEnterRoom) ProtoReflect() protoreflect.Message {
+func (x *S2CEnterScene) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_scene_event_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -317,12 +317,12 @@ func (x *S2CEnterRoom) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use S2CEnterRoom.ProtoReflect.Descriptor instead.
-func (*S2CEnterRoom) Descriptor() ([]byte, []int) {
+// Deprecated: Use S2CEnterScene.ProtoReflect.Descriptor instead.
+func (*S2CEnterScene) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_scene_event_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *S2CEnterRoom) GetEntity() uint64 {
+func (x *S2CEnterScene) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
@@ -333,20 +333,20 @@ var File_proto_common_event_scene_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_scene_event_proto_rawDesc = "" +
 	"\n" +
-	"$proto/common/event/scene_event.proto\"'\n" +
-	"\rOnRoomCreated\x12\x16\n" +
+	"$proto/common/event/scene_event.proto\"(\n" +
+	"\x0eOnSceneCreated\x12\x16\n" +
+	"\x06entity\x18\x01 \x01(\x04R\x06entity\"*\n" +
+	"\x10OnSceneDestroyed\x12\x16\n" +
+	"\x06entity\x18\x01 \x01(\x04R\x06entity\"*\n" +
+	"\x10BeforeEnterScene\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
-	"\x0fOnRoomDestroyed\x12\x16\n" +
+	"\x0fAfterEnterScene\x12\x16\n" +
+	"\x06entity\x18\x01 \x01(\x04R\x06entity\"*\n" +
+	"\x10BeforeLeaveScene\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
-	"\x0fBeforeEnterRoom\x12\x16\n" +
-	"\x06entity\x18\x01 \x01(\x04R\x06entity\"(\n" +
-	"\x0eAfterEnterRoom\x12\x16\n" +
-	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
-	"\x0fBeforeLeaveRoom\x12\x16\n" +
-	"\x06entity\x18\x01 \x01(\x04R\x06entity\"(\n" +
-	"\x0eAfterLeaveRoom\x12\x16\n" +
-	"\x06entity\x18\x01 \x01(\x04R\x06entity\"&\n" +
-	"\fS2CEnterRoom\x12\x16\n" +
+	"\x0fAfterLeaveScene\x12\x16\n" +
+	"\x06entity\x18\x01 \x01(\x04R\x06entity\"'\n" +
+	"\rS2CEnterScene\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entityB Z\x1erobot/proto/common/event;eventb\x06proto3"
 
 var (
@@ -363,13 +363,13 @@ func file_proto_common_event_scene_event_proto_rawDescGZIP() []byte {
 
 var file_proto_common_event_scene_event_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_common_event_scene_event_proto_goTypes = []any{
-	(*OnRoomCreated)(nil),   // 0: OnRoomCreated
-	(*OnRoomDestroyed)(nil), // 1: OnRoomDestroyed
-	(*BeforeEnterRoom)(nil), // 2: BeforeEnterRoom
-	(*AfterEnterRoom)(nil),  // 3: AfterEnterRoom
-	(*BeforeLeaveRoom)(nil), // 4: BeforeLeaveRoom
-	(*AfterLeaveRoom)(nil),  // 5: AfterLeaveRoom
-	(*S2CEnterRoom)(nil),    // 6: S2CEnterRoom
+	(*OnSceneCreated)(nil),   // 0: OnSceneCreated
+	(*OnSceneDestroyed)(nil), // 1: OnSceneDestroyed
+	(*BeforeEnterScene)(nil), // 2: BeforeEnterScene
+	(*AfterEnterScene)(nil),  // 3: AfterEnterScene
+	(*BeforeLeaveScene)(nil), // 4: BeforeLeaveScene
+	(*AfterLeaveScene)(nil),  // 5: AfterLeaveScene
+	(*S2CEnterScene)(nil),    // 6: S2CEnterScene
 }
 var file_proto_common_event_scene_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

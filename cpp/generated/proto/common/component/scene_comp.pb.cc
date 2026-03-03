@@ -25,7 +25,7 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr ChangeRoomInfoPBComponent::Impl_::Impl_(
+inline constexpr ChangeSceneInfoPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         scene_confid_{0u},
@@ -43,24 +43,24 @@ inline constexpr ChangeRoomInfoPBComponent::Impl_::Impl_(
         to_zone_id_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR ChangeRoomInfoPBComponent::ChangeRoomInfoPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ChangeSceneInfoPBComponent::ChangeSceneInfoPBComponent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(ChangeRoomInfoPBComponent_class_data_.base()),
+    : ::google::protobuf::Message(ChangeSceneInfoPBComponent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct ChangeRoomInfoPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ChangeRoomInfoPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ChangeRoomInfoPBComponentDefaultTypeInternal() {}
+struct ChangeSceneInfoPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ChangeSceneInfoPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ChangeSceneInfoPBComponentDefaultTypeInternal() {}
   union {
-    ChangeRoomInfoPBComponent _instance;
+    ChangeSceneInfoPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChangeRoomInfoPBComponentDefaultTypeInternal _ChangeRoomInfoPBComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChangeSceneInfoPBComponentDefaultTypeInternal _ChangeSceneInfoPBComponent_default_instance_;
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -69,21 +69,21 @@ const ::uint32_t
     TableStruct_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_._has_bits_),
         16, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.scene_confid_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.guid_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.dungen_confid_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.mirror_confid_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.change_sequence_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.change_gs_type_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.change_time_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.ignore_full_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.processing_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.state_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.from_zone_id_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.to_zone_id_),
-        PROTOBUF_FIELD_OFFSET(::ChangeRoomInfoPBComponent, _impl_.is_cross_zone_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.scene_confid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.guid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.dungen_confid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.mirror_confid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_sequence_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_gs_type_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_time_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.ignore_full_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.processing_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.state_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.from_zone_id_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.to_zone_id_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.is_cross_zone_),
         0,
         1,
         2,
@@ -101,33 +101,33 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::ChangeRoomInfoPBComponent)},
+        {0, sizeof(::ChangeSceneInfoPBComponent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_ChangeRoomInfoPBComponent_default_instance_._instance,
+    &::_ChangeSceneInfoPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'proto/common/component/scene_comp.prot"
-    "o\"\332\003\n\031ChangeRoomInfoPBComponent\022\024\n\014scene"
-    "_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rdungen_co"
-    "nfid\030\003 \001(\r\022\025\n\rmirror_confid\030\004 \001(\r\022\027\n\017cha"
-    "nge_sequence\030\005 \001(\r\022\026\n\016change_gs_type\030\006 \001"
-    "(\r\022\023\n\013change_time\030\007 \001(\004\022\023\n\013ignore_full\030\010"
-    " \001(\010\022\022\n\nprocessing\030\t \001(\010\022\r\n\005state\030\n \001(\r\022"
-    "\024\n\014from_zone_id\030\013 \001(\r\022\022\n\nto_zone_id\030\014 \001("
-    "\r\022\025\n\ris_cross_zone\030\r \001(\010\".\n\reChangeGsTyp"
-    "e\022\013\n\007eSameGs\020\000\022\020\n\014eDifferentGs\020\001\"|\n\021eCha"
-    "ngeSceneState\022\021\n\rePendingLeave\020\000\022\014\n\010eLea"
-    "ving\020\001\022\021\n\reWaitingEnter\020\002\022\021\n\reEnterSucce"
-    "ed\020\003\022\025\n\021eGateEnterSucceed\020\004\022\t\n\005eDone\020\005b\006"
-    "proto3"
+    "o\"\333\003\n\032ChangeSceneInfoPBComponent\022\024\n\014scen"
+    "e_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rdungen_c"
+    "onfid\030\003 \001(\r\022\025\n\rmirror_confid\030\004 \001(\r\022\027\n\017ch"
+    "ange_sequence\030\005 \001(\r\022\026\n\016change_gs_type\030\006 "
+    "\001(\r\022\023\n\013change_time\030\007 \001(\004\022\023\n\013ignore_full\030"
+    "\010 \001(\010\022\022\n\nprocessing\030\t \001(\010\022\r\n\005state\030\n \001(\r"
+    "\022\024\n\014from_zone_id\030\013 \001(\r\022\022\n\nto_zone_id\030\014 \001"
+    "(\r\022\025\n\ris_cross_zone\030\r \001(\010\".\n\reChangeGsTy"
+    "pe\022\013\n\007eSameGs\020\000\022\020\n\014eDifferentGs\020\001\"|\n\021eCh"
+    "angeSceneState\022\021\n\rePendingLeave\020\000\022\014\n\010eLe"
+    "aving\020\001\022\021\n\reWaitingEnter\020\002\022\021\n\reEnterSucc"
+    "eed\020\003\022\025\n\021eGateEnterSucceed\020\004\022\t\n\005eDone\020\005b"
+    "\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto = {
     false,
     false,
-    526,
+    527,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto,
     "proto/common/component/scene_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto_once,
@@ -140,41 +140,41 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto,
     file_level_service_descriptors_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto,
 };
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ChangeRoomInfoPBComponent_eChangeGsType_descriptor() {
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ChangeSceneInfoPBComponent_eChangeGsType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto);
   return file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto[0];
 }
-PROTOBUF_CONSTINIT const uint32_t ChangeRoomInfoPBComponent_eChangeGsType_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t ChangeSceneInfoPBComponent_eChangeGsType_internal_data_[] = {
     131072u, 0u, };
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ChangeRoomInfoPBComponent_eChangeSceneState_descriptor() {
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ChangeSceneInfoPBComponent_eChangeSceneState_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto);
   return file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto[1];
 }
-PROTOBUF_CONSTINIT const uint32_t ChangeRoomInfoPBComponent_eChangeSceneState_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t ChangeSceneInfoPBComponent_eChangeSceneState_internal_data_[] = {
     393216u, 0u, };
 // ===================================================================
 
-class ChangeRoomInfoPBComponent::_Internal {
+class ChangeSceneInfoPBComponent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<ChangeRoomInfoPBComponent>()._impl_._has_bits_);
+      decltype(::std::declval<ChangeSceneInfoPBComponent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_._has_bits_);
 };
 
-ChangeRoomInfoPBComponent::ChangeRoomInfoPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ChangeSceneInfoPBComponent::ChangeSceneInfoPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ChangeRoomInfoPBComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ChangeSceneInfoPBComponent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ChangeRoomInfoPBComponent)
+  // @@protoc_insertion_point(arena_constructor:ChangeSceneInfoPBComponent)
 }
-ChangeRoomInfoPBComponent::ChangeRoomInfoPBComponent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ChangeRoomInfoPBComponent& from)
+ChangeSceneInfoPBComponent::ChangeSceneInfoPBComponent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ChangeSceneInfoPBComponent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ChangeRoomInfoPBComponent_class_data_.base()),
+    : ::google::protobuf::Message(arena, ChangeSceneInfoPBComponent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -182,12 +182,12 @@ ChangeRoomInfoPBComponent::ChangeRoomInfoPBComponent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE ChangeRoomInfoPBComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ChangeSceneInfoPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void ChangeRoomInfoPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ChangeSceneInfoPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, scene_confid_),
@@ -196,64 +196,64 @@ inline void ChangeRoomInfoPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABL
                offsetof(Impl_, scene_confid_) +
                sizeof(Impl_::to_zone_id_));
 }
-ChangeRoomInfoPBComponent::~ChangeRoomInfoPBComponent() {
-  // @@protoc_insertion_point(destructor:ChangeRoomInfoPBComponent)
+ChangeSceneInfoPBComponent::~ChangeSceneInfoPBComponent() {
+  // @@protoc_insertion_point(destructor:ChangeSceneInfoPBComponent)
   SharedDtor(*this);
 }
-inline void ChangeRoomInfoPBComponent::SharedDtor(MessageLite& self) {
-  ChangeRoomInfoPBComponent& this_ = static_cast<ChangeRoomInfoPBComponent&>(self);
+inline void ChangeSceneInfoPBComponent::SharedDtor(MessageLite& self) {
+  ChangeSceneInfoPBComponent& this_ = static_cast<ChangeSceneInfoPBComponent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL ChangeRoomInfoPBComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL ChangeSceneInfoPBComponent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ChangeRoomInfoPBComponent(arena);
+  return ::new (mem) ChangeSceneInfoPBComponent(arena);
 }
-constexpr auto ChangeRoomInfoPBComponent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ChangeRoomInfoPBComponent),
-                                            alignof(ChangeRoomInfoPBComponent));
+constexpr auto ChangeSceneInfoPBComponent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ChangeSceneInfoPBComponent),
+                                            alignof(ChangeSceneInfoPBComponent));
 }
-constexpr auto ChangeRoomInfoPBComponent::InternalGenerateClassData_() {
+constexpr auto ChangeSceneInfoPBComponent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ChangeRoomInfoPBComponent_default_instance_._instance,
+          &_ChangeSceneInfoPBComponent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ChangeRoomInfoPBComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ChangeRoomInfoPBComponent>(),
+          &ChangeSceneInfoPBComponent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ChangeSceneInfoPBComponent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ChangeRoomInfoPBComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<ChangeRoomInfoPBComponent>(), &ChangeRoomInfoPBComponent::ByteSizeLong,
-              &ChangeRoomInfoPBComponent::_InternalSerialize,
+          &ChangeSceneInfoPBComponent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ChangeSceneInfoPBComponent>(), &ChangeSceneInfoPBComponent::ByteSizeLong,
+              &ChangeSceneInfoPBComponent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_._cached_size_),
           false,
       },
-      &ChangeRoomInfoPBComponent::kDescriptorMethods,
+      &ChangeSceneInfoPBComponent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ChangeRoomInfoPBComponent_class_data_ =
-        ChangeRoomInfoPBComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ChangeSceneInfoPBComponent_class_data_ =
+        ChangeSceneInfoPBComponent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ChangeRoomInfoPBComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ChangeRoomInfoPBComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ChangeRoomInfoPBComponent_class_data_.tc_table);
-  return ChangeRoomInfoPBComponent_class_data_.base();
+ChangeSceneInfoPBComponent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ChangeSceneInfoPBComponent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ChangeSceneInfoPBComponent_class_data_.tc_table);
+  return ChangeSceneInfoPBComponent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<4, 13, 0, 0, 2>
-ChangeRoomInfoPBComponent::_table_ = {
+ChangeSceneInfoPBComponent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_._has_bits_),
     0, // no _extensions_
     13, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -262,104 +262,104 @@ ChangeRoomInfoPBComponent::_table_ = {
     13,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    ChangeRoomInfoPBComponent_class_data_.base(),
+    ChangeSceneInfoPBComponent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ChangeRoomInfoPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ChangeSceneInfoPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint32 scene_confid = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.scene_confid_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.scene_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.scene_confid_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.scene_confid_)}},
     // uint32 guid = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.guid_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.guid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.guid_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.guid_)}},
     // uint32 dungen_confid = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.dungen_confid_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.dungen_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.dungen_confid_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.dungen_confid_)}},
     // uint32 mirror_confid = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.mirror_confid_), 3>(),
-     {32, 3, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.mirror_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.mirror_confid_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.mirror_confid_)}},
     // uint32 change_sequence = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.change_sequence_), 4>(),
-     {40, 4, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.change_sequence_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_sequence_), 4>(),
+     {40, 4, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_sequence_)}},
     // uint32 change_gs_type = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.change_gs_type_), 5>(),
-     {48, 5, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.change_gs_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_gs_type_), 5>(),
+     {48, 5, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_type_)}},
     // uint64 change_time = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ChangeRoomInfoPBComponent, _impl_.change_time_), 6>(),
-     {56, 6, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.change_time_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_time_), 6>(),
+     {56, 6, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_time_)}},
     // bool ignore_full = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeRoomInfoPBComponent, _impl_.ignore_full_), 8>(),
-     {64, 8, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.ignore_full_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeSceneInfoPBComponent, _impl_.ignore_full_), 8>(),
+     {64, 8, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.ignore_full_)}},
     // bool processing = 9;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeRoomInfoPBComponent, _impl_.processing_), 9>(),
-     {72, 9, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.processing_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeSceneInfoPBComponent, _impl_.processing_), 9>(),
+     {72, 9, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.processing_)}},
     // uint32 state = 10;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.state_), 7>(),
-     {80, 7, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.state_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.state_), 7>(),
+     {80, 7, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.state_)}},
     // uint32 from_zone_id = 11;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.from_zone_id_), 11>(),
-     {88, 11, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.from_zone_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.from_zone_id_), 11>(),
+     {88, 11, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.from_zone_id_)}},
     // uint32 to_zone_id = 12;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeRoomInfoPBComponent, _impl_.to_zone_id_), 12>(),
-     {96, 12, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.to_zone_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.to_zone_id_), 12>(),
+     {96, 12, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.to_zone_id_)}},
     // bool is_cross_zone = 13;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeRoomInfoPBComponent, _impl_.is_cross_zone_), 10>(),
-     {104, 10, 0, PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.is_cross_zone_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeSceneInfoPBComponent, _impl_.is_cross_zone_), 10>(),
+     {104, 10, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.is_cross_zone_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 scene_confid = 1;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.scene_confid_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.scene_confid_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 guid = 2;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.guid_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.guid_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 dungen_confid = 3;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.dungen_confid_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.dungen_confid_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 mirror_confid = 4;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.mirror_confid_), _Internal::kHasBitsOffset + 3, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.mirror_confid_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 change_sequence = 5;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.change_sequence_), _Internal::kHasBitsOffset + 4, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_sequence_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 change_gs_type = 6;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.change_gs_type_), _Internal::kHasBitsOffset + 5, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_type_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 change_time = 7;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.change_time_), _Internal::kHasBitsOffset + 6, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_time_), _Internal::kHasBitsOffset + 6, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // bool ignore_full = 8;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.ignore_full_), _Internal::kHasBitsOffset + 8, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.ignore_full_), _Internal::kHasBitsOffset + 8, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     // bool processing = 9;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.processing_), _Internal::kHasBitsOffset + 9, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.processing_), _Internal::kHasBitsOffset + 9, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     // uint32 state = 10;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.state_), _Internal::kHasBitsOffset + 7, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.state_), _Internal::kHasBitsOffset + 7, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 from_zone_id = 11;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.from_zone_id_), _Internal::kHasBitsOffset + 11, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.from_zone_id_), _Internal::kHasBitsOffset + 11, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 to_zone_id = 12;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.to_zone_id_), _Internal::kHasBitsOffset + 12, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.to_zone_id_), _Internal::kHasBitsOffset + 12, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // bool is_cross_zone = 13;
-    {PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.is_cross_zone_), _Internal::kHasBitsOffset + 10, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.is_cross_zone_), _Internal::kHasBitsOffset + 10, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void ChangeRoomInfoPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:ChangeRoomInfoPBComponent)
+PROTOBUF_NOINLINE void ChangeSceneInfoPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:ChangeSceneInfoPBComponent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -381,17 +381,17 @@ PROTOBUF_NOINLINE void ChangeRoomInfoPBComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ChangeRoomInfoPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ChangeSceneInfoPBComponent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ChangeRoomInfoPBComponent& this_ = static_cast<const ChangeRoomInfoPBComponent&>(base);
+  const ChangeSceneInfoPBComponent& this_ = static_cast<const ChangeSceneInfoPBComponent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ChangeRoomInfoPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ChangeSceneInfoPBComponent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ChangeRoomInfoPBComponent& this_ = *this;
+  const ChangeSceneInfoPBComponent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:ChangeRoomInfoPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:ChangeSceneInfoPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -517,18 +517,18 @@ PROTOBUF_NOINLINE void ChangeRoomInfoPBComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ChangeRoomInfoPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:ChangeSceneInfoPBComponent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ChangeRoomInfoPBComponent::ByteSizeLong(const MessageLite& base) {
-  const ChangeRoomInfoPBComponent& this_ = static_cast<const ChangeRoomInfoPBComponent&>(base);
+::size_t ChangeSceneInfoPBComponent::ByteSizeLong(const MessageLite& base) {
+  const ChangeSceneInfoPBComponent& this_ = static_cast<const ChangeSceneInfoPBComponent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ChangeRoomInfoPBComponent::ByteSizeLong() const {
-  const ChangeRoomInfoPBComponent& this_ = *this;
+::size_t ChangeSceneInfoPBComponent::ByteSizeLong() const {
+  const ChangeSceneInfoPBComponent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:ChangeRoomInfoPBComponent)
+  // @@protoc_insertion_point(message_byte_size_start:ChangeSceneInfoPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -633,10 +633,10 @@ PROTOBUF_NOINLINE void ChangeRoomInfoPBComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void ChangeRoomInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ChangeRoomInfoPBComponent*>(&to_msg);
-  auto& from = static_cast<const ChangeRoomInfoPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:ChangeRoomInfoPBComponent)
+void ChangeSceneInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ChangeSceneInfoPBComponent*>(&to_msg);
+  auto& from = static_cast<const ChangeSceneInfoPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ChangeSceneInfoPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -715,27 +715,27 @@ void ChangeRoomInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_ms
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ChangeRoomInfoPBComponent::CopyFrom(const ChangeRoomInfoPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ChangeRoomInfoPBComponent)
+void ChangeSceneInfoPBComponent::CopyFrom(const ChangeSceneInfoPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ChangeSceneInfoPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void ChangeRoomInfoPBComponent::InternalSwap(ChangeRoomInfoPBComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ChangeSceneInfoPBComponent::InternalSwap(ChangeSceneInfoPBComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.to_zone_id_)
-      + sizeof(ChangeRoomInfoPBComponent::_impl_.to_zone_id_)
-      - PROTOBUF_FIELD_OFFSET(ChangeRoomInfoPBComponent, _impl_.scene_confid_)>(
+      PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.to_zone_id_)
+      + sizeof(ChangeSceneInfoPBComponent::_impl_.to_zone_id_)
+      - PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.scene_confid_)>(
           reinterpret_cast<char*>(&_impl_.scene_confid_),
           reinterpret_cast<char*>(&other->_impl_.scene_confid_));
 }
 
-::google::protobuf::Metadata ChangeRoomInfoPBComponent::GetMetadata() const {
+::google::protobuf::Metadata ChangeSceneInfoPBComponent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

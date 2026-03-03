@@ -21,66 +21,66 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ChangeRoomInfoPBComponentEChangeGsType int32
+type ChangeSceneInfoPBComponentEChangeGsType int32
 
 const (
-	ChangeRoomInfoPBComponent_eSameGs      ChangeRoomInfoPBComponentEChangeGsType = 0 //同服务器间切换
-	ChangeRoomInfoPBComponent_eDifferentGs ChangeRoomInfoPBComponentEChangeGsType = 1 //不同服务器间切换
+	ChangeSceneInfoPBComponent_eSameGs      ChangeSceneInfoPBComponentEChangeGsType = 0 //同服务器间切换
+	ChangeSceneInfoPBComponent_eDifferentGs ChangeSceneInfoPBComponentEChangeGsType = 1 //不同服务器间切换
 )
 
-// Enum value maps for ChangeRoomInfoPBComponentEChangeGsType.
+// Enum value maps for ChangeSceneInfoPBComponentEChangeGsType.
 var (
-	ChangeRoomInfoPBComponentEChangeGsType_name = map[int32]string{
+	ChangeSceneInfoPBComponentEChangeGsType_name = map[int32]string{
 		0: "eSameGs",
 		1: "eDifferentGs",
 	}
-	ChangeRoomInfoPBComponentEChangeGsType_value = map[string]int32{
+	ChangeSceneInfoPBComponentEChangeGsType_value = map[string]int32{
 		"eSameGs":      0,
 		"eDifferentGs": 1,
 	}
 )
 
-func (x ChangeRoomInfoPBComponentEChangeGsType) Enum() *ChangeRoomInfoPBComponentEChangeGsType {
-	p := new(ChangeRoomInfoPBComponentEChangeGsType)
+func (x ChangeSceneInfoPBComponentEChangeGsType) Enum() *ChangeSceneInfoPBComponentEChangeGsType {
+	p := new(ChangeSceneInfoPBComponentEChangeGsType)
 	*p = x
 	return p
 }
 
-func (x ChangeRoomInfoPBComponentEChangeGsType) String() string {
+func (x ChangeSceneInfoPBComponentEChangeGsType) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ChangeRoomInfoPBComponentEChangeGsType) Descriptor() protoreflect.EnumDescriptor {
+func (ChangeSceneInfoPBComponentEChangeGsType) Descriptor() protoreflect.EnumDescriptor {
 	return file_proto_common_component_scene_comp_proto_enumTypes[0].Descriptor()
 }
 
-func (ChangeRoomInfoPBComponentEChangeGsType) Type() protoreflect.EnumType {
+func (ChangeSceneInfoPBComponentEChangeGsType) Type() protoreflect.EnumType {
 	return &file_proto_common_component_scene_comp_proto_enumTypes[0]
 }
 
-func (x ChangeRoomInfoPBComponentEChangeGsType) Number() protoreflect.EnumNumber {
+func (x ChangeSceneInfoPBComponentEChangeGsType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ChangeRoomInfoPBComponentEChangeGsType.Descriptor instead.
-func (ChangeRoomInfoPBComponentEChangeGsType) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ChangeSceneInfoPBComponentEChangeGsType.Descriptor instead.
+func (ChangeSceneInfoPBComponentEChangeGsType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_common_component_scene_comp_proto_rawDescGZIP(), []int{0, 0}
 }
 
-type ChangeRoomInfoPBComponentEChangeSceneState int32
+type ChangeSceneInfoPBComponentEChangeSceneState int32
 
 const (
-	ChangeRoomInfoPBComponent_ePendingLeave     ChangeRoomInfoPBComponentEChangeSceneState = 0
-	ChangeRoomInfoPBComponent_eLeaving          ChangeRoomInfoPBComponentEChangeSceneState = 1
-	ChangeRoomInfoPBComponent_eWaitingEnter     ChangeRoomInfoPBComponentEChangeSceneState = 2
-	ChangeRoomInfoPBComponent_eEnterSucceed     ChangeRoomInfoPBComponentEChangeSceneState = 3
-	ChangeRoomInfoPBComponent_eGateEnterSucceed ChangeRoomInfoPBComponentEChangeSceneState = 4
-	ChangeRoomInfoPBComponent_eDone             ChangeRoomInfoPBComponentEChangeSceneState = 5
+	ChangeSceneInfoPBComponent_ePendingLeave     ChangeSceneInfoPBComponentEChangeSceneState = 0
+	ChangeSceneInfoPBComponent_eLeaving          ChangeSceneInfoPBComponentEChangeSceneState = 1
+	ChangeSceneInfoPBComponent_eWaitingEnter     ChangeSceneInfoPBComponentEChangeSceneState = 2
+	ChangeSceneInfoPBComponent_eEnterSucceed     ChangeSceneInfoPBComponentEChangeSceneState = 3
+	ChangeSceneInfoPBComponent_eGateEnterSucceed ChangeSceneInfoPBComponentEChangeSceneState = 4
+	ChangeSceneInfoPBComponent_eDone             ChangeSceneInfoPBComponentEChangeSceneState = 5
 )
 
-// Enum value maps for ChangeRoomInfoPBComponentEChangeSceneState.
+// Enum value maps for ChangeSceneInfoPBComponentEChangeSceneState.
 var (
-	ChangeRoomInfoPBComponentEChangeSceneState_name = map[int32]string{
+	ChangeSceneInfoPBComponentEChangeSceneState_name = map[int32]string{
 		0: "ePendingLeave",
 		1: "eLeaving",
 		2: "eWaitingEnter",
@@ -88,7 +88,7 @@ var (
 		4: "eGateEnterSucceed",
 		5: "eDone",
 	}
-	ChangeRoomInfoPBComponentEChangeSceneState_value = map[string]int32{
+	ChangeSceneInfoPBComponentEChangeSceneState_value = map[string]int32{
 		"ePendingLeave":     0,
 		"eLeaving":          1,
 		"eWaitingEnter":     2,
@@ -98,34 +98,34 @@ var (
 	}
 )
 
-func (x ChangeRoomInfoPBComponentEChangeSceneState) Enum() *ChangeRoomInfoPBComponentEChangeSceneState {
-	p := new(ChangeRoomInfoPBComponentEChangeSceneState)
+func (x ChangeSceneInfoPBComponentEChangeSceneState) Enum() *ChangeSceneInfoPBComponentEChangeSceneState {
+	p := new(ChangeSceneInfoPBComponentEChangeSceneState)
 	*p = x
 	return p
 }
 
-func (x ChangeRoomInfoPBComponentEChangeSceneState) String() string {
+func (x ChangeSceneInfoPBComponentEChangeSceneState) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ChangeRoomInfoPBComponentEChangeSceneState) Descriptor() protoreflect.EnumDescriptor {
+func (ChangeSceneInfoPBComponentEChangeSceneState) Descriptor() protoreflect.EnumDescriptor {
 	return file_proto_common_component_scene_comp_proto_enumTypes[1].Descriptor()
 }
 
-func (ChangeRoomInfoPBComponentEChangeSceneState) Type() protoreflect.EnumType {
+func (ChangeSceneInfoPBComponentEChangeSceneState) Type() protoreflect.EnumType {
 	return &file_proto_common_component_scene_comp_proto_enumTypes[1]
 }
 
-func (x ChangeRoomInfoPBComponentEChangeSceneState) Number() protoreflect.EnumNumber {
+func (x ChangeSceneInfoPBComponentEChangeSceneState) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ChangeRoomInfoPBComponentEChangeSceneState.Descriptor instead.
-func (ChangeRoomInfoPBComponentEChangeSceneState) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ChangeSceneInfoPBComponentEChangeSceneState.Descriptor instead.
+func (ChangeSceneInfoPBComponentEChangeSceneState) EnumDescriptor() ([]byte, []int) {
 	return file_proto_common_component_scene_comp_proto_rawDescGZIP(), []int{0, 1}
 }
 
-type ChangeRoomInfoPBComponent struct {
+type ChangeSceneInfoPBComponent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SceneConfid    uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`
 	Guid           uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"` //场景id
@@ -144,20 +144,20 @@ type ChangeRoomInfoPBComponent struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *ChangeRoomInfoPBComponent) Reset() {
-	*x = ChangeRoomInfoPBComponent{}
+func (x *ChangeSceneInfoPBComponent) Reset() {
+	*x = ChangeSceneInfoPBComponent{}
 	mi := &file_proto_common_component_scene_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangeRoomInfoPBComponent) String() string {
+func (x *ChangeSceneInfoPBComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangeRoomInfoPBComponent) ProtoMessage() {}
+func (*ChangeSceneInfoPBComponent) ProtoMessage() {}
 
-func (x *ChangeRoomInfoPBComponent) ProtoReflect() protoreflect.Message {
+func (x *ChangeSceneInfoPBComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_scene_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -169,96 +169,96 @@ func (x *ChangeRoomInfoPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangeRoomInfoPBComponent.ProtoReflect.Descriptor instead.
-func (*ChangeRoomInfoPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use ChangeSceneInfoPBComponent.ProtoReflect.Descriptor instead.
+func (*ChangeSceneInfoPBComponent) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_scene_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ChangeRoomInfoPBComponent) GetSceneConfid() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetSceneConfid() uint32 {
 	if x != nil {
 		return x.SceneConfid
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetGuid() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetGuid() uint32 {
 	if x != nil {
 		return x.Guid
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetDungenConfid() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetDungenConfid() uint32 {
 	if x != nil {
 		return x.DungenConfid
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetMirrorConfid() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetMirrorConfid() uint32 {
 	if x != nil {
 		return x.MirrorConfid
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetChangeSequence() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetChangeSequence() uint32 {
 	if x != nil {
 		return x.ChangeSequence
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetChangeGsType() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetChangeGsType() uint32 {
 	if x != nil {
 		return x.ChangeGsType
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetChangeTime() uint64 {
+func (x *ChangeSceneInfoPBComponent) GetChangeTime() uint64 {
 	if x != nil {
 		return x.ChangeTime
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetIgnoreFull() bool {
+func (x *ChangeSceneInfoPBComponent) GetIgnoreFull() bool {
 	if x != nil {
 		return x.IgnoreFull
 	}
 	return false
 }
 
-func (x *ChangeRoomInfoPBComponent) GetProcessing() bool {
+func (x *ChangeSceneInfoPBComponent) GetProcessing() bool {
 	if x != nil {
 		return x.Processing
 	}
 	return false
 }
 
-func (x *ChangeRoomInfoPBComponent) GetState() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetState() uint32 {
 	if x != nil {
 		return x.State
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetFromZoneId() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetFromZoneId() uint32 {
 	if x != nil {
 		return x.FromZoneId
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetToZoneId() uint32 {
+func (x *ChangeSceneInfoPBComponent) GetToZoneId() uint32 {
 	if x != nil {
 		return x.ToZoneId
 	}
 	return 0
 }
 
-func (x *ChangeRoomInfoPBComponent) GetIsCrossZone() bool {
+func (x *ChangeSceneInfoPBComponent) GetIsCrossZone() bool {
 	if x != nil {
 		return x.IsCrossZone
 	}
@@ -269,8 +269,8 @@ var File_proto_common_component_scene_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_scene_comp_proto_rawDesc = "" +
 	"\n" +
-	"'proto/common/component/scene_comp.proto\"\xf5\x04\n" +
-	"\x19ChangeRoomInfoPBComponent\x12!\n" +
+	"'proto/common/component/scene_comp.proto\"\xf6\x04\n" +
+	"\x1aChangeSceneInfoPBComponent\x12!\n" +
 	"\fscene_confid\x18\x01 \x01(\rR\vsceneConfid\x12\x12\n" +
 	"\x04guid\x18\x02 \x01(\rR\x04guid\x12#\n" +
 	"\rdungen_confid\x18\x03 \x01(\rR\fdungenConfid\x12#\n" +
@@ -317,9 +317,9 @@ func file_proto_common_component_scene_comp_proto_rawDescGZIP() []byte {
 var file_proto_common_component_scene_comp_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_proto_common_component_scene_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_common_component_scene_comp_proto_goTypes = []any{
-	(ChangeRoomInfoPBComponentEChangeGsType)(0),     // 0: ChangeRoomInfoPBComponent.eChangeGsType
-	(ChangeRoomInfoPBComponentEChangeSceneState)(0), // 1: ChangeRoomInfoPBComponent.eChangeSceneState
-	(*ChangeRoomInfoPBComponent)(nil),               // 2: ChangeRoomInfoPBComponent
+	(ChangeSceneInfoPBComponentEChangeGsType)(0),     // 0: ChangeSceneInfoPBComponent.eChangeGsType
+	(ChangeSceneInfoPBComponentEChangeSceneState)(0), // 1: ChangeSceneInfoPBComponent.eChangeSceneState
+	(*ChangeSceneInfoPBComponent)(nil),               // 2: ChangeSceneInfoPBComponent
 }
 var file_proto_common_component_scene_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
