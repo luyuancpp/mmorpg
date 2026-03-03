@@ -15,7 +15,7 @@ enum NodeType {
 
 	// 核心服务节点
 	NODE_GATE = 2;                             // 网关服节点
-	NODE_SCENE = 3;                             // 房间服节点
+	NODE_SCENE = 3;                             // 房间服节点 确实是scene 节点
 	NODE_CENTRE = 4;                           // 中心服节点
 	NODE_DB = 5;                               // 数据库节点
 	NODE_DEPLOY = 6;                           // 部署节点服务
@@ -23,7 +23,7 @@ enum NodeType {
 
 	// 游戏业务节点
 	NODE_CENTRE_SCENE = 8;                     // 场景切换中心服务器服务
-	NODE_SCENE = 9;                            // 场景服务器服务
+	NODE_SCENE_MANAGER = 9;                    // 场景管理服 (管理所有游戏玩家不管哪个区都是用场景管理服区切换)
 	NODE_LOGIN = 10;                           // 登录服务器节点服务
 	NODE_MAIL = 13;                            // 邮件节点服务
 	NODE_CHAT = 14;                            // 聊天节点服务
