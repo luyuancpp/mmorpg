@@ -19,8 +19,6 @@
 #include "scene_node_selector.h"
 #include "scene_selector.h"
 
-// Constants
-static constexpr std::size_t kMaxScenePlayer = 1000;
 
 
 void AddMainSceneToNodeComponent(entt::registry& reg, const entt::entity node) {
@@ -60,19 +58,6 @@ NodeId SceneSystem::GetGameNodeIdFromSceneEntity(entt::entity scene) {
 	}
 }
 
-
-// ✅ 2. 多节点负载均衡
-// 你在 CompelPlayerChangeScene 中如果找不到房间就直接创建了：
-//
-// cpp
-// 复制
-// 编辑
-// sceneEntity = CreateSceneOnSceneNode(p);
-// 更好的做法是考虑负载均衡，比如：
-//
-// 查找资源空闲的节点（CPU / 玩家少）。
-//
-// 优先选择已有房间，再决定是否创建。
 
 // Create a new scene associated with a game node
 
@@ -117,9 +102,7 @@ void SceneSystem::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 	}
 }
 
-// 这里只处理了同gs,如果是跨gs的scene切换，应该别的地方处理
 void SceneSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
-	// ✅ 使用 FindOrCreateScene 替代原始杂糅逻辑
 	entt::entity sceneEntity = SceneSystem::FindOrCreateScene(param.sceneConfId);
 
 	SceneCommon::LeaveScene({ param.player });
@@ -158,61 +141,29 @@ void SceneSystem::ReplaceCrashSceneNode(entt::entity crashNode, entt::entity des
 
 
 entt::entity SceneSystem::FindOrCreateScene(uint32_t sceneConfId) {
-	// 选择最优服务器节点
-	entt::entity node = SelectBestNodeForScene(sceneConfId);
-	if (node == entt::null) {
-		LOG_ERROR << "FindOrCreateScene: Failed to select a scene node for sceneConfId = " << sceneConfId;
-		return entt::null;
-	}
+	GetSceneParams params{ sceneConfId };
 
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	auto& nodeSceneComp = registry.get<SceneRegistryComp>(node);
-
-	// 查找已有房间
-	entt::entity scene = SceneSelectorSystem::SelectSceneWithMinPlayers(nodeSceneComp, sceneConfId);
+	// 1. Try to find an existing scene with available slots
+	entt::entity scene = SceneNodeSelectorSystem::SelectAvailableScene(params);
 	if (scene != entt::null) {
 		return scene;
 	}
 
-	// 创建新房间
+	// 2. If no available scene found, select the best node to create a new one
+	entt::entity node = SceneNodeSelectorSystem::SelectBestNodeForCreation(params);
+	if (node == entt::null) {
+		LOG_ERROR << "FindOrCreateScene: Failed to find a suitable node to create scene " << sceneConfId;
+		return entt::null;
+	}
+
+	// 3. Create the scene on the selected node
 	CreateSceneOnNodeSceneParam createParam{ .node = node };
 	createParam.sceneInfo.set_scene_confid(sceneConfId);
 
 	scene = SceneCommon::CreateSceneOnSceneNode(createParam);
 	if (scene == entt::null) {
-		LOG_ERROR << "FindOrCreateScene: Failed to create scene for sceneConfId = " << sceneConfId;
+		LOG_ERROR << "FindOrCreateScene: Failed to create scene " << sceneConfId << " on node " << entt::to_integral(node);
 	}
 
 	return scene;
-}
-
-entt::entity SceneSystem::SelectBestNodeForScene(uint32_t sceneConfId) {
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-	entt::entity bestNode = entt::null;
-	std::size_t minPlayerCount = std::numeric_limits<std::size_t>::max();
-
-	for (auto node : registry.view<SceneRegistryComp, SceneNodePlayerStatsPtrPbComponent>()) {
-		const auto& nodeComp = registry.get<SceneRegistryComp>(node);
-		const auto& playerInfoPtr = registry.get<SceneNodePlayerStatsPtrPbComponent>(node);
-		if (!playerInfoPtr) continue;
-
-		// 如果该节点已经有该配置的房间，优先考虑
-		auto existingScenes = nodeComp.GetScenesByConfig(sceneConfId);
-		if (!existingScenes.empty()) {
-			return node;
-		}
-
-		// 否则看节点的整体玩家数量是否最小
-		std::size_t playerSize = playerInfoPtr->player_size();
-		if (playerSize < minPlayerCount) {
-			minPlayerCount = playerSize;
-			bestNode = node;
-		}
-	}
-
-	if (bestNode == entt::null) {
-		LOG_WARN << "SelectBestNodeForScene: No suitable node found for sceneConfId = " << sceneConfId;
-	}
-
-	return bestNode;
 }

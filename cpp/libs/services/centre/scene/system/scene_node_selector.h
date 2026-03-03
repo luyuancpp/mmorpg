@@ -24,5 +24,8 @@ public:
 	// Find a server with the scene where player count is not full, more efficient than the above function
 	static entt::entity SelectAvailableScene(const GetSceneParams& param);
 
+	// Select the best node to create a new scene on
+	static entt::entity SelectBestNodeForCreation(const GetSceneParams& param);
+
 };
 

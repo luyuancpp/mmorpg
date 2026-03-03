@@ -1,6 +1,7 @@
 #include "scene_selector.h"
+#include <limits>
 #include <threading/registry_manager.h>
-#include <node/constants/node_constants.h>
+#include "engine/core/node/constants/node_constants.h"
 #include "modules/scene/comp/scene_node_comp.h"
 
 entt::entity SceneSelectorSystem::SelectSceneWithMinPlayers(const SceneRegistryComp& comp, uint32_t configId) {
@@ -8,10 +9,11 @@ entt::entity SceneSelectorSystem::SelectSceneWithMinPlayers(const SceneRegistryC
 	if (scenes.empty()) return entt::null;
 
 	entt::entity best = entt::null;
-	std::size_t minPlayers = UINT64_MAX;
+	std::size_t minPlayers = std::numeric_limits<std::size_t>::max();
 
 	for (auto scene : scenes) {
-		std::size_t playerCount = tlsRegistryManager.sceneRegistry.get<ScenePlayers>(scene).size();
+		const auto& players = tlsRegistryManager.sceneRegistry.get<ScenePlayers>(scene);
+		std::size_t playerCount = players.size();
 		if (playerCount >= kMaxPlayersPerScene) continue;
 		if (playerCount < minPlayers) {
 			minPlayers = playerCount;
