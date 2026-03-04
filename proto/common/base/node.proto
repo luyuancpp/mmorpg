@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "scene_manager/base";
+
 enum eNodeType {
     DeployNodeService      = 0;  // 部署节点服务
     DbNodeService          = 1;  // 数据库节点服务
