@@ -1,10 +1,10 @@
 syntax = "proto3";
 package scene_manager;
 
-import "google/protobuf/empty.proto";
 import "proto/common/base/node.proto";
+import "proto/common/base/empty.proto";
 
-option go_package = "github.com/yourorg/yourrepo/proto/service/scene_manager;scene_managerpb";
+option go_package = "scene_manager/scene_manager";
 
 // SceneManager 服务：负责场景创建/销毁与 Centre -> Scene 的路由
 service SceneManager {
@@ -12,13 +12,13 @@ service SceneManager {
   rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}
 
   // 销毁场景
-  rpc DestroyScene(DestroySceneRequest) returns (google.protobuf.Empty) {}
+  rpc DestroyScene(DestroySceneRequest) returns (Empty) {}
 
   // Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
   rpc EnterSceneByCentre(EnterSceneByCentreRequest) returns (EnterSceneByCentreResponse) {}
 
   // Centre 请求玩家离开场景（或切换场景前的离开）
-  rpc LeaveSceneByCentre(LeaveSceneByCentreRequest) returns (google.protobuf.Empty) {}
+  rpc LeaveSceneByCentre(LeaveSceneByCentreRequest) returns (Empty) {}
 }
 
 message CreateSceneRequest {
