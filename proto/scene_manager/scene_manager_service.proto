@@ -1,8 +1,8 @@
 syntax = "proto3";
 package scene_manager;
 
-import "proto/common/base/node.proto";
-import "proto/common/base/empty.proto";
+import "common/base/node.proto";
+import "common/base/empty.proto";
 
 option go_package = "scene_manager/scene_manager";
 
@@ -25,15 +25,17 @@ message CreateSceneRequest {
   // 场景配置 id
   uint64 scene_conf_id = 1;
   // 可选：指定在某个 Scene 节点创建
-  uint64 target_scene_node_id = 2;
+  string target_node_id = 2;
 }
 
 message CreateSceneResponse {
   // 全局场景 id（由 Scene 节点分配）
   uint64 scene_id = 1;
+  // 所在的节点ID
+  string node_id = 2;
   // 创建结果：0 成功，非0 错误码
-  uint32 error_code = 2;
-  string error_message = 3;
+  uint32 error_code = 3;
+  string error_message = 4;
 }
 
 message DestroySceneRequest {
