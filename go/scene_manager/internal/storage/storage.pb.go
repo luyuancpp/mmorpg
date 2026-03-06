@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.9
 // 	protoc        v6.31.1
-// source: proto/scene_manager/storage.proto
+// source: scene_manager/storage.proto
 
 package storage
 
@@ -21,58 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ChangeSceneState_State int32
-
-const (
-	ChangeSceneState_NONE          ChangeSceneState_State = 0
-	ChangeSceneState_PENDING_LEAVE ChangeSceneState_State = 1
-	ChangeSceneState_WAITING_ENTER ChangeSceneState_State = 2
-	ChangeSceneState_ENTER_SUCCEED ChangeSceneState_State = 3
-)
-
-// Enum value maps for ChangeSceneState_State.
-var (
-	ChangeSceneState_State_name = map[int32]string{
-		0: "NONE",
-		1: "PENDING_LEAVE",
-		2: "WAITING_ENTER",
-		3: "ENTER_SUCCEED",
-	}
-	ChangeSceneState_State_value = map[string]int32{
-		"NONE":          0,
-		"PENDING_LEAVE": 1,
-		"WAITING_ENTER": 2,
-		"ENTER_SUCCEED": 3,
-	}
-)
-
-func (x ChangeSceneState_State) Enum() *ChangeSceneState_State {
-	p := new(ChangeSceneState_State)
-	*p = x
-	return p
-}
-
-func (x ChangeSceneState_State) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ChangeSceneState_State) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_scene_manager_storage_proto_enumTypes[0].Descriptor()
-}
-
-func (ChangeSceneState_State) Type() protoreflect.EnumType {
-	return &file_proto_scene_manager_storage_proto_enumTypes[0]
-}
-
-func (x ChangeSceneState_State) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ChangeSceneState_State.Descriptor instead.
-func (ChangeSceneState_State) EnumDescriptor() ([]byte, []int) {
-	return file_proto_scene_manager_storage_proto_rawDescGZIP(), []int{2, 0}
-}
-
 // Redis: scene:{id}:info
 type SceneInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -86,7 +34,7 @@ type SceneInfo struct {
 
 func (x *SceneInfo) Reset() {
 	*x = SceneInfo{}
-	mi := &file_proto_scene_manager_storage_proto_msgTypes[0]
+	mi := &file_scene_manager_storage_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -98,7 +46,7 @@ func (x *SceneInfo) String() string {
 func (*SceneInfo) ProtoMessage() {}
 
 func (x *SceneInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_storage_proto_msgTypes[0]
+	mi := &file_scene_manager_storage_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -111,7 +59,7 @@ func (x *SceneInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SceneInfo.ProtoReflect.Descriptor instead.
 func (*SceneInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_storage_proto_rawDescGZIP(), []int{0}
+	return file_scene_manager_storage_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SceneInfo) GetSceneId() uint64 {
@@ -154,7 +102,7 @@ type PlayerLocation struct {
 
 func (x *PlayerLocation) Reset() {
 	*x = PlayerLocation{}
-	mi := &file_proto_scene_manager_storage_proto_msgTypes[1]
+	mi := &file_scene_manager_storage_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -166,7 +114,7 @@ func (x *PlayerLocation) String() string {
 func (*PlayerLocation) ProtoMessage() {}
 
 func (x *PlayerLocation) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_storage_proto_msgTypes[1]
+	mi := &file_scene_manager_storage_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -179,7 +127,7 @@ func (x *PlayerLocation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerLocation.ProtoReflect.Descriptor instead.
 func (*PlayerLocation) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_storage_proto_rawDescGZIP(), []int{1}
+	return file_scene_manager_storage_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PlayerLocation) GetSceneId() uint64 {
@@ -203,80 +151,11 @@ func (x *PlayerLocation) GetUpdateTime() uint64 {
 	return 0
 }
 
-// Redis: player:{id}:change_scene
-type ChangeSceneState struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TargetSceneId uint64                 `protobuf:"varint,1,opt,name=target_scene_id,json=targetSceneId,proto3" json:"target_scene_id,omitempty"`
-	State         ChangeSceneState_State `protobuf:"varint,2,opt,name=state,proto3,enum=storage.ChangeSceneState_State" json:"state,omitempty"`
-	ChangeType    int32                  `protobuf:"varint,3,opt,name=change_type,json=changeType,proto3" json:"change_type,omitempty"`
-	RequestTime   int64                  `protobuf:"varint,4,opt,name=request_time,json=requestTime,proto3" json:"request_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
+var File_scene_manager_storage_proto protoreflect.FileDescriptor
 
-func (x *ChangeSceneState) Reset() {
-	*x = ChangeSceneState{}
-	mi := &file_proto_scene_manager_storage_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ChangeSceneState) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ChangeSceneState) ProtoMessage() {}
-
-func (x *ChangeSceneState) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_storage_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ChangeSceneState.ProtoReflect.Descriptor instead.
-func (*ChangeSceneState) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_storage_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *ChangeSceneState) GetTargetSceneId() uint64 {
-	if x != nil {
-		return x.TargetSceneId
-	}
-	return 0
-}
-
-func (x *ChangeSceneState) GetState() ChangeSceneState_State {
-	if x != nil {
-		return x.State
-	}
-	return ChangeSceneState_NONE
-}
-
-func (x *ChangeSceneState) GetChangeType() int32 {
-	if x != nil {
-		return x.ChangeType
-	}
-	return 0
-}
-
-func (x *ChangeSceneState) GetRequestTime() int64 {
-	if x != nil {
-		return x.RequestTime
-	}
-	return 0
-}
-
-var File_proto_scene_manager_storage_proto protoreflect.FileDescriptor
-
-const file_proto_scene_manager_storage_proto_rawDesc = "" +
+const file_scene_manager_storage_proto_rawDesc = "" +
 	"\n" +
-	"!proto/scene_manager/storage.proto\x12\astorage\"\x84\x01\n" +
+	"\x1bscene_manager/storage.proto\x12\astorage\"\x84\x01\n" +
 	"\tSceneInfo\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\"\n" +
 	"\rscene_conf_id\x18\x02 \x01(\x04R\vsceneConfId\x12\x17\n" +
@@ -287,69 +166,53 @@ const file_proto_scene_manager_storage_proto_rawDesc = "" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12\x1f\n" +
 	"\vupdate_time\x18\x03 \x01(\x04R\n" +
-	"updateTime\"\x81\x02\n" +
-	"\x10ChangeSceneState\x12&\n" +
-	"\x0ftarget_scene_id\x18\x01 \x01(\x04R\rtargetSceneId\x125\n" +
-	"\x05state\x18\x02 \x01(\x0e2\x1f.storage.ChangeSceneState.StateR\x05state\x12\x1f\n" +
-	"\vchange_type\x18\x03 \x01(\x05R\n" +
-	"changeType\x12!\n" +
-	"\frequest_time\x18\x04 \x01(\x03R\vrequestTime\"J\n" +
-	"\x05State\x12\b\n" +
-	"\x04NONE\x10\x00\x12\x11\n" +
-	"\rPENDING_LEAVE\x10\x01\x12\x11\n" +
-	"\rWAITING_ENTER\x10\x02\x12\x11\n" +
-	"\rENTER_SUCCEED\x10\x03B Z\x1escene_manager/internal/storageb\x06proto3"
+	"updateTimeB Z\x1escene_manager/internal/storageb\x06proto3"
 
 var (
-	file_proto_scene_manager_storage_proto_rawDescOnce sync.Once
-	file_proto_scene_manager_storage_proto_rawDescData []byte
+	file_scene_manager_storage_proto_rawDescOnce sync.Once
+	file_scene_manager_storage_proto_rawDescData []byte
 )
 
-func file_proto_scene_manager_storage_proto_rawDescGZIP() []byte {
-	file_proto_scene_manager_storage_proto_rawDescOnce.Do(func() {
-		file_proto_scene_manager_storage_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_scene_manager_storage_proto_rawDesc), len(file_proto_scene_manager_storage_proto_rawDesc)))
+func file_scene_manager_storage_proto_rawDescGZIP() []byte {
+	file_scene_manager_storage_proto_rawDescOnce.Do(func() {
+		file_scene_manager_storage_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_scene_manager_storage_proto_rawDesc), len(file_scene_manager_storage_proto_rawDesc)))
 	})
-	return file_proto_scene_manager_storage_proto_rawDescData
+	return file_scene_manager_storage_proto_rawDescData
 }
 
-var file_proto_scene_manager_storage_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_scene_manager_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_proto_scene_manager_storage_proto_goTypes = []any{
-	(ChangeSceneState_State)(0), // 0: storage.ChangeSceneState.State
-	(*SceneInfo)(nil),           // 1: storage.SceneInfo
-	(*PlayerLocation)(nil),      // 2: storage.PlayerLocation
-	(*ChangeSceneState)(nil),    // 3: storage.ChangeSceneState
+var file_scene_manager_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_scene_manager_storage_proto_goTypes = []any{
+	(*SceneInfo)(nil),      // 0: storage.SceneInfo
+	(*PlayerLocation)(nil), // 1: storage.PlayerLocation
 }
-var file_proto_scene_manager_storage_proto_depIdxs = []int32{
-	0, // 0: storage.ChangeSceneState.state:type_name -> storage.ChangeSceneState.State
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+var file_scene_manager_storage_proto_depIdxs = []int32{
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_proto_scene_manager_storage_proto_init() }
-func file_proto_scene_manager_storage_proto_init() {
-	if File_proto_scene_manager_storage_proto != nil {
+func init() { file_scene_manager_storage_proto_init() }
+func file_scene_manager_storage_proto_init() {
+	if File_scene_manager_storage_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_manager_storage_proto_rawDesc), len(file_proto_scene_manager_storage_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   3,
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_scene_manager_storage_proto_rawDesc), len(file_scene_manager_storage_proto_rawDesc)),
+			NumEnums:      0,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_scene_manager_storage_proto_goTypes,
-		DependencyIndexes: file_proto_scene_manager_storage_proto_depIdxs,
-		EnumInfos:         file_proto_scene_manager_storage_proto_enumTypes,
-		MessageInfos:      file_proto_scene_manager_storage_proto_msgTypes,
+		GoTypes:           file_scene_manager_storage_proto_goTypes,
+		DependencyIndexes: file_scene_manager_storage_proto_depIdxs,
+		MessageInfos:      file_scene_manager_storage_proto_msgTypes,
 	}.Build()
-	File_proto_scene_manager_storage_proto = out.File
-	file_proto_scene_manager_storage_proto_goTypes = nil
-	file_proto_scene_manager_storage_proto_depIdxs = nil
+	File_scene_manager_storage_proto = out.File
+	file_scene_manager_storage_proto_goTypes = nil
+	file_scene_manager_storage_proto_depIdxs = nil
 }
