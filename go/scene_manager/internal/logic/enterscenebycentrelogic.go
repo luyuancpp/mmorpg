@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 
 	"scene_manager/internal/svc"
 	"scene_manager/scene_manager"
@@ -25,7 +26,65 @@ func NewEnterSceneByCentreLogic(ctx context.Context, svcCtx *svc.ServiceContext)
 
 // Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
 func (l *EnterSceneByCentreLogic) EnterSceneByCentre(in *scene_manager.EnterSceneByCentreRequest) (*scene_manager.EnterSceneByCentreResponse, error) {
-	// todo: add your logic here and delete this line
+	// 1. Check if scene is on this node
+	key := fmt.Sprintf("scene:%d:node", in.SceneId)
+	nodeId, err := l.svcCtx.Redis.Get(key)
+	if err != nil {
+		l.Logger.Errorf("Scene lookup failed: %v", err)
+		return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 1, ErrorMessage: "Scene lookup failed"}, nil
+	}
+	if nodeId != l.svcCtx.Config.NodeID {
+		l.Logger.Errorf("Scene %d not on this node (expected %s, got %s)", in.SceneId, nodeId, l.svcCtx.Config.NodeID)
+		return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 2, ErrorMessage: "Scene not on this node"}, nil
+	}
 
-	return &scene_manager.EnterSceneByCentreResponse{}, nil
+	// 2. IDEMPOTENCY CHECK: Is player already here?
+	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
+	if err == nil && currentLoc != nil {
+		if currentLoc.SceneId == in.SceneId && currentLoc.NodeId == l.svcCtx.Config.NodeID {
+			// Already in the correct scene. Treat as success.
+			// Ensure no pending transition state remains.
+			ClearChangeSceneInfo(l.ctx, l.svcCtx, in.PlayerId)
+			l.Logger.Infof("Player %d already in scene %d, idempotent success", in.PlayerId, in.SceneId)
+			return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 0}, nil
+		}
+	}
+
+	// 3. Process Change Scene State (if exists)
+	// We are lenient here: if ChangeSceneInfo is missing but the request is valid (scene exists on this node),
+	// we allow entry (e.g., forced entry, login after crash).
+	changeInfo, err := GetChangeSceneInfo(l.ctx, l.svcCtx, in.PlayerId)
+	if err != nil {
+		l.Logger.Errorf("Redis error reading change info: %v", err)
+		// Don't fail hard on Redis error if we can try to proceed? No, Redis error is bad.
+		return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 1, ErrorMessage: "Redis error"}, nil
+	}
+
+	if changeInfo != nil {
+		// If there is a pending change, verify target matches
+		if changeInfo.SceneId != in.SceneId {
+			// Mismatching pending change. This is tricky.
+			// Option A: Reject.
+			// Option B: Overwrite (Last Write Wins).
+			// Given user requirement "must always be able to enter", we choose Option B (proceed with this request).
+			l.Logger.Errorf("Player %d entering scene %d but had pending change to %d. Overriding.", in.PlayerId, in.SceneId, changeInfo.SceneId)
+		}
+		
+		// Clean up the change info as we are consuming it
+		err = ClearChangeSceneInfo(l.ctx, l.svcCtx, in.PlayerId)
+		if err != nil {
+			l.Logger.Errorf("Failed to clear change scene info: %v", err)
+		}
+	}
+
+	// 4. Update Player Location (Source of Truth)
+	err = UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, in.SceneId, l.svcCtx.Config.NodeID)
+	if err != nil {
+		l.Logger.Errorf("Failed to update player location: %v", err)
+		return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 1, ErrorMessage: "Failed to update location"}, nil
+	}
+
+	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, in.SceneId, l.svcCtx.Config.NodeID)
+
+	return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 0}, nil
 }
