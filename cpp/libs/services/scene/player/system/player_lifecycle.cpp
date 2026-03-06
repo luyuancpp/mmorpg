@@ -26,13 +26,31 @@
 #include <engine/infra/messaging/kafka/kafka_producer.h>
 #include "threading/player_manager.h"
 #include "core/system/redis.h"
-#include <threading/dispatcher_manager.h>
+#include "threading/dispatcher_manager.h"
+#include "player_scene.h"
 
 void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
-	auto enterInfo = std::any_cast<PlayerGameNodeEnteryInfoPBComponent>(extra);
-	InitPlayerFromAllData(message, enterInfo);
+	
+	if (extra.type() == typeid(PlayerSceneEnterContext))
+	{
+		const auto& context = std::any_cast<PlayerSceneEnterContext>(extra);
+		auto player = InitPlayerFromAllData(message, context.enterInfo);
+		if (tlsRegistryManager.actorRegistry.valid(player))
+		{
+			PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(context.sceneId));
+		}
+	}
+	else if (extra.type() == typeid(PlayerGameNodeEnteryInfoPBComponent))
+	{
+		const auto& enterInfo = std::any_cast<PlayerGameNodeEnteryInfoPBComponent>(extra);
+		InitPlayerFromAllData(message, enterInfo);
+	}
+	else
+	{
+		LOG_ERROR << "HandlePlayerAsyncLoaded: Invalid extra data type for player " << playerId;
+	}
 }
 
 void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& message)
