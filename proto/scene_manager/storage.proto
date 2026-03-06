@@ -1,0 +1,34 @@
+syntax = "proto3";
+package storage;
+
+option go_package = "scene_manager/internal/storage";
+
+// Redis: scene:{id}:info
+message SceneInfo {
+  uint64 scene_id = 1;
+  uint64 scene_conf_id = 2;
+  string node_id = 3;
+  int64 create_time = 4;
+}
+
+// Redis: player:{id}:location
+message PlayerLocation {
+  uint64 scene_id = 1;
+  string node_id = 2;
+  uint64 update_time = 3;
+}
+
+// Redis: player:{id}:change_scene
+message ChangeSceneState {
+  enum State {
+    NONE = 0;
+    PENDING_LEAVE = 1;
+    WAITING_ENTER = 2;
+    ENTER_SUCCEED = 3;
+  }
+
+  uint64 target_scene_id = 1;
+  State state = 2;
+  int32 change_type = 3;
+  int64 request_time = 4;
+}

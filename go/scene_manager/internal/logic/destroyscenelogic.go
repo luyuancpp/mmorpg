@@ -2,7 +2,9 @@ package logic
 
 import (
 	"context"
+	"fmt"
 
+	"scene_manager/base"
 	"scene_manager/internal/svc"
 	"scene_manager/scene_manager"
 
@@ -24,8 +26,13 @@ func NewDestroySceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Dest
 }
 
 // 销毁场景
-func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) (*scene_manager.Empty, error) {
-	// todo: add your logic here and delete this line
-
-	return &scene_manager.Empty{}, nil
+func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) (*base.Empty, error) {
+	key := fmt.Sprintf("scene:%d:node", in.SceneId)
+	_, err := l.svcCtx.Redis.Del(key)
+	if err != nil {
+		l.Logger.Errorf("Failed to destroy scene %d: %v", in.SceneId, err)
+	} else {
+		l.Logger.Infof("Destroyed scene %d", in.SceneId)
+	}
+	return &base.Empty{}, nil
 }
