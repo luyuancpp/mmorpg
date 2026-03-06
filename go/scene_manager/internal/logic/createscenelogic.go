@@ -26,7 +26,21 @@ func NewCreateSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 
 // 在指定节点创建一个场景（由 Scene 节点实现具体创建）
 func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
-	// Generate new Scene ID
+	// 1. Determine Target Node
+	targetNode := in.TargetNodeId
+	if targetNode == "" {
+		// Load Balancing: Select best node
+		bestNode, err := GetBestNode(l.ctx, l.svcCtx)
+		if err != nil {
+			l.Logger.Errorf("Failed to select best node: %v", err)
+			// Fallback to local
+			targetNode = l.svcCtx.Config.NodeID
+		} else {
+			targetNode = bestNode
+		}
+	}
+
+	// 2. Generate new Scene ID
 	id, err := l.svcCtx.Redis.Incr("scene:id_counter")
 	if err != nil {
 		l.Logger.Errorf("Failed to generate scene id: %v", err)
@@ -34,14 +48,17 @@ func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*s
 	}
 	sceneId := uint64(id)
 
-	// Store mapping scene->node
-	// We use the configured NodeID
-	err = l.svcCtx.Redis.Set(fmt.Sprintf("scene:%d:node", sceneId), l.svcCtx.Config.NodeID)
+	// 3. Store mapping scene->node
+	err = l.svcCtx.Redis.Set(fmt.Sprintf("scene:%d:node", sceneId), targetNode)
 	if err != nil {
 		l.Logger.Errorf("Failed to register scene: %v", err)
 		return &scene_manager.CreateSceneResponse{ErrorCode: 1, ErrorMessage: "Redis error"}, nil
 	}
+	
+	// 4. Create Scene Info in Redis (optional but good for metadata)
+	// We should probably store more info like SceneConfId
+	// ... (Skipping full metadata for brevity, but storing node mapping is key)
 
-	l.Logger.Infof("Created scene %d on node %s", sceneId, l.svcCtx.Config.NodeID)
-	return &scene_manager.CreateSceneResponse{SceneId: sceneId, ErrorCode: 0}, nil
+	l.Logger.Infof("Created scene %d on node %s (target was %s)", sceneId, targetNode, in.TargetNodeId)
+	return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: targetNode, ErrorCode: 0}, nil
 }
