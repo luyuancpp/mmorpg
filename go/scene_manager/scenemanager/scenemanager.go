@@ -7,6 +7,7 @@ package scenemanager
 import (
 	"context"
 
+	"scene_manager/base"
 	"scene_manager/scene_manager"
 
 	"github.com/zeromicro/go-zero/zrpc"
@@ -20,6 +21,7 @@ type (
 	EnterSceneByCentreRequest  = scene_manager.EnterSceneByCentreRequest
 	EnterSceneByCentreResponse = scene_manager.EnterSceneByCentreResponse
 	LeaveSceneByCentreRequest  = scene_manager.LeaveSceneByCentreRequest
+	Empty                      = base.Empty
 
 	SceneManager interface {
 		// 在指定节点创建一个场景（由 Scene 节点实现具体创建）

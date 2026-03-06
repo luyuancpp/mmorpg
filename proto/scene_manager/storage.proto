@@ -17,18 +17,3 @@ message PlayerLocation {
   string node_id = 2;
   uint64 update_time = 3;
 }
-
-// Redis: player:{id}:change_scene
-message ChangeSceneState {
-  enum State {
-    NONE = 0;
-    PENDING_LEAVE = 1;
-    WAITING_ENTER = 2;
-    ENTER_SUCCEED = 3;
-  }
-
-  uint64 target_scene_id = 1;
-  State state = 2;
-  int32 change_type = 3;
-  int64 request_time = 4;
-}

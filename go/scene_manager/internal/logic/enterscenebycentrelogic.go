@@ -43,41 +43,12 @@ func (l *EnterSceneByCentreLogic) EnterSceneByCentre(in *scene_manager.EnterScen
 	if err == nil && currentLoc != nil {
 		if currentLoc.SceneId == in.SceneId && currentLoc.NodeId == l.svcCtx.Config.NodeID {
 			// Already in the correct scene. Treat as success.
-			// Ensure no pending transition state remains.
-			ClearChangeSceneInfo(l.ctx, l.svcCtx, in.PlayerId)
 			l.Logger.Infof("Player %d already in scene %d, idempotent success", in.PlayerId, in.SceneId)
 			return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 0}, nil
 		}
 	}
 
-	// 3. Process Change Scene State (if exists)
-	// We are lenient here: if ChangeSceneInfo is missing but the request is valid (scene exists on this node),
-	// we allow entry (e.g., forced entry, login after crash).
-	changeInfo, err := GetChangeSceneInfo(l.ctx, l.svcCtx, in.PlayerId)
-	if err != nil {
-		l.Logger.Errorf("Redis error reading change info: %v", err)
-		// Don't fail hard on Redis error if we can try to proceed? No, Redis error is bad.
-		return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 1, ErrorMessage: "Redis error"}, nil
-	}
-
-	if changeInfo != nil {
-		// If there is a pending change, verify target matches
-		if changeInfo.SceneId != in.SceneId {
-			// Mismatching pending change. This is tricky.
-			// Option A: Reject.
-			// Option B: Overwrite (Last Write Wins).
-			// Given user requirement "must always be able to enter", we choose Option B (proceed with this request).
-			l.Logger.Errorf("Player %d entering scene %d but had pending change to %d. Overriding.", in.PlayerId, in.SceneId, changeInfo.SceneId)
-		}
-		
-		// Clean up the change info as we are consuming it
-		err = ClearChangeSceneInfo(l.ctx, l.svcCtx, in.PlayerId)
-		if err != nil {
-			l.Logger.Errorf("Failed to clear change scene info: %v", err)
-		}
-	}
-
-	// 4. Update Player Location (Source of Truth)
+	// 3. Update Player Location (Source of Truth)
 	err = UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, in.SceneId, l.svcCtx.Config.NodeID)
 	if err != nil {
 		l.Logger.Errorf("Failed to update player location: %v", err)
