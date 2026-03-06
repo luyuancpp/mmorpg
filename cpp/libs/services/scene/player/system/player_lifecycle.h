@@ -8,6 +8,12 @@ class ChangeSceneInfoPBComponent;
 class PlayerMigrationPbEvent;
 class PlayerGameNodeEnteryInfoPBComponent;
 
+struct PlayerSceneEnterContext
+{
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	uint64_t sceneId{ 0 };
+};
+
 class PlayerLifecycleSystem
 {
 public:
