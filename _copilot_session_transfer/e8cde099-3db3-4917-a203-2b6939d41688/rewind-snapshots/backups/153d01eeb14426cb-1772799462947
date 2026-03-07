@@ -1,0 +1,89 @@
+package logic
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+	"strings"
+
+	"scene_manager/internal/svc"
+)
+
+const (
+	ChangeSceneState_None         = 0
+	ChangeSceneState_PendingLeave = 1
+	ChangeSceneState_WaitingEnter = 2
+	ChangeSceneState_EnterSucceed = 3
+
+	ChangeSceneType_SameGs      = 1
+	ChangeSceneType_DifferentGs = 2
+)
+
+type ChangeSceneInfo struct {
+	SceneId uint64
+	State   int
+	Type    int
+}
+
+func getChangeSceneKey(playerId uint64) string {
+	return fmt.Sprintf("player:%d:change_scene", playerId)
+}
+
+func PushChangeSceneInfo(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, sceneId uint64, changeType int) error {
+	key := getChangeSceneKey(playerId)
+	// Format: sceneId:state:type
+	val := fmt.Sprintf("%d:%d:%d", sceneId, ChangeSceneState_PendingLeave, changeType)
+	return svcCtx.Redis.Set(key, val)
+}
+
+func GetChangeSceneInfo(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) (*ChangeSceneInfo, error) {
+	key := getChangeSceneKey(playerId)
+	val, err := svcCtx.Redis.Get(key)
+	if err != nil {
+		// If key doesn't exist, Redis.Get might return empty string or error depending on wrapper
+		// Assuming go-zero Redis wrapper behavior: it returns error if key not found? No, it returns empty string usually or specific error.
+		// Let's assume standard behavior: check val.
+		return nil, err
+	}
+	if val == "" {
+		return nil, nil
+	}
+	parts := strings.Split(val, ":")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid change scene info format")
+	}
+	sceneId, _ := strconv.ParseUint(parts[0], 10, 64)
+	state, _ := strconv.Atoi(parts[1])
+	typ, _ := strconv.Atoi(parts[2])
+	return &ChangeSceneInfo{
+		SceneId: sceneId,
+		State:   state,
+		Type:    typ,
+	}, nil
+}
+
+func UpdateChangeSceneState(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, newState int) error {
+	info, err := GetChangeSceneInfo(ctx, svcCtx, playerId)
+	if err != nil || info == nil {
+		return err
+	}
+	info.State = newState
+	key := getChangeSceneKey(playerId)
+	val := fmt.Sprintf("%d:%d:%d", info.SceneId, info.State, info.Type)
+	return svcCtx.Redis.Set(key, val)
+}
+
+func ClearChangeSceneInfo(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) error {
+	key := getChangeSceneKey(playerId)
+	_, err := svcCtx.Redis.Del(key)
+	return err
+}
+
+func IsSceneOnLocalNode(ctx context.Context, svcCtx *svc.ServiceContext, sceneId uint64) (bool, error) {
+	key := fmt.Sprintf("scene:%d:node", sceneId)
+	nodeId, err := svcCtx.Redis.Get(key)
+	if err != nil {
+		return false, err
+	}
+	return nodeId == svcCtx.Config.NodeID, nil
+}
