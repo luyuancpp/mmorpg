@@ -69,6 +69,9 @@
     <ClInclude Include="service_metadata\player_skill_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="service_metadata\scene_manager_service_service_metadata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="service_metadata\service_metadata.cpp">

@@ -9,13 +9,14 @@
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 
 #include "network/player_message_utils.h"
+#include "network/node_message_utils.h"
 #include <threading/registry_manager.h>
 #include "proto/common/component/team_comp.pb.h"
 #include "proto/scene_manager/storage.pb.h"
 #include "rpc/service_metadata/centre_player_scene_service_metadata.h"
-#include "scene/scene/system/scene_common.h"
-#include "proto/centre/centre_player_scene.pb.h"
-#include "threading/node_context_manager.h"
+#include <modules/scene/comp/scene_comp.h>
+#include <proto/common/component/player_network_comp.pb.h>
+#include <proto/common/base/node.pb.h>
 
 // Callback wrapper for Hiredis
 void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
@@ -47,7 +48,7 @@ void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
 	}
 
 	// Fetch leader location
-	auto cb = [player](hiredis::Hiredis* c, int status, redisReply* r) {
+	auto cb = [player](hiredis::Hiredis* c, redisReply* r) {
 		OnGetLeaderLocation(player, r);
 	};
 	tlsReids.GetZoneRedis()->command(cb, "GET player:%llu:location", leaderId);
@@ -115,7 +116,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	const auto teamIdComp = tlsRegistryManager.actorRegistry.try_get<TeamId>(player);
 	if (teamIdComp && teamIdComp->team_id() != 0)
 	{
-		auto cb = [player](hiredis::Hiredis* c, int status, redisReply* r) {
+		auto cb = [player](hiredis::Hiredis* c, redisReply* r) {
 			OnGetTeamInfo(player, r);
 		};
 		tlsReids.GetZoneRedis()->command(cb, "GET team:%llu", teamIdComp->team_id());

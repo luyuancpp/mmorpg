@@ -28,7 +28,7 @@
 
 namespace scene_manager {
 
-// SceneManager 服务：负责场景创建/销毁与 Centre -> Scene 的路由
+// SceneManager Service: Responsible for scene creation/destruction and Centre -> Scene routing
 class SceneManager final {
  public:
   static constexpr char const* service_full_name() {
@@ -37,7 +37,7 @@ class SceneManager final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    // 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+    // Create a scene on a specific node (implemented by the Scene node)
     virtual ::grpc::Status CreateScene(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest& request, ::scene_manager::CreateSceneResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::CreateSceneResponse>> AsyncCreateScene(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::CreateSceneResponse>>(AsyncCreateSceneRaw(context, request, cq));
@@ -45,7 +45,7 @@ class SceneManager final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::CreateSceneResponse>> PrepareAsyncCreateScene(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::CreateSceneResponse>>(PrepareAsyncCreateSceneRaw(context, request, cq));
     }
-    // 销毁场景
+    // Destroy a scene
     virtual ::grpc::Status DestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::Empty* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncDestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncDestroySceneRaw(context, request, cq));
@@ -53,7 +53,7 @@ class SceneManager final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncDestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncDestroySceneRaw(context, request, cq));
     }
-    // Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+    // Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
     virtual ::grpc::Status EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::scene_manager::EnterSceneByCentreResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>> AsyncEnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>>(AsyncEnterSceneByCentreRaw(context, request, cq));
@@ -61,7 +61,7 @@ class SceneManager final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>> PrepareAsyncEnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>>(PrepareAsyncEnterSceneByCentreRaw(context, request, cq));
     }
-    // Centre 请求玩家离开场景（或切换场景前的离开）
+    // Centre requests a player to leave a scene (or leave before switching scenes)
     virtual ::grpc::Status LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::Empty* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncLeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncLeaveSceneByCentreRaw(context, request, cq));
@@ -72,16 +72,16 @@ class SceneManager final {
     class async_interface {
      public:
       virtual ~async_interface() {}
-      // 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+      // Create a scene on a specific node (implemented by the Scene node)
       virtual void CreateScene(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest* request, ::scene_manager::CreateSceneResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void CreateScene(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest* request, ::scene_manager::CreateSceneResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      // 销毁场景
+      // Destroy a scene
       virtual void DestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
       virtual void DestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      // Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+      // Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
       virtual void EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      // Centre 请求玩家离开场景（或切换场景前的离开）
+      // Centre requests a player to leave a scene (or leave before switching scenes)
       virtual void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
       virtual void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
@@ -170,13 +170,13 @@ class SceneManager final {
    public:
     Service();
     virtual ~Service();
-    // 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+    // Create a scene on a specific node (implemented by the Scene node)
     virtual ::grpc::Status CreateScene(::grpc::ServerContext* context, const ::scene_manager::CreateSceneRequest* request, ::scene_manager::CreateSceneResponse* response);
-    // 销毁场景
+    // Destroy a scene
     virtual ::grpc::Status DestroyScene(::grpc::ServerContext* context, const ::scene_manager::DestroySceneRequest* request, ::Empty* response);
-    // Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+    // Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
     virtual ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response);
-    // Centre 请求玩家离开场景（或切换场景前的离开）
+    // Centre requests a player to leave a scene (or leave before switching scenes)
     virtual ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response);
   };
   template <class BaseClass>

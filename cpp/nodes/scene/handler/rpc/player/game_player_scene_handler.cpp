@@ -19,7 +19,6 @@ void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterScen
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Handling GsEnterSceneRequest for player: " << request->enter_info().player_id() << ", scene_id: " << request->scene_id();
 
 	// Player should already be loaded by PlayerEnterGameNode (Node Handler).
 	// We just handle the logical entry into the specific scene instance here.

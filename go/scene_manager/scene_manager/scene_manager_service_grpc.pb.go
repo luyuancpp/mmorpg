@@ -30,15 +30,15 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// SceneManager 服务：负责场景创建/销毁与 Centre -> Scene 的路由
+// SceneManager Service: Responsible for scene creation/destruction and Centre -> Scene routing
 type SceneManagerClient interface {
-	// 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+	// Create a scene on a specific node (implemented by the Scene node)
 	CreateScene(ctx context.Context, in *CreateSceneRequest, opts ...grpc.CallOption) (*CreateSceneResponse, error)
-	// 销毁场景
+	// Destroy a scene
 	DestroyScene(ctx context.Context, in *DestroySceneRequest, opts ...grpc.CallOption) (*base.Empty, error)
-	// Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+	// Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
 	EnterSceneByCentre(ctx context.Context, in *EnterSceneByCentreRequest, opts ...grpc.CallOption) (*EnterSceneByCentreResponse, error)
-	// Centre 请求玩家离开场景（或切换场景前的离开）
+	// Centre requests a player to leave a scene (or leave before switching scenes)
 	LeaveSceneByCentre(ctx context.Context, in *LeaveSceneByCentreRequest, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
@@ -94,15 +94,15 @@ func (c *sceneManagerClient) LeaveSceneByCentre(ctx context.Context, in *LeaveSc
 // All implementations must embed UnimplementedSceneManagerServer
 // for forward compatibility.
 //
-// SceneManager 服务：负责场景创建/销毁与 Centre -> Scene 的路由
+// SceneManager Service: Responsible for scene creation/destruction and Centre -> Scene routing
 type SceneManagerServer interface {
-	// 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+	// Create a scene on a specific node (implemented by the Scene node)
 	CreateScene(context.Context, *CreateSceneRequest) (*CreateSceneResponse, error)
-	// 销毁场景
+	// Destroy a scene
 	DestroyScene(context.Context, *DestroySceneRequest) (*base.Empty, error)
-	// Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+	// Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
 	EnterSceneByCentre(context.Context, *EnterSceneByCentreRequest) (*EnterSceneByCentreResponse, error)
-	// Centre 请求玩家离开场景（或切换场景前的离开）
+	// Centre requests a player to leave a scene (or leave before switching scenes)
 	LeaveSceneByCentre(context.Context, *LeaveSceneByCentreRequest) (*base.Empty, error)
 	mustEmbedUnimplementedSceneManagerServer()
 }

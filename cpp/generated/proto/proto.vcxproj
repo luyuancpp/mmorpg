@@ -83,8 +83,18 @@
     <ClCompile Include="login\login.grpc.pb.cc" />
     <ClCompile Include="login\login.pb.cc" />
     <ClCompile Include="player\player.pb.cc" />
+    <ClCompile Include="scene\game_client_player.pb.cc" />
+    <ClCompile Include="scene\game_player.pb.cc" />
+    <ClCompile Include="scene\game_player_scene.pb.cc" />
+    <ClCompile Include="scene\game_scene.pb.cc" />
+    <ClCompile Include="scene\player_scene.pb.cc" />
+    <ClCompile Include="scene\player_skill.pb.cc" />
+    <ClCompile Include="scene\player_state_attribute_sync.pb.cc" />
+    <ClCompile Include="scene\scene.pb.cc" />
     <ClCompile Include="scene_manager\scene_manager_service.grpc.pb.cc" />
     <ClCompile Include="scene_manager\scene_manager_service.pb.cc" />
+    <ClCompile Include="scene_manager\storage.grpc.pb.cc" />
+    <ClCompile Include="scene_manager\storage.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="centre\centre_player.pb.h" />
@@ -151,8 +161,18 @@
     <ClInclude Include="login\login.grpc.pb.h" />
     <ClInclude Include="login\login.pb.h" />
     <ClInclude Include="player\player.pb.h" />
+    <ClInclude Include="scene\game_client_player.pb.h" />
+    <ClInclude Include="scene\game_player.pb.h" />
+    <ClInclude Include="scene\game_player_scene.pb.h" />
+    <ClInclude Include="scene\game_scene.pb.h" />
+    <ClInclude Include="scene\player_scene.pb.h" />
+    <ClInclude Include="scene\player_skill.pb.h" />
+    <ClInclude Include="scene\player_state_attribute_sync.pb.h" />
+    <ClInclude Include="scene\scene.pb.h" />
     <ClInclude Include="scene_manager\scene_manager_service.grpc.pb.h" />
     <ClInclude Include="scene_manager\scene_manager_service.pb.h" />
+    <ClInclude Include="scene_manager\storage.grpc.pb.h" />
+    <ClInclude Include="scene_manager\storage.pb.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
