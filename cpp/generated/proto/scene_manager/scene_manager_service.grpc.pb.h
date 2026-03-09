@@ -69,16 +69,6 @@ class SceneManager final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncLeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncLeaveSceneByCentreRaw(context, request, cq));
     }
-    // Gate 连接（保持长连接，双向流）
-    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>> GateConnect(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>>(GateConnectRaw(context));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>> AsyncGateConnect(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>>(AsyncGateConnectRaw(context, cq, tag));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>> PrepareAsyncGateConnect(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>>(PrepareAsyncGateConnectRaw(context, cq));
-    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -94,8 +84,6 @@ class SceneManager final {
       // Centre 请求玩家离开场景（或切换场景前的离开）
       virtual void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
       virtual void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      // Gate 连接（保持长连接，双向流）
-      virtual void GateConnect(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::scene_manager::GateHeartbeat,::scene_manager::GateCommand>* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -109,9 +97,6 @@ class SceneManager final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>* PrepareAsyncEnterSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* GateConnectRaw(::grpc::ClientContext* context) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* AsyncGateConnectRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* PrepareAsyncGateConnectRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -144,15 +129,6 @@ class SceneManager final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncLeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncLeaveSceneByCentreRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>> GateConnect(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>>(GateConnectRaw(context));
-    }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>> AsyncGateConnect(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>>(AsyncGateConnectRaw(context, cq, tag));
-    }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>> PrepareAsyncGateConnect(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>>(PrepareAsyncGateConnectRaw(context, cq));
-    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -164,7 +140,6 @@ class SceneManager final {
       void EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
       void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void GateConnect(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::scene_manager::GateHeartbeat,::scene_manager::GateCommand>* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -184,14 +159,10 @@ class SceneManager final {
     ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>* PrepareAsyncEnterSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* GateConnectRaw(::grpc::ClientContext* context) override;
-    ::grpc::ClientAsyncReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* AsyncGateConnectRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
-    ::grpc::ClientAsyncReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* PrepareAsyncGateConnectRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_CreateScene_;
     const ::grpc::internal::RpcMethod rpcmethod_DestroyScene_;
     const ::grpc::internal::RpcMethod rpcmethod_EnterSceneByCentre_;
     const ::grpc::internal::RpcMethod rpcmethod_LeaveSceneByCentre_;
-    const ::grpc::internal::RpcMethod rpcmethod_GateConnect_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -207,8 +178,6 @@ class SceneManager final {
     virtual ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response);
     // Centre 请求玩家离开场景（或切换场景前的离开）
     virtual ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response);
-    // Gate 连接（保持长连接，双向流）
-    virtual ::grpc::Status GateConnect(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::scene_manager::GateCommand, ::scene_manager::GateHeartbeat>* stream);
   };
   template <class BaseClass>
   class WithAsyncMethod_CreateScene : public BaseClass {
@@ -290,27 +259,7 @@ class SceneManager final {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  template <class BaseClass>
-  class WithAsyncMethod_GateConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithAsyncMethod_GateConnect() {
-      ::grpc::Service::MarkMethodAsync(4);
-    }
-    ~WithAsyncMethod_GateConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GateConnect(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::scene_manager::GateCommand, ::scene_manager::GateHeartbeat>* /*stream*/)  override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestGateConnect(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::scene_manager::GateCommand, ::scene_manager::GateHeartbeat>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncBidiStreaming(4, context, stream, new_call_cq, notification_cq, tag);
-    }
-  };
-  typedef WithAsyncMethod_CreateScene<WithAsyncMethod_DestroyScene<WithAsyncMethod_EnterSceneByCentre<WithAsyncMethod_LeaveSceneByCentre<WithAsyncMethod_GateConnect<Service > > > > > AsyncService;
+  typedef WithAsyncMethod_CreateScene<WithAsyncMethod_DestroyScene<WithAsyncMethod_EnterSceneByCentre<WithAsyncMethod_LeaveSceneByCentre<Service > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_CreateScene : public BaseClass {
    private:
@@ -419,30 +368,7 @@ class SceneManager final {
     virtual ::grpc::ServerUnaryReactor* LeaveSceneByCentre(
       ::grpc::CallbackServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
   };
-  template <class BaseClass>
-  class WithCallbackMethod_GateConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithCallbackMethod_GateConnect() {
-      ::grpc::Service::MarkMethodCallback(4,
-          new ::grpc::internal::CallbackBidiHandler< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>(
-            [this](
-                   ::grpc::CallbackServerContext* context) { return this->GateConnect(context); }));
-    }
-    ~WithCallbackMethod_GateConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GateConnect(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::scene_manager::GateCommand, ::scene_manager::GateHeartbeat>* /*stream*/)  override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerBidiReactor< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* GateConnect(
-      ::grpc::CallbackServerContext* /*context*/)
-      { return nullptr; }
-  };
-  typedef WithCallbackMethod_CreateScene<WithCallbackMethod_DestroyScene<WithCallbackMethod_EnterSceneByCentre<WithCallbackMethod_LeaveSceneByCentre<WithCallbackMethod_GateConnect<Service > > > > > CallbackService;
+  typedef WithCallbackMethod_CreateScene<WithCallbackMethod_DestroyScene<WithCallbackMethod_EnterSceneByCentre<WithCallbackMethod_LeaveSceneByCentre<Service > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_CreateScene : public BaseClass {
@@ -508,23 +434,6 @@ class SceneManager final {
     }
     // disable synchronous version of this method
     ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
-  template <class BaseClass>
-  class WithGenericMethod_GateConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithGenericMethod_GateConnect() {
-      ::grpc::Service::MarkMethodGeneric(4);
-    }
-    ~WithGenericMethod_GateConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GateConnect(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::scene_manager::GateCommand, ::scene_manager::GateHeartbeat>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -607,26 +516,6 @@ class SceneManager final {
     }
     void RequestLeaveSceneByCentre(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
-  class WithRawMethod_GateConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawMethod_GateConnect() {
-      ::grpc::Service::MarkMethodRaw(4);
-    }
-    ~WithRawMethod_GateConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GateConnect(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::scene_manager::GateCommand, ::scene_manager::GateHeartbeat>* /*stream*/)  override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestGateConnect(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncBidiStreaming(4, context, stream, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -716,29 +605,6 @@ class SceneManager final {
     }
     virtual ::grpc::ServerUnaryReactor* LeaveSceneByCentre(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
-  };
-  template <class BaseClass>
-  class WithRawCallbackMethod_GateConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawCallbackMethod_GateConnect() {
-      ::grpc::Service::MarkMethodRawCallback(4,
-          new ::grpc::internal::CallbackBidiHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-            [this](
-                   ::grpc::CallbackServerContext* context) { return this->GateConnect(context); }));
-    }
-    ~WithRawCallbackMethod_GateConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GateConnect(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::scene_manager::GateCommand, ::scene_manager::GateHeartbeat>* /*stream*/)  override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    virtual ::grpc::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* GateConnect(
-      ::grpc::CallbackServerContext* /*context*/)
-      { return nullptr; }
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_CreateScene : public BaseClass {
