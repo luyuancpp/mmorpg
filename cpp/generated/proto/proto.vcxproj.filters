@@ -231,6 +231,12 @@
     <ClCompile Include="login\login.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="scene_manager\scene_manager_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="scene_manager\scene_manager_service.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="centre\centre_player.pb.h">
@@ -447,6 +453,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="login\login.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene_manager\scene_manager_service.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene_manager\scene_manager_service.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

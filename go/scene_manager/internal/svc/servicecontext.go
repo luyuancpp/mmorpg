@@ -1,23 +1,25 @@
 package svc
 
 import (
-	"sync"
-
 	"scene_manager/internal/config"
 
+	"github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
 type ServiceContext struct {
-	Config      config.Config
-	Redis       *redis.Redis
-	GateStreams sync.Map // map[string]scene_manager.SceneManager_GateConnectServer
+	Config config.Config
+	Redis  *redis.Redis
+	Kafka  *kafka.Writer
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
-		Config:      c,
-		Redis:       redis.MustNewRedis(c.Redis),
-		GateStreams: sync.Map{},
+		Config: c,
+		Redis:  redis.MustNewRedis(c.Redis),
+		Kafka: &kafka.Writer{
+			Addr:     kafka.TCP(c.Kafka.Brokers...),
+			Balancer: &kafka.LeastBytes{},
+		},
 	}
 }

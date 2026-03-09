@@ -9,4 +9,7 @@ type Config struct {
 	zrpc.RpcServerConf
 	Redis redis.RedisConf
 	NodeID string
+	Kafka struct {
+		Brokers []string
+	}
 }

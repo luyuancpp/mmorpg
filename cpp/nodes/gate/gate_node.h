@@ -15,8 +15,6 @@
 #include "time/comp/timer_task_comp.h"
 #include "node/system/node/node.h"
 
-#include <grpcpp/grpcpp.h>
-#include "proto/scene_manager/scene_manager_service.grpc.pb.h"
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -36,7 +34,7 @@ public:
     void StartRpcServer()override;
 
     // Connect to SceneManager
-    void ConnectToSceneManager();
+    void ConnectToSceneManager(); // Keeping for now, might repurpose for Kafka init
 
 private:
     void OnConnection(const TcpConnectionPtr& conn)
@@ -52,22 +50,15 @@ private:
         conn->shutdown();
     }
 
-    void HandleStream();
-
 private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
     GateHandler nodeReplyService;
 
-    // SceneManager Control Stream
-    std::unique_ptr<scene_manager::SceneManager::Stub> sceneManagerStub_;
-    std::shared_ptr<grpc::Channel> sceneManagerChannel_;
-    std::unique_ptr<grpc::ClientReaderWriter<scene_manager::GateHeartbeat, scene_manager::GateCommand>> gateStream_;
-    std::unique_ptr<std::thread> streamThread_;
-    std::unique_ptr<grpc::ClientContext> streamContext_;
+    // Kafka Consumer will be added here
+    std::unique_ptr<std::thread> kafkaConsumerThread_;
     std::atomic<bool> isRunning_{false};
-    std::mutex streamMutex_;
 };
 
 extern GateNode* gGateNode;
