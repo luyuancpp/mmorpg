@@ -71,6 +71,7 @@ message EnterSceneByCentreRequest {
   uint64 centre_node_id = 3; // 源 Centre 节点 id
   uint64 session_id = 4; // Gate session id（可为0，表示托管）
   string request_id = 5; // 幂等 id（可选）
+  string gate_id = 6;    // Gate 节点ID
 }
 
 message EnterSceneByCentreResponse {
