@@ -7,4 +7,8 @@ Etcd:
 Redis:
   Host: 127.0.0.1:6379
   Type: node
+  
+Kafka:
+  Brokers:
+    - 127.0.0.1:9092
 NodeID: "node-1"

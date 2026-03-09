@@ -91,6 +91,8 @@
     <ClCompile Include="room\player_skill.pb.cc" />
     <ClCompile Include="room\player_state_attribute_sync.pb.cc" />
     <ClCompile Include="room\scene.pb.cc" />
+    <ClCompile Include="scene_manager\scene_manager_service.grpc.pb.cc" />
+    <ClCompile Include="scene_manager\scene_manager_service.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="centre\centre_player.pb.h" />
@@ -165,6 +167,8 @@
     <ClInclude Include="room\player_skill.pb.h" />
     <ClInclude Include="room\player_state_attribute_sync.pb.h" />
     <ClInclude Include="room\scene.pb.h" />
+    <ClInclude Include="scene_manager\scene_manager_service.grpc.pb.h" />
+    <ClInclude Include="scene_manager\scene_manager_service.pb.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
