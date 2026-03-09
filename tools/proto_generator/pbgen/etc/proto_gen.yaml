@@ -364,6 +364,20 @@ domain_meta:
         proto:   "cpp/generated/db/proto"
         handler: "cpp/generated/db/handler"
 
+  scene_manager:
+    source: "{{proto_dir}}scene_manager/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/scene_manager/proto"
+        handler: "go/generated/scene_manager/handler"
+        grpc:    "go/generated/scene_manager/grpc"
+      cpp:
+        proto:   "cpp/generated/scene_manager/proto"
+        handler: "cpp/generated/scene_manager/handler"
+        grpc:    "cpp/generated/scene_manager/grpc"
+
   etcd:
     source: "{{proto_dir}}etcd/"
     rpc:
