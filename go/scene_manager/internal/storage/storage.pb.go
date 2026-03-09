@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.9
 // 	protoc        v6.31.1
-// source: scene_manager/storage.proto
+// source: proto/scene_manager/storage.proto
 
 package storage
 
@@ -34,7 +34,7 @@ type SceneInfo struct {
 
 func (x *SceneInfo) Reset() {
 	*x = SceneInfo{}
-	mi := &file_scene_manager_storage_proto_msgTypes[0]
+	mi := &file_proto_scene_manager_storage_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *SceneInfo) String() string {
 func (*SceneInfo) ProtoMessage() {}
 
 func (x *SceneInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_scene_manager_storage_proto_msgTypes[0]
+	mi := &file_proto_scene_manager_storage_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *SceneInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SceneInfo.ProtoReflect.Descriptor instead.
 func (*SceneInfo) Descriptor() ([]byte, []int) {
-	return file_scene_manager_storage_proto_rawDescGZIP(), []int{0}
+	return file_proto_scene_manager_storage_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SceneInfo) GetSceneId() uint64 {
@@ -102,7 +102,7 @@ type PlayerLocation struct {
 
 func (x *PlayerLocation) Reset() {
 	*x = PlayerLocation{}
-	mi := &file_scene_manager_storage_proto_msgTypes[1]
+	mi := &file_proto_scene_manager_storage_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -114,7 +114,7 @@ func (x *PlayerLocation) String() string {
 func (*PlayerLocation) ProtoMessage() {}
 
 func (x *PlayerLocation) ProtoReflect() protoreflect.Message {
-	mi := &file_scene_manager_storage_proto_msgTypes[1]
+	mi := &file_proto_scene_manager_storage_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -127,7 +127,7 @@ func (x *PlayerLocation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerLocation.ProtoReflect.Descriptor instead.
 func (*PlayerLocation) Descriptor() ([]byte, []int) {
-	return file_scene_manager_storage_proto_rawDescGZIP(), []int{1}
+	return file_proto_scene_manager_storage_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PlayerLocation) GetSceneId() uint64 {
@@ -151,11 +151,11 @@ func (x *PlayerLocation) GetUpdateTime() uint64 {
 	return 0
 }
 
-var File_scene_manager_storage_proto protoreflect.FileDescriptor
+var File_proto_scene_manager_storage_proto protoreflect.FileDescriptor
 
-const file_scene_manager_storage_proto_rawDesc = "" +
+const file_proto_scene_manager_storage_proto_rawDesc = "" +
 	"\n" +
-	"\x1bscene_manager/storage.proto\x12\astorage\"\x84\x01\n" +
+	"!proto/scene_manager/storage.proto\x12\astorage\"\x84\x01\n" +
 	"\tSceneInfo\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\"\n" +
 	"\rscene_conf_id\x18\x02 \x01(\x04R\vsceneConfId\x12\x17\n" +
@@ -169,23 +169,23 @@ const file_scene_manager_storage_proto_rawDesc = "" +
 	"updateTimeB Z\x1escene_manager/internal/storageb\x06proto3"
 
 var (
-	file_scene_manager_storage_proto_rawDescOnce sync.Once
-	file_scene_manager_storage_proto_rawDescData []byte
+	file_proto_scene_manager_storage_proto_rawDescOnce sync.Once
+	file_proto_scene_manager_storage_proto_rawDescData []byte
 )
 
-func file_scene_manager_storage_proto_rawDescGZIP() []byte {
-	file_scene_manager_storage_proto_rawDescOnce.Do(func() {
-		file_scene_manager_storage_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_scene_manager_storage_proto_rawDesc), len(file_scene_manager_storage_proto_rawDesc)))
+func file_proto_scene_manager_storage_proto_rawDescGZIP() []byte {
+	file_proto_scene_manager_storage_proto_rawDescOnce.Do(func() {
+		file_proto_scene_manager_storage_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_scene_manager_storage_proto_rawDesc), len(file_proto_scene_manager_storage_proto_rawDesc)))
 	})
-	return file_scene_manager_storage_proto_rawDescData
+	return file_proto_scene_manager_storage_proto_rawDescData
 }
 
-var file_scene_manager_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_scene_manager_storage_proto_goTypes = []any{
+var file_proto_scene_manager_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_scene_manager_storage_proto_goTypes = []any{
 	(*SceneInfo)(nil),      // 0: storage.SceneInfo
 	(*PlayerLocation)(nil), // 1: storage.PlayerLocation
 }
-var file_scene_manager_storage_proto_depIdxs = []int32{
+var file_proto_scene_manager_storage_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -193,26 +193,26 @@ var file_scene_manager_storage_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_scene_manager_storage_proto_init() }
-func file_scene_manager_storage_proto_init() {
-	if File_scene_manager_storage_proto != nil {
+func init() { file_proto_scene_manager_storage_proto_init() }
+func file_proto_scene_manager_storage_proto_init() {
+	if File_proto_scene_manager_storage_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_scene_manager_storage_proto_rawDesc), len(file_scene_manager_storage_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_manager_storage_proto_rawDesc), len(file_proto_scene_manager_storage_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_scene_manager_storage_proto_goTypes,
-		DependencyIndexes: file_scene_manager_storage_proto_depIdxs,
-		MessageInfos:      file_scene_manager_storage_proto_msgTypes,
+		GoTypes:           file_proto_scene_manager_storage_proto_goTypes,
+		DependencyIndexes: file_proto_scene_manager_storage_proto_depIdxs,
+		MessageInfos:      file_proto_scene_manager_storage_proto_msgTypes,
 	}.Build()
-	File_scene_manager_storage_proto = out.File
-	file_scene_manager_storage_proto_goTypes = nil
-	file_scene_manager_storage_proto_depIdxs = nil
+	File_proto_scene_manager_storage_proto = out.File
+	file_proto_scene_manager_storage_proto_goTypes = nil
+	file_proto_scene_manager_storage_proto_depIdxs = nil
 }

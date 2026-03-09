@@ -7,3 +7,10 @@ message TeamId
 {
   uint64 team_id = 1;
 }
+
+message TeamInfo
+{
+  uint64 team_id = 1;
+  uint64 leader_id = 2;
+  repeated uint64 members = 3;
+}

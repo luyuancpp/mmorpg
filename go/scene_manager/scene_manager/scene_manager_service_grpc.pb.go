@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.31.1
-// source: scene_manager/scene_manager_service.proto
+// source: proto/scene_manager/scene_manager_service.proto
 
 package scene_manager
 
@@ -11,7 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	base "scene_manager/base"
+	base "login/proto/common/base"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -279,5 +279,5 @@ var SceneManager_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "scene_manager/scene_manager_service.proto",
+	Metadata: "proto/scene_manager/scene_manager_service.proto",
 }

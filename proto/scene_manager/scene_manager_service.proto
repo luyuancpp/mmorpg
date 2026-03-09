@@ -1,8 +1,8 @@
 syntax = "proto3";
 package scene_manager;
 
-import "common/base/node.proto";
-import "common/base/empty.proto";
+import "proto/common/base/node.proto";
+import "proto/common/base/empty.proto";
 
 option go_package = "scene_manager/scene_manager";
 

@@ -25,6 +25,34 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
+inline constexpr TeamInfo::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        members_{},
+        _members_cached_byte_size_{0},
+        team_id_{::uint64_t{0u}},
+        leader_id_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR TeamInfo::TeamInfo(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(TeamInfo_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct TeamInfoDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR TeamInfoDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~TeamInfoDefaultTypeInternal() {}
+  union {
+    TeamInfo _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TeamInfoDefaultTypeInternal _TeamInfo_default_instance_;
+
 inline constexpr TeamId::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -61,31 +89,44 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::TeamId, _impl_.team_id_),
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::TeamInfo, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::TeamInfo, _impl_.team_id_),
+        PROTOBUF_FIELD_OFFSET(::TeamInfo, _impl_.leader_id_),
+        PROTOBUF_FIELD_OFFSET(::TeamInfo, _impl_.members_),
+        0,
+        1,
+        ~0u,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::TeamId)},
+        {5, sizeof(::TeamInfo)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_TeamId_default_instance_._instance,
+    &::_TeamInfo_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n&proto/common/component/team_comp.proto"
-    "\"\031\n\006TeamId\022\017\n\007team_id\030\001 \001(\004b\006proto3"
+    "\"\031\n\006TeamId\022\017\n\007team_id\030\001 \001(\004\"\?\n\010TeamInfo\022"
+    "\017\n\007team_id\030\001 \001(\004\022\021\n\tleader_id\030\002 \001(\004\022\017\n\007m"
+    "embers\030\003 \003(\004b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto = {
     false,
     false,
-    75,
+    140,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto,
     "proto/common/component/team_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto_once,
     nullptr,
     0,
-    1,
+    2,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto::offsets,
@@ -325,6 +366,349 @@ void TeamId::InternalSwap(TeamId* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
 }
 
 ::google::protobuf::Metadata TeamId::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class TeamInfo::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<TeamInfo>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_._has_bits_);
+};
+
+TeamInfo::TeamInfo(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, TeamInfo_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:TeamInfo)
+}
+PROTOBUF_NDEBUG_INLINE TeamInfo::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::TeamInfo& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        members_{visibility, arena, from.members_},
+        _members_cached_byte_size_{0} {}
+
+TeamInfo::TeamInfo(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const TeamInfo& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, TeamInfo_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  TeamInfo* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, team_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, team_id_),
+           offsetof(Impl_, leader_id_) -
+               offsetof(Impl_, team_id_) +
+               sizeof(Impl_::leader_id_));
+
+  // @@protoc_insertion_point(copy_constructor:TeamInfo)
+}
+PROTOBUF_NDEBUG_INLINE TeamInfo::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        members_{visibility, arena},
+        _members_cached_byte_size_{0} {}
+
+inline void TeamInfo::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, team_id_),
+           0,
+           offsetof(Impl_, leader_id_) -
+               offsetof(Impl_, team_id_) +
+               sizeof(Impl_::leader_id_));
+}
+TeamInfo::~TeamInfo() {
+  // @@protoc_insertion_point(destructor:TeamInfo)
+  SharedDtor(*this);
+}
+inline void TeamInfo::SharedDtor(MessageLite& self) {
+  TeamInfo& this_ = static_cast<TeamInfo&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL TeamInfo::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) TeamInfo(arena);
+}
+constexpr auto TeamInfo::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.members_) +
+          decltype(TeamInfo::_impl_.members_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(TeamInfo), alignof(TeamInfo), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&TeamInfo::PlacementNew_,
+                                 sizeof(TeamInfo),
+                                 alignof(TeamInfo));
+  }
+}
+constexpr auto TeamInfo::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_TeamInfo_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &TeamInfo::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<TeamInfo>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &TeamInfo::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<TeamInfo>(), &TeamInfo::ByteSizeLong,
+              &TeamInfo::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_._cached_size_),
+          false,
+      },
+      &TeamInfo::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull TeamInfo_class_data_ =
+        TeamInfo::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+TeamInfo::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&TeamInfo_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(TeamInfo_class_data_.tc_table);
+  return TeamInfo_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+TeamInfo::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    TeamInfo_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::TeamInfo>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 team_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(TeamInfo, _impl_.team_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.team_id_)}},
+    // uint64 leader_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(TeamInfo, _impl_.leader_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.leader_id_)}},
+    // repeated uint64 members = 3;
+    {::_pbi::TcParser::FastV64P1,
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.members_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 team_id = 1;
+    {PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.team_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 leader_id = 2;
+    {PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.leader_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // repeated uint64 members = 3;
+    {PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.members_), -1, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void TeamInfo::Clear() {
+// @@protoc_insertion_point(message_clear_start:TeamInfo)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.members_.Clear();
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    ::memset(&_impl_.team_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.leader_id_) -
+        reinterpret_cast<char*>(&_impl_.team_id_)) + sizeof(_impl_.leader_id_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL TeamInfo::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const TeamInfo& this_ = static_cast<const TeamInfo&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL TeamInfo::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const TeamInfo& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:TeamInfo)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 team_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_team_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_team_id(), target);
+    }
+  }
+
+  // uint64 leader_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_leader_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_leader_id(), target);
+    }
+  }
+
+  // repeated uint64 members = 3;
+  {
+    int byte_size = this_._impl_._members_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteUInt64Packed(
+          3, this_._internal_members(), byte_size, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:TeamInfo)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t TeamInfo::ByteSizeLong(const MessageLite& base) {
+  const TeamInfo& this_ = static_cast<const TeamInfo&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t TeamInfo::ByteSizeLong() const {
+  const TeamInfo& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:TeamInfo)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+   {
+    // repeated uint64 members = 3;
+    {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
+              this_._internal_members(), 1,
+              this_._impl_._members_cached_byte_size_);
+    }
+  }
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // uint64 team_id = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_team_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_team_id());
+      }
+    }
+    // uint64 leader_id = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_leader_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_leader_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void TeamInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<TeamInfo*>(&to_msg);
+  auto& from = static_cast<const TeamInfo&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:TeamInfo)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_members()->MergeFrom(from._internal_members());
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_team_id() != 0) {
+        _this->_impl_.team_id_ = from._impl_.team_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_leader_id() != 0) {
+        _this->_impl_.leader_id_ = from._impl_.leader_id_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void TeamInfo::CopyFrom(const TeamInfo& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:TeamInfo)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void TeamInfo::InternalSwap(TeamInfo* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.members_.InternalSwap(&other->_impl_.members_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.leader_id_)
+      + sizeof(TeamInfo::_impl_.leader_id_)
+      - PROTOBUF_FIELD_OFFSET(TeamInfo, _impl_.team_id_)>(
+          reinterpret_cast<char*>(&_impl_.team_id_),
+          reinterpret_cast<char*>(&other->_impl_.team_id_));
+}
+
+::google::protobuf::Metadata TeamInfo::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
