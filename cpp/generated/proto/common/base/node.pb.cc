@@ -34,7 +34,7 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
     file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2fnode_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\034proto/common/base/node.proto*\273\004\n\teNode"
+    "\n\034proto/common/base/node.proto*\330\004\n\teNode"
     "Type\022\025\n\021DeployNodeService\020\000\022\021\n\rDbNodeSer"
     "vice\020\001\022\025\n\021CentreNodeService\020\002\022\024\n\020SceneNo"
     "deService\020\003\022\023\n\017GateNodeService\020\004\022\024\n\020Logi"
@@ -49,17 +49,18 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fnode_2eproto[] ABSL
     "SecurityNodeService\020\024\022\032\n\026CrossServerNode"
     "Service\020\025\022\030\n\024AnalyticsNodeService\020\026\022\021\n\rG"
     "mNodeService\020\027\022\034\n\030PlayerLocatorNodeServi"
-    "ce\020\030*g\n\016eSceneNodeType\022\022\n\016kMainSceneNode"
-    "\020\000\022\016\n\nkSceneNode\020\001\022\027\n\023kMainSceneCrossNod"
-    "e\020\002\022\030\n\024kSceneSceneCrossNode\020\003*K\n\021eNodePr"
-    "otocolType\022\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPROTOCOL"
-    "_GRPC\020\001\022\021\n\rPROTOCOL_HTTP\020\002b\006proto3"
+    "ce\020\030\022\033\n\027SceneManagerNodeService\020\031*g\n\016eSc"
+    "eneNodeType\022\022\n\016kMainSceneNode\020\000\022\016\n\nkScen"
+    "eNode\020\001\022\027\n\023kMainSceneCrossNode\020\002\022\030\n\024kSce"
+    "neSceneCrossNode\020\003*K\n\021eNodeProtocolType\022"
+    "\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPROTOCOL_GRPC\020\001\022\021\n\r"
+    "PROTOCOL_HTTP\020\002b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto = {
     false,
     false,
-    794,
+    823,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fnode_2eproto,
     "proto/common/base/node.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto_once,
@@ -77,7 +78,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eNodeType_descriptor(
   return file_level_enum_descriptors_proto_2fcommon_2fbase_2fnode_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t eNodeType_internal_data_[] = {
-    1638400u, 0u, };
+    1703936u, 0u, };
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eSceneNodeType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto);
   return file_level_enum_descriptors_proto_2fcommon_2fbase_2fnode_2eproto[1];

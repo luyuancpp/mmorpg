@@ -49,6 +49,7 @@ const (
 	ENodeType_AnalyticsNodeService     ENodeType = 22 // 数据统计与分析服务
 	ENodeType_GmNodeService            ENodeType = 23 // GM工具服务（客服/管理员指令）
 	ENodeType_PlayerLocatorNodeService ENodeType = 24 // 跨服玩家定位服务
+	ENodeType_SceneManagerNodeService  ENodeType = 25 // 场景管理服务（Go-Zero）
 )
 
 // Enum value maps for ENodeType.
@@ -79,6 +80,7 @@ var (
 		22: "AnalyticsNodeService",
 		23: "GmNodeService",
 		24: "PlayerLocatorNodeService",
+		25: "SceneManagerNodeService",
 	}
 	ENodeType_value = map[string]int32{
 		"DeployNodeService":        0,
@@ -106,6 +108,7 @@ var (
 		"AnalyticsNodeService":     22,
 		"GmNodeService":            23,
 		"PlayerLocatorNodeService": 24,
+		"SceneManagerNodeService":  25,
 	}
 )
 
@@ -242,7 +245,7 @@ var File_proto_common_base_node_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_node_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/common/base/node.proto*\xbb\x04\n" +
+	"\x1cproto/common/base/node.proto*\xd8\x04\n" +
 	"\teNodeType\x12\x15\n" +
 	"\x11DeployNodeService\x10\x00\x12\x11\n" +
 	"\rDbNodeService\x10\x01\x12\x15\n" +
@@ -269,7 +272,8 @@ const file_proto_common_base_node_proto_rawDesc = "" +
 	"\x16CrossServerNodeService\x10\x15\x12\x18\n" +
 	"\x14AnalyticsNodeService\x10\x16\x12\x11\n" +
 	"\rGmNodeService\x10\x17\x12\x1c\n" +
-	"\x18PlayerLocatorNodeService\x10\x18*g\n" +
+	"\x18PlayerLocatorNodeService\x10\x18\x12\x1b\n" +
+	"\x17SceneManagerNodeService\x10\x19*g\n" +
 	"\x0eeSceneNodeType\x12\x12\n" +
 	"\x0ekMainSceneNode\x10\x00\x12\x0e\n" +
 	"\n" +

@@ -83,14 +83,6 @@
     <ClCompile Include="login\login.grpc.pb.cc" />
     <ClCompile Include="login\login.pb.cc" />
     <ClCompile Include="player\player.pb.cc" />
-    <ClCompile Include="room\game_client_player.pb.cc" />
-    <ClCompile Include="room\game_player.pb.cc" />
-    <ClCompile Include="room\game_player_scene.pb.cc" />
-    <ClCompile Include="room\game_scene.pb.cc" />
-    <ClCompile Include="room\player_scene.pb.cc" />
-    <ClCompile Include="room\player_skill.pb.cc" />
-    <ClCompile Include="room\player_state_attribute_sync.pb.cc" />
-    <ClCompile Include="room\scene.pb.cc" />
     <ClCompile Include="scene_manager\scene_manager_service.grpc.pb.cc" />
     <ClCompile Include="scene_manager\scene_manager_service.pb.cc" />
   </ItemGroup>
@@ -159,14 +151,6 @@
     <ClInclude Include="login\login.grpc.pb.h" />
     <ClInclude Include="login\login.pb.h" />
     <ClInclude Include="player\player.pb.h" />
-    <ClInclude Include="room\game_client_player.pb.h" />
-    <ClInclude Include="room\game_player.pb.h" />
-    <ClInclude Include="room\game_player_scene.pb.h" />
-    <ClInclude Include="room\game_scene.pb.h" />
-    <ClInclude Include="room\player_scene.pb.h" />
-    <ClInclude Include="room\player_skill.pb.h" />
-    <ClInclude Include="room\player_state_attribute_sync.pb.h" />
-    <ClInclude Include="room\scene.pb.h" />
     <ClInclude Include="scene_manager\scene_manager_service.grpc.pb.h" />
     <ClInclude Include="scene_manager\scene_manager_service.pb.h" />
   </ItemGroup>
