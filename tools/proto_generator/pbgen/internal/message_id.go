@@ -3,7 +3,7 @@ package internal
 import (
 	"bufio"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -92,6 +92,15 @@ func NewConstantsWriter(constants []string, filePath string) *ConstantsWriter {
 
 // Write writes the constants to the specified file path.
 func (cw *ConstantsWriter) Write() error {
+	dir := filepath.Dir(cw.FilePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		logger.Global.Fatal("创建常量文件目录失败",
+			zap.String("file_path", cw.FilePath),
+			zap.Error(err),
+		)
+		return err
+	}
+
 	file, err := os.Create(cw.FilePath)
 	if err != nil {
 		logger.Global.Fatal("创建常量文件失败",
@@ -199,7 +208,7 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 				)
 				continue
 			}
-			basePath := strings.ToLower(path.Base(meta.Source))
+			basePath := strings.ToLower(filepath.Base(meta.Source))
 			outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + _config.Global.Naming.GoPackage
 			filePath := outputDir + "/" + _config.Global.FileExtensions.MessageIdGoFile
 			filePaths = append(filePaths, filePath)
