@@ -55,7 +55,7 @@ type DescData struct {
 
 const playerHeaderTemplate = `#pragma once
 #include "entt/src/entt/entity/registry.hpp"
-#include "proto/logic/database/mysql_database_table.pb.h"
+#include "proto/common/database/mysql_database_table.pb.h"
 {{- range .Entries }}
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message);
 void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);

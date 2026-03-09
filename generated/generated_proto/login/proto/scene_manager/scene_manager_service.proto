@@ -1,4 +1,4 @@
-syntax = "proto3";
+﻿syntax = "proto3";
 package scene_manager;
 
 import "proto/common/base/node.proto";
@@ -6,49 +6,49 @@ import "proto/common/base/empty.proto";
 
 option go_package = "scene_manager/scene_manager";
 
-// SceneManager 服务：负责场景创建/销毁与 Centre -> Scene 的路由
+// SceneManager Service: Responsible for scene creation/destruction and Centre -> Scene routing
 service SceneManager {
-  // 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+  // Create a scene on a specific node (implemented by the Scene node)
   rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}
 
-  // 销毁场景
+  // Destroy a scene
   rpc DestroyScene(DestroySceneRequest) returns (Empty) {}
 
-  // Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+  // Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
   rpc EnterSceneByCentre(EnterSceneByCentreRequest) returns (EnterSceneByCentreResponse) {}
 
-  // Centre 请求玩家离开场景（或切换场景前的离开）
+  // Centre requests a player to leave a scene (or leave before switching scenes)
   rpc LeaveSceneByCentre(LeaveSceneByCentreRequest) returns (Empty) {}
 }
 
 message GateCommand {
   enum CommandType {
-    RoutePlayer = 0; // 切换玩家路由
-    KickPlayer = 1;  // 踢下线
-    Broadcast = 2;   // 广播消息
+    RoutePlayer = 0; // Switch player routing
+    KickPlayer = 1;  // Kick offline
+    Broadcast = 2;   // Broadcast message
   }
   CommandType command_type = 1;
   uint64 player_id = 2;
-  string target_node_id = 3; // 目标 Scene Node ID (用于路由切换)
+  string target_node_id = 3; // Target Scene Node ID (for routing switch)
   uint64 session_id = 4;     // Gate Session ID
-  bytes payload = 5;         // 额外数据 (如广播内容)
-  string target_gate_id = 6;     // 目标Gate ID
-  string target_instance_id = 7; // 目标Gate实例ID（防串号）
+  bytes payload = 5;         // Extra data (e.g., broadcast content)
+  string target_gate_id = 6;     // Target Gate ID
+  string target_instance_id = 7; // Target Gate Instance ID (prevents session conflict)
 }
 
 message CreateSceneRequest {
-  // 场景配置 id
+  // Scene config ID
   uint64 scene_conf_id = 1;
-  // 可选：指定在某个 Scene 节点创建
+  // Optional: Specify creation on a specific Scene node
   string target_node_id = 2;
 }
 
 message CreateSceneResponse {
-  // 全局场景 id（由 Scene 节点分配）
+  // Global scene ID (allocated by Scene node)
   uint64 scene_id = 1;
-  // 所在的节点ID
+  // ID of the node where it resides
   string node_id = 2;
-  // 创建结果：0 成功，非0 错误码
+  // Creation result: 0 for success, non-zero for error code
   uint32 error_code = 3;
   string error_message = 4;
 }
@@ -58,14 +58,14 @@ message DestroySceneRequest {
 }
 
 message EnterSceneByCentreRequest {
-  // 来自 Centre 的调用，包含 player 与 session 元数据
+  // Call from Centre, containing player and session metadata
   uint64 player_id = 1;
-  uint64 scene_id = 2; // 目标场景
-  uint64 centre_node_id = 3; // 源 Centre 节点 id
-  uint64 session_id = 4; // Gate session id（可为0，表示托管）
-  string request_id = 5; // 幂等 id（可选）
-  string gate_id = 6;    // Gate 节点ID
-  string gate_instance_id = 7; // Gate 实例ID（用于 Kafka 消息校验）
+  uint64 scene_id = 2; // Target scene
+  uint64 centre_node_id = 3; // Source Centre node ID
+  uint64 session_id = 4; // Gate session ID (can be 0, indicating hosted)
+  string request_id = 5; // Idempotency ID (optional)
+  string gate_id = 6;    // Gate Node ID
+  string gate_instance_id = 7; // Gate Instance ID (for Kafka message validation)
 }
 
 message EnterSceneByCentreResponse {

@@ -25,9 +25,9 @@ const (
 type GateCommand_CommandType int32
 
 const (
-	GateCommand_RoutePlayer GateCommand_CommandType = 0 // 切换玩家路由
-	GateCommand_KickPlayer  GateCommand_CommandType = 1 // 踢下线
-	GateCommand_Broadcast   GateCommand_CommandType = 2 // 广播消息
+	GateCommand_RoutePlayer GateCommand_CommandType = 0 // Switch player routing
+	GateCommand_KickPlayer  GateCommand_CommandType = 1 // Kick offline
+	GateCommand_Broadcast   GateCommand_CommandType = 2 // Broadcast message
 )
 
 // Enum value maps for GateCommand_CommandType.
@@ -75,11 +75,11 @@ type GateCommand struct {
 	state            protoimpl.MessageState  `protogen:"open.v1"`
 	CommandType      GateCommand_CommandType `protobuf:"varint,1,opt,name=command_type,json=commandType,proto3,enum=scene_manager.GateCommand_CommandType" json:"command_type,omitempty"`
 	PlayerId         uint64                  `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	TargetNodeId     string                  `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`             // 目标 Scene Node ID (用于路由切换)
+	TargetNodeId     string                  `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`             // Target Scene Node ID (for routing switch)
 	SessionId        uint64                  `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                       // Gate Session ID
-	Payload          []byte                  `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                             // 额外数据 (如广播内容)
-	TargetGateId     string                  `protobuf:"bytes,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`             // 目标Gate ID
-	TargetInstanceId string                  `protobuf:"bytes,7,opt,name=target_instance_id,json=targetInstanceId,proto3" json:"target_instance_id,omitempty"` // 目标Gate实例ID（防串号）
+	Payload          []byte                  `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                             // Extra data (e.g., broadcast content)
+	TargetGateId     string                  `protobuf:"bytes,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`             // Target Gate ID
+	TargetInstanceId string                  `protobuf:"bytes,7,opt,name=target_instance_id,json=targetInstanceId,proto3" json:"target_instance_id,omitempty"` // Target Gate Instance ID (prevents session conflict)
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -165,9 +165,9 @@ func (x *GateCommand) GetTargetInstanceId() string {
 
 type CreateSceneRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// 场景配置 id
+	// Scene config ID
 	SceneConfId uint64 `protobuf:"varint,1,opt,name=scene_conf_id,json=sceneConfId,proto3" json:"scene_conf_id,omitempty"`
-	// 可选：指定在某个 Scene 节点创建
+	// Optional: Specify creation on a specific Scene node
 	TargetNodeId  string `protobuf:"bytes,2,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -219,11 +219,11 @@ func (x *CreateSceneRequest) GetTargetNodeId() string {
 
 type CreateSceneResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// 全局场景 id（由 Scene 节点分配）
+	// Global scene ID (allocated by Scene node)
 	SceneId uint64 `protobuf:"varint,1,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
-	// 所在的节点ID
+	// ID of the node where it resides
 	NodeId string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// 创建结果：0 成功，非0 错误码
+	// Creation result: 0 for success, non-zero for error code
 	ErrorCode     uint32 `protobuf:"varint,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
 	ErrorMessage  string `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -334,14 +334,14 @@ func (x *DestroySceneRequest) GetSceneId() uint64 {
 
 type EnterSceneByCentreRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// 来自 Centre 的调用，包含 player 与 session 元数据
+	// Call from Centre, containing player and session metadata
 	PlayerId       uint64 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SceneId        uint64 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // 目标场景
-	CentreNodeId   uint64 `protobuf:"varint,3,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`      // 源 Centre 节点 id
-	SessionId      uint64 `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session id（可为0，表示托管）
-	RequestId      string `protobuf:"bytes,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                  // 幂等 id（可选）
-	GateId         string `protobuf:"bytes,6,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                           // Gate 节点ID
-	GateInstanceId string `protobuf:"bytes,7,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate 实例ID（用于 Kafka 消息校验）
+	SceneId        uint64 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // Target scene
+	CentreNodeId   uint64 `protobuf:"varint,3,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`      // Source Centre node ID
+	SessionId      uint64 `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session ID (can be 0, indicating hosted)
+	RequestId      string `protobuf:"bytes,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                  // Idempotency ID (optional)
+	GateId         string `protobuf:"bytes,6,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                           // Gate Node ID
+	GateInstanceId string `protobuf:"bytes,7,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate Instance ID (for Kafka message validation)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }

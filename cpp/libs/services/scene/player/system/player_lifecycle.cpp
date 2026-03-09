@@ -29,6 +29,13 @@
 #include "threading/dispatcher_manager.h"
 #include "player_scene.h"
 
+struct PlayerSceneEnterContext
+{
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	uint64_t sceneId{ 0 };
+};
+
+
 void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
