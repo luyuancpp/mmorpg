@@ -24,6 +24,7 @@ const (
 	SceneManager_DestroyScene_FullMethodName       = "/scene_manager.SceneManager/DestroyScene"
 	SceneManager_EnterSceneByCentre_FullMethodName = "/scene_manager.SceneManager/EnterSceneByCentre"
 	SceneManager_LeaveSceneByCentre_FullMethodName = "/scene_manager.SceneManager/LeaveSceneByCentre"
+	SceneManager_GateConnect_FullMethodName        = "/scene_manager.SceneManager/GateConnect"
 )
 
 // SceneManagerClient is the client API for SceneManager service.
@@ -40,6 +41,8 @@ type SceneManagerClient interface {
 	EnterSceneByCentre(ctx context.Context, in *EnterSceneByCentreRequest, opts ...grpc.CallOption) (*EnterSceneByCentreResponse, error)
 	// Centre 请求玩家离开场景（或切换场景前的离开）
 	LeaveSceneByCentre(ctx context.Context, in *LeaveSceneByCentreRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	// Gate 连接（保持长连接，双向流）
+	GateConnect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[GateHeartbeat, GateCommand], error)
 }
 
 type sceneManagerClient struct {
@@ -90,6 +93,19 @@ func (c *sceneManagerClient) LeaveSceneByCentre(ctx context.Context, in *LeaveSc
 	return out, nil
 }
 
+func (c *sceneManagerClient) GateConnect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[GateHeartbeat, GateCommand], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &SceneManager_ServiceDesc.Streams[0], SceneManager_GateConnect_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[GateHeartbeat, GateCommand]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SceneManager_GateConnectClient = grpc.BidiStreamingClient[GateHeartbeat, GateCommand]
+
 // SceneManagerServer is the server API for SceneManager service.
 // All implementations must embed UnimplementedSceneManagerServer
 // for forward compatibility.
@@ -104,6 +120,8 @@ type SceneManagerServer interface {
 	EnterSceneByCentre(context.Context, *EnterSceneByCentreRequest) (*EnterSceneByCentreResponse, error)
 	// Centre 请求玩家离开场景（或切换场景前的离开）
 	LeaveSceneByCentre(context.Context, *LeaveSceneByCentreRequest) (*base.Empty, error)
+	// Gate 连接（保持长连接，双向流）
+	GateConnect(grpc.BidiStreamingServer[GateHeartbeat, GateCommand]) error
 	mustEmbedUnimplementedSceneManagerServer()
 }
 
@@ -125,6 +143,9 @@ func (UnimplementedSceneManagerServer) EnterSceneByCentre(context.Context, *Ente
 }
 func (UnimplementedSceneManagerServer) LeaveSceneByCentre(context.Context, *LeaveSceneByCentreRequest) (*base.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LeaveSceneByCentre not implemented")
+}
+func (UnimplementedSceneManagerServer) GateConnect(grpc.BidiStreamingServer[GateHeartbeat, GateCommand]) error {
+	return status.Errorf(codes.Unimplemented, "method GateConnect not implemented")
 }
 func (UnimplementedSceneManagerServer) mustEmbedUnimplementedSceneManagerServer() {}
 func (UnimplementedSceneManagerServer) testEmbeddedByValue()                      {}
@@ -219,6 +240,13 @@ func _SceneManager_LeaveSceneByCentre_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneManager_GateConnect_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SceneManagerServer).GateConnect(&grpc.GenericServerStream[GateHeartbeat, GateCommand]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SceneManager_GateConnectServer = grpc.BidiStreamingServer[GateHeartbeat, GateCommand]
+
 // SceneManager_ServiceDesc is the grpc.ServiceDesc for SceneManager service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -243,6 +271,13 @@ var SceneManager_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SceneManager_LeaveSceneByCentre_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GateConnect",
+			Handler:       _SceneManager_GateConnect_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "scene_manager/scene_manager_service.proto",
 }
