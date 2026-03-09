@@ -12,9 +12,10 @@
 #include "node/system/node/node_util.h"
 #include "session/system/session.h"
 #include "grpc_client/grpc_init_client.h"
+#include "muduo/net/EventLoopThreadPool.h"
 #include "session/manager/session_manager.h"
 
-GateNode* gGateNode = nullptr; 
+GateNode* gGateNode = nullptr;
 
 GateNode::GateNode(EventLoop* loop)
     : Node(loop, "logs/gate"),
@@ -118,9 +119,41 @@ void GateNode::HandleStream() {
             
             // Handle command here
             if (command.command_type() == scene_manager::GateCommand::RoutePlayer) {
-                 // Implement routing logic or forward to main loop via dispatcher
-                 // For now just log
-                 LOG_INFO << "Routing player " << command.player_id() << " to node " << command.target_node_id();
+                 uint64_t sessionId = command.session_id();
+                 uint32_t targetNodeId = 0;
+                 try {
+                     targetNodeId = (uint32_t)std::stoul(command.target_node_id());
+                 } catch(...) {
+                     LOG_ERROR << "Invalid target node id: " << command.target_node_id();
+                     continue;
+                 }
+
+                 auto threadPool = rpcServer->GetTcpServer().threadPool();
+                 if (threadPool) {
+                     auto loops = threadPool->getAllLoops();
+                     if (loops.empty()) {
+                         // Single thread mode
+                         if (GetLoop()) {
+                             GetLoop()->runInLoop([sessionId, targetNodeId]() {
+                                 auto it = tlsSessionManager.sessions().find(sessionId);
+                                 if (it != tlsSessionManager.sessions().end()) {
+                                     it->second.SetNodeId(SceneNodeService, targetNodeId);
+                                     LOG_INFO << "Routed session " << sessionId << " to node " << targetNodeId;
+                                 }
+                             });
+                         }
+                     } else {
+                         for (auto* loop : loops) {
+                             loop->runInLoop([sessionId, targetNodeId]() {
+                                 auto it = tlsSessionManager.sessions().find(sessionId);
+                                 if (it != tlsSessionManager.sessions().end()) {
+                                     it->second.SetNodeId(SceneNodeService, targetNodeId);
+                                     LOG_INFO << "Routed session " << sessionId << " to node " << targetNodeId;
+                                 }
+                             });
+                         }
+                     }
+                 }
             }
         }
 

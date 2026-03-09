@@ -55,6 +55,30 @@ func (l *EnterSceneByCentreLogic) EnterSceneByCentre(in *scene_manager.EnterScen
 		return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 1, ErrorMessage: "Failed to update location"}, nil
 	}
 
+	// 4. Send Route Command to Gate (if GateID is provided)
+	if in.GateId != "" {
+		streamVal, ok := l.svcCtx.GateStreams.Load(in.GateId)
+		if ok {
+			stream := streamVal.(scene_manager.SceneManager_GateConnectServer)
+			cmd := &scene_manager.GateCommand{
+				CommandType:  scene_manager.GateCommand_RoutePlayer,
+				PlayerId:     in.PlayerId,
+				TargetNodeId: l.svcCtx.Config.NodeID, // Route to THIS Scene Manager node (or specific Scene Node logic?)
+				SessionId:    in.SessionId,
+			}
+			if err := stream.Send(cmd); err != nil {
+				l.Logger.Errorf("Failed to send RoutePlayer command to Gate %s: %v", in.GateId, err)
+				// Don't fail the request, but log it. The client might retry or rely on heartbeat sync.
+			} else {
+				l.Logger.Infof("Sent RoutePlayer to Gate %s for player %d -> node %s", in.GateId, in.PlayerId, l.svcCtx.Config.NodeID)
+			}
+		} else {
+			l.Logger.Warnf("Gate %s not connected, cannot route player %d", in.GateId, in.PlayerId)
+		}
+	} else {
+		l.Logger.Warnf("No GateID in EnterSceneByCentre request for player %d", in.PlayerId)
+	}
+
 	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, in.SceneId, l.svcCtx.Config.NodeID)
 
 	return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 0}, nil
