@@ -84,4 +84,3 @@
 83=ScenePlayerEnterGameNode
 84=SceneSkillClientPlayerReleaseSkill
 85=SceneManagerLeaveSceneByCentre
-86=SceneManagerGateConnect

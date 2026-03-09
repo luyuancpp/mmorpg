@@ -68,83 +68,25 @@ func (x GateCommand_CommandType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GateCommand_CommandType.Descriptor instead.
 func (GateCommand_CommandType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{1, 0}
-}
-
-type GateHeartbeat struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	GateId          string                 `protobuf:"bytes,1,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                             // Gate 节点唯一ID
-	ConnectionCount int32                  `protobuf:"varint,2,opt,name=connection_count,json=connectionCount,proto3" json:"connection_count,omitempty"` // 当前连接数/负载
-	Timestamp       int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                    // 心跳时间戳
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *GateHeartbeat) Reset() {
-	*x = GateHeartbeat{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GateHeartbeat) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GateHeartbeat) ProtoMessage() {}
-
-func (x *GateHeartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GateHeartbeat.ProtoReflect.Descriptor instead.
-func (*GateHeartbeat) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *GateHeartbeat) GetGateId() string {
-	if x != nil {
-		return x.GateId
-	}
-	return ""
-}
-
-func (x *GateHeartbeat) GetConnectionCount() int32 {
-	if x != nil {
-		return x.ConnectionCount
-	}
-	return 0
-}
-
-func (x *GateHeartbeat) GetTimestamp() int64 {
-	if x != nil {
-		return x.Timestamp
-	}
-	return 0
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{0, 0}
 }
 
 type GateCommand struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	CommandType   GateCommand_CommandType `protobuf:"varint,1,opt,name=command_type,json=commandType,proto3,enum=scene_manager.GateCommand_CommandType" json:"command_type,omitempty"`
-	PlayerId      uint64                  `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	TargetNodeId  string                  `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"` // 目标 Scene Node ID (用于路由切换)
-	SessionId     uint64                  `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`           // Gate Session ID
-	Payload       []byte                  `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                 // 额外数据 (如广播内容)
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState  `protogen:"open.v1"`
+	CommandType      GateCommand_CommandType `protobuf:"varint,1,opt,name=command_type,json=commandType,proto3,enum=scene_manager.GateCommand_CommandType" json:"command_type,omitempty"`
+	PlayerId         uint64                  `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	TargetNodeId     string                  `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`             // 目标 Scene Node ID (用于路由切换)
+	SessionId        uint64                  `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                       // Gate Session ID
+	Payload          []byte                  `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                             // 额外数据 (如广播内容)
+	TargetGateId     string                  `protobuf:"bytes,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`             // 目标Gate ID
+	TargetInstanceId string                  `protobuf:"bytes,7,opt,name=target_instance_id,json=targetInstanceId,proto3" json:"target_instance_id,omitempty"` // 目标Gate实例ID（防串号）
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GateCommand) Reset() {
 	*x = GateCommand{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[1]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -156,7 +98,7 @@ func (x *GateCommand) String() string {
 func (*GateCommand) ProtoMessage() {}
 
 func (x *GateCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[1]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -169,7 +111,7 @@ func (x *GateCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GateCommand.ProtoReflect.Descriptor instead.
 func (*GateCommand) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{1}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GateCommand) GetCommandType() GateCommand_CommandType {
@@ -207,6 +149,20 @@ func (x *GateCommand) GetPayload() []byte {
 	return nil
 }
 
+func (x *GateCommand) GetTargetGateId() string {
+	if x != nil {
+		return x.TargetGateId
+	}
+	return ""
+}
+
+func (x *GateCommand) GetTargetInstanceId() string {
+	if x != nil {
+		return x.TargetInstanceId
+	}
+	return ""
+}
+
 type CreateSceneRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 场景配置 id
@@ -219,7 +175,7 @@ type CreateSceneRequest struct {
 
 func (x *CreateSceneRequest) Reset() {
 	*x = CreateSceneRequest{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[2]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -231,7 +187,7 @@ func (x *CreateSceneRequest) String() string {
 func (*CreateSceneRequest) ProtoMessage() {}
 
 func (x *CreateSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[2]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -244,7 +200,7 @@ func (x *CreateSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSceneRequest.ProtoReflect.Descriptor instead.
 func (*CreateSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{2}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateSceneRequest) GetSceneConfId() uint64 {
@@ -276,7 +232,7 @@ type CreateSceneResponse struct {
 
 func (x *CreateSceneResponse) Reset() {
 	*x = CreateSceneResponse{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[3]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +244,7 @@ func (x *CreateSceneResponse) String() string {
 func (*CreateSceneResponse) ProtoMessage() {}
 
 func (x *CreateSceneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[3]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,7 +257,7 @@ func (x *CreateSceneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSceneResponse.ProtoReflect.Descriptor instead.
 func (*CreateSceneResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{3}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateSceneResponse) GetSceneId() uint64 {
@@ -341,7 +297,7 @@ type DestroySceneRequest struct {
 
 func (x *DestroySceneRequest) Reset() {
 	*x = DestroySceneRequest{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[4]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -353,7 +309,7 @@ func (x *DestroySceneRequest) String() string {
 func (*DestroySceneRequest) ProtoMessage() {}
 
 func (x *DestroySceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[4]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -366,7 +322,7 @@ func (x *DestroySceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DestroySceneRequest.ProtoReflect.Descriptor instead.
 func (*DestroySceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{4}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DestroySceneRequest) GetSceneId() uint64 {
@@ -379,19 +335,20 @@ func (x *DestroySceneRequest) GetSceneId() uint64 {
 type EnterSceneByCentreRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 来自 Centre 的调用，包含 player 与 session 元数据
-	PlayerId      uint64 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SceneId       uint64 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                  // 目标场景
-	CentreNodeId  uint64 `protobuf:"varint,3,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"` // 源 Centre 节点 id
-	SessionId     uint64 `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`            // Gate session id（可为0，表示托管）
-	RequestId     string `protobuf:"bytes,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`             // 幂等 id（可选）
-	GateId        string `protobuf:"bytes,6,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                      // Gate 节点ID
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	PlayerId       uint64 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SceneId        uint64 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // 目标场景
+	CentreNodeId   uint64 `protobuf:"varint,3,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`      // 源 Centre 节点 id
+	SessionId      uint64 `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session id（可为0，表示托管）
+	RequestId      string `protobuf:"bytes,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                  // 幂等 id（可选）
+	GateId         string `protobuf:"bytes,6,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                           // Gate 节点ID
+	GateInstanceId string `protobuf:"bytes,7,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate 实例ID（用于 Kafka 消息校验）
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *EnterSceneByCentreRequest) Reset() {
 	*x = EnterSceneByCentreRequest{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -403,7 +360,7 @@ func (x *EnterSceneByCentreRequest) String() string {
 func (*EnterSceneByCentreRequest) ProtoMessage() {}
 
 func (x *EnterSceneByCentreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -416,7 +373,7 @@ func (x *EnterSceneByCentreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneByCentreRequest.ProtoReflect.Descriptor instead.
 func (*EnterSceneByCentreRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{5}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EnterSceneByCentreRequest) GetPlayerId() uint64 {
@@ -461,6 +418,13 @@ func (x *EnterSceneByCentreRequest) GetGateId() string {
 	return ""
 }
 
+func (x *EnterSceneByCentreRequest) GetGateInstanceId() string {
+	if x != nil {
+		return x.GateInstanceId
+	}
+	return ""
+}
+
 type EnterSceneByCentreResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorCode     uint32                 `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
@@ -471,7 +435,7 @@ type EnterSceneByCentreResponse struct {
 
 func (x *EnterSceneByCentreResponse) Reset() {
 	*x = EnterSceneByCentreResponse{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[6]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -483,7 +447,7 @@ func (x *EnterSceneByCentreResponse) String() string {
 func (*EnterSceneByCentreResponse) ProtoMessage() {}
 
 func (x *EnterSceneByCentreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[6]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -496,7 +460,7 @@ func (x *EnterSceneByCentreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneByCentreResponse.ProtoReflect.Descriptor instead.
 func (*EnterSceneByCentreResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{6}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *EnterSceneByCentreResponse) GetErrorCode() uint32 {
@@ -525,7 +489,7 @@ type LeaveSceneByCentreRequest struct {
 
 func (x *LeaveSceneByCentreRequest) Reset() {
 	*x = LeaveSceneByCentreRequest{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[7]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -537,7 +501,7 @@ func (x *LeaveSceneByCentreRequest) String() string {
 func (*LeaveSceneByCentreRequest) ProtoMessage() {}
 
 func (x *LeaveSceneByCentreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[7]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -550,7 +514,7 @@ func (x *LeaveSceneByCentreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveSceneByCentreRequest.ProtoReflect.Descriptor instead.
 func (*LeaveSceneByCentreRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{7}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *LeaveSceneByCentreRequest) GetPlayerId() uint64 {
@@ -585,18 +549,16 @@ var File_proto_scene_manager_scene_manager_service_proto protoreflect.FileDescri
 
 const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\n" +
-	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1cproto/common/base/node.proto\x1a\x1dproto/common/base/empty.proto\"q\n" +
-	"\rGateHeartbeat\x12\x17\n" +
-	"\agate_id\x18\x01 \x01(\tR\x06gateId\x12)\n" +
-	"\x10connection_count\x18\x02 \x01(\x05R\x0fconnectionCount\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"\x93\x02\n" +
+	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1cproto/common/base/node.proto\x1a\x1dproto/common/base/empty.proto\"\xe7\x02\n" +
 	"\vGateCommand\x12I\n" +
 	"\fcommand_type\x18\x01 \x01(\x0e2&.scene_manager.GateCommand.CommandTypeR\vcommandType\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12$\n" +
 	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x04 \x01(\x04R\tsessionId\x12\x18\n" +
-	"\apayload\x18\x05 \x01(\fR\apayload\"=\n" +
+	"\apayload\x18\x05 \x01(\fR\apayload\x12$\n" +
+	"\x0etarget_gate_id\x18\x06 \x01(\tR\ftargetGateId\x12,\n" +
+	"\x12target_instance_id\x18\a \x01(\tR\x10targetInstanceId\"=\n" +
 	"\vCommandType\x12\x0f\n" +
 	"\vRoutePlayer\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -612,7 +574,7 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"error_code\x18\x03 \x01(\rR\terrorCode\x12#\n" +
 	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"0\n" +
 	"\x13DestroySceneRequest\x12\x19\n" +
-	"\bscene_id\x18\x01 \x01(\x04R\asceneId\"\xd0\x01\n" +
+	"\bscene_id\x18\x01 \x01(\x04R\asceneId\"\xfa\x01\n" +
 	"\x19EnterSceneByCentreRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12$\n" +
@@ -621,7 +583,8 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"session_id\x18\x04 \x01(\x04R\tsessionId\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x05 \x01(\tR\trequestId\x12\x17\n" +
-	"\agate_id\x18\x06 \x01(\tR\x06gateId\"`\n" +
+	"\agate_id\x18\x06 \x01(\tR\x06gateId\x12(\n" +
+	"\x10gate_instance_id\x18\a \x01(\tR\x0egateInstanceId\"`\n" +
 	"\x1aEnterSceneByCentreResponse\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x01 \x01(\rR\terrorCode\x12#\n" +
@@ -631,13 +594,12 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12$\n" +
 	"\x0ecentre_node_id\x18\x03 \x01(\x04R\fcentreNodeId\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x04 \x01(\tR\trequestId2\xaa\x03\n" +
+	"request_id\x18\x04 \x01(\tR\trequestId2\xdb\x02\n" +
 	"\fSceneManager\x12V\n" +
 	"\vCreateScene\x12!.scene_manager.CreateSceneRequest\x1a\".scene_manager.CreateSceneResponse\"\x00\x12<\n" +
 	"\fDestroyScene\x12\".scene_manager.DestroySceneRequest\x1a\x06.Empty\"\x00\x12k\n" +
 	"\x12EnterSceneByCentre\x12(.scene_manager.EnterSceneByCentreRequest\x1a).scene_manager.EnterSceneByCentreResponse\"\x00\x12H\n" +
-	"\x12LeaveSceneByCentre\x12(.scene_manager.LeaveSceneByCentreRequest\x1a\x06.Empty\"\x00\x12M\n" +
-	"\vGateConnect\x12\x1c.scene_manager.GateHeartbeat\x1a\x1a.scene_manager.GateCommand\"\x00(\x010\x01B\x1dZ\x1bscene_manager/scene_managerb\x06proto3"
+	"\x12LeaveSceneByCentre\x12(.scene_manager.LeaveSceneByCentreRequest\x1a\x06.Empty\"\x00B\x1dZ\x1bscene_manager/scene_managerb\x06proto3"
 
 var (
 	file_proto_scene_manager_scene_manager_service_proto_rawDescOnce sync.Once
@@ -652,33 +614,30 @@ func file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_scene_manager_scene_manager_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_scene_manager_scene_manager_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_scene_manager_scene_manager_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_scene_manager_scene_manager_service_proto_goTypes = []any{
 	(GateCommand_CommandType)(0),       // 0: scene_manager.GateCommand.CommandType
-	(*GateHeartbeat)(nil),              // 1: scene_manager.GateHeartbeat
-	(*GateCommand)(nil),                // 2: scene_manager.GateCommand
-	(*CreateSceneRequest)(nil),         // 3: scene_manager.CreateSceneRequest
-	(*CreateSceneResponse)(nil),        // 4: scene_manager.CreateSceneResponse
-	(*DestroySceneRequest)(nil),        // 5: scene_manager.DestroySceneRequest
-	(*EnterSceneByCentreRequest)(nil),  // 6: scene_manager.EnterSceneByCentreRequest
-	(*EnterSceneByCentreResponse)(nil), // 7: scene_manager.EnterSceneByCentreResponse
-	(*LeaveSceneByCentreRequest)(nil),  // 8: scene_manager.LeaveSceneByCentreRequest
-	(*base.Empty)(nil),                 // 9: Empty
+	(*GateCommand)(nil),                // 1: scene_manager.GateCommand
+	(*CreateSceneRequest)(nil),         // 2: scene_manager.CreateSceneRequest
+	(*CreateSceneResponse)(nil),        // 3: scene_manager.CreateSceneResponse
+	(*DestroySceneRequest)(nil),        // 4: scene_manager.DestroySceneRequest
+	(*EnterSceneByCentreRequest)(nil),  // 5: scene_manager.EnterSceneByCentreRequest
+	(*EnterSceneByCentreResponse)(nil), // 6: scene_manager.EnterSceneByCentreResponse
+	(*LeaveSceneByCentreRequest)(nil),  // 7: scene_manager.LeaveSceneByCentreRequest
+	(*base.Empty)(nil),                 // 8: Empty
 }
 var file_proto_scene_manager_scene_manager_service_proto_depIdxs = []int32{
 	0, // 0: scene_manager.GateCommand.command_type:type_name -> scene_manager.GateCommand.CommandType
-	3, // 1: scene_manager.SceneManager.CreateScene:input_type -> scene_manager.CreateSceneRequest
-	5, // 2: scene_manager.SceneManager.DestroyScene:input_type -> scene_manager.DestroySceneRequest
-	6, // 3: scene_manager.SceneManager.EnterSceneByCentre:input_type -> scene_manager.EnterSceneByCentreRequest
-	8, // 4: scene_manager.SceneManager.LeaveSceneByCentre:input_type -> scene_manager.LeaveSceneByCentreRequest
-	1, // 5: scene_manager.SceneManager.GateConnect:input_type -> scene_manager.GateHeartbeat
-	4, // 6: scene_manager.SceneManager.CreateScene:output_type -> scene_manager.CreateSceneResponse
-	9, // 7: scene_manager.SceneManager.DestroyScene:output_type -> Empty
-	7, // 8: scene_manager.SceneManager.EnterSceneByCentre:output_type -> scene_manager.EnterSceneByCentreResponse
-	9, // 9: scene_manager.SceneManager.LeaveSceneByCentre:output_type -> Empty
-	2, // 10: scene_manager.SceneManager.GateConnect:output_type -> scene_manager.GateCommand
-	6, // [6:11] is the sub-list for method output_type
-	1, // [1:6] is the sub-list for method input_type
+	2, // 1: scene_manager.SceneManager.CreateScene:input_type -> scene_manager.CreateSceneRequest
+	4, // 2: scene_manager.SceneManager.DestroyScene:input_type -> scene_manager.DestroySceneRequest
+	5, // 3: scene_manager.SceneManager.EnterSceneByCentre:input_type -> scene_manager.EnterSceneByCentreRequest
+	7, // 4: scene_manager.SceneManager.LeaveSceneByCentre:input_type -> scene_manager.LeaveSceneByCentreRequest
+	3, // 5: scene_manager.SceneManager.CreateScene:output_type -> scene_manager.CreateSceneResponse
+	8, // 6: scene_manager.SceneManager.DestroyScene:output_type -> Empty
+	6, // 7: scene_manager.SceneManager.EnterSceneByCentre:output_type -> scene_manager.EnterSceneByCentreResponse
+	8, // 8: scene_manager.SceneManager.LeaveSceneByCentre:output_type -> Empty
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -695,7 +654,7 @@ func file_proto_scene_manager_scene_manager_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_manager_scene_manager_service_proto_rawDesc), len(file_proto_scene_manager_scene_manager_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   8,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

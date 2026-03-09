@@ -26,7 +26,6 @@ static const char* SceneManager_method_names[] = {
   "/scene_manager.SceneManager/DestroyScene",
   "/scene_manager.SceneManager/EnterSceneByCentre",
   "/scene_manager.SceneManager/LeaveSceneByCentre",
-  "/scene_manager.SceneManager/GateConnect",
 };
 
 std::unique_ptr< SceneManager::Stub> SceneManager::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -40,7 +39,6 @@ SceneManager::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& chann
   , rpcmethod_DestroyScene_(SceneManager_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_EnterSceneByCentre_(SceneManager_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_LeaveSceneByCentre_(SceneManager_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GateConnect_(SceneManager_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::BIDI_STREAMING, channel)
   {}
 
 ::grpc::Status SceneManager::Stub::CreateScene(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest& request, ::scene_manager::CreateSceneResponse* response) {
@@ -135,22 +133,6 @@ void SceneManager::Stub::async::LeaveSceneByCentre(::grpc::ClientContext* contex
   return result;
 }
 
-::grpc::ClientReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* SceneManager::Stub::GateConnectRaw(::grpc::ClientContext* context) {
-  return ::grpc::internal::ClientReaderWriterFactory< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>::Create(channel_.get(), rpcmethod_GateConnect_, context);
-}
-
-void SceneManager::Stub::async::GateConnect(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::scene_manager::GateHeartbeat,::scene_manager::GateCommand>* reactor) {
-  ::grpc::internal::ClientCallbackReaderWriterFactory< ::scene_manager::GateHeartbeat,::scene_manager::GateCommand>::Create(stub_->channel_.get(), stub_->rpcmethod_GateConnect_, context, reactor);
-}
-
-::grpc::ClientAsyncReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* SceneManager::Stub::AsyncGateConnectRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>::Create(channel_.get(), cq, rpcmethod_GateConnect_, context, true, tag);
-}
-
-::grpc::ClientAsyncReaderWriter< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>* SceneManager::Stub::PrepareAsyncGateConnectRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>::Create(channel_.get(), cq, rpcmethod_GateConnect_, context, false, nullptr);
-}
-
 SceneManager::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneManager_method_names[0],
@@ -192,16 +174,6 @@ SceneManager::Service::Service() {
              ::Empty* resp) {
                return service->LeaveSceneByCentre(ctx, req, resp);
              }, this)));
-  AddMethod(new ::grpc::internal::RpcServiceMethod(
-      SceneManager_method_names[4],
-      ::grpc::internal::RpcMethod::BIDI_STREAMING,
-      new ::grpc::internal::BidiStreamingHandler< SceneManager::Service, ::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>(
-          [](SceneManager::Service* service,
-             ::grpc::ServerContext* ctx,
-             ::grpc::ServerReaderWriter<::scene_manager::GateCommand,
-             ::scene_manager::GateHeartbeat>* stream) {
-               return service->GateConnect(ctx, stream);
-             }, this)));
 }
 
 SceneManager::Service::~Service() {
@@ -232,12 +204,6 @@ SceneManager::Service::~Service() {
   (void) context;
   (void) request;
   (void) response;
-  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-}
-
-::grpc::Status SceneManager::Service::GateConnect(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::scene_manager::GateCommand, ::scene_manager::GateHeartbeat>* stream) {
-  (void) context;
-  (void) stream;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 

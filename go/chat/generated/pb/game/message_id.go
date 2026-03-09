@@ -86,4 +86,3 @@ const ScenePlayerSyncSyncAttribute10FramesMessageId = 82
 const ScenePlayerEnterGameNodeMessageId = 83
 const SceneSkillClientPlayerReleaseSkillMessageId = 84
 const SceneManagerLeaveSceneByCentreMessageId = 85
-const SceneManagerGateConnectMessageId = 86

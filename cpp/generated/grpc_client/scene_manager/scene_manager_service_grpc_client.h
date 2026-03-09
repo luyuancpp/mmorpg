@@ -103,36 +103,6 @@ void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity n
 void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneByCentreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
-#pragma region SceneManagerGateConnect
-
-
-struct AsyncSceneManagerGateConnectGrpcClient {
-    uint32_t messageId{ SceneManagerGateConnectMessageId };
-    ClientContext context;
-    Status status;
-    ::scene_manager::GateCommand reply;
-    std::unique_ptr<grpc::ClientAsyncReaderWriter<::scene_manager::GateHeartbeat, ::scene_manager::GateCommand>> stream;
-};
-
-struct GateHeartbeatBuffer {
-    boost::circular_buffer<::scene_manager::GateHeartbeat> pendingWritesBuffer{200};
-};
-
-struct GateHeartbeatWriteInProgress {
-    bool isInProgress{false};
-};
-
-
-
-class ::scene_manager::GateHeartbeat;
-using AsyncSceneManagerGateConnectHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::scene_manager::GateCommand&)>;
-extern AsyncSceneManagerGateConnectHandlerFunctionType AsyncSceneManagerGateConnectHandler;
-
-void SendSceneManagerGateConnect(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::GateHeartbeat& request);
-void SendSceneManagerGateConnect(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::GateHeartbeat& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void SendSceneManagerGateConnect(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-#pragma endregion
 void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
