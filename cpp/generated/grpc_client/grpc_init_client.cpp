@@ -24,18 +24,18 @@ namespace NodeUtils
 };
 
 
-namespace scene_manager {
-    void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void InitSceneManagerServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
-    void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
-}
-
 namespace loginpb {
     void SetLoginHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void InitLoginGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
     void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+}
+
+namespace scene_manager {
+    void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void InitSceneManagerServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
 namespace etcdserverpb {
@@ -48,9 +48,9 @@ namespace etcdserverpb {
 
 void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 
-    scene_manager::SetSceneManagerServiceIfEmptyHandler(handler);
-
     loginpb::SetLoginIfEmptyHandler(handler);
+
+    scene_manager::SetSceneManagerServiceIfEmptyHandler(handler);
 
     etcdserverpb::SetEtcdIfEmptyHandler(handler);
 
@@ -58,9 +58,9 @@ void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::go
 
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 
-    scene_manager::SetSceneManagerServiceHandler(handler);
-
     loginpb::SetLoginHandler(handler);
+
+    scene_manager::SetSceneManagerServiceHandler(handler);
 
     etcdserverpb::SetEtcdHandler(handler);
 
@@ -79,11 +79,11 @@ void HandleCompletedQueueMessage(entt::registry& registry){
                 return;
             }
             GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
-            if (eNodeType::SceneManagerNodeService == nodeType) {
-                scene_manager::HandleSceneManagerServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
-            }
-            else if (eNodeType::LoginNodeService == nodeType) {
+            if (eNodeType::LoginNodeService == nodeType) {
                 loginpb::HandleLoginCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
+            else if (eNodeType::SceneManagerNodeService == nodeType) {
+                scene_manager::HandleSceneManagerServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
             else if (eNodeType::EtcdNodeService == nodeType) {
                 etcdserverpb::HandleEtcdCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
@@ -96,11 +96,11 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
     auto nodeType = NodeUtils::GetRegistryType(registry);
     registry.emplace<grpc::CompletionQueue>(nodeEntity);
-    if (eNodeType::SceneManagerNodeService == nodeType) {
-        scene_manager::InitSceneManagerServiceGrpcNode(channel, registry, nodeEntity);
-    }
-    else if (eNodeType::LoginNodeService == nodeType) {
+    if (eNodeType::LoginNodeService == nodeType) {
         loginpb::InitLoginGrpcNode(channel, registry, nodeEntity);
+    }
+    else if (eNodeType::SceneManagerNodeService == nodeType) {
+        scene_manager::InitSceneManagerServiceGrpcNode(channel, registry, nodeEntity);
     }
     else if (eNodeType::EtcdNodeService == nodeType) {
         etcdserverpb::InitEtcdGrpcNode(channel, registry, nodeEntity);
