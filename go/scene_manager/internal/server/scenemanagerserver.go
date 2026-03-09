@@ -47,3 +47,9 @@ func (s *SceneManagerServer) LeaveSceneByCentre(ctx context.Context, in *scene_m
 	l := logic.NewLeaveSceneByCentreLogic(ctx, s.svcCtx)
 	return l.LeaveSceneByCentre(in)
 }
+
+// Gate 连接（保持长连接，双向流）
+func (s *SceneManagerServer) GateConnect(stream scene_manager.SceneManager_GateConnectServer) error {
+	l := logic.NewGateConnectLogic(stream.Context(), s.svcCtx)
+	return l.GateConnect(stream)
+}

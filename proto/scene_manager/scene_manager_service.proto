@@ -19,6 +19,28 @@ service SceneManager {
 
   // Centre 请求玩家离开场景（或切换场景前的离开）
   rpc LeaveSceneByCentre(LeaveSceneByCentreRequest) returns (Empty) {}
+
+  // Gate 连接（保持长连接，双向流）
+  rpc GateConnect(stream GateHeartbeat) returns (stream GateCommand) {}
+}
+
+message GateHeartbeat {
+  string gate_id = 1; // Gate 节点唯一ID
+  int32 connection_count = 2; // 当前连接数/负载
+  int64 timestamp = 3; // 心跳时间戳
+}
+
+message GateCommand {
+  enum CommandType {
+    RoutePlayer = 0; // 切换玩家路由
+    KickPlayer = 1;  // 踢下线
+    Broadcast = 2;   // 广播消息
+  }
+  CommandType command_type = 1;
+  uint64 player_id = 2;
+  string target_node_id = 3; // 目标 Scene Node ID (用于路由切换)
+  uint64 session_id = 4;     // Gate Session ID
+  bytes payload = 5;         // 额外数据 (如广播内容)
 }
 
 message CreateSceneRequest {

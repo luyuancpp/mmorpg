@@ -20,6 +20,8 @@ type (
 	DestroySceneRequest        = scene_manager.DestroySceneRequest
 	EnterSceneByCentreRequest  = scene_manager.EnterSceneByCentreRequest
 	EnterSceneByCentreResponse = scene_manager.EnterSceneByCentreResponse
+	GateCommand                = scene_manager.GateCommand
+	GateHeartbeat              = scene_manager.GateHeartbeat
 	LeaveSceneByCentreRequest  = scene_manager.LeaveSceneByCentreRequest
 	Empty                      = base.Empty
 
@@ -32,6 +34,8 @@ type (
 		EnterSceneByCentre(ctx context.Context, in *EnterSceneByCentreRequest, opts ...grpc.CallOption) (*EnterSceneByCentreResponse, error)
 		// Centre 请求玩家离开场景（或切换场景前的离开）
 		LeaveSceneByCentre(ctx context.Context, in *LeaveSceneByCentreRequest, opts ...grpc.CallOption) (*Empty, error)
+		// Gate 连接（保持长连接，双向流）
+		GateConnect(ctx context.Context, opts ...grpc.CallOption) (scene_manager.SceneManager_GateConnectClient, error)
 	}
 
 	defaultSceneManager struct {
@@ -67,4 +71,10 @@ func (m *defaultSceneManager) EnterSceneByCentre(ctx context.Context, in *EnterS
 func (m *defaultSceneManager) LeaveSceneByCentre(ctx context.Context, in *LeaveSceneByCentreRequest, opts ...grpc.CallOption) (*Empty, error) {
 	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
 	return client.LeaveSceneByCentre(ctx, in, opts...)
+}
+
+// Gate 连接（保持长连接，双向流）
+func (m *defaultSceneManager) GateConnect(ctx context.Context, opts ...grpc.CallOption) (scene_manager.SceneManager_GateConnectClient, error) {
+	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
+	return client.GateConnect(ctx, opts...)
 }
