@@ -6,41 +6,79 @@
 
 #include <node_config_manager.h>
 
-bool KafkaManager::Init(const KafkaConfig& config) {
+namespace {
+std::string JoinBrokers(const KafkaConfig& config) {
 	std::vector<std::string> brokersVec;
 	for (const auto& broker : config.brokers()) {
 		brokersVec.push_back(broker);
 	}
 
-	std::string brokers = boost::algorithm::join(brokersVec, ",");
-	std::string groupId = config.group_id();
+	return boost::algorithm::join(brokersVec, ",");
+}
 
+std::vector<std::string> CollectTopics(const KafkaConfig& config) {
 	std::vector<std::string> topicsVec;
 	for (const auto& topic : config.topics()) {
 		topicsVec.push_back(topic);
 	}
 
-	auto zoneId = tlsNodeConfigManager.GetGameConfig().zone_id(); // zone ID
-	std::vector<int32_t> partitions{ static_cast<int32_t>(zoneId) };
+	return topicsVec;
+}
+}
 
-	KafkaProducer::Instance().init(brokers);
+bool KafkaManager::Init(const KafkaConfig& config) {
+	auto zoneId = tlsNodeConfigManager.GetGameConfig().zone_id();
+	return Subscribe(
+		config,
+		CollectTopics(config),
+		config.group_id(),
+		{ static_cast<int32_t>(zoneId) }
+	);
+}
 
-	if (!kafkaHandler) {
-		LOG_DEBUG << "KafkaManager: Message handler not set. Please call subscribe() to register a handler.";
+bool KafkaManager::Subscribe(const KafkaConfig& config,
+	const std::vector<std::string>& topics,
+	const std::string& groupId,
+	const std::vector<int32_t>& partitions) {
+	if (!messageCallback_) {
+		LOG_DEBUG << "KafkaManager: Message callback not set. Please call SetMessageCallback before subscribing.";
 		return false;
 	}
 
-	KafkaConsumer::Instance().init(
+	if (topics.empty()) {
+		LOG_ERROR << "KafkaManager: Cannot subscribe without any topics configured.";
+		return false;
+	}
+
+	const std::string brokers = JoinBrokers(config);
+	const std::string effectiveGroupId = groupId.empty() ? config.group_id() : groupId;
+
+	if (!KafkaProducer::Instance().init(brokers)) {
+		LOG_ERROR << "KafkaManager: Failed to initialize Kafka producer for brokers: " << brokers;
+		return false;
+	}
+
+	KafkaConsumer::Instance().stop();
+	if (!KafkaConsumer::Instance().init(
 		brokers,
-		groupId,
-		topicsVec,
+		effectiveGroupId,
+		topics,
 		partitions,
-		kafkaHandler
-	);
+		messageCallback_
+	)) {
+		LOG_ERROR << "KafkaManager: Failed to initialize Kafka consumer for topics: "
+			<< boost::algorithm::join(topics, ",");
+		return false;
+	}
 
-	KafkaConsumer::Instance().start();
+	if (!KafkaConsumer::Instance().start()) {
+		LOG_ERROR << "KafkaManager: Failed to start Kafka consumer for topics: "
+			<< boost::algorithm::join(topics, ",");
+		return false;
+	}
 
-	LOG_INFO << "KafkaManager initialized successfully. Brokers: " << brokers;
+	LOG_INFO << "KafkaManager initialized successfully. Brokers: " << brokers
+		<< " Topics: " << boost::algorithm::join(topics, ",");
 	return true;
 }
 
@@ -53,6 +91,10 @@ bool KafkaManager::Publish(const std::string& topic, const std::string& msg) {
 	}
 
 	return true;
+}
+
+void KafkaManager::Poll() {
+	KafkaConsumer::Instance().poll();
 }
 
 void KafkaManager::Shutdown() {

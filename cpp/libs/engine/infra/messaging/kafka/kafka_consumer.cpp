@@ -1,7 +1,11 @@
 ﻿#include "kafka_consumer.h"
 #include "muduo/base/Logging.h"
 
-void KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
+namespace {
+constexpr int kMaxMessagesPerPoll = 128;
+}
+
+bool KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 	const std::vector<std::string>& topics,
 	const std::vector<int32_t>& partitions,  // 需要消费的分区
 	const MessageCallback& callback) {
@@ -19,16 +23,31 @@ void KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 	consumer_.reset(RdKafka::KafkaConsumer::create(conf_.get(), errstr));
 	if (!consumer_) {
 		LOG_ERROR << "Failed to create KafkaConsumer: " << errstr;
-		return;
+		return false;
 	}
 
 	// 如果需要指定消费的分区，使用 assign()
 	if (!partitions.empty()) {
 		std::vector<RdKafka::TopicPartition*> assignedPartitions;
 		for (int32_t partition : partitions) {
+			if (topics.empty()) {
+				LOG_ERROR << "KafkaConsumer: topics is empty, cannot assign partitions";
+				consumer_->close();
+				consumer_.reset();
+				return false;
+			}
 			assignedPartitions.push_back(RdKafka::TopicPartition::create(topics[0], partition));
 		}
-		consumer_->assign(assignedPartitions);
+		const auto err = consumer_->assign(assignedPartitions);
+		for (auto* assignedPartition : assignedPartitions) {
+			delete assignedPartition;
+		}
+		if (err) {
+			LOG_ERROR << "Failed to assign Kafka partitions: " << RdKafka::err2str(err);
+			consumer_->close();
+			consumer_.reset();
+			return false;
+		}
 		LOG_INFO << "Assigned to specific partitions.";
 	}
 	else {
@@ -36,18 +55,29 @@ void KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 		RdKafka::ErrorCode err = consumer_->subscribe(topics);
 		if (err) {
 			LOG_ERROR << "Failed to subscribe to topics: " << RdKafka::err2str(err);
+			consumer_->close();
+			consumer_.reset();
+			return false;
 		}
 	}
 
 	LOG_INFO << "KafkaConsumer initialized, ready to consume messages.";
+	return true;
 }
 
 KafkaConsumer::~KafkaConsumer() {
 	stop();
 }
 
-void KafkaConsumer::start() {
+bool KafkaConsumer::start() {
+	if (!consumer_) {
+		LOG_ERROR << "KafkaConsumer start requested before successful initialization.";
+		running_ = false;
+		return false;
+	}
+
 	running_ = true;
+	return true;
 }
 
 void KafkaConsumer::stop() {
@@ -60,25 +90,25 @@ void KafkaConsumer::stop() {
 }
 
 void KafkaConsumer::poll() {
-	if (!running_) return;
+	if (!running_ || !consumer_) return;
 
-	// 非阻塞轮询，每次最多等待 100ms
-	std::unique_ptr<RdKafka::Message> msg{ consumer_->consume(1) };
-	if (!msg) return;
+	for (int i = 0; i < kMaxMessagesPerPoll; ++i) {
+		std::unique_ptr<RdKafka::Message> msg{ consumer_->consume(0) };
+		if (!msg) return;
 
-	switch (msg->err()) {
-	case RdKafka::ERR_NO_ERROR:
-		if (msgCallback_) {
-			msgCallback_(msg->topic_name(), std::string(static_cast<const char*>(msg->payload()), msg->len()));
+		switch (msg->err()) {
+		case RdKafka::ERR_NO_ERROR:
+			if (msgCallback_) {
+				msgCallback_(msg->topic_name(), std::string(static_cast<const char*>(msg->payload()), msg->len()));
+			}
+			break;
+
+		case RdKafka::ERR__TIMED_OUT:
+			return;
+
+		default:
+			LOG_ERROR << "[KafkaConsumer] Error: " << msg->errstr();
+			break;
 		}
-		break;
-
-	case RdKafka::ERR__TIMED_OUT:
-		break;  // 正常空转等待
-
-	default:
-		LOG_ERROR << "[KafkaConsumer] Error: " << msg->errstr();
-		break;
 	}
-
 }

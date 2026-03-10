@@ -19,10 +19,15 @@
 #include <atomic>
 #include <mutex>
 
+namespace scene_manager {
+class GateCommand;
+}
+
 class GateNode : public  Node
 {
 public:
     using TcpServerPtr = std::unique_ptr<TcpServer>;
+    using GateCommandPtr = std::shared_ptr<const scene_manager::GateCommand>;
 
     explicit GateNode(EventLoop* loop);
     ~GateNode() override; // Changed to non-inline to handle member destruction
@@ -34,9 +39,13 @@ public:
     void StartRpcServer()override;
 
     // Connect to SceneManager
-    void ConnectToSceneManager(); // Keeping for now, might repurpose for Kafka init
+    bool ConnectToSceneManager(); // Initialize Kafka Consumer
 
 private:
+    void PollGateCommands();
+    void HandleGateCommand(const std::string& topic, const std::string& payload);
+    static void HandleGateCommandInLoop(const GateCommandPtr& command);
+
     void OnConnection(const TcpConnectionPtr& conn)
     {
         rpcClientHandler.OnConnection(conn);
@@ -56,9 +65,7 @@ private:
     RpcClientSessionHandler rpcClientHandler;
     GateHandler nodeReplyService;
 
-    // Kafka Consumer will be added here
-    std::unique_ptr<std::thread> kafkaConsumerThread_;
-    std::atomic<bool> isRunning_{false};
+    // Kafka consumer is configured through Node::kafkaManager and polled by Node::kafkaConsumerTimer.
 };
 
 extern GateNode* gGateNode;

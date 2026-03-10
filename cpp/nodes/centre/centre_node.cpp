@@ -19,7 +19,7 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	EventHandler::Register();
 	tlsRedisSystem.Initialize();
 
-	GetKafkaManager().SetKafkaHandler(KafkaSystem::KafkaMessageHandler);
+	GetKafkaManager().SetMessageCallback(KafkaSystem::KafkaMessageHandler);
 }
 
 

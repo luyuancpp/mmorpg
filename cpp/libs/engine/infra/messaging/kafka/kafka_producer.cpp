@@ -1,13 +1,14 @@
 ﻿#include "kafka_producer.h"
 #include "muduo/base/Logging.h"
 
-void KafkaProducer::init(const std::string& brokers) {
+bool KafkaProducer::init(const std::string& brokers) {
 	std::string errstr;
 
 	conf_.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
 	if (conf_->set("bootstrap.servers", brokers, errstr) != RdKafka::Conf::CONF_OK) {
 		LOG_ERROR << "Kafka conf error: " << errstr;
-		return;
+		producer_.reset();
+		return false;
 	}
 
 	// 设置回调，非阻塞时用来检测消息是否送达
@@ -16,10 +17,11 @@ void KafkaProducer::init(const std::string& brokers) {
 	producer_.reset(RdKafka::Producer::create(conf_.get(), errstr));
 	if (!producer_) {
 		LOG_ERROR << "Kafka producer create failed: " << errstr;
-		return;
+		return false;
 	}
 
 	LOG_INFO << "KafkaProducer initialized for brokers: " << brokers;
+	return true;
 }
 
 KafkaProducer::~KafkaProducer() {
@@ -31,6 +33,11 @@ KafkaProducer::~KafkaProducer() {
 
 RdKafka::ErrorCode KafkaProducer::send(const std::string& topic, const std::string& message,
 	const std::string& key, int32_t partition) {
+	if (!producer_) {
+		LOG_ERROR << "KafkaProducer send requested before successful initialization.";
+		return RdKafka::ERR__STATE;
+	}
+
 	RdKafka::ErrorCode resp = producer_->produce(
 		topic,
 		partition,
@@ -69,6 +76,10 @@ void KafkaProducer::dr_cb(RdKafka::Message& message) {
 
 // 在主线程调用 poll()，处理消息队列中的所有消息
 void KafkaProducer::poll() {
+	if (!producer_) {
+		return;
+	}
+
 	// 轮询消息队列，0 表示非阻塞调用
 	producer_->poll(0);
 }
