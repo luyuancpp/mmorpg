@@ -18,13 +18,9 @@ public:
 	bool Subscribe(const KafkaConfig& config,
 		const std::vector<std::string>& topics,
 		const std::string& groupId = {},
-		const std::vector<int32_t>& partitions = {});
+		const std::vector<int32_t>& partitions = {},
+		KafkaMessageCallback callback = {});
 	bool Publish(const std::string& topic, const std::string& msg);
 	void Poll();
 	void Shutdown();
-
-	void SetMessageCallback(const KafkaMessageCallback& cb) { messageCallback_ = cb; }
-
-private:
-	KafkaMessageCallback messageCallback_;
 };

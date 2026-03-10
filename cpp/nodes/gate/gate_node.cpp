@@ -27,9 +27,6 @@ GateNode::GateNode(EventLoop* loop)
 	gGateNode = this;
 	GetNodeInfo().set_node_type(GateNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService, SceneNodeService, LoginNodeService };
-	GetKafkaManager().SetMessageCallback(
-		std::bind(&GateNode::HandleGateCommand, this, std::placeholders::_1, std::placeholders::_2)
-	);
 
 	auto sendGrpcResponseToClientSession = [](const ClientContext& context, const ::google::protobuf::Message& reply) {
 		auto sessionDetails = GetSessionDetailsByClientContext(context);
@@ -85,7 +82,8 @@ bool GateNode::ConnectToSceneManager() {
     // Partitions: empty vector for automatic assignment/subscription
     std::vector<int32_t> partitions;
 
-    if (!GetKafkaManager().Subscribe(kafkaConfig, topics, groupId, partitions)) {
+    if (!GetKafkaManager().Subscribe(kafkaConfig, topics, groupId, partitions,
+        std::bind(&GateNode::HandleGateCommand, this, std::placeholders::_1, std::placeholders::_2))) {
         LOG_ERROR << "Failed to subscribe Gate Kafka consumer on topic: " << topic;
         return false;
     }
