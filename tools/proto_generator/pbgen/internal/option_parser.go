@@ -4,7 +4,70 @@ import (
 	messageoption "github.com/luyuancpp/protooption"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"reflect"
+	"strings"
 )
+
+func boolFromExtensionValue(extValue interface{}) (bool, bool) {
+	if extValue == nil {
+		return false, false
+	}
+	v := reflect.ValueOf(extValue)
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return false, false
+		}
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Bool {
+		return false, false
+	}
+	return v.Bool(), true
+}
+
+func nodeTypeFromExtensionValue(extValue interface{}) (messageoption.NodeType, bool) {
+	if extValue == nil {
+		return messageoption.NodeType_NODE_UNSPECIFIED, false
+	}
+	v := reflect.ValueOf(extValue)
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return messageoption.NodeType_NODE_UNSPECIFIED, false
+		}
+		v = v.Elem()
+	}
+
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return messageoption.NodeType(v.Int()), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return messageoption.NodeType(v.Uint()), true
+	default:
+		return messageoption.NodeType_NODE_UNSPECIFIED, false
+	}
+}
+
+func inferNodeByProtoPath(fileDesc *descriptorpb.FileDescriptorProto) messageoption.NodeType {
+	if fileDesc == nil {
+		return messageoption.NodeType_NODE_UNSPECIFIED
+	}
+
+	path := strings.ToLower(fileDesc.GetName())
+	switch {
+	case strings.Contains(path, "/scene/"):
+		return messageoption.NodeType_NODE_SCENE
+	case strings.Contains(path, "/centre/"):
+		return messageoption.NodeType_NODE_CENTRE
+	case strings.Contains(path, "/gate/"):
+		return messageoption.NodeType_NODE_GATE
+	case strings.Contains(path, "/login/"):
+		return messageoption.NodeType_NODE_LOGIN
+	case strings.Contains(path, "/db/"):
+		return messageoption.NodeType_NODE_DB
+	default:
+		return messageoption.NodeType_NODE_UNSPECIFIED
+	}
+}
 
 // 工具函数：判断服务是否设置了 OptionIsClientProtocolService 为 true
 func IsClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
@@ -13,12 +76,9 @@ func IsClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) b
 		return false
 	}
 
-	// 读取 OptionIsClientProtocolService 扩展选项
 	extValue := proto.GetExtension(opts, messageoption.E_OptionIsClientProtocolService)
-
-	// 转换为 bool 类型并判断是否为 true
-	isClientProtocolSvc, ok := extValue.(bool)
-	return ok && isClientProtocolSvc
+	v, ok := boolFromExtensionValue(extValue)
+	return ok && v
 }
 
 func IsPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
@@ -27,12 +87,9 @@ func IsPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
 		return false
 	}
 
-	// 读取 OptionIsClientProtocolService 扩展选项
 	extValue := proto.GetExtension(opts, messageoption.E_OptionIsPlayerService)
-
-	// 转换为 bool 类型并判断是否为 true
-	isClientProtocolSvc, ok := extValue.(bool)
-	return ok && isClientProtocolSvc
+	v, ok := boolFromExtensionValue(extValue)
+	return ok && v
 }
 
 // --------------------------
@@ -43,17 +100,12 @@ func GetFileDefaultNode(fileDesc *descriptorpb.FileDescriptorProto) messageoptio
 	if opts == nil {
 		return messageoption.NodeType_NODE_UNSPECIFIED // 默认未指定
 	}
-
-	// 读取文件级 OptionFileDefaultNode
 	extValue := proto.GetExtension(opts, messageoption.E_OptionFileDefaultNode)
-
-	// 转换为 NodeType 枚举类型
-	nodeType, ok := extValue.(messageoption.NodeType)
-	if !ok {
-		return messageoption.NodeType_NODE_UNSPECIFIED
+	if node, ok := nodeTypeFromExtensionValue(extValue); ok {
+		return node
 	}
 
-	return nodeType
+	return inferNodeByProtoPath(fileDesc)
 }
 
 // 判断文件是否归属指定节点类型

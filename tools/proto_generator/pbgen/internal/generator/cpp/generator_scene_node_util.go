@@ -7,12 +7,20 @@ import (
 	"strings"
 )
 
+func isSceneOwnedMethod(m *internal.MethodInfo) bool {
+	return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE) || strings.Contains(strings.ToLower(m.Path()), "/scene/")
+}
+
+func isCentreOwnedMethod(m *internal.MethodInfo) bool {
+	return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_CENTRE) || strings.Contains(strings.ToLower(m.Path()), "/centre/")
+}
+
 // IsSceneNodeHostedProtocolHandler 判断是否是SceneNode节点对外提供的协议服务处理器
 // （SceneNode作为服务端，处理外部调用的客户端协议接口）
 func IsSceneNodeHostedProtocolHandler(methods *internal.RPCMethods) bool {
 	return checkFirstMethod(methods,
 		func(m *internal.MethodInfo) bool {
-			return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE)
+			return isSceneOwnedMethod(m)
 		},
 		func(m *internal.MethodInfo) bool {
 			return !internal.IsPlayerService(m.ServiceDescriptorProto)
@@ -28,7 +36,7 @@ func IsSceneNodeHostedProtocolHandler(methods *internal.RPCMethods) bool {
 func IsSceneNodeHostedPlayerProtocolHandler(methods *internal.RPCMethods) bool {
 	return checkFirstMethod(methods,
 		func(m *internal.MethodInfo) bool {
-			return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE)
+			return isSceneOwnedMethod(m)
 		},
 		func(m *internal.MethodInfo) bool {
 			return !utils.HasGrpcService(m.Path())
@@ -52,7 +60,7 @@ func IsSceneNodeReceivedPlayerResponseHandler(methodList *internal.RPCMethods) b
 			return m.CcGenericServices()
 		},
 		func(m *internal.MethodInfo) bool {
-			return !internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE)
+			return isCentreOwnedMethod(m)
 		},
 		func(m *internal.MethodInfo) bool {
 			return !internal.IsClientProtocolService(m.ServiceDescriptorProto)
@@ -74,7 +82,7 @@ func IsSceneNodeReceivedProtocolResponseHandler(methodList *internal.RPCMethods)
 			return m.CcGenericServices()
 		},
 		func(m *internal.MethodInfo) bool {
-			return !internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE)
+			return !isSceneOwnedMethod(m)
 		},
 		func(m *internal.MethodInfo) bool {
 			return !internal.IsClientProtocolService(m.ServiceDescriptorProto)
