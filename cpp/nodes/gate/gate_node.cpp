@@ -65,6 +65,5 @@ void GateNode::StartRpcServer()
 void GateNode::ConnectToSceneManager() {
     // TODO: Initialize Kafka consumer here
     LOG_INFO << "Initializing Kafka Consumer for Gate " << GetNodeId();
-    isRunning_ = true;
     // kafkaConsumerThread_ = std::make_unique<std::thread>(&GateNode::HandleKafkaMessages, this);
 }
