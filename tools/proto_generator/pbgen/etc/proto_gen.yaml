@@ -164,7 +164,7 @@ naming:
   include_begin: "#include \""
   your_code_begin: "///<<< BEGIN WRITING YOUR CODE"
   your_code_end: "///<<< END WRITING YOUR CODE"
-  your_code_pair: "{{your_code_begin}}\n{{your_code_end}}\n"
+  your_code_pair: "{{your_code_begin}}\n{{your_code_end}}"
 
 # 路径列表配置
 path_lists:

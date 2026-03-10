@@ -116,6 +116,11 @@ void Node::InitKafka()
 	kafkaManager.Init(tlsNodeConfigManager.GetBaseDeployConfig().kafka());
 }
 
+void Node::StartKafkaPolling()
+{
+	kafkaConsumerTimer.RunEvery(0.1, [this] { kafkaManager.Poll(); });
+}
+
 void Node::InitEtcdService()
 {
 	serviceDiscoveryManager.Init();
@@ -161,6 +166,8 @@ void Node::Shutdown() {
 	ReleaseNodeId();
 	gNode->GetEtcdManager().Shutdown();
 	grpcHandlerTimer.Cancel();
+	kafkaConsumerTimer.Cancel();
+	kafkaManager.Shutdown();
 	LOG_DEBUG << "Node shutdown complete.";
 }
 

@@ -7,7 +7,6 @@
 #include "muduo/net/EventLoop.h"
 #include "network/rpc_session.h"
 #include "proto/common/base/node.pb.h"
-#include "kafka/system/kafka.h"
 #include "redis/system/redis.h"
 
 using namespace muduo;
@@ -18,8 +17,6 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	GetNodeInfo().set_node_type(CentreNodeService);
 	EventHandler::Register();
 	tlsRedisSystem.Initialize();
-
-	GetKafkaManager().SetKafkaHandler(KafkaSystem::KafkaMessageHandler);
 }
 
 

@@ -75,10 +75,10 @@ type GateCommand struct {
 	state            protoimpl.MessageState  `protogen:"open.v1"`
 	CommandType      GateCommand_CommandType `protobuf:"varint,1,opt,name=command_type,json=commandType,proto3,enum=scene_manager.GateCommand_CommandType" json:"command_type,omitempty"`
 	PlayerId         uint64                  `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	TargetNodeId     string                  `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`             // Target Scene Node ID (for routing switch)
+	TargetNodeId     uint32                  `protobuf:"varint,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`            // Target Scene Node ID (for routing switch)
 	SessionId        uint64                  `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                       // Gate Session ID
 	Payload          []byte                  `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                             // Extra data (e.g., broadcast content)
-	TargetGateId     string                  `protobuf:"bytes,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`             // Target Gate ID
+	TargetGateId     uint32                  `protobuf:"varint,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`            // Target Gate ID
 	TargetInstanceId string                  `protobuf:"bytes,7,opt,name=target_instance_id,json=targetInstanceId,proto3" json:"target_instance_id,omitempty"` // Target Gate Instance ID (prevents session conflict)
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -128,11 +128,11 @@ func (x *GateCommand) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *GateCommand) GetTargetNodeId() string {
+func (x *GateCommand) GetTargetNodeId() uint32 {
 	if x != nil {
 		return x.TargetNodeId
 	}
-	return ""
+	return 0
 }
 
 func (x *GateCommand) GetSessionId() uint64 {
@@ -149,11 +149,11 @@ func (x *GateCommand) GetPayload() []byte {
 	return nil
 }
 
-func (x *GateCommand) GetTargetGateId() string {
+func (x *GateCommand) GetTargetGateId() uint32 {
 	if x != nil {
 		return x.TargetGateId
 	}
-	return ""
+	return 0
 }
 
 func (x *GateCommand) GetTargetInstanceId() string {
@@ -553,11 +553,11 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\vGateCommand\x12I\n" +
 	"\fcommand_type\x18\x01 \x01(\x0e2&.scene_manager.GateCommand.CommandTypeR\vcommandType\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12$\n" +
-	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId\x12\x1d\n" +
+	"\x0etarget_node_id\x18\x03 \x01(\rR\ftargetNodeId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x04 \x01(\x04R\tsessionId\x12\x18\n" +
 	"\apayload\x18\x05 \x01(\fR\apayload\x12$\n" +
-	"\x0etarget_gate_id\x18\x06 \x01(\tR\ftargetGateId\x12,\n" +
+	"\x0etarget_gate_id\x18\x06 \x01(\rR\ftargetGateId\x12,\n" +
 	"\x12target_instance_id\x18\a \x01(\tR\x10targetInstanceId\"=\n" +
 	"\vCommandType\x12\x0f\n" +
 	"\vRoutePlayer\x10\x00\x12\x0e\n" +
@@ -667,3 +667,4 @@ func file_proto_scene_manager_scene_manager_service_proto_init() {
 	file_proto_scene_manager_scene_manager_service_proto_goTypes = nil
 	file_proto_scene_manager_scene_manager_service_proto_depIdxs = nil
 }
+

@@ -1,10 +1,10 @@
+void InitGateReply();
+void InitSceneSceneReply();
+void InitSceneReply();
 
 void InitReply()
 {
-    void InitGateReply();
     InitGateReply();
-    void InitSceneSceneReply();
     InitSceneSceneReply();
-    void InitSceneReply();
     InitSceneReply();
 }

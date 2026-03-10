@@ -10,7 +10,7 @@ class KafkaConsumer {
 public:
 	using MessageCallback = std::function<void(const std::string&, const std::string&)>;
 
-	void init(const std::string& brokers,
+	bool init(const std::string& brokers,
 		const std::string& groupId,
 		const std::vector<std::string>& topics,
 		const std::vector<int32_t>& partitions,  // 指定需要消费的分区
@@ -23,7 +23,7 @@ public:
 
 	~KafkaConsumer();
 
-	void start();
+	bool start();
 	void stop();
 
 	// 非阻塞轮询方法

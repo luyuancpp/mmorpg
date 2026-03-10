@@ -71,6 +71,7 @@ protected:
     void LoadAllConfigData();
     void SetupTimeZone();
     void InitKafka();
+    void StartKafkaPolling();
     void InitEtcdService();
 
     void ReleaseNodeId();

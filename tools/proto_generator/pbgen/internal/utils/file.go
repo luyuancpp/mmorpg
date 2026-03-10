@@ -29,6 +29,10 @@ func AreFileSizesEqual(file1, file2 string) bool {
 	return info1.Size() == info2.Size()
 }
 
+func TrimTrailingLineBreaks(value string) string {
+	return strings.TrimRight(value, "\r\n")
+}
+
 // WriteFileIfChanged 写入内容到文件，若内容未变化则不写入
 func WriteFileIfChanged(outputPath string, content []byte) error {
 	// 读取现有文件内容
