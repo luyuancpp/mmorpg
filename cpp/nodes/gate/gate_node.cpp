@@ -47,8 +47,6 @@ GateNode::GateNode(EventLoop* loop)
 }
 
 GateNode::~GateNode() {
-    kafkaConsumerTimer.Cancel();
-    GetKafkaManager().Shutdown();
 }
 
 void GateNode::StartRpcServer()
@@ -95,13 +93,8 @@ bool GateNode::ConnectToSceneManager() {
 
     LOG_INFO << "Kafka Consumer started on topic: " << topic;
 
-    // Poll on the node loop so Kafka callbacks stay aligned with the loop-driven timer model.
-    kafkaConsumerTimer.RunEvery(0.1, std::bind(&GateNode::PollGateCommands, this));
+    StartKafkaPolling();
     return true;
-}
-
-void GateNode::PollGateCommands() {
-    GetKafkaManager().Poll();
 }
 
 void GateNode::HandleGateCommand(const std::string& topic, const std::string& payload) {
