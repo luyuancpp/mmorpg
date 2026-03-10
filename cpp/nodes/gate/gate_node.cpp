@@ -1,6 +1,5 @@
 ﻿#include "gate_node.h"
 #include "node_config_manager.h"
-#include <limits>
 
 #include <thread>
 #include <chrono>
@@ -134,22 +133,9 @@ void GateNode::HandleGateCommandInLoop(const GateCommandPtr& command) {
 
     switch (command->command_type()) {
     case scene_manager::GateCommand::RoutePlayer: {
-        try {
-            // Update routing
-            // Assuming target_node_id is convertible to NodeId (uint32)
-            if (!command->target_node_id().empty()) {
-                const auto parsedNodeId = std::stoull(command->target_node_id());
-                if (parsedNodeId > std::numeric_limits<uint32_t>::max()) {
-                    LOG_ERROR << "target_node_id out of range: " << command->target_node_id();
-                    break;
-                }
-
-                uint32_t nodeId = static_cast<uint32_t>(parsedNodeId);
-                session.SetNodeId(SceneNodeService, nodeId);
-                LOG_INFO << "Updated route for session " << session_id << " to SceneNode " << nodeId;
-            }
-        } catch (const std::exception& e) {
-            LOG_ERROR << "Invalid target_node_id: " << command->target_node_id() << ", error: " << e.what();
+        if (command->target_node_id() != 0) {
+            session.SetNodeId(SceneNodeService, command->target_node_id());
+            LOG_INFO << "Updated route for session " << session_id << " to SceneNode " << command->target_node_id();
         }
         break;
     }
