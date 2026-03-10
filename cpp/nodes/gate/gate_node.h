@@ -42,7 +42,6 @@ public:
     bool ConnectToSceneManager(); // Initialize Kafka Consumer
 
 private:
-    void PollGateCommands();
     void HandleGateCommand(const std::string& topic, const std::string& payload);
     static void HandleGateCommandInLoop(const GateCommandPtr& command);
 
