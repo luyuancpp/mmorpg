@@ -7,9 +7,9 @@
 package scene_manager
 
 import (
+	base "chat/proto/common/base"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	base "login/proto/common/base"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -667,3 +667,4 @@ func file_proto_scene_manager_scene_manager_service_proto_init() {
 	file_proto_scene_manager_scene_manager_service_proto_goTypes = nil
 	file_proto_scene_manager_scene_manager_service_proto_depIdxs = nil
 }
+

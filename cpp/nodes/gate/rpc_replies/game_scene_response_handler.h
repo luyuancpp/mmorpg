@@ -4,4 +4,5 @@
 
 using namespace muduo;
 using namespace muduo::net;
+
 void OnSceneSceneTestReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp);

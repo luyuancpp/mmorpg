@@ -8,8 +8,16 @@ class {{ .ClassName }}
 {
 public:
     static void Register();
+
     static void UnRegister();
+{{- if .EventMessages }}
+
+{{- end }}
 {{- range .EventMessages }}
-    static void {{ . }}Handler(const {{ . }}& event);
+    static void {{ .Name }}Handler(const {{ .Name }}& event);
+{{- if .IsLast }}
+{{- else }}
+
+{{- end }}
 {{- end }}
 };

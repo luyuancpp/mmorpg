@@ -1,10 +1,6 @@
-
 void InitCentreSceneReply();
-
 void InitCentreReply();
-
 void InitGateReply();
-
 
 void InitReply()
 {
