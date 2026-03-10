@@ -1,12 +1,9 @@
-
 #include "scene_response_handler.h"
 
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
-
-
 ///<<< BEGIN WRITING YOUR CODE
 
 #include <boost/get_pointer.hpp>
@@ -20,8 +17,6 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include "proto/common/component/player_network_comp.pb.h"
 #include "threading/player_manager.h"
 ///<<< END WRITING YOUR CODE
-
-
 
 void InitSceneReply()
 {
@@ -48,31 +43,30 @@ void InitSceneReply()
     gRpcResponseDispatcher.registerMessageCallback<::NodeHandshakeResponse>(SceneNodeHandshakeMessageId,
         std::bind(&OnSceneNodeHandshakeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
-
 void OnScenePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneSendMessageToPlayerReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeRouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneProcessClientPlayerMessageReply(const TcpConnectionPtr& conn, const std::shared_ptr<::ProcessClientPlayerMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneCentreSendToPlayerViaGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneInvokePlayerServiceReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeRouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -127,40 +121,41 @@ void OnSceneInvokePlayerServiceReply(const TcpConnectionPtr& conn, const std::sh
 
 	serviceImpl->CallMethod(method, player, nullptr, boost::get_pointer(playerResponse));
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneRoutePlayerStringMsgReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RoutePlayerMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneUpdateSessionDetailReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneEnterSceneReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneCreateSceneReply(const TcpConnectionPtr& conn, const std::shared_ptr<::CreateSceneResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnSceneNodeHandshakeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
