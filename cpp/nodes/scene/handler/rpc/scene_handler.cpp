@@ -1,4 +1,3 @@
-
 #include "scene_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -38,8 +37,8 @@ using namespace muduo::net;
 
 
 void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::PlayerEnterGameNodeRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+    ::Empty* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_DEBUG << "Handling EnterGs request for player: " << request->player_id()
@@ -63,13 +62,13 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 3 玩家不在线，加入异步加载列表并尝试异步加载
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
 ///<<< END WRITING YOUR CODE
+
 }
 
 
-
 void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+    ::NodeRouteMessageResponse* response,
+    ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -150,13 +149,13 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 
     response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 	///<<< END WRITING YOUR CODE
+
 }
 
 
-
 void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController* controller, const ::ProcessClientPlayerMessageRequest* request,
-	::ProcessClientPlayerMessageResponse* response,
-	::google::protobuf::Closure* done)
+    ::ProcessClientPlayerMessageResponse* response,
+    ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
   // 新增：语义化的内部处理函数（处理客户端发来的玩家消息包）
@@ -247,13 +246,13 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 
 
 ///<<< END WRITING YOUR CODE
+
 }
 
 
-
 void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+    ::Empty* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const auto it = SessionMap().find(request->header().session_id());
@@ -273,13 +272,13 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 
 	::SendMessageToClientViaGate(request->message_content().message_id(), request->message_content(), player);
 ///<<< END WRITING YOUR CODE
+
 }
 
 
-
 void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+    ::NodeRouteMessageResponse* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const auto it = SessionMap().find(request->header().session_id());
@@ -376,33 +375,33 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	}
         
 ///<<< END WRITING YOUR CODE
-}
 
+}
 
 
 void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
-	::RouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+    ::RouteMessageResponse* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 
 
 void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
-	::RoutePlayerMessageResponse* response,
-	::google::protobuf::Closure* done)
+    ::RoutePlayerMessageResponse* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 
-
 void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* controller, const ::RegisterPlayerSessionRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+    ::Empty* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerLifecycleSystem::RemovePlayerSession(request->player_id());
@@ -428,13 +427,13 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
 ///<<< END WRITING YOUR CODE
+
 }
 
 
-
 void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, const ::Centre2GsEnterSceneRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+    ::Empty* response,
+    ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -457,27 +456,27 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
     SceneCommon::EnterScene({ .scene = sceneEntity, .enter = player });
     PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
 	///<<< END WRITING YOUR CODE
-}
 
+}
 
 
 void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, const ::CreateSceneRequest* request,
-	::CreateSceneResponse* response,
-	::google::protobuf::Closure* done)
+    ::CreateSceneResponse* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 
-
 void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
-	::NodeHandshakeResponse* response,
-	::google::protobuf::Closure* done)
+    ::NodeHandshakeResponse* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
-}
 
+}
 

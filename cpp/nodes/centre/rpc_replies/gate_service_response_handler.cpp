@@ -1,12 +1,9 @@
-
 #include "gate_service_response_handler.h"
 
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
-
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "engine/core/type_define/type_define.h"
@@ -19,8 +16,6 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include <threading/registry_manager.h>
 #include <type_alias/player_session_type_alias.h>
 ///<<< END WRITING YOUR CODE
-
-
 
 void InitGateReply()
 {
@@ -41,7 +36,6 @@ void InitGateReply()
     gRpcResponseDispatcher.registerMessageCallback<::BindSessionToGateResponse>(GateBindSessionToGateMessageId,
         std::bind(&OnGateBindSessionToGateReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
-
 void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -60,44 +54,44 @@ void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::sha
 	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(player);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnGateSendMessageToPlayerReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnGateKickSessionByCentreReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnGateRouteNodeMessageReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnGateRoutePlayerMessageReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RoutePlayerMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnGateBroadcastToPlayersReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnGateNodeHandshakeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
 
+}
 void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -145,4 +139,5 @@ void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::share
 		<< " player=" << playerId
 		<< " version=" << respVersion;
 ///<<< END WRITING YOUR CODE
+
 }

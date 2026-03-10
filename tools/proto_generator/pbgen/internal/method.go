@@ -84,39 +84,41 @@ constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 
 // 获取 C++ 头文件字符串，使用 text/template
 func GetServiceHandlerHeadStr(methods RPCMethods) (string, error) {
-	// 定义 C++ 类头文件的模板
+	if len(methods) == 0 {
+		return "", nil
+	}
+
 	const tmplStr = `#pragma once
 {{.Include}}
 
 class {{.Service}}Handler : public ::{{.Service}}
 {
 public:
-{{range .Methods}}
-{{getServiceHandlerMethodStr .}}
-{{end}}
+{{- range .Methods }}
+    void {{ .Method }}({{ $.GoogleMethodController }}const {{ .CppRequest }}* request,
+        {{ .CppResponse }}* response,
+        ::google::protobuf::Closure* done) override;
+{{ end }}
 };`
 
-	// 创建一个模板对象
-	tmpl, err := template.New("header").Funcs(template.FuncMap{
-		"getServiceHandlerMethodStr": getServiceHandlerMethodStr,
-	}).Parse(tmplStr)
+	tmpl, err := template.New("header").Parse(tmplStr)
 	if err != nil {
 		logger.Global.Error("解析服务处理类头文件模板失败", zap.Error(err))
 		return "", err
 	}
 
-	// 定义模板的数据
 	data := struct {
-		Include string
-		Service string
-		Methods RPCMethods
+		Include                string
+		Service                string
+		GoogleMethodController string
+		Methods                RPCMethods
 	}{
-		Include: methods[0].IncludeName(), // 假设所有方法使用相同的 Include
-		Service: methods[0].Service(),     // 假设所有方法属于同一个服务
-		Methods: methods,
+		Include:                methods[0].IncludeName(),
+		Service:                methods[0].Service(),
+		GoogleMethodController: _config.Global.Naming.GoogleMethodController,
+		Methods:                methods,
 	}
 
-	// 使用模板填充数据
 	var result strings.Builder
 	err = tmpl.Execute(&result, data)
 	if err != nil {
@@ -124,46 +126,7 @@ public:
 		return "", err
 	}
 
-	// 返回生成的 C++ 头文件
 	return result.String(), nil
-}
-
-// Helper function to generate method strings for service handlers
-func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
-	const methodTemplate = `
-	void {{.Method}}({{.GoogleMethodController}} const {{.CppRequest}}* request, {{.CppResponse}}* response, ::google::protobuf::Closure* done) override;
-`
-
-	type MethodData struct {
-		Method                 string
-		GoogleMethodController string
-		CppRequest             string
-		CppResponse            string
-	}
-	// 填充模板所需的数据
-	data := MethodData{
-		Method:                 method.Method(),
-		GoogleMethodController: _config.Global.Naming.GoogleMethodController,
-		CppRequest:             method.CppRequest(),
-		CppResponse:            method.CppResponse(),
-	}
-
-	// 创建模板
-	tmpl, err := template.New("methodTemplate").Parse(methodTemplate)
-	if err != nil {
-		logger.Global.Error("解析方法模板失败", zap.Error(err))
-		return "", err
-	}
-
-	// 使用 bytes.Buffer 来捕获模板输出
-	var output bytes.Buffer
-	err = tmpl.Execute(&output, data)
-	if err != nil {
-		logger.Global.Error("执行方法模板失败", zap.Error(err))
-		return "", err
-	}
-
-	return output.String(), nil
 }
 
 // Function to get the header string for player method handlers
@@ -417,7 +380,7 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 func GetServiceRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
 	const methodRepliedHandlerHeadTemplate = `#pragma once
 #include "muduo/net/TcpConnection.h"
-{{.FirstMethodInfo.IncludeName }}
+{{.IncludeName }}
 using namespace muduo;
 using namespace muduo::net;
 
@@ -427,39 +390,18 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 {{- end }}
 `
 	type MethodRepliedHandlerData struct {
-		FirstMethodInfo        *MethodInfo
+		IncludeName            string
 		Methods                RPCMethods
 		RepliedHandlerFileName string
 	}
 
-	type MethodInfo struct {
-		KeyName     string
-		CppResponse string
-		IncludeName string
-	}
-
 	// Ensure there are methods in the list
 	if len(methods) == 0 {
 		return "", nil
-	}
-
-	// Ensure there are methods in the list
-	if len(methods) == 0 {
-		return "", nil
-	}
-
-	// Prepare data for the template
-	var methodsInfo []MethodInfo
-	for _, method := range methods {
-		methodsInfo = append(methodsInfo, MethodInfo{
-			KeyName:     method.KeyName(),
-			CppResponse: method.CppResponse(),
-			IncludeName: method.IncludeName(),
-		})
 	}
 
 	data := MethodRepliedHandlerData{
-		FirstMethodInfo:        (methods)[0],
+		IncludeName:            methods[0].IncludeName(),
 		Methods:                methods,
 		RepliedHandlerFileName: _config.Global.Naming.RepliedHandlerFile,
 	}
@@ -619,25 +561,24 @@ func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
 }
 
 func GetServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
-	const methodHandlerCppTemplate = `
-{{ .CppHandlerInclude }}
+	const methodHandlerCppTemplate = `{{ .CppHandlerInclude }}
 
 {{- if .FirstCode }}
 {{ .FirstCode }}
-{{- end }}
-
-{{- range .Methods }}
-{{ if .HasCode }}
+{{ end -}}
+{{ range .Methods }}
 void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* request,
-	{{ .CppResponse }}* response,
-	::google::protobuf::Closure* done)
+    {{ .CppResponse }}* response,
+    ::google::protobuf::Closure* done)
 {
-{{ .Code -}}
+{{- if .HasCode }}
+{{ .Code }}
+{{- else }}
+{{ $.YourCodePair }}
+{{- end }}
 }
-{{ else }}
-{{- $.YourCodePair -}}
-{{ end }}
-{{ end }}
+
+{{ end -}}
 `
 
 	type HandlerMethod struct {
@@ -706,17 +647,15 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 }
 
 func GetServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
-	const methodRepliedHandlerCppTemplate = `
-{{ .CppRepliedHandlerInclude }}
+	const methodRepliedHandlerCppTemplate = `{{ .CppRepliedHandlerInclude }}
 #include "rpc/{{ .ServiceInfoName }}{{ .ServiceInfoHeadInclude }}"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
-{{ if .FirstCode }}
+{{- if .FirstCode }}
 {{ .FirstCode }}
-{{ end }}
-
+{{ end -}}
 void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
 {
 {{- range .Methods }}
@@ -729,11 +668,11 @@ void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
 
 {{- range .Methods }}
 {{- if .HasCode }}
-
 void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, Timestamp timestamp)
 {
-{{ .Code -}}
+{{ .Code }}
 }
+
 {{- end }}
 {{- end }}
 `
@@ -959,12 +898,14 @@ void InitServiceHandler()
 
 func WriteRepliedRegisterFile(wg *sync.WaitGroup, dst string, cb checkRepliedCb) {
 	const repliedRegisterTemplate = `
+{{- range .InitFuncs }}
+void {{ . }}();
+{{ end }}
+
 void InitReply()
 {
 {{- range .InitFuncs }}
-    void {{ . }}();
     {{ . }}();
-
 {{- end }}
 }
 `
