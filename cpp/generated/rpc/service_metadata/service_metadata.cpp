@@ -3,6 +3,7 @@
 #include "proto/common/base/node.pb.h"
 
 #include "proto/login/login.grpc.pb.h"
+#include "proto/gate/gate_service.pb.h"
 #include "proto/scene/game_client_player.pb.h"
 #include "proto/scene/game_player.pb.h"
 #include "proto/scene/game_player_scene.pb.h"
@@ -15,13 +16,13 @@
 #include "proto/centre/centre_player_scene.pb.h"
 #include "proto/centre/centre_scene.pb.h"
 #include "proto/centre/centre_service.pb.h"
-#include "proto/gate/gate_service.pb.h"
 #include "proto/scene_manager/scene_manager_service.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 
 #include "rpc/service_metadata/login_service_metadata.h"
+#include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/game_client_player_service_metadata.h"
 #include "rpc/service_metadata/game_player_service_metadata.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
@@ -34,13 +35,13 @@
 #include "rpc/service_metadata/centre_player_scene_service_metadata.h"
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
-#include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/scene_manager_service_service_metadata.h"
 #include "rpc/service_metadata/etcd_service_metadata.h"
 #include "rpc/service_metadata/etcd_service_metadata.h"
 #include "rpc/service_metadata/etcd_service_metadata.h"
 
 
+class GateImpl final : public Gate {};
 class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon {};
 class ScenePlayerImpl final : public ScenePlayer {};
 class SceneScenePlayerImpl final : public SceneScenePlayer {};
@@ -53,7 +54,6 @@ class CentrePlayerUtilityImpl final : public CentrePlayerUtility {};
 class CentrePlayerSceneImpl final : public CentrePlayerScene {};
 class CentreSceneImpl final : public CentreScene {};
 class CentreImpl final : public Centre {};
-class GateImpl final : public Gate {};
 
 namespace loginpb{void SendClientPlayerLoginLogin(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -86,6 +86,14 @@ void InitMessageInfo()
     gRpcServiceRegistry[ClientPlayerLoginEnterGameMessageId] = RpcService{"ClientPlayerLogin", "EnterGame", std::make_unique_for_overwrite<::loginpb::EnterGameRequest>(), std::make_unique_for_overwrite<::loginpb::EnterGameResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
     gRpcServiceRegistry[ClientPlayerLoginLeaveGameMessageId] = RpcService{"ClientPlayerLogin", "LeaveGame", std::make_unique_for_overwrite<::loginpb::LeaveGameRequest>(), std::make_unique_for_overwrite<::loginpb::LoginEmptyResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
     gRpcServiceRegistry[ClientPlayerLoginDisconnectMessageId] = RpcService{"ClientPlayerLogin", "Disconnect", std::make_unique_for_overwrite<::loginpb::LoginNodeDisconnectRequest>(), std::make_unique_for_overwrite<::loginpb::LoginEmptyResponse>(), nullptr, 1, eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
+    gRpcServiceRegistry[GatePlayerEnterGameNodeMessageId] = RpcService{"Gate", "PlayerEnterGameNode", std::make_unique_for_overwrite<::RegisterGameNodeSessionRequest>(), std::make_unique_for_overwrite<::RegisterGameNodeSessionResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
+    gRpcServiceRegistry[GateSendMessageToPlayerMessageId] = RpcService{"Gate", "SendMessageToPlayer", std::make_unique_for_overwrite<::NodeRouteMessageRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
+    gRpcServiceRegistry[GateKickSessionByCentreMessageId] = RpcService{"Gate", "KickSessionByCentre", std::make_unique_for_overwrite<::KickSessionRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
+    gRpcServiceRegistry[GateRouteNodeMessageMessageId] = RpcService{"Gate", "RouteNodeMessage", std::make_unique_for_overwrite<::RouteMessageRequest>(), std::make_unique_for_overwrite<::RouteMessageResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
+    gRpcServiceRegistry[GateRoutePlayerMessageMessageId] = RpcService{"Gate", "RoutePlayerMessage", std::make_unique_for_overwrite<::RoutePlayerMessageRequest>(), std::make_unique_for_overwrite<::RoutePlayerMessageResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
+    gRpcServiceRegistry[GateBroadcastToPlayersMessageId] = RpcService{"Gate", "BroadcastToPlayers", std::make_unique_for_overwrite<::BroadcastToPlayersRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
+    gRpcServiceRegistry[GateNodeHandshakeMessageId] = RpcService{"Gate", "NodeHandshake", std::make_unique_for_overwrite<::NodeHandshakeRequest>(), std::make_unique_for_overwrite<::NodeHandshakeResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
+    gRpcServiceRegistry[GateBindSessionToGateMessageId] = RpcService{"Gate", "BindSessionToGate", std::make_unique_for_overwrite<::BindSessionToGateRequest>(), std::make_unique_for_overwrite<::BindSessionToGateResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
     gRpcServiceRegistry[SceneClientPlayerCommonSendTipToClientMessageId] = RpcService{"SceneClientPlayerCommon", "SendTipToClient", std::make_unique_for_overwrite<::TipInfoMessage>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<SceneClientPlayerCommonImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[SceneClientPlayerCommonKickPlayerMessageId] = RpcService{"SceneClientPlayerCommon", "KickPlayer", std::make_unique_for_overwrite<::GameKickPlayerRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<SceneClientPlayerCommonImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[ScenePlayerCentre2GsLoginMessageId] = RpcService{"ScenePlayer", "Centre2GsLogin", std::make_unique_for_overwrite<::Centre2GsLoginRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), std::make_unique_for_overwrite<ScenePlayerImpl>(), 0, eNodeType::SceneNodeService};
@@ -143,14 +151,6 @@ void InitMessageInfo()
     gRpcServiceRegistry[CentreRoutePlayerStringMsgMessageId] = RpcService{"Centre", "RoutePlayerStringMsg", std::make_unique_for_overwrite<::RoutePlayerMessageRequest>(), std::make_unique_for_overwrite<::RoutePlayerMessageResponse>(), std::make_unique_for_overwrite<CentreImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreInitSceneNodeMessageId] = RpcService{"Centre", "InitSceneNode", std::make_unique_for_overwrite<::InitSceneNodeRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreNodeHandshakeMessageId] = RpcService{"Centre", "NodeHandshake", std::make_unique_for_overwrite<::NodeHandshakeRequest>(), std::make_unique_for_overwrite<::NodeHandshakeResponse>(), std::make_unique_for_overwrite<CentreImpl>(), 0, eNodeType::CentreNodeService};
-    gRpcServiceRegistry[GatePlayerEnterGameNodeMessageId] = RpcService{"Gate", "PlayerEnterGameNode", std::make_unique_for_overwrite<::RegisterGameNodeSessionRequest>(), std::make_unique_for_overwrite<::RegisterGameNodeSessionResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
-    gRpcServiceRegistry[GateSendMessageToPlayerMessageId] = RpcService{"Gate", "SendMessageToPlayer", std::make_unique_for_overwrite<::NodeRouteMessageRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
-    gRpcServiceRegistry[GateKickSessionByCentreMessageId] = RpcService{"Gate", "KickSessionByCentre", std::make_unique_for_overwrite<::KickSessionRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
-    gRpcServiceRegistry[GateRouteNodeMessageMessageId] = RpcService{"Gate", "RouteNodeMessage", std::make_unique_for_overwrite<::RouteMessageRequest>(), std::make_unique_for_overwrite<::RouteMessageResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
-    gRpcServiceRegistry[GateRoutePlayerMessageMessageId] = RpcService{"Gate", "RoutePlayerMessage", std::make_unique_for_overwrite<::RoutePlayerMessageRequest>(), std::make_unique_for_overwrite<::RoutePlayerMessageResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
-    gRpcServiceRegistry[GateBroadcastToPlayersMessageId] = RpcService{"Gate", "BroadcastToPlayers", std::make_unique_for_overwrite<::BroadcastToPlayersRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
-    gRpcServiceRegistry[GateNodeHandshakeMessageId] = RpcService{"Gate", "NodeHandshake", std::make_unique_for_overwrite<::NodeHandshakeRequest>(), std::make_unique_for_overwrite<::NodeHandshakeResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
-    gRpcServiceRegistry[GateBindSessionToGateMessageId] = RpcService{"Gate", "BindSessionToGate", std::make_unique_for_overwrite<::BindSessionToGateRequest>(), std::make_unique_for_overwrite<::BindSessionToGateResponse>(), std::make_unique_for_overwrite<GateImpl>(), 0, eNodeType::GateNodeService};
     gRpcServiceRegistry[SceneManagerCreateSceneMessageId] = RpcService{"SceneManager", "CreateScene", std::make_unique_for_overwrite<::scene_manager::CreateSceneRequest>(), std::make_unique_for_overwrite<::scene_manager::CreateSceneResponse>(), nullptr, 1, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerCreateScene};
     gRpcServiceRegistry[SceneManagerDestroySceneMessageId] = RpcService{"SceneManager", "DestroyScene", std::make_unique_for_overwrite<::scene_manager::DestroySceneRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 1, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerDestroyScene};
     gRpcServiceRegistry[SceneManagerEnterSceneByCentreMessageId] = RpcService{"SceneManager", "EnterSceneByCentre", std::make_unique_for_overwrite<::scene_manager::EnterSceneByCentreRequest>(), std::make_unique_for_overwrite<::scene_manager::EnterSceneByCentreResponse>(), nullptr, 1, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerEnterSceneByCentre};
