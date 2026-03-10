@@ -80,14 +80,13 @@ NodeInfo& Node::GetNodeInfo() const {
 
 void Node::Initialize() {
 	LOG_DEBUG << "Node initializing...";
-    SetupTimeZone();
+	SetupTimeZone();
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();
 	InitRpcServer();
 	InitLogSystem();
 	LoadAllConfigData();
-	InitKafka();
 	InitEtcdService();
 	LOG_DEBUG << "Node initialization complete.";
 }
@@ -154,6 +153,8 @@ void Node::StartRpcServer() {
 
 void Node::Shutdown() {
 	LOG_DEBUG << "Node shutting down...";
+	kafkaConsumerTimer.Cancel();
+	kafkaManager.Shutdown();
 	StopWatchingServiceNodes();
 	tlsThreadLocalEntityContainer.Clear();
 	tlsRegistryManager.Clear();
