@@ -1,5 +1,6 @@
 #include "centre_scene_handler.h"
 
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "proto/common/base/node.pb.h"
@@ -8,8 +9,6 @@
 #include <modules/scene/system/scene_common.h>
 #include "modules/scene/system/scene_param.h"
 ///<<< END WRITING YOUR CODE
-
-
 void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* controller, const ::RegisterSceneRequest* request,
     ::RegisterSceneResponse* response,
     ::google::protobuf::Closure* done)
@@ -27,9 +26,7 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 
 	
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* controller, const ::UnRegisterSceneRequest* request,
     ::Empty* response,
@@ -52,6 +49,4 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 
 	SceneCommon::DestroyScene({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
-
 }
-

@@ -4,17 +4,17 @@
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
+
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 void InitSceneSceneReply()
 {
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(SceneSceneTestMessageId,
         std::bind(&OnSceneSceneTestReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
+
 void OnSceneSceneTestReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }

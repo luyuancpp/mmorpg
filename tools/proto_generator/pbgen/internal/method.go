@@ -3,6 +3,7 @@ package internal
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -94,11 +95,7 @@ func GetServiceHandlerHeadStr(methods RPCMethods) (string, error) {
 class {{.Service}}Handler : public ::{{.Service}}
 {
 public:
-{{- range .Methods }}
-    void {{ .Method }}({{ $.GoogleMethodController }}const {{ .CppRequest }}* request,
-        {{ .CppResponse }}* response,
-        ::google::protobuf::Closure* done) override;
-{{ end }}
+{{.MethodDeclarations}}
 };`
 
 	tmpl, err := template.New("header").Parse(tmplStr)
@@ -108,15 +105,13 @@ public:
 	}
 
 	data := struct {
-		Include                string
-		Service                string
-		GoogleMethodController string
-		Methods                RPCMethods
+		Include            string
+		Service            string
+		MethodDeclarations string
 	}{
-		Include:                methods[0].IncludeName(),
-		Service:                methods[0].Service(),
-		GoogleMethodController: _config.Global.Naming.GoogleMethodController,
-		Methods:                methods,
+		Include:            methods[0].IncludeName(),
+		Service:            methods[0].Service(),
+		MethodDeclarations: buildServiceHandlerDeclarations(methods),
 	}
 
 	var result strings.Builder
@@ -127,6 +122,21 @@ public:
 	}
 
 	return result.String(), nil
+}
+
+func buildServiceHandlerDeclarations(methods RPCMethods) string {
+	declarations := make([]string, 0, len(methods))
+	for _, method := range methods {
+		declarations = append(declarations, fmt.Sprintf(
+			"    void %s(%sconst %s* request,\n        %s* response,\n        ::google::protobuf::Closure* done) override;",
+			method.Method(),
+			_config.Global.Naming.GoogleMethodController,
+			method.CppRequest(),
+			method.CppResponse(),
+		))
+	}
+
+	return strings.Join(declarations, "\n\n")
 }
 
 // Function to get the header string for player method handlers
@@ -181,8 +191,7 @@ public:
 	return output.String(), nil
 }
 
-const playerMethodFunctionsTemplate = `
-{{- range .Methods }}
+const playerMethodFunctionsTemplate = `{{- range .Methods }}
     static void {{ .Method }}({{ $.PlayerMethodController }}
         const {{ .CppRequest }}* request,
         {{ .CppResponse }}* response);
@@ -307,8 +316,7 @@ func GetPlayerMethodRepliedHeadStr(methods RPCMethods) (string, error) {
 	return output.String(), nil
 }
 
-const playerMethodRepliedFunctionsTemplate = `
-{{- range .Methods }}
+const playerMethodRepliedFunctionsTemplate = `{{- range .Methods }}
     static void {{ .Method }}({{ $.PlayerMethodController }}
         const {{ .CppRequest }}* request,
         {{ .CppResponse }}* response);
@@ -384,14 +392,11 @@ func GetServiceRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
 using namespace muduo;
 using namespace muduo::net;
 
-{{- range .Methods }}
-void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, Timestamp timestamp);
-
-{{- end }}
+{{.MethodDeclarations}}
 `
 	type MethodRepliedHandlerData struct {
 		IncludeName            string
-		Methods                RPCMethods
+		MethodDeclarations     string
 		RepliedHandlerFileName string
 	}
 
@@ -402,7 +407,7 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 
 	data := MethodRepliedHandlerData{
 		IncludeName:            methods[0].IncludeName(),
-		Methods:                methods,
+		MethodDeclarations:     buildServiceRepliedHandlerDeclarations(methods),
 		RepliedHandlerFileName: _config.Global.Naming.RepliedHandlerFile,
 	}
 
@@ -420,6 +425,46 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn
 	}
 
 	return output.String(), nil
+}
+
+func buildServiceRepliedHandlerDeclarations(methods RPCMethods) string {
+	declarations := make([]string, 0, len(methods))
+	for _, method := range methods {
+		declarations = append(declarations, fmt.Sprintf(
+			"void On%s%s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp);",
+			method.KeyName(),
+			_config.Global.Naming.RepliedHandlerFile,
+			method.CppResponse(),
+		))
+	}
+
+	return strings.Join(declarations, "\n\n")
+}
+
+func buildFunctionDefinition(signature string, body string) string {
+	var output strings.Builder
+	output.WriteString(signature)
+	output.WriteString("\n{\n")
+	if body != "" {
+		output.WriteString(body)
+		output.WriteString("\n")
+	}
+	output.WriteString("}")
+	return output.String()
+}
+
+func buildGeneratedCppFile(prefix string, firstCode string, functionDefinitions []string) string {
+	var output strings.Builder
+	output.WriteString(prefix)
+	output.WriteString("\n\n")
+	output.WriteString(firstCode)
+	output.WriteString("\n")
+	if len(functionDefinitions) > 0 {
+		output.WriteString(strings.Join(functionDefinitions, "\n\n"))
+		output.WriteString("\n")
+	}
+
+	return output.String()
 }
 
 // ReadCodeSectionsFromFile 函数接收一个函数作为参数，动态选择 A 或 B 方法
@@ -498,10 +543,11 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 				currentCode += line
 				// 使用 methodFunc currentMethod
 				handlerName := methodFunc(currentMethod, funcParam)
-				codeMap[handlerName] = currentCode
+				normalizedCode := utils2.TrimTrailingLineBreaks(currentCode)
+				codeMap[handlerName] = normalizedCode
 				logger.Global.Debug("方法代码段读取完成",
 					zap.String("handler_name", handlerName),
-					zap.Int("code_length", len(currentCode)),
+					zap.Int("code_length", len(normalizedCode)),
 				)
 				currentMethod = nil
 				currentCode = ""
@@ -528,13 +574,15 @@ func ReadCodeSectionsFromFile(cppFileName string, methods *RPCMethods, methodFun
 			zap.String("default_code", firstCode),
 		)
 	}
+	firstCode = utils2.TrimTrailingLineBreaks(firstCode)
 
 	// 检查是否有方法没有找到对应的 yourCode，如果没有找到，则添加默认值
+	defaultCode := utils2.TrimTrailingLineBreaks(_config.Global.Naming.YourCodePair)
 	missingCount := 0
 	for _, method := range *methods {
 		handlerName := methodFunc(method, funcParam)
 		if _, exists := codeMap[handlerName]; !exists {
-			codeMap[handlerName] = _config.Global.Naming.YourCodePair
+			codeMap[handlerName] = defaultCode
 			missingCount++
 		}
 	}
@@ -561,26 +609,6 @@ func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
 }
 
 func GetServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
-	const methodHandlerCppTemplate = `{{ .CppHandlerInclude }}
-
-{{- if .FirstCode }}
-{{ .FirstCode }}
-{{ end -}}
-{{ range .Methods }}
-void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* request,
-    {{ .CppResponse }}* response,
-    ::google::protobuf::Closure* done)
-{
-{{- if .HasCode }}
-{{ .Code }}
-{{- else }}
-{{ $.YourCodePair }}
-{{- end }}
-}
-
-{{ end -}}
-`
-
 	type HandlerMethod struct {
 		HandlerName string
 		CppRequest  string
@@ -589,24 +617,15 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 		HasCode     bool
 	}
 
-	type HandlerCppData struct {
-		CppHandlerInclude      string
-		GoogleMethodController string
-		FirstCode              string
-		YourCodePair           string
-		Methods                []HandlerMethod
-	}
-
 	if len(methods) == 0 {
 		return ""
 	}
 
 	ex := ""
 
-	// 获取 yourCode 段落
 	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerNameWrapper, ex)
 
-	firstMethodInfo := (methods)[0]
+	firstMethodInfo := methods[0]
 
 	var methodList []HandlerMethod
 	for _, methodInfo := range methods {
@@ -621,78 +640,32 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 		})
 	}
 
-	// 填充模板数据
-	data := HandlerCppData{
-		CppHandlerInclude:      firstMethodInfo.CppHandlerIncludeName(),
-		GoogleMethodController: _config.Global.Naming.GoogleMethodController,
-		FirstCode:              firstCode,
-		YourCodePair:           _config.Global.Naming.YourCodePair,
-		Methods:                methodList,
+	methodDefinitions := make([]string, 0, len(methodList))
+	for _, method := range methodList {
+		methodDefinitions = append(methodDefinitions, buildFunctionDefinition(
+			fmt.Sprintf(
+				`void %s%sconst %s* request,
+    %s* response,
+    ::google::protobuf::Closure* done)`,
+				method.HandlerName,
+				_config.Global.Naming.GoogleMethodController,
+				method.CppRequest,
+				method.CppResponse,
+			),
+			method.Code,
+		))
 	}
 
-	// 执行模板
-	tmpl, err := template.New("methodHandlerCpp").Parse(methodHandlerCppTemplate)
-	if err != nil {
-		logger.Global.Fatal("解析服务处理类CPP模板失败", zap.Error(err))
-		panic(err)
-	}
-
-	var output bytes.Buffer
-	if err := tmpl.Execute(&output, data); err != nil {
-		logger.Global.Fatal("执行服务处理类CPP模板失败", zap.Error(err))
-		panic(err)
-	}
-
-	return output.String()
+	return buildGeneratedCppFile(firstMethodInfo.CppHandlerIncludeName(), firstCode, methodDefinitions)
 }
 
 func GetServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
-	const methodRepliedHandlerCppTemplate = `{{ .CppRepliedHandlerInclude }}
-#include "rpc/{{ .ServiceInfoName }}{{ .ServiceInfoHeadInclude }}"
-#include "network/codec/message_response_dispatcher.h"
-
-extern MessageResponseDispatcher gRpcResponseDispatcher;
-
-{{- if .FirstCode }}
-{{ .FirstCode }}
-{{ end -}}
-void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
-{
-{{- range .Methods }}
-{{- if .HasCode }}
-    gRpcResponseDispatcher.registerMessageCallback<{{ .CppResponse }}>({{.KeyName}}{{$.MessageIdName}},
-        std::bind(&{{ .FuncName }}, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-{{- end }}
-{{- end }}
-}
-
-{{- range .Methods }}
-{{- if .HasCode }}
-void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, Timestamp timestamp)
-{
-{{ .Code }}
-}
-
-{{- end }}
-{{- end }}
-`
 	type RepliedHandlerMethod struct {
 		FuncName    string
 		CppResponse string
 		Code        string
 		HasCode     bool
 		KeyName     string
-	}
-
-	type RepliedHandlerCppData struct {
-		CppRepliedHandlerInclude string
-		FirstCode                string
-		InitFuncName             string
-		RepliedHandlerFileName   string
-		Methods                  []RepliedHandlerMethod
-		MessageIdName            string
-		ServiceInfoHeadInclude   string
-		ServiceInfoName          string
 	}
 
 	if len(methods) == 0 {
@@ -702,7 +675,7 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 	emptyString := ""
 
 	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerKeyNameWrapper, emptyString)
-	firstMethodInfo := (methods)[0]
+	firstMethodInfo := methods[0]
 
 	var methodsData []RepliedHandlerMethod
 	for _, method := range methods {
@@ -717,66 +690,55 @@ void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .Cpp
 		})
 	}
 
-	templateData := RepliedHandlerCppData{
-		CppRepliedHandlerInclude: firstMethodInfo.CppRepliedHandlerIncludeName(),
-		FirstCode:                firstCode,
-		InitFuncName:             firstMethodInfo.Service(),
-		RepliedHandlerFileName:   _config.Global.Naming.RepliedHandlerFile,
-		Methods:                  methodsData,
-		MessageIdName:            _config.Global.Naming.MessageId,
-		ServiceInfoHeadInclude:   firstMethodInfo.ServiceInfoHeadInclude(),
-		ServiceInfoName:          _config.Global.DirectoryNames.ServiceInfoName,
+	registrationLines := make([]string, 0, len(methodsData))
+	handlerDefinitions := make([]string, 0, len(methodsData)+1)
+	for _, method := range methodsData {
+		if !method.HasCode {
+			continue
+		}
+
+		registrationLines = append(registrationLines, fmt.Sprintf(
+			`    gRpcResponseDispatcher.registerMessageCallback<%s>(%s%s,
+        std::bind(&%s, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));`,
+			method.CppResponse,
+			method.KeyName,
+			_config.Global.Naming.MessageId,
+			method.FuncName,
+		))
+		handlerDefinitions = append(handlerDefinitions, buildFunctionDefinition(
+			fmt.Sprintf(
+				"void %s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp)",
+				method.FuncName,
+				method.CppResponse,
+			),
+			method.Code,
+		))
 	}
 
-	tmpl, err := template.New("methodRepliedHandlerCpp").Parse(methodRepliedHandlerCppTemplate)
-	if err != nil {
-		logger.Global.Fatal("解析回复处理类CPP模板失败", zap.Error(err))
-		panic(err)
-	}
+	initDefinition := buildFunctionDefinition(
+		fmt.Sprintf("void Init%s%s()", firstMethodInfo.Service(), _config.Global.Naming.RepliedHandlerFile),
+		strings.Join(registrationLines, "\n"),
+	)
 
-	var output bytes.Buffer
-	if err := tmpl.Execute(&output, templateData); err != nil {
-		logger.Global.Fatal("执行回复处理类CPP模板失败", zap.Error(err))
-		panic(err)
-	}
+	filePrefix := strings.Join([]string{
+		firstMethodInfo.CppRepliedHandlerIncludeName(),
+		fmt.Sprintf("#include \"rpc/%s%s\"", _config.Global.DirectoryNames.ServiceInfoName, firstMethodInfo.ServiceInfoHeadInclude()),
+		"#include \"network/codec/message_response_dispatcher.h\"",
+		"",
+		"extern MessageResponseDispatcher gRpcResponseDispatcher;",
+	}, "\n")
 
-	return output.String()
+	functionDefinitions := append([]string{initDefinition}, handlerDefinitions...)
+	return buildGeneratedCppFile(filePrefix, firstCode, functionDefinitions)
 }
 
 func GetPlayerServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
-	const playerHandlerCppTemplate = `
-{{ .IncludeName }}
-{{- if .FirstCode }}
-{{ .FirstCode }}
-{{ end }}
-
-{{- range .Methods }}
-
-void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* request,
-	{{ .CppResponse }}* response)
-{
-{{- if .HasCode }}
-{{ .Code -}}
-{{ else }}
-{{ $.YourCodePair }}
-{{ end }}
-}
-{{ end }}
-`
 	type PlayerHandlerMethod struct {
 		HandlerName string
 		CppRequest  string
 		CppResponse string
 		Code        string
 		HasCode     bool
-	}
-
-	type PlayerHandlerCppData struct {
-		IncludeName            string
-		FirstCode              string
-		PlayerMethodController string
-		YourCodePair           string
-		Methods                []PlayerHandlerMethod
 	}
 
 	if len(methods) == 0 {
@@ -798,32 +760,26 @@ void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* re
 		})
 	}
 
-	data := PlayerHandlerCppData{
-		IncludeName:            includeName,
-		FirstCode:              firstCode,
-		PlayerMethodController: _config.Global.Naming.PlayerMethodController,
-		YourCodePair:           _config.Global.Naming.YourCodePair,
-		Methods:                methodList,
+	methodDefinitions := make([]string, 0, len(methodList))
+	for _, method := range methodList {
+		methodDefinitions = append(methodDefinitions, buildFunctionDefinition(
+			fmt.Sprintf(
+				`void %s%sconst %s* request,
+	%s* response)`,
+				method.HandlerName,
+				_config.Global.Naming.PlayerMethodController,
+				method.CppRequest,
+				method.CppResponse,
+			),
+			method.Code,
+		))
 	}
 
-	tmpl, err := template.New("playerHandlerCpp").Parse(playerHandlerCppTemplate)
-	if err != nil {
-		logger.Global.Fatal("解析玩家服务处理类CPP模板失败", zap.Error(err))
-		panic(err)
-	}
-
-	var output bytes.Buffer
-	if err := tmpl.Execute(&output, data); err != nil {
-		logger.Global.Fatal("执行玩家服务处理类CPP模板失败", zap.Error(err))
-		panic(err)
-	}
-
-	return output.String()
+	return buildGeneratedCppFile(includeName, firstCode, methodDefinitions)
 }
 
 func GenRegisterFile(wg *sync.WaitGroup, dst string, cb checkRepliedCb) {
-	const registerFileTemplate = `
-#include <unordered_map>
+	const registerFileTemplate = `#include <unordered_map>
 #include <memory>
 #include <google/protobuf/service.h>
 {{- range .Includes }}
@@ -897,22 +853,6 @@ void InitServiceHandler()
 }
 
 func WriteRepliedRegisterFile(wg *sync.WaitGroup, dst string, cb checkRepliedCb) {
-	const repliedRegisterTemplate = `
-{{- range .InitFuncs }}
-void {{ . }}();
-{{ end }}
-
-void InitReply()
-{
-{{- range .InitFuncs }}
-    {{ . }}();
-{{- end }}
-}
-`
-	type RepliedRegisterData struct {
-		InitFuncs []string
-	}
-
 	defer wg.Done()
 
 	var initFuncList []string
@@ -938,23 +878,24 @@ void InitReply()
 		)
 	}
 
-	templateData := RepliedRegisterData{
-		InitFuncs: initFuncList,
+	var output strings.Builder
+	for _, initFunc := range initFuncList {
+		output.WriteString("void ")
+		output.WriteString(initFunc)
+		output.WriteString("();\n")
 	}
-
-	tmpl, err := template.New("repliedRegister").Parse(repliedRegisterTemplate)
-	if err != nil {
-		logger.Global.Fatal("解析回复注册文件模板失败", zap.Error(err))
-		panic(err)
+	if len(initFuncList) > 0 {
+		output.WriteString("\n")
 	}
-
-	var output bytes.Buffer
-	if err := tmpl.Execute(&output, templateData); err != nil {
-		logger.Global.Fatal("执行回复注册文件模板失败", zap.Error(err))
-		panic(err)
+	output.WriteString("void InitReply()\n{\n")
+	for _, initFunc := range initFuncList {
+		output.WriteString("    ")
+		output.WriteString(initFunc)
+		output.WriteString("();\n")
 	}
+	output.WriteString("}\n")
 
-	utils2.WriteFileIfChanged(dst, output.Bytes())
+	utils2.WriteFileIfChanged(dst, []byte(output.String()))
 	logger.Global.Info("回复注册文件生成完成",
 		zap.String("output_path", dst),
 		zap.Int("init_func_count", len(initFuncList)),

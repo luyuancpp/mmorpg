@@ -1,17 +1,12 @@
-
-void InitSceneSceneReply();
-
-void InitSceneReply();
-
 void InitCentreSceneReply();
-
 void InitCentreReply();
-
+void InitSceneSceneReply();
+void InitSceneReply();
 
 void InitReply()
 {
-    InitSceneSceneReply();
-    InitSceneReply();
     InitCentreSceneReply();
     InitCentreReply();
+    InitSceneSceneReply();
+    InitSceneReply();
 }

@@ -1,5 +1,5 @@
-
 #include "game_player_handler.h"
+
 
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -8,9 +8,6 @@
 #include "muduo/base/Logging.h"
 #include "proto/common/component/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-
-
-
 void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -24,9 +21,7 @@ void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLog
 
 	PlayerLifecycleSystem::OnPlayerLogin(player, request->enter_gs_type());
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
 	::google::protobuf::Empty* response)
@@ -38,6 +33,4 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 	PlayerLifecycleSystem::HandleExitGameNode(player);
 
 ///<<< END WRITING YOUR CODE
-
 }
-

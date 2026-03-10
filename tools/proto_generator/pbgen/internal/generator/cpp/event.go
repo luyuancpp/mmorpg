@@ -129,12 +129,15 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 	if globalCode == "" {
 		globalCode = _config.Global.Naming.YourCodePair
 	}
+	globalCode = utils2.TrimTrailingLineBreaks(globalCode)
 
 	// 补充未找到的函数
 	for _, signature := range methodSignatures {
 		if _, exists := codeMap[signature]; !exists {
-			codeMap[signature] = _config.Global.Naming.YourCodePair
+			codeMap[signature] = utils2.TrimTrailingLineBreaks(_config.Global.Naming.YourCodePair)
+			continue
 		}
+		codeMap[signature] = utils2.TrimTrailingLineBreaks(codeMap[signature])
 	}
 	return codeMap, globalCode, scanner.Err()
 }
@@ -144,10 +147,16 @@ type EventTemplateData struct {
 	ClassName           string
 	HeaderFile          string
 	ProtoInclude        string
-	EventMessages       []string
+	EventMessages       []EventHandlerMessage
 	ForwardDeclarations []string
 	GlobalUserCode      string
 	UserCodeBlocks      map[string]string
+}
+
+type EventHandlerMessage struct {
+	Name      string
+	Signature string
+	IsLast    bool
 }
 
 // generateEventHandlerFiles 使用模板生成每个 proto 对应的 .h 和 .cpp 文件
@@ -188,11 +197,20 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	}
 
 	// 构建模板数据
+	eventHandlers := make([]EventHandlerMessage, 0, len(eventMessages))
+	for index, eventName := range eventMessages {
+		eventHandlers = append(eventHandlers, EventHandlerMessage{
+			Name:      eventName,
+			Signature: buildEventHandlerSignature(className, eventName),
+			IsLast:    index == len(eventMessages)-1,
+		})
+	}
+
 	tmplData := EventTemplateData{
 		ClassName:           className,
 		HeaderFile:          headerFileBase,
 		ProtoInclude:        _config.Global.DirectoryNames.ProtoDirName + _config.Global.PathLists.ProtoDirs.LogicEvent + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
-		EventMessages:       eventMessages,
+		EventMessages:       eventHandlers,
 		ForwardDeclarations: eventMessages,
 		GlobalUserCode:      globalCode,
 		UserCodeBlocks:      userCodeBlocks,
@@ -252,7 +270,7 @@ type Config struct {
 	HandlerHeaderExtension          string
 	EventHandlerHeaderFileName      string
 	EventHandlerCppFileName         string
-	SceneNodeEventHandlerDirectory   string
+	SceneNodeEventHandlerDirectory  string
 	CentreNodeEventHandlerDirectory string
 	IncludeBegin                    string
 	IncludeEndLine                  string

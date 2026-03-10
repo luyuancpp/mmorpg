@@ -1,5 +1,6 @@
 #include "centre_service_handler.h"
 
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -323,17 +324,13 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
 } // namespace
 
 ///<<< END WRITING YOUR CODE
-
-
 void CentreHandler::GatePlayerService(::google::protobuf::RpcController* controller, const ::GateClientMessageRequest* request,
     ::Empty* response,
     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
     ::Empty* response,
@@ -370,9 +367,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	StartDelayedCleanupTimer(playerEntity, 30000);
 
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller, const ::CentreLoginRequest* request,
     ::CentreLoginResponse* response,
@@ -391,9 +386,7 @@ void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* con
 	//如果不是同一個登錄服務器,踢掉已經登錄的賬號
 	//告訴客戶端登錄中
 ///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* controller, const ::CentrePlayerGameNodeEntryRequest* request,
     ::Empty* response,
@@ -530,9 +523,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	// 执行进入场景相关副作用（保持原有流程）
 	ApplyEnterGameDecision(playerEntity, decision);
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* controller, const ::LoginNodeLeaveGameRequest* request,
     ::Empty* response,
@@ -548,9 +539,7 @@ void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* contro
 	PlayerLifecycleSystem::HandleNormalExit(player_id);
 	//todo statistics
 ///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
     ::Empty* response,
@@ -566,9 +555,7 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerLifecycleSystem::HandleNormalExit(player_id);
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::PlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
     ::NodeRouteMessageResponse* response,
@@ -694,9 +681,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 		<< " for player ID: " << playerId;
 
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller, const ::EnterGameNodeSuccessRequest* request,
     ::Empty* response,
@@ -739,9 +724,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
 
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
     ::RouteMessageResponse* response,
@@ -885,9 +868,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	}
 	}
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
     ::RoutePlayerMessageResponse* response,
@@ -895,9 +876,7 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller, const ::InitSceneNodeRequest* request,
     ::Empty* response,
@@ -935,9 +914,7 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 		registry.get_or_emplace<CrossSceneSceneNode>(sceneNodeId);
 	}
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
     ::NodeHandshakeResponse* response,
@@ -946,6 +923,4 @@ void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller,
 	///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 	///<<< END WRITING YOUR CODE
-
 }
-

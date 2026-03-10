@@ -12,5 +12,4 @@ public:
     void UnRegisterScene(::google::protobuf::RpcController* controller, const ::UnRegisterSceneRequest* request,
         ::Empty* response,
         ::google::protobuf::Closure* done) override;
-
 };

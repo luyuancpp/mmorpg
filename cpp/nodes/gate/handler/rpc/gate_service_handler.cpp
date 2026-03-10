@@ -1,5 +1,6 @@
 #include "gate_service_handler.h"
 
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
@@ -16,8 +17,6 @@ bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 }
 
 ///<<< END WRITING YOUR CODE
-
-
 void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::RegisterGameNodeSessionRequest* request,
     ::RegisterGameNodeSessionResponse* response,
     ::google::protobuf::Closure* done)
@@ -35,9 +34,7 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 	LOG_INFO << "Player entered GS, session ID: " << request->session_info().session_id()
 		<< ", game node ID: " << request->scene_node_id();
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
     ::Empty* response,
@@ -57,9 +54,7 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 	gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* controller, const ::KickSessionRequest* request,
     ::Empty* response,
@@ -88,9 +83,7 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	// Gate 会发送 GateSessionDisconnect 到 Centre (或 Centre 会收到)
 	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
     ::RouteMessageResponse* response,
@@ -98,9 +91,7 @@ void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
     ::RoutePlayerMessageResponse* response,
@@ -108,9 +99,7 @@ void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controll
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controller, const ::BroadcastToPlayersRequest* request,
     ::Empty* response,
@@ -133,9 +122,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE
-
 }
-
 
 void GateHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
     ::NodeHandshakeResponse* response,
@@ -144,9 +131,7 @@ void GateHandler::NodeHandshake(::google::protobuf::RpcController* controller, c
 ///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
-
 }
-
 
 void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controller, const ::BindSessionToGateRequest* request,
     ::BindSessionToGateResponse* response,
@@ -162,6 +147,4 @@ void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controlle
 	response->set_session_version(request->session_version());
 	response->set_player_id(request->player_id());
 ///<<< END WRITING YOUR CODE
-
 }
-
