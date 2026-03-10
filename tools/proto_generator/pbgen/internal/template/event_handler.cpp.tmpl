@@ -3,24 +3,27 @@
 #include "threading/dispatcher_manager.h"
 
 {{ .GlobalUserCode }}
-
 void {{ .ClassName }}::Register()
 {
 {{- range .EventMessages }}
-    dispatcher.sink<{{ . }}>().connect<&{{ $.ClassName }}::{{ . }}Handler>();
+    dispatcher.sink<{{ .Name }}>().connect<&{{ $.ClassName }}::{{ .Name }}Handler>();
 {{- end }}
 }
 
 void {{ .ClassName }}::UnRegister()
 {
 {{- range .EventMessages }}
-    dispatcher.sink<{{ . }}>().disconnect<&{{ $.ClassName }}::{{ . }}Handler>();
+    dispatcher.sink<{{ .Name }}>().disconnect<&{{ $.ClassName }}::{{ .Name }}Handler>();
 {{- end }}
 }
 
 {{- range .EventMessages }}
-void {{ $.ClassName }}::{{ . }}Handler(const {{ . }}& event)
+void {{ $.ClassName }}::{{ .Name }}Handler(const {{ .Name }}& event)
 {
-{{ index $.UserCodeBlocks (printf "void %s::%sHandler(const %s& event)\n" $.ClassName . . ) -}}
+{{ index $.UserCodeBlocks .Signature }}
 }
+{{- if .IsLast }}
+{{- else }}
+
+{{- end }}
 {{- end }}

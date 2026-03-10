@@ -57,8 +57,8 @@ type Paths struct {
 	NodePkgDir                      string `yaml:"node_pkg_dir"`
 	NodeLibsEngine                  string `yaml:"node_libs_engine"`
 	NodeLibGame                     string `yaml:"node_lib_game"`
-	NodePkgLogicScene                string `yaml:"node_pkg_logic_scene"`
-	SceneNodeDir                     string `yaml:"scene_node_dir"`
+	NodePkgLogicScene               string `yaml:"node_pkg_logic_scene"`
+	SceneNodeDir                    string `yaml:"scene_node_dir"`
 	CentreNodeDir                   string `yaml:"centre_node_dir"`
 	GateNodeDir                     string `yaml:"gate_node_dir"`
 	Robot                           string `yaml:"robot"`
@@ -114,9 +114,9 @@ type Paths struct {
 
 	// 原有配置中的路径
 	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
-	SceneNodeEventHandlerDirectory   string `yaml:"scene_node_event_handler_directory"`
+	SceneNodeEventHandlerDirectory  string `yaml:"scene_node_event_handler_directory"`
 	CentreNodeEventHandlerDirectory string `yaml:"centre_node_event_handler_directory"`
-	SceneAttributeSyncDir            string `yaml:"scene_attribute_sync_dir"`
+	SceneAttributeSyncDir           string `yaml:"scene_attribute_sync_dir"`
 }
 
 // FileExtensions 文件扩展名配置（仅存放文件后缀/扩展名）
@@ -236,7 +236,7 @@ type ProtoDirIndexes struct {
 	LoginProtoDirIndex          int `yaml:"login_proto_dir_index"`
 	DbProtoDirIndex             int `yaml:"db_proto_dir_index"`
 	CenterProtoDirIndex         int `yaml:"center_proto_dir_index"`
-	SceneProtoDirIndex           int `yaml:"scene_proto_dir_index"`
+	SceneProtoDirIndex          int `yaml:"scene_proto_dir_index"`
 	GateProtoDirIndex           int `yaml:"gate_proto_dir_index"`
 	ChatProtoDirIndex           int `yaml:"chat_proto_dir_index"`
 	TeamProtoDirIndex           int `yaml:"team_proto_dir_index"`
@@ -254,10 +254,10 @@ type NodeTypes struct {
 // MethodHandlerDirs 方法处理器目录映射
 type MethodHandlerDirs struct {
 	Robot                   string `yaml:"robot"`
-	SceneNode                string `yaml:"scene_node"`
-	SceneNodePlayer          string `yaml:"scene_node_player"`
-	SceneNodeReplied         string `yaml:"scene_node_replied"`
-	SceneNodePlayerReplied   string `yaml:"scene_node_player_replied"`
+	SceneNode               string `yaml:"scene_node"`
+	SceneNodePlayer         string `yaml:"scene_node_player"`
+	SceneNodeReplied        string `yaml:"scene_node_replied"`
+	SceneNodePlayerReplied  string `yaml:"scene_node_player_replied"`
 	CentreNode              string `yaml:"centre_node"`
 	CentreNodePlayer        string `yaml:"centre_node_player"`
 	CentreNodeReplied       string `yaml:"centre_node_replied"`
@@ -414,7 +414,7 @@ func loadConfigWithLogger(log *zap.Logger) error {
 func calculateDerivedConstants() {
 	// 计算YourCodePair
 	if Global.Naming.YourCodePair == "" && Global.Naming.YourCodeBegin != "" && Global.Naming.YourCodeEnd != "" {
-		Global.Naming.YourCodePair = Global.Naming.YourCodeBegin + "\n" + Global.Naming.YourCodeEnd + "\n"
+		Global.Naming.YourCodePair = Global.Naming.YourCodeBegin + "\n" + Global.Naming.YourCodeEnd
 	}
 
 	// 计算注册处理器扩展名

@@ -10,7 +10,7 @@ public:
 	using DeliveryCallback = std::function<void(const std::string& topic, int32_t partition, int64_t offset, const std::string& message)>;
 	~KafkaProducer();
 
-	void init(const std::string& brokers);
+	bool init(const std::string& brokers);
 
 	// ✅ 线程单例访问器
 	static KafkaProducer& Instance() {

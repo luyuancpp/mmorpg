@@ -1,4 +1,3 @@
-
 #include "scene_response_handler.h"
 
 #include "rpc/service_metadata/scene_service_metadata.h"
@@ -6,15 +5,11 @@
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "gate_node.h"
 #include "session/manager/session_manager.h"
 
 ///<<< END WRITING YOUR CODE
-
-
-
 void InitSceneReply()
 {
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(ScenePlayerEnterGameNodeMessageId,

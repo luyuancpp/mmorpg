@@ -1,11 +1,9 @@
-
 #include "gate_service_response_handler.h"
 
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
-
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
@@ -19,9 +17,6 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include <threading/registry_manager.h>
 #include <type_alias/player_session_type_alias.h>
 ///<<< END WRITING YOUR CODE
-
-
-
 void InitGateReply()
 {
     gRpcResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(GatePlayerEnterGameNodeMessageId,
