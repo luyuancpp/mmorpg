@@ -15,13 +15,12 @@
 #include "world/world.h"
 #include "proto/centre/centre_service.pb.h"
 #include "core/network/message_system.h"
-#include "kafka/system/kafka.h"
 #include "core/system/redis.h"
 
 using namespace muduo::net;
 
 SceneNode::SceneNode(muduo::net::EventLoop* loop)
-    :Node(loop, "logs/scene")
+	:Node(loop, "logs/scene")
 {
 	GetNodeInfo().set_node_type(SceneNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService };
@@ -30,15 +29,12 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 
 	EventHandler::Register();
 
-
 	World::InitializeSystemBeforeConnect();
 
 	OnTablesLoadSuccess([]()
 	{
 		ConfigSystem::OnConfigLoadSuccessful();
 	});
-
-	GetKafkaManager().SetMessageCallback(KafkaSystem::KafkaMessageHandler);
 }
 
 void SceneNode::StartRpcServer(){

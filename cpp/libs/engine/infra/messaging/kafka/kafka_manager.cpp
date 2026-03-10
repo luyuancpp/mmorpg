@@ -39,9 +39,10 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 bool KafkaManager::Subscribe(const KafkaConfig& config,
 	const std::vector<std::string>& topics,
 	const std::string& groupId,
-	const std::vector<int32_t>& partitions) {
-	if (!messageCallback_) {
-		LOG_DEBUG << "KafkaManager: Message callback not set. Please call SetMessageCallback before subscribing.";
+	const std::vector<int32_t>& partitions,
+	KafkaMessageCallback callback) {
+	if (!callback) {
+		LOG_DEBUG << "KafkaManager: No message callback provided, skipping subscribe.";
 		return false;
 	}
 
@@ -64,7 +65,7 @@ bool KafkaManager::Subscribe(const KafkaConfig& config,
 		effectiveGroupId,
 		topics,
 		partitions,
-		messageCallback_
+		callback
 	)) {
 		LOG_ERROR << "KafkaManager: Failed to initialize Kafka consumer for topics: "
 			<< boost::algorithm::join(topics, ",");
