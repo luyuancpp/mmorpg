@@ -7,10 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	"go.uber.org/zap" // 引入zap结构化日志字段
+	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 // ConstantsGenerator is responsible for generating Go constants from a file.
@@ -150,12 +150,6 @@ func (cw *ConstantsWriter) Write() error {
 // WriteToFiles concurrently writes constants to multiple files.
 func WriteToFiles(constants []string, filePaths []string) {
 	var wg sync.WaitGroup
-
-	logger.Global.Info("开始并发写入常量文件",
-		zap.Int("file_count", len(filePaths)),
-		zap.Int("const_count", len(constants)),
-	)
-
 	for _, path := range filePaths {
 		wg.Add(1)
 		go func(path string) {
@@ -169,42 +163,25 @@ func WriteToFiles(constants []string, filePaths []string) {
 			}
 		}(path)
 	}
-
 	wg.Wait()
-
-	logger.Global.Info("所有常量文件写入完成",
-		zap.Int("file_count", len(filePaths)),
-	)
 }
 
 func WriteGoMessageId(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-
-		// Initialize the ConstantsGenerator
 		g := NewConstantsGenerator(_config.Global.Paths.ServiceIdFile)
-		logger.Global.Info("开始生成Go MessageId常量",
-			zap.String("source_file", _config.Global.Paths.ServiceIdFile),
-		)
-
 		consts, err := g.Generate()
 		if err != nil {
-			logger.Global.Fatal("生成MessageId常量失败",
-				zap.Error(err),
-			)
+			logger.Global.Fatal("生成MessageId常量失败", zap.Error(err))
 		}
-
-		// Define file paths where constants will be written
 		filePaths := []string{
 			_config.Global.Paths.RobotMessageIdFile,
 		}
-
 		for domain, meta := range _config.Global.DomainMeta {
 			if !utils.IsGRPC(meta) {
 				logger.Global.Debug("目录无GRPC服务，跳过MessageId文件生成",
 					zap.String("domain", domain),
-					zap.String("dir", meta.Source),
 				)
 				continue
 			}
@@ -212,14 +189,7 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 			outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + _config.Global.Naming.GoPackage
 			filePath := outputDir + "/" + _config.Global.FileExtensions.MessageIdGoFile
 			filePaths = append(filePaths, filePath)
-
-			logger.Global.Debug("添加MessageId文件输出路径",
-				zap.String("dir", meta.Source),
-				zap.String("output_path", filePath),
-			)
 		}
-
-		// Write constants to files concurrently
 		WriteToFiles(consts, filePaths)
 	}()
 }

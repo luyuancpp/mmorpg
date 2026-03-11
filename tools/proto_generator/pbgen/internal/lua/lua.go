@@ -7,50 +7,46 @@ import (
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"reflect"
 	"strconv"
 	"strings"
 )
 
-const msg = "message "
-const begin = "{"
-const end = "}"
-const setName = "::set_"
-const mapType = "map"
-const stringType = "string"
+const (
+	msg        = "message "
+	begin      = "{"
+	end        = "}"
+	setName    = "::set_"
+	mapType    = "map"
+	stringType = "string"
+)
 
-func toCppIntType(typeString string) (newType string, convert bool) {
-	if reflect.DeepEqual(typeString, "int32") ||
-		reflect.DeepEqual(typeString, "uint32") ||
-		reflect.DeepEqual(typeString, "uint64") ||
-		reflect.DeepEqual(typeString, "int64") {
-		typeString = typeString + "_t"
-		return typeString, true
+var cppTypes = map[string]bool{
+	"int32": true, "uint32": true, "uint64": true, "int64": true,
+	"int32_t": true, "uint32_t": true, "uint64_t": true, "int64_t": true,
+	"bool": true, "float": true, "double": true,
+}
+
+var cppIntSuffixTypes = map[string]bool{
+	"int32": true, "uint32": true, "uint64": true, "int64": true,
+}
+
+func toCppIntType(typeString string) (string, bool) {
+	if cppIntSuffixTypes[typeString] {
+		return typeString + "_t", true
 	}
 	return typeString, false
 }
 
-func GetTypeRefString(typeString string) (valueTypeRef string) {
-	if isCppType(typeString) {
-		valueTypeRef, _ = toCppIntType(typeString)
-	} else {
-		valueTypeRef = typeString + "&"
+func GetTypeRefString(typeString string) string {
+	if cppTypes[typeString] {
+		v, _ := toCppIntType(typeString)
+		return v
 	}
-	return valueTypeRef
+	return typeString + "&"
 }
 
 func isCppType(typeString string) bool {
-	return reflect.DeepEqual(typeString, "int32") ||
-		reflect.DeepEqual(typeString, "uint32") ||
-		reflect.DeepEqual(typeString, "uint64") ||
-		reflect.DeepEqual(typeString, "int64") ||
-		reflect.DeepEqual(typeString, "int32_t") ||
-		reflect.DeepEqual(typeString, "uint32_t") ||
-		reflect.DeepEqual(typeString, "uint64_t") ||
-		reflect.DeepEqual(typeString, "int64_t") ||
-		reflect.DeepEqual(typeString, "bool") ||
-		reflect.DeepEqual(typeString, "float") ||
-		reflect.DeepEqual(typeString, "double")
+	return cppTypes[typeString]
 }
 
 func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {

@@ -341,9 +341,9 @@ void InitMessageInfo()
 				)
 			} else {
 				declareFunction := "namespace " + method.Package() + "{void Send" +
-					service.Service() + method.MethodName() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
-				senderFunction = append(senderFunction, declareFunction)
-				sendName := method.Package() + "::" + "Send" + service.Service() + method.MethodName()
+service.Service() + method.Method() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
+					senderFunction = append(senderFunction, declareFunction)
+					sendName := method.Package() + "::" + "Send" + service.Service() + method.Method()
 				initLine = fmt.Sprintf(
 					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s, %s};`,
 					messageId,
