@@ -15,6 +15,9 @@ import (
 	"pbgen/logger" // 引入封装的logger包
 )
 
+// Wg 全局WaitGroup用于并发任务同步
+var Wg sync.WaitGroup
+
 func AreFileSizesEqual(file1, file2 string) bool {
 	info1, err1 := os.Stat(file1)
 	info2, err2 := os.Stat(file2)

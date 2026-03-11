@@ -19,6 +19,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/sync_stream.h>
+#include <grpcpp/ports_def.inc>
 namespace scene_manager {
 
 static const char* SceneManager_method_names[] = {
@@ -209,4 +210,5 @@ SceneManager::Service::~Service() {
 
 
 }  // namespace scene_manager
+#include <grpcpp/ports_undef.inc>
 
