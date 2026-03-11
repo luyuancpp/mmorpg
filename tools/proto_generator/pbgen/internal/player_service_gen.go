@@ -1,0 +1,180 @@
+package internal
+
+import (
+	"strings"
+
+	_config "pbgen/internal/config"
+	"pbgen/internal/utils"
+)
+
+// PlayerMethod 玩家服务方法数据
+type PlayerMethod struct {
+	Method          string
+	CppRequest      string
+	CppResponse     string
+	IsEmptyResponse bool
+}
+
+// PlayerMethodFunctionsData 玩家方法函数数据
+type PlayerMethodFunctionsData struct {
+	PlayerMethodController string
+	Methods                []PlayerMethod
+}
+
+// GetPlayerServiceHeadStr 生成玩家服务头文件
+func GetPlayerServiceHeadStr(methods RPCMethods) (string, error) {
+	const tmplStr = `#pragma once
+
+{{.IncludeName}}
+{{.PlayerServiceIncludeName}}
+{{.MacroReturnIncludeName}}
+
+class {{.Service}}Handler : public ::PlayerService
+{
+public:
+    using PlayerService::PlayerService;
+
+{{.MethodHandlerFunctions}}
+};
+`
+
+	if len(methods) == 0 {
+		return "", nil
+	}
+
+	data := struct {
+		IncludeName              string
+		PlayerServiceIncludeName string
+		MacroReturnIncludeName   string
+		Service                  string
+		MethodHandlerFunctions   string
+	}{
+		IncludeName:              methods[0].IncludeName(),
+		PlayerServiceIncludeName: _config.Global.Naming.PlayerServiceIncludeName,
+		MacroReturnIncludeName:   _config.Global.Naming.MacroReturnIncludeName,
+		Service:                  methods[0].Service(),
+		MethodHandlerFunctions:   getPlayerMethodHandlerFunctions(methods),
+	}
+
+	return utils.GlobalEngine.MustExecute("playerServiceHead", tmplStr, data)
+}
+
+// getPlayerMethodHandlerFunctions 生成玩家方法处理函数
+func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
+	const tmplStr = `
+{{- range .Methods }}
+    static void {{ .Method }}({{ $.PlayerMethodController }}
+        const {{ .CppRequest }}* request,
+        {{ .CppResponse }}* response);
+
+{{- end }}
+
+    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+        entt::entity player,
+        const ::google::protobuf::Message* request,
+        ::google::protobuf::Message* response) override
+    {
+        switch (method->index())
+        {
+{{- range $index, $method := .Methods }}
+        case {{ $index }}:
+			{
+            {{ $method.Method }}(player,
+                static_cast<const {{ $method.CppRequest }}*>(request),
+                static_cast<{{ $method.CppResponse }}*>(response));
+{{- if not $method.IsEmptyResponse }}
+            TRANSFER_ERROR_MESSAGE(static_cast<{{ $method.CppResponse }}*>(response));
+{{- end }}
+			}
+            break;
+{{- end }}
+        default:
+            break;
+        }
+    }
+`
+
+	var methodList []PlayerMethod
+	for _, method := range methods {
+		methodList = append(methodList, PlayerMethod{
+			Method:          method.Method(),
+			CppRequest:      method.CppRequest(),
+			CppResponse:     method.CppResponse(),
+			IsEmptyResponse: strings.Contains(method.CppResponse(), _config.Global.Naming.EmptyResponse),
+		})
+	}
+
+	data := PlayerMethodFunctionsData{
+		PlayerMethodController: _config.Global.Naming.PlayerMethodController,
+		Methods:                methodList,
+	}
+
+	return utils.ExecuteTemplate("playerMethodFunctions", tmplStr, data)
+}
+
+// PlayerHandlerMethod 玩家处理器方法
+type PlayerHandlerMethod struct {
+	HandlerName string
+	CppRequest  string
+	CppResponse string
+	Code        string
+	HasCode     bool
+}
+
+// GetPlayerServiceHandlerCppStr 生成玩家服务处理器CPP文件
+func GetPlayerServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
+	const tmplStr = `
+{{ .IncludeName }}
+{{- if .FirstCode }}
+{{ .FirstCode }}
+{{ end }}
+
+{{- range .Methods }}
+
+void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* request,
+	{{ .CppResponse }}* response)
+{
+{{- if .HasCode }}
+{{ .Code -}}
+{{ else }}
+{{ $.YourCodePair }}
+{{ end }}
+}
+{{ end }}
+`
+
+	if len(methods) == 0 {
+		return includeName
+	}
+
+	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerNameWithClassPrefixWrapper, className)
+
+	var methodList []PlayerHandlerMethod
+	for _, method := range methods {
+		handlerName := GenerateMethodHandlerNameWithClassPrefixWrapper(method, className)
+		code, exists := yourCodesMap[handlerName]
+		methodList = append(methodList, PlayerHandlerMethod{
+			HandlerName: handlerName,
+			CppRequest:  method.CppRequest(),
+			CppResponse: method.CppResponse(),
+			Code:        code,
+			HasCode:     exists,
+		})
+	}
+
+	data := struct {
+		IncludeName            string
+		FirstCode              string
+		PlayerMethodController string
+		YourCodePair           string
+		Methods                []PlayerHandlerMethod
+	}{
+		IncludeName:            includeName,
+		FirstCode:              firstCode,
+		PlayerMethodController: _config.Global.Naming.PlayerMethodController,
+		YourCodePair:           _config.Global.Naming.YourCodePair,
+		Methods:                methodList,
+	}
+
+	return utils.ExecuteTemplate("playerHandlerCpp", tmplStr, data)
+}
