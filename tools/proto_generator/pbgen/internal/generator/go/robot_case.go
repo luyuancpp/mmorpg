@@ -84,14 +84,14 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 
 		handlerCases := make([]HandlerCase, 0)
 		for _, service := range internal.GlobalRPCServiceList {
-			if !isClientMethodRepliedHandler(&service.MethodInfo) {
+			if !isClientMethodRepliedHandler(&service.Methods) {
 				logger.Global.Debug("跳过非客户端响应服务",
-					zap.String("service_name", service.GetServiceName()),
+					zap.String("service_name", service.Service()),
 				)
 				continue
 			}
 
-			for _, method := range service.MethodInfo {
+			for _, method := range service.Methods {
 				if !isRelevantService(method) {
 					logger.Global.Debug("跳过无关服务方法",
 						zap.String("service_name", method.Service()),

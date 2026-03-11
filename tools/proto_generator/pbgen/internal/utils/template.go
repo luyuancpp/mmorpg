@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"sync"
 	"text/template"
 
 	"go.uber.org/zap"
@@ -10,6 +11,7 @@ import (
 
 // TemplateEngine 模板引擎，简化模板操作
 type TemplateEngine struct {
+	mu    sync.RWMutex
 	cache map[string]*template.Template
 }
 
@@ -29,7 +31,9 @@ var GlobalEngine = NewTemplateEngine()
 // data: 模板数据
 // funcs: 可选的模板函数映射
 func (e *TemplateEngine) Execute(name, tmplStr string, data interface{}, funcs ...template.FuncMap) string {
+	e.mu.RLock()
 	tmpl, ok := e.cache[name]
+	e.mu.RUnlock()
 	if !ok {
 		var err error
 		t := template.New(name)
@@ -44,7 +48,9 @@ func (e *TemplateEngine) Execute(name, tmplStr string, data interface{}, funcs .
 				zap.Error(err),
 			)
 		}
+		e.mu.Lock()
 		e.cache[name] = tmpl
+		e.mu.Unlock()
 	}
 
 	var buf bytes.Buffer

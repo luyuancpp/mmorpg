@@ -40,8 +40,10 @@ func buildMethod(path string, node messageoption.NodeType, ccGeneric bool, isPla
 	}
 
 	return &internal.MethodInfo{
-		Fd:                     fd,
-		ServiceDescriptorProto: svc,
+		ProtoFileInfo: internal.ProtoFileInfo{
+			Fd:                     fd,
+			ServiceDescriptorProto: svc,
+		},
 	}
 }
 

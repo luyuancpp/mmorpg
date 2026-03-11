@@ -20,7 +20,7 @@ namespace {{.Package}} {
 {{- range $svc := .ServiceInfo }}
 using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
 
-{{- range $method := $svc.MethodInfo }}
+{{- range $method := $svc.Methods }}
 #pragma region {{ $svc.Service }}{{ $method.Method }}
 {{ if $method.ClientStreaming }}
 
@@ -95,7 +95,7 @@ struct {{.GrpcCompleteQueueName}} {
 boost::object_pool<GrpcTag> tagPool;
 
 {{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.MethodInfo }}
+{{- range $method := $svc.Methods }}
 #pragma region {{ $svc.Service }}{{ $method.Method }}
 boost::object_pool<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient> {{ $svc.Service }}{{ $method.Method }}Pool;
 using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType =
@@ -238,7 +238,7 @@ void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& regis
 {{- end }}
         switch (grpcTag->messageId) {
 {{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.MethodInfo }}
+{{- range $method := $svc.Methods }}
         case {{ $svc.Service }}{{ $method.Method }}MessageId:
             AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
@@ -257,7 +257,7 @@ void Set{{ $m.FileBaseNameCamel }}Handler(const std::function<void(const ClientC
   {{- end }}
 {{ end }}
 {{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.MethodInfo }}
+{{- range $method := $svc.Methods }}
     Async{{ $svc.Service }}{{ $method.Method }}Handler = handler;
 {{- end }}
 {{- end }}
@@ -269,7 +269,7 @@ void Set{{ $m.FileBaseNameCamel }}IfEmptyHandler(const std::function<void(const 
   {{- end }}
 {{ end }}
 {{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.MethodInfo }}
+{{- range $method := $svc.Methods }}
     if (!Async{{ $svc.Service }}{{ $method.Method }}Handler) {
         Async{{ $svc.Service }}{{ $method.Method }}Handler = handler;
     }
@@ -288,7 +288,7 @@ void Init{{ $m.FileBaseNameCamel }}GrpcNode(const std::shared_ptr<::grpc::Channe
 
 
 {{- range $svc := .ServiceInfo -}}
-{{- range $method := $svc.MethodInfo -}}
+{{- range $method := $svc.Methods -}}
 {{ if $method.ClientStreaming }}
     {
         GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)GrpcOperation::INIT));

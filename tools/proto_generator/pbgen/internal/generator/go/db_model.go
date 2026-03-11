@@ -234,7 +234,7 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 		logger.Global.Debug("消息实例字段信息",
 			zap.String("message_name", msgName),
 			zap.String("field_name", string(fd.Name())),
-			zap.String("field_kind", string(fd.Kind())),
+			zap.String("field_kind", fd.Kind().String()),
 			zap.Int32("field_number", int32(fd.Number())),
 		)
 	}

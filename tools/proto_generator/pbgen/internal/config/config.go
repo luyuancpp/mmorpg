@@ -75,19 +75,15 @@ type Paths struct {
 	ProtoBufCTempDir                string `yaml:"proto_buf_c_temp_dir"`
 	PlayerStorageTempDir            string `yaml:"player_storage_temp_dir"`
 	ProtoBufCProtoOutputDir         string `yaml:"proto_buf_c_proto_output_dir"`
-	ProtoBufCProtoOutputNoSuffixDir string `yaml:"proto_buf_c_proto_output_no_suffix_dir"`
 	GeneratedOutputDir              string `yaml:"generated_output_dir"`
 	GrpcOutputDir                   string `yaml:"grpc_output_dir"`
 	GrpcProtoOutputDir              string `yaml:"grpc_proto_output_dir"`
-	RobotGoOutputDir                string `yaml:"robot_go_output_dir"`
 	RobotGeneratedOutputDir         string `yaml:"robot_generated_output_dir"`
 	RobotGoGamePbDir                string `yaml:"robot_go_game_pb_dir"`
 	RobotGoGenDir                   string `yaml:"robot_go_gen_dir"`
-	GoGeneratorDir                  string `yaml:"go_generator_dir"`
 	GeneratedRpcDir                 string `yaml:"generated_rpc_dir"`
 	ServiceInfoDir                  string `yaml:"service_info_dir"`
 	ProtoBufCLuaDir                 string `yaml:"proto_buf_c_lua_dir"`
-	ClientLuaDir                    string `yaml:"client_lua_dir"`
 	CppGenGrpcDir                   string `yaml:"cpp_gen_grpc_dir"`
 	UtilGeneratorDir                string `yaml:"util_generator_dir"`
 	GeneratorDir                    string `yaml:"generator_dir"`
@@ -101,8 +97,6 @@ type Paths struct {
 	RobotProtoImportPath            string `yaml:"robot_proto_import_path"`
 	ServiceCppFile                  string `yaml:"service_cpp_file"`
 	ServiceHeaderFile               string `yaml:"service_header_file"`
-	LuaServiceFile                  string `yaml:"lua_service_file"`
-	ClientLuaServiceFile            string `yaml:"client_lua_service_file"`
 	GrpcInitCppFile                 string `yaml:"grpc_init_cpp_file"`
 	GrpcInitHeadFile                string `yaml:"grpc_init_head_file"`
 	GenUtilCppFile                  string `yaml:"gen_util_cpp_file"`
@@ -110,7 +104,6 @@ type Paths struct {
 	RobotMsgBodyHandlerFile         string `yaml:"robot_msg_body_handler_file"`
 	PlayerStorageSystemDir          string `yaml:"player_storage_system_dir"`
 	PlayerDataLoaderFile            string `yaml:"player_data_loader_file"`
-	ProtocPath                      string `yaml:"protoc_path"`
 
 	// 原有配置中的路径
 	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
@@ -128,24 +121,18 @@ type FileExtensions struct {
 	GrpcPbH           string `yaml:"grpc_pb_h"`
 	Header            string `yaml:"header"`
 	Cpp               string `yaml:"cpp"`
-	LuaCpp            string `yaml:"lua_cpp"`
 	HandlerH          string `yaml:"handler_h"`
 	HandlerCpp        string `yaml:"handler_cpp"`
 	RepliedHandlerH   string `yaml:"replied_handler_h"`
-	RepliedHandlerCpp string `yaml:"replied_handler_cpp"`
-	CppSol2           string `yaml:"cpp_sol2"`
 	GrpcClient        string `yaml:"grpc_client"`
 	GrpcClientH       string `yaml:"grpc_client_h"`
 	GrpcClientCpp     string `yaml:"grpc_client_cpp"`
-	ModelSql          string `yaml:"model_sql"`
 	LoaderCpp         string `yaml:"loader_cpp"`
 
 	// 原有配置中的扩展名
-	HandlerCppExtension                string `yaml:"handler_cpp_extension"`
 	RepliedHandlerHeaderExtension      string `yaml:"replied_handler_header_extension"`
 	CppRepliedHandlerEx                string `yaml:"cpp_replied_handler_ex"`
 	ModelSqlExtension                  string `yaml:"model_sql_extension"`
-	ProtoGoPackageSuffix               string `yaml:"proto_go_package_suffix"`
 	MessageIdGoFile                    string `yaml:"message_id_go_file"`
 	ServiceInfoExtension               string `yaml:"service_info_extension"`
 	RegisterRepliedHandlerCppExtension string `yaml:"register_replied_handler_cpp_extension"`
@@ -169,12 +156,9 @@ type Naming struct {
 	DbTableFile          string `yaml:"db_table_file"`
 	DbTableListJson      string `yaml:"db_table_list_json"`
 	GameRpcProto         string `yaml:"game_rpc_proto"`
-	RobotRpcProto        string `yaml:"robot_rpc_proto"`
 	GrpcName             string `yaml:"grpc_name"`
 
 	// 原有配置中的命名常量
-	TypePlayer                      string `yaml:"type_player"`
-	ServiceIncludeName              string `yaml:"service_include_name"`
 	PlayerServiceIncludeName        string `yaml:"player_service_include_name"`
 	PlayerServiceRepliedIncludeName string `yaml:"player_service_replied_include_name"`
 	MacroReturnIncludeName          string `yaml:"macro_return_include_name"`
@@ -221,27 +205,6 @@ type ProtoDirs struct {
 	Gate   string `yaml:"gate"`
 
 	Etcd string `yaml:"etcd"`
-}
-
-// ProtoDirIndexes Proto目录索引配置
-type ProtoDirIndexes struct {
-	CommonProtoDirIndex         int `yaml:"common_proto_dir_index"`
-	LogicComponentProtoDirIndex int `yaml:"logic_component_proto_dir_index"`
-	LogicEventProtoDirIndex     int `yaml:"logic_event_proto_dir_index"`
-	LogicSharedProtoDirIndex    int `yaml:"logic_shared_proto_dir_index"`
-	LogicProtoDirIndex          int `yaml:"logic_proto_dir_index"`
-	PlayerLocatorDirIndex       int `yaml:"player_locator_dir_index"`
-	ConstantsDirIndex           int `yaml:"constants_dir_index"`
-	EtcdProtoDirIndex           int `yaml:"etcd_proto_dir_index"`
-	LoginProtoDirIndex          int `yaml:"login_proto_dir_index"`
-	DbProtoDirIndex             int `yaml:"db_proto_dir_index"`
-	CenterProtoDirIndex         int `yaml:"center_proto_dir_index"`
-	SceneProtoDirIndex          int `yaml:"scene_proto_dir_index"`
-	GateProtoDirIndex           int `yaml:"gate_proto_dir_index"`
-	ChatProtoDirIndex           int `yaml:"chat_proto_dir_index"`
-	TeamProtoDirIndex           int `yaml:"team_proto_dir_index"`
-	MailProtoDirIndex           int `yaml:"mail_proto_dir_index"`
-	RobotProtoDirIndex          int `yaml:"robot_proto_dir_index"`
 }
 
 // NodeTypes 节点类型配置
@@ -422,7 +385,7 @@ func calculateDerivedConstants() {
 		Global.FileExtensions.RegisterRepliedHandlerCppExtension = "register" + Global.FileExtensions.CppRepliedHandlerEx
 	}
 	if Global.FileExtensions.RegisterHandlerCppExtension == "" {
-		Global.FileExtensions.RegisterHandlerCppExtension = "register" + Global.FileExtensions.HandlerCppExtension
+		Global.FileExtensions.RegisterHandlerCppExtension = "register" + Global.FileExtensions.HandlerCpp
 	}
 }
 
@@ -714,11 +677,6 @@ func setDefaults() {
 		Global.PathLists.MethodHandlerDirectories.Robot = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "logic/handler/")
 	}
 
-	// protoc路径默认值
-	if Global.Paths.ProtocPath == "" {
-		Global.Paths.ProtocPath = "protoc"
-	}
-
 	// 日志默认值
 	if Global.Log.Level == "" {
 		Global.Log.Level = "info"
@@ -972,107 +930,6 @@ func createRequiredDirs() error {
 	return nil
 }
 
-// GetProtoFullPaths 获取完整的Proto文件目录路径
-func (c *Config) GetProtoFullPaths() []string {
-	var fullPaths []string
-	for _, dir := range c.PathLists.ProtoDirectories {
-		fullPath := dir
-		if !filepath.IsAbs(dir) {
-			fullPath = filepath.Join(c.Paths.ProtoDir, dir)
-		}
-		fullPath = formatPathWithSlash(fullPath, fullPath)
-		fullPaths = append(fullPaths, fullPath)
-	}
-	return fullPaths
-}
-
-// GetRobotProtoFullPaths 获取完整的Robot Proto文件目录路径
-func (c *Config) GetRobotProtoFullPaths() []string {
-	var fullPaths []string
-	if !c.Generators.EnableRobotProto {
-		return fullPaths
-	}
-
-	for _, dir := range c.PathLists.RobotProtoDirectories {
-		fullPath := dir
-		if !filepath.IsAbs(dir) {
-			fullPath = filepath.Join(c.Paths.RobotProto, dir)
-		}
-		fullPath = formatPathWithSlash(fullPath, fullPath)
-		fullPaths = append(fullPaths, fullPath)
-	}
-	return fullPaths
-}
-
-// GetAllProtoFullPaths 获取所有Proto文件目录路径（包括全局和Robot）
-func (c *Config) GetAllProtoFullPaths() []string {
-	fullPaths := c.GetProtoFullPaths()
-	robotPaths := c.GetRobotProtoFullPaths()
-	return append(fullPaths, robotPaths...)
-}
-
-// GetIncludePaths 获取完整的Include路径
-func (c *Config) GetIncludePaths() []string {
-	var includePaths []string
-	seen := make(map[string]bool) // 去重
-
-	// 添加配置中的include paths
-	for _, path := range c.Parser.IncludePaths {
-		if strings.Contains(path, "{{") {
-			// 如果还有变量，尝试替换
-			path = replaceVariables(path, map[string]string{
-				"{{output_root}}":              c.Paths.OutputRoot,
-				"{{proto_dir}}":                c.Paths.ProtoDir,
-				"{{robot_proto}}":              c.Paths.RobotProto,
-				"{{robot}}":                    c.Paths.Robot,
-				"{{proto_dir_name}}":           c.DirectoryNames.ProtoDirName,         // 修改：从DirectoryNames获取
-				"{{robot_proto_name}}":         c.DirectoryNames.RobotProtoName,       // 修改：从DirectoryNames获取
-				"{{robot_go_zero_proto_name}}": c.DirectoryNames.RobotGoZeroProtoName, // 修改：从DirectoryNames获取
-			})
-		}
-
-		absPath, err := filepath.Abs(path)
-		if err == nil {
-			path = absPath
-		}
-
-		if !seen[path] {
-			includePaths = append(includePaths, path)
-			seen[path] = true
-		}
-	}
-
-	// 添加默认的include路径
-	defaultPaths := []string{
-		c.Paths.ProtoParentIncludePath,
-		c.Paths.ProtoDir,
-		c.Paths.RobotProto,
-		c.Paths.RobotProtoImportPath,
-		c.DirectoryNames.RobotProtoName, // 新增：添加DirectoryNames中的路径
-	}
-
-	for _, path := range defaultPaths {
-		if path != "" && !seen[path] {
-			includePaths = append(includePaths, path)
-			seen[path] = true
-		}
-	}
-
-	return includePaths
-}
-
-// GetRobotOutputDirs 获取Robot相关的输出目录映射
-func (c *Config) GetRobotOutputDirs() map[string]string {
-	return map[string]string{
-		"generated":        c.Paths.RobotGenerated,
-		"proto":            c.Paths.RobotProto,
-		"generated_proto":  c.Paths.RobotGeneratedProto,
-		"go_gen":           c.Paths.RobotGoGenDir,
-		"game_pb":          c.Paths.RobotGoGamePbDir,
-		"robot_proto_name": c.DirectoryNames.RobotProtoName, // 新增：添加DirectoryNames中的目录
-	}
-}
-
 // GetTemplatePath 获取模板的完整路径
 func (c *Config) GetTemplatePath(mappingName string) (string, error) {
 	mapping, ok := c.Mappings[mappingName]
@@ -1096,50 +953,4 @@ func (c *Config) GetOutputPath(mappingName, protoDir, protoFile string) (string,
 	})
 
 	return path, nil
-}
-
-// IsGeneratorEnabled 检查生成器是否启用
-func (c *Config) IsGeneratorEnabled(generator string) bool {
-	switch generator {
-	case "cpp":
-		return c.Generators.EnableCpp
-	case "go":
-		return c.Generators.EnableGo
-	case "handler":
-		return c.Generators.EnableHandler
-	case "rpc_response":
-		return c.Generators.EnableRpcResponse
-	case "robot_proto":
-		return c.Generators.EnableRobotProto
-	case "robot_go_zero":
-		return c.Generators.EnableRobotGoZero
-	default:
-		return false
-	}
-}
-
-// ShouldIgnoreFile 检查文件是否应该被忽略
-func (c *Config) ShouldIgnoreFile(filename string) bool {
-	for _, pattern := range c.Parser.IgnoreFiles {
-		if matched, _ := filepath.Match(pattern, filename); matched {
-			return true
-		}
-	}
-	return false
-}
-
-// ========== 原有配置的兼容方法 ==========
-
-// GetNodeType 获取节点类型值
-func (c *Config) GetNodeType(name string) uint32 {
-	switch name {
-	case "tcp":
-		return c.PathLists.NodeTypes.TcpNode
-	case "grpc":
-		return c.PathLists.NodeTypes.GrpcNode
-	case "http":
-		return c.PathLists.NodeTypes.HttpNode
-	default:
-		return uint32(0)
-	}
 }
