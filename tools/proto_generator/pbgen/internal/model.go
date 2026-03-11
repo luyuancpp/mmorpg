@@ -15,8 +15,7 @@ import (
 
 type EmptyStruct struct{}
 
-// ProtoFileInfo holds common proto file and service descriptor fields
-// shared between RPCServiceInfo and MethodInfo.
+// ProtoFileInfo holds common proto file and service descriptor fields.
 type ProtoFileInfo struct {
 	Fd                     *descriptorpb.FileDescriptorProto
 	ServiceDescriptorProto *descriptorpb.ServiceDescriptorProto
@@ -98,7 +97,7 @@ func (info *ProtoFileInfo) ServiceInfoHeadInclude() string {
 	return info.FileBaseNameNoEx() + _config.Global.FileExtensions.ServiceInfoExtension + _config.Global.FileExtensions.Header
 }
 
-// MethodInfo 定义RPC方法信息
+// MethodInfo defines an RPC method.
 type MethodInfo struct {
 	ProtoFileInfo
 	Id                    uint64
@@ -106,10 +105,10 @@ type MethodInfo struct {
 	MethodDescriptorProto *descriptorpb.MethodDescriptorProto
 }
 
-// RPCMethods 是RPCMethod的切片
+// RPCMethods is a slice of MethodInfo pointers.
 type RPCMethods []*MethodInfo
 
-// RPCServiceInfo 定义RPC服务信息
+// RPCServiceInfo defines an RPC service with its methods.
 type RPCServiceInfo struct {
 	ProtoFileInfo
 	Methods      RPCMethods
@@ -118,7 +117,7 @@ type RPCServiceInfo struct {
 
 var FdSet = &descriptorpb.FileDescriptorSet{}
 
-// RPCServiceInfoList 是用于排序的类型
+// RPCServiceInfoList supports sorting by ServiceIndex.
 type RPCServiceInfoList []*RPCServiceInfo
 
 func (s RPCServiceInfoList) Len() int           { return len(s) }
@@ -135,16 +134,9 @@ var MessageIdFileMaxId = uint64(0)
 var FileMaxMessageId = uint64(0)
 
 var (
-	ActiveMsgDescCache map[protoreflect.FullName]protoreflect.MessageDescriptor
-	FileDescCache      map[string]protoreflect.FileDescriptor
-)
-
-func init() {
 	ActiveMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor)
-	FileDescCache = make(map[string]protoreflect.FileDescriptor)
-}
-
-// --- RPCServiceInfo-specific methods ---
+	FileDescCache      = make(map[string]protoreflect.FileDescriptor)
+)
 
 func (info *RPCServiceInfo) IncludeName() string {
 	return "#include \"" + strings.Replace(info.Path(), _config.Global.Paths.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
@@ -162,14 +154,8 @@ func (info *RPCServiceInfo) LogicalPath() string {
 	return strings.TrimPrefix(info.ProtoPathWithFileBaseName(), "proto/")
 }
 
-// --- MethodInfo-specific methods ---
-
 func (info *MethodInfo) KeyName() string {
 	return info.Service() + info.Method()
-}
-
-func (info *MethodInfo) MethodName() string {
-	return info.MethodDescriptorProto.GetName()
 }
 
 func (info *MethodInfo) Method() string {
