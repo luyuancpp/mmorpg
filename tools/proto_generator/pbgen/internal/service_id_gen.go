@@ -18,7 +18,7 @@ func GenServiceIdHeader(serviceInfo []*RPCServiceInfo) string {
 
 {{.IncludeName}}
 {{- range .ServiceInfo }}
-{{range .MethodInfo}}
+{{range .Methods}}
 constexpr uint32_t {{.KeyName}}{{$.MessageIdName}} = {{.Id}};
 constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 #define {{.KeyName}}Method  ::{{.Service}}_Stub::descriptor()->method({{.Index}})

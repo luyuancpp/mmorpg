@@ -374,7 +374,7 @@ func GenerateGameGrpc(wg *sync.WaitGroup) {
 
 func GeneratorHandler(wg *sync.WaitGroup) {
 	for _, service := range internal.GlobalRPCServiceList {
-		ProcessAllHandlers(wg, service.MethodInfo)
+		ProcessAllHandlers(wg, service.Methods)
 	}
 }
 

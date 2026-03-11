@@ -37,19 +37,15 @@ paths:
 
   # 输出目录
   proto_buf_c_proto_output_dir: "{{output_root}}{{generated_dir}}"
-  proto_buf_c_proto_output_no_suffix_dir: "{{output_root}}{{generated_dir}}"
   generated_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_proto_output_dir: "{{output_root}}{{generated_dir}}proto/"
-  robot_go_output_dir: "{{output_root}}{{robot}}"
   robot_generated_output_dir: "{{output_root}}{{robot}}generated/"
   robot_go_game_pb_dir: "{{robot_generated_output_dir}}pb/game"
   robot_go_gen_dir: "{{output_root}}{{robot_generated}}"
-  go_generator_dir: "{{node_go_dir}}"
   generated_rpc_dir: "{{generated_output_dir}}rpc/"
   service_info_dir: "{{generated_rpc_dir}}service_metadata/"
   proto_buf_c_lua_dir: "{{generated_output_dir}}lua/"
-  client_lua_dir: "{{output_root}}bin/script/lua/service/"
   cpp_gen_grpc_dir: "{{output_root}}{{generated_dir}}grpc_client/"
   util_generator_dir: "{{output_root}}{{generated_dir}}proto_helpers/"
   generator_dir: "generated/"
@@ -65,8 +61,6 @@ paths:
   robot_proto_import_path: "{{output_root}}{{robot_proto}}"  # robot proto导入路径
   service_cpp_file: "{{service_info_dir}}service_metadata.cpp"
   service_header_file: "{{service_info_dir}}service_metadata.h"
-  lua_service_file: "{{proto_buf_c_lua_dir}}lua_service.cpp"
-  client_lua_service_file: "{{output_root}}client/src/handler/service_lua.cpp"
   grpc_init_cpp_file: "{{cpp_gen_grpc_dir}}grpc_init_client.cpp"
   grpc_init_head_file: "{{cpp_gen_grpc_dir}}grpc_init_client.h"
   gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"
@@ -74,7 +68,6 @@ paths:
   robot_msg_body_handler_file: "{{output_root}}{{robot}}logic/handler/message_body_handler.go"
   player_storage_system_dir: "{{output_root}}{{node_pkg_logic_scene}}player/system/"
   player_data_loader_file: "{{player_storage_system_dir}}player_data_loader.h"
-  protoc_path: "protoc"
 
   event_handler_source_directory: "handler/event/"
   scene_node_event_handler_directory: "{{scene_node_dir}}{{event_handler_source_directory}}"
@@ -106,28 +99,24 @@ file_extensions:
   grpc_pb_h: ".grpc.pb.h"
   header: ".h"
   cpp: ".cpp"
-  lua_cpp: "_lua.cpp"
   handler_h: "_handler.h"
   handler_cpp: "_handler.cpp"
   replied_handler_h: "_response_handler.h"
   replied_handler_cpp: "_response_handler.cpp"
-  cpp_sol2: "_sol2.cpp"
+
   grpc_client: "_grpc_client"
   grpc_client_h: "_grpc_client.h"
   grpc_client_cpp: "_grpc_client.cpp"
-  model_sql: "mysql_database_table.sql"
   loader_cpp: "_loader.cpp"
 
   # 原有配置中的扩展名
-  handler_cpp_extension: "_handler.cpp"
   replied_handler_header_extension: "_response_handler.h"
   cpp_replied_handler_ex: "_response_handler.cpp"
   model_sql_extension: "mysql_database_table.sql"
-  proto_go_package_suffix: "_proto"
   message_id_go_file: "message_id.go"
   service_info_extension: "_service_metadata"
   register_replied_handler_cpp_extension: "register{{cpp_replied_handler_ex}}"
-  register_handler_cpp_extension: "register{{handler_cpp_extension}}"
+  register_handler_cpp_extension: "register{{handler_cpp}}"
 
 # 命名规则配置（业务逻辑命名常量）
 naming:
@@ -146,11 +135,9 @@ naming:
   db_table_file: "mysql_database_table.proto"
   db_table_list_json: "mysql_database_table_list.json"
   game_rpc_proto: "game_rpc.proto"
-  robot_rpc_proto: "robot_rpc.proto"  # robot专用rpc proto文件名
   grpc_name: "grpc"
 
   # 原有配置中的命名常量
-  type_player: "player"
   player_service_include_name: "#include \"rpc/player_service_interface.h\"\n"
   player_service_replied_include_name: "#include \"rpc/player_rpc_response_handler.h\"\n"
   macro_return_include_name: "#include \"macros/return_define.h\""

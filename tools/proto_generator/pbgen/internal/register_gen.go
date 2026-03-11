@@ -49,10 +49,10 @@ void InitServiceHandler()
 	)
 
 	for _, service := range GlobalRPCServiceList {
-		if !cb(&service.MethodInfo) {
+		if !cb(&service.Methods) {
 			continue
 		}
-		first := service.MethodInfo[0]
+		first := service.Methods[0]
 		includes = append(includes, first.CppHandlerIncludeName())
 		initLine := " gNodeService.emplace(\"" + first.Service() + "\", std::make_unique_for_overwrite<" + first.Service() + _config.Global.Naming.HandlerFile + ">());"
 		initLines = append(initLines, initLine)
@@ -99,10 +99,10 @@ void InitReply()
 	)
 
 	for _, service := range GlobalRPCServiceList {
-		if !cb(&service.MethodInfo) {
+		if !cb(&service.Methods) {
 			continue
 		}
-		first := service.MethodInfo[0]
+		first := service.Methods[0]
 		initFunc := "Init" + first.Service() + _config.Global.Naming.RepliedHandlerFile
 		initFuncList = append(initFuncList, initFunc)
 	}

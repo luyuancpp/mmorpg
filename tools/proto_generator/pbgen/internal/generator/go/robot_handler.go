@@ -108,7 +108,7 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 					zap.String("response_type", responseType),
 				)
 			}
-		}(service.MethodInfo)
+		}(service.Methods)
 	}
 
 	logger.Global.Info("Robot单个处理器文件生成任务已提交",

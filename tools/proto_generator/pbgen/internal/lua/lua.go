@@ -277,10 +277,10 @@ func writeInitLuaServiceFile() {
 	defer utils2.Wg.Done()
 	data := "void InitServiceLua()\n{\n"
 	for _, service := range internal.GlobalRPCServiceList {
-		if len(service.MethodInfo) <= 0 {
+		if len(service.Methods) <= 0 {
 			continue
 		}
-		firstMethodInfo := service.MethodInfo[0]
+		firstMethodInfo := service.Methods[0]
 		data += "void Init" + firstMethodInfo.Service() + "Lua();\n"
 		data += "Init" + firstMethodInfo.Service() + "Lua();\n\n"
 	}
@@ -290,7 +290,7 @@ func writeInitLuaServiceFile() {
 func WriteLuaServiceHeadHandlerFile() {
 	for _, service := range internal.GlobalRPCServiceList {
 		utils2.Wg.Add(1)
-		go writeLuaServiceMethodCppFile(service.MethodInfo)
+		go writeLuaServiceMethodCppFile(service.Methods)
 	}
 	utils2.Wg.Add(1)
 	go writeInitLuaServiceFile()
