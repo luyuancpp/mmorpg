@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.uber.org/zap" // 引入zap用于结构化日志字段
-	"pbgen/logger"    // 引入封装的logger包
+	"go.uber.org/zap"
+	"pbgen/logger"
 )
 
 // EnsureDir 确保目录存在，不存在则创建（权限默认0755）

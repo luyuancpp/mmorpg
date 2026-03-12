@@ -9,14 +9,14 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/luyuancpp/protooption"
-	"go.uber.org/zap" // 引入zap用于结构化日志字段
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 const playerLoaderTemplate = `
@@ -115,22 +115,20 @@ func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error
 	return nil
 }
 
-// 工具函数：判断消息是否设置了 OptionIsPlayerDatabase 为 true
+// isPlayerDatabase returns true if the message has OptionIsPlayerDatabase set.
 func isPlayerDatabase(messageDesc *descriptorpb.DescriptorProto) bool {
 	opts := messageDesc.GetOptions()
 	if opts == nil {
 		return false
 	}
 
-	// 读取自定义选项 OptionIsPlayerDatabase（替代原有的 OptionTableName 判断）
 	extValue := proto.GetExtension(opts, messageoption.E_OptionIsPlayerDatabase)
 
-	// 转换为 bool 类型并判断是否为 true
 	isPlayerDB, ok := extValue.(bool)
 	return ok && isPlayerDB
 }
 
-// 从 Descriptor Set 文件中读取消息结构（核心逻辑修改）
+// CppPlayerDataLoadGenerator generates C++ player data loader from descriptor set.
 func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 	wg.Add(1)
 
@@ -148,10 +146,8 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 
 		var headerEntries []HeaderEntry
 
-		// 收集所有标记为玩家数据库的消息
 		for _, fileDesc := range internal.FdSet.GetFile() {
 			for _, messageDesc := range fileDesc.GetMessageType() {
-				// 替换判断条件：使用 isPlayerDatabase 替代 hasValidOptionTableName
 				if !isPlayerDatabase(messageDesc) {
 					continue
 				}
@@ -165,10 +161,8 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 			}
 		}
 
-		// 为每个玩家数据库消息生成处理代码
 		for _, fileDesc := range internal.FdSet.GetFile() {
 			for _, messageDesc := range fileDesc.GetMessageType() {
-				// 替换判断条件：仅处理标记为玩家数据库的消息
 				if !isPlayerDatabase(messageDesc) {
 					continue
 				}
@@ -200,7 +194,6 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 			}
 		}
 
-		// 生成头部文件
 		md5FilePath := _config.Global.Paths.PlayerDataLoaderFile
 		err = GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
 		if err != nil {
@@ -215,7 +208,6 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 	}()
 }
 
-// 打印消息字段信息（保留fmt，用于调试输出）
 func printMessageFields(descriptor *descriptorpb.DescriptorProto) {
 	fmt.Printf("Message Type: %s\n", descriptor.GetName())
 	for _, field := range descriptor.GetField() {
@@ -228,7 +220,6 @@ func printMessageFields(descriptor *descriptorpb.DescriptorProto) {
 	}
 }
 
-// 生成数据库字段列表（保持不变）
 func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBProtoFieldData {
 	result := make([]PlayerDBProtoFieldData, len(descriptor.GetField()))
 
@@ -240,7 +231,6 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 	return result
 }
 
-// 生成 C++ 反序列化代码（保持不变）
 func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
 	file, err := os.Create(fileName)
 	if err != nil {

@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"sync"
 
-	"go.uber.org/zap" // 引入zap结构化日志字段
+	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 // GenerateAllInOneDescriptor 生成合并的Protobuf描述符文件
@@ -29,7 +29,6 @@ func GenerateAllInOneDescriptor(wg *sync.WaitGroup) {
 
 // generateAllInOneDesc 生成并解析全量描述符文件
 func generateAllInOneDesc() error {
-	// 步骤1：收集目标proto文件（去重）
 	protoFiles, err := collectUniqueProtoFiles()
 	if err != nil {
 		logger.Global.Fatal("收集Proto文件失败",
@@ -44,7 +43,6 @@ func generateAllInOneDesc() error {
 		zap.Int("count", len(protoFiles)),
 	)
 
-	// 步骤2：构建protoc命令参数
 	args, err := buildDescriptorArgs(protoFiles)
 	if err != nil {
 		logger.Global.Fatal("构建命令参数失败",
@@ -52,14 +50,12 @@ func generateAllInOneDesc() error {
 		)
 	}
 
-	// 步骤3：执行protoc命令
 	if err := executeDescriptorCommand(args); err != nil {
 		logger.Global.Fatal("执行protoc失败",
 			zap.Error(err),
 		)
 	}
 
-	// 步骤4：读取并解析描述符文件
 	if err := parseDescriptorFile(); err != nil {
 		logger.Global.Fatal("解析描述符文件失败",
 			zap.Error(err),
@@ -115,14 +111,12 @@ func collectUniqueProtoFiles() ([]string, error) {
 func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 	descOutput := filepath.ToSlash(_config.Global.Paths.AllInOneDesc)
 
-	// 基础选项
 	args := []string{
 		"--descriptor_set_out=" + descOutput,
 		"--include_imports",     // 包含所有依赖的描述符
 		"--include_source_info", // 包含源码信息，便于调试
 	}
 
-	// 添加导入路径
 	importPaths := []string{
 		_config.Global.Paths.OutputRoot,
 		_config.Global.Paths.ProtobufDir,
@@ -134,7 +128,6 @@ func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 		args = append(args, "--proto_path="+filepath.ToSlash(ip))
 	}
 
-	// 添加目标proto文件
 	args = append(args, protoFiles...)
 	return args, nil
 }

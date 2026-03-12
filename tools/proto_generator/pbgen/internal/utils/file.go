@@ -55,18 +55,13 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 }
 
 // WriteFileIfChangedSafe 新函数
-// 写入内容到文件，内容未变化则不写入；文件不存在则创建；内部处理错误，不返回错误码
 func WriteFileIfChangedSafe(filePath string, content []byte) {
-	// 读取现有文件内容
 	existingContent, err := os.ReadFile(filePath)
-	// 仅处理“非文件不存在”的读取错误
-	// 场景2：文件不存在（读取失败且是“文件不存在”错误）
 	if os.IsNotExist(err) {
 		logger.Global.Info("文件不存在，开始创建",
 			zap.String("文件路径", filePath),
 		)
 
-		// 先创建文件所在的多级目录
 		dir := filepath.Dir(filePath)
 		if mkdirErr := os.MkdirAll(dir, 0755); mkdirErr != nil {
 			logger.Global.Fatal("创建目录失败",
@@ -75,7 +70,6 @@ func WriteFileIfChangedSafe(filePath string, content []byte) {
 			)
 		}
 
-		// 写入内容创建文件
 		if writeErr := os.WriteFile(filePath, content, 0644); writeErr != nil {
 			logger.Global.Fatal("创建文件失败",
 				zap.String("文件路径", filePath),
@@ -89,7 +83,6 @@ func WriteFileIfChangedSafe(filePath string, content []byte) {
 		return // 返回刚写入的内容
 	}
 
-	// 内容相同则跳过写入
 	if err == nil && bytes.Equal(existingContent, content) {
 		logger.Global.Info("文件内容无变化，跳过写入",
 			zap.String("文件路径", filePath),
@@ -97,7 +90,6 @@ func WriteFileIfChangedSafe(filePath string, content []byte) {
 		return
 	}
 
-	// 写入新内容（文件不存在时自动创建）
 	err = os.WriteFile(filePath, content, 0644)
 	if err != nil {
 		logger.Global.Warn("写入文件失败",

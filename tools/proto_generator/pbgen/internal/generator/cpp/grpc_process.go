@@ -8,13 +8,13 @@ import (
 	"sync"
 	"text/template"
 
-	"go.uber.org/zap" // 引入zap用于结构化日志字段
+	"go.uber.org/zap"
 
 	messageoption "github.com/luyuancpp/protooption"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 // GrpcServiceTemplateData 用于传递给模板的数据结构
@@ -29,14 +29,12 @@ type GrpcServiceTemplateData struct {
 
 // generateGrpcFile 根据模板生成 gRPC 文件，并避免重复写入
 func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, text string) error {
-	// 检查输入数据是否为空
 	if len(grpcServices) == 0 {
 		logger.Global.Fatal("生成gRPC文件失败: 服务信息不能为空",
 			zap.String("target_file", fileName),
 		)
 	}
 
-	// 渲染模板内容
 	tmpl, err := template.New(fileName).Parse(text)
 	if err != nil {
 		logger.Global.Fatal("生成gRPC文件失败: 解析模板失败",
@@ -45,7 +43,6 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 		)
 	}
 
-	// 填充模板数据
 	data := GrpcServiceTemplateData{
 		ServiceInfo:           grpcServices,
 		GrpcIncludeHeadName:   grpcServices[0].GrpcIncludeHeadName(),
@@ -56,7 +53,6 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 	}
 
 	var generatedContent bytes.Buffer
-	// 渲染模板到缓冲区
 	if err := tmpl.Execute(&generatedContent, data); err != nil {
 		logger.Global.Fatal("生成gRPC文件失败: 执行模板失败",
 			zap.String("target_file", fileName),
@@ -64,7 +60,6 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 		)
 	}
 
-	// 读取现有文件的内容（如果文件存在）
 	existingContent, err := os.ReadFile(fileName)
 	if err != nil && !os.IsNotExist(err) {
 		logger.Global.Fatal("生成gRPC文件失败: 读取现有文件失败",
@@ -73,7 +68,6 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 		)
 	}
 
-	// 如果文件内容相同，则跳过写入
 	if err == nil && bytes.Equal(existingContent, generatedContent.Bytes()) {
 		logger.Global.Info("gRPC文件内容无变化，跳过写入",
 			zap.String("file_path", fileName),
@@ -90,7 +84,6 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 		return err
 	}
 
-	// 创建文件并写入渲染后的内容
 	file, err := os.Create(fileName)
 	if err != nil {
 		logger.Global.Fatal("生成gRPC文件失败: 创建文件失败",
@@ -100,7 +93,6 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 	}
 	defer file.Close()
 
-	// 写入生成的内容到文件
 	if _, err := file.Write(generatedContent.Bytes()); err != nil {
 		logger.Global.Fatal("生成gRPC文件失败: 写入文件失败",
 			zap.String("file_path", fileName),
@@ -129,18 +121,15 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			firstService := serviceInfo[0]
 			protoPath := firstService.Path()
 
-			// 如果既不是gRPC服务也不是etcd服务，则返回（不继续处理）
 			if !(utils2.HasGrpcService(protoPath) || utils2.HasEtcdService(protoPath)) {
 				return
 			}
 
-			// 以下为继续处理的逻辑
 			// ...
 			sort.Slice(serviceInfo, func(i, j int) bool {
 				return serviceInfo[i].ServiceIndex < serviceInfo[j].ServiceIndex
 			})
 
-			// 确保目录存在
 			targetDir := path.Dir(_config.Global.Paths.CppGenGrpcDir + firstService.LogicalPath())
 			err := os.MkdirAll(targetDir, os.FileMode(0777))
 			if err != nil {
@@ -154,7 +143,6 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 
 			cppFileBaseName := firstService.LogicalPath()
 
-			// 生成 .h 文件
 			filePath := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientH
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
 				logger.Global.Fatal("生成gRPC客户端头文件失败",
@@ -164,7 +152,6 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 				)
 			}
 
-			// 生成 .cpp 文件
 			filePathCpp := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientCpp
 			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
 				logger.Global.Fatal("生成gRPC客户端cpp文件失败",

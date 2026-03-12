@@ -3,10 +3,10 @@ package prototools
 import (
 	"sync"
 
-	"go.uber.org/zap" // 引入zap结构化日志字段
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 type ExtensionCallback func(desc interface{}, value interface{}) error
@@ -21,7 +21,6 @@ func RegisterExtensionCallback(ext protoreflect.ExtensionType, cb ExtensionCallb
 	extMu.Lock()
 	defer extMu.Unlock()
 
-	// 空回调校验
 	if cb == nil {
 		logger.Global.Warn("尝试注册空的Extension回调",
 			zap.String("extension_full_name", string(ext.TypeDescriptor().FullName())),
@@ -38,7 +37,6 @@ func RegisterExtensionCallback(ext protoreflect.ExtensionType, cb ExtensionCallb
 
 // dispatchExtensions 分发扩展字段回调
 func dispatchExtensions(desc interface{}, opts interface{}, wg *sync.WaitGroup) {
-	// 类型断言转换为proto.Message
 	msgOpts, ok := opts.(proto.Message)
 	if !ok {
 		logger.Global.Debug("opts不是proto.Message类型，跳过扩展回调分发",
@@ -50,7 +48,6 @@ func dispatchExtensions(desc interface{}, opts interface{}, wg *sync.WaitGroup) 
 	extMu.RLock()
 	defer extMu.RUnlock()
 
-	// 空注册表快速返回
 	if len(extRegistry) == 0 {
 		logger.Global.Debug("扩展回调注册表为空，跳过分发",
 			zap.String("msg_full_name", string(msgOpts.ProtoReflect().Descriptor().FullName())),
@@ -69,7 +66,6 @@ func dispatchExtensions(desc interface{}, opts interface{}, wg *sync.WaitGroup) 
 		extFullName := ext.TypeDescriptor().FullName()
 		msgFullName := msgOpts.ProtoReflect().Descriptor().FullName()
 
-		// 1. 检查扩展字段所属的消息类型是否匹配
 		if ext.TypeDescriptor().ContainingMessage().FullName() != msgFullName {
 			logger.Global.Debug("扩展字段所属消息类型不匹配，跳过",
 				zap.String("extension_full_name", string(extFullName)),
@@ -79,7 +75,6 @@ func dispatchExtensions(desc interface{}, opts interface{}, wg *sync.WaitGroup) 
 			continue
 		}
 
-		// 2. 安全获取扩展字段值
 		val := proto.GetExtension(msgOpts, ext)
 		if val == nil {
 			logger.Global.Debug("扩展字段值为空，跳过回调",
@@ -89,7 +84,6 @@ func dispatchExtensions(desc interface{}, opts interface{}, wg *sync.WaitGroup) 
 			continue
 		}
 
-		// 3. 空回调列表跳过
 		if len(callbacks) == 0 {
 			logger.Global.Debug("扩展字段无回调函数，跳过",
 				zap.String("extension_full_name", string(extFullName)),
@@ -97,7 +91,6 @@ func dispatchExtensions(desc interface{}, opts interface{}, wg *sync.WaitGroup) 
 			continue
 		}
 
-		// 4. 并发调用回调函数
 		dispatchCount += len(callbacks)
 		for _, cb := range callbacks {
 			wg.Add(1)

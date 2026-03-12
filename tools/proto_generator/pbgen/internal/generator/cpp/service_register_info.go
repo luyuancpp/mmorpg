@@ -17,12 +17,12 @@ import (
 	"sync/atomic"
 	"text/template"
 
-	"go.uber.org/zap" // 引入zap用于结构化日志字段
+	"go.uber.org/zap"
 
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 // ReadProtoFileService reads service information from a protobuf descriptor file.

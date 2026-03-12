@@ -4,8 +4,6 @@ import (
 	messageoption "github.com/luyuancpp/protooption"
 	"pbgen/internal"
 )
-
-// 判断 methodList 第一个 method 是否满足给定条件函数
 func checkFirstMethod(methodList *internal.RPCMethods, conditions ...func(*internal.MethodInfo) bool) bool {
 	first := (*methodList)[0]
 	for _, cond := range conditions {

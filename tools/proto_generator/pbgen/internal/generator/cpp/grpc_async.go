@@ -197,7 +197,6 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
 {{ end }}
 }
 
-
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 {{ if $method.ClientStreaming }}
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
@@ -250,7 +249,6 @@ void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& regis
         }
 }
 
-
 {{ range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}
 void Set{{ $m.FileBaseNameCamel }}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
@@ -286,7 +284,6 @@ void Init{{ $m.FileBaseNameCamel }}GrpcNode(const std::shared_ptr<::grpc::Channe
     registry.emplace<{{ $svc.Service }}StubPtr>(nodeEntity, {{ $svc.Service }}::NewStub(channel));
 {{- end }}
 
-
 {{- range $svc := .ServiceInfo -}}
 {{- range $method := $svc.Methods -}}
 {{ if $method.ClientStreaming }}
@@ -310,7 +307,6 @@ void Init{{ $m.FileBaseNameCamel }}GrpcNode(const std::shared_ptr<::grpc::Channe
 {{ end }}
 
 }
-
 
 }// namespace {{.Package}}
 `

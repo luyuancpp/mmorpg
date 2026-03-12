@@ -64,7 +64,6 @@ type codeParser struct {
 	methodFunc MethodNameFunc
 	funcParam  string
 
-	// 状态
 	codeMap       map[string]string
 	firstCode     string
 	currentCode   string

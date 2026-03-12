@@ -69,7 +69,7 @@ func inferNodeByProtoPath(fileDesc *descriptorpb.FileDescriptorProto) messageopt
 	}
 }
 
-// 工具函数：判断服务是否设置了 OptionIsClientProtocolService 为 true
+// IsClientProtocolService returns true if the service has OptionIsClientProtocolService set.
 func IsClientProtocolService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
 	opts := serviceDesc.GetOptions()
 	if opts == nil {
@@ -91,10 +91,7 @@ func IsPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
 	v, ok := boolFromExtensionValue(extValue)
 	return ok && v
 }
-
-// --------------------------
-// 解析文件级默认节点类型 OptionFileDefaultNode
-// --------------------------
+// GetFileDefaultNode returns the file-level default node type, falling back to path inference.
 func GetFileDefaultNode(fileDesc *descriptorpb.FileDescriptorProto) messageoption.NodeType {
 	opts := fileDesc.GetOptions()
 	if opts == nil {
@@ -108,7 +105,7 @@ func GetFileDefaultNode(fileDesc *descriptorpb.FileDescriptorProto) messageoptio
 	return inferNodeByProtoPath(fileDesc)
 }
 
-// 判断文件是否归属指定节点类型
+// IsFileBelongToNode returns true if the file's default node matches the target.
 func IsFileBelongToNode(fileDesc *descriptorpb.FileDescriptorProto, targetNode messageoption.NodeType) bool {
 	defaultNode := GetFileDefaultNode(fileDesc)
 	return defaultNode == targetNode

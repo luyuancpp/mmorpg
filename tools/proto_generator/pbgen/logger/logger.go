@@ -6,10 +6,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Global 全局logger实例，整个项目共用
+// Global is the shared logger instance.
 var Global *zap.Logger
 
-// Init 初始化全局logger
+// Init initializes the global logger.
 func Init() error {
 	config := zap.NewProductionConfig()
 	config.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
@@ -21,12 +21,11 @@ func Init() error {
 		return err
 	}
 
-	// 替换zap默认全局logger，方便直接使用zap.L()
 	zap.ReplaceGlobals(Global)
 	return nil
 }
 
-// Sync 同步日志到磁盘（在程序退出时调用）
+// Sync flushes buffered log entries. Call before program exit.
 func Sync() {
 	_ = Global.Sync()
 }

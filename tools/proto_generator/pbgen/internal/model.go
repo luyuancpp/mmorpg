@@ -247,9 +247,6 @@ func (info *MethodInfo) ServerStreaming() bool {
 	}
 	return *info.MethodDescriptorProto.ServerStreaming
 }
-
-// --- Sort interfaces ---
-
 func (s RPCMethods) Len() int { return len(s) }
 func (s RPCMethods) Less(i, j int) bool {
 	if s[i].Service() < s[j].Service() {
@@ -258,9 +255,6 @@ func (s RPCMethods) Less(i, j int) bool {
 	return s[i].Index < s[j].Index
 }
 func (s RPCMethods) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-// --- Utility functions ---
-
 func GetTypeName(fullTypeName string) string {
 	if idx := strings.LastIndex(fullTypeName, "."); idx != -1 {
 		return fullTypeName[idx+1:]

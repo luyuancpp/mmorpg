@@ -7,9 +7,7 @@ import (
 )
 
 func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
-	// 直接定义配置列表，减少临时变量
 	handlerConfigs := []HandlerConfig{
-		// ---------------- Game Node ----------------
 		{
 			IsValidFunc:         IsSceneNodeHostedProtocolHandler,
 			GenerateDataFunc:    internal.GetServiceHandlerHeadStr,
@@ -50,7 +48,6 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
 			IsRepliedHandler:    true,
 		},
-		// ---------------- Centre Node ----------------
 		{
 			IsValidFunc:         IsCentreHostedServiceHandler,
 			GenerateDataFunc:    internal.GetServiceHandlerHeadStr,
@@ -91,7 +88,6 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
 			IsRepliedHandler:    true,
 		},
-		// ---------------- Gate Node ----------------
 		{
 			IsValidFunc:         IsGateNodeHostedServiceHandler,
 			GenerateDataFunc:    internal.GetServiceHandlerHeadStr,
@@ -115,7 +111,6 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 	}
 
 	for _, cfg := range handlerConfigs {
-		// 使用闭包捕获当前配置，避免循环变量问题
 		currentCfg := cfg
 
 		wg.Add(1)

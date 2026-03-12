@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/luyuancpp/proto2mysql"
-	"go.uber.org/zap" // 引入zap用于结构化日志字段
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -18,7 +18,7 @@ import (
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 // MessageListConfig 定义消息名列表结构
@@ -31,8 +31,6 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 	var messageNames []string
 
 	for _, fileDesc := range internal.FdSet.GetFile() {
-		// 修复：用 strings.HasSuffix 可能匹配到同名文件，建议用绝对路径或精确匹配
-		// 例如：若 protoFile 是 "mysql_database_table.proto"，精确匹配文件名
 		fileName := filepath.Base(fileDesc.GetName())
 		if fileName != protoFile {
 			continue
@@ -74,15 +72,11 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 		zap.Int("total_files", len(internal.FdSet.GetFile())),
 	)
 
-	// 1. 初始化 protoregistry.Files（作为 FileResolver，用于解析跨文件依赖）
 	fileReg := &protoregistry.Files{}
 
-	// 2. 关键修复：传入 fileReg 作为 FileResolver，支持依赖解析
 	for _, rawFile := range internal.FdSet.GetFile() {
-		// 第二个参数传入 fileReg，而非 nil！让 protodesc 能从已注册的文件中找依赖
 		activeFileDesc, err := protodesc.NewFile(rawFile, fileReg)
 		if err != nil {
-			// 打印详细依赖错误，便于定位缺失的依赖
 			logger.Global.Warn("激活文件失败，跳过",
 				zap.String("file_name", rawFile.GetName()),
 				zap.Error(err),
@@ -90,7 +84,6 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 			continue
 		}
 
-		// 3. 注册到 fileReg（此时依赖已激活，注册会成功）
 		if err := fileReg.RegisterFile(activeFileDesc); err != nil {
 			logger.Global.Warn("注册文件到registry失败，跳过",
 				zap.String("file_path", activeFileDesc.Path()),
@@ -99,7 +92,6 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 			continue
 		}
 
-		// 4. 缓存文件描述符
 		internal.FileDescCache[rawFile.GetName()] = activeFileDesc
 		logger.Global.Debug("已激活并注册文件",
 			zap.String("file_path", activeFileDesc.Path()),
@@ -108,13 +100,11 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 		)
 	}
 
-	// 5. 重新缓存消息描述符（此时依赖已解决，消息能正常提取）
 	internal.ActiveMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor) // 清空旧缓存
 	fileReg.RangeFiles(func(activeFileDesc protoreflect.FileDescriptor) bool {
 		messages := activeFileDesc.Messages()
 		for i := 0; i < messages.Len(); i++ {
 			activeMsgDesc := messages.Get(i)
-			// 生成全限定名（无包名则直接用消息名）
 			var fullNameStr string
 			if pkg := string(activeFileDesc.Package()); pkg != "" {
 				fullNameStr = pkg + "." + string(activeMsgDesc.Name())
@@ -140,7 +130,6 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 	return
 }
 
-// 以下函数保持不变（GenerateMergedTableSQL、verifyMessageValidity 等）
 func GenerateMergedTableSQL(messageNames []string) error {
 	sqlGenerator := proto2mysql.NewPbMysqlDB()
 	var mergedSQL strings.Builder
@@ -148,7 +137,6 @@ func GenerateMergedTableSQL(messageNames []string) error {
 	for _, msgFullNameStr := range messageNames {
 		msgFullName := protoreflect.FullName(msgFullNameStr)
 
-		// 从缓存获取激活后的消息描述符
 		activeMsgDesc, exists := internal.ActiveMsgDescCache[msgFullName]
 		if !exists {
 			logger.Global.Warn("未找到激活的消息描述符，跳过",
@@ -157,7 +145,6 @@ func GenerateMergedTableSQL(messageNames []string) error {
 			continue
 		}
 
-		// 创建包含完整字段的消息实例
 		msgInstance := dynamicpb.NewMessage(activeMsgDesc)
 		if msgInstance == nil {
 			logger.Global.Warn("无法创建消息实例，跳过",
@@ -169,17 +156,14 @@ func GenerateMergedTableSQL(messageNames []string) error {
 			zap.String("message_full_name", msgFullNameStr),
 		)
 
-		// 验证实例字段
 		verifyMessageValidity(msgFullNameStr, msgInstance)
 
-		// 生成 SQL
 		sqlGenerator.RegisterTable(msgInstance)
 		tableSQL := sqlGenerator.GetCreateTableSQL(msgInstance)
 		mergedSQL.WriteString(tableSQL)
 		mergedSQL.WriteString("\n\n")
 	}
 
-	// 写入 SQL 文件（逻辑不变）
 	if mergedSQL.Len() == 0 {
 		logger.Global.Info("未生成任何SQL",
 			zap.String("reason", "无有效消息实例"),
@@ -251,8 +235,6 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 		)
 	}
 }
-
-// 其他辅助函数（writeMessageNamesToJSON、GenerateDBResource 等）保持不变
 func writeMessageNamesToJSON(messages []string) error {
 	data, err := json.MarshalIndent(&MessageListConfig{Messages: messages}, "", "  ")
 	if err != nil {
@@ -309,7 +291,6 @@ func GenerateDBResource(wg *sync.WaitGroup) {
 			)
 		}
 
-		// 并发生成 JSON 配置
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -321,7 +302,6 @@ func GenerateDBResource(wg *sync.WaitGroup) {
 			}
 		}()
 
-		// 并发生成 SQL
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

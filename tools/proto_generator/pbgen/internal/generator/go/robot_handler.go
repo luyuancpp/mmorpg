@@ -7,10 +7,10 @@ import (
 	"sync"
 	"text/template"
 
-	"go.uber.org/zap" // 引入zap结构化日志字段
+	"go.uber.org/zap"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 const handlerTemplate = `package handler
@@ -40,7 +40,6 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 		go func(methods internal.RPCMethods) {
 			defer wg.Done()
 
-			// 跳过非客户端响应处理器
 			if !isClientMethodRepliedHandler(&methods) {
 				logger.Global.Debug("跳过非客户端响应服务的处理器生成",
 					zap.Int("method_count", len(methods)),
@@ -48,11 +47,9 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 				return
 			}
 
-			// 遍历每个方法生成处理器文件
 			for _, method := range methods {
 				serviceName := method.Service()
 
-				// 跳过无关服务
 				if !isRelevantService(method) {
 					logger.Global.Debug("跳过无关服务方法的处理器生成",
 						zap.String("service_name", serviceName),
@@ -61,11 +58,9 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 					continue
 				}
 
-				// 生成处理器函数名和响应类型
 				handlerName := serviceName + method.Method() + "Handler"
 				responseType := method.GoResponse()
 
-				// 空响应类型替换为请求类型
 				if strings.Contains(responseType, _config.Global.Naming.EmptyResponse) {
 					responseType = method.GoRequest()
 					logger.Global.Debug("响应类型为空，替换为请求类型",
@@ -76,11 +71,9 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 					)
 				}
 
-				// 生成合法文件名并拼接路径
 				fileName := sanitizeFileName(serviceName + method.Method())
 				filePath := filepath.Join(_config.Global.PathLists.MethodHandlerDirectories.Robot, fileName+".go")
 
-				// 文件已存在则跳过
 				if fileExists(filePath) {
 					logger.Global.Debug("处理器文件已存在，跳过生成",
 						zap.String("file_path", filePath),
@@ -90,7 +83,6 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 					continue
 				}
 
-				// 生成处理器文件
 				err := generateHandlerFile(filePath, handlerName, responseType)
 				if err != nil {
 					logger.Global.Warn("生成处理器文件失败，跳过",
@@ -118,12 +110,10 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 
 // generateHandlerFile Generates a Go file using the provided handler and response names.
 func generateHandlerFile(fileName, handlerName, responseType string) error {
-	// 空路径校验
 	if fileName == "" {
 		logger.Global.Fatal("生成处理器文件失败: 文件路径为空")
 	}
 
-	// 创建文件（存在则覆盖）
 	file, err := os.Create(fileName)
 	if err != nil {
 		logger.Global.Fatal("创建处理器文件失败",
@@ -133,7 +123,6 @@ func generateHandlerFile(fileName, handlerName, responseType string) error {
 	}
 	defer file.Close()
 
-	// 解析模板
 	tmpl, err := template.New("handler").Parse(handlerTemplate)
 	if err != nil {
 		logger.Global.Fatal("解析处理器模板失败",
@@ -142,7 +131,6 @@ func generateHandlerFile(fileName, handlerName, responseType string) error {
 		)
 	}
 
-	// 准备模板数据
 	data := ServiceData{
 		HandlerName:  handlerName,
 		ResponseType: responseType,
@@ -154,7 +142,6 @@ func generateHandlerFile(fileName, handlerName, responseType string) error {
 		zap.String("response_type", responseType),
 	)
 
-	// 写入模板内容到文件
 	return tmpl.Execute(file, data)
 }
 
@@ -165,7 +152,6 @@ func fileExists(filePath string) bool {
 		if os.IsNotExist(err) {
 			return false
 		}
-		// 其他错误（如权限问题）也视为"存在"（避免重复创建）
 		logger.Global.Warn("检查文件存在性时出错",
 			zap.String("file_path", filePath),
 			zap.Error(err),
@@ -177,7 +163,6 @@ func fileExists(filePath string) bool {
 
 // sanitizeFileName replaces invalid characters in service names for valid file names.
 func sanitizeFileName(serviceName string) string {
-	// 替换无效字符并转为小写
 	sanitized := strings.ToLower(strings.ReplaceAll(serviceName, " ", "_"))
 	logger.Global.Debug("文件名清洗完成",
 		zap.String("original_name", serviceName),
