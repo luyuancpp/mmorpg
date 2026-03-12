@@ -1,5 +1,5 @@
-#include "game_player_scene_handler.h"
 
+#include "game_player_scene_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "core/network/message_system.h"
@@ -12,6 +12,9 @@
 #include <modules/scene/system/scene_common.h>
 
 ///<<< END WRITING YOUR CODE
+
+
+
 void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -28,7 +31,9 @@ void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterScen
 		LOG_ERROR << "Player entity not found in EnterScene handler. This should not happen if PlayerEnterGameNode was called first.";
 	}
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
@@ -41,7 +46,9 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	PlayerLifecycleSystem::HandleExitGameNode(player);
 
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
 	::EnterScenerS2CResponse* response)
@@ -60,4 +67,6 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 	message.mutable_scene_info()->CopyFrom(tlsRegistryManager.actorRegistry.get_or_emplace<SceneInfoPBComponent>(sceneEntity->sceneEntity));
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
+
 }
+

@@ -1,3 +1,4 @@
+
 #include "centre_service_response_handler.h"
 
 #include "rpc/service_metadata/centre_service_service_metadata.h"
@@ -5,9 +6,13 @@
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "gate_node.h"
 ///<<< END WRITING YOUR CODE
+
+
+
 void InitCentreReply()
 {
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreGatePlayerServiceMessageId,

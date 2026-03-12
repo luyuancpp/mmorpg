@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"scene_manager/internal/svc"
@@ -10,7 +11,8 @@ import (
 )
 
 const (
-	NodeLoadKey = "scene_nodes:load"
+	NodeLoadKey      = "scene_nodes:load"
+	NodeSceneCountKey = "node:%s:scene_count"
 )
 
 // StartLoadReporter starts a background task to report this node's load to Redis
@@ -24,6 +26,8 @@ func StartLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
 	for {
 		select {
 		case <-ctx.Done():
+			// Remove node from the load set on shutdown
+			_, _ = svcCtx.Redis.Zrem(NodeLoadKey, svcCtx.Config.NodeID)
 			return
 		case <-ticker.C:
 			reportLoad(ctx, svcCtx)
@@ -32,19 +36,17 @@ func StartLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
 }
 
 func reportLoad(ctx context.Context, svcCtx *svc.ServiceContext) {
-	// Calculating Load:
-	// 1. Get current active connections/players (metrics)
-	// 2. Get system load (CPU/Memory)
-	// Since we don't have easy access to these in a pure logic package without passing dependencies,
-	// we will rely on a heuristic or placeholder.
-	// For a real implementation, you should inject a metrics provider into ServiceContext.
-	
-	// Example: Use a random load for testing load balancing, or 0 if idle.
-	// In production, replace 0 with `len(connectedPlayers)` + `cpuUsage * 10`
-	currentLoad := 0 
-	
+	// Use the number of scenes hosted on this node as load indicator.
+	// Each CreateScene increments the counter; each DestroyScene decrements it.
+	sceneCountKey := fmt.Sprintf(NodeSceneCountKey, svcCtx.Config.NodeID)
+	countStr, err := svcCtx.Redis.Get(sceneCountKey)
+	var currentLoad int64
+	if err == nil && countStr != "" {
+		fmt.Sscanf(countStr, "%d", &currentLoad)
+	}
+
 	// Update Redis ZSet with score = load
-	_, err := svcCtx.Redis.Zadd(NodeLoadKey, int64(currentLoad), svcCtx.Config.NodeID)
+	_, err = svcCtx.Redis.Zadd(NodeLoadKey, currentLoad, svcCtx.Config.NodeID)
 	if err != nil {
 		logx.Errorf("Failed to update node load for %s: %v", svcCtx.Config.NodeID, err)
 	}

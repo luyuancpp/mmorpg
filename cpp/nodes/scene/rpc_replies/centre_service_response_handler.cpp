@@ -1,9 +1,11 @@
+
 #include "centre_service_response_handler.h"
 
 #include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
+
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "scene/scene/system/game_node_scene.h"
@@ -12,6 +14,9 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 #include "scene_node.h"
 ///<<< END WRITING YOUR CODE
+
+
+
 void InitCentreReply()
 {
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(CentreGatePlayerServiceMessageId,

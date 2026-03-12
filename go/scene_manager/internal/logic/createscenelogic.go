@@ -54,10 +54,10 @@ func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*s
 		l.Logger.Errorf("Failed to register scene: %v", err)
 		return &scene_manager.CreateSceneResponse{ErrorCode: 1, ErrorMessage: "Redis error"}, nil
 	}
-	
-	// 4. Create Scene Info in Redis (optional but good for metadata)
-	// We should probably store more info like SceneConfId
-	// ... (Skipping full metadata for brevity, but storing node mapping is key)
+
+	// 4. Increment scene count on the target node for load tracking
+	sceneCountKey := fmt.Sprintf(NodeSceneCountKey, targetNode)
+	l.svcCtx.Redis.Incr(sceneCountKey)
 
 	l.Logger.Infof("Created scene %d on node %s (target was %s)", sceneId, targetNode, in.TargetNodeId)
 	return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: targetNode, ErrorCode: 0}, nil

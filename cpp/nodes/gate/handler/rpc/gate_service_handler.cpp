@@ -1,5 +1,5 @@
-#include "gate_service_handler.h"
 
+#include "gate_service_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
@@ -17,9 +17,11 @@ bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 }
 
 ///<<< END WRITING YOUR CODE
+
+
 void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::RegisterGameNodeSessionRequest* request,
-    ::RegisterGameNodeSessionResponse* response,
-    ::google::protobuf::Closure* done)
+	::RegisterGameNodeSessionResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sessionIt = tlsSessionManager.sessions().find(request->session_info().session_id());
@@ -36,9 +38,11 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 }
 
+
+
 void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-    ::Empty* response,
-    ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -56,9 +60,11 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 }
 
+
+
 void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* controller, const ::KickSessionRequest* request,
-    ::Empty* response,
-    ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const uint64_t sessionId = request->session_id();
@@ -85,25 +91,31 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 }
 
+
+
 void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
-    ::RouteMessageResponse* response,
-    ::google::protobuf::Closure* done)
+	::RouteMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 }
+
+
 
 void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
-    ::RoutePlayerMessageResponse* response,
-    ::google::protobuf::Closure* done)
+	::RoutePlayerMessageResponse* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 }
 
+
+
 void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controller, const ::BroadcastToPlayersRequest* request,
-    ::Empty* response,
-    ::google::protobuf::Closure* done)
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sessionId : request->session_list())
@@ -124,18 +136,22 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 	///<<< END WRITING YOUR CODE
 }
 
+
+
 void GateHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
-    ::NodeHandshakeResponse* response,
-    ::google::protobuf::Closure* done)
+	::NodeHandshakeResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
 
+
+
 void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controller, const ::BindSessionToGateRequest* request,
-    ::BindSessionToGateResponse* response,
-    ::google::protobuf::Closure* done)
+	::BindSessionToGateResponse* response,
+	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	SessionInfo info;
@@ -148,3 +164,5 @@ void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controlle
 	response->set_player_id(request->player_id());
 ///<<< END WRITING YOUR CODE
 }
+
+

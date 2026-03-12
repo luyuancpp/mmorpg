@@ -1,3 +1,4 @@
+
 #include "gate_service_response_handler.h"
 
 #include "rpc/service_metadata/gate_service_service_metadata.h"
@@ -5,8 +6,12 @@
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
+
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
+
+
 void InitGateReply()
 {
     gRpcResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(GatePlayerEnterGameNodeMessageId,

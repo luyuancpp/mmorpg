@@ -51,3 +51,10 @@ func UpdatePlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playe
 
 	return svcCtx.Redis.Set(key, string(data))
 }
+
+// DeletePlayerLocation removes the player's location from Redis
+func DeletePlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) error {
+	key := getPlayerLocationKey(playerId)
+	_, err := svcCtx.Redis.Del(key)
+	return err
+}
