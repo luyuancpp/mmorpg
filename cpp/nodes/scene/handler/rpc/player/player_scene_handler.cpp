@@ -1,5 +1,5 @@
-#include "player_scene_handler.h"
 
+#include "player_scene_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -12,6 +12,9 @@
 #include "proto/common/base/node.pb.h"
 #include "network/node_message_utils.h"
 ///<<< END WRITING YOUR CODE
+
+
+
 void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,
 	::EnterSceneC2SResponse* response)
 {
@@ -53,14 +56,18 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 
 	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneSceneClientPlayerHandler::NotifyEnterScene(entt::entity player,const ::EnterSceneS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneSceneClientPlayerHandler::SceneInfoC2S(entt::entity player,const ::SceneInfoRequest* request,
 	::Empty* response)
@@ -69,39 +76,51 @@ void SceneSceneClientPlayerHandler::SceneInfoC2S(entt::entity player,const ::Sce
     SceneInfoRequest req;
 	SendToCentrePlayerByClientNode(CentrePlayerSceneSceneInfoC2SMessageId, req, player);
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneSceneClientPlayerHandler::NotifySceneInfo(entt::entity player,const ::SceneInfoS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneSceneClientPlayerHandler::NotifyActorCreate(entt::entity player,const ::ActorCreateS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneSceneClientPlayerHandler::NotifyActorDestroy(entt::entity player,const ::ActorDestroyS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneSceneClientPlayerHandler::NotifyActorListCreate(entt::entity player,const ::ActorListCreateS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
 
 void SceneSceneClientPlayerHandler::NotifyActorListDestroy(entt::entity player,const ::ActorListDestroyS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
+
