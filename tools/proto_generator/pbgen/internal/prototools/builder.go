@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"sync"
 
-	"go.uber.org/zap" // 引入zap结构化日志字段
+	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 // resolveGameProtoPath 解析游戏核心Proto文件路径
@@ -41,7 +41,6 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 
 	grpcDirs := utils2.GetGRPCSubdirectoryNames()
 
-	// 拷贝到不同生成目录
 	copyToDirs := []struct {
 		dirBuilder func(string) string
 		desc       string
@@ -50,7 +49,6 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		{BuildGeneratorGoZeroProtoPath, "GoZero生成目录"},
 	}
 
-	// 拷贝到普通/GoZero生成目录
 	go func() {
 		defer wg.Done()
 		for _, item := range copyToDirs {
@@ -67,7 +65,6 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		}
 	}()
 
-	// 拷贝Robot目录（RobotDir若为绝对路径则直接使用）
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

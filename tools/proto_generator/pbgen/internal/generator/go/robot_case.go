@@ -6,10 +6,10 @@ import (
 	"sync"
 	"text/template"
 
-	"go.uber.org/zap" // 引入zap结构化日志字段
+	"go.uber.org/zap"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 const handlerTotalTemplate = `package handler
@@ -145,12 +145,10 @@ func generateHandlerCases(method *internal.MethodInfo, cases []HandlerCase) []Ha
 
 // generateHandlerFile creates a new handler file with the specified parameters.
 func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
-	// 提前校验文件路径
 	if fileName == "" {
 		logger.Global.Fatal("生成处理器文件失败: 文件路径为空")
 	}
 
-	// 创建文件（如果文件已存在会覆盖，可根据需求调整为os.OpenFile）
 	file, err := os.Create(fileName)
 	if err != nil {
 		logger.Global.Fatal("创建处理器文件失败",
@@ -160,7 +158,6 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 	}
 	defer file.Close()
 
-	// 解析模板
 	tmpl, err := template.New("handler").Parse(handlerTotalTemplate)
 	if err != nil {
 		logger.Global.Fatal("解析处理器模板失败",
@@ -168,12 +165,10 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 		)
 	}
 
-	// 准备模板数据
 	data := CasesData{
 		Cases: cases,
 	}
 
-	// 执行模板并写入文件
 	if err := tmpl.Execute(file, data); err != nil {
 		logger.Global.Fatal("执行处理器模板失败",
 			zap.String("file_name", fileName),

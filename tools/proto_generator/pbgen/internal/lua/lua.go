@@ -113,7 +113,6 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 			isRepeatedFiled := true
 			mapKeyType := ""
 			mapValueType := ""
-			//填入真正的类型
 			if isCppType(filedTypeName) {
 				templateName = ""
 				isRepeatedFiled = false

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"sync"
 
-	"go.uber.org/zap" // 引入zap，用于日志字段
+	"go.uber.org/zap"
 
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
-	"pbgen/logger" // 引入全局logger包
+	"pbgen/logger"
 )
 
 // generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
@@ -85,7 +85,6 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 	for scanner.Scan() {
 		line := scanner.Text() + "\n"
 
-		// 全局 yourCode 逻辑
 		if inGlobalCode {
 			globalCode += line
 			if strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
@@ -100,7 +99,6 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 			continue
 		}
 
-		// 事件处理函数代码提取
 		if currentMethod == "" {
 			for _, signature := range methodSignatures {
 				if strings.Contains(line, signature) {
@@ -131,7 +129,6 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 	}
 	globalCode = utils2.TrimTrailingLineBreaks(globalCode)
 
-	// 补充未找到的函数
 	for _, signature := range methodSignatures {
 		if _, exists := codeMap[signature]; !exists {
 			codeMap[signature] = utils2.TrimTrailingLineBreaks(_config.Global.Naming.YourCodePair)
@@ -181,13 +178,11 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	cppFilePath := filePrefix + _config.Global.FileExtensions.HandlerCpp
 	headerFileBase := filepath.Base(headerFilePath)
 
-	// 构建 handler 签名
 	var handlerSignatures []string
 	for _, evt := range eventMessages {
 		handlerSignatures = append(handlerSignatures, buildEventHandlerSignature(className, evt))
 	}
 
-	// 提取自定义用户代码块
 	userCodeBlocks, globalCode, err := extractUserCodeBlocks(cppFilePath, handlerSignatures)
 	if err != nil {
 		logger.Global.Warn("读取用户代码失败",
@@ -196,7 +191,6 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 		)
 	}
 
-	// 构建模板数据
 	eventHandlers := make([]EventHandlerMessage, 0, len(eventMessages))
 	for index, eventName := range eventMessages {
 		eventHandlers = append(eventHandlers, EventHandlerMessage{
@@ -216,7 +210,6 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 		UserCodeBlocks:      userCodeBlocks,
 	}
 
-	// 渲染模板并写入文件
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
 		logger.Global.Error("生成头文件失败",
 			zap.String("header_file", headerFilePath),
