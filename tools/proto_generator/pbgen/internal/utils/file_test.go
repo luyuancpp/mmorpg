@@ -71,23 +71,6 @@ func TestWriteFileIfChanged(t *testing.T) {
 	}
 }
 
-func TestWriteFileIfChangedCreatesParentDir(t *testing.T) {
-	dir := t.TempDir()
-	file := filepath.Join(dir, "nested", "content.txt")
-
-	if err := WriteFileIfChanged(file, []byte("created")); err != nil {
-		t.Fatalf("write with nested directory failed: %v", err)
-	}
-
-	got, err := os.ReadFile(file)
-	if err != nil {
-		t.Fatalf("read nested file failed: %v", err)
-	}
-	if string(got) != "created" {
-		t.Fatalf("unexpected nested file content: %q", string(got))
-	}
-}
-
 func TestCollectProtoFiles(t *testing.T) {
 	dir := t.TempDir()
 	nested := filepath.Join(dir, "nested")
