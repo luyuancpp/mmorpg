@@ -4,8 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
-
 void CentrePlayerSceneReply::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -13,7 +11,6 @@ void CentrePlayerSceneReply::EnterScene(entt::entity player,const ::CentreEnterS
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 void CentrePlayerSceneReply::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
@@ -23,7 +20,6 @@ void CentrePlayerSceneReply::LeaveScene(entt::entity player,const ::CentreLeaveS
 
 }
 
-
 void CentrePlayerSceneReply::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -32,7 +28,6 @@ void CentrePlayerSceneReply::LeaveSceneAsyncSavePlayerComplete(entt::entity play
 
 }
 
-
 void CentrePlayerSceneReply::SceneInfoC2S(entt::entity player,const ::CentreSceneInfoRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -40,4 +35,3 @@ void CentrePlayerSceneReply::SceneInfoC2S(entt::entity player,const ::CentreScen
 ///<<< END WRITING YOUR CODE
 
 }
-

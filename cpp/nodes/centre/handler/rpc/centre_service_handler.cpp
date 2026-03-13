@@ -116,7 +116,6 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 	return player_it->second;
 }
 
-
 // ---------- refactor helpers (匿名 namespace) ----------
 // helpers for login / reconnect / kick decision (single-threaded simplified)
 namespace {
@@ -143,7 +142,6 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
     }
     return storedId == requestId;
 }
-
 
 	enum class EnterGameDecision {
 		FirstLogin,        // 没有 player
@@ -325,7 +323,6 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
 
 ///<<< END WRITING YOUR CODE
 
-
 void CentreHandler::GatePlayerService(::google::protobuf::RpcController* controller, const ::GateClientMessageRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -333,8 +330,6 @@ void CentreHandler::GatePlayerService(::google::protobuf::RpcController* control
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 }
-
-
 
 void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
 	::Empty* response,
@@ -373,8 +368,6 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	///<<< END WRITING YOUR CODE
 }
 
-
-
 void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller, const ::CentreLoginRequest* request,
 	::CentreLoginResponse* response,
 	::google::protobuf::Closure* done)
@@ -393,8 +386,6 @@ void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* con
 	//告訴客戶端登錄中
 ///<<< END WRITING YOUR CODE
 }
-
-
 
 void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* controller, const ::CentrePlayerGameNodeEntryRequest* request,
 	::Empty* response,
@@ -433,7 +424,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	//	旧 session 的 Disconnect 延迟到达
 	//	→ DelayedCleanupTimer 触发
 	//	→ erase SessionMap(新 session) ❌
-
 
 	// 是否在内存中已有 player 对象
 	auto it = tlsPlayerList.find(playerId);
@@ -533,8 +523,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	///<<< END WRITING YOUR CODE
 }
 
-
-
 void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* controller, const ::LoginNodeLeaveGameRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -551,8 +539,6 @@ void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* contro
 ///<<< END WRITING YOUR CODE
 }
 
-
-
 void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -568,8 +554,6 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 	PlayerLifecycleSystem::HandleNormalExit(player_id);
 	///<<< END WRITING YOUR CODE
 }
-
-
 
 void CentreHandler::PlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
@@ -697,8 +681,6 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 	///<<< END WRITING YOUR CODE
 }
 
-
-
 void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller, const ::EnterGameNodeSuccessRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -736,13 +718,10 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	PlayerChangeSceneUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoPBComponent::eEnterSucceed);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
 
-
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
 
 	///<<< END WRITING YOUR CODE
 }
-
-
 
 void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
 	::RouteMessageResponse* response,
@@ -888,8 +867,6 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	///<<< END WRITING YOUR CODE
 }
 
-
-
 void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
 	::RoutePlayerMessageResponse* response,
 	::google::protobuf::Closure* done)
@@ -897,8 +874,6 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 }
-
-
 
 void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller, const ::InitSceneNodeRequest* request,
 	::Empty* response,
@@ -938,8 +913,6 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 	///<<< END WRITING YOUR CODE
 }
 
-
-
 void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
 	::NodeHandshakeResponse* response,
 	::google::protobuf::Closure* done)
@@ -948,5 +921,3 @@ void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller,
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 	///<<< END WRITING YOUR CODE
 }
-
-

@@ -3,7 +3,6 @@
 
 #include "proto/login/login.pb.h"
 
-
 constexpr uint32_t ClientPlayerLoginLoginMessageId = 48;
 constexpr uint32_t ClientPlayerLoginLoginIndex = 0;
 #define ClientPlayerLoginLoginMethod  ::ClientPlayerLogin_Stub::descriptor()->method(0)
@@ -23,5 +22,3 @@ constexpr uint32_t ClientPlayerLoginLeaveGameIndex = 3;
 constexpr uint32_t ClientPlayerLoginDisconnectMessageId = 58;
 constexpr uint32_t ClientPlayerLoginDisconnectIndex = 4;
 #define ClientPlayerLoginDisconnectMethod  ::ClientPlayerLogin_Stub::descriptor()->method(4)
-
-

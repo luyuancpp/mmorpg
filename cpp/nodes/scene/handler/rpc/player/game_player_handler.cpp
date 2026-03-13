@@ -9,8 +9,6 @@
 #include "proto/common/component/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
-
-
 void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -27,7 +25,6 @@ void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLog
 
 }
 
-
 void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -40,4 +37,3 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 ///<<< END WRITING YOUR CODE
 
 }
-

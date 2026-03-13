@@ -6,11 +6,8 @@
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
-
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
-
 
 void InitSceneSceneReply()
 {

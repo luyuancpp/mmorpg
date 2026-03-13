@@ -6,7 +6,6 @@
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "scene/scene/system/game_node_scene.h"
 #include "proto/common/base/node.pb.h"
@@ -14,8 +13,6 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 #include "scene_node.h"
 ///<<< END WRITING YOUR CODE
-
-
 
 void InitCentreReply()
 {

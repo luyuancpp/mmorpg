@@ -6,7 +6,6 @@
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "engine/core/type_define/type_define.h"
@@ -19,8 +18,6 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include <threading/registry_manager.h>
 #include <type_alias/player_session_type_alias.h>
 ///<<< END WRITING YOUR CODE
-
-
 
 void InitGateReply()
 {
@@ -54,7 +51,7 @@ void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::sha
 		LOG_TRACE << "session player not found " << replied->session_info().session_id();
 		return;
 	}
-	
+
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
 	PlayerLifecycleSystem::ProcessPlayerSessionState(player);
 	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(player);

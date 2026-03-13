@@ -36,7 +36,6 @@ using namespace muduo::net;
 
 ///<<< END WRITING YOUR CODE
 
-
 void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::PlayerEnterGameNodeRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -64,8 +63,6 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
 ///<<< END WRITING YOUR CODE
 }
-
-
 
 void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
@@ -151,8 +148,6 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
     response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 	///<<< END WRITING YOUR CODE
 }
-
-
 
 void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController* controller, const ::ProcessClientPlayerMessageRequest* request,
 	::ProcessClientPlayerMessageResponse* response,
@@ -245,11 +240,8 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 			}
 		}
 
-
 ///<<< END WRITING YOUR CODE
 }
-
-
 
 void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::Empty* response,
@@ -274,8 +266,6 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 	::SendMessageToClientViaGate(request->message_content().message_id(), request->message_content(), player);
 ///<<< END WRITING YOUR CODE
 }
-
-
 
 void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
@@ -353,10 +343,9 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
 	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-
     response->mutable_header()->set_session_id(request->header().session_id());
     response->mutable_message_content()->set_message_id(request->message_content().message_id());
-	
+
     if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
         return;
     }
@@ -364,7 +353,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	auto& tipInfoMessage = tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity());
 	response->mutable_message_content()->mutable_error_message()->CopyFrom(tipInfoMessage);
 	tipInfoMessage.Clear();
-	
+
 	const auto byte_size = playerResponse->ByteSizeLong();
 	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
 	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
@@ -374,11 +363,9 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		SendErrorToClient(*request, *response, kResponseMessageParseError);
 		return;
 	}
-        
+
 ///<<< END WRITING YOUR CODE
 }
-
-
 
 void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
 	::RouteMessageResponse* response,
@@ -388,8 +375,6 @@ void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* control
 ///<<< END WRITING YOUR CODE
 }
 
-
-
 void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
 	::RoutePlayerMessageResponse* response,
 	::google::protobuf::Closure* done)
@@ -397,8 +382,6 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
-
 
 void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* controller, const ::RegisterPlayerSessionRequest* request,
 	::Empty* response,
@@ -430,8 +413,6 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 ///<<< END WRITING YOUR CODE
 }
 
-
-
 void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, const ::Centre2GsEnterSceneRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -459,8 +440,6 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 	///<<< END WRITING YOUR CODE
 }
 
-
-
 void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, const ::CreateSceneRequest* request,
 	::CreateSceneResponse* response,
 	::google::protobuf::Closure* done)
@@ -468,8 +447,6 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
-
 
 void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
 	::NodeHandshakeResponse* response,
@@ -479,5 +456,3 @@ void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, 
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
-
-

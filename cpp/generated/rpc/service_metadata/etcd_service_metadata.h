@@ -3,7 +3,6 @@
 
 #include "proto/etcd/etcd.pb.h"
 
-
 constexpr uint32_t KVRangeMessageId = 59;
 constexpr uint32_t KVRangeIndex = 0;
 #define KVRangeMethod  ::KV_Stub::descriptor()->method(0)
@@ -24,13 +23,9 @@ constexpr uint32_t KVCompactMessageId = 0;
 constexpr uint32_t KVCompactIndex = 4;
 #define KVCompactMethod  ::KV_Stub::descriptor()->method(4)
 
-
-
 constexpr uint32_t WatchWatchMessageId = 6;
 constexpr uint32_t WatchWatchIndex = 0;
 #define WatchWatchMethod  ::Watch_Stub::descriptor()->method(0)
-
-
 
 constexpr uint32_t LeaseLeaseGrantMessageId = 5;
 constexpr uint32_t LeaseLeaseGrantIndex = 0;
@@ -51,5 +46,3 @@ constexpr uint32_t LeaseLeaseTimeToLiveIndex = 3;
 constexpr uint32_t LeaseLeaseLeasesMessageId = 4;
 constexpr uint32_t LeaseLeaseLeasesIndex = 4;
 #define LeaseLeaseLeasesMethod  ::Lease_Stub::descriptor()->method(4)
-
-

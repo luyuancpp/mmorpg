@@ -11,7 +11,6 @@ class ScenePlayerHandler : public ::PlayerService
 public:
     using PlayerService::PlayerService;
 
-
     static void Centre2GsLogin(entt::entity player,
         const ::Centre2GsLoginRequest* request,
         ::google::protobuf::Empty* response);

@@ -10,7 +10,6 @@
 #include "modules/scene/system/scene_param.h"
 ///<<< END WRITING YOUR CODE
 
-
 void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* controller, const ::RegisterSceneRequest* request,
 	::RegisterSceneResponse* response,
 	::google::protobuf::Closure* done)
@@ -26,11 +25,8 @@ void CentreSceneHandler::RegisterScene(::google::protobuf::RpcController* contro
 			<< request->scene_node_id() << "].";
 	}
 
-	
 	///<<< END WRITING YOUR CODE
 }
-
-
 
 void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* controller, const ::UnRegisterSceneRequest* request,
 	::Empty* response,
@@ -54,5 +50,3 @@ void CentreSceneHandler::UnRegisterScene(::google::protobuf::RpcController* cont
 	SceneCommon::DestroyScene({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
 }
-
-

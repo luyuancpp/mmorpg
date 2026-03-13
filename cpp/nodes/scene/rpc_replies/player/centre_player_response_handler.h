@@ -4,12 +4,10 @@
 
 #include "rpc/player_rpc_response_handler.h"
 
-
 class CentrePlayerUtilityReply : public ::PlayerServiceReplied
 {
 public:
     using PlayerServiceReplied::PlayerServiceReplied;
-
 
     static void SendTipToClient(entt::entity player,
         const ::TipInfoMessage* request,

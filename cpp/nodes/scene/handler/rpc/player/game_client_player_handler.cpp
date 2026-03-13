@@ -4,8 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
-
 void SceneClientPlayerCommonHandler::SendTipToClient(entt::entity player,const ::TipInfoMessage* request,
 	::Empty* response)
 {
@@ -14,7 +12,6 @@ void SceneClientPlayerCommonHandler::SendTipToClient(entt::entity player,const :
 
 }
 
-
 void SceneClientPlayerCommonHandler::KickPlayer(entt::entity player,const ::GameKickPlayerRequest* request,
 	::Empty* response)
 {
@@ -22,4 +19,3 @@ void SceneClientPlayerCommonHandler::KickPlayer(entt::entity player,const ::Game
 ///<<< END WRITING YOUR CODE
 
 }
-

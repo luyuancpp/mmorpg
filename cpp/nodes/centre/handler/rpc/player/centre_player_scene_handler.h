@@ -11,7 +11,6 @@ class CentrePlayerSceneHandler : public ::PlayerService
 public:
     using PlayerService::PlayerService;
 
-
     static void EnterScene(entt::entity player,
         const ::CentreEnterSceneRequest* request,
         ::google::protobuf::Empty* response);

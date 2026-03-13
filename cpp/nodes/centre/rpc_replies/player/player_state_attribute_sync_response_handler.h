@@ -4,12 +4,10 @@
 
 #include "rpc/player_rpc_response_handler.h"
 
-
 class ScenePlayerSyncReply : public ::PlayerServiceReplied
 {
 public:
     using PlayerServiceReplied::PlayerServiceReplied;
-
 
     static void SyncBaseAttribute(entt::entity player,
         const ::ActorBaseAttributesS2C* request,

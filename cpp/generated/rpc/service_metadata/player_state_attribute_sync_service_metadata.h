@@ -3,7 +3,6 @@
 
 #include "proto/scene/player_state_attribute_sync.pb.h"
 
-
 constexpr uint32_t ScenePlayerSyncSyncBaseAttributeMessageId = 66;
 constexpr uint32_t ScenePlayerSyncSyncBaseAttributeIndex = 0;
 #define ScenePlayerSyncSyncBaseAttributeMethod  ::ScenePlayerSync_Stub::descriptor()->method(0)
@@ -27,5 +26,3 @@ constexpr uint32_t ScenePlayerSyncSyncAttribute30FramesIndex = 4;
 constexpr uint32_t ScenePlayerSyncSyncAttribute60FramesMessageId = 75;
 constexpr uint32_t ScenePlayerSyncSyncAttribute60FramesIndex = 5;
 #define ScenePlayerSyncSyncAttribute60FramesMethod  ::ScenePlayerSync_Stub::descriptor()->method(5)
-
-
