@@ -13,8 +13,6 @@
 
 ///<<< END WRITING YOUR CODE
 
-
-
 void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -34,13 +32,12 @@ void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterScen
 
 }
 
-
 void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
-	
+
 	// Save player data to Redis and handle exit logic (cleanup, notify Centre)
 	// This replaces the legacy ChangeSceneInfo state machine checks with a direct save-and-exit flow.
 	PlayerLifecycleSystem::HandleExitGameNode(player);
@@ -48,7 +45,6 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
 	::EnterScenerS2CResponse* response)
@@ -69,4 +65,3 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 ///<<< END WRITING YOUR CODE
 
 }
-

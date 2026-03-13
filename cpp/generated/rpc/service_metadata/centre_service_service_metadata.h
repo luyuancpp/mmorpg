@@ -3,7 +3,6 @@
 
 #include "proto/centre/centre_service.pb.h"
 
-
 constexpr uint32_t CentreGatePlayerServiceMessageId = 35;
 constexpr uint32_t CentreGatePlayerServiceIndex = 0;
 #define CentreGatePlayerServiceMethod  ::Centre_Stub::descriptor()->method(0)
@@ -51,5 +50,3 @@ constexpr uint32_t CentreInitSceneNodeIndex = 10;
 constexpr uint32_t CentreNodeHandshakeMessageId = 29;
 constexpr uint32_t CentreNodeHandshakeIndex = 11;
 #define CentreNodeHandshakeMethod  ::Centre_Stub::descriptor()->method(11)
-
-

@@ -2,6 +2,7 @@ package cpp
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
@@ -46,11 +47,19 @@ func BuildProtocCpp(wg *sync.WaitGroup) {
 
 // BuildProtoCpp 批量生成指定目录下Proto文件的C++序列化代码
 func BuildProtoCpp(wg *sync.WaitGroup, protoDir string) error {
+	if _, statErr := os.Stat(protoDir); statErr != nil {
+		if os.IsNotExist(statErr) {
+			logger.Global.Warn("C++批量生成: Proto目录不存在，跳过",
+				zap.String("目录", protoDir),
+			)
+			return nil
+		}
+		return statErr
+	}
+
 	protoFiles, err := utils2.CollectProtoFiles(protoDir)
 	if err != nil {
-		logger.Global.Fatal("C++批量生成: 收集Proto失败",
-			zap.Error(err),
-		)
+		return err
 	}
 	if len(protoFiles) == 0 {
 		logger.Global.Info("C++批量生成: 无Proto文件，跳过",
@@ -61,22 +70,16 @@ func BuildProtoCpp(wg *sync.WaitGroup, protoDir string) error {
 
 	cppOutputDir := _config.Global.Paths.ProtoBufCProtoOutputDir
 	if err := utils2.EnsureDir(cppOutputDir); err != nil {
-		logger.Global.Fatal("C++批量生成: 创建输出目录失败",
-			zap.Error(err),
-		)
+		return err
 	}
 
 	cppTempDir := _config.Global.Paths.ProtoBufCTempDir
 
 	if err := GenerateCpp(protoFiles, cppTempDir); err != nil {
-		logger.Global.Fatal("C++批量生成: 代码生成失败",
-			zap.Error(err),
-		)
+		return err
 	}
 	if err := CopyCppOutputs(wg, protoFiles, cppTempDir, cppOutputDir); err != nil {
-		logger.Global.Fatal("C++批量生成: 代码拷贝失败",
-			zap.Error(err),
-		)
+		return err
 	}
 
 	return nil
@@ -156,11 +159,19 @@ func BuildProtoGrpcCpp(wg *sync.WaitGroup, protoDir string) error {
 		return nil
 	}
 
+	if _, statErr := os.Stat(protoDir); statErr != nil {
+		if os.IsNotExist(statErr) {
+			logger.Global.Warn("GRPC C++生成: Proto目录不存在，跳过",
+				zap.String("目录", protoDir),
+			)
+			return nil
+		}
+		return statErr
+	}
+
 	protoFiles, err := utils2.CollectProtoFiles(protoDir)
 	if err != nil {
-		logger.Global.Fatal("GRPC C++生成: 收集Proto失败",
-			zap.Error(err),
-		)
+		return err
 	}
 	if len(protoFiles) == 0 {
 		logger.Global.Info("GRPC C++生成: 无Proto文件，跳过",
@@ -170,25 +181,17 @@ func BuildProtoGrpcCpp(wg *sync.WaitGroup, protoDir string) error {
 	}
 
 	if err := utils2.EnsureDir(_config.Global.Paths.GrpcTempDir); err != nil {
-		logger.Global.Fatal("GRPC C++生成: 创建临时目录失败",
-			zap.Error(err),
-		)
+		return err
 	}
 	if err := utils2.EnsureDir(_config.Global.Paths.GrpcOutputDir); err != nil {
-		logger.Global.Fatal("GRPC C++生成: 创建输出目录失败",
-			zap.Error(err),
-		)
+		return err
 	}
 
 	if err := GenerateCppGrpc(protoFiles); err != nil {
-		logger.Global.Fatal("GRPC C++生成: 代码生成失败",
-			zap.Error(err),
-		)
+		return err
 	}
 	if err := copyCppGrpcOutputs(wg, protoFiles); err != nil {
-		logger.Global.Fatal("GRPC C++生成: 代码拷贝失败",
-			zap.Error(err),
-		)
+		return err
 	}
 
 	return nil

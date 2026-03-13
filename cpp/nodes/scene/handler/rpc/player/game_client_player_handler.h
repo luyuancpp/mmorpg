@@ -11,7 +11,6 @@ class SceneClientPlayerCommonHandler : public ::PlayerService
 public:
     using PlayerService::PlayerService;
 
-
     static void SendTipToClient(entt::entity player,
         const ::TipInfoMessage* request,
         ::Empty* response);

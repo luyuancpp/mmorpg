@@ -3,7 +3,6 @@
 
 #include "proto/gate/gate_service.pb.h"
 
-
 constexpr uint32_t GatePlayerEnterGameNodeMessageId = 42;
 constexpr uint32_t GatePlayerEnterGameNodeIndex = 0;
 #define GatePlayerEnterGameNodeMethod  ::Gate_Stub::descriptor()->method(0)
@@ -35,5 +34,3 @@ constexpr uint32_t GateNodeHandshakeIndex = 6;
 constexpr uint32_t GateBindSessionToGateMessageId = 56;
 constexpr uint32_t GateBindSessionToGateIndex = 7;
 #define GateBindSessionToGateMethod  ::Gate_Stub::descriptor()->method(7)
-
-

@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 void SceneSceneHandler::Test(::google::protobuf::RpcController* controller, const ::GameSceneTest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
@@ -12,5 +11,3 @@ void SceneSceneHandler::Test(::google::protobuf::RpcController* controller, cons
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
-

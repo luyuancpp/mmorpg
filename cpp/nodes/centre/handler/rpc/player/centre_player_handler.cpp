@@ -4,8 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
-
 void CentrePlayerUtilityHandler::SendTipToClient(entt::entity player,const ::TipInfoMessage* request,
 	::Empty* response)
 {
@@ -14,7 +12,6 @@ void CentrePlayerUtilityHandler::SendTipToClient(entt::entity player,const ::Tip
 
 }
 
-
 void CentrePlayerUtilityHandler::KickPlayer(entt::entity player,const ::CentreKickPlayerRequest* request,
 	::Empty* response)
 {
@@ -22,4 +19,3 @@ void CentrePlayerUtilityHandler::KickPlayer(entt::entity player,const ::CentreKi
 ///<<< END WRITING YOUR CODE
 
 }
-

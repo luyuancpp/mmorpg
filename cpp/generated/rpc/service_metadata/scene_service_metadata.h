@@ -3,7 +3,6 @@
 
 #include "proto/scene/scene.pb.h"
 
-
 constexpr uint32_t ScenePlayerEnterGameNodeMessageId = 83;
 constexpr uint32_t ScenePlayerEnterGameNodeIndex = 0;
 #define ScenePlayerEnterGameNodeMethod  ::Scene_Stub::descriptor()->method(0)
@@ -47,5 +46,3 @@ constexpr uint32_t SceneCreateSceneIndex = 9;
 constexpr uint32_t SceneNodeHandshakeMessageId = 62;
 constexpr uint32_t SceneNodeHandshakeIndex = 10;
 #define SceneNodeHandshakeMethod  ::Scene_Stub::descriptor()->method(10)
-
-

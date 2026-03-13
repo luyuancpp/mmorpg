@@ -11,7 +11,6 @@ class SceneSceneClientPlayerHandler : public ::PlayerService
 public:
     using PlayerService::PlayerService;
 
-
     static void EnterScene(entt::entity player,
         const ::EnterSceneC2SRequest* request,
         ::EnterSceneC2SResponse* response);

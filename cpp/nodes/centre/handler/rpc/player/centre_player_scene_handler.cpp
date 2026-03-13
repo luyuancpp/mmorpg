@@ -19,8 +19,6 @@
 #include <modules/scene/system/scene_common.h>
 ///<<< END WRITING YOUR CODE
 
-
-
 void CentrePlayerSceneHandler::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -38,7 +36,6 @@ void CentrePlayerSceneHandler::EnterScene(entt::entity player,const ::CentreEnte
 
 }
 
-
 void CentrePlayerSceneHandler::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -46,7 +43,6 @@ void CentrePlayerSceneHandler::LeaveScene(entt::entity player,const ::CentreLeav
 	///<<< END WRITING YOUR CODE
 
 }
-
 
 void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
@@ -86,7 +82,6 @@ void CentrePlayerSceneHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity pl
 
 }
 
-
 void CentrePlayerSceneHandler::SceneInfoC2S(entt::entity player,const ::CentreSceneInfoRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -102,4 +97,3 @@ void CentrePlayerSceneHandler::SceneInfoC2S(entt::entity player,const ::CentreSc
 	///<<< END WRITING YOUR CODE
 
 }
-

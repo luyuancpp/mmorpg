@@ -5,12 +5,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"sync"
 
-	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"pbgen/logger"
+
+	"go.uber.org/zap"
 )
 
 // GenerateAllInOneDescriptor 生成合并的Protobuf描述符文件
@@ -73,7 +75,15 @@ func collectUniqueProtoFiles() ([]string, error) {
 	protoFileSet := make(map[string]struct{}) // 用于去重
 	var allProtoFiles []string
 
-	for _, meta := range _config.Global.DomainMeta {
+	// map iteration order is random in Go; sort keys to stabilize generation output.
+	domainKeys := make([]string, 0, len(_config.Global.DomainMeta))
+	for key := range _config.Global.DomainMeta {
+		domainKeys = append(domainKeys, key)
+	}
+	sort.Strings(domainKeys)
+
+	for _, key := range domainKeys {
+		meta := _config.Global.DomainMeta[key]
 		fileEntries, err := os.ReadDir(meta.Source)
 		if err != nil {
 			logger.Global.Warn("描述符生成: 读取目录失败，跳过",
@@ -103,6 +113,9 @@ func collectUniqueProtoFiles() ([]string, error) {
 			}
 		}
 	}
+
+	// Keep protoc input order deterministic across machines/runs.
+	sort.Strings(allProtoFiles)
 
 	return allProtoFiles, nil
 }

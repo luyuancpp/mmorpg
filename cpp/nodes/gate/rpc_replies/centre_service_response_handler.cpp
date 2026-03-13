@@ -6,12 +6,9 @@
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "gate_node.h"
 ///<<< END WRITING YOUR CODE
-
-
 
 void InitCentreReply()
 {

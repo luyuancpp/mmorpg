@@ -6,12 +6,10 @@
 
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
-
 ///<<< BEGIN WRITING YOUR CODE
 
 #include <boost/get_pointer.hpp>
 #include <muduo/base/Logging.h>
-
 
 #include "rpc/service_metadata/service_metadata.h"
 #include "rpc/player_rpc_response_handler.h"
@@ -20,8 +18,6 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include "proto/common/component/player_network_comp.pb.h"
 #include "threading/player_manager.h"
 ///<<< END WRITING YOUR CODE
-
-
 
 void InitSceneReply()
 {

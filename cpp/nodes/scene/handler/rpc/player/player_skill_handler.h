@@ -11,7 +11,6 @@ class SceneSkillClientPlayerHandler : public ::PlayerService
 public:
     using PlayerService::PlayerService;
 
-
     static void ReleaseSkill(entt::entity player,
         const ::ReleaseSkillSkillRequest* request,
         ::ReleaseSkillSkillResponse* response);

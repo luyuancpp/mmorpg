@@ -3,7 +3,6 @@
 
 #include "proto/scene/player_scene.pb.h"
 
-
 constexpr uint32_t SceneSceneClientPlayerEnterSceneMessageId = 63;
 constexpr uint32_t SceneSceneClientPlayerEnterSceneIndex = 0;
 #define SceneSceneClientPlayerEnterSceneMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(0)
@@ -35,5 +34,3 @@ constexpr uint32_t SceneSceneClientPlayerNotifyActorListCreateIndex = 6;
 constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyMessageId = 64;
 constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyIndex = 7;
 #define SceneSceneClientPlayerNotifyActorListDestroyMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(7)
-
-

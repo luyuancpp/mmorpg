@@ -4,12 +4,10 @@
 
 #include "rpc/player_rpc_response_handler.h"
 
-
 class SceneScenePlayerReply : public ::PlayerServiceReplied
 {
 public:
     using PlayerServiceReplied::PlayerServiceReplied;
-
 
     static void EnterScene(entt::entity player,
         const ::GsEnterSceneRequest* request,

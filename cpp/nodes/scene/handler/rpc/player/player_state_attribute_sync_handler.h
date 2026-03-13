@@ -11,7 +11,6 @@ class ScenePlayerSyncHandler : public ::PlayerService
 public:
     using PlayerService::PlayerService;
 
-
     static void SyncBaseAttribute(entt::entity player,
         const ::ActorBaseAttributesS2C* request,
         ::Empty* response);

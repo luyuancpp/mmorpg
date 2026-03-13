@@ -155,6 +155,20 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 				serviceInfoList = append(serviceInfoList, service)
 			}
 
+			// Stabilize namespace/branch emission order in grpc_init_total templates.
+			sort.Slice(serviceInfoList, func(i, j int) bool {
+				left := serviceInfoList[i]
+				right := serviceInfoList[j]
+
+				if left.BasePathForCpp() != right.BasePathForCpp() {
+					return left.BasePathForCpp() < right.BasePathForCpp()
+				}
+				if left.Package() != right.Package() {
+					return left.Package() < right.Package()
+				}
+				return left.FileBaseNameCamel() < right.FileBaseNameCamel()
+			})
+
 			err := os.MkdirAll(path.Dir(_config.Global.Paths.GrpcInitCppFile), os.FileMode(0777))
 			if err != nil {
 				logger.Global.Error("生成gRPC初始化文件失败: 创建目录失败",
