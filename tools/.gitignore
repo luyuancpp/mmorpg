@@ -1,0 +1,17 @@
+# IDE metadata
+.idea/
+**/.idea/
+
+# Temporary generation outputs
+generated/
+**/temp/
+
+# Local logs and debug outputs from tool runs
+proto_generator/pbgen/*.txt
+proto_generator/pbgen/*.log
+
+# Local binary/tool drops
+proto/zlibd.dll
+proto_generator/grpc_cpp_plugin.exe
+proto/pbgen/*.exe
+proto/pbgen/*.dll
