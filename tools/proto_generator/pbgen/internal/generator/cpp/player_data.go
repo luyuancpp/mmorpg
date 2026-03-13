@@ -1,6 +1,7 @@
 package cpp
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -8,7 +9,7 @@ import (
 	"text/template"
 
 	"github.com/iancoleman/strcase"
-	"github.com/luyuancpp/protooption"
+	messageoption "github.com/luyuancpp/protooption"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -95,24 +96,16 @@ func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error
 		)
 	}
 
-	f, err := os.Create(outputPath)
-	if err != nil {
-		logger.Global.Fatal("生成玩家头文件失败: 创建文件失败",
-			zap.String("file_path", outputPath),
-			zap.Error(err),
-		)
-	}
-	defer f.Close()
-
 	data := HeaderTemplateInput{Entries: entries}
-	if err := tmpl.Execute(f, data); err != nil {
+	var rendered bytes.Buffer
+	if err := tmpl.Execute(&rendered, data); err != nil {
 		logger.Global.Fatal("生成玩家头文件失败: 执行模板失败",
 			zap.String("file_path", outputPath),
 			zap.Error(err),
 		)
 	}
 
-	return nil
+	return utils.WriteFileIfChanged(outputPath, []byte(utils.NormalizeGeneratedLayout(rendered.String())))
 }
 
 // isPlayerDatabase returns true if the message has OptionIsPlayerDatabase set.
@@ -169,12 +162,12 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 
 				messageDescName := strings.ToLower(*messageDesc.Name)
 				handleName := strcase.ToCamel(*messageDesc.Name)
-				md5FilePath := _config.Global.Paths.PlayerStorageTempDir + messageDescName + _config.Global.FileExtensions.LoaderCpp
+				filePath := _config.Global.Paths.PlayerStorageTempDir + messageDescName + _config.Global.FileExtensions.LoaderCpp
 				filedList := generateDatabaseFiles(messageDesc)
 				messageType := *messageDesc.Name
 
 				err := generateCppDeserializeFromDatabase(
-					md5FilePath,
+					filePath,
 					handleName,
 					filedList,
 					messageType,
@@ -183,28 +176,21 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 				if err != nil {
 					logger.Global.Fatal("生成玩家数据反序列化代码失败",
 						zap.String("message_type", messageType),
-						zap.String("file_path", md5FilePath),
+						zap.String("file_path", filePath),
 						zap.Error(err),
 					)
 					return
 				}
-
-				destFilePath := _config.Global.Paths.PlayerStorageTempDir + messageDescName + _config.Global.FileExtensions.LoaderCpp
-				utils.CopyFileIfChangedAsync(wg, md5FilePath, destFilePath)
 			}
 		}
 
-		md5FilePath := _config.Global.Paths.PlayerDataLoaderFile
-		err = GenerateCppPlayerHeaderFile(md5FilePath, headerEntries)
+		err = GenerateCppPlayerHeaderFile(_config.Global.Paths.PlayerDataLoaderFile, headerEntries)
 		if err != nil {
 			logger.Global.Fatal("生成玩家数据加载器头文件失败",
-				zap.String("file_path", md5FilePath),
+				zap.String("file_path", _config.Global.Paths.PlayerDataLoaderFile),
 				zap.Error(err),
 			)
 		}
-
-		destFilePath := _config.Global.Paths.PlayerDataLoaderFile
-		utils.CopyFileIfChangedAsync(wg, md5FilePath, destFilePath)
 	}()
 }
 
@@ -232,25 +218,6 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 }
 
 func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
-	file, err := os.Create(fileName)
-	if err != nil {
-		logger.Global.Fatal("生成反序列化代码失败: 创建文件失败",
-			zap.String("file_name", fileName),
-			zap.String("message_type", messageType),
-			zap.Error(err),
-		)
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			logger.Global.Error("关闭文件失败",
-				zap.String("file_name", fileName),
-				zap.Error(err),
-			)
-			return
-		}
-	}(file)
-
 	tmpl, err := template.New("handler").Parse(playerLoaderTemplate)
 	if err != nil {
 		logger.Global.Fatal("生成反序列化代码失败: 解析模板失败",
@@ -267,7 +234,8 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 		Entries:     entries,
 	}
 
-	if err := tmpl.Execute(file, data); err != nil {
+	var rendered bytes.Buffer
+	if err := tmpl.Execute(&rendered, data); err != nil {
 		logger.Global.Fatal("生成反序列化代码失败: 执行模板失败",
 			zap.String("file_name", fileName),
 			zap.String("message_type", messageType),
@@ -275,5 +243,5 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 		)
 	}
 
-	return nil
+	return utils.WriteFileIfChanged(fileName, []byte(utils.NormalizeGeneratedLayout(rendered.String())))
 }

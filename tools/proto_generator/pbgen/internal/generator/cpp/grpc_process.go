@@ -10,11 +10,12 @@ import (
 
 	"go.uber.org/zap"
 
-	messageoption "github.com/luyuancpp/protooption"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"pbgen/logger"
+
+	messageoption "github.com/luyuancpp/protooption"
 )
 
 // GrpcServiceTemplateData 用于传递给模板的数据结构
@@ -60,49 +61,15 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 		)
 	}
 
-	existingContent, err := os.ReadFile(fileName)
-	if err != nil && !os.IsNotExist(err) {
-		logger.Global.Fatal("生成gRPC文件失败: 读取现有文件失败",
+	if err := utils2.WriteFileIfChanged(fileName, []byte(utils2.NormalizeGeneratedLayout(generatedContent.String()))); err != nil {
+		logger.Global.Error("生成gRPC文件失败: 写入文件失败",
 			zap.String("file_path", fileName),
-			zap.Error(err),
-		)
-	}
-
-	if err == nil && bytes.Equal(existingContent, generatedContent.Bytes()) {
-		logger.Global.Info("gRPC文件内容无变化，跳过写入",
-			zap.String("file_path", fileName),
-		)
-		return nil
-	}
-
-	err = os.MkdirAll(path.Dir(fileName), os.FileMode(0777))
-	if err != nil {
-		logger.Global.Error("生成gRPC文件失败: 创建目录失败",
 			zap.String("directory", path.Dir(fileName)),
 			zap.Error(err),
 		)
 		return err
 	}
 
-	file, err := os.Create(fileName)
-	if err != nil {
-		logger.Global.Fatal("生成gRPC文件失败: 创建文件失败",
-			zap.String("file_path", fileName),
-			zap.Error(err),
-		)
-	}
-	defer file.Close()
-
-	if _, err := file.Write(generatedContent.Bytes()); err != nil {
-		logger.Global.Fatal("生成gRPC文件失败: 写入文件失败",
-			zap.String("file_path", fileName),
-			zap.Error(err),
-		)
-	}
-
-	logger.Global.Info("gRPC文件已更新",
-		zap.String("file_path", fileName),
-	)
 	return nil
 }
 

@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/iancoleman/strcase"
-	messageoption "github.com/luyuancpp/protooption"
 	"math"
 	"os"
 	"path"
@@ -17,6 +15,9 @@ import (
 	"sync/atomic"
 	"text/template"
 
+	"github.com/iancoleman/strcase"
+	messageoption "github.com/luyuancpp/protooption"
+
 	"go.uber.org/zap"
 
 	"pbgen/internal"
@@ -24,6 +25,17 @@ import (
 	utils2 "pbgen/internal/utils"
 	"pbgen/logger"
 )
+
+func appendUniqueString(dst []string, seen map[string]struct{}, value string) []string {
+	if value == "" {
+		return dst
+	}
+	if _, ok := seen[value]; ok {
+		return dst
+	}
+	seen[value] = struct{}{}
+	return append(dst, value)
+}
 
 // ReadProtoFileService reads service information from a protobuf descriptor file.
 func ReadProtoFileService() error {
@@ -282,6 +294,11 @@ void InitMessageInfo()
 		initLines           []string
 		clientIdLines       []string
 		senderFunction      []string
+		includeSet          = make(map[string]struct{})
+		serviceIncludeSet   = make(map[string]struct{})
+		handlerClassSet     = make(map[string]struct{})
+		senderFunctionSet   = make(map[string]struct{})
+		clientIDSet         = make(map[string]struct{})
 	)
 
 	// Step 1: Collect headers and handler classes
@@ -296,15 +313,15 @@ void InitMessageInfo()
 
 		firstMethod := service.Methods[0]
 
-		includes = append(includes, firstMethod.IncludeName())
-		serviceInfoIncludes = append(serviceInfoIncludes, firstMethod.ServiceInfoIncludeName())
+		includes = appendUniqueString(includes, includeSet, firstMethod.IncludeName())
+		serviceInfoIncludes = appendUniqueString(serviceInfoIncludes, serviceIncludeSet, firstMethod.ServiceInfoIncludeName())
 
 		if firstMethod.CcGenericServices() {
 			handlerClass := fmt.Sprintf(
 				"class %sImpl final : public %s {};",
 				service.Service(),
 				service.Service())
-			handlerClasses = append(handlerClasses, handlerClass)
+			handlerClasses = appendUniqueString(handlerClasses, handlerClassSet, handlerClass)
 		}
 	}
 
@@ -341,9 +358,9 @@ void InitMessageInfo()
 				)
 			} else {
 				declareFunction := "namespace " + method.Package() + "{void Send" +
-service.Service() + method.Method() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
-					senderFunction = append(senderFunction, declareFunction)
-					sendName := method.Package() + "::" + "Send" + service.Service() + method.Method()
+					service.Service() + method.Method() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
+				senderFunction = appendUniqueString(senderFunction, senderFunctionSet, declareFunction)
+				sendName := method.Package() + "::" + "Send" + service.Service() + method.Method()
 				initLine = fmt.Sprintf(
 					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s, %s};`,
 					messageId,
@@ -360,7 +377,7 @@ service.Service() + method.Method() + "(entt::registry& , entt::entity , const g
 			initLines = append(initLines, initLine)
 
 			if isClientMessage {
-				clientIdLines = append(clientIdLines, fmt.Sprintf("gClientMessageIdWhitelist.emplace(%s);", messageId))
+				clientIdLines = appendUniqueString(clientIdLines, clientIDSet, fmt.Sprintf("gClientMessageIdWhitelist.emplace(%s);", messageId))
 			}
 		}
 	}
@@ -392,7 +409,8 @@ service.Service() + method.Method() + "(entt::registry& , entt::entity , const g
 		)
 	}
 
-	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceCppFile, output.Bytes())
+	normalized := utils2.NormalizeGeneratedLayout(output.String())
+	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceCppFile, []byte(normalized))
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
@@ -489,8 +507,9 @@ void InitPlayerService()
 		)
 	}
 
-	utils2.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
-	return output.String()
+	normalized := utils2.NormalizeGeneratedLayout(output.String())
+	utils2.WriteFileIfChanged(handlerDir+serviceName, []byte(normalized))
+	return normalized
 }
 
 // Helper function to generate instance data for player services.
@@ -565,8 +584,9 @@ void InitPlayerServiceReplied()
 		)
 	}
 
-	utils2.WriteFileIfChanged(handlerDir+serviceName, output.Bytes())
-	return output.String()
+	normalized := utils2.NormalizeGeneratedLayout(output.String())
+	utils2.WriteFileIfChanged(handlerDir+serviceName, []byte(normalized))
+	return normalized
 }
 
 func writePlayerServiceInstanceFiles(wg *sync.WaitGroup, serviceType string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir, serviceName string) {

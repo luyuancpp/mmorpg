@@ -10,9 +10,10 @@ import (
 	"sync"
 	"text/template"
 
-	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	"pbgen/logger"
+
+	"go.uber.org/zap"
 )
 
 // Wg is the global WaitGroup for concurrent tasks.
@@ -45,6 +46,9 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 		)
 		return nil
 	}
+	if err = os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return err
+	}
 	if err = os.WriteFile(outputPath, content, 0644); err != nil {
 		return err
 	}
@@ -54,54 +58,14 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 	return nil
 }
 
-// WriteFileIfChangedSafe 新函数
+// WriteFileIfChangedSafe writes content when it changed and logs warnings instead of returning errors.
 func WriteFileIfChangedSafe(filePath string, content []byte) {
-	existingContent, err := os.ReadFile(filePath)
-	if os.IsNotExist(err) {
-		logger.Global.Info("文件不存在，开始创建",
-			zap.String("文件路径", filePath),
-		)
-
-		dir := filepath.Dir(filePath)
-		if mkdirErr := os.MkdirAll(dir, 0755); mkdirErr != nil {
-			logger.Global.Fatal("创建目录失败",
-				zap.String("目录路径", dir),
-				zap.Error(mkdirErr),
-			)
-		}
-
-		if writeErr := os.WriteFile(filePath, content, 0644); writeErr != nil {
-			logger.Global.Fatal("创建文件失败",
-				zap.String("文件路径", filePath),
-				zap.Error(writeErr),
-			)
-		}
-
-		logger.Global.Info("文件创建成功",
-			zap.String("文件路径", filePath),
-		)
-		return // 返回刚写入的内容
-	}
-
-	if err == nil && bytes.Equal(existingContent, content) {
-		logger.Global.Info("文件内容无变化，跳过写入",
-			zap.String("文件路径", filePath),
-		)
-		return
-	}
-
-	err = os.WriteFile(filePath, content, 0644)
-	if err != nil {
+	if err := WriteFileIfChanged(filePath, content); err != nil {
 		logger.Global.Warn("写入文件失败",
 			zap.String("文件路径", filePath),
 			zap.Error(err),
 		)
-		return
 	}
-
-	logger.Global.Info("文件已更新/创建",
-		zap.String("文件路径", filePath),
-	)
 }
 
 // RenderTemplateToFile renders a template and writes to file if content changed.
@@ -114,7 +78,8 @@ func RenderTemplateToFile(tmplPath string, outputPath string, data any) error {
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return err
 	}
-	return WriteFileIfChanged(outputPath, buf.Bytes())
+	normalized := NormalizeGeneratedLayout(buf.String())
+	return WriteFileIfChanged(outputPath, []byte(normalized))
 }
 
 func RenderTemplateToFileWithFuncs(tmplPath string, outputPath string, data any, funcMap template.FuncMap) error {
@@ -130,7 +95,8 @@ func RenderTemplateToFileWithFuncs(tmplPath string, outputPath string, data any,
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return err
 	}
-	WriteFileIfChangedSafe(outputPath, buf.Bytes())
+	normalized := NormalizeGeneratedLayout(buf.String())
+	WriteFileIfChangedSafe(outputPath, []byte(normalized))
 	return nil
 }
 
