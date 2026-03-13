@@ -46,3 +46,15 @@ func TestTemplateEngineCachesByTemplateContent(t *testing.T) {
 		t.Fatalf("unexpected second render: %q", second)
 	}
 }
+
+func TestNormalizeGeneratedLayoutCollapsesIndentedBlankLines(t *testing.T) {
+	input := "func A() {\n}\n\t\n    \n\nfunc B() {\n}\n"
+	got := NormalizeGeneratedLayout(input)
+
+	if strings.Contains(got, "\n\n\n") {
+		t.Fatalf("expected no double blank lines, got: %q", got)
+	}
+	if !strings.Contains(got, "}\n\nfunc B()") {
+		t.Fatalf("expected exactly one blank line between functions, got: %q", got)
+	}
+}

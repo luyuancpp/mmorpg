@@ -1,4 +1,3 @@
 syntax = "proto3";
-option go_package = "chat/proto/common/constants;constants";
 
 

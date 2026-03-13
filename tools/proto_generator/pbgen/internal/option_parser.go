@@ -1,11 +1,12 @@
 package internal
 
 import (
+	"reflect"
+	"strings"
+
 	messageoption "github.com/luyuancpp/protooption"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"reflect"
-	"strings"
 )
 
 func boolFromExtensionValue(extValue interface{}) (bool, bool) {
@@ -91,6 +92,7 @@ func IsPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
 	v, ok := boolFromExtensionValue(extValue)
 	return ok && v
 }
+
 // GetFileDefaultNode returns the file-level default node type, falling back to path inference.
 func GetFileDefaultNode(fileDesc *descriptorpb.FileDescriptorProto) messageoption.NodeType {
 	opts := fileDesc.GetOptions()
