@@ -2,12 +2,19 @@ package utils
 
 import (
 	"bytes"
+	"hash/fnv"
+	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 	"text/template"
 
-	"go.uber.org/zap"
 	"pbgen/logger"
+
+	"go.uber.org/zap"
 )
+
+var excessiveBlankLinesPattern = regexp.MustCompile(`\n{3,}`)
 
 // TemplateEngine is a thread-safe template cache and executor.
 type TemplateEngine struct {
@@ -24,10 +31,17 @@ func NewTemplateEngine() *TemplateEngine {
 
 var GlobalEngine = NewTemplateEngine()
 
+func templateCacheKey(name, tmplStr string) string {
+	hasher := fnv.New64a()
+	_, _ = hasher.Write([]byte(tmplStr))
+	return name + ":" + strconv.FormatUint(hasher.Sum64(), 16)
+}
+
 // Execute renders a template string with the given data, caching parsed templates by name.
 func (e *TemplateEngine) Execute(name, tmplStr string, data interface{}, funcs ...template.FuncMap) string {
+	cacheKey := templateCacheKey(name, tmplStr)
 	e.mu.RLock()
-	tmpl, ok := e.cache[name]
+	tmpl, ok := e.cache[cacheKey]
 	e.mu.RUnlock()
 	if !ok {
 		var err error
@@ -43,7 +57,7 @@ func (e *TemplateEngine) Execute(name, tmplStr string, data interface{}, funcs .
 			)
 		}
 		e.mu.Lock()
-		e.cache[name] = tmpl
+		e.cache[cacheKey] = tmpl
 		e.mu.Unlock()
 	}
 
@@ -54,7 +68,7 @@ func (e *TemplateEngine) Execute(name, tmplStr string, data interface{}, funcs .
 			zap.Error(err),
 		)
 	}
-	return buf.String()
+	return NormalizeGeneratedLayout(buf.String())
 }
 
 // ExecuteTemplate is a convenience wrapper using GlobalEngine.
@@ -77,5 +91,26 @@ func (e *TemplateEngine) MustExecute(name, tmplStr string, data interface{}, fun
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return "", err
 	}
-	return buf.String(), nil
+	return NormalizeGeneratedLayout(buf.String()), nil
+}
+
+// NormalizeGeneratedLayout keeps generated output compact and stable.
+func NormalizeGeneratedLayout(content string) string {
+	return normalizeGeneratedLayout(content)
+}
+
+func normalizeGeneratedLayout(content string) string {
+	if content == "" {
+		return content
+	}
+
+	hasCRLF := strings.Contains(content, "\r\n")
+	normalized := strings.ReplaceAll(content, "\r\n", "\n")
+	normalized = strings.TrimLeft(normalized, "\n")
+	normalized = excessiveBlankLinesPattern.ReplaceAllString(normalized, "\n\n")
+
+	if hasCRLF {
+		normalized = strings.ReplaceAll(normalized, "\n", "\r\n")
+	}
+	return normalized
 }
