@@ -5,9 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	"pbgen/logger"
+
+	"go.uber.org/zap"
 )
 
 // MethodNameFunc generates handler names from method info.
@@ -71,6 +72,7 @@ type codeParser struct {
 	inFirstCode   bool
 	inMethodCode  bool
 	isFirstCode   bool
+	hasSeenMethod bool
 }
 
 func newCodeParser(methods *RPCMethods, methodFunc MethodNameFunc, funcParam string) *codeParser {
@@ -115,7 +117,8 @@ func (p *codeParser) handleGlobalCode(line string) bool {
 		p.firstCode += line
 		return true
 	}
-	if !p.isFirstCode && strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
+	// Global preserved-code block is only valid before any method signature appears.
+	if !p.isFirstCode && !p.hasSeenMethod && strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
 		p.firstCode = line
 		p.inFirstCode = true
 		p.isFirstCode = true
@@ -130,6 +133,7 @@ func (p *codeParser) handleMethodCode(line string) {
 			handlerName := p.methodFunc(method, p.funcParam)
 			if strings.Contains(line, handlerName) {
 				p.currentMethod = method
+				p.hasSeenMethod = true
 				break
 			}
 		}
