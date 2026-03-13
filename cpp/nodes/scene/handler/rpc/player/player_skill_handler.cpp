@@ -10,8 +10,6 @@
 
 ///<<< END WRITING YOUR CODE
 
-
-
 void SceneSkillClientPlayerHandler::ReleaseSkill(entt::entity player,const ::ReleaseSkillSkillRequest* request,
 	::ReleaseSkillSkillResponse* response)
 {
@@ -21,7 +19,6 @@ void SceneSkillClientPlayerHandler::ReleaseSkill(entt::entity player,const ::Rel
 
 }
 
-
 void SceneSkillClientPlayerHandler::NotifySkillUsed(entt::entity player,const ::SkillUsedS2C* request,
 	::Empty* response)
 {
@@ -30,7 +27,6 @@ void SceneSkillClientPlayerHandler::NotifySkillUsed(entt::entity player,const ::
 
 }
 
-
 void SceneSkillClientPlayerHandler::NotifySkillInterrupted(entt::entity player,const ::SkillInterruptedS2C* request,
 	::Empty* response)
 {
@@ -38,7 +34,6 @@ void SceneSkillClientPlayerHandler::NotifySkillInterrupted(entt::entity player,c
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 void SceneSkillClientPlayerHandler::GetSkillList(entt::entity player,const ::GetSkillListRequest* request,
 	::GetSkillListResponse* response)

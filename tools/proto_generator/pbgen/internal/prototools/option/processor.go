@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"sync"
 
+	"pbgen/logger"
+
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"pbgen/logger"
 )
 
 // OptionType defines option scope levels.

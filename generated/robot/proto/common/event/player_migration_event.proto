@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "robot/proto/common/event;event";
 
 import "proto/common/component/scene_comp.proto";
 

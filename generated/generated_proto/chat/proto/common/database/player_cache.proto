@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "chat/proto/common/database;database";
 
 import "proto/common/database/mysql_database_table.proto";
 

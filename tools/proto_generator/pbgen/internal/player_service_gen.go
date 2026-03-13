@@ -129,13 +129,16 @@ func GetPlayerServiceHandlerCppStr(dst string, methods RPCMethods, className str
 {{ .FirstCode }}
 {{ end }}
 
-{{- range .Methods }}
+{{- range $index, $method := .Methods }}
+{{- if gt $index 0 }}
 
-void {{ .HandlerName }}{{ $.PlayerMethodController }}const {{ .CppRequest }}* request,
-	{{ .CppResponse }}* response)
+{{- end }}
+
+void {{ $method.HandlerName }}{{ $.PlayerMethodController }}const {{ $method.CppRequest }}* request,
+	{{ $method.CppResponse }}* response)
 {
-{{- if .HasCode }}
-{{ .Code -}}
+{{- if $method.HasCode }}
+{{ $method.Code -}}
 {{ else }}
 {{ $.YourCodePair }}
 {{ end }}

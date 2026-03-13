@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var excessiveBlankLinesPattern = regexp.MustCompile(`\n{3,}`)
+var excessiveBlankLinesPattern = regexp.MustCompile(`\n(?:[ \t]*\n){2,}`)
 
 // TemplateEngine is a thread-safe template cache and executor.
 type TemplateEngine struct {

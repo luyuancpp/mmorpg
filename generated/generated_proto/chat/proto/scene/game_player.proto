@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "chat/proto/scene;scene";
 
 import "proto/db/proto_option.proto";
 import "google/protobuf/empty.proto";

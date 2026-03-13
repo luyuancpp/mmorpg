@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.uber.org/zap"
 	"pbgen/logger"
+
+	"go.uber.org/zap"
 )
 
 // GenGoPackageOptWithPkg generates a go_package option with path and package name.

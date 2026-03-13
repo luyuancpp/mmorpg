@@ -1,4 +1,3 @@
 syntax = "proto3";
-option go_package = "login/proto/common/constants;constants";
 
 
