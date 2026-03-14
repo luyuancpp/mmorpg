@@ -18,6 +18,13 @@
 #include "node/system/discovery/service_discovery_manager.h"
 
 
+enum class NodeIdConflictReason
+{
+	kLeaseExpiredByEtcd,     // keepalive returned TTL=0
+	kLeaseDeadlineExceeded,  // local health monitor: no ACK within TTL
+	kReRegistrationFailed,   // re-register CAS failed, another node owns this ID
+};
+
 class Node : muduo::noncopyable {
 public:
     // 类型定义
@@ -58,7 +65,12 @@ public:
     void HandleServiceNodeStop(const std::string& key, const std::string& nodeJson);
 
     virtual void StartRpcServer();
-	
+
+	// Called before LOG_FATAL when this node's identity is no longer valid.
+	// Override in subclasses to flush players, save state, etc.
+	// After this returns, the process will terminate.
+	virtual void OnNodeIdConflictShutdown(NodeIdConflictReason reason);
+
 	// 工具与状态判断
     bool IsCurrentNode(const NodeInfo& candidateNode) const;
 	bool IsServiceStarted() { return rpcServer != nullptr; }
