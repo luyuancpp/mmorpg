@@ -11,6 +11,10 @@ public:
 		itemIdGenerator.set_node_id(nodeId);
 	}
 
+	void SetGuardTime(uint64_t guardUtcSeconds) {
+		itemIdGenerator.SetGuardTime(guardUtcSeconds);
+	}
+
 	Guid lastGeneratorItemGuid{ kInvalidGuid };
 	SnowFlake itemIdGenerator;
 };

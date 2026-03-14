@@ -147,6 +147,15 @@ void Node::InitEtcdService()
 	serviceDiscoveryManager.Init();
 }
 
+void Node::OnNodeIdConflictShutdown(NodeIdConflictReason reason) {
+	LOG_WARN << "Node identity conflict detected (reason="
+		<< static_cast<int>(reason) << "), node_id=" << GetNodeId()
+		<< ". Override OnNodeIdConflictShutdown() to flush players before termination.";
+	// Base implementation: no-op. Subclasses (SceneNode, GateNode, etc.)
+	// should override to: save player data, migrate/kick players, etc.
+	// For instance nodes: notify players that the dungeon is lost.
+}
+
 void Node::StartRpcServer() {
 	eventLoop->assertInLoopThread();
 	if (rpcServer) {
@@ -417,6 +426,19 @@ void Node::StartNodeRegistrationHealthMonitor() {
 		{
 			return;
 		}
+
+		// Check lease deadline first — this catches network partitions where
+		// the watch stream is dead and the local ServiceNodeList is stale.
+		if (serviceDiscoveryManager.etcdService.IsLeasePresumablyExpired()) {
+			OnNodeIdConflictShutdown(NodeIdConflictReason::kLeaseDeadlineExceeded);
+			LOG_FATAL << "Lease deadline exceeded: no keepalive ACK from etcd within TTL. "
+				"node_id=" << GetNodeInfo().node_id()
+				<< ". Etcd has likely expired our lease; another node may claim this ID. "
+				   "Terminating to prevent SnowFlake collision. "
+				   "Active players will reconnect through the normal login flow.";
+			return;
+		}
+
 		auto& currentNode = GetNodeInfo();
 
 		auto& serviceNodesByType = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());

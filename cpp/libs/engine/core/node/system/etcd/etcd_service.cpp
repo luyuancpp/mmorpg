@@ -11,6 +11,7 @@
 #include "threading/node_context_manager.h"
 #include <node_config_manager.h>
 #include <threading/snow_flake_manager.h>
+#include <time/system/time.h>
 
 void EtcdService::Init() {
 	InitHandlers();
@@ -85,6 +86,10 @@ void EtcdService::InitWatchHandlers() {
 void EtcdService::InitLeaseHandlers() {
 	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const etcdserverpb::LeaseGrantResponse& reply) {
 		OnLeaseGranted(reply);
+		};
+
+	etcdserverpb::AsyncLeaseLeaseKeepAliveHandler = [this](const ClientContext& context, const etcdserverpb::LeaseKeepAliveResponse& reply) {
+		OnKeepAliveResponse(reply);
 		};
 }
 
@@ -164,15 +169,19 @@ void EtcdService::OnTxnSucceeded(const std::string& key) {
 		return;
 	}
 
-	tlsSnowflakeManager.OnNodeStart(gNode->GetNodeInfo().node_id());
-	gNode->StartRpcServer();
+	ActivateSnowFlakeAfterGuard();
 }
 
 void EtcdService::OnTxnFailed(const std::string& key) {
 	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
 		SetRegistrationMode(RegistrationMode::kInitialBoot, "re-registration failed");
-		LOG_FATAL << "Node re-registration failed for key: " << key
-			<< ". Another node may have taken our ID.";
+		gNode->OnNodeIdConflictShutdown(NodeIdConflictReason::kReRegistrationFailed);
+		LOG_FATAL << "Node re-registration FAILED for key: " << key
+			<< ", node_id=" << gNode->GetNodeInfo().node_id()
+			<< ". Another node has claimed this ID — SnowFlake collision is inevitable. "
+			   "Active players on this node will be disconnected and must reconnect "
+			   "through the normal login flow to be routed to a healthy node. "
+			   "This process must terminate now.";
 		return;
 	}
 
@@ -200,6 +209,10 @@ void EtcdService::HandleDeleteEvent(const std::string& key, const std::string& v
 }
 
 void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse& response) {
+	// Registration flow map:
+	// 1) Initial boot: Watch ready -> Lease -> Port CAS -> NodeId CAS -> StartRpcServer
+	// 2) Re-register: Health monitor detects missing snapshot -> Lease -> Port CAS -> NodeId CAS (same node_id)
+	//    If same node_id is already occupied, process exits via LOG_FATAL to protect identity invariants.
 	if (!hasSentWatch) {
 		RequestNodeLease();
 		hasSentWatch = true;
@@ -260,6 +273,10 @@ void EtcdService::Shutdown() {
 }
 
 void EtcdService::RequestReRegistration() {
+	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
+		LOG_DEBUG << "Re-registration already in progress, skipping duplicate attempt.";
+		return;
+	}
 	SetRegistrationMode(RegistrationMode::kReRegisterExisting, "health monitor missing local node snapshot");
 	RequestNodeLease();
 }
@@ -273,6 +290,10 @@ void EtcdService::OnLeaseGranted(const etcdserverpb::LeaseGrantResponse& reply) 
 		return;
 	}
 
+	leaseTtlSeconds_ = reply.ttl();
+	lastKeepAliveAckTime_ = std::chrono::steady_clock::now();
+	LOG_INFO << "Lease granted: id=" << leaseId << ", ttl=" << leaseTtlSeconds_ << "s";
+
 	StartLeaseKeepAlive();
 
 	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
@@ -280,4 +301,61 @@ void EtcdService::OnLeaseGranted(const etcdserverpb::LeaseGrantResponse& reply) 
 	} else {
 		NodeAllocator::AcquireNodePort(); // Only acquire port initially
 	}
+}
+
+void EtcdService::OnKeepAliveResponse(const etcdserverpb::LeaseKeepAliveResponse& reply) {
+	if (reply.ttl() <= 0) {
+		gNode->OnNodeIdConflictShutdown(NodeIdConflictReason::kLeaseExpiredByEtcd);
+		LOG_FATAL << "Lease keepalive returned TTL=0, lease has expired on etcd server. "
+			"node_id=" << gNode->GetNodeInfo().node_id()
+			<< ". Another node may claim this ID — terminating to prevent SnowFlake collision.";
+		return;
+	}
+
+	lastKeepAliveAckTime_ = std::chrono::steady_clock::now();
+	LOG_TRACE << "Lease keepalive ACK, ttl=" << reply.ttl();
+}
+
+bool EtcdService::IsLeasePresumablyExpired() const {
+	if (leaseTtlSeconds_ <= 0) {
+		return false; // Lease not yet granted
+	}
+
+	auto elapsed = std::chrono::steady_clock::now() - lastKeepAliveAckTime_;
+	auto elapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+	return elapsedSeconds > leaseTtlSeconds_;
+}
+
+void EtcdService::ActivateSnowFlakeAfterGuard() {
+	const auto& info = gNode->GetNodeInfo();
+	std::string guardKey = EtcdManager::MakeSnowFlakeGuardKey(info);
+
+	auto& redis = tlsReids.GetZoneRedis();
+	if (!redis || !redis->connected()) {
+		LOG_WARN << "Redis not connected, activating SnowFlake without guard for node_id=" << info.node_id();
+		tlsSnowflakeManager.OnNodeStart(info.node_id());
+		gNode->StartRpcServer();
+		return;
+	}
+
+	redis->command(
+		[nodeId = info.node_id(), guardKey](hiredis::Hiredis*, redisReply* reply) {
+			tlsSnowflakeManager.OnNodeStart(nodeId);
+
+			if (reply != nullptr && reply->type == REDIS_REPLY_STRING) {
+				uint64_t lastTs = std::strtoull(reply->str, nullptr, 10);
+				uint64_t now = TimeSystem::NowSecondsUTC();
+				tlsSnowflakeManager.SetGuardTime(now);
+				LOG_INFO << "SnowFlake guard applied: last_ts=" << lastTs
+					<< ", guard_to=" << now
+					<< ", node_id=" << nodeId
+					<< ". Generator will skip current second.";
+			} else {
+				LOG_INFO << "No SnowFlake guard found for " << guardKey
+					<< ", node_id=" << nodeId;
+			}
+
+			gNode->StartRpcServer();
+		},
+		"GET %s", guardKey.c_str());
 }

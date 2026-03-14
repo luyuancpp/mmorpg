@@ -54,6 +54,17 @@ public:
 
 	inline void set_epoch(uint64_t epoch) { epoch_ = epoch; }
 
+	// Prevent ID collision with a previous node that held the same node_id.
+	// Sets last_time_ so that Generate() skips any second the old node may have used.
+	inline void SetGuardTime(uint64_t guardUtcSeconds)
+	{
+		uint64_t guardEpoch = guardUtcSeconds - epoch_;
+		if (guardEpoch > last_time_) {
+			last_time_ = guardEpoch;
+			step_ = kStepMask; // exhaust this second so Generate() advances to next
+		}
+	}
+
 	Guid Generate()
 	{
 		uint64_t now = NowEpoch();
