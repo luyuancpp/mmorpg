@@ -7,7 +7,7 @@
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "gate_node.h"
+#include "node/system/node/node.h"
 #include "session/manager/session_manager.h"
 
 ///<<< END WRITING YOUR CODE

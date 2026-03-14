@@ -11,6 +11,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <atomic>
+#include <functional>
 #include "infra/messaging/kafka/kafka_manager.h"
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/etcd/etcd_manager.h"
@@ -65,6 +66,11 @@ public:
     void HandleServiceNodeStop(const std::string& key, const std::string& nodeJson);
 
     virtual void StartRpcServer();
+    using KafkaMessageHandler = std::function<void(const std::string&, const std::string&)>;
+    bool RegisterKafkaMessageHandler(const std::vector<std::string>& topics,
+                                     const std::string& groupId,
+                                     KafkaMessageHandler handler,
+                                     const std::vector<int32_t>& partitions = {});
 
 	// Called before LOG_FATAL when this node's identity is no longer valid.
 	// Override in subclasses to flush players, save state, etc.
@@ -85,6 +91,7 @@ protected:
     void SetupTimeZone();
     void InitKafka();
     void StartKafkaPolling();
+    virtual bool RegisterKafkaHandlers() { return true; }
     void InitEtcdService();
 
     void ReleaseNodeId();
@@ -121,6 +128,7 @@ protected:
     NodeHandshakeManager nodeRegistrationManager;
     ServiceDiscoveryManager serviceDiscoveryManager;
     std::atomic<bool> shutdownStarted{ false };
+    bool kafkaPollingStarted{ false };
 };
 
 extern Node* gNode;
