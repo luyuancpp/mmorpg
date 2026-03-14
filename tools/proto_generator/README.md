@@ -13,7 +13,7 @@ pbgen is a code generator that processes `.proto` files and generates language-s
 ## Directory Structure
 
 ```
-proto-generator/
+proto_generator/
 ├── pbgen/                  # Main pbgen source code
 │   ├── bin/               # Compiled pbgen executable
 │   ├── src/               # Go source code
@@ -36,17 +36,17 @@ The main configuration file is `pbgen/etc/proto_gen.yaml`. It specifies:
 ### Build pbgen
 
 ```powershell
-pwsh -File ../../scripts/dev-tools.ps1 -Command pbgen-build
+pwsh -File ../../scripts/dev_tools.ps1 -Command pbgen-build
 ```
 
 ### Generate Code
 
 ```powershell
 # Using default config
-pwsh -File ../../scripts/dev-tools.ps1 -Command pbgen-run
+pwsh -File ../../scripts/dev_tools.ps1 -Command pbgen-run
 
 # Using custom config
-pwsh -File ../../scripts/dev-tools.ps1 -Command pbgen-run -ConfigPath etc/proto_gen.yaml
+pwsh -File ../../scripts/dev_tools.ps1 -Command pbgen-run -ConfigPath etc/proto_gen.yaml
 ```
 
 ## Output

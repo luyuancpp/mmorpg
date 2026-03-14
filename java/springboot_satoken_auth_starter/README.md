@@ -16,5 +16,5 @@ APIs are under `http://localhost:8080/api/auth`.
 ## Production with Docker
 
 1. `docker-compose up -d` to start MySQL + Redis.
-2. Edit `production-application.properties` with your credentials.
+2. Edit `production_application.properties` with your credentials.
 3. Build and run jar.

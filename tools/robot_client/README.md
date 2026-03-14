@@ -13,7 +13,7 @@ The robot client is a Go-based testing framework that:
 ## Directory Structure
 
 ```
-robot-client/
+robot_client/
 ├── main.go               # Entry point
 ├── go.mod, go.sum        # Go module dependencies
 ├── build.bat             # Build script
@@ -37,17 +37,17 @@ robot-client/
 ### Linux/macOS
 
 ```bash
-go build -o bin/robot-client main.go
+go build -o bin/robot_client main.go
 ```
 
 ## Running
 
 ```bash
 # With default config
-./bin/robot-client
+./bin/robot_client
 
 # With custom config
-./bin/robot-client -config etc/custom.yaml
+./bin/robot_client -config etc/custom.yaml
 ```
 
 ## Configuration

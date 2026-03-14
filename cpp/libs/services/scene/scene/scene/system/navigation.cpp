@@ -9,7 +9,7 @@
 #include "scene/scene/system/recast.h"
 #include "proto/common/event/scene_event.pb.h"
 #include "scene/scene/constants/nav.h"
-#include "scene/scene/mananger/scene_nav.h"
+#include "scene/scene/manager/scene_nav.h"
 
 void NavigationSystem::LoadMainSceneNavBins() {
 	auto& configAll = GetMainSceneAllTable();
