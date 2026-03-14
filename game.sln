@@ -112,7 +112,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cool_down_time_test", "cpp\
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "message_limiter_test", "cpp\\tests\\message_limiter\message_limiter.vcxproj", "{C0C06D7F-741F-4476-B56F-930B3799DD3D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "message_limiter_test", "cpp\\tests\\message_limiter_test\message_limiter.vcxproj", "{C0C06D7F-741F-4476-B56F-930B3799DD3D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
 	EndProjectSection
@@ -168,7 +168,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "timer_destroy_test", "cpp\\
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "timer_queue_uinttest", "cpp\\tests\\timer_queue_uinttest_test\timer_queue_uinttest.vcxproj", "{92BDF89E-2160-4712-88F0-E39020A598EC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "timer_queue_unit_test", "cpp\\tests\\timer_queue_unit_test\timer_queue_unit_test.vcxproj", "{92BDF89E-2160-4712-88F0-E39020A598EC}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {6348AEF3-B5C7-43C9-AEAD-D707F104140F}
 	EndProjectSection

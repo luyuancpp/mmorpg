@@ -11,7 +11,7 @@
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
-#include "scene/scene/mananger/scene_nav.h"
+#include "scene/scene/manager/scene_nav.h"
 #include <threading/registry_manager.h>
 #include <modules/scene/system/scene_common.h>
 

@@ -30,16 +30,16 @@ This directory hosts developer tooling and generated helper code.
 ## Quick Start
 
 - Build pbgen:
-	`pwsh -File tools/scripts/dev-tools.ps1 -Command pbgen-build`
+	`pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-build`
 - Run pbgen with default config:
-	`pwsh -File tools/scripts/dev-tools.ps1 -Command pbgen-run`
+	`pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-run`
 - Run pbgen with custom config:
-	`pwsh -File tools/scripts/dev-tools.ps1 -Command pbgen-run -ConfigPath tools/proto_generator/pbgen/etc/proto_gen.yaml`
+	`pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-run -ConfigPath tools/proto_generator/pbgen/etc/proto_gen.yaml`
 - Refresh tree output script:
-	`pwsh -File tools/scripts/dev-tools.ps1 -Command tree`
+	`pwsh -File tools/scripts/dev_tools.ps1 -Command tree`
 
 ## Notes
 
 - Existing build/run tasks already target `tools/proto_generator/pbgen` and remain unchanged.
 - `tools/proto/pbgen` is currently retained for compatibility with existing local toolchains.
-- `tools/scripts/dev-tools.ps1` is the preferred shell entry point for common tool commands.
+- `tools/scripts/dev_tools.ps1` is the preferred shell entry point for common tool commands.

@@ -45,9 +45,9 @@
 - **Dependencies**: `cd go\login && go mod tidy`
 
 ### Java (Auth/Web)
-- **Build**: `cd java\sa-token-node && mvn clean install`
-- **Run tests**: `cd java\sa-token-node && mvn test`
-- **Run a single Java test**: `cd java\sa-token-node && mvn -Dtest=GrpcServerApplicationTests#contextLoads test`
+- **Build**: `cd java\sa_token_node && mvn clean install`
+- **Run tests**: `cd java\sa_token_node && mvn test`
+- **Run a single Java test**: `cd java\sa_token_node && mvn -Dtest=GrpcServerApplicationTests#contextLoads test`
 
 ## High-Level Architecture
 
@@ -55,7 +55,7 @@
   - **C++ nodes** (`cpp/nodes/*`): runtime node processes (scene/gate/centre) and RPC handlers.
   - **C++ shared game logic** (`cpp/libs/services/scene/*`): ECS-heavy domain logic, with `system` and `comp` subtrees.
   - **Go services** (`go/login` and peers): go-zero based microservices and grpc servers.
-  - **Java auth/web** (`java/sa-token-node`): Spring Boot + sa-token + grpc auth service.
+  - **Java auth/web** (`java/sa_token_node`): Spring Boot + sa-token + grpc auth service.
 - **Proto-first contract flow**:
   - Source contracts live in `proto/`.
   - Generated protocol outputs are checked into `generated/proto/` and language-specific trees (e.g., `go/login/proto/...`).
