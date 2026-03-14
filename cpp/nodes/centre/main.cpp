@@ -5,6 +5,7 @@
 #include "handler/event/event_handler.h"
 #include "redis/system/redis.h"
 #include "grpc/third_party/abseil-cpp/absl/log/initialize.h"
+#include "proto/common/base/node.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

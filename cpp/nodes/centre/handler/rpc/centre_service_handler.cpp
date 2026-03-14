@@ -2,7 +2,7 @@
 #include "centre_service_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "centre_node.h"
+#include "node/system/node/node.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/code/mainscene_table.h"
 #include "session/system/session.h"

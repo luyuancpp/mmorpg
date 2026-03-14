@@ -1,15 +1,17 @@
 #include "muduo/net/EventLoop.h"
 
 #include "node/system/node/simple_node.h"
+#include "node/system/node/node.h"
 #include "handler/rpc/scene_handler.h"
 #include "table/code/all_table.h"
 #include "core/config/config.h"
 #include "handler/event/event_handler.h"
 #include "world/world.h"
-#include "threading/redis_manager.h"
+#include "core/system/redis.h"
 #include "frame/manager/frame_time.h"
 #include "time/comp/timer_task_comp.h"
 #include "grpc/third_party/abseil-cpp/absl/log/initialize.h"
+#include "proto/common/base/node.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -20,7 +22,7 @@ void startSceneNode(EventLoop& loop)
     TimerTaskComp worldTimer;
 
     SimpleNode<SceneHandler> node(&loop, "logs/scene", SceneNodeService,
-        CanConnectNodeTypeList{ CentreNodeService });
+        Node::CanConnectNodeTypeList{ CentreNodeService });
     tlsRedisSystem.Initialize();
     EventHandler::Register();
     World::InitializeSystemBeforeConnect();

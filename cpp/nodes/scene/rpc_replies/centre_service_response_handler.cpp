@@ -11,7 +11,7 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 #include "proto/common/base/node.pb.h"
 #include "proto/common/event/server_event.pb.h"
 
-#include "scene_node.h"
+#include "node/system/node/node.h"
 ///<<< END WRITING YOUR CODE
 
 void InitCentreReply()

@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "scene_node.h"
+#include "node/system/node/node.h"
 #include "core/network/message_system.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "proto/centre/centre_player_scene.pb.h"
