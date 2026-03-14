@@ -16,9 +16,9 @@ PROJECT_DIR = Path("../../../")
 
 # 生成相关目录
 GENERATOR_DIR = PROJECT_DIR / "generated"
-PROJECT_GENERATED_JSON_DIR = GENERATOR_DIR / "generated_tables"  # 生成的表格数据
-PROJECT_GENERATED_CODE_DIR = GENERATOR_DIR / "generated_code"    # 生成的代码
-DATA_TABLES_DIR = PROJECT_DIR / "data_tables"                    # 数据表目录
+PROJECT_GENERATED_JSON_DIR = GENERATOR_DIR / "tables"  # 生成的表格数据
+PROJECT_GENERATED_CODE_DIR = GENERATOR_DIR / "code"    # 生成的代码
+DATA_TABLES_DIR = PROJECT_DIR / "data"                           # 数据表目录
 
 # -----------------------------
 # Go 代码生成相关

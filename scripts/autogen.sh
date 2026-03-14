@@ -2,9 +2,13 @@
 
 git submodule update --init --recursive
 
-./third_party.sh
+# Run from repo root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
 
-python vcxproj2cmake.py
+./scripts/setup-dependencies.sh
+
+python tools/vcxproj2cmake.py
 
 cpu=$(cat /proc/cpuinfo | grep processor | wc -l)
 echo $cpu

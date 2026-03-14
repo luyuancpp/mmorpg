@@ -49,9 +49,9 @@ paths:
   cpp_gen_grpc_dir: "{{output_root}}{{generated_dir}}grpc_client/"
   util_generator_dir: "{{output_root}}{{generated_dir}}proto_helpers/"
   generator_dir: "generated/"
-  generator_proto_dir: "{{output_root}}{{generator_dir}}generated_proto/"
+  generator_proto_dir: "{{output_root}}{{generator_dir}}proto/"
   project_generated_dir: "{{output_root}}generated/"
-  table_generator_dir: "{{project_generated_dir}}generated_data/"
+  table_generator_dir: "{{project_generated_dir}}data/"
   game_rpc_proto_path: "{{proto_dir}}common/base/"
   tools_dir: "{{output_root}}{{tool_dir}}"
 
