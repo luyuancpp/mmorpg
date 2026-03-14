@@ -31,10 +31,11 @@ void NodeHandshakeManager::TryRegisterNodeSession(uint32_t nodeType, const muduo
 		if (client->GetConnection() == nullptr || client->GetConnection().get() != conn.get()) continue;
 		LOG_INFO << "Peer address match in " << NodeUtils::GetRegistryName(registry)
 			<< ": " << conn->peerAddress().toIpPort();
-		registry.get_or_emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, &client]() {
+		auto clientCopy = client;
+		registry.get_or_emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, clientCopy]() {
 			NodeHandshakeRequest req;
 			req.mutable_self_node()->CopyFrom(GetNodeInfo());
-			client->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
+			clientCopy->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
 			});
 		return;
 	}
@@ -98,10 +99,11 @@ void NodeHandshakeManager::OnHandshakeReplied(const NodeHandshakeResponse& respo
 		LOG_TRACE << "Registration failed: " << response.DebugString();
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 			if (!NodeUtils::IsSameNode(nodeInfo.node_uuid(), response.peer_node().node_uuid())) continue;
-			registry.get<TimerTaskComp>(entity).RunAfter(0.5, [this, &client, nodeType]() {
+			auto clientCopy = client;
+			registry.get<TimerTaskComp>(entity).RunAfter(0.5, [this, clientCopy, nodeType]() {
 				NodeHandshakeRequest req;
 				*req.mutable_self_node() = GetNodeInfo();
-				client->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
+				clientCopy->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
 				});
 			return;
 		}

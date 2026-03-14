@@ -27,6 +27,7 @@ GateNode::GateNode(EventLoop* loop)
 	gGateNode = this;
 	GetNodeInfo().set_node_type(GateNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService, SceneNodeService, LoginNodeService };
+    Initialize();
 
 	auto sendGrpcResponseToClientSession = [](const ClientContext& context, const ::google::protobuf::Message& reply) {
 		auto sessionDetails = GetSessionDetailsByClientContext(context);

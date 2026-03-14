@@ -69,6 +69,17 @@ bool NodeUtils::IsNodeConnected(uint32_t nodeType, const NodeInfo& info)  {
 		}
 	}
 	break;
+	case PROTOCOL_GRPC:
+	{
+		entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
+		for (const auto& [entity, nodeInfo] : registry.view<NodeInfo>().each()) {
+			if (NodeUtils::IsSameNode(info.node_uuid(), nodeInfo.node_uuid())) {
+				LOG_TRACE << "GRPC node already tracked, uuid=" << nodeInfo.node_uuid();
+				return true;
+			}
+		}
+	}
+	break;
 	default:
 		break;
 	}

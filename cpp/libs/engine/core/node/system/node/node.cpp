@@ -1,5 +1,4 @@
 ﻿#include "node.h"
-#include <ranges>
 #include <regex>
 #include <grpcpp/create_channel.h>
 #include <boost/uuid/uuid_io.hpp>
@@ -39,6 +38,18 @@
 #include <threading/registry_manager.h>
 #include "threading/thread_local_entity_container.h"
 #include <threading/entity_manager.h>
+#include <cstdio>
+#include <atomic>
+#include <future>
+#include <chrono>
+
+namespace {
+std::atomic<Node*> gNodeAtomic{ nullptr };
+
+void StdoutOutput(const char* msg, int len) {
+	std::fwrite(msg, 1, static_cast<size_t>(len), stdout);
+}
+}
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
@@ -46,9 +57,17 @@ Node* gNode;
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 	: eventLoop(loop), logSystem(logPath, kMaxLogFileRollSize, 1) {
+	if (eventLoop == nullptr) {
+		LOG_FATAL << "Node requires a valid EventLoop pointer.";
+	}
+
 	LOG_INFO << "Node created, log file: " << logPath;
+	if (gNode != nullptr && gNode != this) {
+		LOG_FATAL << "Multiple Node instances detected. existing=" << gNode << ", new=" << this;
+	}
 
 	gNode = this;
+	gNodeAtomic.store(this, std::memory_order_release);
 	tlsRegistryManager.nodeGlobalRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 
 	//未实现的节点实现一个空函数
@@ -60,13 +79,14 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
 
 	void InitServiceHandler();
 	InitServiceHandler();
-
-	Initialize();
 }
 
 Node::~Node() {
-	serviceDiscoveryManager.Shutdown();
 	Shutdown();
+	if (gNode == this) {
+		gNodeAtomic.store(nullptr, std::memory_order_release);
+		gNode = nullptr;
+	}
 }
 
 int64_t Node::GetLeaseId() const
@@ -79,6 +99,7 @@ NodeInfo& Node::GetNodeInfo() const {
 }
 
 void Node::Initialize() {
+	eventLoop->assertInLoopThread();
 	LOG_DEBUG << "Node initializing...";
     SetupTimeZone();
 	RegisterHandlers();
@@ -127,6 +148,7 @@ void Node::InitEtcdService()
 }
 
 void Node::StartRpcServer() {
+	eventLoop->assertInLoopThread();
 	if (rpcServer) {
 		LOG_TRACE << "RPC server already started, skipping.";
 		return;
@@ -137,10 +159,23 @@ void Node::StartRpcServer() {
 
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
 	rpcServer->start();
-	rpcServer->registerService(GetNodeReplyService());
+	auto* replyService = GetNodeReplyService();
+	if (replyService != nullptr) {
+		rpcServer->registerService(replyService);
+	}
+	else {
+		LOG_WARN << "Node reply service is null, skip registerService for node_type=" << GetNodeInfo().node_type();
+	}
 
-	for (auto& val : gNodeService | std::views::values) {
-		rpcServer->registerService(val.get());
+	for (auto it = gNodeService.begin(); it != gNodeService.end(); ++it) {
+		auto& serviceName = it->first;
+		auto& service = it->second;
+		if (service == nullptr) {
+			LOG_WARN << "Skip null node service registration for key=" << serviceName;
+			continue;
+		}
+
+		rpcServer->registerService(service.get());
 	}
 
 	NodeConnector::ConnectAllNodes();
@@ -158,16 +193,48 @@ void Node::StartRpcServer() {
 }
 
 void Node::Shutdown() {
+	if (eventLoop == nullptr) {
+		return;
+	}
+
+	if (eventLoop->isInLoopThread()) {
+		ShutdownInLoop();
+		return;
+	}
+
+	std::promise<void> shutdownDone;
+	auto shutdownFuture = shutdownDone.get_future();
+	eventLoop->runInLoop([this, &shutdownDone]() {
+		ShutdownInLoop();
+		shutdownDone.set_value();
+	});
+	constexpr auto kShutdownWaitTimeout = std::chrono::seconds(5);
+	if (shutdownFuture.wait_for(kShutdownWaitTimeout) != std::future_status::ready) {
+		LOG_ERROR << "Node shutdown timed out waiting for loop thread. timeout_s="
+			<< std::chrono::duration_cast<std::chrono::seconds>(kShutdownWaitTimeout).count();
+	}
+}
+
+void Node::ShutdownInLoop() {
+	eventLoop->assertInLoopThread();
+	if (shutdownStarted.exchange(true, std::memory_order_acq_rel)) {
+		return;
+	}
+
 	LOG_DEBUG << "Node shutting down...";
-	StopWatchingServiceNodes();
+	grpcHandlerTimer.Cancel();
+	serviceHealthMonitorTimer.Cancel();
+	acquireNodeTimer.Cancel();
+	acquirePortTimer.Cancel();
+	kafkaProducerTimer.Cancel();
+	kafkaConsumerTimer.Cancel();
+	ReleaseNodeId();
+	serviceDiscoveryManager.Shutdown();
+	kafkaManager.Shutdown();
 	tlsThreadLocalEntityContainer.Clear();
 	tlsRegistryManager.Clear();
+	muduo::Logger::setOutput(StdoutOutput);
 	logSystem.stop();
-	ReleaseNodeId();
-	gNode->GetEtcdManager().Shutdown();
-	grpcHandlerTimer.Cancel();
-	kafkaConsumerTimer.Cancel();
-	kafkaManager.Shutdown();
 	LOG_DEBUG << "Node shutdown complete.";
 }
 
@@ -215,7 +282,12 @@ void Node::RegisterHandlers() {
 }
 
 void Node::AsyncOutput(const char* msg, int len) {
-	gNode->Log().append(msg, len);
+	Node* node = gNodeAtomic.load(std::memory_order_acquire);
+	if (node != nullptr) {
+		node->Log().append(msg, len);
+		return;
+	}
+	StdoutOutput(msg, len);
 #ifdef WIN32
 	LogToConsole(msg, len);
 #endif
@@ -247,6 +319,7 @@ bool Node::IsMyNode(const NodeInfo& node) const
 }
 
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& nodeJson) {
+	eventLoop->assertInLoopThread();
 	LOG_INFO << "Service node stop, key: " << key << ", value: " << nodeJson;
 
 	NodeInfo deleteNode;
@@ -263,24 +336,71 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		return;
 	}
 
+	if (deleteNode.node_uuid().empty()) {
+		LOG_WARN << "Ignore service node stop with empty node_uuid. key=" << key;
+		return;
+	}
+
 	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[deleteNode.node_type()].mutable_node_list();
-	if (deleteNode.protocol_type() == PROTOCOL_GRPC)
-	{
-		auto nodeEntity = entt::entity{ deleteNode.node_id() };
-		entt::registry& registry = tlsNodeContextManager.GetRegistry(deleteNode.node_type());
+
+	// Remove stale node snapshot first so service discovery state stays consistent.
+	int removedCount = 0;
+	for (int i = nodeList.size() - 1; i >= 0; --i) {
+		const auto& node = nodeList.Get(i);
+		if (!NodeUtils::IsSameNode(node.node_uuid(), deleteNode.node_uuid())) {
+			continue;
+		}
+
+		nodeList.DeleteSubrange(i, 1);
+		++removedCount;
+	}
+
+	if (removedCount == 0) {
+		LOG_WARN << "Service node stop did not match local cache. node_id=" << deleteNode.node_id()
+			<< ", node_uuid=" << deleteNode.node_uuid()
+			<< ", node_type=" << deleteNode.node_type();
+	}
+	else {
+		LOG_INFO << "Removed " << removedCount << " stale node record(s) for uuid=" << deleteNode.node_uuid();
+	}
+
+	const auto nodeType = deleteNode.node_type();
+	const auto nodeId = deleteNode.node_id();
+	const auto nodeUuid = deleteNode.node_uuid();
+
+	// Important: destroy network entities after current channel dispatch cycle.
+	// Direct destroy inside etcd watch callback can invalidate activeChannels_.
+	GetLoop()->queueInLoop([nodeType, nodeId, nodeUuid]() {
+		auto nodeEntity = entt::entity{ nodeId };
+		entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
+
+		if (registry.valid(nodeEntity)) {
+			auto* currentNodeInfo = registry.try_get<NodeInfo>(nodeEntity);
+			if (currentNodeInfo && !NodeUtils::IsSameNode(currentNodeInfo->node_uuid(), nodeUuid)) {
+				LOG_WARN << "Skip node destroy due to node id reuse. node_id=" << nodeId
+					<< ", stale_uuid=" << nodeUuid
+					<< ", current_uuid=" << currentNodeInfo->node_uuid();
+				return;
+			}
+		}
 
 		OnNodeRemovePbEvent onNodeRemovePbEvent;
 		onNodeRemovePbEvent.set_entity(entt::to_integral(nodeEntity));
-		onNodeRemovePbEvent.set_node_type(deleteNode.node_type());
+		onNodeRemovePbEvent.set_node_type(nodeType);
 		dispatcher.trigger(onNodeRemovePbEvent);
 
 		DestroyEntity(registry, nodeEntity);
-	}
+	});
 	LOG_INFO << "Service node stopped : " << deleteNode.DebugString();
 }
 
 void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
+	eventLoop->assertInLoopThread();
+	if (rpcServer == nullptr) {
+		return;
+	}
+
 	auto& conn = event.conn_;
 	if (!conn->connected()) {
 		LOG_INFO << "Client disconnected: " << conn->peerAddress().toIpPort();
@@ -309,7 +429,7 @@ void Node::StartServiceHealthMonitor(){
 			}
 		}
 
-		gNode->GetEtcdManager().RequestEtcdLease();
+		etcdManager.RequestEtcdLease();
 		}
 	);
 }
