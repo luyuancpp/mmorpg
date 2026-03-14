@@ -230,7 +230,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 
     GateSessionDisconnectRequest request;
     request.mutable_session_info()->set_session_id(sessionId);
-	gGateNode->CallRemoteMethodZoneCenter(CentreGateSessionDisconnectMessageId, request);
+	gGateNode->SendMessageToZoneCentre(CentreGateSessionDisconnectMessageId, request);
 
     // 删除会话
     tlsSessionManager.sessions().erase(sessionId);

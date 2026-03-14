@@ -17,19 +17,19 @@ void NodeAllocator::AcquireNode() {
 	const uint32_t nodeType = gNode->GetNodeType();
 	LOG_INFO << "Acquiring node ID for node type: " << nodeType;
 
-	// 1. 如果是全局唯一类型，执行清理逻辑 + 直接使用 zone_id
+	// Startup path A: zone-singleton services always use zone_id as node_id.
+	// We force-put node key to avoid delete/put ordering races during restart.
 	if (IsZoneSingletonNodeType(nodeType)) {
 		const uint32_t zoneId = tlsNodeConfigManager.GetGameConfig().zone_id();
 		gNode->GetNodeInfo().set_node_id(zoneId);
 		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
 
-		std::string prefix = gNode->GetEtcdManager().MakeNodeEtcdKey(gNode->GetNodeInfo());
-		EtcdHelper::DeleteRange(prefix, false);
-		gNode->GetEtcdManager().RegisterNodeService();
+		gNode->GetEtcdManager().ForceRegisterNodeService();
 		return;
 	}
 
-	// ...（以下为非 singleton 的原有分配逻辑）
+	// Startup path B: non-singleton services pick next free ID in local snapshot,
+	// then rely on etcd PutIfAbsent CAS to enforce same-type uniqueness.
 	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity())[nodeType];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
@@ -67,6 +67,14 @@ void NodeAllocator::AcquireNode() {
 	GetNodeInfo().set_node_id(nextNodeId);
 
 	gNode->GetEtcdManager().RegisterNodeService();
+}
+
+void NodeAllocator::ReRegisterExistingNode() {
+	// Re-registration must keep existing node_id to preserve SnowFlake worker bits
+	// and avoid mid-flight identity change after temporary lease loss.
+	LOG_INFO << "Re-registering existing node with node_id=" << GetNodeInfo().node_id()
+		<< " port=" << GetNodeInfo().endpoint().port();
+	gNode->GetEtcdManager().RegisterNodePort();
 }
 
 bool IsPortReservedType(uint32_t type)

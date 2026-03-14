@@ -36,8 +36,8 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string& nodeJson, uint32
 		return;
 	}
 
-	NodeInfo newNode;
-	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &newNode);
+	NodeInfo discoveredNode;
+	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &discoveredNode);
 	if (!parseResult.ok()) {
 		LOG_ERROR << "Parse node JSON failed, type: " << nodeType
 			<< ", JSON: " << nodeJson
@@ -45,45 +45,45 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string& nodeJson, uint32
 		return;
 	}
 
-	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
+	auto& serviceNodesByType = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& cachedNodesOfType = *serviceNodesByType[nodeType].mutable_node_list();
 
-	bool existed = false;
-	for (auto& node : nodeList) {
-		if (!NodeUtils::IsSameNode(node.node_uuid(), newNode.node_uuid())) {
+	bool hasExistingSnapshot = false;
+	for (auto& cachedNode : cachedNodesOfType) {
+		if (!NodeUtils::IsSameNode(cachedNode.node_uuid(), discoveredNode.node_uuid())) {
 			continue;
 		}
 
-		node.CopyFrom(newNode);
-		existed = true;
+		cachedNode.CopyFrom(discoveredNode);
+		hasExistingSnapshot = true;
 		break;
 	}
 
-	if (!existed) {
-		*nodeList.Add() = newNode;
-		LOG_INFO << "Node added, type: " << nodeType << ", info: " << newNode.DebugString();
+	if (!hasExistingSnapshot) {
+		*cachedNodesOfType.Add() = discoveredNode;
+		LOG_INFO << "Node added, type: " << nodeType << ", info: " << discoveredNode.DebugString();
 	}
 	else {
-		LOG_TRACE << "Node updated from service discovery event, uuid=" << newNode.node_uuid();
+		LOG_TRACE << "Node updated from service discovery event, uuid=" << discoveredNode.node_uuid();
 	}
 
-	if (gNode->IsMyNode(newNode)) {
-		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self uuid: " << newNode.node_uuid();
+	if (gNode->IsCurrentNode(discoveredNode)) {
+		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self uuid: " << discoveredNode.node_uuid();
 		return;
 	}
 
 	if (!gNode->GetTargetNodeTypeWhitelist().contains(nodeType)) return;
-	if (NodeUtils::IsNodeConnected(nodeType, newNode)) {
-		LOG_TRACE << "Node already connected, skip reconnect. uuid=" << newNode.node_uuid();
+	if (NodeUtils::IsNodeConnected(nodeType, discoveredNode)) {
+		LOG_TRACE << "Node already connected, skip reconnect. uuid=" << discoveredNode.node_uuid();
 		return;
 	}
 
 	if (gNode->IsServiceStarted()) {
-		NodeConnector::ConnectToNode(newNode);
-		LOG_INFO << "Connected to node: " << newNode.DebugString();
+		NodeConnector::ConnectToNode(discoveredNode);
+		LOG_INFO << "Connected to node: " << discoveredNode.DebugString();
 	}
 	else {
-		LOG_INFO << "Service not started or node already connected. Skipping connection for now: " << newNode.DebugString();
+		LOG_INFO << "Service not started or node already connected. Skipping connection for now: " << discoveredNode.DebugString();
 	}
 }
 

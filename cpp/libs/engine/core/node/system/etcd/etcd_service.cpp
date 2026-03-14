@@ -102,26 +102,86 @@ void EtcdService::InitTxnHandlers() {
 		pendingKeys.pop_front();
 
 		if (reply.succeeded()) {
-			if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodePortEtcdPrefix(gNode->GetNodeInfo()))) {
-				// Port acquired successfully, now acquire node
-				NodeAllocator::AcquireNode();
-			}
-			else if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodeEtcdPrefix(gNode->GetNodeInfo()))) {
-				// Node acquired successfully
-				tlsSnowflakeManager.OnNodeStart(gNode->GetNodeInfo().node_id());
-				gNode->StartRpcServer();
-			}
+			OnTxnSucceeded(key);
 		}
 		else {
-			if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodeEtcdPrefix(gNode->GetNodeInfo()))) {
-				acquireNodeTimer.RunAfter(1, [] { NodeAllocator::AcquireNode(); });
-			}
-			else {
-				acquirePortTimer.RunAfter(1, [] { NodeAllocator::AcquireNodePort(); });
-			}
+			OnTxnFailed(key);
 		}
 
 		};
+}
+
+const char* EtcdService::RegistrationModeName(RegistrationMode mode) const {
+	switch (mode) {
+	case RegistrationMode::kInitialBoot:
+		return "InitialBoot";
+	case RegistrationMode::kReRegisterExisting:
+		return "ReRegisterExisting";
+	default:
+		return "Unknown";
+	}
+}
+
+void EtcdService::SetRegistrationMode(RegistrationMode mode, const char* reason) {
+	if (registrationMode_ == mode) {
+		return;
+	}
+
+	LOG_INFO << "Registration mode: " << RegistrationModeName(registrationMode_)
+		<< " -> " << RegistrationModeName(mode)
+		<< ", reason=" << reason;
+	registrationMode_ = mode;
+}
+
+bool EtcdService::IsNodePortKey(const std::string& key) const {
+	return boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodePortEtcdPrefix(gNode->GetNodeInfo()));
+}
+
+bool EtcdService::IsNodeIdKey(const std::string& key) const {
+	return boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodeEtcdPrefix(gNode->GetNodeInfo()));
+}
+
+void EtcdService::OnTxnSucceeded(const std::string& key) {
+	if (IsNodePortKey(key)) {
+		if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
+			// Re-register path keeps the same node_id and only refreshes lease-bound etcd records.
+			gNode->GetEtcdManager().RegisterNodeService();
+			return;
+		}
+
+		NodeAllocator::AcquireNode();
+		return;
+	}
+
+	if (!IsNodeIdKey(key)) {
+		LOG_WARN << "Unexpected txn success key: " << key;
+		return;
+	}
+
+	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
+		SetRegistrationMode(RegistrationMode::kInitialBoot, "re-registration succeeded");
+		LOG_INFO << "Node re-registration successful, node_id=" << gNode->GetNodeInfo().node_id();
+		return;
+	}
+
+	tlsSnowflakeManager.OnNodeStart(gNode->GetNodeInfo().node_id());
+	gNode->StartRpcServer();
+}
+
+void EtcdService::OnTxnFailed(const std::string& key) {
+	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
+		SetRegistrationMode(RegistrationMode::kInitialBoot, "re-registration failed");
+		LOG_FATAL << "Node re-registration failed for key: " << key
+			<< ". Another node may have taken our ID.";
+		return;
+	}
+
+	if (IsNodeIdKey(key)) {
+		acquireNodeTimer.RunAfter(1, [] { NodeAllocator::AcquireNode(); });
+		return;
+	}
+
+	acquirePortTimer.RunAfter(1, [] { NodeAllocator::AcquireNodePort(); });
 }
 
 void EtcdService::StartWatchingPrefixes() {
@@ -141,7 +201,7 @@ void EtcdService::HandleDeleteEvent(const std::string& key, const std::string& v
 
 void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse& response) {
 	if (!hasSentWatch) {
-		RequestLease();
+		RequestNodeLease();
 		hasSentWatch = true;
 	}
 
@@ -160,12 +220,20 @@ void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse& response) {
 	}
 }
 
-void EtcdService::RequestLease() {
-	gNode->GetEtcdManager().RequestEtcdLease();
+void EtcdService::RequestNodeLease() {
+	if (leaseRequestInFlight_) {
+		LOG_TRACE << "Skip lease request because one is already in flight. mode="
+			<< RegistrationModeName(registrationMode_);
+		return;
+	}
+
+	leaseRequestInFlight_ = true;
+	LOG_INFO << "Requesting etcd lease. mode=" << RegistrationModeName(registrationMode_);
+	gNode->GetEtcdManager().RequestNodeLease();
 }
 
-void EtcdService::KeepAlive() {
-	gNode->GetEtcdManager().KeepNodeAlive();
+void EtcdService::StartLeaseKeepAlive() {
+	gNode->GetEtcdManager().StartLeaseKeepAlive();
 }
 
 void EtcdService::RegisterService() {
@@ -176,6 +244,8 @@ void EtcdService::Shutdown() {
 	grpcHandlerTimer.Cancel();
 	acquireNodeTimer.Cancel();
 	acquirePortTimer.Cancel();
+	leaseRequestInFlight_ = false;
+	SetRegistrationMode(RegistrationMode::kInitialBoot, "service shutdown");
 
 	auto emptyHandler = [](const ClientContext&, const ::google::protobuf::Message&) {};
 	etcdserverpb::AsyncKVRangeHandler = emptyHandler;
@@ -189,7 +259,13 @@ void EtcdService::Shutdown() {
 	gNode->GetEtcdManager().Shutdown();
 }
 
+void EtcdService::RequestReRegistration() {
+	SetRegistrationMode(RegistrationMode::kReRegisterExisting, "health monitor missing local node snapshot");
+	RequestNodeLease();
+}
+
 void EtcdService::OnLeaseGranted(const etcdserverpb::LeaseGrantResponse& reply) {
+	leaseRequestInFlight_ = false;
 	leaseId = reply.id();
 
 	if (leaseId <= 0) {
@@ -197,6 +273,11 @@ void EtcdService::OnLeaseGranted(const etcdserverpb::LeaseGrantResponse& reply) 
 		return;
 	}
 
-	KeepAlive();
-	NodeAllocator::AcquireNodePort(); // Only acquire port initially
+	StartLeaseKeepAlive();
+
+	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
+		NodeAllocator::ReRegisterExistingNode();
+	} else {
+		NodeAllocator::AcquireNodePort(); // Only acquire port initially
+	}
 }

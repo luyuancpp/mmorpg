@@ -98,6 +98,24 @@ void EtcdHelper::PutIfAbsent(const std::string& key, const NodeInfo& nodeInfo, i
 	PutIfAbsent(key, jsonValue, 0, lease);
 }
 
+void EtcdHelper::ForcePut(const std::string& key, const NodeInfo& nodeInfo, int64_t lease)
+{
+	std::string jsonValue;
+	auto status = google::protobuf::util::MessageToJsonString(nodeInfo, &jsonValue);
+	if (!status.ok()) {
+		LOG_ERROR << "Failed to serialize NodeInfo to JSON: " << status.message().data();
+		return;
+	}
+
+	etcdserverpb::TxnRequest txn;
+	auto& successOp = *txn.add_success()->mutable_request_put();
+	successOp.set_key(key);
+	successOp.set_value(jsonValue);
+	successOp.set_lease(lease);
+
+	SendKVTxn(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), txn);
+}
+
 void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)
 {
 	etcdserverpb::LeaseRevokeRequest request;

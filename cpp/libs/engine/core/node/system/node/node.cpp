@@ -55,13 +55,13 @@ std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gN
 
 Node* gNode;
 
-Node::Node(muduo::net::EventLoop* loop, const std::string& logPath)
-	: eventLoop(loop), logSystem(logPath, kMaxLogFileRollSize, 1) {
+Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
+	: eventLoop(loop), logSystem(logFilePath, kMaxLogFileRollSize, 1) {
 	if (eventLoop == nullptr) {
 		LOG_FATAL << "Node requires a valid EventLoop pointer.";
 	}
 
-	LOG_INFO << "Node created, log file: " << logPath;
+	LOG_INFO << "Node created, log file: " << logFilePath;
 	if (gNode != nullptr && gNode != this) {
 		LOG_FATAL << "Multiple Node instances detected. existing=" << gNode << ", new=" << this;
 	}
@@ -114,22 +114,22 @@ void Node::Initialize() {
 }
 
 void Node::InitRpcServer() {
-	NodeInfo& info = GetNodeInfo();
-	info.mutable_endpoint()->set_ip(localip());
-	info.mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
-	info.set_node_type(GetNodeType());
-	info.set_scene_node_type(tlsNodeConfigManager.GetGameConfig().scene_node_type());
-	info.set_protocol_type(PROTOCOL_TCP);
-	info.set_launch_time(TimeSystem::NowMicrosecondsUTC());
-	info.set_zone_id(tlsNodeConfigManager.GetGameConfig().zone_id());
+	NodeInfo& localNodeInfo = GetNodeInfo();
+	localNodeInfo.mutable_endpoint()->set_ip(localip());
+	localNodeInfo.mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
+	localNodeInfo.set_node_type(GetNodeType());
+	localNodeInfo.set_scene_node_type(tlsNodeConfigManager.GetGameConfig().scene_node_type());
+	localNodeInfo.set_protocol_type(PROTOCOL_TCP);
+	localNodeInfo.set_launch_time(TimeSystem::NowMicrosecondsUTC());
+	localNodeInfo.set_zone_id(tlsNodeConfigManager.GetGameConfig().zone_id());
 
-	info.set_node_uuid(boost::uuids::to_string(gen()));
+	localNodeInfo.set_node_uuid(boost::uuids::to_string(gen()));
 
-	InetAddress addr(tlsNodeConfigManager.GetGameConfig().zone_redis().host(), tlsNodeConfigManager.GetGameConfig().zone_redis().port());
-	tlsReids.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, addr);
+	InetAddress zoneRedisAddress(tlsNodeConfigManager.GetGameConfig().zone_redis().host(), tlsNodeConfigManager.GetGameConfig().zone_redis().port());
+	tlsReids.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, zoneRedisAddress);
 	tlsReids.GetZoneRedis()->connect();
 
-	LOG_DEBUG << "Node info: " << info.DebugString();
+	LOG_DEBUG << "Node info: " << localNodeInfo.DebugString();
 }
 
 void Node::InitKafka()
@@ -154,22 +154,20 @@ void Node::StartRpcServer() {
 		return;
 	}
 
-	NodeInfo& info = GetNodeInfo();
-	InetAddress addr(info.endpoint().ip(), info.endpoint().port());
+	NodeInfo& localNodeInfo = GetNodeInfo();
+	InetAddress rpcListenAddress(localNodeInfo.endpoint().ip(), localNodeInfo.endpoint().port());
 
-	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, addr);
+	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, rpcListenAddress);
 	rpcServer->start();
-	auto* replyService = GetNodeReplyService();
-	if (replyService != nullptr) {
-		rpcServer->registerService(replyService);
+	auto* nodeReplyService = GetNodeReplyService();
+	if (nodeReplyService != nullptr) {
+		rpcServer->registerService(nodeReplyService);
 	}
 	else {
 		LOG_WARN << "Node reply service is null, skip registerService for node_type=" << GetNodeInfo().node_type();
 	}
 
-	for (auto it = gNodeService.begin(); it != gNodeService.end(); ++it) {
-		auto& serviceName = it->first;
-		auto& service = it->second;
+	for (auto& [serviceName, service] : gNodeService) {
 		if (service == nullptr) {
 			LOG_WARN << "Skip null node service registration for key=" << serviceName;
 			continue;
@@ -180,7 +178,7 @@ void Node::StartRpcServer() {
 
 	NodeConnector::ConnectAllNodes();
 
-	StartServiceHealthMonitor();
+	StartNodeRegistrationHealthMonitor();
 
 	dispatcher.trigger<OnServerStart>();
 
@@ -202,11 +200,11 @@ void Node::Shutdown() {
 		return;
 	}
 
-	std::promise<void> shutdownDone;
-	auto shutdownFuture = shutdownDone.get_future();
-	eventLoop->runInLoop([this, &shutdownDone]() {
+	std::promise<void> shutdownPromise;
+	auto shutdownFuture = shutdownPromise.get_future();
+	eventLoop->runInLoop([this, &shutdownPromise]() {
 		ShutdownInLoop();
-		shutdownDone.set_value();
+		shutdownPromise.set_value();
 	});
 	constexpr auto kShutdownWaitTimeout = std::chrono::seconds(5);
 	if (shutdownFuture.wait_for(kShutdownWaitTimeout) != std::future_status::ready) {
@@ -282,9 +280,9 @@ void Node::RegisterHandlers() {
 }
 
 void Node::AsyncOutput(const char* msg, int len) {
-	Node* node = gNodeAtomic.load(std::memory_order_acquire);
-	if (node != nullptr) {
-		node->Log().append(msg, len);
+	Node* activeNode = gNodeAtomic.load(std::memory_order_acquire);
+	if (activeNode != nullptr) {
+		activeNode->Log().append(msg, len);
 		return;
 	}
 	StdoutOutput(msg, len);
@@ -305,25 +303,25 @@ uint32_t Node::GetPort() {
 	return GetNodeInfo().endpoint().port();
 }
 
-void Node::CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request)
+void Node::SendMessageToZoneCentre(uint32_t messageId, const ::google::protobuf::Message& requestMessage)
 {
-	if (nullptr == GetZoneCentreNode()){
+	if (nullptr == GetZoneCentreClient()){
 		return;
 	}
-	GetZoneCentreNode()->CallRemoteMethod(message_id, request);
+	GetZoneCentreClient()->CallRemoteMethod(messageId, requestMessage);
 }
 
-bool Node::IsMyNode(const NodeInfo& node) const
+bool Node::IsCurrentNode(const NodeInfo& candidateNode) const
 {
-	return NodeUtils::IsSameNode(node.node_uuid(), GetNodeInfo().node_uuid());
+	return NodeUtils::IsSameNode(candidateNode.node_uuid(), GetNodeInfo().node_uuid());
 }
 
 void Node::HandleServiceNodeStop(const std::string& key, const std::string& nodeJson) {
 	eventLoop->assertInLoopThread();
 	LOG_INFO << "Service node stop, key: " << key << ", value: " << nodeJson;
 
-	NodeInfo deleteNode;
-	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &deleteNode);
+	NodeInfo stoppedNode;
+	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &stoppedNode);
 	if (!parseResult.ok()) {
 		LOG_ERROR << "Parse node JSON failed, key: " << key
 			<< ", JSON: " << nodeJson
@@ -331,105 +329,107 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		return;
 	}
 
-	if (!eNodeType_IsValid(deleteNode.node_type())) {
+	if (!eNodeType_IsValid(stoppedNode.node_type())) {
 		LOG_TRACE << "Unknown service type for key: " << key;
 		return;
 	}
 
-	if (deleteNode.node_uuid().empty()) {
+	if (stoppedNode.node_uuid().empty()) {
 		LOG_WARN << "Ignore service node stop with empty node_uuid. key=" << key;
 		return;
 	}
 
-	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-	auto& nodeList = *nodeRegistry[deleteNode.node_type()].mutable_node_list();
+	auto& serviceNodesByType = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodesOfStoppedType = *serviceNodesByType[stoppedNode.node_type()].mutable_node_list();
 
 	// Remove stale node snapshot first so service discovery state stays consistent.
-	int removedCount = 0;
-	for (int i = nodeList.size() - 1; i >= 0; --i) {
-		const auto& node = nodeList.Get(i);
-		if (!NodeUtils::IsSameNode(node.node_uuid(), deleteNode.node_uuid())) {
+	int removedSnapshotCount = 0;
+	for (int i = nodesOfStoppedType.size() - 1; i >= 0; --i) {
+		const auto& cachedNodeSnapshot = nodesOfStoppedType.Get(i);
+		if (!NodeUtils::IsSameNode(cachedNodeSnapshot.node_uuid(), stoppedNode.node_uuid())) {
 			continue;
 		}
 
-		nodeList.DeleteSubrange(i, 1);
-		++removedCount;
+		nodesOfStoppedType.DeleteSubrange(i, 1);
+		++removedSnapshotCount;
 	}
 
-	if (removedCount == 0) {
-		LOG_WARN << "Service node stop did not match local cache. node_id=" << deleteNode.node_id()
-			<< ", node_uuid=" << deleteNode.node_uuid()
-			<< ", node_type=" << deleteNode.node_type();
+	if (removedSnapshotCount == 0) {
+		LOG_WARN << "Service node stop did not match local cache. node_id=" << stoppedNode.node_id()
+			<< ", node_uuid=" << stoppedNode.node_uuid()
+			<< ", node_type=" << stoppedNode.node_type();
 	}
 	else {
-		LOG_INFO << "Removed " << removedCount << " stale node record(s) for uuid=" << deleteNode.node_uuid();
+		LOG_INFO << "Removed " << removedSnapshotCount << " stale node record(s) for uuid=" << stoppedNode.node_uuid();
 	}
 
-	const auto nodeType = deleteNode.node_type();
-	const auto nodeId = deleteNode.node_id();
-	const auto nodeUuid = deleteNode.node_uuid();
+	const auto stoppedNodeType = stoppedNode.node_type();
+	const auto stoppedNodeId = stoppedNode.node_id();
+	const auto stoppedNodeUuid = stoppedNode.node_uuid();
 
 	// Important: destroy network entities after current channel dispatch cycle.
 	// Direct destroy inside etcd watch callback can invalidate activeChannels_.
-	GetLoop()->queueInLoop([nodeType, nodeId, nodeUuid]() {
-		auto nodeEntity = entt::entity{ nodeId };
-		entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
+	GetLoop()->queueInLoop([stoppedNodeType, stoppedNodeId, stoppedNodeUuid]() {
+		auto stoppedNodeEntity = entt::entity{ stoppedNodeId };
+		entt::registry& nodeRegistry = tlsNodeContextManager.GetRegistry(stoppedNodeType);
 
-		if (registry.valid(nodeEntity)) {
-			auto* currentNodeInfo = registry.try_get<NodeInfo>(nodeEntity);
-			if (currentNodeInfo && !NodeUtils::IsSameNode(currentNodeInfo->node_uuid(), nodeUuid)) {
-				LOG_WARN << "Skip node destroy due to node id reuse. node_id=" << nodeId
-					<< ", stale_uuid=" << nodeUuid
+		if (nodeRegistry.valid(stoppedNodeEntity)) {
+			auto* currentNodeInfo = nodeRegistry.try_get<NodeInfo>(stoppedNodeEntity);
+			if (currentNodeInfo && !NodeUtils::IsSameNode(currentNodeInfo->node_uuid(), stoppedNodeUuid)) {
+				LOG_WARN << "Skip node destroy due to node id reuse. node_id=" << stoppedNodeId
+					<< ", stale_uuid=" << stoppedNodeUuid
 					<< ", current_uuid=" << currentNodeInfo->node_uuid();
 				return;
 			}
 		}
 
-		OnNodeRemovePbEvent onNodeRemovePbEvent;
-		onNodeRemovePbEvent.set_entity(entt::to_integral(nodeEntity));
-		onNodeRemovePbEvent.set_node_type(nodeType);
-		dispatcher.trigger(onNodeRemovePbEvent);
+		OnNodeRemovePbEvent nodeRemovedEvent;
+		nodeRemovedEvent.set_entity(entt::to_integral(stoppedNodeEntity));
+		nodeRemovedEvent.set_node_type(stoppedNodeType);
+		dispatcher.trigger(nodeRemovedEvent);
 
-		DestroyEntity(registry, nodeEntity);
+		DestroyEntity(nodeRegistry, stoppedNodeEntity);
 	});
-	LOG_INFO << "Service node stopped : " << deleteNode.DebugString();
+	LOG_INFO << "Service node stopped : " << stoppedNode.DebugString();
 }
 
-void Node::OnServerConnected(const OnConnected2TcpServerEvent& event) {
+void Node::OnServerConnected(const OnConnected2TcpServerEvent& connectedEvent) {
 	eventLoop->assertInLoopThread();
 	if (rpcServer == nullptr) {
 		return;
 	}
 
-	auto& conn = event.conn_;
-	if (!conn->connected()) {
-		LOG_INFO << "Client disconnected: " << conn->peerAddress().toIpPort();
+	auto& connection = connectedEvent.conn_;
+	if (!connection->connected()) {
+		LOG_INFO << "Client disconnected: " << connection->peerAddress().toIpPort();
 		return;
 	}
-	LOG_INFO << "Connected to server: " << conn->peerAddress().toIpPort();
-	for (uint32_t i = 0; i < eNodeType_ARRAYSIZE; ++i)
+	LOG_INFO << "Connected to server: " << connection->peerAddress().toIpPort();
+	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
 	{
-		nodeRegistrationManager.TryRegisterNodeSession(i, conn);
+		nodeRegistrationManager.TryRegisterNodeSession(nodeType, connection);
 	}
 }
 
-void Node::StartServiceHealthMonitor(){
+void Node::StartNodeRegistrationHealthMonitor() {
 	serviceHealthMonitorTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().health_check_interval(), [this]() {
 		if (nullptr == rpcServer)
 		{
 			return;
 		}
-		auto& myNode = GetNodeInfo();
+		auto& currentNode = GetNodeInfo();
 
-		auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-		auto& nodeList = *nodeRegistry[myNode.node_type()].mutable_node_list();
-		for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
-			if (IsMyNode(*it)) {
+		auto& serviceNodesByType = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		auto& registeredNodesForType = *serviceNodesByType[currentNode.node_type()].mutable_node_list();
+		for (const auto& registeredNode : registeredNodesForType) {
+			if (IsCurrentNode(registeredNode)) {
 				return ;
 			}
 		}
 
-		etcdManager.RequestEtcdLease();
+		// Node snapshot disappeared from service discovery.
+		// Re-register with the same node_id; do not run full re-allocation flow.
+		serviceDiscoveryManager.etcdService.RequestReRegistration();
 		}
 	);
 }

@@ -11,7 +11,7 @@
 
 void EtcdManager::Shutdown()
 {
-	renewLeaseTimer.Cancel();
+	leaseKeepAliveTimer.Cancel();
 }
 
 std::string EtcdManager::GetServiceName(uint32_t type) {
@@ -48,6 +48,13 @@ void EtcdManager::RegisterNodeService() {
 	LOG_INFO << "Registered node to etcd: " << gNode->GetNodeInfo().DebugString();
 }
 
+void EtcdManager::ForceRegisterNodeService() {
+	const auto serviceKey = MakeNodeEtcdKey(gNode->GetNodeInfo());
+	LOG_INFO << "Force registering (singleton) node service to etcd: " << serviceKey;
+	EtcdHelper::ForcePut(serviceKey, gNode->GetNodeInfo(), gNode->GetLeaseId());
+	pendingKeys.push_back(serviceKey);
+}
+
 void EtcdManager::RegisterNodePort() {
 	const auto portKey = MakeNodePortEtcdKey(gNode->GetNodeInfo());
 	LOG_INFO << "Registering node port to etcd with key: " << portKey;
@@ -56,7 +63,7 @@ void EtcdManager::RegisterNodePort() {
 	LOG_INFO << "Registered node port to etcd: " << gNode->GetNodeInfo().endpoint().port();
 }
 
-void EtcdManager::RequestEtcdLease() {
+void EtcdManager::RequestNodeLease() {
 	uint64_t ttlSeconds = tlsNodeConfigManager.GetBaseDeployConfig().node_ttl_seconds();
 	LOG_INFO << "[EtcdLease] Requesting lease with TTL: " << ttlSeconds
 		<< " seconds. Time: " << muduo::Timestamp::now().toFormattedString();
@@ -65,8 +72,8 @@ void EtcdManager::RequestEtcdLease() {
 	LOG_INFO << "[EtcdLease] Lease request completed.";
 }
 
-void EtcdManager::KeepNodeAlive() {
-	renewLeaseTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().keep_alive_interval(), []() {
+void EtcdManager::StartLeaseKeepAlive() {
+	leaseKeepAliveTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().keep_alive_interval(), []() {
 		etcdserverpb::LeaseKeepAliveRequest req;
 		req.set_id(gNode->GetLeaseId());
 		SendLeaseLeaseKeepAlive(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), req);
