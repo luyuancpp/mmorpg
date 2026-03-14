@@ -1,9 +1,12 @@
 ﻿#pragma once
 
+#include <algorithm>
+#include <atomic>
 #include <chrono>
+#include <ctime>
 #include <cstdint>
 #include <thread>
-#include <atomic>
+#include <vector>
 #include <cassert>
 
 #include "muduo/base/Logging.h"
@@ -195,7 +198,7 @@ private:
 
 private:
 	uint64_t epoch_ = kEpoch;
-	uint16_t node_id_;
+	uint16_t node_id_ = 0;
 	uint64_t last_time_ = 0;
 	uint64_t step_ = 0;
 #ifdef ENABLE_SNOWFLAKE_TESTING
@@ -214,6 +217,8 @@ public:
 		node_id_ = node_id;
 	}
 
+	inline void set_epoch(uint64_t epoch) { epoch_ = epoch; }
+
 #ifdef ENABLE_SNOWFLAKE_TESTING
 public:
 	void set_mock_static_time(uint64_t t) {
@@ -229,8 +234,8 @@ public:
 			uint64_t now = NowEpoch();
 
 			uint64_t current = time_step_.load(std::memory_order_relaxed);
-			uint32_t last_time = static_cast<uint32_t>(current >> 32);
-			uint32_t last_step = static_cast<uint32_t>(current & 0xFFFFFFFF);
+			uint64_t last_time = (current >> kStepBits);
+			uint64_t last_step = (current & kStepMask);
 
 			if (now < last_time) {
 				LOG_ERROR << "Clock rollback: now=" << now << " < last=" << last_time;
@@ -239,7 +244,7 @@ public:
 			}
 
 			uint64_t next;
-			uint32_t step_to_use;
+			uint64_t step_to_use;
 
 			if (now == last_time) {
 				if (last_step >= kStepMask) {
@@ -247,11 +252,11 @@ public:
 					continue;
 				}
 				step_to_use = last_step + 1;
-				next = (static_cast<uint64_t>(now) << 32) | step_to_use;
+				next = (now << kStepBits) | step_to_use;
 			}
 			else {
 				step_to_use = 0;
-				next = (static_cast<uint64_t>(now) << 32);
+				next = (now << kStepBits);
 			}
 
 			if (time_step_.compare_exchange_weak(current, next, std::memory_order_acq_rel)) {
@@ -268,8 +273,8 @@ public:
 			uint64_t now = NowEpoch();
 
 			uint64_t current = time_step_.load(std::memory_order_relaxed);
-			uint64_t last_time = static_cast<uint32_t>(current >> 32);
-			uint64_t last_step = static_cast<uint32_t>(current & 0xFFFFFFFF);
+			uint64_t last_time = (current >> kStepBits);
+			uint64_t last_step = (current & kStepMask);
 
 			if (now < last_time) {
 				LOG_ERROR << "Clock rollback: now=" << now << " < last=" << last_time;
@@ -288,16 +293,16 @@ public:
 				}
 				step_start = last_step + 1;
 				step_count = std::min(static_cast<size_t>(kStepMask - last_step), count);
-				next = (static_cast<uint64_t>(now) << 32) | (step_start + step_count - 1);
+				next = (now << kStepBits) | (step_start + step_count - 1);
 			}
 			else {
 				step_start = 0;
 				step_count = std::min(static_cast<size_t>(kStepMask + 1), count);
-				next = (static_cast<uint64_t>(now) << 32) | (step_count - 1);
+				next = (now << kStepBits) | (step_count - 1);
 			}
 
 			if (time_step_.compare_exchange_weak(current, next, std::memory_order_acq_rel)) {
-				for (uint32_t i = 0; i < step_count; ++i) {
+				for (uint64_t i = 0; i < step_count; ++i) {
 					ids.push_back(ComposeID(now, step_start + i));
 				}
 				count -= step_count;
@@ -346,7 +351,7 @@ private:
 	}
 
 private:
-	const uint64_t epoch_ = 1609459200; // 2021-01-01
+	uint64_t epoch_ = kEpoch;
 
 	uint16_t node_id_{ 0 };
 	std::atomic<uint64_t> time_step_{ 0 };

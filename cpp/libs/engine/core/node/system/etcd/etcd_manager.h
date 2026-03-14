@@ -24,13 +24,15 @@ public:
 
 	void RegisterNodeService();
 
+	void ForceRegisterNodeService();
+
 	void RegisterNodePort();
 
-	void RequestEtcdLease();
+	void RequestNodeLease();
 
-	void KeepNodeAlive();
+	void StartLeaseKeepAlive();
 
 private:
-	TimerTaskComp renewLeaseTimer;
+	TimerTaskComp leaseKeepAliveTimer;
 	std::deque<std::string> pendingKeys;
 };

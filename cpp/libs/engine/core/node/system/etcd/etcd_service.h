@@ -15,17 +15,29 @@ public:
     void InitHandlers();
     void StartWatchingPrefixes();
     void Shutdown();
-    void RequestLease();
+    void RequestNodeLease();
+    void RequestReRegistration();
     void RegisterService();
-    void KeepAlive();
+    void StartLeaseKeepAlive();
 
 	int64_t GetLeaseId() const { return leaseId; }
 
 private:
+    enum class RegistrationMode : uint8_t {
+        kInitialBoot,
+        kReRegisterExisting,
+    };
+
     void HandlePutEvent(const std::string& key, const std::string& value);
     void HandleDeleteEvent(const std::string& key, const std::string& value);
     void OnLeaseGranted(const ::etcdserverpb::LeaseGrantResponse& reply);
     void OnWatchResponse(const ::etcdserverpb::WatchResponse& response);
+    void OnTxnSucceeded(const std::string& key);
+    void OnTxnFailed(const std::string& key);
+    void SetRegistrationMode(RegistrationMode mode, const char* reason);
+    const char* RegistrationModeName(RegistrationMode mode) const;
+    bool IsNodePortKey(const std::string& key) const;
+    bool IsNodeIdKey(const std::string& key) const;
 
     void InitKVHandlers();
     void InitWatchHandlers();
@@ -34,6 +46,8 @@ private:
 private:
     bool hasSentWatch = false;
     bool hasSentRange = false;
+    bool leaseRequestInFlight_ = false;
+    RegistrationMode registrationMode_ = RegistrationMode::kInitialBoot;
     int64_t leaseId = 0;
     std::unordered_map<std::string, int64_t> revision;
     TimerTaskComp grpcHandlerTimer;

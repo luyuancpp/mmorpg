@@ -41,8 +41,8 @@ public:
 	KafkaManager& GetKafkaManager() { return kafkaManager; }
     virtual google::protobuf::Service* GetNodeReplyService() { return nullptr; }
     muduo::AsyncLogging& Log() { return logSystem; }
-    RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
-	void SetZoneCentreNode(RpcClientPtr& c) { zoneCentreNode = c; }
+    RpcClientPtr& GetZoneCentreClient() { return zoneCentreClient; }
+    void SetZoneCentreClient(RpcClientPtr& client) { zoneCentreClient = client; }
     ClientList& GetZombieClientList() { return zombieClientList; }
     CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
 	NodeHandshakeManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
@@ -52,15 +52,15 @@ public:
     uint32_t GetPort();
 	EtcdManager& GetEtcdManager() { return etcdManager; }
 
-    void CallRemoteMethodZoneCenter(uint32_t message_id, const ::google::protobuf::Message& request);
+    void SendMessageToZoneCentre(uint32_t messageId, const ::google::protobuf::Message& requestMessage);
 
     // 节点注册与服务处理
-    void HandleServiceNodeStop(const std::string& key, const std::string& value);
+    void HandleServiceNodeStop(const std::string& key, const std::string& nodeJson);
 
     virtual void StartRpcServer();
 	
 	// 工具与状态判断
-	bool IsMyNode(const NodeInfo& node) const;
+    bool IsCurrentNode(const NodeInfo& candidateNode) const;
 	bool IsServiceStarted() { return rpcServer != nullptr; }
 protected:
     // 初始化相关
@@ -79,10 +79,10 @@ protected:
     void RegisterHandlers();
     void StopWatchingServiceNodes();
     static void AsyncOutput(const char* msg, int len);
-    void StartServiceHealthMonitor();
+    void StartNodeRegistrationHealthMonitor();
 
     // 事件处理
-    void OnServerConnected(const OnConnected2TcpServerEvent& es);
+    void OnServerConnected(const OnConnected2TcpServerEvent& connectedEvent);
 
     void Shutdown();
     void ShutdownInLoop();
@@ -97,7 +97,7 @@ protected:
 	TimerTaskComp acquirePortTimer;
 	TimerTaskComp kafkaProducerTimer;
 	TimerTaskComp kafkaConsumerTimer;
-    RpcClientPtr zoneCentreNode;
+    RpcClientPtr zoneCentreClient;
     CanConnectNodeTypeList targetNodeTypeWhitelist;
     ClientList zombieClientList;
     std::unordered_map<std::string,int64_t> revision;
