@@ -32,6 +32,10 @@ public:
 
 	void StartLeaseKeepAlive();
 
+	static std::string MakeSnowFlakeGuardKey(const NodeInfo& info);
+
+	void WriteSnowFlakeGuard();
+
 private:
 	TimerTaskComp leaseKeepAliveTimer;
 	std::deque<std::string> pendingKeys;

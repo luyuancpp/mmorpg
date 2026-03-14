@@ -8,6 +8,7 @@
 #include "threading/node_context_manager.h"
 #include <node_config_manager.h>
 #include <node/system/node/node.h>
+#include <time/system/time.h>
 
 void EtcdManager::Shutdown()
 {
@@ -78,5 +79,28 @@ void EtcdManager::StartLeaseKeepAlive() {
 		req.set_id(gNode->GetLeaseId());
 		SendLeaseLeaseKeepAlive(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), req);
 		LOG_DEBUG << "Keeping node alive, lease_id: " << gNode->GetLeaseId();
+
+		gNode->GetEtcdManager().WriteSnowFlakeGuard();
 		});
+}
+
+std::string EtcdManager::MakeSnowFlakeGuardKey(const NodeInfo& info) {
+	return "snowflake_guard:" + std::to_string(info.zone_id())
+		+ ":" + std::to_string(info.node_type())
+		+ ":" + std::to_string(info.node_id());
+}
+
+void EtcdManager::WriteSnowFlakeGuard() {
+	auto& redis = tlsReids.GetZoneRedis();
+	if (!redis || !redis->connected()) {
+		return;
+	}
+
+	constexpr uint32_t guardTtl = 600; // 10 minutes — long enough for any restart scenario
+	const auto& info = gNode->GetNodeInfo();
+	std::string key = MakeSnowFlakeGuardKey(info);
+	uint64_t nowSeconds = TimeSystem::NowSecondsUTC();
+
+	redis->command([](hiredis::Hiredis*, redisReply*) {},
+		"SETEX %s %u %llu", key.c_str(), guardTtl, static_cast<unsigned long long>(nowSeconds));
 }
