@@ -31,7 +31,7 @@
     <ClInclude Include="scene\scene\constants\dt_crowd.h" />
     <ClInclude Include="scene\scene\constants\nav.h" />
     <ClInclude Include="scene\scene\constants\view.h" />
-    <ClInclude Include="scene\scene\mananger\scene_nav.h" />
+    <ClInclude Include="scene\scene\manager\scene_nav.h" />
     <ClInclude Include="scene\scene\system\aoi.h" />
     <ClInclude Include="scene\scene\system\game_node_scene.h" />
     <ClInclude Include="scene\scene\system\grid.h" />
@@ -84,7 +84,7 @@
     <ClCompile Include="player\system\player_scene.cpp" />
     <ClCompile Include="player\system\player_skill.cpp" />
     <ClCompile Include="player\system\player_tip.cpp" />
-    <ClCompile Include="scene\scene\mananger\scene_nav.cpp" />
+    <ClCompile Include="scene\scene\manager\scene_nav.cpp" />
     <ClCompile Include="scene\scene\system\aoi.cpp" />
     <ClCompile Include="scene\scene\system\game_node_scene.cpp" />
     <ClCompile Include="scene\scene\system\grid.cpp" />
