@@ -1,5 +1,4 @@
 #include "scene_event_handler.h"
-#include "proto/common/event/scene_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE 
@@ -19,8 +18,6 @@
 #include "proto/common/base/common.pb.h"
 
 ///<<< END WRITING YOUR CODE
-
-
 void SceneEventHandler::Register()
 {
     dispatcher.sink<OnSceneCreated>().connect<&SceneEventHandler::OnSceneCreatedHandler>();
@@ -61,7 +58,7 @@ void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& event)
 void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-  
+
 ///<<< END WRITING YOUR CODE
 }
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
@@ -78,7 +75,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 		const auto& changeSceneInfo = *changeSceneQueue.front();
 		*leaveSceneRequest.mutable_change_scene_info() = changeSceneInfo;
 	}
-	
+
 	SendMessageToPlayerOnSceneNode(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
 
 	LOG_INFO << "Player is leaving scene "

@@ -3,12 +3,13 @@ package cpp
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"go.uber.org/zap"
 
@@ -57,9 +58,40 @@ func parseProtoMessages(protoFilePath string) ([]string, error) {
 	return messages, scanner.Err()
 }
 
+func parseProtoPackage(protoFilePath string) (string, error) {
+	file, err := os.Open(protoFilePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if !strings.HasPrefix(line, "package ") {
+			continue
+		}
+
+		packageName := strings.TrimPrefix(line, "package ")
+		packageName = strings.TrimSuffix(packageName, ";")
+		return strings.TrimSpace(packageName), nil
+	}
+
+	return "", scanner.Err()
+}
+
+func qualifyProtoType(packageName, typeName string) string {
+	if packageName == "" {
+		return typeName
+	}
+
+	parts := strings.Split(packageName, ".")
+	return strings.Join(parts, "::") + "::" + typeName
+}
+
 // buildEventHandlerSignature 构建事件处理函数的定义签名
-func buildEventHandlerSignature(className, eventName string) string {
-	return fmt.Sprintf("void %s::%sHandler(const %s& event)\n", className, eventName, eventName)
+func buildEventHandlerSignature(className, qualifiedTypeName, eventName string) string {
+	return fmt.Sprintf("void %s::%sHandler(const %s& event)\n", className, eventName, qualifiedTypeName)
 }
 
 // extractUserCodeBlocks 提取 .cpp 文件中每个事件处理函数的自定义代码区域
@@ -141,26 +173,26 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 
 // EventTemplateData 用于渲染模板的数据结构
 type EventTemplateData struct {
-	ClassName           string
-	HeaderFile          string
-	ProtoInclude        string
-	EventMessages       []EventHandlerMessage
-	ForwardDeclarations []string
-	GlobalUserCode      string
-	UserCodeBlocks      map[string]string
+	ClassName      string
+	HeaderFile     string
+	ProtoInclude   string
+	EventMessages  []EventHandlerMessage
+	GlobalUserCode string
+	UserCodeBlocks map[string]string
 }
 
 type EventHandlerMessage struct {
-	Name      string
-	Signature string
-	IsLast    bool
+	Name          string
+	QualifiedName string
+	Signature     string
+	IsLast        bool
 }
 
 // generateEventHandlerFiles 使用模板生成每个 proto 对应的 .h 和 .cpp 文件
-func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir string) {
+func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelativeDir string, outputDir string) {
 	defer wg.Done()
 
-	protoFilePath := _config.Global.PathLists.ProtoDirs.LogicEvent + file.Name()
+	protoFilePath := filepath.Join(_config.Global.Paths.ProtoDir, protoRelativeDir, file.Name())
 	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
 		logger.Global.Error("解析proto文件失败",
@@ -170,9 +202,18 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 		return
 	}
 
+	packageName, err := parseProtoPackage(protoFilePath)
+	if err != nil {
+		logger.Global.Warn("解析proto package失败，默认按无命名空间处理",
+			zap.String("proto_file", protoFilePath),
+			zap.Error(err),
+		)
+		packageName = ""
+	}
+
 	className := generateClassNameFromFile(file, _config.Global.Naming.HandlerFile)
 	baseName := strings.ToLower(strings.TrimSuffix(file.Name(), _config.Global.FileExtensions.Proto))
-	filePrefix := outputDir + baseName
+	filePrefix := filepath.Join(outputDir, baseName)
 
 	headerFilePath := filePrefix + _config.Global.FileExtensions.HandlerH
 	cppFilePath := filePrefix + _config.Global.FileExtensions.HandlerCpp
@@ -180,7 +221,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 
 	var handlerSignatures []string
 	for _, evt := range eventMessages {
-		handlerSignatures = append(handlerSignatures, buildEventHandlerSignature(className, evt))
+		handlerSignatures = append(handlerSignatures, buildEventHandlerSignature(className, qualifyProtoType(packageName, evt), evt))
 	}
 
 	userCodeBlocks, globalCode, err := extractUserCodeBlocks(cppFilePath, handlerSignatures)
@@ -193,21 +234,22 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 
 	eventHandlers := make([]EventHandlerMessage, 0, len(eventMessages))
 	for index, eventName := range eventMessages {
+		qualifiedName := qualifyProtoType(packageName, eventName)
 		eventHandlers = append(eventHandlers, EventHandlerMessage{
-			Name:      eventName,
-			Signature: buildEventHandlerSignature(className, eventName),
-			IsLast:    index == len(eventMessages)-1,
+			Name:          eventName,
+			QualifiedName: qualifiedName,
+			Signature:     buildEventHandlerSignature(className, qualifiedName, eventName),
+			IsLast:        index == len(eventMessages)-1,
 		})
 	}
 
 	tmplData := EventTemplateData{
-		ClassName:           className,
-		HeaderFile:          headerFileBase,
-		ProtoInclude:        _config.Global.DirectoryNames.ProtoDirName + _config.Global.PathLists.ProtoDirs.LogicEvent + strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1),
-		EventMessages:       eventHandlers,
-		ForwardDeclarations: eventMessages,
-		GlobalUserCode:      globalCode,
-		UserCodeBlocks:      userCodeBlocks,
+		ClassName:      className,
+		HeaderFile:     headerFileBase,
+		ProtoInclude:   filepath.ToSlash(filepath.Join(_config.Global.DirectoryNames.ProtoDirName, protoRelativeDir, strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1))),
+		EventMessages:  eventHandlers,
+		GlobalUserCode: globalCode,
+		UserCodeBlocks: userCodeBlocks,
 	}
 
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
@@ -224,53 +266,98 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, outputDir s
 	}
 }
 
+func filterProtoFiles(files []os.DirEntry) []os.DirEntry {
+	filtered := make([]os.DirEntry, 0, len(files))
+	for _, file := range files {
+		if utils2.IsProtoFile(file) {
+			filtered = append(filtered, file)
+		}
+	}
+	return filtered
+}
+
+func filterProtoFilesBySuffix(files []os.DirEntry, suffix string) []os.DirEntry {
+	filtered := make([]os.DirEntry, 0, len(files))
+	for _, file := range files {
+		if !utils2.IsProtoFile(file) {
+			continue
+		}
+		if !strings.HasSuffix(file.Name(), suffix) {
+			continue
+		}
+		filtered = append(filtered, file)
+	}
+	return filtered
+}
+
+func readProtoFiles(relativeDir string) ([]os.DirEntry, error) {
+	return os.ReadDir(filepath.Join(_config.Global.Paths.ProtoDir, relativeDir))
+}
+
 // generateAllEventHandlers 生成所有事件处理器
 func GenerateAllEventHandlers(wg *sync.WaitGroup) {
-	files, err := os.ReadDir(_config.Global.Paths.ProtoDir + _config.Global.PathLists.ProtoDirs.LogicEvent)
+	logicEventFiles, err := readProtoFiles(_config.Global.PathLists.ProtoDirs.LogicEvent)
 	if err != nil {
 		logger.Global.Fatal("读取proto目录失败",
 			zap.String("dir", _config.Global.PathLists.ProtoDirs.LogicEvent),
 			zap.Error(err),
 		)
 	}
+	logicEventFiles = filterProtoFiles(logicEventFiles)
 
-	for _, file := range files {
-		if !utils2.IsProtoFile(file) {
-			continue
-		}
+	for _, file := range logicEventFiles {
 		wg.Add(2)
-		go generateEventHandlerFiles(wg, file, _config.Global.Paths.SceneNodeEventHandlerDirectory)
-		go generateEventHandlerFiles(wg, file, _config.Global.Paths.CentreNodeEventHandlerDirectory)
+		go generateEventHandlerFiles(wg, file, _config.Global.PathLists.ProtoDirs.LogicEvent, _config.Global.Paths.SceneNodeEventHandlerDirectory)
+		go generateEventHandlerFiles(wg, file, _config.Global.PathLists.ProtoDirs.LogicEvent, _config.Global.Paths.CentreNodeEventHandlerDirectory)
+	}
+
+	kafkaContractFiles := []os.DirEntry{}
+	if _config.Global.PathLists.ProtoDirs.ContractsKafka != "" {
+		files, readErr := readProtoFiles(_config.Global.PathLists.ProtoDirs.ContractsKafka)
+		if readErr != nil {
+			logger.Global.Warn("读取Kafka proto目录失败，跳过Gate事件处理器生成",
+				zap.String("dir", _config.Global.PathLists.ProtoDirs.ContractsKafka),
+				zap.Error(readErr),
+			)
+		} else {
+			kafkaContractFiles = filterProtoFilesBySuffix(files, "_event.proto")
+			for _, file := range kafkaContractFiles {
+				wg.Add(1)
+				go generateEventHandlerFiles(wg, file, _config.Global.PathLists.ProtoDirs.ContractsKafka, _config.Global.Paths.GateNodeEventHandlerDirectory)
+			}
+		}
 	}
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = GenerateAllEventHandlersTemplate(files)
-		if err != nil {
+		if err = GenerateEventHandlersTemplate(logicEventFiles, _config.Global.Paths.SceneNodeEventHandlerDirectory); err != nil {
 			logger.Global.Fatal("生成事件处理器模板失败",
+				zap.String("dir", _config.Global.Paths.SceneNodeEventHandlerDirectory),
 				zap.Error(err),
 			)
 			return
 		}
+		if err = GenerateEventHandlersTemplate(logicEventFiles, _config.Global.Paths.CentreNodeEventHandlerDirectory); err != nil {
+			logger.Global.Fatal("生成事件处理器模板失败",
+				zap.String("dir", _config.Global.Paths.CentreNodeEventHandlerDirectory),
+				zap.Error(err),
+			)
+			return
+		}
+		if len(kafkaContractFiles) > 0 {
+			if err = GenerateEventHandlersTemplate(kafkaContractFiles, _config.Global.Paths.GateNodeEventHandlerDirectory); err != nil {
+				logger.Global.Fatal("生成Gate事件处理器模板失败",
+					zap.String("dir", _config.Global.Paths.GateNodeEventHandlerDirectory),
+					zap.Error(err),
+				)
+				return
+			}
+		}
 	}()
 }
 
-type Config struct {
-	ProtoDirs                       []string
-	EventProtoDirIndex              int
-	ProtoEx                         string
-	HandlerHeaderExtension          string
-	EventHandlerHeaderFileName      string
-	EventHandlerCppFileName         string
-	SceneNodeEventHandlerDirectory  string
-	CentreNodeEventHandlerDirectory string
-	IncludeBegin                    string
-	IncludeEndLine                  string
-	ClassNameSuffix                 string
-}
-
-func GenerateAllEventHandlersTemplate(protoFiles []os.DirEntry) error {
+func GenerateEventHandlersTemplate(protoFiles []os.DirEntry, outputDir string) error {
 	// Template for the header file content
 	const eventHandlerHeaderTemplate = `#pragma once
 
@@ -285,24 +372,19 @@ public:
 	// Prepare the dynamic data
 	var cppIncludeData, registerData, unRegisterData string
 	for _, protoFile := range protoFiles {
-		// Only process valid proto files
 		if !strings.HasSuffix(protoFile.Name(), _config.Global.FileExtensions.Proto) {
 			continue
 		}
 
-		// Include header file name with the right extension
 		cppIncludeData += _config.Global.Naming.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.HandlerH, 1) + _config.Global.Naming.IncludeEndLine
 
-		// Register and UnRegister data
 		className := generateClassNameFromFile(protoFile, _config.Global.Naming.HandlerFile)
 		registerData += className + "::Register();\n"
 		unRegisterData += className + "::UnRegister();\n"
 	}
 
-	// Create header file content
 	eventHeadData := eventHandlerHeaderTemplate
 
-	// Prepare the data for C++ source file
 	eventCppData := struct {
 		IncludeBegin               string
 		EventHandlerHeaderFileName string
@@ -319,8 +401,8 @@ public:
 		UnRegisterData:             unRegisterData,
 	}
 
-	headerFilePath := _config.Global.Paths.SceneNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header
-	cppFilePath := _config.Global.Paths.SceneNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Cpp
+	headerFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Header)
+	cppFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Cpp)
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
 		logger.Global.Error("生成总头文件失败",
 			zap.String("header_file", headerFilePath),
@@ -333,20 +415,20 @@ public:
 			zap.Error(err),
 		)
 	}
-
-	headerFilePath = _config.Global.Paths.CentreNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header
-	cppFilePath = _config.Global.Paths.CentreNodeEventHandlerDirectory + _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Cpp
-	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
-		logger.Global.Error("生成中心节点总头文件失败",
-			zap.String("header_file", headerFilePath),
-			zap.Error(err),
-		)
-	}
-	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
-		logger.Global.Error("生成中心节点总cpp文件失败",
-			zap.String("cpp_file", cppFilePath),
-			zap.Error(err),
-		)
-	}
 	return nil
+}
+
+type Config struct {
+	ProtoDirs                       []string
+	EventProtoDirIndex              int
+	ProtoEx                         string
+	HandlerHeaderExtension          string
+	EventHandlerHeaderFileName      string
+	EventHandlerCppFileName         string
+	SceneNodeEventHandlerDirectory  string
+	CentreNodeEventHandlerDirectory string
+	GateNodeEventHandlerDirectory   string
+	IncludeBegin                    string
+	IncludeEndLine                  string
+	ClassNameSuffix                 string
 }

@@ -1,4 +1,5 @@
 #include "muduo/base/Logging.h"
+#include "muduo/net/TcpConnection.h"
 
 #include "gate_globals.h"
 #include "network/codec/dispatcher.h"
@@ -8,10 +9,14 @@
 #include "session/manager/session_manager.h"
 #include "threading/message_context.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
+#include "proto/common/base/message.pb.h"
+
+using namespace muduo;
+using namespace muduo::net;
 
 extern ProtobufDispatcher gRpcResponseDispatcher;
 
-void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMessageResponse>& replied, Timestamp timestamp)
+void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RouteMessageResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	defer(tlsMessageContext.SetNextRouteNodeType(UINT32_MAX));
@@ -47,7 +52,7 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 	///<<< END WRITING YOUR CODE
 }
 
-void OnRoutePlayerStringMsgReply(const TcpConnectionPtr& conn, const std::shared_ptr<RoutePlayerMessageResponse>& replied, Timestamp timestamp)
+void OnRoutePlayerStringMsgReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RoutePlayerMessageResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE

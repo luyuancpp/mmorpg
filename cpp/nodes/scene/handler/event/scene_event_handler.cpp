@@ -1,5 +1,4 @@
 #include "scene_event_handler.h"
-#include "proto/common/event/scene_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -8,8 +7,6 @@
 #include "scene/scene/system/game_node_scene.h"
 #include "scene/scene/system/scene_crowd.h"
 ///<<< END WRITING YOUR CODE
-
-
 void SceneEventHandler::Register()
 {
     dispatcher.sink<OnSceneCreated>().connect<&SceneEventHandler::OnSceneCreatedHandler>();

@@ -1,11 +1,8 @@
 #include "mission_event_handler.h"
-#include "proto/common/event/mission_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
-
 void MissionEventHandler::Register()
 {
     dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventHandler::AcceptMissionEventHandler>();

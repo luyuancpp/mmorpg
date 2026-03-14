@@ -248,16 +248,21 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 	type ServiceInfoCppData struct {
 		Includes             []string
 		ServiceInfoIncludes  []string
+		EventIncludesBlock   string
 		HandlerClasses       []string
+		EventDispatchers     []string
 		InitLines            []string
 		ClientMessageIdLines []string
 		MessageIdArraySize   int
+		EventInitLines       []string
+		EventIdArraySize     int
 		SenderFunctions      []string
 	}
 
 	const serviceInfoCppTemplate = `#include <array>
 #include "service_metadata.h"
 #include "proto/common/base/node.pb.h"
+#include "threading/dispatcher_manager.h"
 
 {{range .Includes -}}
 {{ . }}
@@ -265,15 +270,23 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 {{range .ServiceInfoIncludes -}}
 {{ . }}
 {{- end }}
+{{ .EventIncludesBlock }}
 {{range .HandlerClasses}}
 {{ . }}
 {{- end }}
+namespace {
+{{range .EventDispatchers}}
+{{ . }}
+{{- end }}
+} // namespace
+
 {{range .SenderFunctions}}
 {{ . }}
 {{- end }}
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 std::array<RpcService, {{ .MessageIdArraySize }}> gRpcServiceRegistry;
+std::array<ProtoEvent, {{ .EventIdArraySize }}> gProtoEventRegistry;
 
 void InitMessageInfo()
 {
@@ -285,18 +298,75 @@ void InitMessageInfo()
     {{ . }}
 {{- end }}
 }
+
+void InitEventInfo()
+{
+{{- range .EventInitLines }}
+	{{ . }}
+{{- end }}
+}
+
+bool IsValidEventId(uint32_t eventId)
+{
+	if (eventId >= gProtoEventRegistry.size()) {
+		return false;
+	}
+	return gProtoEventRegistry[eventId].prototype != nullptr;
+}
+
+MessageUniquePtr NewEventMessage(uint32_t eventId)
+{
+	if (!IsValidEventId(eventId)) {
+		return nullptr;
+	}
+
+	return MessageUniquePtr(gProtoEventRegistry[eventId].prototype->New());
+}
+
+MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload)
+{
+	auto message = NewEventMessage(eventId);
+	if (!message) {
+		return nullptr;
+	}
+
+	if (!message->ParseFromString(payload)) {
+		return nullptr;
+	}
+
+	return message;
+}
+
+void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& message)
+{
+	if (!IsValidEventId(eventId)) {
+		return;
+	}
+
+	auto dispatchFn = gProtoEventRegistry[eventId].dispatcher;
+	if (dispatchFn == nullptr) {
+		return;
+	}
+
+	dispatchFn(message);
+}
 `
 
 	var (
 		includes            []string
 		serviceInfoIncludes []string
+		eventIncludes       []string
 		handlerClasses      []string
+		eventDispatchers    []string
 		initLines           []string
 		clientIdLines       []string
+		eventInitLines      []string
 		senderFunction      []string
 		includeSet          = make(map[string]struct{})
 		serviceIncludeSet   = make(map[string]struct{})
+		eventIncludeSet     = make(map[string]struct{})
 		handlerClassSet     = make(map[string]struct{})
+		eventDispatcherSet  = make(map[string]struct{})
 		senderFunctionSet   = make(map[string]struct{})
 		clientIDSet         = make(map[string]struct{})
 	)
@@ -382,14 +452,37 @@ void InitMessageInfo()
 		}
 	}
 
+	for _, event := range globalProtoEventList {
+		eventIncludes = appendUniqueString(eventIncludes, eventIncludeSet, fmt.Sprintf("#include \"%s\"", event.ProtoInclude))
+		dispatcherName := fmt.Sprintf("Dispatch%s", event.IdName)
+		dispatcherBody := fmt.Sprintf(
+			"void %s(const google::protobuf::Message& message)\n{\n    dispatcher.enqueue(static_cast<const %s&>(message));\n}\n",
+			dispatcherName,
+			event.QualifiedName,
+		)
+		eventDispatchers = appendUniqueString(eventDispatchers, eventDispatcherSet, dispatcherBody)
+		eventInitLines = append(eventInitLines, fmt.Sprintf(
+			`gProtoEventRegistry[%s%s] = ProtoEvent{"%s", std::make_unique_for_overwrite<%s>(), &%s};`,
+			event.IdName,
+			_config.Global.Naming.EventId,
+			event.QualifiedName,
+			event.QualifiedName,
+			dispatcherName,
+		))
+	}
+
 	// Step 3: Fill template data and render
 	tmplData := ServiceInfoCppData{
 		Includes:             includes,
 		ServiceInfoIncludes:  serviceInfoIncludes,
+		EventIncludesBlock:   strings.Join(eventIncludes, "\n") + "\n",
 		HandlerClasses:       handlerClasses,
+		EventDispatchers:     eventDispatchers,
 		InitLines:            initLines,
 		ClientMessageIdLines: clientIdLines,
 		MessageIdArraySize:   int(internal.MessageIdLen()),
+		EventInitLines:       eventInitLines,
+		EventIdArraySize:     int(EventIdLen()),
 		SenderFunctions:      senderFunction,
 	}
 
@@ -417,11 +510,20 @@ void InitMessageInfo()
 func writeServiceInfoHeadFile(wg *sync.WaitGroup) {
 	defer wg.Done()
 	type HeaderTemplateData struct {
-		MaxMessageLen uint64
+		MaxMessageLen      uint64
+		MaxEventLen        uint64
+		EventConstantLines []string
+	}
+
+	eventConstantLines := make([]string, 0, len(globalProtoEventList))
+	for _, event := range globalProtoEventList {
+		eventConstantLines = append(eventConstantLines, fmt.Sprintf("constexpr uint32_t %s%s = %d;", event.IdName, _config.Global.Naming.EventId, event.Id))
 	}
 
 	data := HeaderTemplateData{
-		MaxMessageLen: internal.MessageIdLen(),
+		MaxMessageLen:      internal.MessageIdLen(),
+		MaxEventLen:        EventIdLen(),
+		EventConstantLines: eventConstantLines,
 	}
 
 	err := utils2.RenderTemplateToFile("internal/template/service_header.tmpl", _config.Global.Paths.ServiceHeaderFile, data)

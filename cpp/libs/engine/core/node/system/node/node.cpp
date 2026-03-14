@@ -312,6 +312,7 @@ void InitPlayerServiceReplied();
 void InitServiceHandler();
 void Node::RegisterHandlers() {
 	InitMessageInfo();
+	InitEventInfo();
 	InitReply();
 	InitPlayerService();
 	InitPlayerServiceReplied();

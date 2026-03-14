@@ -28,10 +28,10 @@
 #include "google/protobuf/message_lite.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
-#include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/base/node.pb.h"
 #include "proto/common/base/empty.pb.h"
+#include "proto/contracts/kafka/gate_command.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -56,8 +56,6 @@ extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
 }  // extern "C"
 namespace scene_manager {
-enum GateCommand_CommandType : int;
-extern const uint32_t GateCommand_CommandType_internal_data_[];
 class CreateSceneRequest;
 struct CreateSceneRequestDefaultTypeInternal;
 extern CreateSceneRequestDefaultTypeInternal _CreateSceneRequest_default_instance_;
@@ -78,10 +76,6 @@ class EnterSceneByCentreResponse;
 struct EnterSceneByCentreResponseDefaultTypeInternal;
 extern EnterSceneByCentreResponseDefaultTypeInternal _EnterSceneByCentreResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull EnterSceneByCentreResponse_class_data_;
-class GateCommand;
-struct GateCommandDefaultTypeInternal;
-extern GateCommandDefaultTypeInternal _GateCommand_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull GateCommand_class_data_;
 class LeaveSceneByCentreRequest;
 struct LeaveSceneByCentreRequestDefaultTypeInternal;
 extern LeaveSceneByCentreRequestDefaultTypeInternal _LeaveSceneByCentreRequest_default_instance_;
@@ -89,50 +83,10 @@ extern const ::google::protobuf::internal::ClassDataFull LeaveSceneByCentreReque
 }  // namespace scene_manager
 namespace google {
 namespace protobuf {
-template <>
-internal::EnumTraitsT<::scene_manager::GateCommand_CommandType_internal_data_>
-    internal::EnumTraitsImpl::value<::scene_manager::GateCommand_CommandType>;
 }  // namespace protobuf
 }  // namespace google
 
 namespace scene_manager {
-enum GateCommand_CommandType : int {
-  GateCommand_CommandType_RoutePlayer = 0,
-  GateCommand_CommandType_KickPlayer = 1,
-  GateCommand_CommandType_Broadcast = 2,
-  GateCommand_CommandType_GateCommand_CommandType_INT_MIN_SENTINEL_DO_NOT_USE_ =
-      ::std::numeric_limits<::int32_t>::min(),
-  GateCommand_CommandType_GateCommand_CommandType_INT_MAX_SENTINEL_DO_NOT_USE_ =
-      ::std::numeric_limits<::int32_t>::max(),
-};
-
-extern const uint32_t GateCommand_CommandType_internal_data_[];
-inline constexpr GateCommand_CommandType GateCommand_CommandType_CommandType_MIN =
-    static_cast<GateCommand_CommandType>(0);
-inline constexpr GateCommand_CommandType GateCommand_CommandType_CommandType_MAX =
-    static_cast<GateCommand_CommandType>(2);
-inline bool GateCommand_CommandType_IsValid(int value) {
-  return 0 <= value && value <= 2;
-}
-inline constexpr int GateCommand_CommandType_CommandType_ARRAYSIZE = 2 + 1;
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL GateCommand_CommandType_descriptor();
-template <typename T>
-const ::std::string& GateCommand_CommandType_Name(T value) {
-  static_assert(::std::is_same<T, GateCommand_CommandType>::value ||
-                    ::std::is_integral<T>::value,
-                "Incorrect type passed to CommandType_Name().");
-  return GateCommand_CommandType_Name(static_cast<GateCommand_CommandType>(value));
-}
-template <>
-inline const ::std::string& GateCommand_CommandType_Name(GateCommand_CommandType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<GateCommand_CommandType_descriptor, 0, 2>(
-      static_cast<int>(value));
-}
-inline bool GateCommand_CommandType_Parse(
-    ::absl::string_view name, GateCommand_CommandType* PROTOBUF_NONNULL value) {
-  return ::google::protobuf::internal::ParseNamedEnum<GateCommand_CommandType>(GateCommand_CommandType_descriptor(), name,
-                                           value);
-}
 
 // ===================================================================
 
@@ -194,7 +148,7 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const LeaveSceneByCentreRequest*>(
         &_LeaveSceneByCentreRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(LeaveSceneByCentreRequest& a, LeaveSceneByCentreRequest& b) { a.Swap(&b); }
   inline void Swap(LeaveSceneByCentreRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -371,300 +325,6 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull LeaveSceneByCentreRequest_class_data_;
 // -------------------------------------------------------------------
 
-class GateCommand final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:scene_manager.GateCommand) */ {
- public:
-  inline GateCommand() : GateCommand(nullptr) {}
-  ~GateCommand() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(GateCommand* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(GateCommand));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR GateCommand(::google::protobuf::internal::ConstantInitialized);
-
-  inline GateCommand(const GateCommand& from) : GateCommand(nullptr, from) {}
-  inline GateCommand(GateCommand&& from) noexcept
-      : GateCommand(nullptr, ::std::move(from)) {}
-  inline GateCommand& operator=(const GateCommand& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline GateCommand& operator=(GateCommand&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const GateCommand& default_instance() {
-    return *reinterpret_cast<const GateCommand*>(
-        &_GateCommand_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 0;
-  friend void swap(GateCommand& a, GateCommand& b) { a.Swap(&b); }
-  inline void Swap(GateCommand* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(GateCommand* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  GateCommand* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<GateCommand>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const GateCommand& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const GateCommand& from) { GateCommand::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(GateCommand* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "scene_manager.GateCommand"; }
-
- protected:
-  explicit GateCommand(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  GateCommand(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GateCommand& from);
-  GateCommand(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GateCommand&& from) noexcept
-      : GateCommand(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-  using CommandType = GateCommand_CommandType;
-  static constexpr CommandType RoutePlayer = GateCommand_CommandType_RoutePlayer;
-  static constexpr CommandType KickPlayer = GateCommand_CommandType_KickPlayer;
-  static constexpr CommandType Broadcast = GateCommand_CommandType_Broadcast;
-  static inline bool CommandType_IsValid(int value) {
-    return GateCommand_CommandType_IsValid(value);
-  }
-  static constexpr CommandType CommandType_MIN = GateCommand_CommandType_CommandType_MIN;
-  static constexpr CommandType CommandType_MAX = GateCommand_CommandType_CommandType_MAX;
-  static constexpr int CommandType_ARRAYSIZE = GateCommand_CommandType_CommandType_ARRAYSIZE;
-  static inline const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL CommandType_descriptor() {
-    return GateCommand_CommandType_descriptor();
-  }
-  template <typename T>
-  static inline const ::std::string& CommandType_Name(T value) {
-    return GateCommand_CommandType_Name(value);
-  }
-  static inline bool CommandType_Parse(
-      ::absl::string_view name, CommandType* PROTOBUF_NONNULL value) {
-    return GateCommand_CommandType_Parse(name, value);
-  }
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPayloadFieldNumber = 5,
-    kTargetInstanceIdFieldNumber = 7,
-    kPlayerIdFieldNumber = 2,
-    kCommandTypeFieldNumber = 1,
-    kTargetNodeIdFieldNumber = 3,
-    kSessionIdFieldNumber = 4,
-    kTargetGateIdFieldNumber = 6,
-  };
-  // bytes payload = 5;
-  void clear_payload() ;
-  const ::std::string& payload() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_payload(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_payload();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_payload();
-  void set_allocated_payload(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_payload() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_payload(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_payload();
-
-  public:
-  // string target_instance_id = 7;
-  void clear_target_instance_id() ;
-  const ::std::string& target_instance_id() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_target_instance_id(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_target_instance_id();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_instance_id();
-  void set_allocated_target_instance_id(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_target_instance_id() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_target_instance_id(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_instance_id();
-
-  public:
-  // uint64 player_id = 2;
-  void clear_player_id() ;
-  ::uint64_t player_id() const;
-  void set_player_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_player_id() const;
-  void _internal_set_player_id(::uint64_t value);
-
-  public:
-  // .scene_manager.GateCommand.CommandType command_type = 1;
-  void clear_command_type() ;
-  ::scene_manager::GateCommand_CommandType command_type() const;
-  void set_command_type(::scene_manager::GateCommand_CommandType value);
-
-  private:
-  ::scene_manager::GateCommand_CommandType _internal_command_type() const;
-  void _internal_set_command_type(::scene_manager::GateCommand_CommandType value);
-
-  public:
-  // uint32 target_node_id = 3;
-  void clear_target_node_id() ;
-  ::uint32_t target_node_id() const;
-  void set_target_node_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_target_node_id() const;
-  void _internal_set_target_node_id(::uint32_t value);
-
-  public:
-  // uint64 session_id = 4;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint32 target_gate_id = 6;
-  void clear_target_gate_id() ;
-  ::uint32_t target_gate_id() const;
-  void set_target_gate_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_target_gate_id() const;
-  void _internal_set_target_gate_id(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:scene_manager.GateCommand)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 7,
-                                   0, 52,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const GateCommand& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr payload_;
-    ::google::protobuf::internal::ArenaStringPtr target_instance_id_;
-    ::uint64_t player_id_;
-    int command_type_;
-    ::uint32_t target_node_id_;
-    ::uint64_t session_id_;
-    ::uint32_t target_gate_id_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull GateCommand_class_data_;
-// -------------------------------------------------------------------
-
 class EnterSceneByCentreResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:scene_manager.EnterSceneByCentreResponse) */ {
  public:
@@ -720,7 +380,7 @@ class EnterSceneByCentreResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const EnterSceneByCentreResponse*>(
         &_EnterSceneByCentreResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(EnterSceneByCentreResponse& a, EnterSceneByCentreResponse& b) { a.Swap(&b); }
   inline void Swap(EnterSceneByCentreResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -928,7 +588,7 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const EnterSceneByCentreRequest*>(
         &_EnterSceneByCentreRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(EnterSceneByCentreRequest& a, EnterSceneByCentreRequest& b) { a.Swap(&b); }
   inline void Swap(EnterSceneByCentreRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1206,7 +866,7 @@ class DestroySceneRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const DestroySceneRequest*>(
         &_DestroySceneRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(DestroySceneRequest& a, DestroySceneRequest& b) { a.Swap(&b); }
   inline void Swap(DestroySceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1397,7 +1057,7 @@ class CreateSceneResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateSceneResponse*>(
         &_CreateSceneResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 1;
   friend void swap(CreateSceneResponse& a, CreateSceneResponse& b) { a.Swap(&b); }
   inline void Swap(CreateSceneResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1634,7 +1294,7 @@ class CreateSceneRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateSceneRequest*>(
         &_CreateSceneRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 1;
+  static constexpr int kIndexInFileMessages = 0;
   friend void swap(CreateSceneRequest& a, CreateSceneRequest& b) { a.Swap(&b); }
   inline void Swap(CreateSceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1798,260 +1458,6 @@ extern const ::google::protobuf::internal::ClassDataFull CreateSceneRequest_clas
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
-// -------------------------------------------------------------------
-
-// GateCommand
-
-// .scene_manager.GateCommand.CommandType command_type = 1;
-inline void GateCommand::clear_command_type() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.command_type_ = 0;
-  _impl_._has_bits_[0] &= ~0x00000008u;
-}
-inline ::scene_manager::GateCommand_CommandType GateCommand::command_type() const {
-  // @@protoc_insertion_point(field_get:scene_manager.GateCommand.command_type)
-  return _internal_command_type();
-}
-inline void GateCommand::set_command_type(::scene_manager::GateCommand_CommandType value) {
-  _internal_set_command_type(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:scene_manager.GateCommand.command_type)
-}
-inline ::scene_manager::GateCommand_CommandType GateCommand::_internal_command_type() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::scene_manager::GateCommand_CommandType>(_impl_.command_type_);
-}
-inline void GateCommand::_internal_set_command_type(::scene_manager::GateCommand_CommandType value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.command_type_ = value;
-}
-
-// uint64 player_id = 2;
-inline void GateCommand::clear_player_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
-}
-inline ::uint64_t GateCommand::player_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.GateCommand.player_id)
-  return _internal_player_id();
-}
-inline void GateCommand::set_player_id(::uint64_t value) {
-  _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:scene_manager.GateCommand.player_id)
-}
-inline ::uint64_t GateCommand::_internal_player_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.player_id_;
-}
-inline void GateCommand::_internal_set_player_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = value;
-}
-
-// uint32 target_node_id = 3;
-inline void GateCommand::clear_target_node_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.target_node_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000010u;
-}
-inline ::uint32_t GateCommand::target_node_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.GateCommand.target_node_id)
-  return _internal_target_node_id();
-}
-inline void GateCommand::set_target_node_id(::uint32_t value) {
-  _internal_set_target_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
-  // @@protoc_insertion_point(field_set:scene_manager.GateCommand.target_node_id)
-}
-inline ::uint32_t GateCommand::_internal_target_node_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.target_node_id_;
-}
-inline void GateCommand::_internal_set_target_node_id(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.target_node_id_ = value;
-}
-
-// uint64 session_id = 4;
-inline void GateCommand::clear_session_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000020u;
-}
-inline ::uint64_t GateCommand::session_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.GateCommand.session_id)
-  return _internal_session_id();
-}
-inline void GateCommand::set_session_id(::uint64_t value) {
-  _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
-  // @@protoc_insertion_point(field_set:scene_manager.GateCommand.session_id)
-}
-inline ::uint64_t GateCommand::_internal_session_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.session_id_;
-}
-inline void GateCommand::_internal_set_session_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = value;
-}
-
-// bytes payload = 5;
-inline void GateCommand::clear_payload() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.payload_.ClearToEmpty();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-inline const ::std::string& GateCommand::payload() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:scene_manager.GateCommand.payload)
-  return _internal_payload();
-}
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void GateCommand::set_payload(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.payload_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:scene_manager.GateCommand.payload)
-}
-inline ::std::string* PROTOBUF_NONNULL GateCommand::mutable_payload()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_payload();
-  // @@protoc_insertion_point(field_mutable:scene_manager.GateCommand.payload)
-  return _s;
-}
-inline const ::std::string& GateCommand::_internal_payload() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.payload_.Get();
-}
-inline void GateCommand::_internal_set_payload(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.payload_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL GateCommand::_internal_mutable_payload() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  return _impl_.payload_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE GateCommand::release_payload() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:scene_manager.GateCommand.payload)
-  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
-    return nullptr;
-  }
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  auto* released = _impl_.payload_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.payload_.Set("", GetArena());
-  }
-  return released;
-}
-inline void GateCommand::set_allocated_payload(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-  _impl_.payload_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.payload_.IsDefault()) {
-    _impl_.payload_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:scene_manager.GateCommand.payload)
-}
-
-// uint32 target_gate_id = 6;
-inline void GateCommand::clear_target_gate_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.target_gate_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000040u;
-}
-inline ::uint32_t GateCommand::target_gate_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.GateCommand.target_gate_id)
-  return _internal_target_gate_id();
-}
-inline void GateCommand::set_target_gate_id(::uint32_t value) {
-  _internal_set_target_gate_id(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
-  // @@protoc_insertion_point(field_set:scene_manager.GateCommand.target_gate_id)
-}
-inline ::uint32_t GateCommand::_internal_target_gate_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.target_gate_id_;
-}
-inline void GateCommand::_internal_set_target_gate_id(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.target_gate_id_ = value;
-}
-
-// string target_instance_id = 7;
-inline void GateCommand::clear_target_instance_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.target_instance_id_.ClearToEmpty();
-  _impl_._has_bits_[0] &= ~0x00000002u;
-}
-inline const ::std::string& GateCommand::target_instance_id() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:scene_manager.GateCommand.target_instance_id)
-  return _internal_target_instance_id();
-}
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void GateCommand::set_target_instance_id(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.target_instance_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:scene_manager.GateCommand.target_instance_id)
-}
-inline ::std::string* PROTOBUF_NONNULL GateCommand::mutable_target_instance_id()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_target_instance_id();
-  // @@protoc_insertion_point(field_mutable:scene_manager.GateCommand.target_instance_id)
-  return _s;
-}
-inline const ::std::string& GateCommand::_internal_target_instance_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.target_instance_id_.Get();
-}
-inline void GateCommand::_internal_set_target_instance_id(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.target_instance_id_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL GateCommand::_internal_mutable_target_instance_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  return _impl_.target_instance_id_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE GateCommand::release_target_instance_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:scene_manager.GateCommand.target_instance_id)
-  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
-    return nullptr;
-  }
-  _impl_._has_bits_[0] &= ~0x00000002u;
-  auto* released = _impl_.target_instance_id_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.target_instance_id_.Set("", GetArena());
-  }
-  return released;
-}
-inline void GateCommand::set_allocated_target_instance_id(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000002u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
-  }
-  _impl_.target_instance_id_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_instance_id_.IsDefault()) {
-    _impl_.target_instance_id_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:scene_manager.GateCommand.target_instance_id)
-}
-
 // -------------------------------------------------------------------
 
 // CreateSceneRequest
@@ -2891,19 +2297,6 @@ inline void LeaveSceneByCentreRequest::set_allocated_request_id(::std::string* P
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace scene_manager
 
-
-namespace google {
-namespace protobuf {
-
-template <>
-struct is_proto_enum<::scene_manager::GateCommand_CommandType> : std::true_type {};
-template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::scene_manager::GateCommand_CommandType>() {
-  return ::scene_manager::GateCommand_CommandType_descriptor();
-}
-
-}  // namespace protobuf
-}  // namespace google
 
 // @@protoc_insertion_point(global_scope)
 

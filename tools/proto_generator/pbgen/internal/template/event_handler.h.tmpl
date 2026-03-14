@@ -1,8 +1,6 @@
 #pragma once
 
-{{- range .ForwardDeclarations }}
-class {{ . }};
-{{- end }}
+#include "{{ .ProtoInclude }}"
 
 class {{ .ClassName }}
 {
@@ -14,7 +12,7 @@ public:
 
 {{- end }}
 {{- range .EventMessages }}
-    static void {{ .Name }}Handler(const {{ .Name }}& event);
+    static void {{ .Name }}Handler(const {{ .QualifiedName }}& event);
 {{- if .IsLast }}
 {{- else }}
 

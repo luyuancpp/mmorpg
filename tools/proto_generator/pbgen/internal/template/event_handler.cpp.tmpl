@@ -1,19 +1,18 @@
 #include "{{ .HeaderFile }}"
-#include "{{ .ProtoInclude }}"
 #include "threading/dispatcher_manager.h"
 
 {{ .GlobalUserCode }}
 void {{ .ClassName }}::Register()
 {
 {{- range .EventMessages }}
-    dispatcher.sink<{{ .Name }}>().connect<&{{ $.ClassName }}::{{ .Name }}Handler>();
+    dispatcher.sink<{{ .QualifiedName }}>().connect<&{{ $.ClassName }}::{{ .Name }}Handler>();
 {{- end }}
 }
 
 void {{ .ClassName }}::UnRegister()
 {
 {{- range .EventMessages }}
-    dispatcher.sink<{{ .Name }}>().disconnect<&{{ $.ClassName }}::{{ .Name }}Handler>();
+    dispatcher.sink<{{ .QualifiedName }}>().disconnect<&{{ $.ClassName }}::{{ .Name }}Handler>();
 {{- end }}
 }
 

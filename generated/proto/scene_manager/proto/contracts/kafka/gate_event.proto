@@ -1,0 +1,15 @@
+syntax = "proto3";
+package contracts.kafka;
+
+option go_package = "contracts/kafka";
+
+// In-process events decoded from Gate Kafka transport payloads.
+// These are intentionally modeled like node event protos so handlers can stay split by file/domain.
+message RoutePlayerEvent {
+  uint64 session_id = 1;
+  uint32 target_node_id = 2;
+}
+
+message KickPlayerEvent {
+  uint64 session_id = 1;
+}

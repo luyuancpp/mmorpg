@@ -3,6 +3,7 @@ package scene_manager;
 
 import "proto/common/base/node.proto";
 import "proto/common/base/empty.proto";
+import "proto/contracts/kafka/gate_command.proto";
 
 option go_package = "scene_manager/scene_manager";
 
@@ -19,21 +20,6 @@ service SceneManager {
 
   // Centre requests a player to leave a scene (or leave before switching scenes)
   rpc LeaveSceneByCentre(LeaveSceneByCentreRequest) returns (Empty) {}
-}
-
-message GateCommand {
-  enum CommandType {
-    RoutePlayer = 0; // Switch player routing
-    KickPlayer = 1;  // Kick offline
-    Broadcast = 2;   // Broadcast message
-  }
-  CommandType command_type = 1;
-  uint64 player_id = 2;
-  uint32 target_node_id = 3; // Target Scene Node ID (for routing switch)
-  uint64 session_id = 4;     // Gate Session ID
-  bytes payload = 5;         // Extra data (e.g., broadcast content)
-  uint32 target_gate_id = 6;     // Target Gate ID
-  string target_instance_id = 7; // Target Gate Instance ID (prevents session conflict)
 }
 
 message CreateSceneRequest {

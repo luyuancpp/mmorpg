@@ -1,10 +1,12 @@
 #pragma once
-class PlayerMigrationPbEvent;
+
+#include "proto/common/event/player_migration_event.pb.h"
 
 class PlayerMigrationEventHandler
 {
 public:
     static void Register();
+
     static void UnRegister();
     static void PlayerMigrationPbEventHandler(const PlayerMigrationPbEvent& event);
 };

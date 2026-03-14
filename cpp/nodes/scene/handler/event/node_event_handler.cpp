@@ -1,11 +1,8 @@
 #include "node_event_handler.h"
-#include "proto/common/event/node_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
-
 void NodeEventHandler::Register()
 {
     dispatcher.sink<OnNodeAddPbEvent>().connect<&NodeEventHandler::OnNodeAddPbEventHandler>();

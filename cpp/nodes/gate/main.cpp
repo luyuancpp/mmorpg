@@ -1,33 +1,38 @@
 #include "grpc/third_party/abseil-cpp/absl/log/initialize.h"
 #include "muduo/base/CrossPlatformAdapterFunction.h"
+#include "muduo/base/Logging.h"
+#include "muduo/net/EventLoopThreadPool.h"
 
 #include "node/system/node/simple_node.h"
+#include "node/system/node/node.h"
 #include "handler/rpc/gate_service_handler.h"
 #include "handler/rpc/client_message_processor.h"
+#include "handler/event/event_handler.h"
+#include "handler/event/gate_kafka_command_router.h"
 #include "grpc_client/grpc_init_client.h"
+#include "session/system/session.h"
 #include "session/manager/session_manager.h"
-#include "node/system/node/node_config_manager.h"
+#include <node_config_manager.h>
+#include <messaging/kafka/kafka_proto_decoder.h>
 #include "proto/scene_manager/scene_manager_service.pb.h"
+#include "proto/contracts/kafka/gate_command.pb.h"
 #include "gate_globals.h"
 
 ProtobufCodec* gGateCodec = nullptr;
 
 namespace {
 
-using GateCommandPtr     = std::shared_ptr<const scene_manager::GateCommand>;
-using GateCommandHandler = std::function<void(SessionInfo&, const GateCommandPtr&)>;
-
 void startGateNode(EventLoop& loop)
 {
     // ── TCP 层基础设施 ──────────────────────────────────────────────────────
-    ProtobufDispatcher dispatcher([](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp) {
-        LOG_ERROR << "Unknown message: " << msg->GetTypeName();
+    ProtobufDispatcher protobufDispatcher([](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp) {
+        LOG_ERROR << "Unknown message: " << std::string(msg->GetTypeName());
         conn->shutdown();
     });
-    ProtobufCodec codec([&dispatcher](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp ts) {
-        dispatcher.onProtobufMessage(conn, msg, ts);
+    ProtobufCodec codec([&protobufDispatcher](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp ts) {
+        protobufDispatcher.onProtobufMessage(conn, msg, ts);
     });
-    RpcClientSessionHandler rpcClientHandler(codec, dispatcher);
+    RpcClientSessionHandler rpcClientHandler(codec, protobufDispatcher);
     gGateCodec = &codec;
 
     // ── gRPC 响应 → 客户端 TCP 桥接 ────────────────────────────────────────
@@ -39,25 +44,10 @@ void startGateNode(EventLoop& loop)
         rpcClientHandler.SendMessageToClient(it->second.conn, reply);
     });
 
-    // ── SceneManager → Gate Kafka 命令处理器 ────────────────────────────────
-    std::unordered_map<int, GateCommandHandler> commandHandlers;
-    commandHandlers[scene_manager::GateCommand::RoutePlayer] =
-        [](SessionInfo& session, const GateCommandPtr& cmd) {
-            if (cmd->target_node_id() == 0) return;
-            session.SetNodeId(SceneNodeService, cmd->target_node_id());
-            LOG_INFO << "RoutePlayer: session " << cmd->session_id()
-                     << " -> SceneNode " << cmd->target_node_id();
-        };
-    commandHandlers[scene_manager::GateCommand::KickPlayer] =
-        [](SessionInfo& session, const GateCommandPtr& cmd) {
-            if (!session.conn) return;
-            session.conn->forceClose();
-            LOG_INFO << "KickPlayer: session " << cmd->session_id();
-        };
-
     // ── 节点 ────────────────────────────────────────────────────────────────
     SimpleNode<GateHandler> node(&loop, "logs/gate", GateNodeService,
-        CanConnectNodeTypeList{ CentreNodeService, SceneNodeService, LoginNodeService });
+        Node::CanConnectNodeTypeList{ CentreNodeService, SceneNodeService, LoginNodeService });
+    EventHandler::Register();
 
     // 启动后：挂载客户端 TCP 回调 + session ID 初始化
     node.SetAfterStart([&codec, &rpcClientHandler](SimpleNode<GateHandler>& n) {
@@ -73,7 +63,7 @@ void startGateNode(EventLoop& loop)
     });
 
     // Kafka：订阅 gate-{id} topic，分发 SceneManager 命令
-    node.SetKafkaHandlers([&commandHandlers](SimpleNode<GateHandler>& n) {
+    node.SetKafkaHandlers([](SimpleNode<GateHandler>& n) {
         auto& kafkaConfig = tlsNodeConfigManager.GetBaseDeployConfig().kafka();
         std::string groupId = kafkaConfig.group_id();
         if (groupId.empty()) {
@@ -83,10 +73,9 @@ void startGateNode(EventLoop& loop)
         LOG_INFO << "Registering gate Kafka handlers for node_id=" << n.GetNodeId();
 
         return n.RegisterKafkaMessageHandler({ topic }, groupId,
-            [&n, &commandHandlers](const std::string& t, const std::string& payload) {
-                auto command = std::make_shared<scene_manager::GateCommand>();
-                if (!command->ParseFromString(payload)) {
-                    LOG_ERROR << "Failed to parse GateCommand from topic " << t;
+            [&n](const std::string& t, const std::string& payload) {
+                auto command = DecodeKafkaProtoPayload<contracts::kafka::GateCommand>(t, payload);
+                if (!command) {
                     return;
                 }
                 const auto& targetId = command->target_instance_id();
@@ -94,19 +83,7 @@ void startGateNode(EventLoop& loop)
                     LOG_WARN << "Stale GateCommand ignored. target=" << targetId;
                     return;
                 }
-                for (auto* evloop : n.GetTcpServer().threadPool()->getAllLoops()) {
-                    evloop->runInLoop([&commandHandlers, command] {
-                        const auto it = tlsSessionManager.sessions().find(command->session_id());
-                        if (it == tlsSessionManager.sessions().end()) return;
-                        SessionInfo& session = it->second;
-                        const auto handlerIt = commandHandlers.find(command->command_type());
-                        if (handlerIt == commandHandlers.end()) {
-                            LOG_WARN << "Unknown GateCommand type: " << command->command_type();
-                            return;
-                        }
-                        handlerIt->second(session, command);
-                    });
-                }
+                DispatchGateKafkaCommand(t, *command);
             });
     });
 

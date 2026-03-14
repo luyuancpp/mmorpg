@@ -1,12 +1,12 @@
 #pragma once
-class RegisterPlayerEvent;
-class PlayerUpgradeEvent;
-class InitializePlayerComponentsEvent;
+
+#include "proto/common/event/player_event.pb.h"
 
 class PlayerEventHandler
 {
 public:
     static void Register();
+
     static void UnRegister();
     static void RegisterPlayerEventHandler(const RegisterPlayerEvent& event);
     static void PlayerUpgradeEventHandler(const PlayerUpgradeEvent& event);
