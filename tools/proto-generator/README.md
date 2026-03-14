@@ -52,7 +52,7 @@ pwsh -File ../../scripts/dev-tools.ps1 -Command pbgen-run -ConfigPath etc/proto_
 ## Output
 
 Generated code is placed in:
-- `generated/generated_proto/` - All language proto outputs
+- `generated/proto/` - All language proto outputs
 - `go/generated/proto/` - Go-specific bindings
 - `cpp/generated/` - C++ protobuf and gRPC stubs
 - `java/` - Java generated classes

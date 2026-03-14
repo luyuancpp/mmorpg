@@ -67,4 +67,6 @@ lib/LIST.TXT
 bin/vsout/
 *md5
 tools/generated/
-tools/proto/pbgen/bin/
+tools/proto-generator/pbgen/bin/
+tools/proto-generator/pbgen/.idea/
+_copilot_session_transfer/
