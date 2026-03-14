@@ -69,16 +69,6 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 	gNode = this;
 	gNodeAtomic.store(this, std::memory_order_release);
 	tlsRegistryManager.nodeGlobalRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
-
-	//未实现的节点实现一个空函数
-	void InitPlayerService();
-	InitPlayerService();
-
-	void InitPlayerServiceReplied();
-	InitPlayerServiceReplied();
-
-	void InitServiceHandler();
-	InitServiceHandler();
 }
 
 Node::~Node() {
@@ -142,6 +132,35 @@ void Node::StartKafkaPolling()
 	kafkaConsumerTimer.RunEvery(0.1, [this] { kafkaManager.Poll(); });
 }
 
+bool Node::RegisterKafkaMessageHandler(const std::vector<std::string>& topics,
+	const std::string& groupId,
+	KafkaMessageHandler handler,
+	const std::vector<int32_t>& partitions)
+{
+	if (topics.empty()) {
+		LOG_ERROR << "RegisterKafkaMessageHandler failed: topics is empty.";
+		return false;
+	}
+
+	if (!handler) {
+		LOG_ERROR << "RegisterKafkaMessageHandler failed: handler is null.";
+		return false;
+	}
+
+	auto& kafkaConfig = tlsNodeConfigManager.GetBaseDeployConfig().kafka();
+	if (!GetKafkaManager().Subscribe(kafkaConfig, topics, groupId, partitions, std::move(handler))) {
+		LOG_ERROR << "Kafka subscribe failed. group_id=" << groupId;
+		return false;
+	}
+
+	if (!kafkaPollingStarted) {
+		StartKafkaPolling();
+		kafkaPollingStarted = true;
+	}
+
+	return true;
+}
+
 void Node::InitEtcdService()
 {
 	serviceDiscoveryManager.Init();
@@ -186,6 +205,10 @@ void Node::StartRpcServer() {
 	}
 
 	NodeConnector::ConnectAllNodes();
+
+	if (!RegisterKafkaHandlers()) {
+		LOG_FATAL << "RegisterKafkaHandlers failed for node_type=" << GetNodeInfo().node_type();
+	}
 
 	StartNodeRegistrationHealthMonitor();
 
@@ -282,10 +305,17 @@ void Node::ReleaseNodeId() {
 	EtcdHelper::RevokeLeaseAndCleanup(serviceDiscoveryManager.etcdService.GetLeaseId());
 }
 
+// 以下函数由各 node 二进制各自提供实现，链接器负责绑定（同 Go-zero 的 RegisterHandlers 模式）
 void InitReply();
+void InitPlayerService();
+void InitPlayerServiceReplied();
+void InitServiceHandler();
 void Node::RegisterHandlers() {
 	InitMessageInfo();
 	InitReply();
+	InitPlayerService();
+	InitPlayerServiceReplied();
+	InitServiceHandler();
 }
 
 void Node::AsyncOutput(const char* msg, int len) {

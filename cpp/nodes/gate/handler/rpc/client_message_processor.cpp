@@ -1,4 +1,4 @@
-﻿#include "client_message_processor.h"
+#include "client_message_processor.h"
 
 #include <algorithm>
 #include <functional>
@@ -6,7 +6,8 @@
 #include <unordered_map>
 #include <optional>
 
-#include "gate_node.h"
+#include "gate_globals.h"
+#include "node/system/node/node.h"
 #include "grpc_client/login/login_grpc_client.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
@@ -50,7 +51,7 @@ static inline NodeId GetEffectiveNodeId(
 	uint32_t nodeType)
 {
 	if (IsZoneSingletonNodeType(nodeType)) {
-        auto node = FindZoneUniqueNodeInfo(gGateNode->GetNodeInfo().zone_id(), nodeType);
+        auto node = FindZoneUniqueNodeInfo(gNode->GetNodeInfo().zone_id(), nodeType);
         if (node == nullptr) {
             LOG_ERROR << "Node not found for type: " << nodeType;
             return kInvalidNodeId;
@@ -80,7 +81,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 {
 	// 先判断是否是 zone 单例类型（全局唯一逻辑）
 	if (IsZoneSingletonNodeType(nodeType)) {
-		auto nodeInfo = FindZoneUniqueNodeInfo(gGateNode->GetNodeInfo().zone_id(), nodeType);
+		auto nodeInfo = FindZoneUniqueNodeInfo(gNode->GetNodeInfo().zone_id(), nodeType);
 		if (!nodeInfo) {
 			LOG_ERROR << "Singleton node not found for nodeType: " << nodeType;
 			return std::nullopt;
@@ -161,7 +162,7 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
     MessageContent message;
     message.set_serialized_message(tipMessage.SerializeAsString());
     message.set_message_id(SceneClientPlayerCommonSendTipToClientMessageId);
-    gGateNode->Codec().send(conn, message);
+    gGateCodec->send(conn, message);
 
     LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
@@ -230,7 +231,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 
     GateSessionDisconnectRequest request;
     request.mutable_session_info()->set_session_id(sessionId);
-	gGateNode->SendMessageToZoneCentre(CentreGateSessionDisconnectMessageId, request);
+	gNode->SendMessageToZoneCentre(CentreGateSessionDisconnectMessageId, request);
 
     // 删除会话
     tlsSessionManager.sessions().erase(sessionId);

@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
-#include "gate_node.h"
+#include "gate_globals.h"
 #include "network/network_constants.h"
 
 #include "proto/common/component/player_network_comp.pb.h"
@@ -52,7 +52,7 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 		}
 		return;
 	}
-	gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
+	gGateCodec->send(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
 }
@@ -119,7 +119,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 
 			continue;
 		}
-		gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
+		gGateCodec->send(sessionIt->second.conn, request->message_content());
 		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE
