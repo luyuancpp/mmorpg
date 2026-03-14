@@ -14,10 +14,11 @@
 uint32_t tryPortId{ 0 };
 
 void NodeAllocator::AcquireNode() {
-	LOG_INFO << "Acquiring node ID for node type: " << gNode->GetNodeType();
+	const uint32_t nodeType = gNode->GetNodeType();
+	LOG_INFO << "Acquiring node ID for node type: " << nodeType;
 
 	// 1. 如果是全局唯一类型，执行清理逻辑 + 直接使用 zone_id
-	if (IsZoneSingletonNodeType(gNode->GetNodeType())) {
+	if (IsZoneSingletonNodeType(nodeType)) {
 		const uint32_t zoneId = tlsNodeConfigManager.GetGameConfig().zone_id();
 		gNode->GetNodeInfo().set_node_id(zoneId);
 		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
@@ -29,7 +30,7 @@ void NodeAllocator::AcquireNode() {
 	}
 
 	// ...（以下为非 singleton 的原有分配逻辑）
-	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
+	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity())[nodeType];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedIds;
@@ -42,15 +43,13 @@ void NodeAllocator::AcquireNode() {
 		}
 	}
 
-	static constexpr uint32_t kMaxNodeId = (1U << kNodeBits) - 1;
+	static constexpr uint32_t kMaxNodeId = static_cast<uint32_t>(kNodeMask);
 	uint32_t nextNodeId;
 
 	if (maxUsedId < kMaxNodeId) {
-		// 还有空间，优先用 maxUsedId + 1
 		nextNodeId = maxUsedId + 1;
 	}
 	else {
-		// 空间满了，从头找未使用的（包括 0）
 		bool found = false;
 		for (uint32_t id = 0; id <= kMaxNodeId; ++id) {
 			if (usedIds.find(id) == usedIds.end()) {

@@ -1,6 +1,10 @@
 ﻿#include <gtest/gtest.h>
+#include <algorithm>
+#include <array>
 #include <functional>
 #include <iostream>
+#include <limits>
+#include <mutex>
 #include <thread>
 #include <unordered_set>
 #include <vector>
@@ -14,62 +18,78 @@ using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
 constexpr size_t kTotal = 40'000'000;
+constexpr size_t kThreadCount = 3;
 
 SnowFlakeAtomic idGenAtomic;
-GuidSet firstSet;
-GuidSet secondSet;
-GuidSet thirdSet;
 
-void emplaceToVector(GuidSet& v)
+void GenerateThreadIds(SnowFlakeAtomic& generator, GuidVector& out)
 {
-	for (std::size_t i = 0; i < kTotal; ++i)
-	{
-		v.emplace(idGenAtomic.Generate());
+	out.resize(kTotal);
+	for (size_t i = 0; i < kTotal; ++i) {
+		out[i] = generator.Generate();
 	}
-}
-
-void generateThread1()
-{
-	emplaceToVector(firstSet);
-}
-
-void generateThread2()
-{
-	emplaceToVector(secondSet);
-}
-
-void generateThread3()
-{
-	emplaceToVector(thirdSet);
 }
 
 
 TEST(TestSnowFlakeThreadSafe, generate)
 {
-	firstSet.clear();
-	secondSet.clear();
-	thirdSet.clear();
+	SnowFlakeAtomic generator;
+	generator.set_node_id(1);
+	generator.set_epoch(kEpoch);
 
-	firstSet.reserve(kTotal);
-	secondSet.reserve(kTotal);
-	thirdSet.reserve(kTotal);
+	std::array<GuidVector, kThreadCount> thread_ids;
 
-	std::thread firstThread(generateThread1);
-	std::thread secondThread(generateThread2);
-	std::thread thirdThread(generateThread3);
+	std::thread firstThread(GenerateThreadIds, std::ref(generator), std::ref(thread_ids[0]));
+	std::thread secondThread(GenerateThreadIds, std::ref(generator), std::ref(thread_ids[1]));
+	std::thread thirdThread(GenerateThreadIds, std::ref(generator), std::ref(thread_ids[2]));
 
 	firstThread.join();
 	secondThread.join();
 	thirdThread.join();
 
-	GuidSet total;
-	total.reserve(kTotal * 3);
-	total.insert(firstSet.begin(), firstSet.end());
-	total.insert(secondSet.begin(), secondSet.end());
-	total.insert(thirdSet.begin(), thirdSet.end());
+	for (auto& ids : thread_ids) {
+		ASSERT_EQ(ids.size(), kTotal);
+		std::sort(ids.begin(), ids.end());
+		auto dup = std::adjacent_find(ids.begin(), ids.end());
+		ASSERT_TRUE(dup == ids.end()) << "single-thread buffer contains duplicate ID";
+	}
 
-	EXPECT_EQ(kTotal * 3, total.size())
-		<< "存在重复 ID";
+	std::array<size_t, kThreadCount> pos{ 0, 0, 0 };
+	Guid last = 0;
+	bool has_last = false;
+	size_t merged_count = 0;
+
+	while (true) {
+		int32_t min_idx = -1;
+		Guid min_id = 0;
+
+		for (size_t i = 0; i < kThreadCount; ++i) {
+			if (pos[i] >= thread_ids[i].size()) {
+				continue;
+			}
+
+			Guid current = thread_ids[i][pos[i]];
+			if (min_idx == -1 || current < min_id) {
+				min_id = current;
+				min_idx = static_cast<int32_t>(i);
+			}
+		}
+
+		if (min_idx < 0) {
+			break;
+		}
+
+		if (has_last) {
+			ASSERT_NE(min_id, last) << "duplicate ID detected across threads";
+		}
+
+		last = min_id;
+		has_last = true;
+		++merged_count;
+		++pos[min_idx];
+	}
+
+	EXPECT_EQ(merged_count, kTotal * kThreadCount);
 }
 
 TEST(SnowFlakeTest, ClockRollback_SingleThread) {
@@ -172,7 +192,7 @@ TEST(SnowFlakeTest, UniqueIds_SingleThread_NormalGenerate) {
 
 	for (int32_t node = 0; node < kNodeCount; ++node) {
 		SnowFlake sf;
-		sf.set_node_id(static_cast<uint16_t>(node));
+		sf.set_node_id(static_cast<uint32_t>(node));
 
 		for (int32_t i = 0; i < kTotal; ++i) {
 			Guid id = sf.Generate();
@@ -193,7 +213,7 @@ TEST(SnowFlakeTest, UniqueIds_SingleThread_BatchGenerate) {
 
 	for (int32_t node = 0; node < kNodeCount; ++node) {
 		SnowFlake sf;
-		sf.set_node_id(static_cast<uint16_t>(node));
+		sf.set_node_id(static_cast<uint32_t>(node));
 
 		auto ids = sf.GenerateBatch(kTotal);
 		for (const auto& id : ids) {
@@ -217,7 +237,7 @@ TEST(SnowFlakeTest, UniqueIds_MultiThread_NormalGenerate) {
 	for (int32_t node = 0; node < kNodeCount; ++node) {
 		threads.emplace_back([node, &all_ids, &id_mutex]() {
 			SnowFlakeAtomic sf;
-			sf.set_node_id(static_cast<uint16_t>(node));
+			sf.set_node_id(static_cast<uint32_t>(node));
 
 			for (int32_t i = 0; i < kTotal; ++i) {
 				Guid id = sf.Generate();
@@ -247,7 +267,7 @@ TEST(SnowFlakeTest, UniqueIds_MultiThread_BatchGenerate) {
 	for (int32_t node = 0; node < kNodeCount; ++node) {
 		threads.emplace_back([node, &all_ids, &id_mutex]() {
 			SnowFlakeAtomic sf;
-			sf.set_node_id(static_cast<uint16_t>(node));
+			sf.set_node_id(static_cast<uint32_t>(node));
 
 			auto ids = sf.GenerateBatch(kTotal);
 			std::lock_guard<std::mutex> lock(id_mutex);
@@ -384,6 +404,42 @@ TEST(SnowFlakeTest, GuidParsing)
 	EXPECT_GT(parsed.timestamp, 0);
 }
 
+TEST(SnowFlakeTest, AtomicGuidParsingUsesDefaultEpoch)
+{
+	SnowFlakeAtomic generator;
+	generator.set_node_id(7);
+	generator.set_epoch(kEpoch);
+
+	Guid id = generator.Generate();
+	auto parsed = ParseGuid(id);
+	auto real_time = GetRealTimeFromGuid(id);
+
+	EXPECT_EQ(parsed.node_id, 7);
+	EXPECT_LT(parsed.sequence, (1U << kStepBits));
+	EXPECT_GE(real_time, static_cast<std::time_t>(kEpoch));
+}
+
+TEST(SnowFlakeTest, AtomicSupportsBeyondUint32Timestamp)
+{
+	SnowFlakeAtomic generator;
+	generator.set_node_id(9);
+	generator.set_epoch(kEpoch);
+
+	const uint64_t beyond = kEpoch + static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1ULL;
+	generator.set_mock_static_time(beyond);
+
+	Guid id1 = generator.Generate();
+	Guid id2 = generator.Generate();
+
+	auto p1 = ParseGuid(id1);
+	auto p2 = ParseGuid(id2);
+
+	EXPECT_NE(id1, id2);
+	EXPECT_EQ(p1.timestamp, p2.timestamp);
+	EXPECT_LT(p1.sequence, p2.sequence);
+	EXPECT_EQ(p1.timestamp, beyond - kEpoch);
+}
+
 // 并发压力测试：多个线程并发批量生成，确保 ID 唯一
 TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 {
@@ -422,14 +478,31 @@ TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 	EXPECT_EQ(unique_ids.size(), all_ids.size()) << "并发生成的 ID 有重复";
 }
 
+// 验证不同节点 ID 不会生成重复 GUID
+TEST(SnowFlakeTest, DifferentNodeNoDuplicate)
+{
+	SnowFlake genA;
+	genA.set_node_id(3);
+
+	SnowFlake genB;
+	genB.set_node_id(4);
+
+	std::unordered_set<Guid> all_ids;
+	constexpr size_t kCount = 10000;
+
+	for (size_t i = 0; i < kCount; ++i) {
+		auto [_, ok1] = all_ids.insert(genA.Generate());
+		ASSERT_TRUE(ok1) << "Duplicate from node A at i=" << i;
+
+		auto [__, ok2] = all_ids.insert(genB.Generate());
+		ASSERT_TRUE(ok2) << "Duplicate from node B at i=" << i;
+	}
+
+	EXPECT_EQ(all_ids.size(), kCount * 2);
+}
+
 int32_t main(int32_t argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);
-	while (true) {
-		int32_t ret = RUN_ALL_TESTS();
-		if (ret != 0) {
-			return ret;
-		}
-	}
 	return RUN_ALL_TESTS();
 }
