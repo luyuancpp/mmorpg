@@ -27,11 +27,11 @@ constexpr uint64_t kNodeBits = 9;
 constexpr uint64_t kStepBits = 21;
 #else
 constexpr uint64_t kEpoch = 1773446400; // 2026-03-14 00:00:00 UTC
-constexpr uint64_t kNodeBits = 18;
-constexpr uint64_t kStepBits = 14;
+constexpr uint64_t kNodeBits = 17;
+constexpr uint64_t kStepBits = 15;
 #endif
 
-// Layout: [time : 32 bits (~136 years, until 2162)] [node : 18 bits (262144)] [step : 14 bits (16384/sec)]
+// Layout: [time : 32 bits (~136 years, until 2162)] [node : 17 bits (131072)] [step : 15 bits (32768/sec)]
 // Each node type assigns node_id independently (0..262143)
 // Different generators per purpose (item/buff/session) avoid cross-type collision
 constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
