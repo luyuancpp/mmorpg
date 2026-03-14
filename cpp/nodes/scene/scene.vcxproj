@@ -103,6 +103,7 @@
       <AdditionalLibraryDirectories>../../../lib/;</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
+      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -134,7 +135,6 @@
       <AdditionalLibraryDirectories>../bin/;../lib/</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -169,7 +169,6 @@
     <ClCompile Include="rpc_replies\player\centre_player_scene_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\player_rpc_response_handler.cpp" />
     <ClCompile Include="rpc_replies\register_response_handler.cpp" />
-    <ClCompile Include="scene_node.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="handler\event\actor_combat_state_event_handler.h" />
@@ -198,7 +197,6 @@
     <ClInclude Include="rpc_replies\gate_service_response_handler.h" />
     <ClInclude Include="rpc_replies\player\centre_player_response_handler.h" />
     <ClInclude Include="rpc_replies\player\centre_player_scene_response_handler.h" />
-    <ClInclude Include="scene_node.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

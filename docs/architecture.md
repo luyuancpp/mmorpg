@@ -10,3 +10,6 @@
     0 非常重要，在玩家的tick end 会处理,如果没处理完会存储数据库
     1 一般，在压力过后再继续处理
     2 可以丢弃，不重要，比如tip消息提示
+
+## 3 跨服架构文档入口
+    参见: docs/design/mmo_cross_server_architecture.md

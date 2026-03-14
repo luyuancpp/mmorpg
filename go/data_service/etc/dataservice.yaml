@@ -1,0 +1,38 @@
+Name: dataservice.rpc
+ListenOn: 0.0.0.0:9000
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379
+  Key: dataservice.rpc
+
+# Global mapping Redis: stores player_id → home_zone_id
+MappingRedis:
+  Host: 127.0.0.1:6379
+  Type: node
+  DB: 15
+
+# Zone → Region → Redis Cluster routing
+Regions:
+  - Id: 1
+    Zones: [1, 2, 3, 4, 5]
+    Redis:
+      Addrs:
+        - 127.0.0.1:7001
+        - 127.0.0.1:7002
+        - 127.0.0.1:7003
+  - Id: 2
+    Zones: [6, 7, 8, 9, 10]
+    Redis:
+      Addrs:
+        - 127.0.0.1:7004
+        - 127.0.0.1:7005
+        - 127.0.0.1:7006
+
+# Standalone dev mode: single Redis for all zones (overrides Regions when set)
+DevRedis:
+  Host: 127.0.0.1:6379
+  Type: node
+  DB: 0
+
+# Player lock TTL in seconds
+PlayerLockTTLSec: 3

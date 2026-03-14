@@ -65,6 +65,8 @@ third_party/lua/vs2022
 lib/LIST.TXT
 *.tmp
 bin/vsout/
+bin/*.txt
+go/pkg/
 *md5
 tools/generated/
 tools/proto-generator/pbgen/bin/

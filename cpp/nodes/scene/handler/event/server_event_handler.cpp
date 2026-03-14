@@ -2,7 +2,7 @@
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "scene_node.h"
+#include "node/system/node/node.h"
 #include "network/rpc_client.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "scene/scene/system/game_node_scene.h"
