@@ -1,5 +1,4 @@
 #include "npc_event_handler.h"
-#include "proto/common/event/npc_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -7,8 +6,6 @@
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>
 ///<<< END WRITING YOUR CODE
-
-
 void NpcEventHandler::Register()
 {
     dispatcher.sink<InitializeNpcComponentsEvent>().connect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
@@ -28,7 +25,6 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
 		LOG_ERROR << "Npc Not Found :" << event.actor_entity();
 		return;
 	}
-
 
 ///<<< END WRITING YOUR CODE
 }

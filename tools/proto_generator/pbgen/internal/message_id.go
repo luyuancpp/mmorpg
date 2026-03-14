@@ -7,10 +7,11 @@ import (
 	"strings"
 	"sync"
 
-	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	"pbgen/internal/utils"
 	"pbgen/logger"
+
+	"go.uber.org/zap"
 )
 
 // ConstantsGenerator is responsible for generating Go constants from a file.
@@ -25,6 +26,10 @@ func NewConstantsGenerator(fileName string) *ConstantsGenerator {
 
 // Generate generates constants from the file and returns them as a slice of strings.
 func (cg *ConstantsGenerator) Generate() ([]string, error) {
+	return cg.GenerateWithSuffix(_config.Global.Naming.MessageId)
+}
+
+func (cg *ConstantsGenerator) GenerateWithSuffix(suffix string) ([]string, error) {
 	file, err := os.Open(cg.FileName)
 	if err != nil {
 		logger.Global.Fatal("打开常量生成源文件失败",
@@ -47,7 +52,7 @@ func (cg *ConstantsGenerator) Generate() ([]string, error) {
 		name := strings.TrimSpace(parts[1])
 
 		constName := convertToValidIdentifier(name)
-		consts = append(consts, "const "+constName+_config.Global.Naming.MessageId+" = "+number)
+		consts = append(consts, "const "+constName+suffix+" = "+number)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -166,12 +171,20 @@ func WriteToFiles(constants []string, filePaths []string) {
 	wg.Wait()
 }
 
+func generateConstants(fileName, suffix string) ([]string, error) {
+	g := NewConstantsGenerator(fileName)
+	consts, err := g.GenerateWithSuffix(suffix)
+	if err != nil {
+		return nil, err
+	}
+	return consts, nil
+}
+
 func WriteGoMessageId(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		g := NewConstantsGenerator(_config.Global.Paths.ServiceIdFile)
-		consts, err := g.Generate()
+		consts, err := generateConstants(_config.Global.Paths.ServiceIdFile, _config.Global.Naming.MessageId)
 		if err != nil {
 			logger.Global.Fatal("生成MessageId常量失败", zap.Error(err))
 		}
@@ -190,6 +203,32 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 			filePath := outputDir + "/" + _config.Global.FileExtensions.MessageIdGoFile
 			filePaths = append(filePaths, filePath)
 		}
+		WriteToFiles(consts, filePaths)
+	}()
+}
+
+func WriteGoEventId(wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		consts, err := generateConstants(_config.Global.Paths.EventIdFile, _config.Global.Naming.EventId)
+		if err != nil {
+			logger.Global.Fatal("生成EventId常量失败", zap.Error(err))
+		}
+
+		filePaths := make([]string, 0)
+		for domain, meta := range _config.Global.DomainMeta {
+			if !utils.IsGRPC(meta) {
+				logger.Global.Debug("目录无GRPC服务，跳过EventId文件生成",
+					zap.String("domain", domain),
+				)
+				continue
+			}
+			basePath := strings.ToLower(filepath.Base(meta.Source))
+			outputDir := _config.Global.Paths.NodeGoDir + basePath + "/" + _config.Global.Naming.GoPackage
+			filePaths = append(filePaths, outputDir+"/"+_config.Global.FileExtensions.EventIdGoFile)
+		}
+
 		WriteToFiles(consts, filePaths)
 	}()
 }

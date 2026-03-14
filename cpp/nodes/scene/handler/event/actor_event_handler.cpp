@@ -1,5 +1,4 @@
 #include "actor_event_handler.h"
-#include "proto/common/event/actor_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -13,8 +12,6 @@
 #include "mount/system/mount.h"
 #include "scene/scene/system/interest.h"
 ///<<< END WRITING YOUR CODE
-
-
 void ActorEventHandler::Register()
 {
     dispatcher.sink<InitializeActorComponentsEvent>().connect<&ActorEventHandler::InitializeActorComponentsEventHandler>();

@@ -1,11 +1,8 @@
 #include "server_event_handler.h"
-#include "proto/common/event/server_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
-
 void ServerEventHandler::Register()
 {
     dispatcher.sink<OnConnect2CentrePbEvent>().connect<&ServerEventHandler::OnConnect2CentrePbEventHandler>();

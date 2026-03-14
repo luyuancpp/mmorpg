@@ -5,6 +5,7 @@
 #include "muduo/base/Logging.h"
 
 #include "gate_globals.h"
+#include "node/system/node/node.h"
 #include "network/network_constants.h"
 
 #include "proto/common/component/player_network_comp.pb.h"

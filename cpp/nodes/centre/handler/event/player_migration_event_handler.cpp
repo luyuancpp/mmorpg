@@ -1,11 +1,8 @@
 #include "player_migration_event_handler.h"
-#include "proto/common/event/player_migration_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
-
 void PlayerMigrationEventHandler::Register()
 {
     dispatcher.sink<PlayerMigrationPbEvent>().connect<&PlayerMigrationEventHandler::PlayerMigrationPbEventHandler>();

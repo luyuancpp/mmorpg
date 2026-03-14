@@ -2,13 +2,16 @@ package logic
 
 import (
 	"context"
+	kafkacontracts "contracts/kafka"
 	"fmt"
+	game "generated/pb/game"
+	"strconv"
 
 	"scene_manager/internal/svc"
 	"scene_manager/scene_manager"
 
+	kafkago "github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/segmentio/kafka-go"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -59,13 +62,39 @@ func (l *EnterSceneByCentreLogic) EnterSceneByCentre(in *scene_manager.EnterScen
 
 	// 4. Send Route Command to Gate (via Kafka)
 	if in.GateId != "" {
-		cmd := &scene_manager.GateCommand{
-			CommandType:      scene_manager.GateCommand_RoutePlayer,
+		targetNodeId, convErr := strconv.ParseUint(l.svcCtx.Config.NodeID, 10, 32)
+		if convErr != nil {
+			l.Logger.Errorf("Invalid SceneManager node id %q: %v", l.svcCtx.Config.NodeID, convErr)
+			return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 1, ErrorMessage: "Invalid scene manager node id"}, nil
+		}
+
+		targetGateId, convErr := strconv.ParseUint(in.GateId, 10, 32)
+		if convErr != nil {
+			l.Logger.Errorf("Invalid GateID %q: %v", in.GateId, convErr)
+			return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 1, ErrorMessage: "Invalid gate id"}, nil
+		}
+
+		eventId := game.ContractsKafkaRoutePlayerEventEventId
+		event := &kafkacontracts.RoutePlayerEvent{
+			SessionId:    in.SessionId,
+			TargetNodeId: uint32(targetNodeId),
+		}
+
+		payload, err := proto.Marshal(event)
+		if err != nil {
+			l.Logger.Errorf("Failed to marshal RoutePlayerEvent: %v", err)
+			return &scene_manager.EnterSceneByCentreResponse{ErrorCode: 1, ErrorMessage: "Failed to encode route event"}, nil
+		}
+
+		cmd := &kafkacontracts.GateCommand{
+			CommandType:      kafkacontracts.GateCommand_RoutePlayer,
 			PlayerId:         in.PlayerId,
-			TargetNodeId:     l.svcCtx.Config.NodeID,
+			TargetNodeId:     uint32(targetNodeId),
 			SessionId:        in.SessionId,
-			TargetGateId:     in.GateId,
+			Payload:          payload,
+			TargetGateId:     uint32(targetGateId),
 			TargetInstanceId: in.GateInstanceId,
+			EventId:          &eventId,
 		}
 
 		bytes, err := proto.Marshal(cmd)
@@ -73,7 +102,7 @@ func (l *EnterSceneByCentreLogic) EnterSceneByCentre(in *scene_manager.EnterScen
 			l.Logger.Errorf("Failed to marshal GateCommand: %v", err)
 		} else {
 			topic := fmt.Sprintf("gate-%s", in.GateId)
-			err = l.svcCtx.Kafka.WriteMessages(l.ctx, kafka.Message{
+			err = l.svcCtx.Kafka.WriteMessages(l.ctx, kafkago.Message{
 				Topic: topic,
 				Key:   []byte(fmt.Sprintf("%d", in.PlayerId)),
 				Value: bytes,

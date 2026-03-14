@@ -1,11 +1,8 @@
 #include "player_event_handler.h"
-#include "proto/common/event/player_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
-
 void PlayerEventHandler::Register()
 {
     dispatcher.sink<RegisterPlayerEvent>().connect<&PlayerEventHandler::RegisterPlayerEventHandler>();

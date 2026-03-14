@@ -57,6 +57,7 @@ paths:
 
   # 特定文件路径
   service_id_file: "{{proto_dir}}service_id.txt"
+  event_id_file: "{{proto_dir}}event_id.txt"
   robot_message_id_file: "{{robot_go_game_pb_dir}}/message_id.go"
   robot_proto_import_path: "{{output_root}}{{robot_proto}}"  # robot proto导入路径
   service_cpp_file: "{{service_info_dir}}service_metadata.cpp"
@@ -72,6 +73,7 @@ paths:
   event_handler_source_directory: "handler/event/"
   scene_node_event_handler_directory: "{{scene_node_dir}}{{event_handler_source_directory}}"
   centre_node_event_handler_directory: "{{centre_node_dir}}{{event_handler_source_directory}}"
+  gate_node_event_handler_directory: "{{gate_node_dir}}{{event_handler_source_directory}}"
 
   # Scene 属性同步生成目录
   scene_attribute_sync_dir: "{{output_root}}{{node_pkg_dir}}/services/scene/generated/attribute/"
@@ -114,6 +116,7 @@ file_extensions:
   cpp_replied_handler_ex: "_response_handler.cpp"
   model_sql_extension: "mysql_database_table.sql"
   message_id_go_file: "message_id.go"
+  event_id_go_file: "event_id.go"
   service_info_extension: "_service_metadata"
   register_replied_handler_cpp_extension: "register{{cpp_replied_handler_ex}}"
   register_handler_cpp_extension: "register{{handler_cpp}}"
@@ -121,6 +124,7 @@ file_extensions:
 # 命名规则配置（业务逻辑命名常量）
 naming:
   message_id: "MessageId"
+  event_id: "EventId"
   method_index: "Index"
   handler_file: "Handler"
   replied_handler_file: "Reply"
@@ -160,6 +164,7 @@ path_lists:
     - "common/base/"
     - "common/component/"
     - "common/event/"
+    - "contracts/kafka/"
     - "common/base/"
     - "common/base/"
     - "player_locator/"
@@ -207,6 +212,7 @@ path_lists:
     common: "common/base/"
     logic_component: "common/component/"
     logic_event: "common/event/"
+    contracts_kafka: "contracts/kafka/"
     logic: "common/"
     constants: "common/constants/"
     database: "common/database/"
@@ -386,3 +392,13 @@ domain_meta:
         proto: "go/generated/common/proto"
       cpp:
         proto: "cpp/generated/common/proto"
+
+  contracts:
+    source: "{{proto_dir}}contracts/"
+    rpc:
+      type: none
+    outputs:
+      go:
+        proto: "go/generated/contracts/proto"
+      cpp:
+        proto: "cpp/generated/contracts/proto"

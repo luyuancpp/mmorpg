@@ -1,11 +1,8 @@
 #include "combat_event_handler.h"
-#include "proto/common/event/combat_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
-
 void CombatEventHandler::Register()
 {
     dispatcher.sink<BeKillEvent>().connect<&CombatEventHandler::BeKillEventHandler>();

@@ -1,5 +1,4 @@
 #include "server_event_handler.h"
-#include "proto/common/event/server_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -11,8 +10,6 @@
 #include <proto/common/base/node.pb.h>
 #include <modules/scene/system/scene_common.h>
 ///<<< END WRITING YOUR CODE
-
-
 void ServerEventHandler::Register()
 {
     dispatcher.sink<OnConnect2CentrePbEvent>().connect<&ServerEventHandler::OnConnect2CentrePbEventHandler>();

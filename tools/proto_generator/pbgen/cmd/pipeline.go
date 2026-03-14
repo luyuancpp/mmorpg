@@ -23,10 +23,12 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 	runner.RunParallelGroup("GRPCGeneration", []NamedTask{
 		{Name: "cppGen.GenerateGameGrpc", Run: cppGen.GenerateGameGrpc},
 		{Name: "cppGen.ReadServiceIdFile", Run: cppGen.ReadServiceIdFile},
+		{Name: "cppGen.ReadEventIdFile", Run: cppGen.ReadEventIdFile},
 	})
 
 	runner.RunTaskWithWG("prototools.GenerateAllInOneDescriptor", prototools.GenerateAllInOneDescriptor)
 	runner.RunTaskWithWG("cppGen.ReadAllProtoFileServices", cppGen.ReadAllProtoFileServices)
+	runner.RunTaskWithWG("cppGen.ReadAllProtoEvents", cppGen.ReadAllProtoEvents)
 
 	runner.RunParallelGroup("CompilationAndUtilGeneration", []NamedTask{
 		{Name: "cppGen.BuildProtocCpp", Run: cppGen.BuildProtocCpp},
@@ -36,7 +38,9 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 	})
 
 	runner.RunTask("cppGen.InitServiceId", cppGen.InitServiceId)
+	runner.RunTask("cppGen.InitEventId", cppGen.InitEventId)
 	runner.RunTask("cppGen.WriteServiceIdFile", cppGen.WriteServiceIdFile)
+	runner.RunTask("cppGen.WriteEventIdFile", cppGen.WriteEventIdFile)
 
 	runner.RunParallelGroup("MethodFilesGeneration", []NamedTask{
 		{Name: "cppGen.WriteMethodFile", Run: cppGen.WriteMethodFile},
@@ -46,6 +50,7 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 	runner.RunParallelGroup("ConstantsMessageIdsAndOptionBuilding", []NamedTask{
 		{Name: "internal.GenerateServiceConstants", Run: internal.GenerateServiceConstants},
 		{Name: "internal.WriteGoMessageId", Run: internal.WriteGoMessageId},
+		{Name: "internal.WriteGoEventId", Run: internal.WriteGoEventId},
 		{Name: "goGen.LoadAllDescriptors", Run: goGen.LoadAllDescriptors},
 		{Name: "cppGenOption.BuildOption", Run: wrapNoWG(cppGenOption.BuildOption)},
 		{Name: "goGenOption.BuildOption", Run: wrapNoWG(goGenOption.BuildOption)},

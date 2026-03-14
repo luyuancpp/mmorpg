@@ -1,16 +1,12 @@
 #pragma once
-class OnSceneCreated;
-class OnSceneDestroyed;
-class BeforeEnterScene;
-class AfterEnterScene;
-class BeforeLeaveScene;
-class AfterLeaveScene;
-class S2CEnterScene;
+
+#include "proto/common/event/scene_event.pb.h"
 
 class SceneEventHandler
 {
 public:
     static void Register();
+
     static void UnRegister();
     static void OnSceneCreatedHandler(const OnSceneCreated& event);
     static void OnSceneDestroyedHandler(const OnSceneDestroyed& event);

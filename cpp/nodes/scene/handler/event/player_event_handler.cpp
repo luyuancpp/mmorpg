@@ -1,5 +1,4 @@
 #include "player_event_handler.h"
-#include "proto/common/event/player_event.pb.h"
 #include "threading/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
@@ -7,8 +6,6 @@
 #include <threading/registry_manager.h>
 #include <muduo/base/Logging.h>
 ///<<< END WRITING YOUR CODE
-
-
 void PlayerEventHandler::Register()
 {
     dispatcher.sink<RegisterPlayerEvent>().connect<&PlayerEventHandler::RegisterPlayerEventHandler>();
@@ -39,7 +36,7 @@ void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& e
 void PlayerEventHandler::PlayerUpgradeEventHandler(const PlayerUpgradeEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	
+
 ///<<< END WRITING YOUR CODE
 }
 void PlayerEventHandler::InitializePlayerComponentsEventHandler(const InitializePlayerComponentsEvent& event)
