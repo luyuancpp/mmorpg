@@ -24,6 +24,7 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 {
 	GetNodeInfo().set_node_type(SceneNodeService);
 	targetNodeTypeWhitelist = { CentreNodeService };
+	Initialize();
 
 	tlsRedisSystem.Initialize();
 

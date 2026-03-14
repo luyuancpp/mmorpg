@@ -48,8 +48,24 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string& nodeJson, uint32
 	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 
-	*nodeList.Add() = newNode;
-	LOG_INFO << "Node added, type: " << nodeType << ", info: " << newNode.DebugString();
+	bool existed = false;
+	for (auto& node : nodeList) {
+		if (!NodeUtils::IsSameNode(node.node_uuid(), newNode.node_uuid())) {
+			continue;
+		}
+
+		node.CopyFrom(newNode);
+		existed = true;
+		break;
+	}
+
+	if (!existed) {
+		*nodeList.Add() = newNode;
+		LOG_INFO << "Node added, type: " << nodeType << ", info: " << newNode.DebugString();
+	}
+	else {
+		LOG_TRACE << "Node updated from service discovery event, uuid=" << newNode.node_uuid();
+	}
 
 	if (gNode->IsMyNode(newNode)) {
 		LOG_TRACE << "Node has same lease_id as self, skip adding node. Self uuid: " << newNode.node_uuid();
@@ -57,6 +73,10 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string& nodeJson, uint32
 	}
 
 	if (!gNode->GetTargetNodeTypeWhitelist().contains(nodeType)) return;
+	if (NodeUtils::IsNodeConnected(nodeType, newNode)) {
+		LOG_TRACE << "Node already connected, skip reconnect. uuid=" << newNode.node_uuid();
+		return;
+	}
 
 	if (gNode->IsServiceStarted()) {
 		NodeConnector::ConnectToNode(newNode);

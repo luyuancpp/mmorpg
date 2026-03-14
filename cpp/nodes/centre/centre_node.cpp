@@ -15,6 +15,7 @@ using namespace net;
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
 	: Node(loop, "logs/centre"){
 	GetNodeInfo().set_node_type(CentreNodeService);
+	Initialize();
 	EventHandler::Register();
 	tlsRedisSystem.Initialize();
 }

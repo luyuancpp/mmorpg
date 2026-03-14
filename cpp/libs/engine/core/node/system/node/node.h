@@ -10,6 +10,7 @@
 #include "type_define/type_define.h"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <atomic>
 #include "infra/messaging/kafka/kafka_manager.h"
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/etcd/etcd_manager.h"
@@ -38,9 +39,9 @@ public:
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     NodeInfo& GetNodeInfo() const;
 	KafkaManager& GetKafkaManager() { return kafkaManager; }
-    virtual ::google::protobuf::Service* GetNodeReplyService() { return {}; }
-    inline [[nodiscard]] muduo::AsyncLogging& Log() { return logSystem; }
-    [[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
+    virtual google::protobuf::Service* GetNodeReplyService() { return nullptr; }
+    muduo::AsyncLogging& Log() { return logSystem; }
+    RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
 	void SetZoneCentreNode(RpcClientPtr& c) { zoneCentreNode = c; }
     ClientList& GetZombieClientList() { return zombieClientList; }
     CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
@@ -84,6 +85,7 @@ protected:
     void OnServerConnected(const OnConnected2TcpServerEvent& es);
 
     void Shutdown();
+    void ShutdownInLoop();
 
     // 成员变量
     muduo::net::EventLoop* eventLoop;
@@ -106,6 +108,7 @@ protected:
     EtcdManager etcdManager;
     NodeHandshakeManager nodeRegistrationManager;
     ServiceDiscoveryManager serviceDiscoveryManager;
+    std::atomic<bool> shutdownStarted{ false };
 };
 
 extern Node* gNode;

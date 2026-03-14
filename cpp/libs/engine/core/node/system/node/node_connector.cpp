@@ -95,7 +95,13 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& info) {
 
 	registry.emplace<NodeInfo>(createdId, info);
 
-	client->registerService(gNode->GetNodeReplyService());
+	auto* replyService = gNode->GetNodeReplyService();
+	if (replyService != nullptr) {
+		client->registerService(replyService);
+	}
+	else {
+		LOG_WARN << "Node reply service is null, skip client registerService. node_type=" << gNode->GetNodeType();
+	}
 	client->connect();
 
 	LOG_INFO << "Connecting to TCP node, Uuid: " << info.node_uuid()

@@ -92,7 +92,14 @@ void EtcdService::InitTxnHandlers() {
 	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const etcdserverpb::TxnResponse& reply) {
 		LOG_INFO << "Txn response: " << reply.DebugString();
 
-		auto& key = gNode->GetEtcdManager().GetPendingKeys().front();
+		auto& pendingKeys = gNode->GetEtcdManager().GetPendingKeys();
+		if (pendingKeys.empty()) {
+			LOG_WARN << "Ignore txn response because pending key queue is empty.";
+			return;
+		}
+
+		std::string key = std::move(pendingKeys.front());
+		pendingKeys.pop_front();
 
 		if (reply.succeeded()) {
 			if (boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodePortEtcdPrefix(gNode->GetNodeInfo()))) {
@@ -114,7 +121,6 @@ void EtcdService::InitTxnHandlers() {
 			}
 		}
 
-		gNode->GetEtcdManager().GetPendingKeys().pop_front();
 		};
 }
 
@@ -167,6 +173,18 @@ void EtcdService::RegisterService() {
 }
 
 void EtcdService::Shutdown() {
+	grpcHandlerTimer.Cancel();
+	acquireNodeTimer.Cancel();
+	acquirePortTimer.Cancel();
+
+	auto emptyHandler = [](const ClientContext&, const ::google::protobuf::Message&) {};
+	etcdserverpb::AsyncKVRangeHandler = emptyHandler;
+	etcdserverpb::AsyncKVPutHandler = emptyHandler;
+	etcdserverpb::AsyncKVDeleteRangeHandler = emptyHandler;
+	etcdserverpb::AsyncKVTxnHandler = emptyHandler;
+	etcdserverpb::AsyncWatchWatchHandler = emptyHandler;
+	etcdserverpb::AsyncLeaseLeaseGrantHandler = emptyHandler;
+
 	EtcdHelper::StopAllWatching();
 	gNode->GetEtcdManager().Shutdown();
 }
