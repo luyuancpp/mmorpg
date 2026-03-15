@@ -3,10 +3,11 @@ package cpp
 import (
 	"testing"
 
+	"pbgen/internal"
+
 	messageoption "github.com/luyuancpp/protooption"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"pbgen/internal"
 )
 
 func boolPtr(v bool) *bool {
@@ -69,5 +70,3 @@ func TestSceneNodeReceivedFilters(t *testing.T) {
 		t.Fatalf("did not expect scene node to treat own scene service as external response")
 	}
 }
-
-
