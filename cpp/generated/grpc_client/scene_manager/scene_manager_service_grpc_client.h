@@ -5,9 +5,7 @@
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/scene_manager/scene_manager_service.grpc.pb.h"
 
-
 #include "rpc/service_metadata/scene_manager_service_service_metadata.h"
-
 
 using grpc::ClientContext;
 using grpc::Status;
@@ -17,7 +15,6 @@ namespace scene_manager {
 using SceneManagerStubPtr = std::unique_ptr<SceneManager::Stub>;
 #pragma region SceneManagerCreateScene
 
-
 struct AsyncSceneManagerCreateSceneGrpcClient {
     uint32_t messageId{ SceneManagerCreateSceneMessageId };
     ClientContext context;
@@ -25,8 +22,6 @@ struct AsyncSceneManagerCreateSceneGrpcClient {
     ::scene_manager::CreateSceneResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::scene_manager::CreateSceneResponse>> response_reader;
 };
-
-
 
 class ::scene_manager::CreateSceneRequest;
 using AsyncSceneManagerCreateSceneHandlerFunctionType =
@@ -39,7 +34,6 @@ void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEnti
 #pragma endregion
 #pragma region SceneManagerDestroyScene
 
-
 struct AsyncSceneManagerDestroySceneGrpcClient {
     uint32_t messageId{ SceneManagerDestroySceneMessageId };
     ClientContext context;
@@ -47,8 +41,6 @@ struct AsyncSceneManagerDestroySceneGrpcClient {
     ::Empty reply;
     std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
-
-
 
 class ::scene_manager::DestroySceneRequest;
 using AsyncSceneManagerDestroySceneHandlerFunctionType =
@@ -59,49 +51,43 @@ void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEnt
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
-#pragma region SceneManagerEnterSceneByCentre
+#pragma region SceneManagerEnterScene
 
-
-struct AsyncSceneManagerEnterSceneByCentreGrpcClient {
-    uint32_t messageId{ SceneManagerEnterSceneByCentreMessageId };
+struct AsyncSceneManagerEnterSceneGrpcClient {
+    uint32_t messageId{ SceneManagerEnterSceneMessageId };
     ClientContext context;
     Status status;
-    ::scene_manager::EnterSceneByCentreResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::scene_manager::EnterSceneByCentreResponse>> response_reader;
+    ::scene_manager::EnterSceneResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::scene_manager::EnterSceneResponse>> response_reader;
 };
 
+class ::scene_manager::EnterSceneRequest;
+using AsyncSceneManagerEnterSceneHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::scene_manager::EnterSceneResponse&)>;
+extern AsyncSceneManagerEnterSceneHandlerFunctionType AsyncSceneManagerEnterSceneHandler;
 
-
-class ::scene_manager::EnterSceneByCentreRequest;
-using AsyncSceneManagerEnterSceneByCentreHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::scene_manager::EnterSceneByCentreResponse&)>;
-extern AsyncSceneManagerEnterSceneByCentreHandlerFunctionType AsyncSceneManagerEnterSceneByCentreHandler;
-
-void SendSceneManagerEnterSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneByCentreRequest& request);
-void SendSceneManagerEnterSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneByCentreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void SendSceneManagerEnterSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request);
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
-#pragma region SceneManagerLeaveSceneByCentre
+#pragma region SceneManagerLeaveScene
 
-
-struct AsyncSceneManagerLeaveSceneByCentreGrpcClient {
-    uint32_t messageId{ SceneManagerLeaveSceneByCentreMessageId };
+struct AsyncSceneManagerLeaveSceneGrpcClient {
+    uint32_t messageId{ SceneManagerLeaveSceneMessageId };
     ClientContext context;
     Status status;
     ::Empty reply;
     std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
 };
 
-
-
-class ::scene_manager::LeaveSceneByCentreRequest;
-using AsyncSceneManagerLeaveSceneByCentreHandlerFunctionType =
+class ::scene_manager::LeaveSceneRequest;
+using AsyncSceneManagerLeaveSceneHandlerFunctionType =
     std::function<void(const ClientContext&, const ::Empty&)>;
-extern AsyncSceneManagerLeaveSceneByCentreHandlerFunctionType AsyncSceneManagerLeaveSceneByCentreHandler;
+extern AsyncSceneManagerLeaveSceneHandlerFunctionType AsyncSceneManagerLeaveSceneHandler;
 
-void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneByCentreRequest& request);
-void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneByCentreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request);
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -109,4 +95,3 @@ void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, en
 void InitSceneManagerServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace scene_manager
-

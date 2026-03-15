@@ -5,9 +5,7 @@
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 
-
 #include "rpc/service_metadata/etcd_service_metadata.h"
-
 
 using grpc::ClientContext;
 using grpc::Status;
@@ -17,7 +15,6 @@ namespace etcdserverpb {
 using KVStubPtr = std::unique_ptr<KV::Stub>;
 #pragma region KVRange
 
-
 struct AsyncKVRangeGrpcClient {
     uint32_t messageId{ KVRangeMessageId };
     ClientContext context;
@@ -25,8 +22,6 @@ struct AsyncKVRangeGrpcClient {
     ::etcdserverpb::RangeResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::RangeResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::RangeRequest;
 using AsyncKVRangeHandlerFunctionType =
@@ -39,7 +34,6 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google
 #pragma endregion
 #pragma region KVPut
 
-
 struct AsyncKVPutGrpcClient {
     uint32_t messageId{ KVPutMessageId };
     ClientContext context;
@@ -47,8 +41,6 @@ struct AsyncKVPutGrpcClient {
     ::etcdserverpb::PutResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::PutResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::PutRequest;
 using AsyncKVPutHandlerFunctionType =
@@ -61,7 +53,6 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::
 #pragma endregion
 #pragma region KVDeleteRange
 
-
 struct AsyncKVDeleteRangeGrpcClient {
     uint32_t messageId{ KVDeleteRangeMessageId };
     ClientContext context;
@@ -69,8 +60,6 @@ struct AsyncKVDeleteRangeGrpcClient {
     ::etcdserverpb::DeleteRangeResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::DeleteRangeResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::DeleteRangeRequest;
 using AsyncKVDeleteRangeHandlerFunctionType =
@@ -83,7 +72,6 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
 #pragma endregion
 #pragma region KVTxn
 
-
 struct AsyncKVTxnGrpcClient {
     uint32_t messageId{ KVTxnMessageId };
     ClientContext context;
@@ -91,8 +79,6 @@ struct AsyncKVTxnGrpcClient {
     ::etcdserverpb::TxnResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::TxnResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::TxnRequest;
 using AsyncKVTxnHandlerFunctionType =
@@ -105,7 +91,6 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::
 #pragma endregion
 #pragma region KVCompact
 
-
 struct AsyncKVCompactGrpcClient {
     uint32_t messageId{ KVCompactMessageId };
     ClientContext context;
@@ -113,8 +98,6 @@ struct AsyncKVCompactGrpcClient {
     ::etcdserverpb::CompactionResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::CompactionResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::CompactionRequest;
 using AsyncKVCompactHandlerFunctionType =
@@ -127,7 +110,6 @@ void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const goog
 #pragma endregion
 using WatchStubPtr = std::unique_ptr<Watch::Stub>;
 #pragma region WatchWatch
-
 
 struct AsyncWatchWatchGrpcClient {
     uint32_t messageId{ WatchWatchMessageId };
@@ -145,8 +127,6 @@ struct WatchRequestWriteInProgress {
     bool isInProgress{false};
 };
 
-
-
 class ::etcdserverpb::WatchRequest;
 using AsyncWatchWatchHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::WatchResponse&)>;
@@ -159,7 +139,6 @@ void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const goo
 using LeaseStubPtr = std::unique_ptr<Lease::Stub>;
 #pragma region LeaseLeaseGrant
 
-
 struct AsyncLeaseLeaseGrantGrpcClient {
     uint32_t messageId{ LeaseLeaseGrantMessageId };
     ClientContext context;
@@ -167,8 +146,6 @@ struct AsyncLeaseLeaseGrantGrpcClient {
     ::etcdserverpb::LeaseGrantResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseGrantResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::LeaseGrantRequest;
 using AsyncLeaseLeaseGrantHandlerFunctionType =
@@ -181,7 +158,6 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
 #pragma endregion
 #pragma region LeaseLeaseRevoke
 
-
 struct AsyncLeaseLeaseRevokeGrpcClient {
     uint32_t messageId{ LeaseLeaseRevokeMessageId };
     ClientContext context;
@@ -189,8 +165,6 @@ struct AsyncLeaseLeaseRevokeGrpcClient {
     ::etcdserverpb::LeaseRevokeResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseRevokeResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::LeaseRevokeRequest;
 using AsyncLeaseLeaseRevokeHandlerFunctionType =
@@ -202,7 +176,6 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 #pragma region LeaseLeaseKeepAlive
-
 
 struct AsyncLeaseLeaseKeepAliveGrpcClient {
     uint32_t messageId{ LeaseLeaseKeepAliveMessageId };
@@ -220,8 +193,6 @@ struct LeaseKeepAliveRequestWriteInProgress {
     bool isInProgress{false};
 };
 
-
-
 class ::etcdserverpb::LeaseKeepAliveRequest;
 using AsyncLeaseLeaseKeepAliveHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::LeaseKeepAliveResponse&)>;
@@ -233,7 +204,6 @@ void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, 
 #pragma endregion
 #pragma region LeaseLeaseTimeToLive
 
-
 struct AsyncLeaseLeaseTimeToLiveGrpcClient {
     uint32_t messageId{ LeaseLeaseTimeToLiveMessageId };
     ClientContext context;
@@ -241,8 +211,6 @@ struct AsyncLeaseLeaseTimeToLiveGrpcClient {
     ::etcdserverpb::LeaseTimeToLiveResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseTimeToLiveResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::LeaseTimeToLiveRequest;
 using AsyncLeaseLeaseTimeToLiveHandlerFunctionType =
@@ -255,7 +223,6 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
 #pragma endregion
 #pragma region LeaseLeaseLeases
 
-
 struct AsyncLeaseLeaseLeasesGrpcClient {
     uint32_t messageId{ LeaseLeaseLeasesMessageId };
     ClientContext context;
@@ -263,8 +230,6 @@ struct AsyncLeaseLeaseLeasesGrpcClient {
     ::etcdserverpb::LeaseLeasesResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseLeasesResponse>> response_reader;
 };
-
-
 
 class ::etcdserverpb::LeaseLeasesRequest;
 using AsyncLeaseLeaseLeasesHandlerFunctionType =
@@ -281,4 +246,3 @@ void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity node
 void InitEtcdGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace etcdserverpb
-

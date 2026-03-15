@@ -8,6 +8,7 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/protobuf/proto"
 
 	kafkapb "login/contracts/kafka"
@@ -15,16 +16,18 @@ import (
 	"login/internal/kafka"
 	"login/internal/logic/pkg/taskmanager"
 	login_proto "login/proto/common"
+	plpb "login/proto/player_locator"
 	"time"
 )
 
 type ServiceContext struct {
-	RedisClient   *redis.Client
-	SnowFlake     *snowflake.Node
-	NodeInfo      login_proto.NodeInfo
-	KafkaClient   *kafka.KeyOrderedKafkaProducer
-	TaskExecutor  *taskmanager.TaskExecutor
-	ExpandMonitor *kafka.ExpandMonitor
+	RedisClient         *redis.Client
+	SnowFlake           *snowflake.Node
+	NodeInfo            login_proto.NodeInfo
+	KafkaClient         *kafka.KeyOrderedKafkaProducer
+	TaskExecutor        *taskmanager.TaskExecutor
+	ExpandMonitor       *kafka.ExpandMonitor
+	PlayerLocatorClient plpb.PlayerLocatorClient
 }
 
 func NewServiceContext() *ServiceContext {
@@ -71,12 +74,17 @@ func NewServiceContext() *ServiceContext {
 		panic(fmt.Errorf("failed to init TaskExecutor: %w", err))
 	}
 
+	// 初始化 player_locator gRPC 客户端 (通过 etcd 发现)
+	plConn := zrpc.MustNewClient(config.AppConfig.PlayerLocatorRpc)
+	plClient := plpb.NewPlayerLocatorClient(plConn.Conn())
+
 	// 返回 ServiceContext 实例
 	return &ServiceContext{
-		RedisClient:   redisClient,
-		KafkaClient:   kafkaClient,
-		TaskExecutor:  taskExecutor,
-		ExpandMonitor: monitor,
+		RedisClient:         redisClient,
+		KafkaClient:         kafkaClient,
+		TaskExecutor:        taskExecutor,
+		ExpandMonitor:       monitor,
+		PlayerLocatorClient: plClient,
 	}
 }
 
@@ -93,26 +101,31 @@ func (c *ServiceContext) SetNodeId(nodeId int64) {
 	c.SnowFlake = node
 }
 
-// KickOldSession sends a KickPlayer command to the old Gate via Kafka.
-func (s *ServiceContext) KickOldSession(ctx context.Context, gateID string, gateInstanceID string, sessionID uint64, sessionVersion uint64) {
+// KickSessionOnGate sends a KickPlayer command to the target Gate via Kafka.
+func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint64) error {
 	cmd := &kafkapb.GateCommand{
 		CommandType:      kafkapb.GateCommand_KickPlayer,
 		SessionId:        sessionID,
 		TargetInstanceId: gateInstanceID,
 	}
-	gateNodeID, _ := strconv.ParseUint(gateID, 10, 32)
+
+	gateNodeID, err := strconv.ParseUint(gateID, 10, 32)
+	if err != nil {
+		return fmt.Errorf("parse gate id %q: %w", gateID, err)
+	}
 	cmd.TargetGateId = uint32(gateNodeID)
 
 	data, err := proto.Marshal(cmd)
 	if err != nil {
-		logx.Errorf("KickOldSession marshal failed: %v", err)
-		return
+		return fmt.Errorf("marshal gate kick command: %w", err)
 	}
 
 	topic := fmt.Sprintf("gate-%s", gateID)
 	if err := s.KafkaClient.SendToTopic(topic, data); err != nil {
-		logx.Errorf("KickOldSession send to %s failed: %v", topic, err)
+		return fmt.Errorf("send gate kick command to %s: %w", topic, err)
 	}
+
+	return nil
 }
 
 func (s *ServiceContext) Stop() {

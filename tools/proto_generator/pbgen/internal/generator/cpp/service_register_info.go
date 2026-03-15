@@ -383,7 +383,10 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 
 		firstMethod := service.Methods[0]
 
-		includes = appendUniqueString(includes, includeSet, firstMethod.IncludeName())
+		pbInclude := _config.Global.Naming.IncludeBegin +
+			strings.Replace(firstMethod.Path(), _config.Global.Paths.ProtoDir, _config.Global.DirectoryNames.ProtoDirName, 1) +
+			firstMethod.PbcHeadName() + "\"\n"
+		includes = appendUniqueString(includes, includeSet, pbInclude)
 		serviceInfoIncludes = appendUniqueString(serviceInfoIncludes, serviceIncludeSet, firstMethod.ServiceInfoIncludeName())
 
 		if firstMethod.CcGenericServices() {
@@ -416,7 +419,7 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 			if method.CcGenericServices() {
 				handler := service.Service() + "Impl"
 				initLine = fmt.Sprintf(
-					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), %d, %s};`,
+					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique<%s>(), std::make_unique<%s>(), std::make_unique<%s>(), %d, %s};`,
 					messageId,
 					method.Service(),
 					method.Method(),
@@ -432,7 +435,7 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 				senderFunction = appendUniqueString(senderFunction, senderFunctionSet, declareFunction)
 				sendName := method.Package() + "::" + "Send" + service.Service() + method.Method()
 				initLine = fmt.Sprintf(
-					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique_for_overwrite<%s>(), std::make_unique_for_overwrite<%s>(), nullptr, %d, %s, %s};`,
+					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique<%s>(), std::make_unique<%s>(), nullptr, %d, %s, %s};`,
 					messageId,
 					method.Service(),
 					method.Method(),
@@ -462,7 +465,7 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 		)
 		eventDispatchers = appendUniqueString(eventDispatchers, eventDispatcherSet, dispatcherBody)
 		eventInitLines = append(eventInitLines, fmt.Sprintf(
-			`gProtoEventRegistry[%s%s] = ProtoEvent{"%s", std::make_unique_for_overwrite<%s>(), &%s};`,
+			`gProtoEventRegistry[%s%s] = ProtoEvent{"%s", std::make_unique<%s>(), &%s};`,
 			event.IdName,
 			_config.Global.Naming.EventId,
 			event.QualifiedName,

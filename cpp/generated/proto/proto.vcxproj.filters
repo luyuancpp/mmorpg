@@ -243,6 +243,21 @@
     <ClCompile Include="scene_manager\storage.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="contracts\kafka\centre_command.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="contracts\kafka\gate_command.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="contracts\kafka\gate_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="contracts\kafka\scene_command.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="data_service\data_service.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="centre\centre_player.pb.h">
@@ -471,6 +486,21 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="scene_manager\storage.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="contracts\kafka\centre_command.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="contracts\kafka\gate_command.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="contracts\kafka\gate_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="contracts\kafka\scene_command.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="data_service\data_service.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -10,6 +10,7 @@
 #include "network/rpc_session.h"
 #include "threading/node_context_manager.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
+#include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "proto/common/base/message.pb.h"
 
 #include "proto/common/component/player_network_comp.pb.h"
@@ -67,26 +68,9 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const uint64_t sessionId = request->session_id();
-	const uint64_t expectedVersion = request->expected_session_version();
-
-	auto it = tlsSessionManager.sessions().find(sessionId);
-	if (it == tlsSessionManager.sessions().end()) {
-		LOG_DEBUG << "Kick: session not found " << sessionId;
-		return; // 幂等
-	}
-	const SessionInfo& info = it->second;
-
-	// 只有版本相等时才断开，避免旧请求断开新连接
-	if (info.sessionVersion != expectedVersion) {
-		LOG_INFO << "Kick: version mismatch, ignore. session=" << sessionId << " current=" << info.sessionVersion
-			<< " expected=" << expectedVersion;
-		return;
-	}
-
-	// 执行断开（旧版通过 Centre gRPC 调用，新版主要通过 Kafka KickPlayer 事件）
-	//CloseSession(sessionId);
-	LOG_INFO << "Session kicked via gRPC: " << request->session_id();
+	// DEPRECATED: Centre has been decommissioned. Kick is now handled via Kafka KickPlayer GateCommand.
+	// This RPC handler is kept as a no-op stub for proto ABI compatibility.
+	LOG_DEBUG << "KickSessionByCentre called but Centre is decommissioned. session_id=" << request->session_id();
 	///<<< END WRITING YOUR CODE
 }
 

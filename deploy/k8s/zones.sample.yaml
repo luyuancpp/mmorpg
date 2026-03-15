@@ -1,0 +1,14 @@
+zones:
+  - name: yesterday
+    zoneId: 101
+    replicas:
+      centre: 1
+      gate: 2
+      scene: 4
+
+  - name: today
+    zoneId: 102
+    replicas:
+      centre: 1
+      gate: 2
+      scene: 4

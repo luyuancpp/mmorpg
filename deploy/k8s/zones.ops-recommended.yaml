@@ -1,0 +1,22 @@
+zones:
+  - name: yesterday
+    zoneId: 101
+    replicas:
+      centre: 1
+      gate: 2
+      scene: 4
+
+  - name: today
+    zoneId: 102
+    replicas:
+      centre: 1
+      gate: 2
+      scene: 4
+
+# Ops recommendation:
+# 1. Keep centre=1 unless you have already validated multi-centre semantics.
+# 2. Start with gate=2 and scene=4 per zone for basic redundancy and rollout safety.
+# 3. Use YAML as the operational source of truth; keep JSON only for tool interop.
+# 4. Managed cloud K8s: prefer -GateServiceType LoadBalancer.
+# 5. Self-hosted/bare metal K8s: prefer -GateServiceType NodePort behind an external L4 LB.
+# 6. Do not default every cluster to LoadBalancer; if the cluster lacks a mature LB implementation, NodePort + external L4 LB is usually the more stable production choice.

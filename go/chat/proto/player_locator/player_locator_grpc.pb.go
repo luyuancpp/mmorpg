@@ -20,9 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PlayerLocator_SetLocation_FullMethodName = "/playerlocator.PlayerLocator/SetLocation"
-	PlayerLocator_GetLocation_FullMethodName = "/playerlocator.PlayerLocator/GetLocation"
-	PlayerLocator_MarkOffline_FullMethodName = "/playerlocator.PlayerLocator/MarkOffline"
+	PlayerLocator_SetLocation_FullMethodName      = "/playerlocator.PlayerLocator/SetLocation"
+	PlayerLocator_GetLocation_FullMethodName      = "/playerlocator.PlayerLocator/GetLocation"
+	PlayerLocator_MarkOffline_FullMethodName      = "/playerlocator.PlayerLocator/MarkOffline"
+	PlayerLocator_SetSession_FullMethodName       = "/playerlocator.PlayerLocator/SetSession"
+	PlayerLocator_GetSession_FullMethodName       = "/playerlocator.PlayerLocator/GetSession"
+	PlayerLocator_SetDisconnecting_FullMethodName = "/playerlocator.PlayerLocator/SetDisconnecting"
+	PlayerLocator_Reconnect_FullMethodName        = "/playerlocator.PlayerLocator/Reconnect"
 )
 
 // PlayerLocatorClient is the client API for PlayerLocator service.
@@ -32,6 +36,11 @@ type PlayerLocatorClient interface {
 	SetLocation(ctx context.Context, in *PlayerLocation, opts ...grpc.CallOption) (*base.Empty, error)
 	GetLocation(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*PlayerLocation, error)
 	MarkOffline(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*base.Empty, error)
+	// Session management (replaces Centre)
+	SetSession(ctx context.Context, in *SetSessionRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	GetSession(ctx context.Context, in *GetSessionRequest, opts ...grpc.CallOption) (*GetSessionResponse, error)
+	SetDisconnecting(ctx context.Context, in *SetDisconnectingRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	Reconnect(ctx context.Context, in *ReconnectRequest, opts ...grpc.CallOption) (*ReconnectResponse, error)
 }
 
 type playerLocatorClient struct {
@@ -72,6 +81,46 @@ func (c *playerLocatorClient) MarkOffline(ctx context.Context, in *PlayerId, opt
 	return out, nil
 }
 
+func (c *playerLocatorClient) SetSession(ctx context.Context, in *SetSessionRequest, opts ...grpc.CallOption) (*base.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.Empty)
+	err := c.cc.Invoke(ctx, PlayerLocator_SetSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *playerLocatorClient) GetSession(ctx context.Context, in *GetSessionRequest, opts ...grpc.CallOption) (*GetSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSessionResponse)
+	err := c.cc.Invoke(ctx, PlayerLocator_GetSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *playerLocatorClient) SetDisconnecting(ctx context.Context, in *SetDisconnectingRequest, opts ...grpc.CallOption) (*base.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.Empty)
+	err := c.cc.Invoke(ctx, PlayerLocator_SetDisconnecting_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *playerLocatorClient) Reconnect(ctx context.Context, in *ReconnectRequest, opts ...grpc.CallOption) (*ReconnectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReconnectResponse)
+	err := c.cc.Invoke(ctx, PlayerLocator_Reconnect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PlayerLocatorServer is the server API for PlayerLocator service.
 // All implementations must embed UnimplementedPlayerLocatorServer
 // for forward compatibility.
@@ -79,6 +128,11 @@ type PlayerLocatorServer interface {
 	SetLocation(context.Context, *PlayerLocation) (*base.Empty, error)
 	GetLocation(context.Context, *PlayerId) (*PlayerLocation, error)
 	MarkOffline(context.Context, *PlayerId) (*base.Empty, error)
+	// Session management (replaces Centre)
+	SetSession(context.Context, *SetSessionRequest) (*base.Empty, error)
+	GetSession(context.Context, *GetSessionRequest) (*GetSessionResponse, error)
+	SetDisconnecting(context.Context, *SetDisconnectingRequest) (*base.Empty, error)
+	Reconnect(context.Context, *ReconnectRequest) (*ReconnectResponse, error)
 	mustEmbedUnimplementedPlayerLocatorServer()
 }
 
@@ -97,6 +151,18 @@ func (UnimplementedPlayerLocatorServer) GetLocation(context.Context, *PlayerId) 
 }
 func (UnimplementedPlayerLocatorServer) MarkOffline(context.Context, *PlayerId) (*base.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarkOffline not implemented")
+}
+func (UnimplementedPlayerLocatorServer) SetSession(context.Context, *SetSessionRequest) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetSession not implemented")
+}
+func (UnimplementedPlayerLocatorServer) GetSession(context.Context, *GetSessionRequest) (*GetSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSession not implemented")
+}
+func (UnimplementedPlayerLocatorServer) SetDisconnecting(context.Context, *SetDisconnectingRequest) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetDisconnecting not implemented")
+}
+func (UnimplementedPlayerLocatorServer) Reconnect(context.Context, *ReconnectRequest) (*ReconnectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Reconnect not implemented")
 }
 func (UnimplementedPlayerLocatorServer) mustEmbedUnimplementedPlayerLocatorServer() {}
 func (UnimplementedPlayerLocatorServer) testEmbeddedByValue()                       {}
@@ -173,6 +239,78 @@ func _PlayerLocator_MarkOffline_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PlayerLocator_SetSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PlayerLocatorServer).SetSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PlayerLocator_SetSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PlayerLocatorServer).SetSession(ctx, req.(*SetSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PlayerLocator_GetSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PlayerLocatorServer).GetSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PlayerLocator_GetSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PlayerLocatorServer).GetSession(ctx, req.(*GetSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PlayerLocator_SetDisconnecting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetDisconnectingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PlayerLocatorServer).SetDisconnecting(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PlayerLocator_SetDisconnecting_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PlayerLocatorServer).SetDisconnecting(ctx, req.(*SetDisconnectingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PlayerLocator_Reconnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReconnectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PlayerLocatorServer).Reconnect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PlayerLocator_Reconnect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PlayerLocatorServer).Reconnect(ctx, req.(*ReconnectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PlayerLocator_ServiceDesc is the grpc.ServiceDesc for PlayerLocator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -191,6 +329,22 @@ var PlayerLocator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarkOffline",
 			Handler:    _PlayerLocator_MarkOffline_Handler,
+		},
+		{
+			MethodName: "SetSession",
+			Handler:    _PlayerLocator_SetSession_Handler,
+		},
+		{
+			MethodName: "GetSession",
+			Handler:    _PlayerLocator_GetSession_Handler,
+		},
+		{
+			MethodName: "SetDisconnecting",
+			Handler:    _PlayerLocator_SetDisconnecting_Handler,
+		},
+		{
+			MethodName: "Reconnect",
+			Handler:    _PlayerLocator_Reconnect_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -15,8 +15,6 @@ void InitGateReply()
         std::bind(&OnGatePlayerEnterGameNodeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(GateSendMessageToPlayerMessageId,
         std::bind(&OnGateSendMessageToPlayerReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gRpcResponseDispatcher.registerMessageCallback<::Empty>(GateKickSessionByCentreMessageId,
-        std::bind(&OnGateKickSessionByCentreReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(GateRouteNodeMessageMessageId,
         std::bind(&OnGateRouteNodeMessageReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::RoutePlayerMessageResponse>(GateRoutePlayerMessageMessageId,
@@ -36,12 +34,6 @@ void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::sha
 }
 
 void OnGateSendMessageToPlayerReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
-void OnGateKickSessionByCentreReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

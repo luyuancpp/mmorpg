@@ -5,7 +5,7 @@
 #include <network/rpc_client.h>
 #include "threading/redis_manager.h"
 #include "proto/common/component/player_network_comp.pb.h"
-#include "rpc/service_metadata/centre_service_service_metadata.h"
+#include "proto/common/base/message.pb.h"
 #include "threading/node_context_manager.h"
 #include "threading/player_manager.h"
 #include <threading/registry_manager.h>
@@ -251,20 +251,4 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	request.mutable_header()->set_session_id(sessionPB->gate_session_id());
 
 	session->SendRequest(wrappedMessageId, request);
-}
-
-void SendToCentrePlayerByClientNode(
-	uint32_t messageId,
-	const google::protobuf::Message& message,
-	Guid playerId)
-{
-	SendMessageToPlayerViaClientNode(CentrePlayerServiceMessageId, eNodeType::CentreNodeService, messageId, message, playerId);
-}
-
-void SendToCentrePlayerByClientNode(
-	uint32_t messageId,
-	const google::protobuf::Message& message,
-	entt::entity playerEntity)
-{
-	SendMessageToPlayerViaClientNode(CentrePlayerServiceMessageId, eNodeType::CentreNodeService, messageId, message, playerEntity);
 }

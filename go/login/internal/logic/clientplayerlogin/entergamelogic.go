@@ -12,7 +12,6 @@ import (
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/logic/pkg/sessionmanager"
-	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
 	login_proto_common "login/proto/common"
 	login_proto_database "login/proto/logic/database"
@@ -29,6 +28,15 @@ type EnterGameLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
+}
+
+type enterGameSessionState struct {
+	playerID       uint64
+	sessionID      uint64
+	gateID         string
+	gateInstanceID string
+	account        string
+	requestID      string
 }
 
 func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGameLogic {
@@ -76,63 +84,12 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
+	flowState := buildEnterGameSessionState(in, sessionDetails, session.Account)
 	taskCallback := func(taskKey string, taskSuccess bool, err error) {
-		// Player data loaded → register session in Redis (replaces Centre's SessionMap)
-		existing, _ := sessionmanager.GetSession(ctx, l.svcCtx.RedisClient, in.PlayerId)
-		decision := sessionmanager.DecideEnterGame(existing, session.Account)
-
-		gateID := strconv.FormatUint(uint64(sessionDetails.GetGateNodeId()), 10)
-		gateInstanceID := sessionDetails.GetGateInstanceId()
-
-		switch decision {
-		case sessionmanager.FirstLogin:
-			newSession := &sessionmanager.PlayerSession{
-				PlayerID:       in.PlayerId,
-				SessionID:      sessionDetails.SessionId,
-				GateID:         gateID,
-				GateInstanceID: gateInstanceID,
-				Account:        session.Account,
-				SessionVersion: 1,
-				State:          sessionmanager.StateOnline,
-				LastActiveTs:   time.Now().UnixMilli(),
-				RequestID:      in.GetRequestId(),
-			}
-			if setErr := sessionmanager.SetSession(ctx, l.svcCtx.RedisClient, newSession); setErr != nil {
-				logx.Errorf("Failed to set session for player %d: %v", in.PlayerId, setErr)
-			}
-			_ = sessionmanager.SetIdempotency(ctx, l.svcCtx.RedisClient, in.PlayerId, in.GetRequestId())
-
-		case sessionmanager.ShortReconnect:
-			_, reconnErr := sessionmanager.Reconnect(ctx, l.svcCtx.RedisClient, in.PlayerId,
-				sessionDetails.SessionId, gateID, gateInstanceID,
-				session.Account, in.GetRequestId())
-			if reconnErr != nil {
-				logx.Errorf("Reconnect failed for player %d: %v", in.PlayerId, reconnErr)
-			}
-
-		case sessionmanager.ReplaceLogin:
-			// Kick old session via Kafka before replacing
-			if existing != nil && existing.SessionID != sessionDetails.SessionId && existing.GateID != "" {
-				l.svcCtx.KickOldSession(ctx, existing.GateID, existing.GateInstanceID, existing.SessionID, existing.SessionVersion)
-			}
-			newSession := &sessionmanager.PlayerSession{
-				PlayerID:       in.PlayerId,
-				SessionID:      sessionDetails.SessionId,
-				GateID:         gateID,
-				GateInstanceID: gateInstanceID,
-				Account:        session.Account,
-				SessionVersion: 1,
-				State:          sessionmanager.StateOnline,
-				LastActiveTs:   time.Now().UnixMilli(),
-				RequestID:      in.GetRequestId(),
-			}
-			if existing != nil {
-				newSession.SessionVersion = existing.SessionVersion + 1
-			}
-			if setErr := sessionmanager.SetSession(ctx, l.svcCtx.RedisClient, newSession); setErr != nil {
-				logx.Errorf("Failed to set session for player %d: %v", in.PlayerId, setErr)
-			}
-			_ = sessionmanager.SetIdempotency(ctx, l.svcCtx.RedisClient, in.PlayerId, in.GetRequestId())
+		decision, applyErr := l.applyLoadedPlayerSession(ctx, flowState)
+		if applyErr != nil {
+			logx.Errorf("Failed to apply loaded player session for player %d: %v", in.PlayerId, applyErr)
+			return
 		}
 
 		logx.Infof("All tasks completed (decision=%d). playerId=%d", decision, in.PlayerId)
@@ -203,15 +160,91 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	// 7. 清理 Session 和 FSM（原始步骤7，不改动）
-	_ = sessioncleaner.CleanupSession(
-		ctx,
-		l.svcCtx.RedisClient,
-		sessionDetails.SessionId,
-		"enterGame",
-	)
+	cleanupLoginSessionState(ctx, l.svcCtx, sessionDetails.SessionId, "enterGame")
 
 	resp.PlayerId = in.PlayerId
 	return resp, nil
+}
+
+func buildEnterGameSessionState(in *login_proto.EnterGameRequest, sessionDetails *login_proto_common.SessionDetails, account string) enterGameSessionState {
+	return enterGameSessionState{
+		playerID:       in.PlayerId,
+		sessionID:      sessionDetails.SessionId,
+		gateID:         strconv.FormatUint(uint64(sessionDetails.GetGateNodeId()), 10),
+		gateInstanceID: sessionDetails.GetGateInstanceId(),
+		account:        account,
+		requestID:      in.GetRequestId(),
+	}
+}
+
+func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state enterGameSessionState) (sessionmanager.EnterGameDecision, error) {
+	existing, err := sessionmanager.GetSession(ctx, l.svcCtx.PlayerLocatorClient, state.playerID)
+	if err != nil {
+		return sessionmanager.FirstLogin, err
+	}
+
+	decision := sessionmanager.DecideEnterGame(existing, state.account)
+	if err := l.persistEnterGameSession(ctx, decision, existing, state); err != nil {
+		return decision, err
+	}
+
+	if err := sessionmanager.SetIdempotency(ctx, l.svcCtx.RedisClient, state.playerID, state.requestID); err != nil {
+		logx.Errorf("Failed to set idempotency for player %d: %v", state.playerID, err)
+	}
+
+	return decision, nil
+}
+
+func (l *EnterGameLogic) persistEnterGameSession(
+	ctx context.Context,
+	decision sessionmanager.EnterGameDecision,
+	existing *sessionmanager.PlayerSession,
+	state enterGameSessionState,
+) error {
+	switch decision {
+	case sessionmanager.FirstLogin, sessionmanager.ReplaceLogin:
+		if decision == sessionmanager.ReplaceLogin {
+			if err := l.kickReplacedSession(existing, state.sessionID); err != nil {
+				logx.Errorf("Failed to kick old session for player %d: %v", state.playerID, err)
+			}
+		}
+
+		newSession := sessionmanager.NewOnlineSession(existing, sessionmanager.OnlineSessionInput{
+			PlayerID:       state.playerID,
+			SessionID:      state.sessionID,
+			GateID:         state.gateID,
+			GateInstanceID: state.gateInstanceID,
+			Account:        state.account,
+			RequestID:      state.requestID,
+			Now:            time.Now(),
+		})
+		return sessionmanager.SetSession(ctx, l.svcCtx.PlayerLocatorClient, newSession)
+	case sessionmanager.ShortReconnect:
+		_, err := sessionmanager.Reconnect(
+			ctx,
+			l.svcCtx.PlayerLocatorClient,
+			state.playerID,
+			state.sessionID,
+			state.gateID,
+			state.gateInstanceID,
+			state.account,
+			state.requestID,
+		)
+		return err
+	default:
+		return nil
+	}
+}
+
+func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSession, currentSessionID uint64) error {
+	if existing == nil {
+		return nil
+	}
+	if existing.SessionID == currentSessionID || existing.GateID == "" {
+		return nil
+	}
+
+	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID)
 }
 
 // 改造ensurePlayerDataInRedis：接收自定义回调函数，不改动原有数据加载逻辑

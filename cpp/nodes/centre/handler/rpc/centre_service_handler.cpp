@@ -20,6 +20,7 @@
 #include "scene/system/player_change_scene.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
+#include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"

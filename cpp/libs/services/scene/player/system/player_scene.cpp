@@ -10,13 +10,17 @@
 
 #include "network/player_message_utils.h"
 #include "network/node_message_utils.h"
+#include "network/network_utils.h"
 #include <threading/registry_manager.h>
+#include "engine/threading/node_context_manager.h"
 #include "proto/common/component/team_comp.pb.h"
 #include "proto/scene_manager/storage.pb.h"
-#include "rpc/service_metadata/centre_player_scene_service_metadata.h"
+#include "proto/scene_manager/scene_manager_service.pb.h"
+#include "grpc_client/scene_manager/scene_manager_service_grpc_client.h"
 #include <modules/scene/comp/scene_comp.h>
 #include <proto/common/component/player_network_comp.pb.h>
 #include <proto/common/base/node.pb.h>
+#include <proto/common/base/common.pb.h>
 
 // Callback wrapper for Hiredis
 void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
@@ -86,16 +90,49 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 
 	if (leaderSceneId != 0 && leaderSceneId != currentSceneId)
 	{
-		LOG_INFO << "Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) 
-				 << " (Follower) needs to switch to Leader's scene: " << leaderSceneId;
-		
-		// Initiate scene change via Centre
-		CentreEnterSceneRequest request;
-		request.mutable_scene_info()->set_guid(static_cast<uint32_t>(leaderSceneId));
-		// Set other fields if necessary
-		
-		NodeId centreNodeId = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).node_id().at(eNodeType::CentreNodeService);
-		CallRemoteMethodOnClient(CentrePlayerSceneEnterSceneMessageId, request, centreNodeId, eNodeType::CentreNodeService);
+		const auto* playerSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+		if (!playerSessionPB)
+		{
+			LOG_ERROR << "PlayerSessionSnapshotPBComp missing for follower " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
+			return;
+		}
+
+		// Resolve gate info
+		NodeId gateNodeId = GetGateNodeId(playerSessionPB->gate_session_id());
+
+		std::string gateInstanceId;
+		auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+		entt::entity gateEntity{ gateNodeId };
+		if (const auto* gateNodeInfo = gateRegistry.try_get<NodeInfo>(gateEntity))
+		{
+			gateInstanceId = gateNodeInfo->node_uuid();
+		}
+
+		// Find a SceneManager gRPC node
+		auto& smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
+		entt::entity smEntity = entt::null;
+		for (const auto& [e, info] : smRegistry.view<NodeInfo>().each())
+		{
+			smEntity = e;
+			break;
+		}
+		if (smEntity == entt::null)
+		{
+			LOG_WARN << "No SceneManager node available, cannot follow leader to scene " << leaderSceneId;
+			return;
+		}
+
+		::scene_manager::EnterSceneRequest req;
+		req.set_player_id(playerSessionPB->player_id());
+		req.set_scene_id(leaderSceneId);
+		req.set_session_id(playerSessionPB->gate_session_id());
+		req.set_gate_id(std::to_string(gateNodeId));
+		req.set_gate_instance_id(gateInstanceId);
+
+		scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req);
+
+		LOG_INFO << "Player " << playerSessionPB->player_id()
+				 << " (Follower) requesting SceneManager to switch to Leader's scene " << leaderSceneId;
 	}
 }
 

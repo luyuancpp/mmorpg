@@ -122,11 +122,6 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& nodeInfo) {
 		<< ", IP: " << nodeInfo.endpoint().ip()
 		<< ", Port: " << nodeInfo.endpoint().port();
 
-	// Step 4: 设置中心节点引用（仅限中心服）
-	if (nodeInfo.node_type() == CentreNodeService &&
-		nodeInfo.zone_id() == tlsNodeConfigManager.GetGameConfig().zone_id()) {
-		gNode->SetZoneCentreClient(client);
-	}
 }
 
 void NodeConnector::ConnectToHttpNode(const NodeInfo&) {

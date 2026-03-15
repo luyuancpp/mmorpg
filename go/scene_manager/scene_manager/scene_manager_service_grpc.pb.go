@@ -7,11 +7,11 @@
 package scene_manager
 
 import (
-	base "chat/proto/common/base"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	base "scene_manager/proto/common/base"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -20,26 +20,27 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SceneManager_CreateScene_FullMethodName        = "/scene_manager.SceneManager/CreateScene"
-	SceneManager_DestroyScene_FullMethodName       = "/scene_manager.SceneManager/DestroyScene"
-	SceneManager_EnterSceneByCentre_FullMethodName = "/scene_manager.SceneManager/EnterSceneByCentre"
-	SceneManager_LeaveSceneByCentre_FullMethodName = "/scene_manager.SceneManager/LeaveSceneByCentre"
+	SceneManager_CreateScene_FullMethodName  = "/scene_manager.SceneManager/CreateScene"
+	SceneManager_DestroyScene_FullMethodName = "/scene_manager.SceneManager/DestroyScene"
+	SceneManager_EnterScene_FullMethodName   = "/scene_manager.SceneManager/EnterScene"
+	SceneManager_LeaveScene_FullMethodName   = "/scene_manager.SceneManager/LeaveScene"
 )
 
 // SceneManagerClient is the client API for SceneManager service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// SceneManager Service: Responsible for scene creation/destruction and Centre -> Scene routing
+// SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
+// No longer requires Centre — Login/player_locator drive the flow directly.
 type SceneManagerClient interface {
 	// Create a scene on a specific node (implemented by the Scene node)
 	CreateScene(ctx context.Context, in *CreateSceneRequest, opts ...grpc.CallOption) (*CreateSceneResponse, error)
 	// Destroy a scene
 	DestroyScene(ctx context.Context, in *DestroySceneRequest, opts ...grpc.CallOption) (*base.Empty, error)
-	// Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
-	EnterSceneByCentre(ctx context.Context, in *EnterSceneByCentreRequest, opts ...grpc.CallOption) (*EnterSceneByCentreResponse, error)
-	// Centre requests a player to leave a scene (or leave before switching scenes)
-	LeaveSceneByCentre(ctx context.Context, in *LeaveSceneByCentreRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	// Login/player_locator requests a player to enter a scene
+	EnterScene(ctx context.Context, in *EnterSceneRequest, opts ...grpc.CallOption) (*EnterSceneResponse, error)
+	// Login/player_locator requests a player to leave a scene
+	LeaveScene(ctx context.Context, in *LeaveSceneRequest, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type sceneManagerClient struct {
@@ -70,20 +71,20 @@ func (c *sceneManagerClient) DestroyScene(ctx context.Context, in *DestroySceneR
 	return out, nil
 }
 
-func (c *sceneManagerClient) EnterSceneByCentre(ctx context.Context, in *EnterSceneByCentreRequest, opts ...grpc.CallOption) (*EnterSceneByCentreResponse, error) {
+func (c *sceneManagerClient) EnterScene(ctx context.Context, in *EnterSceneRequest, opts ...grpc.CallOption) (*EnterSceneResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EnterSceneByCentreResponse)
-	err := c.cc.Invoke(ctx, SceneManager_EnterSceneByCentre_FullMethodName, in, out, cOpts...)
+	out := new(EnterSceneResponse)
+	err := c.cc.Invoke(ctx, SceneManager_EnterScene_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sceneManagerClient) LeaveSceneByCentre(ctx context.Context, in *LeaveSceneByCentreRequest, opts ...grpc.CallOption) (*base.Empty, error) {
+func (c *sceneManagerClient) LeaveScene(ctx context.Context, in *LeaveSceneRequest, opts ...grpc.CallOption) (*base.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(base.Empty)
-	err := c.cc.Invoke(ctx, SceneManager_LeaveSceneByCentre_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, SceneManager_LeaveScene_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,16 +95,17 @@ func (c *sceneManagerClient) LeaveSceneByCentre(ctx context.Context, in *LeaveSc
 // All implementations must embed UnimplementedSceneManagerServer
 // for forward compatibility.
 //
-// SceneManager Service: Responsible for scene creation/destruction and Centre -> Scene routing
+// SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
+// No longer requires Centre — Login/player_locator drive the flow directly.
 type SceneManagerServer interface {
 	// Create a scene on a specific node (implemented by the Scene node)
 	CreateScene(context.Context, *CreateSceneRequest) (*CreateSceneResponse, error)
 	// Destroy a scene
 	DestroyScene(context.Context, *DestroySceneRequest) (*base.Empty, error)
-	// Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
-	EnterSceneByCentre(context.Context, *EnterSceneByCentreRequest) (*EnterSceneByCentreResponse, error)
-	// Centre requests a player to leave a scene (or leave before switching scenes)
-	LeaveSceneByCentre(context.Context, *LeaveSceneByCentreRequest) (*base.Empty, error)
+	// Login/player_locator requests a player to enter a scene
+	EnterScene(context.Context, *EnterSceneRequest) (*EnterSceneResponse, error)
+	// Login/player_locator requests a player to leave a scene
+	LeaveScene(context.Context, *LeaveSceneRequest) (*base.Empty, error)
 	mustEmbedUnimplementedSceneManagerServer()
 }
 
@@ -120,11 +122,11 @@ func (UnimplementedSceneManagerServer) CreateScene(context.Context, *CreateScene
 func (UnimplementedSceneManagerServer) DestroyScene(context.Context, *DestroySceneRequest) (*base.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DestroyScene not implemented")
 }
-func (UnimplementedSceneManagerServer) EnterSceneByCentre(context.Context, *EnterSceneByCentreRequest) (*EnterSceneByCentreResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method EnterSceneByCentre not implemented")
+func (UnimplementedSceneManagerServer) EnterScene(context.Context, *EnterSceneRequest) (*EnterSceneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnterScene not implemented")
 }
-func (UnimplementedSceneManagerServer) LeaveSceneByCentre(context.Context, *LeaveSceneByCentreRequest) (*base.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method LeaveSceneByCentre not implemented")
+func (UnimplementedSceneManagerServer) LeaveScene(context.Context, *LeaveSceneRequest) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method LeaveScene not implemented")
 }
 func (UnimplementedSceneManagerServer) mustEmbedUnimplementedSceneManagerServer() {}
 func (UnimplementedSceneManagerServer) testEmbeddedByValue()                      {}
@@ -183,38 +185,38 @@ func _SceneManager_DestroyScene_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SceneManager_EnterSceneByCentre_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EnterSceneByCentreRequest)
+func _SceneManager_EnterScene_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnterSceneRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SceneManagerServer).EnterSceneByCentre(ctx, in)
+		return srv.(SceneManagerServer).EnterScene(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SceneManager_EnterSceneByCentre_FullMethodName,
+		FullMethod: SceneManager_EnterScene_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneManagerServer).EnterSceneByCentre(ctx, req.(*EnterSceneByCentreRequest))
+		return srv.(SceneManagerServer).EnterScene(ctx, req.(*EnterSceneRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SceneManager_LeaveSceneByCentre_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LeaveSceneByCentreRequest)
+func _SceneManager_LeaveScene_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LeaveSceneRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SceneManagerServer).LeaveSceneByCentre(ctx, in)
+		return srv.(SceneManagerServer).LeaveScene(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SceneManager_LeaveSceneByCentre_FullMethodName,
+		FullMethod: SceneManager_LeaveScene_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneManagerServer).LeaveSceneByCentre(ctx, req.(*LeaveSceneByCentreRequest))
+		return srv.(SceneManagerServer).LeaveScene(ctx, req.(*LeaveSceneRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -235,12 +237,12 @@ var SceneManager_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SceneManager_DestroyScene_Handler,
 		},
 		{
-			MethodName: "EnterSceneByCentre",
-			Handler:    _SceneManager_EnterSceneByCentre_Handler,
+			MethodName: "EnterScene",
+			Handler:    _SceneManager_EnterScene_Handler,
 		},
 		{
-			MethodName: "LeaveSceneByCentre",
-			Handler:    _SceneManager_LeaveSceneByCentre_Handler,
+			MethodName: "LeaveScene",
+			Handler:    _SceneManager_LeaveScene_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

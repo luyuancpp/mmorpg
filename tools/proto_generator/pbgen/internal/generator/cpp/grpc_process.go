@@ -86,9 +86,11 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			}
 
 			firstService := serviceInfo[0]
-			protoPath := firstService.Path()
+			_ = firstService.Path()
 
-			if !(utils2.HasGrpcService(protoPath) || utils2.HasEtcdService(protoPath)) {
+			// Generate per-file async grpc clients for proto files that use gRPC services.
+			// CcGenericServices=true means legacy C++ generic RPC handlers, not gRPC stubs.
+			if firstService.CcGenericServices() {
 				return
 			}
 

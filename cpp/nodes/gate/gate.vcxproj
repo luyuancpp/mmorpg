@@ -22,6 +22,7 @@
     <ClCompile Include="handler\event\event_handler.cpp" />
     <ClCompile Include="handler\event\gate_event_handler.cpp" />
     <ClCompile Include="handler\event\gate_kafka_command_router.cpp" />
+    <ClCompile Include="handler\event\player_event_handler.cpp" />
     <ClCompile Include="handler\rpc\client_message_processor.cpp" />
     <ClCompile Include="handler\rpc\gate_service_handler.cpp" />
     <ClCompile Include="handler\rpc\player\player_service_interface.cpp" />
@@ -42,6 +43,7 @@
     <ClInclude Include="handler\event\event_handler.h" />
     <ClInclude Include="handler\event\gate_event_handler.h" />
     <ClInclude Include="handler\event\gate_kafka_command_router.h" />
+    <ClInclude Include="handler\event\player_event_handler.h" />
     <ClInclude Include="handler\rpc\client_message_processor.h" />
     <ClInclude Include="handler\rpc\gate_service_handler.h" />
     <ClInclude Include="rpc_replies\centre_scene_response_handler.h" />

@@ -24,9 +24,11 @@ const (
 type GateCommand_CommandType int32
 
 const (
-	GateCommand_RoutePlayer GateCommand_CommandType = 0 // Switch player routing
-	GateCommand_KickPlayer  GateCommand_CommandType = 1 // Kick session offline
-	GateCommand_Broadcast   GateCommand_CommandType = 2 // Broadcast message
+	GateCommand_RoutePlayer  GateCommand_CommandType = 0 // Switch player routing
+	GateCommand_KickPlayer   GateCommand_CommandType = 1 // Kick session offline
+	GateCommand_Broadcast    GateCommand_CommandType = 2 // Broadcast message
+	GateCommand_BindSession  GateCommand_CommandType = 3 // Bind session to player (replaces Centre)
+	GateCommand_LeaseExpired GateCommand_CommandType = 4 // Disconnect lease expired, clean up
 )
 
 // Enum value maps for GateCommand_CommandType.
@@ -35,11 +37,15 @@ var (
 		0: "RoutePlayer",
 		1: "KickPlayer",
 		2: "Broadcast",
+		3: "BindSession",
+		4: "LeaseExpired",
 	}
 	GateCommand_CommandType_value = map[string]int32{
-		"RoutePlayer": 0,
-		"KickPlayer":  1,
-		"Broadcast":   2,
+		"RoutePlayer":  0,
+		"KickPlayer":   1,
+		"Broadcast":    2,
+		"BindSession":  3,
+		"LeaseExpired": 4,
 	}
 )
 
@@ -176,7 +182,7 @@ var File_proto_contracts_kafka_gate_command_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_gate_command_proto_rawDesc = "" +
 	"\n" +
-	"(proto/contracts/kafka/gate_command.proto\x12\x0fcontracts.kafka\"\x96\x03\n" +
+	"(proto/contracts/kafka/gate_command.proto\x12\x0fcontracts.kafka\"\xb9\x03\n" +
 	"\vGateCommand\x12K\n" +
 	"\fcommand_type\x18\x01 \x01(\x0e2(.contracts.kafka.GateCommand.CommandTypeR\vcommandType\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12$\n" +
@@ -186,12 +192,14 @@ const file_proto_contracts_kafka_gate_command_proto_rawDesc = "" +
 	"\apayload\x18\x05 \x01(\fR\apayload\x12$\n" +
 	"\x0etarget_gate_id\x18\x06 \x01(\rR\ftargetGateId\x12,\n" +
 	"\x12target_instance_id\x18\a \x01(\tR\x10targetInstanceId\x12\x1e\n" +
-	"\bevent_id\x18\b \x01(\rH\x00R\aeventId\x88\x01\x01\"=\n" +
+	"\bevent_id\x18\b \x01(\rH\x00R\aeventId\x88\x01\x01\"`\n" +
 	"\vCommandType\x12\x0f\n" +
 	"\vRoutePlayer\x10\x00\x12\x0e\n" +
 	"\n" +
 	"KickPlayer\x10\x01\x12\r\n" +
-	"\tBroadcast\x10\x02B\v\n" +
+	"\tBroadcast\x10\x02\x12\x0f\n" +
+	"\vBindSession\x10\x03\x12\x10\n" +
+	"\fLeaseExpired\x10\x04B\v\n" +
 	"\t_event_idB\x11Z\x0fcontracts/kafkab\x06proto3"
 
 var (

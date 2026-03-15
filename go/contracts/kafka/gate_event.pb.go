@@ -119,6 +119,224 @@ func (x *KickPlayerEvent) GetSessionId() uint64 {
 	return 0
 }
 
+// Sent by Gate when a player TCP connection drops.
+// Consumed by player_locator to start disconnect lease.
+type PlayerDisconnectedEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	GateId         string                 `protobuf:"bytes,3,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
+	GateInstanceId string                 `protobuf:"bytes,4,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *PlayerDisconnectedEvent) Reset() {
+	*x = PlayerDisconnectedEvent{}
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerDisconnectedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerDisconnectedEvent) ProtoMessage() {}
+
+func (x *PlayerDisconnectedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerDisconnectedEvent.ProtoReflect.Descriptor instead.
+func (*PlayerDisconnectedEvent) Descriptor() ([]byte, []int) {
+	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PlayerDisconnectedEvent) GetSessionId() uint64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *PlayerDisconnectedEvent) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *PlayerDisconnectedEvent) GetGateId() string {
+	if x != nil {
+		return x.GateId
+	}
+	return ""
+}
+
+func (x *PlayerDisconnectedEvent) GetGateInstanceId() string {
+	if x != nil {
+		return x.GateInstanceId
+	}
+	return ""
+}
+
+// Published by player_locator when disconnect lease expires (player didn't reconnect).
+// Consumed by Scene to clean up player entity, and Gate to clean up stale session.
+type PlayerLeaseExpiredEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SceneNodeId    string                 `protobuf:"bytes,3,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
+	SceneId        uint64                 `protobuf:"varint,4,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
+	GateId         string                 `protobuf:"bytes,5,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
+	GateInstanceId string                 `protobuf:"bytes,6,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *PlayerLeaseExpiredEvent) Reset() {
+	*x = PlayerLeaseExpiredEvent{}
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerLeaseExpiredEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerLeaseExpiredEvent) ProtoMessage() {}
+
+func (x *PlayerLeaseExpiredEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerLeaseExpiredEvent.ProtoReflect.Descriptor instead.
+func (*PlayerLeaseExpiredEvent) Descriptor() ([]byte, []int) {
+	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *PlayerLeaseExpiredEvent) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *PlayerLeaseExpiredEvent) GetSessionId() uint64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *PlayerLeaseExpiredEvent) GetSceneNodeId() string {
+	if x != nil {
+		return x.SceneNodeId
+	}
+	return ""
+}
+
+func (x *PlayerLeaseExpiredEvent) GetSceneId() uint64 {
+	if x != nil {
+		return x.SceneId
+	}
+	return 0
+}
+
+func (x *PlayerLeaseExpiredEvent) GetGateId() string {
+	if x != nil {
+		return x.GateId
+	}
+	return ""
+}
+
+func (x *PlayerLeaseExpiredEvent) GetGateInstanceId() string {
+	if x != nil {
+		return x.GateInstanceId
+	}
+	return ""
+}
+
+// Sent by Login/player_locator to bind a session to Gate.
+// Replaces Centre's BindSessionToGateRequest.
+type BindSessionEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SessionVersion uint64                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *BindSessionEvent) Reset() {
+	*x = BindSessionEvent{}
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindSessionEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindSessionEvent) ProtoMessage() {}
+
+func (x *BindSessionEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindSessionEvent.ProtoReflect.Descriptor instead.
+func (*BindSessionEvent) Descriptor() ([]byte, []int) {
+	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *BindSessionEvent) GetSessionId() uint64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *BindSessionEvent) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *BindSessionEvent) GetSessionVersion() uint64 {
+	if x != nil {
+		return x.SessionVersion
+	}
+	return 0
+}
+
 var File_proto_contracts_kafka_gate_event_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
@@ -130,7 +348,26 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\x0etarget_node_id\x18\x02 \x01(\rR\ftargetNodeId\"0\n" +
 	"\x0fKickPlayerEvent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionIdB\x11Z\x0fcontracts/kafkab\x06proto3"
+	"session_id\x18\x01 \x01(\x04R\tsessionId\"\x98\x01\n" +
+	"\x17PlayerDisconnectedEvent\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x17\n" +
+	"\agate_id\x18\x03 \x01(\tR\x06gateId\x12(\n" +
+	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceId\"\xd7\x01\n" +
+	"\x17PlayerLeaseExpiredEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\x04R\tsessionId\x12\"\n" +
+	"\rscene_node_id\x18\x03 \x01(\tR\vsceneNodeId\x12\x19\n" +
+	"\bscene_id\x18\x04 \x01(\x04R\asceneId\x12\x17\n" +
+	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +
+	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\"w\n" +
+	"\x10BindSessionEvent\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
+	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersionB\x11Z\x0fcontracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_gate_event_proto_rawDescOnce sync.Once
@@ -144,10 +381,13 @@ func file_proto_contracts_kafka_gate_event_proto_rawDescGZIP() []byte {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescData
 }
 
-var file_proto_contracts_kafka_gate_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_contracts_kafka_gate_event_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_contracts_kafka_gate_event_proto_goTypes = []any{
-	(*RoutePlayerEvent)(nil), // 0: contracts.kafka.RoutePlayerEvent
-	(*KickPlayerEvent)(nil),  // 1: contracts.kafka.KickPlayerEvent
+	(*RoutePlayerEvent)(nil),        // 0: contracts.kafka.RoutePlayerEvent
+	(*KickPlayerEvent)(nil),         // 1: contracts.kafka.KickPlayerEvent
+	(*PlayerDisconnectedEvent)(nil), // 2: contracts.kafka.PlayerDisconnectedEvent
+	(*PlayerLeaseExpiredEvent)(nil), // 3: contracts.kafka.PlayerLeaseExpiredEvent
+	(*BindSessionEvent)(nil),        // 4: contracts.kafka.BindSessionEvent
 }
 var file_proto_contracts_kafka_gate_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -168,7 +408,7 @@ func file_proto_contracts_kafka_gate_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_contracts_kafka_gate_event_proto_rawDesc), len(file_proto_contracts_kafka_gate_event_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

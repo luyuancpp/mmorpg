@@ -49,8 +49,6 @@ public:
 	KafkaManager& GetKafkaManager() { return kafkaManager; }
     virtual google::protobuf::Service* GetNodeReplyService() { return nullptr; }
     muduo::AsyncLogging& Log() { return logSystem; }
-    RpcClientPtr& GetZoneCentreClient() { return zoneCentreClient; }
-    void SetZoneCentreClient(RpcClientPtr& client) { zoneCentreClient = client; }
     ClientList& GetZombieClientList() { return zombieClientList; }
     CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
 	NodeHandshakeManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
@@ -59,8 +57,6 @@ public:
     std::string GetIp();
     uint32_t GetPort();
 	EtcdManager& GetEtcdManager() { return etcdManager; }
-
-    void SendMessageToZoneCentre(uint32_t messageId, const ::google::protobuf::Message& requestMessage);
 
     // 节点注册与服务处理
     void HandleServiceNodeStop(const std::string& key, const std::string& nodeJson);
@@ -116,7 +112,6 @@ protected:
 	TimerTaskComp acquirePortTimer;
 	TimerTaskComp kafkaProducerTimer;
 	TimerTaskComp kafkaConsumerTimer;
-    RpcClientPtr zoneCentreClient;
     CanConnectNodeTypeList targetNodeTypeWhitelist;
     ClientList zombieClientList;
     std::unordered_map<std::string,int64_t> revision;

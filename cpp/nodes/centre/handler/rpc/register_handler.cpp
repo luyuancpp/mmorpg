@@ -10,8 +10,8 @@ extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Servi
 
 void InitServiceHandler()
 {
- gNodeService.emplace("CentreScene", std::make_unique_for_overwrite<CentreSceneHandler>());
+ gNodeService.emplace("CentreScene", std::make_unique<CentreSceneHandler>());
 
- gNodeService.emplace("Centre", std::make_unique_for_overwrite<CentreHandler>());
+ gNodeService.emplace("Centre", std::make_unique<CentreHandler>());
 
 }

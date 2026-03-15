@@ -13,3 +13,31 @@ message RoutePlayerEvent {
 message KickPlayerEvent {
   uint64 session_id = 1;
 }
+
+// Sent by Gate when a player TCP connection drops.
+// Consumed by player_locator to start disconnect lease.
+message PlayerDisconnectedEvent {
+  uint64 session_id = 1;
+  uint64 player_id = 2;
+  string gate_id = 3;
+  string gate_instance_id = 4;
+}
+
+// Published by player_locator when disconnect lease expires (player didn't reconnect).
+// Consumed by Scene to clean up player entity, and Gate to clean up stale session.
+message PlayerLeaseExpiredEvent {
+  uint64 player_id = 1;
+  uint64 session_id = 2;
+  string scene_node_id = 3;
+  uint64 scene_id = 4;
+  string gate_id = 5;
+  string gate_instance_id = 6;
+}
+
+// Sent by Login/player_locator to bind a session to Gate.
+// Replaces Centre's BindSessionToGateRequest.
+message BindSessionEvent {
+  uint64 session_id = 1;
+  uint64 player_id = 2;
+  uint64 session_version = 3;
+}
