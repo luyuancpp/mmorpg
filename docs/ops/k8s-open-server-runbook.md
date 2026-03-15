@@ -46,7 +46,23 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-push-image `
   -ImageTag v1
 ```
 
-## 4. Open One Zone
+## 4. Exposure Sanity Check
+
+Before production open-server, run a dry-run exposure check so the selected profile and service type are explicit in command output.
+
+Expected results:
+
+1. `custom` without explicit `GateServiceType` resolves to `NodePort`.
+2. `managed-cloud` resolves to `LoadBalancer`.
+3. `custom + LoadBalancer` prints a warning so the operator explicitly confirms cluster LB capability.
+
+```powershell
+pwsh -NoProfile -Command "Set-Location 'F:\work\mmorpg'; Write-Host '--- CASE1 custom default ---'; pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -DryRun -ZoneName testa -ZoneId 201; Write-Host '--- CASE2 managed-cloud ---'; pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -DryRun -ZoneName testb -ZoneId 202 -OpsProfile managed-cloud; Write-Host '--- CASE3 custom + LoadBalancer ---'; pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -DryRun -ZoneName testc -ZoneId 203 -OpsProfile custom -GateServiceType LoadBalancer"
+```
+
+If the output does not match the expected service type resolution, stop before deployment and correct the command profile or service type.
+
+## 5. Open One Zone
 
 Managed cloud profile example:
 
@@ -76,7 +92,7 @@ Post-check:
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-status -ZoneName yesterday
 ```
 
-## 5. Open All Zones
+## 6. Open All Zones
 
 Use YAML zone config for ops readability:
 
@@ -95,7 +111,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-status `
   -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml
 ```
 
-## 6. Release Shortcut Commands
+## 7. Release Shortcut Commands
 
 One-command zone release:
 
@@ -120,7 +136,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-release-all `
   -WaitReady
 ```
 
-## 7. Rollback
+## 8. Rollback
 
 Use last known good image tag and redeploy.
 
@@ -152,7 +168,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-down -ZoneName yesterda
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml
 ```
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 Common checks:
 
@@ -171,7 +187,7 @@ If `WaitReady` fails:
 3. Check gate service exposure mode against cluster type.
 4. Verify infra pods (`etcd`, `redis`, `kafka`) are healthy.
 
-## 9. Change Record Template
+## 10. Change Record Template
 
 Keep a short release note per operation:
 

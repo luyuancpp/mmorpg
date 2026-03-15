@@ -9,7 +9,6 @@ void ScenePlayerSyncReply::SyncBaseAttribute(entt::entity player,const ::ActorBa
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void ScenePlayerSyncReply::SyncAttribute2Frames(entt::entity player,const ::AttributeDelta2FramesS2C* request,
@@ -17,7 +16,6 @@ void ScenePlayerSyncReply::SyncAttribute2Frames(entt::entity player,const ::Attr
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void ScenePlayerSyncReply::SyncAttribute5Frames(entt::entity player,const ::AttributeDelta5FramesS2C* request,
@@ -25,7 +23,6 @@ void ScenePlayerSyncReply::SyncAttribute5Frames(entt::entity player,const ::Attr
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void ScenePlayerSyncReply::SyncAttribute10Frames(entt::entity player,const ::AttributeDelta10FramesS2C* request,
@@ -33,7 +30,6 @@ void ScenePlayerSyncReply::SyncAttribute10Frames(entt::entity player,const ::Att
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void ScenePlayerSyncReply::SyncAttribute30Frames(entt::entity player,const ::AttributeDelta30FramesS2C* request,
@@ -41,7 +37,6 @@ void ScenePlayerSyncReply::SyncAttribute30Frames(entt::entity player,const ::Att
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void ScenePlayerSyncReply::SyncAttribute60Frames(entt::entity player,const ::AttributeDelta60FramesS2C* request,
@@ -49,5 +44,4 @@ void ScenePlayerSyncReply::SyncAttribute60Frames(entt::entity player,const ::Att
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }

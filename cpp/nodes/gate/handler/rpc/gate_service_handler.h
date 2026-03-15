@@ -9,8 +9,6 @@ public:
 
 	void SendMessageToPlayer(::google::protobuf::RpcController* controller,  const ::NodeRouteMessageRequest* request, ::Empty* response, ::google::protobuf::Closure* done) override;
 
-	void KickSessionByCentre(::google::protobuf::RpcController* controller,  const ::KickSessionRequest* request, ::Empty* response, ::google::protobuf::Closure* done) override;
-
 	void RouteNodeMessage(::google::protobuf::RpcController* controller,  const ::RouteMessageRequest* request, ::RouteMessageResponse* response, ::google::protobuf::Closure* done) override;
 
 	void RoutePlayerMessage(::google::protobuf::RpcController* controller,  const ::RoutePlayerMessageRequest* request, ::RoutePlayerMessageResponse* response, ::google::protobuf::Closure* done) override;

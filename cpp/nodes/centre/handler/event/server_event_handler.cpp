@@ -1,8 +1,6 @@
 #include "server_event_handler.h"
 #include "threading/dispatcher_manager.h"
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()
 {
     dispatcher.sink<OnConnect2CentrePbEvent>().connect<&ServerEventHandler::OnConnect2CentrePbEventHandler>();
@@ -18,16 +16,13 @@ void ServerEventHandler::UnRegister()
 }
 void ServerEventHandler::OnConnect2CentrePbEventHandler(const OnConnect2CentrePbEvent& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }
 void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }

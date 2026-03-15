@@ -11,7 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	base "scene_manager/proto/common/base"
+	base "login/proto/common/base"
 )
 
 // This is a compile-time assertion to ensure that this generated file

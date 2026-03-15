@@ -25,32 +25,6 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr KickSessionRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        session_id_{::uint64_t{0u}},
-        expected_session_version_{::uint64_t{0u}} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR KickSessionRequest::KickSessionRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(KickSessionRequest_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct KickSessionRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR KickSessionRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~KickSessionRequestDefaultTypeInternal() {}
-  union {
-    KickSessionRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 KickSessionRequestDefaultTypeInternal _KickSessionRequest_default_instance_;
-
 inline constexpr BindSessionToGateResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -139,13 +113,6 @@ const ::uint32_t
     TableStruct_proto_2fgate_2fgate_5fservice_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::KickSessionRequest, _impl_._has_bits_),
-        5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::KickSessionRequest, _impl_.session_id_),
-        PROTOBUF_FIELD_OFFSET(::KickSessionRequest, _impl_.expected_session_version_),
-        0,
-        1,
-        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_._has_bits_),
         6, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_.session_id_),
@@ -174,13 +141,11 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::KickSessionRequest)},
-        {7, sizeof(::BindSessionToGateRequest)},
-        {16, sizeof(::BindSessionToGateResponse)},
-        {25, sizeof(::BroadcastToPlayersRequest)},
+        {0, sizeof(::BindSessionToGateRequest)},
+        {9, sizeof(::BindSessionToGateResponse)},
+        {18, sizeof(::BroadcastToPlayersRequest)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_KickSessionRequest_default_instance_._instance,
     &::_BindSessionToGateRequest_default_instance_._instance,
     &::_BindSessionToGateResponse_default_instance_._instance,
     &::_BroadcastToPlayersRequest_default_instance_._instance,
@@ -190,30 +155,26 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "\n\035proto/gate/gate_service.proto\032\033proto/d"
     "b/proto_option.proto\032\035proto/common/base/"
     "empty.proto\032\037proto/common/base/message.p"
-    "roto\"J\n\022KickSessionRequest\022\022\n\nsession_id"
-    "\030\001 \001(\004\022 \n\030expected_session_version\030\002 \001(\004"
-    "\"Z\n\030BindSessionToGateRequest\022\022\n\nsession_"
-    "id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017session_v"
-    "ersion\030\003 \001(\004\"[\n\031BindSessionToGateRespons"
-    "e\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004"
-    "\022\027\n\017session_version\030\003 \001(\004\"[\n\031BroadcastTo"
-    "PlayersRequest\022\024\n\014session_list\030\001 \003(\004\022(\n\017"
-    "message_content\030\002 \001(\0132\017.MessageContent2\243"
-    "\004\n\004Gate\022X\n\023PlayerEnterGameNode\022\037.Registe"
-    "rGameNodeSessionRequest\032 .RegisterGameNo"
-    "deSessionResponse\0227\n\023SendMessageToPlayer"
-    "\022\030.NodeRouteMessageRequest\032\006.Empty\0222\n\023Ki"
-    "ckSessionByCentre\022\023.KickSessionRequest\032\006"
-    ".Empty\022\?\n\020RouteNodeMessage\022\024.RouteMessag"
-    "eRequest\032\025.RouteMessageResponse\022M\n\022Route"
-    "PlayerMessage\022\032.RoutePlayerMessageReques"
-    "t\032\033.RoutePlayerMessageResponse\0228\n\022Broadc"
-    "astToPlayers\022\032.BroadcastToPlayersRequest"
-    "\032\006.Empty\022>\n\rNodeHandshake\022\025.NodeHandshak"
-    "eRequest\032\026.NodeHandshakeResponse\022J\n\021Bind"
-    "SessionToGate\022\031.BindSessionToGateRequest"
-    "\032\032.BindSessionToGateResponseB\007\200\001\001\230\324a\002b\006p"
-    "roto3"
+    "roto\"Z\n\030BindSessionToGateRequest\022\022\n\nsess"
+    "ion_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017sessi"
+    "on_version\030\003 \001(\004\"[\n\031BindSessionToGateRes"
+    "ponse\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002"
+    " \001(\004\022\027\n\017session_version\030\003 \001(\004\"[\n\031Broadca"
+    "stToPlayersRequest\022\024\n\014session_list\030\001 \003(\004"
+    "\022(\n\017message_content\030\002 \001(\0132\017.MessageConte"
+    "nt2\357\003\n\004Gate\022X\n\023PlayerEnterGameNode\022\037.Reg"
+    "isterGameNodeSessionRequest\032 .RegisterGa"
+    "meNodeSessionResponse\0227\n\023SendMessageToPl"
+    "ayer\022\030.NodeRouteMessageRequest\032\006.Empty\022\?"
+    "\n\020RouteNodeMessage\022\024.RouteMessageRequest"
+    "\032\025.RouteMessageResponse\022M\n\022RoutePlayerMe"
+    "ssage\022\032.RoutePlayerMessageRequest\032\033.Rout"
+    "ePlayerMessageResponse\0228\n\022BroadcastToPla"
+    "yers\022\032.BroadcastToPlayersRequest\032\006.Empty"
+    "\022>\n\rNodeHandshake\022\025.NodeHandshakeRequest"
+    "\032\026.NodeHandshakeResponse\022J\n\021BindSessionT"
+    "oGate\022\031.BindSessionToGateRequest\032\032.BindS"
+    "essionToGateResponseB\007\200\001\001\230\324a\002b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] = {
@@ -225,299 +186,19 @@ static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    1045,
+    917,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,
     descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps,
     3,
-    4,
+    3,
     schemas,
     file_default_instances,
     TableStruct_proto_2fgate_2fgate_5fservice_2eproto::offsets,
     file_level_enum_descriptors_proto_2fgate_2fgate_5fservice_2eproto,
     file_level_service_descriptors_proto_2fgate_2fgate_5fservice_2eproto,
 };
-// ===================================================================
-
-class KickSessionRequest::_Internal {
- public:
-  using HasBits =
-      decltype(::std::declval<KickSessionRequest>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_._has_bits_);
-};
-
-KickSessionRequest::KickSessionRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, KickSessionRequest_class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:KickSessionRequest)
-}
-KickSessionRequest::KickSessionRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const KickSessionRequest& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, KickSessionRequest_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-PROTOBUF_NDEBUG_INLINE KickSessionRequest::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
-
-inline void KickSessionRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
-           0,
-           offsetof(Impl_, expected_session_version_) -
-               offsetof(Impl_, session_id_) +
-               sizeof(Impl_::expected_session_version_));
-}
-KickSessionRequest::~KickSessionRequest() {
-  // @@protoc_insertion_point(destructor:KickSessionRequest)
-  SharedDtor(*this);
-}
-inline void KickSessionRequest::SharedDtor(MessageLite& self) {
-  KickSessionRequest& this_ = static_cast<KickSessionRequest&>(self);
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-inline void* PROTOBUF_NONNULL KickSessionRequest::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) KickSessionRequest(arena);
-}
-constexpr auto KickSessionRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(KickSessionRequest),
-                                            alignof(KickSessionRequest));
-}
-constexpr auto KickSessionRequest::InternalGenerateClassData_() {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &_KickSessionRequest_default_instance_._instance,
-          &_table_.header,
-          nullptr,  // OnDemandRegisterArenaDtor
-          nullptr,  // IsInitialized
-          &KickSessionRequest::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<KickSessionRequest>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &KickSessionRequest::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<KickSessionRequest>(), &KickSessionRequest::ByteSizeLong,
-              &KickSessionRequest::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_._cached_size_),
-          false,
-      },
-      &KickSessionRequest::kDescriptorMethods,
-      &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto,
-      nullptr,  // tracker
-  };
-}
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull KickSessionRequest_class_data_ =
-        KickSessionRequest::InternalGenerateClassData_();
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-KickSessionRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&KickSessionRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(KickSessionRequest_class_data_.tc_table);
-  return KickSessionRequest_class_data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
-KickSessionRequest::_table_ = {
-  {
-    PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_._has_bits_),
-    0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    KickSessionRequest_class_data_.base(),
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::KickSessionRequest>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // uint64 expected_session_version = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(KickSessionRequest, _impl_.expected_session_version_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.expected_session_version_)}},
-    // uint64 session_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(KickSessionRequest, _impl_.session_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.session_id_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // uint64 session_id = 1;
-    {PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 expected_session_version = 2;
-    {PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.expected_session_version_), _Internal::kHasBitsOffset + 1, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
-PROTOBUF_NOINLINE void KickSessionRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:KickSessionRequest)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
-    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.expected_session_version_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.expected_session_version_));
-  }
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL KickSessionRequest::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const KickSessionRequest& this_ = static_cast<const KickSessionRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL KickSessionRequest::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const KickSessionRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:KickSessionRequest)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // uint64 session_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
-    if (this_._internal_session_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          1, this_._internal_session_id(), target);
-    }
-  }
-
-  // uint64 expected_session_version = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
-    if (this_._internal_expected_session_version() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          2, this_._internal_expected_session_version(), target);
-    }
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:KickSessionRequest)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t KickSessionRequest::ByteSizeLong(const MessageLite& base) {
-  const KickSessionRequest& this_ = static_cast<const KickSessionRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t KickSessionRequest::ByteSizeLong() const {
-  const KickSessionRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:KickSessionRequest)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-  cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
-    // uint64 session_id = 1;
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
-    // uint64 expected_session_version = 2;
-    if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_expected_session_version() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_expected_session_version());
-      }
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void KickSessionRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<KickSessionRequest*>(&to_msg);
-  auto& from = static_cast<const KickSessionRequest&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:KickSessionRequest)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
-      }
-    }
-    if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_expected_session_version() != 0) {
-        _this->_impl_.expected_session_version_ = from._impl_.expected_session_version_;
-      }
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void KickSessionRequest::CopyFrom(const KickSessionRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:KickSessionRequest)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void KickSessionRequest::InternalSwap(KickSessionRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.expected_session_version_)
-      + sizeof(KickSessionRequest::_impl_.expected_session_version_)
-      - PROTOBUF_FIELD_OFFSET(KickSessionRequest, _impl_.session_id_)>(
-          reinterpret_cast<char*>(&_impl_.session_id_),
-          reinterpret_cast<char*>(&other->_impl_.session_id_));
-}
-
-::google::protobuf::Metadata KickSessionRequest::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
 // ===================================================================
 
 class BindSessionToGateRequest::_Internal {
@@ -1467,13 +1148,6 @@ void Gate::SendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLA
   controller->SetFailed("Method SendMessageToPlayer() not implemented.");
   done->Run();
 }
-void Gate::KickSessionByCentre(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::KickSessionRequest* PROTOBUF_NONNULL,
-                         ::Empty* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method KickSessionByCentre() not implemented.");
-  done->Run();
-}
 void Gate::RouteNodeMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                          const ::RouteMessageRequest* PROTOBUF_NONNULL,
                          ::RouteMessageResponse* PROTOBUF_NONNULL,
@@ -1526,26 +1200,22 @@ void Gate::CallMethod(
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
     case 2:
-      this->KickSessionByCentre(controller, ::google::protobuf::DownCastMessage<::KickSessionRequest>(request),
-                   ::google::protobuf::DownCastMessage<::Empty>(response), done);
-      break;
-    case 3:
       this->RouteNodeMessage(controller, ::google::protobuf::DownCastMessage<::RouteMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::RouteMessageResponse>(response), done);
       break;
-    case 4:
+    case 3:
       this->RoutePlayerMessage(controller, ::google::protobuf::DownCastMessage<::RoutePlayerMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::RoutePlayerMessageResponse>(response), done);
       break;
-    case 5:
+    case 4:
       this->BroadcastToPlayers(controller, ::google::protobuf::DownCastMessage<::BroadcastToPlayersRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
-    case 6:
+    case 5:
       this->NodeHandshake(controller, ::google::protobuf::DownCastMessage<::NodeHandshakeRequest>(request),
                    ::google::protobuf::DownCastMessage<::NodeHandshakeResponse>(response), done);
       break;
-    case 7:
+    case 6:
       this->BindSessionToGate(controller, ::google::protobuf::DownCastMessage<::BindSessionToGateRequest>(request),
                    ::google::protobuf::DownCastMessage<::BindSessionToGateResponse>(response), done);
       break;
@@ -1565,16 +1235,14 @@ const ::google::protobuf::Message& Gate::GetRequestPrototype(
     case 1:
       return ::NodeRouteMessageRequest::default_instance();
     case 2:
-      return ::KickSessionRequest::default_instance();
-    case 3:
       return ::RouteMessageRequest::default_instance();
-    case 4:
+    case 3:
       return ::RoutePlayerMessageRequest::default_instance();
-    case 5:
+    case 4:
       return ::BroadcastToPlayersRequest::default_instance();
-    case 6:
+    case 5:
       return ::NodeHandshakeRequest::default_instance();
-    case 7:
+    case 6:
       return ::BindSessionToGateRequest::default_instance();
 
     default:
@@ -1593,16 +1261,14 @@ const ::google::protobuf::Message& Gate::GetResponsePrototype(
     case 1:
       return ::Empty::default_instance();
     case 2:
-      return ::Empty::default_instance();
-    case 3:
       return ::RouteMessageResponse::default_instance();
-    case 4:
+    case 3:
       return ::RoutePlayerMessageResponse::default_instance();
-    case 5:
+    case 4:
       return ::Empty::default_instance();
-    case 6:
+    case 5:
       return ::NodeHandshakeResponse::default_instance();
-    case 7:
+    case 6:
       return ::BindSessionToGateResponse::default_instance();
 
     default:
@@ -1639,46 +1305,39 @@ void Gate_Stub::SendMessageToPlayer(
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
-void Gate_Stub::KickSessionByCentre(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::KickSessionRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(2), controller,
-                       request, response, done);
-}
 void Gate_Stub::RouteNodeMessage(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::RouteMessageRequest* PROTOBUF_NONNULL request, ::RouteMessageResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(3), controller,
+  channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
 void Gate_Stub::RoutePlayerMessage(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL request, ::RoutePlayerMessageResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(4), controller,
+  channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
 void Gate_Stub::BroadcastToPlayers(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::BroadcastToPlayersRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(5), controller,
+  channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
 void Gate_Stub::NodeHandshake(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::NodeHandshakeRequest* PROTOBUF_NONNULL request, ::NodeHandshakeResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(6), controller,
+  channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
 void Gate_Stub::BindSessionToGate(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::BindSessionToGateRequest* PROTOBUF_NONNULL request, ::BindSessionToGateResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(7), controller,
+  channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

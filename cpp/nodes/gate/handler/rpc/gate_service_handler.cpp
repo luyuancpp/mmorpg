@@ -63,17 +63,6 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 }
 
-void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* controller, const ::KickSessionRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	// DEPRECATED: Centre has been decommissioned. Kick is now handled via Kafka KickPlayer GateCommand.
-	// This RPC handler is kept as a no-op stub for proto ABI compatibility.
-	LOG_DEBUG << "KickSessionByCentre called but Centre is decommissioned. session_id=" << request->session_id();
-	///<<< END WRITING YOUR CODE
-}
-
 void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
 	::RouteMessageResponse* response,
 	::google::protobuf::Closure* done)

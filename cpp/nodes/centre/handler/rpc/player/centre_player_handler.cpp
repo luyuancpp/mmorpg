@@ -9,7 +9,6 @@ void CentrePlayerUtilityHandler::SendTipToClient(entt::entity player,const ::Tip
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void CentrePlayerUtilityHandler::KickPlayer(entt::entity player,const ::CentreKickPlayerRequest* request,
@@ -17,5 +16,4 @@ void CentrePlayerUtilityHandler::KickPlayer(entt::entity player,const ::CentreKi
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }

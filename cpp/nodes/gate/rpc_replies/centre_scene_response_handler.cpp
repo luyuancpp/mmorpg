@@ -20,11 +20,9 @@ void InitCentreSceneReply()
 void OnCentreSceneRegisterSceneReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterSceneResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
+///<<< END WRITING YOUR CODE}
 
 void OnCentreSceneUnRegisterSceneReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
+///<<< END WRITING YOUR CODE}
