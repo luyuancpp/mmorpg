@@ -17,12 +17,12 @@ void GateEventHandler::UnRegister()
     dispatcher.sink<contracts::kafka::RoutePlayerEvent>().disconnect<&GateEventHandler::RoutePlayerEventHandler>();
     dispatcher.sink<contracts::kafka::KickPlayerEvent>().disconnect<&GateEventHandler::KickPlayerEventHandler>();
 }
-void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
+void GateEventHandler::RoutePlayerEventHandler(const RoutePlayerEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayerEvent& event)
+void GateEventHandler::KickPlayerEventHandler(const KickPlayerEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

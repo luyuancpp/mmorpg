@@ -68,7 +68,9 @@ service Scene {
   rpc CentreSendToPlayerViaGameNode (NodeRouteMessageRequest) returns (Empty);
   rpc InvokePlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc RouteNodeStringMsg (RouteMessageRequest) returns (RouteMessageResponse);
-  rpc RoutePlayerStringMsg (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse) {
+    option (OptionMessagePriority) = MESSAGE_PRIORITY_IMPORTANT;
+  }
   rpc UpdateSessionDetail (RegisterPlayerSessionRequest) returns (Empty);
   rpc EnterScene (Centre2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);

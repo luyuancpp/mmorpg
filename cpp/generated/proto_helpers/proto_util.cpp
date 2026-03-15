@@ -30,6 +30,7 @@ bool IsTcpNodeType(uint32_t nodeType) {
 		eNodeType::GmNodeService,
 		eNodeType::PlayerLocatorNodeService,
 		eNodeType::SceneManagerNodeService,
+		eNodeType::DataServiceNodeService,
 	};
 
 	return validTypes.contains(nodeType);

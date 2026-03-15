@@ -84,3 +84,11 @@
 83=ScenePlayerEnterGameNode
 84=SceneSkillClientPlayerReleaseSkill
 85=SceneManagerLeaveSceneByCentre
+86=DataServiceRegisterPlayerZone
+87=DataServiceBatchGetPlayerHomeZone
+88=DataServiceDeletePlayerData
+89=DataServiceSetPlayerField
+90=DataServiceLoadPlayerData
+91=DataServiceGetPlayerField
+92=DataServiceSavePlayerData
+93=DataServiceGetPlayerHomeZone

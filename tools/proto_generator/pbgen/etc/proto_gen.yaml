@@ -371,6 +371,20 @@ domain_meta:
         handler: "cpp/generated/scene_manager/handler"
         grpc:    "cpp/generated/scene_manager/grpc"
 
+  data_service:
+    source: "{{proto_dir}}data_service/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/data_service/proto"
+        handler: "go/generated/data_service/handler"
+        grpc:    "go/generated/data_service/grpc"
+      cpp:
+        proto:   "cpp/generated/data_service/proto"
+        handler: "cpp/generated/data_service/handler"
+        grpc:    "cpp/generated/data_service/grpc"
+
   etcd:
     source: "{{proto_dir}}etcd/"
     rpc:

@@ -7,6 +7,7 @@
 #include "proto/centre/centre_player_scene.pb.h"
 #include "proto/centre/centre_scene.pb.h"
 #include "proto/centre/centre_service.pb.h"
+#include "proto/data_service/data_service.grpc.pb.h"
 #include "proto/etcd/etcd.grpc.pb.h"
 #include "proto/gate/gate_service.pb.h"
 #include "proto/login/login.grpc.pb.h"
@@ -24,6 +25,7 @@
 #include "rpc/service_metadata/centre_player_scene_service_metadata.h"
 #include "rpc/service_metadata/centre_scene_service_metadata.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
+#include "rpc/service_metadata/data_service_service_metadata.h"
 #include "rpc/service_metadata/etcd_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
@@ -228,6 +230,14 @@ void DispatchSkillExecutedEvent(const google::protobuf::Message& message)
 
 } // namespace
 
+namespace data_service{void SendDataServiceLoadPlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceSavePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceGetPlayerField(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceSetPlayerField(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceRegisterPlayerZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceBatchGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceDeletePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -250,7 +260,7 @@ namespace scene_manager{void SendSceneManagerEnterSceneByCentre(entt::registry& 
 namespace scene_manager{void SendSceneManagerLeaveSceneByCentre(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
-std::array<RpcService, 86> gRpcServiceRegistry;
+std::array<RpcService, 94> gRpcServiceRegistry;
 std::array<ProtoEvent, 32> gProtoEventRegistry;
 
 void InitMessageInfo()
@@ -275,6 +285,14 @@ void InitMessageInfo()
     gRpcServiceRegistry[CentreRoutePlayerStringMsgMessageId] = RpcService{"Centre", "RoutePlayerStringMsg", std::make_unique_for_overwrite<::RoutePlayerMessageRequest>(), std::make_unique_for_overwrite<::RoutePlayerMessageResponse>(), std::make_unique_for_overwrite<CentreImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreInitSceneNodeMessageId] = RpcService{"Centre", "InitSceneNode", std::make_unique_for_overwrite<::InitSceneNodeRequest>(), std::make_unique_for_overwrite<::Empty>(), std::make_unique_for_overwrite<CentreImpl>(), 0, eNodeType::CentreNodeService};
     gRpcServiceRegistry[CentreNodeHandshakeMessageId] = RpcService{"Centre", "NodeHandshake", std::make_unique_for_overwrite<::NodeHandshakeRequest>(), std::make_unique_for_overwrite<::NodeHandshakeResponse>(), std::make_unique_for_overwrite<CentreImpl>(), 0, eNodeType::CentreNodeService};
+    gRpcServiceRegistry[DataServiceLoadPlayerDataMessageId] = RpcService{"DataService", "LoadPlayerData", std::make_unique_for_overwrite<::data_service::LoadPlayerDataRequest>(), std::make_unique_for_overwrite<::data_service::LoadPlayerDataResponse>(), nullptr, 0, eNodeType::DataServiceNodeService, data_service::SendDataServiceLoadPlayerData};
+    gRpcServiceRegistry[DataServiceSavePlayerDataMessageId] = RpcService{"DataService", "SavePlayerData", std::make_unique_for_overwrite<::data_service::SavePlayerDataRequest>(), std::make_unique_for_overwrite<::data_service::SavePlayerDataResponse>(), nullptr, 0, eNodeType::DataServiceNodeService, data_service::SendDataServiceSavePlayerData};
+    gRpcServiceRegistry[DataServiceGetPlayerFieldMessageId] = RpcService{"DataService", "GetPlayerField", std::make_unique_for_overwrite<::data_service::GetPlayerFieldRequest>(), std::make_unique_for_overwrite<::data_service::GetPlayerFieldResponse>(), nullptr, 0, eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerField};
+    gRpcServiceRegistry[DataServiceSetPlayerFieldMessageId] = RpcService{"DataService", "SetPlayerField", std::make_unique_for_overwrite<::data_service::SetPlayerFieldRequest>(), std::make_unique_for_overwrite<::data_service::SetPlayerFieldResponse>(), nullptr, 0, eNodeType::DataServiceNodeService, data_service::SendDataServiceSetPlayerField};
+    gRpcServiceRegistry[DataServiceRegisterPlayerZoneMessageId] = RpcService{"DataService", "RegisterPlayerZone", std::make_unique_for_overwrite<::data_service::RegisterPlayerZoneRequest>(), std::make_unique_for_overwrite<::google::protobuf::Empty>(), nullptr, 0, eNodeType::DataServiceNodeService, data_service::SendDataServiceRegisterPlayerZone};
+    gRpcServiceRegistry[DataServiceGetPlayerHomeZoneMessageId] = RpcService{"DataService", "GetPlayerHomeZone", std::make_unique_for_overwrite<::data_service::GetPlayerHomeZoneRequest>(), std::make_unique_for_overwrite<::data_service::GetPlayerHomeZoneResponse>(), nullptr, 0, eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerHomeZone};
+    gRpcServiceRegistry[DataServiceBatchGetPlayerHomeZoneMessageId] = RpcService{"DataService", "BatchGetPlayerHomeZone", std::make_unique_for_overwrite<::data_service::BatchGetPlayerHomeZoneRequest>(), std::make_unique_for_overwrite<::data_service::BatchGetPlayerHomeZoneResponse>(), nullptr, 0, eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerHomeZone};
+    gRpcServiceRegistry[DataServiceDeletePlayerDataMessageId] = RpcService{"DataService", "DeletePlayerData", std::make_unique_for_overwrite<::data_service::DeletePlayerDataRequest>(), std::make_unique_for_overwrite<::data_service::DeletePlayerDataResponse>(), nullptr, 0, eNodeType::DataServiceNodeService, data_service::SendDataServiceDeletePlayerData};
     gRpcServiceRegistry[KVRangeMessageId] = RpcService{"KV", "Range", std::make_unique_for_overwrite<::etcdserverpb::RangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::RangeResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendKVRange};
     gRpcServiceRegistry[KVPutMessageId] = RpcService{"KV", "Put", std::make_unique_for_overwrite<::etcdserverpb::PutRequest>(), std::make_unique_for_overwrite<::etcdserverpb::PutResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendKVPut};
     gRpcServiceRegistry[KVDeleteRangeMessageId] = RpcService{"KV", "DeleteRange", std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeRequest>(), std::make_unique_for_overwrite<::etcdserverpb::DeleteRangeResponse>(), nullptr, 0, eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRange};

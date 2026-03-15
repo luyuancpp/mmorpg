@@ -29,6 +29,9 @@
 #include "threading/node_context_manager.h"
 #include "threading/player_manager.h"
 #include "core/system/redis.h"
+#include "rpc/service_metadata/scene_service_metadata.h"
+#include "rpc/service_metadata/gate_service_service_metadata.h"
+#include "rpc/service_metadata/centre_service_service_metadata.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
@@ -380,6 +383,65 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 	::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	if (!request || !response) {
+		return;
+	}
+
+	// Always mirror request in response so callers can correlate route result.
+	response->set_body(request->body());
+	response->mutable_player_info()->CopyFrom(request->player_info());
+	response->mutable_node_list()->CopyFrom(request->node_list());
+
+	// Local fast path: player already loaded on this scene and no further route nodes.
+	const Guid playerId = request->player_info().player_id();
+	if (playerId != kInvalidGuid) {
+		const auto localPlayer = GetPlayer(playerId);
+		if (localPlayer != entt::null && request->node_list_size() == 0) {
+			LOG_TRACE << "RoutePlayerStringMsg local hit, player_id=" << playerId;
+			return;
+		}
+	}
+
+	if (request->node_list_size() == 0) {
+		LOG_WARN << "RoutePlayerStringMsg has no next node, player_id=" << playerId;
+		return;
+	}
+
+	RoutePlayerMessageRequest nextRequest(*request);
+	// Consume the current hop before forwarding.
+	nextRequest.mutable_node_list()->DeleteSubrange(0, 1);
+
+	const auto& nextNode = request->node_list(0);
+	entt::entity nextNodeEntity{ nextNode.node_id() };
+	auto& nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
+	if (!nextRegistry.valid(nextNodeEntity)) {
+		LOG_ERROR << "RoutePlayerStringMsg next node not found, node_type=" << nextNode.node_type()
+				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		return;
+	}
+
+	const auto nextSession = nextRegistry.try_get<RpcSession>(nextNodeEntity);
+	if (!nextSession) {
+		LOG_ERROR << "RoutePlayerStringMsg next node session missing, node_type=" << nextNode.node_type()
+				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		return;
+	}
+
+	switch (nextNode.node_type()) {
+	case eNodeType::SceneNodeService:
+		nextSession->SendRequest(SceneRoutePlayerStringMsgMessageId, nextRequest);
+		return;
+	case eNodeType::GateNodeService:
+		nextSession->SendRequest(GateRoutePlayerMessageMessageId, nextRequest);
+		return;
+	case eNodeType::CentreNodeService:
+		nextSession->SendRequest(CentreRoutePlayerStringMsgMessageId, nextRequest);
+		return;
+	default:
+		LOG_ERROR << "RoutePlayerStringMsg unsupported next node_type=" << nextNode.node_type()
+				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		return;
+	}
 ///<<< END WRITING YOUR CODE
 }
 

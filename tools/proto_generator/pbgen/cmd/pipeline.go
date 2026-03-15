@@ -35,6 +35,7 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "goGen.BuildGrpcServiceProto", Run: goGen.BuildGrpcServiceProto},
 		{Name: "cppGen.GenNodeUtil", Run: cppGen.GenNodeUtil},
 		{Name: "cppGen.GenerateAllEventHandlers", Run: cppGen.GenerateAllEventHandlers},
+		{Name: "cppGen.GenerateGateKafkaCommandRouter", Run: cppGen.GenerateGateKafkaCommandRouter},
 	})
 
 	runner.RunTask("cppGen.InitServiceId", cppGen.InitServiceId)
