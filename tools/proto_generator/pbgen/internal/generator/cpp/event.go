@@ -411,15 +411,15 @@ public:
 }
 
 type Config struct {
-	ProtoDirs                       []string
-	EventProtoDirIndex              int
-	ProtoEx                         string
-	HandlerHeaderExtension          string
-	EventHandlerHeaderFileName      string
-	EventHandlerCppFileName         string
-	SceneNodeEventHandlerDirectory  string
-	GateNodeEventHandlerDirectory   string
-	IncludeBegin                    string
-	IncludeEndLine                  string
-	ClassNameSuffix                 string
+	ProtoDirs                      []string
+	EventProtoDirIndex             int
+	ProtoEx                        string
+	HandlerHeaderExtension         string
+	EventHandlerHeaderFileName     string
+	EventHandlerCppFileName        string
+	SceneNodeEventHandlerDirectory string
+	GateNodeEventHandlerDirectory  string
+	IncludeBegin                   string
+	IncludeEndLine                 string
+	ClassNameSuffix                string
 }

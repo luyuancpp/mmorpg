@@ -107,10 +107,10 @@ type Paths struct {
 	PlayerDataLoaderFile    string `yaml:"player_data_loader_file"`
 
 	// 原有配置中的路径
-	EventHandlerSourceDirectory     string `yaml:"event_handler_source_directory"`
-	SceneNodeEventHandlerDirectory  string `yaml:"scene_node_event_handler_directory"`
-	GateNodeEventHandlerDirectory   string `yaml:"gate_node_event_handler_directory"`
-	SceneAttributeSyncDir           string `yaml:"scene_attribute_sync_dir"`
+	EventHandlerSourceDirectory    string `yaml:"event_handler_source_directory"`
+	SceneNodeEventHandlerDirectory string `yaml:"scene_node_event_handler_directory"`
+	GateNodeEventHandlerDirectory  string `yaml:"gate_node_event_handler_directory"`
+	SceneAttributeSyncDir          string `yaml:"scene_attribute_sync_dir"`
 }
 
 // FileExtensions 文件扩展名配置（仅存放文件后缀/扩展名）
@@ -204,8 +204,8 @@ type ProtoDirs struct {
 	Team          string `yaml:"team"`
 	Mail          string `yaml:"mail"`
 
-	Scene  string `yaml:"scene"`
-	Gate   string `yaml:"gate"`
+	Scene string `yaml:"scene"`
+	Gate  string `yaml:"gate"`
 
 	Etcd string `yaml:"etcd"`
 }
@@ -219,15 +219,15 @@ type NodeTypes struct {
 
 // MethodHandlerDirs 方法处理器目录映射
 type MethodHandlerDirs struct {
-	Robot                   string `yaml:"robot"`
-	SceneNode               string `yaml:"scene_node"`
-	SceneNodePlayer         string `yaml:"scene_node_player"`
-	SceneNodeReplied        string `yaml:"scene_node_replied"`
-	SceneNodePlayerReplied  string `yaml:"scene_node_player_replied"`
-	GateNode                string `yaml:"gate_node"`
-	GateNodeReplied         string `yaml:"gate_node_replied"`
-	GateNodePlayer          string `yaml:"gate_node_player"`
-	GateNodePlayerReplied   string `yaml:"gate_node_player_replied"`
+	Robot                  string `yaml:"robot"`
+	SceneNode              string `yaml:"scene_node"`
+	SceneNodePlayer        string `yaml:"scene_node_player"`
+	SceneNodeReplied       string `yaml:"scene_node_replied"`
+	SceneNodePlayerReplied string `yaml:"scene_node_player_replied"`
+	GateNode               string `yaml:"gate_node"`
+	GateNodeReplied        string `yaml:"gate_node_replied"`
+	GateNodePlayer         string `yaml:"gate_node_player"`
+	GateNodePlayerReplied  string `yaml:"gate_node_player_replied"`
 }
 
 // Generators 生成器开关配置
