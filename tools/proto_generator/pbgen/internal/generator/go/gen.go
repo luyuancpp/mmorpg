@@ -3,6 +3,7 @@ package _go
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"go.uber.org/zap"
@@ -33,6 +34,17 @@ func GenerateGoProto(rootDir string) error {
 		return nil
 	}
 
+	// Avoid cross-domain overwrite races: only generate files whose go_package belongs to this domain.
+	domainName := filepath.Base(filepath.Dir(filepath.Clean(rootDir)))
+	protoFiles = filterProtoFilesByDomainGoPackage(protoFiles, domainName)
+	if len(protoFiles) == 0 {
+		logger.Global.Info("Go GRPC生成: 过滤后无需要处理的Proto文件，跳过目录",
+			zap.String("root_dir", rootDir),
+			zap.String("domain", domainName),
+		)
+		return nil
+	}
+
 	nodeGoDir := _config.Global.Paths.NodeGoDir
 	if err := utils2.EnsureDir(nodeGoDir); err != nil {
 		logger.Global.Fatal("Go GRPC生成: 创建输出目录失败",
@@ -56,6 +68,62 @@ func GenerateGoProto(rootDir string) error {
 		zap.Int("proto_file_count", len(protoFiles)),
 	)
 	return nil
+}
+
+func filterProtoFilesByDomainGoPackage(protoFiles []string, domainName string) []string {
+	if domainName == "" {
+		return protoFiles
+	}
+
+	prefix := domainName + "/"
+	filtered := make([]string, 0, len(protoFiles))
+
+	for _, protoFile := range protoFiles {
+		content, err := os.ReadFile(protoFile)
+		if err != nil {
+			logger.Global.Warn("Go GRPC过滤: 读取Proto文件失败，按保守策略保留",
+				zap.String("file", protoFile),
+				zap.Error(err),
+			)
+			filtered = append(filtered, protoFile)
+			continue
+		}
+
+		goPackage := ""
+		for _, line := range strings.Split(string(content), "\n") {
+			trimmed := strings.TrimSpace(line)
+			if !strings.HasPrefix(trimmed, "option go_package =") {
+				continue
+			}
+			firstQuote := strings.Index(trimmed, "\"")
+			if firstQuote < 0 {
+				break
+			}
+			rest := trimmed[firstQuote+1:]
+			secondQuote := strings.Index(rest, "\"")
+			if secondQuote < 0 {
+				break
+			}
+			goPackage = rest[:secondQuote]
+			if semi := strings.Index(goPackage, ";"); semi >= 0 {
+				goPackage = goPackage[:semi]
+			}
+			break
+		}
+
+		if goPackage == "" || strings.HasPrefix(goPackage, prefix) {
+			filtered = append(filtered, protoFile)
+			continue
+		}
+
+		logger.Global.Debug("Go GRPC过滤: 跳过跨域go_package文件",
+			zap.String("file", protoFile),
+			zap.String("domain", domainName),
+			zap.String("go_package", goPackage),
+		)
+	}
+
+	return filtered
 }
 
 // GenerateRobotGoProto 递归处理目录下Proto文件，生成Go GRPC代码
