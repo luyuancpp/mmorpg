@@ -41,6 +41,7 @@ message PlayerSession {
   PlayerSessionState state = 10;
   int64 last_active_ts = 11;     // 最后活跃时间 (unix ms)
   string request_id = 12;        // 最近一次登录 request_id (幂等)
+  string account = 13;           // 账号名 (Login 用于 reconnect 决策)
 }
 
 message SetSessionRequest {
@@ -72,6 +73,7 @@ message ReconnectRequest {
   string token_id = 5;
   uint64 token_expiry_ms = 6;
   string request_id = 7;
+  string account = 8;           // 账号名 (Login 传入)
 }
 
 message ReconnectResponse {

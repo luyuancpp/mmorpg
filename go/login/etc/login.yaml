@@ -60,7 +60,14 @@ Timeouts:
   RoleCacheExpire: 24h
   TaskManagerCleanInterval: 5s   # 任务管理器清理间隔
   TaskBatchExpireTime: 10s       # 任务批次过期时间
-  
+# PlayerLocator gRPC 客户端 (通过 etcd 发现)
+PlayerLocatorRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: playerlocator.rpc
+  Timeout: 5000
+
 # Kafka配置
 Kafka:
   Brokers: "127.0.0.1:9092"

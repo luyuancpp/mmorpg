@@ -1,14 +1,11 @@
 #include "player_lifecycle.h"
 #include "proto/common/event/actor_event.pb.h"
 #include "core/network/message_system.h"
-#include "proto/centre/centre_service.pb.h"
 #include "proto/common/component/player_async_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/event/player_event.pb.h"
-#include "rpc/service_metadata/centre_player_scene_service_metadata.h"
-#include "rpc/service_metadata/centre_service_service_metadata.h"
 
 #include "threading/redis_manager.h"
 #include "time/system/time.h"
@@ -81,38 +78,26 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 		DestroyPlayer(playerId);
 	}
 
-	//告诉Centre 保存完毕，可以切换场景了,或者再登录可以重新上线了
-	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
-	SendToCentrePlayerByClientNode(CentrePlayerSceneLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
+	// Centre decommissioned: save-complete notification no longer needed.
+	// player_locator lease handles reconnect gating via Redis TTL.
 }
 
 //考虑: 没load 完再次进入别的gs
 void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
 	LOG_INFO << "EnterGs: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering Game Node";
 
-	auto& playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
-	auto& nodeIdMap = *playerSessionSnapshotPB.mutable_node_id();
-	nodeIdMap[eNodeType::CentreNodeService] = enterInfo.centre_node_id();
-	LOG_INFO << "Updated PlayerNodeInfo with CentreNodeId: " << enterInfo.centre_node_id();
-
-	// Notify Centre that player has entered the game node successfully
-	NotifyEnterSceneSucceed(player, enterInfo.centre_node_id());
+	// Centre decommissioned: no longer track centre_node_id or send CentreEnterGsSucceed.
+	// player_locator (Go service) owns session/location truth via Redis.
 	//todo Centre 重新启动以后
 	//todo gs更新了对应的gate之后 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，
 	//进入game_node a, 再进入game_node b 两个gs的消息到达客户端消息的顺序不一样,所以说game 还要通知game 还要收到gate 的处理完准备离开game的消息
 	//否则两个不同的gs可能离开场景的消息后于进入场景的消息到达客户端
 }
 
-void PlayerLifecycleSystem::NotifyEnterSceneSucceed(entt::entity player, NodeId centreNodeId)
+void PlayerLifecycleSystem::NotifyEnterSceneSucceed(entt::entity /*player*/, NodeId /*centreNodeId*/)
 {
-	EnterGameNodeSuccessRequest request;
-	request.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player));
-	request.set_scene_node_id(GetNodeInfo().node_id());
-	CallRemoteMethodOnClient(CentreEnterGsSucceedMessageId, request, centreNodeId, eNodeType::CentreNodeService);
-
-	// TODO: Handle game node update corresponding to gate before sending client messages
-	// Example: Ensure gate updates are done before client messages can be sent
-	// This ensures that the message order received by clients is consistent
+	// Centre decommissioned: CentreEnterGsSucceed callback removed.
+	// Scene entry is now self-contained; player_locator owns location truth.
 }
 
 void PlayerLifecycleSystem::LeaveGs(entt::entity player)
@@ -227,9 +212,6 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	
 	auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
 
-	auto& sessionSnapshot = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
-	auto& nodeIdMap = *sessionSnapshot.mutable_node_id();
-
 	PlayerAllData playerAllDataMessage;
 	PlayerAllDataMessageFieldsMarshal(playerEntity, playerAllDataMessage);
 	playerAllDataMessage.mutable_player_database_data()->set_player_id(playerId);
@@ -241,7 +223,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	request.set_to_zone(changeInfo->to_zone_id());
 	request.mutable_scene_info()->CopyFrom(*changeInfo);
 	request.set_serialized_player_data(std::move(playerAllDataMessage.SerializeAsString()));
-	request.set_centre_node_id(nodeIdMap[eNodeType::CentreNodeService]);
+	// Centre decommissioned: centre_node_id no longer carried in migration messages.
 
 	KafkaProducer::Instance().send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo->to_zone_id());
 
@@ -259,8 +241,8 @@ void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& 
 		return;
 	}
 
-	PlayerGameNodeEnteryInfoPBComponent enterInfo; // 已在消息中带上
-	enterInfo.set_centre_node_id(msg.centre_node_id());
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	// Centre decommissioned: centre_node_id no longer piggybacked in migration.
 
 	auto player = InitPlayerFromAllData(playerAllDataMessage, enterInfo);
 	SavePlayerToRedis(player);
@@ -303,12 +285,8 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& p
 	// 6. 设置视野
 	tlsRegistryManager.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
 
-	// 7. 设置玩家节点映射（如 Centre NodeId）
-	auto& sessionSnapshot = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player);
-	auto& nodeIdMap = *sessionSnapshot.mutable_node_id();
-	nodeIdMap[eNodeType::CentreNodeService] = enterInfo.centre_node_id();
-
-	LOG_INFO << "[InitPlayerFromAllData] Set CentreNodeId: " << enterInfo.centre_node_id();
+	// Centre decommissioned: centre_node_id no longer tracked in session snapshot.
+	// player_locator (Go) owns the canonical session/location record.
 
 	// 8. 初始化系统组件事件
 	InitializeActorComponentsEvent initActorEvent;

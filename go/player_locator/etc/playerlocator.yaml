@@ -1,0 +1,33 @@
+# player_locator service config
+Name: playerlocator.rpc
+ListenOn: 127.0.0.1:50100
+Timeout: 10000
+
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379
+  Key: playerlocator.rpc
+
+Redis:
+  Host: 127.0.0.1:6379
+  Password: ""
+  DB: 0
+
+Kafka:
+  Brokers:
+    - 127.0.0.1:9092
+
+Node:
+  ZoneId: 0
+  LeaseTTL: 500
+
+Registry:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    DialTimeout: 5s
+
+Lease:
+  DefaultTTLSeconds: 30
+  PollInterval: 1s
+  BatchSize: 100

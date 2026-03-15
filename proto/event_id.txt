@@ -30,3 +30,7 @@
 29=RegisterPlayerEvent
 30=S2CEnterScene
 31=SkillExecutedEvent
+32=ContractsKafkaBindSessionEvent
+33=ContractsKafkaPlayerDisconnectedEvent
+34=ContractsKafkaPlayerLeaseExpiredEvent
+35=ContractsKafkaPlayerLifecycleCommand

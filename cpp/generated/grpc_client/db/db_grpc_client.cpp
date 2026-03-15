@@ -1,8 +1,7 @@
 #include "muduo/base/Logging.h"
 
-
 #include "db_grpc_client.h"
-#include "proto/logic/constants/etcd_grpc.pb.h"
+#include "proto/common/constants/etcd_grpc.pb.h"
 #include "core/utils/encode/base64.h"
 #include <boost/pool/object_pool.hpp>
 #include "grpc_call_tag.h"
@@ -33,8 +32,6 @@ void AsyncCompleteGrpcdbTest(entt::registry& registry, entt::entity nodeEntity, 
 	dbTestPool.destroy(call);
 }
 
-
-
 void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::TestRequest& request) {
 
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
@@ -48,7 +45,6 @@ void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::TestR
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
-
 
 void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const ::TestRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
@@ -76,7 +72,6 @@ void SenddbTest(entt::registry& registry, entt::entity nodeEntity, const google:
 }
 #pragma endregion
 
-
 void HandleDbCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
         case dbTestMessageId:
@@ -88,13 +83,10 @@ void HandleDbCompletedQueueMessage(entt::registry& registry, entt::entity nodeEn
         }
 }
 
-
-
 void SetDbHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
 
     AsyncdbTestHandler = handler;
 }
-
 
 void SetDbIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
 
@@ -103,12 +95,10 @@ void SetDbIfEmptyHandler(const std::function<void(const ClientContext&, const ::
     }
 }
 
-
 void InitDbGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
 
     registry.emplace<dbStubPtr>(nodeEntity, db::NewStub(channel));
 
 }
-
 
 }// namespace 

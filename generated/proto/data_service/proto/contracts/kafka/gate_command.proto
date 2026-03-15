@@ -7,9 +7,11 @@ option go_package = "contracts/kafka";
 // Keep this schema transport-facing and map it to in-process events in C++.
 message GateCommand {
   enum CommandType {
-    RoutePlayer = 0; // Switch player routing
-    KickPlayer = 1;  // Kick session offline
-    Broadcast = 2;   // Broadcast message
+    RoutePlayer = 0;  // Switch player routing
+    KickPlayer = 1;   // Kick session offline
+    Broadcast = 2;    // Broadcast message
+    BindSession = 3;  // Bind session to player (replaces Centre)
+    LeaseExpired = 4; // Disconnect lease expired, clean up
   }
 
   CommandType command_type = 1;

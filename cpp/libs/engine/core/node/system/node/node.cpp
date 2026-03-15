@@ -19,7 +19,6 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "proto/common/base/node.pb.h"
 #include "proto/common/event/node_event.pb.h"
-#include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
@@ -417,13 +416,6 @@ uint32_t Node::GetPort() {
 	return GetNodeInfo().endpoint().port();
 }
 
-void Node::SendMessageToZoneCentre(uint32_t messageId, const ::google::protobuf::Message& requestMessage)
-{
-	if (nullptr == GetZoneCentreClient()){
-		return;
-	}
-	GetZoneCentreClient()->CallRemoteMethod(messageId, requestMessage);
-}
 
 bool Node::IsCurrentNode(const NodeInfo& candidateNode) const
 {

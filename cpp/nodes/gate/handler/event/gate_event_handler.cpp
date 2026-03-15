@@ -10,16 +10,18 @@ void GateEventHandler::Register()
 {
     dispatcher.sink<contracts::kafka::RoutePlayerEvent>().connect<&GateEventHandler::RoutePlayerEventHandler>();
     dispatcher.sink<contracts::kafka::KickPlayerEvent>().connect<&GateEventHandler::KickPlayerEventHandler>();
-    dispatcher.sink<contracts::kafka::BindSessionEvent>().connect<&GateEventHandler::BindSessionEventHandler>();
+    dispatcher.sink<contracts::kafka::PlayerDisconnectedEvent>().connect<&GateEventHandler::PlayerDisconnectedEventHandler>();
     dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().connect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
+    dispatcher.sink<contracts::kafka::BindSessionEvent>().connect<&GateEventHandler::BindSessionEventHandler>();
 }
 
 void GateEventHandler::UnRegister()
 {
     dispatcher.sink<contracts::kafka::RoutePlayerEvent>().disconnect<&GateEventHandler::RoutePlayerEventHandler>();
     dispatcher.sink<contracts::kafka::KickPlayerEvent>().disconnect<&GateEventHandler::KickPlayerEventHandler>();
-    dispatcher.sink<contracts::kafka::BindSessionEvent>().disconnect<&GateEventHandler::BindSessionEventHandler>();
+    dispatcher.sink<contracts::kafka::PlayerDisconnectedEvent>().disconnect<&GateEventHandler::PlayerDisconnectedEventHandler>();
     dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().disconnect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
+    dispatcher.sink<contracts::kafka::BindSessionEvent>().disconnect<&GateEventHandler::BindSessionEventHandler>();
 }
 void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
 {
@@ -57,21 +59,11 @@ void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayer
     LOG_INFO << "KickPlayer cleaned stale session entry. session_id=" << event.session_id();
 ///<<< END WRITING YOUR CODE
 }
-
-void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessionEvent& event)
+void GateEventHandler::PlayerDisconnectedEventHandler(const contracts::kafka::PlayerDisconnectedEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    SessionInfo info;
-    info.playerId = event.player_id();
-    info.sessionVersion = event.session_version();
-    tlsSessionManager.sessions()[event.session_id()] = info;
-
-    LOG_INFO << "BindSession applied. session_id=" << event.session_id()
-        << ", player_id=" << event.player_id()
-        << ", session_version=" << event.session_version();
 ///<<< END WRITING YOUR CODE
 }
-
 void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::PlayerLeaseExpiredEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -97,5 +89,18 @@ void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::Pl
 
     tlsSessionManager.sessions().erase(sessionIt);
     LOG_INFO << "LeaseExpired cleaned stale session. session_id=" << event.session_id();
+///<<< END WRITING YOUR CODE
+}
+void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessionEvent& event)
+{
+///<<< BEGIN WRITING YOUR CODE
+    SessionInfo info;
+    info.playerId = event.player_id();
+    info.sessionVersion = event.session_version();
+    tlsSessionManager.sessions()[event.session_id()] = info;
+
+    LOG_INFO << "BindSession applied. session_id=" << event.session_id()
+        << ", player_id=" << event.player_id()
+        << ", session_version=" << event.session_version();
 ///<<< END WRITING YOUR CODE
 }

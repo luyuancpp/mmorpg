@@ -3,11 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "node/system/node/node.h"
-#include "network/rpc_client.h"
-#include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "scene/scene/system/game_node_scene.h"
-#include "network/node_message_utils.h"
-#include <proto/common/base/node.pb.h>
 #include <modules/scene/system/scene_common.h>
 ///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()
@@ -26,13 +22,8 @@ void ServerEventHandler::UnRegister()
 void ServerEventHandler::OnConnect2CentrePbEventHandler(const OnConnect2CentrePbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	InitSceneNodeRequest request;
-	request.set_node_id(gNode->GetNodeId());
-	request.set_scene_node_type(gNode->GetNodeInfo().scene_node_type());
-    CallRemoteMethodOnClient(CentreInitSceneNodeMessageId, request, entt::to_integral(event.entity()), eNodeType::CentreNodeService);
-
-    entt::entity centreNodeId{ event.entity() };
-	GameNodeSceneSystem::RegisterAllSceneToCentre(centreNodeId);
+	// Centre decommissioned: no longer register scenes to Centre or send InitSceneNode.
+	// Scenes are discovered via etcd; scene switch is orchestrated by SceneManager.
 ///<<< END WRITING YOUR CODE
 }
 void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)

@@ -54,7 +54,7 @@ void InitServiceHandler()
 		}
 		first := service.Methods[0]
 		includes = append(includes, first.CppHandlerIncludeName())
-		initLine := " gNodeService.emplace(\"" + first.Service() + "\", std::make_unique_for_overwrite<" + first.Service() + _config.Global.Naming.HandlerFile + ">());"
+		initLine := " gNodeService.emplace(\"" + first.Service() + "\", std::make_unique<" + first.Service() + _config.Global.Naming.HandlerFile + ">());"
 		initLines = append(initLines, initLine)
 	}
 

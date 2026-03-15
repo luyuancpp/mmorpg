@@ -6,11 +6,9 @@
 #include "node/system/node/node.h"
 #include "core/network/message_system.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "proto/centre/centre_player_scene.pb.h"
 #include "modules/scene/comp/scene_comp.h"
-#include "rpc/service_metadata/centre_player_scene_service_metadata.h"
 #include "proto/common/base/node.pb.h"
-#include "network/node_message_utils.h"
+#include "proto/centre/centre_player_scene.pb.h"
 ///<<< END WRITING YOUR CODE
 
 void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,
@@ -50,7 +48,10 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 
 	CentreEnterSceneRequest enterSceneReq;
 	enterSceneReq.mutable_scene_info()->CopyFrom(scene_info);
-	SendToCentrePlayerByClientNode(CentrePlayerSceneEnterSceneMessageId, enterSceneReq, player);
+	// TODO(centre-decommission): Route scene change request via Kafka to SceneManager
+	// instead of SendToCentrePlayerByClientNode.
+	LOG_WARN << "EnterSceneC2S: Centre decommissioned, scene change via SceneManager not yet wired. player="
+			 << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 
 	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 ///<<< END WRITING YOUR CODE
@@ -69,8 +70,8 @@ void SceneSceneClientPlayerHandler::SceneInfoC2S(entt::entity player,const ::Sce
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    SceneInfoRequest req;
-	SendToCentrePlayerByClientNode(CentrePlayerSceneSceneInfoC2SMessageId, req, player);
+	// TODO(centre-decommission): Route scene info request via SceneManager or local lookup.
+	LOG_WARN << "SceneInfoC2S: Centre decommissioned, scene info via SceneManager not yet wired.";
 ///<<< END WRITING YOUR CODE
 
 }

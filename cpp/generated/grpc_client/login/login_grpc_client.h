@@ -5,9 +5,7 @@
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/login/login.grpc.pb.h"
 
-
 #include "rpc/service_metadata/login_service_metadata.h"
-
 
 using grpc::ClientContext;
 using grpc::Status;
@@ -17,7 +15,6 @@ namespace loginpb {
 using ClientPlayerLoginStubPtr = std::unique_ptr<ClientPlayerLogin::Stub>;
 #pragma region ClientPlayerLoginLogin
 
-
 struct AsyncClientPlayerLoginLoginGrpcClient {
     uint32_t messageId{ ClientPlayerLoginLoginMessageId };
     ClientContext context;
@@ -25,8 +22,6 @@ struct AsyncClientPlayerLoginLoginGrpcClient {
     ::loginpb::LoginResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginResponse>> response_reader;
 };
-
-
 
 class ::loginpb::LoginRequest;
 using AsyncClientPlayerLoginLoginHandlerFunctionType =
@@ -39,7 +34,6 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 #pragma endregion
 #pragma region ClientPlayerLoginCreatePlayer
 
-
 struct AsyncClientPlayerLoginCreatePlayerGrpcClient {
     uint32_t messageId{ ClientPlayerLoginCreatePlayerMessageId };
     ClientContext context;
@@ -47,8 +41,6 @@ struct AsyncClientPlayerLoginCreatePlayerGrpcClient {
     ::loginpb::CreatePlayerResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::CreatePlayerResponse>> response_reader;
 };
-
-
 
 class ::loginpb::CreatePlayerRequest;
 using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType =
@@ -61,7 +53,6 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 #pragma endregion
 #pragma region ClientPlayerLoginEnterGame
 
-
 struct AsyncClientPlayerLoginEnterGameGrpcClient {
     uint32_t messageId{ ClientPlayerLoginEnterGameMessageId };
     ClientContext context;
@@ -69,8 +60,6 @@ struct AsyncClientPlayerLoginEnterGameGrpcClient {
     ::loginpb::EnterGameResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::EnterGameResponse>> response_reader;
 };
-
-
 
 class ::loginpb::EnterGameRequest;
 using AsyncClientPlayerLoginEnterGameHandlerFunctionType =
@@ -83,7 +72,6 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 #pragma endregion
 #pragma region ClientPlayerLoginLeaveGame
 
-
 struct AsyncClientPlayerLoginLeaveGameGrpcClient {
     uint32_t messageId{ ClientPlayerLoginLeaveGameMessageId };
     ClientContext context;
@@ -91,8 +79,6 @@ struct AsyncClientPlayerLoginLeaveGameGrpcClient {
     ::loginpb::LoginEmptyResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginEmptyResponse>> response_reader;
 };
-
-
 
 class ::loginpb::LeaveGameRequest;
 using AsyncClientPlayerLoginLeaveGameHandlerFunctionType =
@@ -105,7 +91,6 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 #pragma endregion
 #pragma region ClientPlayerLoginDisconnect
 
-
 struct AsyncClientPlayerLoginDisconnectGrpcClient {
     uint32_t messageId{ ClientPlayerLoginDisconnectMessageId };
     ClientContext context;
@@ -113,8 +98,6 @@ struct AsyncClientPlayerLoginDisconnectGrpcClient {
     ::loginpb::LoginEmptyResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginEmptyResponse>> response_reader;
 };
-
-
 
 class ::loginpb::LoginNodeDisconnectRequest;
 using AsyncClientPlayerLoginDisconnectHandlerFunctionType =
@@ -131,4 +114,3 @@ void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nod
 void InitLoginGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace loginpb
-

@@ -33,7 +33,7 @@ struct ProtoEvent {
 };
 
 constexpr uint32_t kMaxMessageLen = 94;
-constexpr uint32_t kMaxEventLen = 32;
+constexpr uint32_t kMaxEventLen = 36;
 constexpr uint32_t AcceptMissionEventEventId = 0;
 constexpr uint32_t AfterEnterSceneEventId = 1;
 constexpr uint32_t AfterLeaveSceneEventId = 2;
@@ -44,7 +44,11 @@ constexpr uint32_t BuffTestEvetEventId = 6;
 constexpr uint32_t CombatStateAddedPbEventEventId = 7;
 constexpr uint32_t CombatStateRemovedPbEventEventId = 8;
 constexpr uint32_t ConnectToNodePbEventEventId = 9;
+constexpr uint32_t ContractsKafkaBindSessionEventEventId = 32;
 constexpr uint32_t ContractsKafkaKickPlayerEventEventId = 10;
+constexpr uint32_t ContractsKafkaPlayerDisconnectedEventEventId = 33;
+constexpr uint32_t ContractsKafkaPlayerLeaseExpiredEventEventId = 34;
+constexpr uint32_t ContractsKafkaPlayerLifecycleCommandEventId = 35;
 constexpr uint32_t ContractsKafkaRoutePlayerEventEventId = 11;
 constexpr uint32_t InitializeActorComponentsEventEventId = 12;
 constexpr uint32_t InitializeNpcComponentsEventEventId = 13;

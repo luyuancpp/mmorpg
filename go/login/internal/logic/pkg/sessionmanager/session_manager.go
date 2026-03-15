@@ -1,19 +1,20 @@
 // Package sessionmanager replaces Centre's in-memory session management.
-// All state is stored in Redis (no single point of failure).
-// It handles: login decision (first/reconnect/replace), idempotency, session lifecycle.
+// Session I/O is delegated to the player_locator gRPC service (single source of truth).
+// Pure decision logic (DecideEnterGame, CanReconnect) remains local.
 package sessionmanager
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/core/logx"
+
+	plpb "login/proto/player_locator"
 )
 
-// PlayerSession mirrors the proto PlayerSession but lives in Redis.
+// PlayerSession is the Login-side view of a player session.
+// It mirrors player_locator.PlayerSession for local decision logic.
 type PlayerSession struct {
 	PlayerID       uint64 `json:"player_id"`
 	SessionID      uint64 `json:"session_id"`
@@ -21,7 +22,7 @@ type PlayerSession struct {
 	GateInstanceID string `json:"gate_instance_id"`
 	SceneNodeID    string `json:"scene_node_id"`
 	SceneID        uint64 `json:"scene_id"`
-	Account        string `json:"account"` // account name (identity for reconnect decisions)
+	Account        string `json:"account"`
 	SessionVersion uint64 `json:"session_version"`
 	State          int32  `json:"state"` // 0=unknown, 1=online, 2=disconnecting, 3=offline
 	LastActiveTs   int64  `json:"last_active_ts"`
@@ -42,122 +43,125 @@ const (
 	StateDisconnecting int32 = 2
 	StateOffline       int32 = 3
 
-	sessionKeyPrefix     = "player_session:"
 	idempotencyKeyPrefix = "login_idempotent:"
 	idempotencyTTL       = 5 * time.Minute
-	disconnectLeaseTTL   = 30 * time.Second
 )
 
-func sessionKey(playerID uint64) string {
-	return fmt.Sprintf("%s%d", sessionKeyPrefix, playerID)
+type OnlineSessionInput struct {
+	PlayerID       uint64
+	SessionID      uint64
+	GateID         string
+	GateInstanceID string
+	Account        string
+	RequestID      string
+	Now            time.Time
 }
 
 func idempotencyKey(playerID uint64, requestID string) string {
 	return fmt.Sprintf("%s%d:%s", idempotencyKeyPrefix, playerID, requestID)
 }
 
-// GetSession retrieves the player session from Redis. Returns nil if not found.
-func GetSession(ctx context.Context, rdb *redis.Client, playerID uint64) (*PlayerSession, error) {
-	key := sessionKey(playerID)
-	data, err := rdb.Get(ctx, key).Bytes()
-	if err == redis.Nil {
+// ---- I/O functions (delegate to player_locator gRPC) ----
+
+// GetSession retrieves the player session from player_locator. Returns nil if not found.
+func GetSession(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64) (*PlayerSession, error) {
+	resp, err := plClient.GetSession(ctx, &plpb.GetSessionRequest{PlayerId: playerID})
+	if err != nil {
+		return nil, fmt.Errorf("player_locator GetSession: %w", err)
+	}
+	if !resp.Found {
 		return nil, nil
 	}
-	if err != nil {
-		return nil, err
-	}
-	// We store as protobuf-friendly JSON, but let's use a simple proto-compatible approach.
-	// Actually, let's store as protobuf binary for consistency with the rest of the codebase.
-	// We'll use a generated proto message eventually, but for now use a simple approach.
-	session := &PlayerSession{}
-	if err := unmarshalSession(data, session); err != nil {
-		return nil, err
-	}
-	return session, nil
+	return fromProto(resp.Session), nil
 }
 
-// SetSession writes/overwrites a player session in Redis (no TTL — online sessions are permanent).
-func SetSession(ctx context.Context, rdb *redis.Client, session *PlayerSession) error {
-	key := sessionKey(session.PlayerID)
-	data, err := marshalSession(session)
+// SetSession writes/overwrites a player session via player_locator.
+func SetSession(ctx context.Context, plClient plpb.PlayerLocatorClient, session *PlayerSession) error {
+	_, err := plClient.SetSession(ctx, &plpb.SetSessionRequest{Session: toProto(session)})
 	if err != nil {
-		return err
+		return fmt.Errorf("player_locator SetSession: %w", err)
 	}
-	return rdb.Set(ctx, key, data, 0).Err()
+	return nil
 }
 
-// SetSessionDisconnecting marks the session as disconnecting with a TTL lease.
-// When the TTL expires, Redis key is auto-deleted (effectively = lease expired).
-func SetSessionDisconnecting(ctx context.Context, rdb *redis.Client, playerID uint64, sessionID uint64) error {
-	session, err := GetSession(ctx, rdb, playerID)
-	if err != nil || session == nil {
-		return err
-	}
-	// Only the current session can start disconnect
-	if session.SessionID != sessionID {
-		logx.Infof("SetSessionDisconnecting: session mismatch player=%d current=%d requested=%d, ignoring",
-			playerID, session.SessionID, sessionID)
-		return nil
-	}
-	session.State = StateDisconnecting
-	data, err := marshalSession(session)
+// SetSessionDisconnecting marks the session as disconnecting with a 30s lease via player_locator.
+func SetSessionDisconnecting(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64, sessionID uint64) error {
+	_, err := plClient.SetDisconnecting(ctx, &plpb.SetDisconnectingRequest{
+		PlayerId:        playerID,
+		SessionId:       sessionID,
+		LeaseTtlSeconds: 30,
+	})
 	if err != nil {
-		return err
+		return fmt.Errorf("player_locator SetDisconnecting: %w", err)
 	}
-	// Set with TTL — if not reconnected, key auto-expires
-	return rdb.Set(ctx, sessionKey(playerID), data, disconnectLeaseTTL).Err()
+	return nil
 }
 
-// Reconnect cancels the disconnect lease and restores the session to online.
-func Reconnect(ctx context.Context, rdb *redis.Client, playerID uint64,
+// Reconnect cancels the disconnect lease and restores the session to online via player_locator.
+func Reconnect(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64,
 	newSessionID uint64, gateID string, gateInstanceID string,
 	account string, requestID string,
 ) (*PlayerSession, error) {
-	session, err := GetSession(ctx, rdb, playerID)
+	resp, err := plClient.Reconnect(ctx, &plpb.ReconnectRequest{
+		PlayerId:       playerID,
+		NewSessionId:   newSessionID,
+		GateId:         gateID,
+		GateInstanceId: gateInstanceID,
+		Account:        account,
+		RequestId:      requestID,
+	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("player_locator Reconnect: %w", err)
 	}
-	if session == nil {
-		return nil, fmt.Errorf("no session found for player %d", playerID)
+	if !resp.Success {
+		return nil, fmt.Errorf("reconnect failed: %s", resp.ErrorMessage)
 	}
-
-	session.SessionID = newSessionID
-	session.GateID = gateID
-	session.GateInstanceID = gateInstanceID
-	session.Account = account
-	session.SessionVersion++
-	session.State = StateOnline
-	session.LastActiveTs = time.Now().UnixMilli()
-	session.RequestID = requestID
-
-	if err := SetSession(ctx, rdb, session); err != nil {
-		return nil, err
-	}
-	return session, nil
+	return fromProto(resp.Session), nil
 }
 
-// DeleteSession removes the session (player fully logged off).
-func DeleteSession(ctx context.Context, rdb *redis.Client, playerID uint64) error {
-	return rdb.Del(ctx, sessionKey(playerID)).Err()
+// DeleteSession removes the session (player fully logged off) via player_locator MarkOffline.
+func DeleteSession(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64) error {
+	_, err := plClient.MarkOffline(ctx, &plpb.PlayerId{Uid: int64(playerID)})
+	if err != nil {
+		return fmt.Errorf("player_locator MarkOffline: %w", err)
+	}
+	return nil
 }
 
-// DecideEnterGame implements Centre's login decision logic.
-// Same account reconnecting within the disconnect lease window → ShortReconnect.
-// Different account or no lease → ReplaceLogin.
+// ---- Pure logic (no I/O) ----
+
+// DecideEnterGame implements the login decision logic.
 func DecideEnterGame(existing *PlayerSession, incomingAccount string) EnterGameDecision {
 	if existing == nil {
 		return FirstLogin
 	}
-
-	// Reconnect only if: session is in disconnecting state AND same account
-	if existing.State == StateDisconnecting && existing.Account == incomingAccount {
+	if CanReconnect(existing, incomingAccount) {
 		return ShortReconnect
 	}
-
 	return ReplaceLogin
 }
 
-// CheckIdempotency checks if a request_id was already processed for a player.
+func CanReconnect(existing *PlayerSession, incomingAccount string) bool {
+	if existing == nil {
+		return false
+	}
+	return existing.State == StateDisconnecting && existing.Account == incomingAccount
+}
+
+func NewOnlineSession(existing *PlayerSession, input OnlineSessionInput) *PlayerSession {
+	session := &PlayerSession{
+		PlayerID: input.PlayerID,
+	}
+	if existing != nil {
+		session.SessionVersion = existing.SessionVersion
+	}
+	applyOnlineSession(session, input)
+	session.SessionVersion = nextSessionVersion(existing)
+	return session
+}
+
+// ---- Idempotency (stays in Redis — not session-related) ----
+
 func CheckIdempotency(ctx context.Context, rdb *redis.Client, playerID uint64, requestID string) (bool, error) {
 	if requestID == "" {
 		return false, nil
@@ -170,7 +174,6 @@ func CheckIdempotency(ctx context.Context, rdb *redis.Client, playerID uint64, r
 	return exists > 0, nil
 }
 
-// SetIdempotency marks a request_id as processed.
 func SetIdempotency(ctx context.Context, rdb *redis.Client, playerID uint64, requestID string) error {
 	if requestID == "" {
 		return nil
@@ -179,11 +182,62 @@ func SetIdempotency(ctx context.Context, rdb *redis.Client, playerID uint64, req
 	return rdb.Set(ctx, key, "1", idempotencyTTL).Err()
 }
 
-// marshalSession serialises a PlayerSession to bytes using JSON.
-func marshalSession(s *PlayerSession) ([]byte, error) {
-	return json.Marshal(s)
+// ---- Proto conversion helpers ----
+
+func toProto(s *PlayerSession) *plpb.PlayerSession {
+	return &plpb.PlayerSession{
+		PlayerId:       s.PlayerID,
+		SessionId:      s.SessionID,
+		GateId:         s.GateID,
+		GateInstanceId: s.GateInstanceID,
+		SceneNodeId:    s.SceneNodeID,
+		SceneId:        s.SceneID,
+		SessionVersion: s.SessionVersion,
+		State:          plpb.PlayerSessionState(s.State),
+		LastActiveTs:   s.LastActiveTs,
+		RequestId:      s.RequestID,
+		Account:        s.Account,
+	}
 }
 
-func unmarshalSession(data []byte, s *PlayerSession) error {
-	return json.Unmarshal(data, s)
+func fromProto(pb *plpb.PlayerSession) *PlayerSession {
+	if pb == nil {
+		return nil
+	}
+	return &PlayerSession{
+		PlayerID:       pb.PlayerId,
+		SessionID:      pb.SessionId,
+		GateID:         pb.GateId,
+		GateInstanceID: pb.GateInstanceId,
+		SceneNodeID:    pb.SceneNodeId,
+		SceneID:        pb.SceneId,
+		Account:        pb.Account,
+		SessionVersion: pb.SessionVersion,
+		State:          int32(pb.State),
+		LastActiveTs:   pb.LastActiveTs,
+		RequestID:      pb.RequestId,
+	}
+}
+
+func applyOnlineSession(session *PlayerSession, input OnlineSessionInput) {
+	now := input.Now
+	if now.IsZero() {
+		now = time.Now()
+	}
+
+	session.PlayerID = input.PlayerID
+	session.SessionID = input.SessionID
+	session.GateID = input.GateID
+	session.GateInstanceID = input.GateInstanceID
+	session.Account = input.Account
+	session.State = StateOnline
+	session.LastActiveTs = now.UnixMilli()
+	session.RequestID = input.RequestID
+}
+
+func nextSessionVersion(existing *PlayerSession) uint64 {
+	if existing == nil {
+		return 1
+	}
+	return existing.SessionVersion + 1
 }

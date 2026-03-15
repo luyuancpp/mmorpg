@@ -1,6 +1,5 @@
 #include "muduo/base/Logging.h"
 
-
 #include "scene_manager_service_grpc_client.h"
 #include "proto/common/constants/etcd_grpc.pb.h"
 #include "core/utils/encode/base64.h"
@@ -33,8 +32,6 @@ void AsyncCompleteGrpcSceneManagerCreateScene(entt::registry& registry, entt::en
 	SceneManagerCreateScenePool.destroy(call);
 }
 
-
-
 void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request) {
 
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
@@ -48,7 +45,6 @@ void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEnti
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
-
 
 void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
@@ -95,8 +91,6 @@ void AsyncCompleteGrpcSceneManagerDestroyScene(entt::registry& registry, entt::e
 	SceneManagerDestroyScenePool.destroy(call);
 }
 
-
-
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request) {
 
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
@@ -110,7 +104,6 @@ void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEnt
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
-
 
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
@@ -137,46 +130,43 @@ void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEnt
     SendSceneManagerDestroyScene(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
-#pragma region SceneManagerEnterSceneByCentre
-boost::object_pool<AsyncSceneManagerEnterSceneByCentreGrpcClient> SceneManagerEnterSceneByCentrePool;
-using AsyncSceneManagerEnterSceneByCentreHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::scene_manager::EnterSceneByCentreResponse&)>;
-AsyncSceneManagerEnterSceneByCentreHandlerFunctionType AsyncSceneManagerEnterSceneByCentreHandler;
+#pragma region SceneManagerEnterScene
+boost::object_pool<AsyncSceneManagerEnterSceneGrpcClient> SceneManagerEnterScenePool;
+using AsyncSceneManagerEnterSceneHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::scene_manager::EnterSceneResponse&)>;
+AsyncSceneManagerEnterSceneHandlerFunctionType AsyncSceneManagerEnterSceneHandler;
 
-void AsyncCompleteGrpcSceneManagerEnterSceneByCentre(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+void AsyncCompleteGrpcSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     auto call(
-        static_cast<AsyncSceneManagerEnterSceneByCentreGrpcClient*>(got_tag));
+        static_cast<AsyncSceneManagerEnterSceneGrpcClient*>(got_tag));
     if (call->status.ok()) {
-        if (AsyncSceneManagerEnterSceneByCentreHandler) {
-            AsyncSceneManagerEnterSceneByCentreHandler(call->context, call->reply);
+        if (AsyncSceneManagerEnterSceneHandler) {
+            AsyncSceneManagerEnterSceneHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
     }
 
-	SceneManagerEnterSceneByCentrePool.destroy(call);
+	SceneManagerEnterScenePool.destroy(call);
 }
 
-
-
-void SendSceneManagerEnterSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneByCentreRequest& request) {
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request) {
 
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto call(SceneManagerEnterSceneByCentrePool.construct());
+    auto call(SceneManagerEnterScenePool.construct());
     call->response_reader = registry
         .get<SceneManagerStubPtr>(nodeEntity)
-        ->PrepareAsyncEnterSceneByCentre(&call->context, request,
+        ->PrepareAsyncEnterScene(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(SceneManagerEnterSceneByCentreMessageId, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(SceneManagerEnterSceneMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-void SendSceneManagerEnterSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneByCentreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
-    auto call(SceneManagerEnterSceneByCentrePool.construct());
+    auto call(SceneManagerEnterScenePool.construct());
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
@@ -186,59 +176,56 @@ void SendSceneManagerEnterSceneByCentre(entt::registry& registry, entt::entity n
 
     call->response_reader = registry
         .get<SceneManagerStubPtr>(nodeEntity)
-        ->PrepareAsyncEnterSceneByCentre(&call->context, request,
+        ->PrepareAsyncEnterScene(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(SceneManagerEnterSceneByCentreMessageId, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(SceneManagerEnterSceneMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
-void SendSceneManagerEnterSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-    const ::scene_manager::EnterSceneByCentreRequest& derived = static_cast<const ::scene_manager::EnterSceneByCentreRequest&>(message);
-    SendSceneManagerEnterSceneByCentre(registry, nodeEntity, derived, metaKeys, metaValues);
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::scene_manager::EnterSceneRequest& derived = static_cast<const ::scene_manager::EnterSceneRequest&>(message);
+    SendSceneManagerEnterScene(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
-#pragma region SceneManagerLeaveSceneByCentre
-boost::object_pool<AsyncSceneManagerLeaveSceneByCentreGrpcClient> SceneManagerLeaveSceneByCentrePool;
-using AsyncSceneManagerLeaveSceneByCentreHandlerFunctionType =
+#pragma region SceneManagerLeaveScene
+boost::object_pool<AsyncSceneManagerLeaveSceneGrpcClient> SceneManagerLeaveScenePool;
+using AsyncSceneManagerLeaveSceneHandlerFunctionType =
     std::function<void(const ClientContext&, const ::Empty&)>;
-AsyncSceneManagerLeaveSceneByCentreHandlerFunctionType AsyncSceneManagerLeaveSceneByCentreHandler;
+AsyncSceneManagerLeaveSceneHandlerFunctionType AsyncSceneManagerLeaveSceneHandler;
 
-void AsyncCompleteGrpcSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+void AsyncCompleteGrpcSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
     auto call(
-        static_cast<AsyncSceneManagerLeaveSceneByCentreGrpcClient*>(got_tag));
+        static_cast<AsyncSceneManagerLeaveSceneGrpcClient*>(got_tag));
     if (call->status.ok()) {
-        if (AsyncSceneManagerLeaveSceneByCentreHandler) {
-            AsyncSceneManagerLeaveSceneByCentreHandler(call->context, call->reply);
+        if (AsyncSceneManagerLeaveSceneHandler) {
+            AsyncSceneManagerLeaveSceneHandler(call->context, call->reply);
         }
     } else {
         LOG_ERROR << call->status.error_message();
     }
 
-	SceneManagerLeaveSceneByCentrePool.destroy(call);
+	SceneManagerLeaveScenePool.destroy(call);
 }
 
-
-
-void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneByCentreRequest& request) {
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request) {
 
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto call(SceneManagerLeaveSceneByCentrePool.construct());
+    auto call(SceneManagerLeaveScenePool.construct());
     call->response_reader = registry
         .get<SceneManagerStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaveSceneByCentre(&call->context, request,
+        ->PrepareAsyncLeaveScene(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(SceneManagerLeaveSceneByCentreMessageId, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(SceneManagerLeaveSceneMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneByCentreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
-    auto call(SceneManagerLeaveSceneByCentrePool.construct());
+    auto call(SceneManagerLeaveScenePool.construct());
     auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
 
     const size_t count = std::min(metaKeys.size(), metaValues.size());
@@ -248,20 +235,19 @@ void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity n
 
     call->response_reader = registry
         .get<SceneManagerStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaveSceneByCentre(&call->context, request,
+        ->PrepareAsyncLeaveScene(&call->context, request,
                                            &cq);
     call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(SceneManagerLeaveSceneByCentreMessageId, (void*)call));
+    GrpcTag* got_tag(tagPool.construct(SceneManagerLeaveSceneMessageId, (void*)call));
     call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
 
 }
 
-void SendSceneManagerLeaveSceneByCentre(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-    const ::scene_manager::LeaveSceneByCentreRequest& derived = static_cast<const ::scene_manager::LeaveSceneByCentreRequest&>(message);
-    SendSceneManagerLeaveSceneByCentre(registry, nodeEntity, derived, metaKeys, metaValues);
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::scene_manager::LeaveSceneRequest& derived = static_cast<const ::scene_manager::LeaveSceneRequest&>(message);
+    SendSceneManagerLeaveScene(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
-
 
 void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
@@ -273,12 +259,12 @@ void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, en
             AsyncCompleteGrpcSceneManagerDestroyScene(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
-        case SceneManagerEnterSceneByCentreMessageId:
-            AsyncCompleteGrpcSceneManagerEnterSceneByCentre(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+        case SceneManagerEnterSceneMessageId:
+            AsyncCompleteGrpcSceneManagerEnterScene(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
-        case SceneManagerLeaveSceneByCentreMessageId:
-            AsyncCompleteGrpcSceneManagerLeaveSceneByCentre(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+        case SceneManagerLeaveSceneMessageId:
+            AsyncCompleteGrpcSceneManagerLeaveScene(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
         default:
@@ -286,16 +272,13 @@ void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, en
         }
 }
 
-
-
 void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
 
     AsyncSceneManagerCreateSceneHandler = handler;
     AsyncSceneManagerDestroySceneHandler = handler;
-    AsyncSceneManagerEnterSceneByCentreHandler = handler;
-    AsyncSceneManagerLeaveSceneByCentreHandler = handler;
+    AsyncSceneManagerEnterSceneHandler = handler;
+    AsyncSceneManagerLeaveSceneHandler = handler;
 }
-
 
 void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
 
@@ -305,20 +288,18 @@ void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientC
     if (!AsyncSceneManagerDestroySceneHandler) {
         AsyncSceneManagerDestroySceneHandler = handler;
     }
-    if (!AsyncSceneManagerEnterSceneByCentreHandler) {
-        AsyncSceneManagerEnterSceneByCentreHandler = handler;
+    if (!AsyncSceneManagerEnterSceneHandler) {
+        AsyncSceneManagerEnterSceneHandler = handler;
     }
-    if (!AsyncSceneManagerLeaveSceneByCentreHandler) {
-        AsyncSceneManagerLeaveSceneByCentreHandler = handler;
+    if (!AsyncSceneManagerLeaveSceneHandler) {
+        AsyncSceneManagerLeaveSceneHandler = handler;
     }
 }
-
 
 void InitSceneManagerServiceGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
 
     registry.emplace<SceneManagerStubPtr>(nodeEntity, SceneManager::NewStub(channel));
 
 }
-
 
 }// namespace scene_manager

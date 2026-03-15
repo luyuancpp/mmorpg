@@ -7,7 +7,8 @@ import "proto/contracts/kafka/gate_command.proto";
 
 option go_package = "scene_manager/scene_manager";
 
-// SceneManager Service: Responsible for scene creation/destruction and Centre -> Scene routing
+// SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
+// No longer requires Centre — Login/player_locator drive the flow directly.
 service SceneManager {
   // Create a scene on a specific node (implemented by the Scene node)
   rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}
@@ -15,11 +16,11 @@ service SceneManager {
   // Destroy a scene
   rpc DestroyScene(DestroySceneRequest) returns (Empty) {}
 
-  // Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
-  rpc EnterSceneByCentre(EnterSceneByCentreRequest) returns (EnterSceneByCentreResponse) {}
+  // Login/player_locator requests a player to enter a scene
+  rpc EnterScene(EnterSceneRequest) returns (EnterSceneResponse) {}
 
-  // Centre requests a player to leave a scene (or leave before switching scenes)
-  rpc LeaveSceneByCentre(LeaveSceneByCentreRequest) returns (Empty) {}
+  // Login/player_locator requests a player to leave a scene
+  rpc LeaveScene(LeaveSceneRequest) returns (Empty) {}
 }
 
 message CreateSceneRequest {
@@ -43,25 +44,22 @@ message DestroySceneRequest {
   uint64 scene_id = 1;
 }
 
-message EnterSceneByCentreRequest {
-  // Call from Centre, containing player and session metadata
+message EnterSceneRequest {
   uint64 player_id = 1;
-  uint64 scene_id = 2; // Target scene
-  uint64 centre_node_id = 3; // Source Centre node ID
-  uint64 session_id = 4; // Gate session ID (can be 0, indicating hosted)
-  string request_id = 5; // Idempotency ID (optional)
-  string gate_id = 6;    // Gate Node ID
-  string gate_instance_id = 7; // Gate Instance ID (for Kafka message validation)
+  uint64 scene_id = 2;          // Target scene
+  uint64 session_id = 3;        // Gate session ID
+  string request_id = 4;        // Idempotency ID (optional)
+  string gate_id = 5;           // Gate Node ID
+  string gate_instance_id = 6;  // Gate Instance ID (for Kafka message validation)
 }
 
-message EnterSceneByCentreResponse {
+message EnterSceneResponse {
   uint32 error_code = 1;
   string error_message = 2;
 }
 
-message LeaveSceneByCentreRequest {
+message LeaveSceneRequest {
   uint64 player_id = 1;
   uint64 scene_id = 2;
-  uint64 centre_node_id = 3;
-  string request_id = 4;
+  string request_id = 3;
 }

@@ -32,3 +32,7 @@ const PlayerUpgradeEventEventId = 28
 const RegisterPlayerEventEventId = 29
 const S2CEnterSceneEventId = 30
 const SkillExecutedEventEventId = 31
+const ContractsKafkaBindSessionEventEventId = 32
+const ContractsKafkaPlayerDisconnectedEventEventId = 33
+const ContractsKafkaPlayerLeaseExpiredEventEventId = 34
+const ContractsKafkaPlayerLifecycleCommandEventId = 35

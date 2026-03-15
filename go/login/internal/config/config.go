@@ -1,21 +1,23 @@
 package config
 
 import (
+	"time"
+
 	"github.com/IBM/sarama"
 	"github.com/zeromicro/go-zero/zrpc"
-	"time"
 )
 
 // Config 总配置结构体
 type Config struct {
-	zrpc.RpcServerConf               // 继承zrpc的基础配置（ListenOn、Etcd等）
-	Node               NodeConfig    `json:"Node"` // 节点配置（新增登录时长限制）
-	Snowflake          SnowflakeConf `json:"Snowflake"` // 雪花ID配置
-	Locker             LockerConf    `json:"Locker"` // 锁配置
-	Account            AccountConf   `json:"Account"` // 账号配置
-	Registry           RegistryConf  `json:"Registry"` // 服务注册发现配置
-	Timeouts           TimeoutConf   `json:"Timeouts"` // 各类超时配置
-	Kafka              KafkaConfig   `json:"Kafka"` // Kafka配置
+	zrpc.RpcServerConf                    // 继承zrpc的基础配置（ListenOn、Etcd等）
+	Node               NodeConfig         `json:"Node"`             // 节点配置（新增登录时长限制）
+	Snowflake          SnowflakeConf      `json:"Snowflake"`        // 雪花ID配置
+	Locker             LockerConf         `json:"Locker"`           // 锁配置
+	Account            AccountConf        `json:"Account"`          // 账号配置
+	Registry           RegistryConf       `json:"Registry"`         // 服务注册发现配置
+	Timeouts           TimeoutConf        `json:"Timeouts"`         // 各类超时配置
+	Kafka              KafkaConfig        `json:"Kafka"`            // Kafka配置
+	PlayerLocatorRpc   zrpc.RpcClientConf `json:"PlayerLocatorRpc"` // player_locator gRPC 客户端
 }
 
 // NodeConfig 节点相关配置（新增登录时长限制）

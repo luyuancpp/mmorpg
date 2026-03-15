@@ -31,6 +31,25 @@ pwsh -File dev_tools.ps1 -Command naming-apply
 
 # Use kebab-case style with a capped batch size
 pwsh -File dev_tools.ps1 -Command naming-audit -Style kebab -MaxChanges 200
+
+# Open one k8s zone
+pwsh -File dev_tools.ps1 -Command k8s-zone-up -ZoneName yesterday -ZoneId 101 -OpsProfile managed-cloud -NodeImage <image> -WaitReady
+
+# Open all zones from JSON/YAML config
+pwsh -File dev_tools.ps1 -Command k8s-all-up -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml -OpsProfile managed-cloud -NodeImage <image> -WaitReady
+
+# Check/close k8s zones
+pwsh -File dev_tools.ps1 -Command k8s-zone-status -ZoneName yesterday
+pwsh -File dev_tools.ps1 -Command k8s-zone-down -ZoneName yesterday
+pwsh -File dev_tools.ps1 -Command k8s-all-status -ZonesConfigPath deploy/k8s/zones.yaml
+pwsh -File dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath deploy/k8s/zones.yaml
+
+# Preflight/build/push/release runtime image for k8s
+pwsh -File dev_tools.ps1 -Command k8s-stage-runtime -BinarySourceRoot D:/linux-build/bin -ZoneInfoSource bin/zoneinfo -TableSource generated/tables
+pwsh -File dev_tools.ps1 -Command k8s-image-preflight
+pwsh -File dev_tools.ps1 -Command k8s-build-image -ImageRepository ghcr.io/luyuancpp/mmorpg-node -ImageTag v1
+pwsh -File dev_tools.ps1 -Command k8s-push-image -ImageRepository ghcr.io/luyuancpp/mmorpg-node -ImageTag v1
+pwsh -File dev_tools.ps1 -Command k8s-release-zone -ZoneName yesterday -ZoneId 101 -ImageRepository ghcr.io/luyuancpp/mmorpg-node -ImageTag v1 -WaitReady
 ```
 
 ### normalize_names.ps1
@@ -68,6 +87,33 @@ Generates a tree structure report of the project directory.
 ```powershell
 pwsh -File tree.ps1
 ```
+
+### k8s_deploy.ps1
+
+Kubernetes-only deployment entrypoint used by `dev_tools.ps1`.
+
+- Supports single-zone and multi-zone one-click open-server flows.
+- Applies infra (`etcd`, `redis`, `kafka`) and game node workloads (`centre`, `gate`, `scene`) per namespace.
+- Exposes `gate` through a per-zone Kubernetes Service and can wait for deployment readiness.
+- Reads multi-zone definitions from `deploy/k8s/zones.json` or `deploy/k8s/zones.yaml` (or custom path).
+- Do not assume `LoadBalancer` across all environments: managed cloud K8s usually prefers `LoadBalancer`, while self-hosted / bare metal K8s should usually prefer `NodePort` plus an external L4 load balancer.
+- Prefer passing `-OpsProfile managed-cloud` or `-OpsProfile bare-metal` so the exposure choice is explicit in commands and change records.
+- In `custom` mode, the default `-GateServiceType` baseline is `NodePort` (safer for clusters without mature LB support).
+
+See `deploy/k8s/README.md` for full usage and behavior details.
+Ops runbook: `docs/ops/k8s-open-server-runbook.md`.
+
+### k8s_image.ps1
+
+Kubernetes runtime image and release entrypoint used by `dev_tools.ps1`.
+
+- Verifies staged Linux runtime files before image build.
+- Builds and pushes the dedicated K8s runtime image from `deploy/k8s/Dockerfile.runtime`.
+- Supports one-command release flows: build + push + deploy.
+
+### k8s_stage_runtime.ps1
+
+Stages Linux node binaries, `zoneinfo`, and generated tables into `deploy/k8s/runtime/linux` for the dedicated K8s runtime image.
 
 ## Usage Examples
 
