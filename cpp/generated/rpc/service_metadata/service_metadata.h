@@ -32,7 +32,7 @@ struct ProtoEvent {
 	void (*dispatcher)(const ::google::protobuf::Message& message){nullptr};
 };
 
-constexpr uint32_t kMaxMessageLen = 86;
+constexpr uint32_t kMaxMessageLen = 94;
 constexpr uint32_t kMaxEventLen = 32;
 constexpr uint32_t AcceptMissionEventEventId = 0;
 constexpr uint32_t AfterEnterSceneEventId = 1;

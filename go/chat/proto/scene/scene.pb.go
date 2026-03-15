@@ -511,15 +511,15 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\"K\n" +
 	"\x13CreateSceneResponse\x124\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x15.SceneInfoPBComponentR\tsceneInfo2\x84\x06\n" +
+	"scene_info\x18\x01 \x01(\v2\x15.SceneInfoPBComponentR\tsceneInfo2\x8b\x06\n" +
 	"\x05Scene\x12:\n" +
 	"\x13PlayerEnterGameNode\x12\x1b.PlayerEnterGameNodeRequest\x1a\x06.Empty\x12J\n" +
 	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x19.NodeRouteMessageResponse\x12e\n" +
 	"\x1aProcessClientPlayerMessage\x12\".ProcessClientPlayerMessageRequest\x1a#.ProcessClientPlayerMessageResponse\x12A\n" +
 	"\x1dCentreSendToPlayerViaGameNode\x12\x18.NodeRouteMessageRequest\x1a\x06.Empty\x12J\n" +
 	"\x13InvokePlayerService\x12\x18.NodeRouteMessageRequest\x1a\x19.NodeRouteMessageResponse\x12A\n" +
-	"\x12RouteNodeStringMsg\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12O\n" +
-	"\x14RoutePlayerStringMsg\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x12<\n" +
+	"\x12RouteNodeStringMsg\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12V\n" +
+	"\x14RoutePlayerStringMsg\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\"\x05\x80\x99\xc8\x01\x01\x12<\n" +
 	"\x13UpdateSessionDetail\x12\x1d.RegisterPlayerSessionRequest\x1a\x06.Empty\x121\n" +
 	"\n" +
 	"EnterScene\x12\x1b.Centre2GsEnterSceneRequest\x1a\x06.Empty\x128\n" +

@@ -65,6 +65,12 @@ extend google.protobuf.ServiceOptions {
 	bool OptionIsClientProtocolService = 400001;
 }
 
+// 方法级选项（RPC 路由/投递策略）
+extend google.protobuf.MethodOptions {
+	// 标记消息投递优先级，用于区分重要消息和普通消息
+	MessagePriority OptionMessagePriority = 410000;
+}
+
 // 消息级选项（数据库相关）
 extend google.protobuf.MessageOptions {
 	optional uint32 OptionTableId			= 500000 ;	//表ID
@@ -123,3 +129,9 @@ enum BS_RESULT_TYPE{
 	BS_RESULT_SUCCESS	= 1;     //操作成功
 	BS_RESULT_FAILED	= 2;     //操作失败
 };
+
+// RPC 消息优先级（用于跨场景/跨节点投递策略）
+enum MessagePriority {
+	MESSAGE_PRIORITY_NORMAL = 0;
+	MESSAGE_PRIORITY_IMPORTANT = 1;
+}

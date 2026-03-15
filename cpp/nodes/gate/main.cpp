@@ -78,6 +78,12 @@ void startGateNode(EventLoop& loop)
                 if (!command) {
                     return;
                 }
+                const auto targetGateId = command->target_gate_id();
+                if (targetGateId != 0 && targetGateId != n.GetNodeId()) {
+                    LOG_WARN << "GateCommand target_gate_id mismatch ignored. target_gate_id=" << targetGateId
+                        << ", current_gate_id=" << n.GetNodeId();
+                    return;
+                }
                 const auto& targetId = command->target_instance_id();
                 if (!targetId.empty() && targetId != n.GetNodeInfo().node_uuid()) {
                     LOG_WARN << "Stale GateCommand ignored. target=" << targetId;

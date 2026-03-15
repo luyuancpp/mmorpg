@@ -53,6 +53,8 @@ extern const ::google::protobuf::internal::DescriptorTable descriptor_table_prot
 }  // extern "C"
 enum BS_RESULT_TYPE : int;
 extern const uint32_t BS_RESULT_TYPE_internal_data_[];
+enum MessagePriority : int;
+extern const uint32_t MessagePriority_internal_data_[];
 enum NodeType : int;
 extern const uint32_t NodeType_internal_data_[];
 enum OPERATE_TYPE : int;
@@ -62,6 +64,9 @@ namespace protobuf {
 template <>
 internal::EnumTraitsT<::BS_RESULT_TYPE_internal_data_>
     internal::EnumTraitsImpl::value<::BS_RESULT_TYPE>;
+template <>
+internal::EnumTraitsT<::MessagePriority_internal_data_>
+    internal::EnumTraitsImpl::value<::MessagePriority>;
 template <>
 internal::EnumTraitsT<::NodeType_internal_data_>
     internal::EnumTraitsImpl::value<::NodeType>;
@@ -215,6 +220,42 @@ inline bool BS_RESULT_TYPE_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<BS_RESULT_TYPE>(BS_RESULT_TYPE_descriptor(), name,
                                            value);
 }
+enum MessagePriority : int {
+  MESSAGE_PRIORITY_NORMAL = 0,
+  MESSAGE_PRIORITY_IMPORTANT = 1,
+  MessagePriority_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  MessagePriority_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t MessagePriority_internal_data_[];
+inline constexpr MessagePriority MessagePriority_MIN =
+    static_cast<MessagePriority>(0);
+inline constexpr MessagePriority MessagePriority_MAX =
+    static_cast<MessagePriority>(1);
+inline bool MessagePriority_IsValid(int value) {
+  return 0 <= value && value <= 1;
+}
+inline constexpr int MessagePriority_ARRAYSIZE = 1 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MessagePriority_descriptor();
+template <typename T>
+const ::std::string& MessagePriority_Name(T value) {
+  static_assert(::std::is_same<T, MessagePriority>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to MessagePriority_Name().");
+  return MessagePriority_Name(static_cast<MessagePriority>(value));
+}
+template <>
+inline const ::std::string& MessagePriority_Name(MessagePriority value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<MessagePriority_descriptor, 0, 1>(
+      static_cast<int>(value));
+}
+inline bool MessagePriority_Parse(
+    ::absl::string_view name, MessagePriority* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<MessagePriority>(MessagePriority_descriptor(), name,
+                                           value);
+}
 
 // ===================================================================
 
@@ -236,6 +277,10 @@ inline constexpr int kOptionIsClientProtocolServiceFieldNumber = 400001;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::ServiceOptions, ::google::protobuf::internal::PrimitiveTypeTraits< bool >, 8, false>
     OptionIsClientProtocolService;
+inline constexpr int kOptionMessagePriorityFieldNumber = 410000;
+extern ::google::protobuf::internal::ExtensionIdentifier<
+    ::google::protobuf::MethodOptions, ::google::protobuf::internal::EnumTypeTraits< ::MessagePriority>, 14, false>
+    OptionMessagePriority;
 inline constexpr int kOptionTableIdFieldNumber = 500000;
 extern ::google::protobuf::internal::ExtensionIdentifier<
     ::google::protobuf::MessageOptions, ::google::protobuf::internal::PrimitiveTypeTraits< ::uint32_t >, 13, false>
@@ -371,6 +416,12 @@ struct is_proto_enum<::BS_RESULT_TYPE> : std::true_type {};
 template <>
 inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::BS_RESULT_TYPE>() {
   return ::BS_RESULT_TYPE_descriptor();
+}
+template <>
+struct is_proto_enum<::MessagePriority> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::MessagePriority>() {
+  return ::MessagePriority_descriptor();
 }
 
 }  // namespace protobuf
