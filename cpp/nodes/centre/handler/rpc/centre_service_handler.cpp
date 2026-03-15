@@ -872,6 +872,100 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+	if (!request || !response) {
+		return;
+	}
+
+	response->set_body(request->body());
+	response->mutable_player_info()->CopyFrom(request->player_info());
+	response->mutable_node_list()->CopyFrom(request->node_list());
+
+	const Guid playerId = request->player_info().player_id();
+	if (playerId == kInvalidGuid) {
+		LOG_ERROR << "RoutePlayerStringMsg: invalid player id";
+		return;
+	}
+
+	if (request->node_list_size() > 0) {
+		RoutePlayerMessageRequest nextRequest(*request);
+		nextRequest.mutable_node_list()->DeleteSubrange(0, 1);
+
+		const auto& nextNode = request->node_list(0);
+		const entt::entity nextNodeEntity{ nextNode.node_id() };
+		auto& nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
+		if (!nextRegistry.valid(nextNodeEntity)) {
+			LOG_ERROR << "RoutePlayerStringMsg: next node not found, node_type=" << nextNode.node_type()
+					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+			return;
+		}
+
+		const auto nextSession = nextRegistry.try_get<RpcSession>(nextNodeEntity);
+		if (!nextSession) {
+			LOG_ERROR << "RoutePlayerStringMsg: next node session missing, node_type=" << nextNode.node_type()
+					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+			return;
+		}
+
+		switch (nextNode.node_type()) {
+		case eNodeType::SceneNodeService:
+			nextSession->SendRequest(SceneRoutePlayerStringMsgMessageId, nextRequest);
+			return;
+		case eNodeType::GateNodeService:
+			nextSession->SendRequest(GateRoutePlayerMessageMessageId, nextRequest);
+			return;
+		case eNodeType::CentreNodeService:
+			nextSession->SendRequest(CentreRoutePlayerStringMsgMessageId, nextRequest);
+			return;
+		default:
+			LOG_ERROR << "RoutePlayerStringMsg: unsupported next node_type=" << nextNode.node_type()
+					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+			return;
+		}
+	}
+
+	const auto playerIt = tlsPlayerList.find(playerId);
+	if (playerIt == tlsPlayerList.end()) {
+		LOG_WARN << "RoutePlayerStringMsg: player not loaded on centre, player_id=" << playerId;
+		return;
+	}
+
+	const auto playerEntity = playerIt->second;
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity)) {
+		LOG_WARN << "RoutePlayerStringMsg: player entity invalid on centre, player_id=" << playerId;
+		return;
+	}
+
+	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!sessionPB) {
+		LOG_WARN << "RoutePlayerStringMsg: missing session snapshot, player_id=" << playerId;
+		return;
+	}
+
+	const auto sceneNodeIt = sessionPB->node_id().find(eNodeType::SceneNodeService);
+	if (sceneNodeIt != sessionPB->node_id().end()) {
+		const entt::entity sceneEntity{ sceneNodeIt->second };
+		auto& sceneRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+		if (sceneRegistry.valid(sceneEntity)) {
+			if (const auto sceneSession = sceneRegistry.try_get<RpcSession>(sceneEntity)) {
+				sceneSession->SendRequest(SceneRoutePlayerStringMsgMessageId, *request);
+				return;
+			}
+		}
+	}
+
+	const auto gateSessionId = sessionPB->gate_session_id();
+	if (gateSessionId != kInvalidSessionId) {
+		const entt::entity gateEntity{ GetGateNodeId(gateSessionId) };
+		auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+		if (gateRegistry.valid(gateEntity)) {
+			if (const auto gateSession = gateRegistry.try_get<RpcSession>(gateEntity)) {
+				gateSession->SendRequest(GateRoutePlayerMessageMessageId, *request);
+				return;
+			}
+		}
+	}
+
+	LOG_ERROR << "RoutePlayerStringMsg: unable to resolve live route for player, player_id=" << playerId;
 	///<<< END WRITING YOUR CODE
 }
 

@@ -77,6 +77,8 @@ enum GateCommand_CommandType : int {
   GateCommand_CommandType_RoutePlayer = 0,
   GateCommand_CommandType_KickPlayer = 1,
   GateCommand_CommandType_Broadcast = 2,
+  GateCommand_CommandType_BindSession = 3,
+  GateCommand_CommandType_LeaseExpired = 4,
   GateCommand_CommandType_GateCommand_CommandType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   GateCommand_CommandType_GateCommand_CommandType_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -87,11 +89,11 @@ extern const uint32_t GateCommand_CommandType_internal_data_[];
 inline constexpr GateCommand_CommandType GateCommand_CommandType_CommandType_MIN =
     static_cast<GateCommand_CommandType>(0);
 inline constexpr GateCommand_CommandType GateCommand_CommandType_CommandType_MAX =
-    static_cast<GateCommand_CommandType>(2);
+    static_cast<GateCommand_CommandType>(4);
 inline bool GateCommand_CommandType_IsValid(int value) {
-  return 0 <= value && value <= 2;
+  return 0 <= value && value <= 4;
 }
-inline constexpr int GateCommand_CommandType_CommandType_ARRAYSIZE = 2 + 1;
+inline constexpr int GateCommand_CommandType_CommandType_ARRAYSIZE = 4 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL GateCommand_CommandType_descriptor();
 template <typename T>
 const ::std::string& GateCommand_CommandType_Name(T value) {
@@ -102,7 +104,7 @@ const ::std::string& GateCommand_CommandType_Name(T value) {
 }
 template <>
 inline const ::std::string& GateCommand_CommandType_Name(GateCommand_CommandType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<GateCommand_CommandType_descriptor, 0, 2>(
+  return ::google::protobuf::internal::NameOfDenseEnum<GateCommand_CommandType_descriptor, 0, 4>(
       static_cast<int>(value));
 }
 inline bool GateCommand_CommandType_Parse(
@@ -260,6 +262,8 @@ class GateCommand final : public ::google::protobuf::Message
   static constexpr CommandType RoutePlayer = GateCommand_CommandType_RoutePlayer;
   static constexpr CommandType KickPlayer = GateCommand_CommandType_KickPlayer;
   static constexpr CommandType Broadcast = GateCommand_CommandType_Broadcast;
+  static constexpr CommandType BindSession = GateCommand_CommandType_BindSession;
+  static constexpr CommandType LeaseExpired = GateCommand_CommandType_LeaseExpired;
   static inline bool CommandType_IsValid(int value) {
     return GateCommand_CommandType_IsValid(value);
   }

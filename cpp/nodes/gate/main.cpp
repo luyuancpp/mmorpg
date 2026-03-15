@@ -12,8 +12,8 @@
 #include "grpc_client/grpc_init_client.h"
 #include "session/system/session.h"
 #include "session/manager/session_manager.h"
+#include "node/system/node/node_kafka_command_handler.h"
 #include <node_config_manager.h>
-#include <messaging/kafka/kafka_proto_decoder.h>
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "proto/contracts/kafka/gate_command.pb.h"
 #include "gate_globals.h"
@@ -46,7 +46,7 @@ void startGateNode(EventLoop& loop)
 
     // ── 节点 ────────────────────────────────────────────────────────────────
     SimpleNode<GateHandler> node(&loop, "logs/gate", GateNodeService,
-        Node::CanConnectNodeTypeList{ CentreNodeService, SceneNodeService, LoginNodeService });
+        Node::CanConnectNodeTypeList{ SceneNodeService, LoginNodeService });
     EventHandler::Register();
 
     // 启动后：挂载客户端 TCP 回调 + session ID 初始化
@@ -62,34 +62,19 @@ void startGateNode(EventLoop& loop)
         tlsSessionManager.session_id_gen().set_node_id(n.GetNodeId());
     });
 
-    // Kafka：订阅 gate-{id} topic，分发 SceneManager 命令
+    // Kafka: unified registration path for all node command-consumers.
     node.SetKafkaHandlers([](SimpleNode<GateHandler>& n) {
-        auto& kafkaConfig = tlsNodeConfigManager.GetBaseDeployConfig().kafka();
-        std::string groupId = kafkaConfig.group_id();
-        if (groupId.empty()) {
-            groupId = "gate-group-" + std::to_string(n.GetNodeId());
-        }
-        const std::string topic = "gate-" + std::to_string(n.GetNodeId());
-        LOG_INFO << "Registering gate Kafka handlers for node_id=" << n.GetNodeId();
+        node::kafka::KafkaCommandHandlerOptions options;
+        options.topicPrefix = "gate";
+        options.groupPrefix = "gate-group";
+        options.nodeIdFieldNames = { "target_gate_id", "target_node_id" };
+        options.instanceIdFieldNames = { "target_instance_id" };
 
-        return n.RegisterKafkaMessageHandler({ topic }, groupId,
-            [&n](const std::string& t, const std::string& payload) {
-                auto command = DecodeKafkaProtoPayload<contracts::kafka::GateCommand>(t, payload);
-                if (!command) {
-                    return;
-                }
-                const auto targetGateId = command->target_gate_id();
-                if (targetGateId != 0 && targetGateId != n.GetNodeId()) {
-                    LOG_WARN << "GateCommand target_gate_id mismatch ignored. target_gate_id=" << targetGateId
-                        << ", current_gate_id=" << n.GetNodeId();
-                    return;
-                }
-                const auto& targetId = command->target_instance_id();
-                if (!targetId.empty() && targetId != n.GetNodeInfo().node_uuid()) {
-                    LOG_WARN << "Stale GateCommand ignored. target=" << targetId;
-                    return;
-                }
-                DispatchGateKafkaCommand(t, *command);
+        return node::kafka::RegisterKafkaCommandHandler<contracts::kafka::GateCommand>(
+            n,
+            options,
+            [](const std::string& topic, const contracts::kafka::GateCommand& command) {
+                DispatchGateKafkaCommand(topic, command);
             });
     });
 

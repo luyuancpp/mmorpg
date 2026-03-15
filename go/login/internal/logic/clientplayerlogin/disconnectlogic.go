@@ -2,11 +2,10 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"login/generated/pb/game"
 	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
-	login_proto_common "login/proto/common"
 	login_proto "login/proto/service/go/grpc/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -29,7 +28,7 @@ func NewDisconnectLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Discon
 func (l *DisconnectLogic) Disconnect(in *login_proto.LoginNodeDisconnectRequest) (*login_proto.LoginEmptyResponse, error) {
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok {
-		logx.Error("Session not found in context during leave game")
+		logx.Error("Session not found in context during disconnect")
 		return &login_proto.LoginEmptyResponse{}, nil
 	}
 
@@ -40,13 +39,16 @@ func (l *DisconnectLogic) Disconnect(in *login_proto.LoginNodeDisconnectRequest)
 		"disconnect",
 	)
 
-	centreRequest := &login_proto_common.GateSessionDisconnectRequest{
-		SessionInfo: &login_proto_common.SessionDetails{SessionId: in.SessionId},
+	// Mark session as disconnecting with 30s lease in Redis (replaces Centre's DelayedCleanupTimer).
+	// When the Redis key TTL expires, the session is effectively cleaned up.
+	if sessionDetails.PlayerId > 0 {
+		if err := sessionmanager.SetSessionDisconnecting(l.ctx, l.svcCtx.RedisClient,
+			sessionDetails.PlayerId, in.SessionId); err != nil {
+			logx.Errorf("Failed to set session disconnecting for player %d: %v", sessionDetails.PlayerId, err)
+		} else {
+			logx.Infof("Session disconnecting with 30s lease: player=%d session=%d", sessionDetails.PlayerId, in.SessionId)
+		}
 	}
-	node := l.svcCtx.GetCentreClient()
-	if nil == node {
-		return &login_proto.LoginEmptyResponse{}, nil
-	}
-	node.Send(centreRequest, game.CentreLoginNodeSessionDisconnectMessageId)
+
 	return &login_proto.LoginEmptyResponse{}, nil
 }

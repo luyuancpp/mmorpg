@@ -210,9 +210,26 @@ class SessionDetails final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
+    kGateInstanceIdFieldNumber = 4,
     kSessionIdFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
+    kGateNodeIdFieldNumber = 3,
   };
+  // string gate_instance_id = 4;
+  void clear_gate_instance_id() ;
+  const ::std::string& gate_instance_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_gate_instance_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_gate_instance_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_gate_instance_id();
+  void set_allocated_gate_instance_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_gate_instance_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_gate_instance_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_gate_instance_id();
+
+  public:
   // uint64 session_id = 1;
   void clear_session_id() ;
   ::uint64_t session_id() const;
@@ -233,12 +250,22 @@ class SessionDetails final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
+  // uint32 gate_node_id = 3;
+  void clear_gate_node_id() ;
+  ::uint32_t gate_node_id() const;
+  void set_gate_node_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_gate_node_id() const;
+  void _internal_set_gate_node_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:SessionDetails)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 0,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 39,
                                    2>
       _table_;
 
@@ -259,8 +286,10 @@ class SessionDetails final : public ::google::protobuf::Message
         const SessionDetails& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr gate_instance_id_;
     ::uint64_t session_id_;
     ::uint64_t player_id_;
+    ::uint32_t gate_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -289,7 +318,7 @@ extern const ::google::protobuf::internal::ClassDataFull SessionDetails_class_da
 inline void SessionDetails::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline ::uint64_t SessionDetails::session_id() const {
   // @@protoc_insertion_point(field_get:SessionDetails.session_id)
@@ -297,7 +326,7 @@ inline ::uint64_t SessionDetails::session_id() const {
 }
 inline void SessionDetails::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:SessionDetails.session_id)
 }
 inline ::uint64_t SessionDetails::_internal_session_id() const {
@@ -313,7 +342,7 @@ inline void SessionDetails::_internal_set_session_id(::uint64_t value) {
 inline void SessionDetails::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint64_t SessionDetails::player_id() const {
   // @@protoc_insertion_point(field_get:SessionDetails.player_id)
@@ -321,7 +350,7 @@ inline ::uint64_t SessionDetails::player_id() const {
 }
 inline void SessionDetails::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:SessionDetails.player_id)
 }
 inline ::uint64_t SessionDetails::_internal_player_id() const {
@@ -331,6 +360,95 @@ inline ::uint64_t SessionDetails::_internal_player_id() const {
 inline void SessionDetails::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
+}
+
+// uint32 gate_node_id = 3;
+inline void SessionDetails::clear_gate_node_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gate_node_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t SessionDetails::gate_node_id() const {
+  // @@protoc_insertion_point(field_get:SessionDetails.gate_node_id)
+  return _internal_gate_node_id();
+}
+inline void SessionDetails::set_gate_node_id(::uint32_t value) {
+  _internal_set_gate_node_id(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:SessionDetails.gate_node_id)
+}
+inline ::uint32_t SessionDetails::_internal_gate_node_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.gate_node_id_;
+}
+inline void SessionDetails::_internal_set_gate_node_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gate_node_id_ = value;
+}
+
+// string gate_instance_id = 4;
+inline void SessionDetails::clear_gate_instance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gate_instance_id_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& SessionDetails::gate_instance_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SessionDetails.gate_instance_id)
+  return _internal_gate_instance_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SessionDetails::set_gate_instance_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.gate_instance_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:SessionDetails.gate_instance_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SessionDetails::mutable_gate_instance_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_gate_instance_id();
+  // @@protoc_insertion_point(field_mutable:SessionDetails.gate_instance_id)
+  return _s;
+}
+inline const ::std::string& SessionDetails::_internal_gate_instance_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.gate_instance_id_.Get();
+}
+inline void SessionDetails::_internal_set_gate_instance_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.gate_instance_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SessionDetails::_internal_mutable_gate_instance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.gate_instance_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SessionDetails::release_gate_instance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:SessionDetails.gate_instance_id)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.gate_instance_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.gate_instance_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SessionDetails::set_allocated_gate_instance_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.gate_instance_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.gate_instance_id_.IsDefault()) {
+    _impl_.gate_instance_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:SessionDetails.gate_instance_id)
 }
 
 #ifdef __GNUC__

@@ -2,9 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"google.golang.org/protobuf/proto"
 	"login/data"
-	"login/generated/pb/game"
 	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
@@ -13,14 +11,16 @@ import (
 	"login/internal/logic/pkg/fsmstore"
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
+	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
 	login_proto_common "login/proto/common"
 	login_proto_database "login/proto/logic/database"
-	login_proto_centre "login/proto/service/cpp/rpc/centre"
 	login_proto "login/proto/service/go/grpc/login"
 	"strconv"
 	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -77,20 +77,65 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	taskCallback := func(taskKey string, taskSuccess bool, err error) {
-		// 原有回调逻辑：通知中心
-		req := &login_proto_centre.CentrePlayerGameNodeEntryRequest{
-			ClientInfo: &login_proto_centre.CentreEnterGameRequest{
-				PlayerId: in.PlayerId,
-			},
-			SessionInfo: sessionDetails,
-		}
-		node := l.svcCtx.GetCentreClient()
-		if node != nil {
-			node.Send(req, game.CentreLoginNodeEnterGameMessageId)
+		// Player data loaded → register session in Redis (replaces Centre's SessionMap)
+		existing, _ := sessionmanager.GetSession(ctx, l.svcCtx.RedisClient, in.PlayerId)
+		decision := sessionmanager.DecideEnterGame(existing, session.Account)
+
+		gateID := strconv.FormatUint(uint64(sessionDetails.GetGateNodeId()), 10)
+		gateInstanceID := sessionDetails.GetGateInstanceId()
+
+		switch decision {
+		case sessionmanager.FirstLogin:
+			newSession := &sessionmanager.PlayerSession{
+				PlayerID:       in.PlayerId,
+				SessionID:      sessionDetails.SessionId,
+				GateID:         gateID,
+				GateInstanceID: gateInstanceID,
+				Account:        session.Account,
+				SessionVersion: 1,
+				State:          sessionmanager.StateOnline,
+				LastActiveTs:   time.Now().UnixMilli(),
+				RequestID:      in.GetRequestId(),
+			}
+			if setErr := sessionmanager.SetSession(ctx, l.svcCtx.RedisClient, newSession); setErr != nil {
+				logx.Errorf("Failed to set session for player %d: %v", in.PlayerId, setErr)
+			}
+			_ = sessionmanager.SetIdempotency(ctx, l.svcCtx.RedisClient, in.PlayerId, in.GetRequestId())
+
+		case sessionmanager.ShortReconnect:
+			_, reconnErr := sessionmanager.Reconnect(ctx, l.svcCtx.RedisClient, in.PlayerId,
+				sessionDetails.SessionId, gateID, gateInstanceID,
+				session.Account, in.GetRequestId())
+			if reconnErr != nil {
+				logx.Errorf("Reconnect failed for player %d: %v", in.PlayerId, reconnErr)
+			}
+
+		case sessionmanager.ReplaceLogin:
+			// Kick old session via Kafka before replacing
+			if existing != nil && existing.SessionID != sessionDetails.SessionId && existing.GateID != "" {
+				l.svcCtx.KickOldSession(ctx, existing.GateID, existing.GateInstanceID, existing.SessionID, existing.SessionVersion)
+			}
+			newSession := &sessionmanager.PlayerSession{
+				PlayerID:       in.PlayerId,
+				SessionID:      sessionDetails.SessionId,
+				GateID:         gateID,
+				GateInstanceID: gateInstanceID,
+				Account:        session.Account,
+				SessionVersion: 1,
+				State:          sessionmanager.StateOnline,
+				LastActiveTs:   time.Now().UnixMilli(),
+				RequestID:      in.GetRequestId(),
+			}
+			if existing != nil {
+				newSession.SessionVersion = existing.SessionVersion + 1
+			}
+			if setErr := sessionmanager.SetSession(ctx, l.svcCtx.RedisClient, newSession); setErr != nil {
+				logx.Errorf("Failed to set session for player %d: %v", in.PlayerId, setErr)
+			}
+			_ = sessionmanager.SetIdempotency(ctx, l.svcCtx.RedisClient, in.PlayerId, in.GetRequestId())
 		}
 
-		// 所有任务完成，主动取消ctx（避免超时等待）
-		logx.Infof("All tasks completed, cancel ctx actively. playerId=%d", in.PlayerId)
+		logx.Infof("All tasks completed (decision=%d). playerId=%d", decision, in.PlayerId)
 	}
 
 	defer func() {
@@ -151,10 +196,10 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	err = l.ensurePlayerDataInRedis(ctx, in.PlayerId, taskCallback)
 	if err != nil {
 		// 错误日志：包含操作描述、玩家ID和错误详情
-		logx.Errorf("failed to ensure player data in redis [PlayerId=%s, error=%v]", in.PlayerId, err)
+		logx.Errorf("failed to ensure player data in redis [PlayerId=%d, error=%v]", in.PlayerId, err)
 	} else {
 		// 成功日志（可选，根据需要开启，建议用Debug级别减少冗余）
-		logx.Debugf("succeeded in ensuring player data in redis [PlayerId=%s]", in.PlayerId)
+		logx.Debugf("succeeded in ensuring player data in redis [PlayerId=%d]", in.PlayerId)
 	}
 
 	// 7. 清理 Session 和 FSM（原始步骤7，不改动）

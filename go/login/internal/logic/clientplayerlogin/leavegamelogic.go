@@ -2,11 +2,10 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"login/generated/pb/game"
 	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
-	login_proto_centre "login/proto/service/cpp/rpc/centre"
 	login_proto "login/proto/service/go/grpc/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -46,15 +45,11 @@ func (l *LeaveGameLogic) LeaveGame(in *login_proto.LeaveGameRequest) (*login_pro
 		logx.Errorf("LeaveGame cleanup failed: %v", err)
 	}
 
-	// 6. 通知中心服务
-	node := l.svcCtx.GetCentreClient()
-	if node != nil {
-		centreRequest := &login_proto_centre.LoginNodeLeaveGameRequest{
-			SessionInfo: sessionDetails,
+	// Remove player session from Redis (replaces Centre notification)
+	if sessionDetails.PlayerId > 0 {
+		if err := sessionmanager.DeleteSession(l.ctx, l.svcCtx.RedisClient, sessionDetails.PlayerId); err != nil {
+			logx.Errorf("Failed to delete session for player %d: %v", sessionDetails.PlayerId, err)
 		}
-		node.Send(centreRequest, game.CentreLoginNodeLeaveGameMessageId)
-	} else {
-		logx.Error("Centre client is nil during leave")
 	}
 
 	return resp, nil

@@ -35,15 +35,14 @@ func (s *SceneManagerServer) DestroyScene(ctx context.Context, in *scene_manager
 	return l.DestroyScene(in)
 }
 
-// Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
-func (s *SceneManagerServer) EnterSceneByCentre(ctx context.Context, in *scene_manager.EnterSceneByCentreRequest) (*scene_manager.EnterSceneByCentreResponse, error) {
-	l := logic.NewEnterSceneByCentreLogic(ctx, s.svcCtx)
-	return l.EnterSceneByCentre(in)
+// 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+func (s *SceneManagerServer) EnterScene(ctx context.Context, in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
+	l := logic.NewEnterSceneLogic(ctx, s.svcCtx)
+	return l.EnterScene(in)
 }
 
-// Centre 请求玩家离开场景（或切换场景前的离开）
-func (s *SceneManagerServer) LeaveSceneByCentre(ctx context.Context, in *scene_manager.LeaveSceneByCentreRequest) (*scene_manager.Empty, error) {
-	l := logic.NewLeaveSceneByCentreLogic(ctx, s.svcCtx)
-	return l.LeaveSceneByCentre(in)
+// 请求玩家离开场景（或切换场景前的离开）
+func (s *SceneManagerServer) LeaveScene(ctx context.Context, in *scene_manager.LeaveSceneRequest) (*scene_manager.Empty, error) {
+	l := logic.NewLeaveSceneLogic(ctx, s.svcCtx)
+	return l.LeaveScene(in)
 }
-

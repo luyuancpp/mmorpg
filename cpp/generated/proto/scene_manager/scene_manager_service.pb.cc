@@ -26,37 +26,36 @@ namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 namespace scene_manager {
 
-inline constexpr LeaveSceneByCentreRequest::Impl_::Impl_(
+inline constexpr LeaveSceneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         request_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
-        scene_id_{::uint64_t{0u}},
-        centre_node_id_{::uint64_t{0u}} {}
+        scene_id_{::uint64_t{0u}} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR LeaveSceneByCentreRequest::LeaveSceneByCentreRequest(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR LeaveSceneRequest::LeaveSceneRequest(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(LeaveSceneByCentreRequest_class_data_.base()),
+    : ::google::protobuf::Message(LeaveSceneRequest_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct LeaveSceneByCentreRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR LeaveSceneByCentreRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~LeaveSceneByCentreRequestDefaultTypeInternal() {}
+struct LeaveSceneRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaveSceneRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaveSceneRequestDefaultTypeInternal() {}
   union {
-    LeaveSceneByCentreRequest _instance;
+    LeaveSceneRequest _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaveSceneByCentreRequestDefaultTypeInternal _LeaveSceneByCentreRequest_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaveSceneRequestDefaultTypeInternal _LeaveSceneRequest_default_instance_;
 
-inline constexpr EnterSceneByCentreResponse::Impl_::Impl_(
+inline constexpr EnterSceneResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         error_message_(
@@ -65,26 +64,26 @@ inline constexpr EnterSceneByCentreResponse::Impl_::Impl_(
         error_code_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR EnterSceneByCentreResponse::EnterSceneByCentreResponse(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR EnterSceneResponse::EnterSceneResponse(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(EnterSceneByCentreResponse_class_data_.base()),
+    : ::google::protobuf::Message(EnterSceneResponse_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct EnterSceneByCentreResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR EnterSceneByCentreResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~EnterSceneByCentreResponseDefaultTypeInternal() {}
+struct EnterSceneResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR EnterSceneResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~EnterSceneResponseDefaultTypeInternal() {}
   union {
-    EnterSceneByCentreResponse _instance;
+    EnterSceneResponse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterSceneByCentreResponseDefaultTypeInternal _EnterSceneByCentreResponse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterSceneResponseDefaultTypeInternal _EnterSceneResponse_default_instance_;
 
-inline constexpr EnterSceneByCentreRequest::Impl_::Impl_(
+inline constexpr EnterSceneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         request_id_(
@@ -98,28 +97,27 @@ inline constexpr EnterSceneByCentreRequest::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
         scene_id_{::uint64_t{0u}},
-        centre_node_id_{::uint64_t{0u}},
         session_id_{::uint64_t{0u}} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR EnterSceneByCentreRequest::EnterSceneByCentreRequest(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR EnterSceneRequest::EnterSceneRequest(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(EnterSceneByCentreRequest_class_data_.base()),
+    : ::google::protobuf::Message(EnterSceneRequest_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct EnterSceneByCentreRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR EnterSceneByCentreRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~EnterSceneByCentreRequestDefaultTypeInternal() {}
+struct EnterSceneRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR EnterSceneRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~EnterSceneRequestDefaultTypeInternal() {}
   union {
-    EnterSceneByCentreRequest _instance;
+    EnterSceneRequest _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterSceneByCentreRequestDefaultTypeInternal _EnterSceneByCentreRequest_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterSceneRequestDefaultTypeInternal _EnterSceneRequest_default_instance_;
 
 inline constexpr DestroySceneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -237,39 +235,35 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::scene_manager::DestroySceneRequest, _impl_.scene_id_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreRequest, _impl_._has_bits_),
-        10, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreRequest, _impl_.scene_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreRequest, _impl_.centre_node_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreRequest, _impl_.session_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreRequest, _impl_.request_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreRequest, _impl_.gate_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreRequest, _impl_.gate_instance_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_._has_bits_),
+        9, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.scene_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.request_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.gate_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.gate_instance_id_),
         3,
         4,
         5,
-        6,
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreResponse, _impl_.error_code_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneByCentreResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_.error_code_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_.error_message_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneByCentreRequest, _impl_._has_bits_),
-        7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneByCentreRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneByCentreRequest, _impl_.scene_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneByCentreRequest, _impl_.centre_node_id_),
-        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneByCentreRequest, _impl_.request_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_.scene_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_.request_id_),
         1,
         2,
-        3,
         0,
 };
 
@@ -278,17 +272,17 @@ static const ::_pbi::MigrationSchema
         {0, sizeof(::scene_manager::CreateSceneRequest)},
         {7, sizeof(::scene_manager::CreateSceneResponse)},
         {18, sizeof(::scene_manager::DestroySceneRequest)},
-        {23, sizeof(::scene_manager::EnterSceneByCentreRequest)},
-        {40, sizeof(::scene_manager::EnterSceneByCentreResponse)},
-        {47, sizeof(::scene_manager::LeaveSceneByCentreRequest)},
+        {23, sizeof(::scene_manager::EnterSceneRequest)},
+        {38, sizeof(::scene_manager::EnterSceneResponse)},
+        {45, sizeof(::scene_manager::LeaveSceneRequest)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::scene_manager::_CreateSceneRequest_default_instance_._instance,
     &::scene_manager::_CreateSceneResponse_default_instance_._instance,
     &::scene_manager::_DestroySceneRequest_default_instance_._instance,
-    &::scene_manager::_EnterSceneByCentreRequest_default_instance_._instance,
-    &::scene_manager::_EnterSceneByCentreResponse_default_instance_._instance,
-    &::scene_manager::_LeaveSceneByCentreRequest_default_instance_._instance,
+    &::scene_manager::_EnterSceneRequest_default_instance_._instance,
+    &::scene_manager::_EnterSceneResponse_default_instance_._instance,
+    &::scene_manager::_LeaveSceneRequest_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -301,26 +295,23 @@ const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5
     "CreateSceneResponse\022\020\n\010scene_id\030\001 \001(\004\022\017\n"
     "\007node_id\030\002 \001(\t\022\022\n\nerror_code\030\003 \001(\r\022\025\n\rer"
     "ror_message\030\004 \001(\t\"\'\n\023DestroySceneRequest"
-    "\022\020\n\010scene_id\030\001 \001(\004\"\253\001\n\031EnterSceneByCentr"
-    "eRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030"
-    "\002 \001(\004\022\026\n\016centre_node_id\030\003 \001(\004\022\022\n\nsession"
-    "_id\030\004 \001(\004\022\022\n\nrequest_id\030\005 \001(\t\022\017\n\007gate_id"
-    "\030\006 \001(\t\022\030\n\020gate_instance_id\030\007 \001(\t\"G\n\032Ente"
-    "rSceneByCentreResponse\022\022\n\nerror_code\030\001 \001"
-    "(\r\022\025\n\rerror_message\030\002 \001(\t\"l\n\031LeaveSceneB"
-    "yCentreRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010sce"
-    "ne_id\030\002 \001(\004\022\026\n\016centre_node_id\030\003 \001(\004\022\022\n\nr"
-    "equest_id\030\004 \001(\t2\333\002\n\014SceneManager\022V\n\013Crea"
-    "teScene\022!.scene_manager.CreateSceneReque"
-    "st\032\".scene_manager.CreateSceneResponse\"\000"
-    "\022<\n\014DestroyScene\022\".scene_manager.Destroy"
-    "SceneRequest\032\006.Empty\"\000\022k\n\022EnterSceneByCe"
-    "ntre\022(.scene_manager.EnterSceneByCentreR"
-    "equest\032).scene_manager.EnterSceneByCentr"
-    "eResponse\"\000\022H\n\022LeaveSceneByCentre\022(.scen"
-    "e_manager.LeaveSceneByCentreRequest\032\006.Em"
-    "pty\"\000B\035Z\033scene_manager/scene_managerb\006pr"
-    "oto3"
+    "\022\020\n\010scene_id\030\001 \001(\004\"\213\001\n\021EnterSceneRequest"
+    "\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n"
+    "\nsession_id\030\003 \001(\004\022\022\n\nrequest_id\030\004 \001(\t\022\017\n"
+    "\007gate_id\030\005 \001(\t\022\030\n\020gate_instance_id\030\006 \001(\t"
+    "\"\?\n\022EnterSceneResponse\022\022\n\nerror_code\030\001 \001"
+    "(\r\022\025\n\rerror_message\030\002 \001(\t\"L\n\021LeaveSceneR"
+    "equest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 "
+    "\001(\004\022\022\n\nrequest_id\030\003 \001(\t2\263\002\n\014SceneManager"
+    "\022V\n\013CreateScene\022!.scene_manager.CreateSc"
+    "eneRequest\032\".scene_manager.CreateSceneRe"
+    "sponse\"\000\022<\n\014DestroyScene\022\".scene_manager"
+    ".DestroySceneRequest\032\006.Empty\"\000\022S\n\nEnterS"
+    "cene\022 .scene_manager.EnterSceneRequest\032!"
+    ".scene_manager.EnterSceneResponse\"\000\0228\n\nL"
+    "eaveScene\022 .scene_manager.LeaveSceneRequ"
+    "est\032\006.Empty\"\000B\035Z\033scene_manager/scene_man"
+    "agerb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_deps[3] = {
@@ -332,7 +323,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_5fmanager_2fscene_5fmana
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto = {
     false,
     false,
-    1124,
+    1012,
     descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto,
     "proto/scene_manager/scene_manager_service.proto",
     &descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_once,
@@ -1264,42 +1255,42 @@ void DestroySceneRequest::InternalSwap(DestroySceneRequest* PROTOBUF_RESTRICT PR
 }
 // ===================================================================
 
-class EnterSceneByCentreRequest::_Internal {
+class EnterSceneRequest::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<EnterSceneByCentreRequest>()._impl_._has_bits_);
+      decltype(::std::declval<EnterSceneRequest>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_._has_bits_);
 };
 
-EnterSceneByCentreRequest::EnterSceneByCentreRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+EnterSceneRequest::EnterSceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, EnterSceneByCentreRequest_class_data_.base()) {
+    : ::google::protobuf::Message(arena, EnterSceneRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:scene_manager.EnterSceneByCentreRequest)
+  // @@protoc_insertion_point(arena_constructor:scene_manager.EnterSceneRequest)
 }
-PROTOBUF_NDEBUG_INLINE EnterSceneByCentreRequest::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE EnterSceneRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::scene_manager::EnterSceneByCentreRequest& from_msg)
+    const ::scene_manager::EnterSceneRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         request_id_(arena, from.request_id_),
         gate_id_(arena, from.gate_id_),
         gate_instance_id_(arena, from.gate_instance_id_) {}
 
-EnterSceneByCentreRequest::EnterSceneByCentreRequest(
+EnterSceneRequest::EnterSceneRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const EnterSceneByCentreRequest& from)
+    const EnterSceneRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, EnterSceneByCentreRequest_class_data_.base()) {
+    : ::google::protobuf::Message(arena, EnterSceneRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  EnterSceneByCentreRequest* const _this = this;
+  EnterSceneRequest* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -1312,9 +1303,9 @@ EnterSceneByCentreRequest::EnterSceneByCentreRequest(
                offsetof(Impl_, player_id_) +
                sizeof(Impl_::session_id_));
 
-  // @@protoc_insertion_point(copy_constructor:scene_manager.EnterSceneByCentreRequest)
+  // @@protoc_insertion_point(copy_constructor:scene_manager.EnterSceneRequest)
 }
-PROTOBUF_NDEBUG_INLINE EnterSceneByCentreRequest::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE EnterSceneRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
@@ -1322,7 +1313,7 @@ PROTOBUF_NDEBUG_INLINE EnterSceneByCentreRequest::Impl_::Impl_(
         gate_id_(arena),
         gate_instance_id_(arena) {}
 
-inline void EnterSceneByCentreRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void EnterSceneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
@@ -1331,12 +1322,12 @@ inline void EnterSceneByCentreRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABL
                offsetof(Impl_, player_id_) +
                sizeof(Impl_::session_id_));
 }
-EnterSceneByCentreRequest::~EnterSceneByCentreRequest() {
-  // @@protoc_insertion_point(destructor:scene_manager.EnterSceneByCentreRequest)
+EnterSceneRequest::~EnterSceneRequest() {
+  // @@protoc_insertion_point(destructor:scene_manager.EnterSceneRequest)
   SharedDtor(*this);
 }
-inline void EnterSceneByCentreRequest::SharedDtor(MessageLite& self) {
-  EnterSceneByCentreRequest& this_ = static_cast<EnterSceneByCentreRequest&>(self);
+inline void EnterSceneRequest::SharedDtor(MessageLite& self) {
+  EnterSceneRequest& this_ = static_cast<EnterSceneRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.request_id_.Destroy();
@@ -1345,126 +1336,121 @@ inline void EnterSceneByCentreRequest::SharedDtor(MessageLite& self) {
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL EnterSceneByCentreRequest::PlacementNew_(
+inline void* PROTOBUF_NONNULL EnterSceneRequest::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) EnterSceneByCentreRequest(arena);
+  return ::new (mem) EnterSceneRequest(arena);
 }
-constexpr auto EnterSceneByCentreRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(EnterSceneByCentreRequest),
-                                            alignof(EnterSceneByCentreRequest));
+constexpr auto EnterSceneRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(EnterSceneRequest),
+                                            alignof(EnterSceneRequest));
 }
-constexpr auto EnterSceneByCentreRequest::InternalGenerateClassData_() {
+constexpr auto EnterSceneRequest::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_EnterSceneByCentreRequest_default_instance_._instance,
+          &_EnterSceneRequest_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &EnterSceneByCentreRequest::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<EnterSceneByCentreRequest>(),
+          &EnterSceneRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<EnterSceneRequest>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &EnterSceneByCentreRequest::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<EnterSceneByCentreRequest>(), &EnterSceneByCentreRequest::ByteSizeLong,
-              &EnterSceneByCentreRequest::_InternalSerialize,
+          &EnterSceneRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<EnterSceneRequest>(), &EnterSceneRequest::ByteSizeLong,
+              &EnterSceneRequest::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_._cached_size_),
           false,
       },
-      &EnterSceneByCentreRequest::kDescriptorMethods,
+      &EnterSceneRequest::kDescriptorMethods,
       &descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull EnterSceneByCentreRequest_class_data_ =
-        EnterSceneByCentreRequest::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull EnterSceneRequest_class_data_ =
+        EnterSceneRequest::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-EnterSceneByCentreRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&EnterSceneByCentreRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(EnterSceneByCentreRequest_class_data_.tc_table);
-  return EnterSceneByCentreRequest_class_data_.base();
+EnterSceneRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&EnterSceneRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(EnterSceneRequest_class_data_.tc_table);
+  return EnterSceneRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 7, 0, 81, 2>
-EnterSceneByCentreRequest::_table_ = {
+const ::_pbi::TcParseTable<3, 6, 0, 73, 2>
+EnterSceneRequest::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_._has_bits_),
     0, // no _extensions_
-    7, 56,  // max_field_number, fast_idx_mask
+    6, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967168,  // skipmap
+    4294967232,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    7,  // num_field_entries
+    6,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    EnterSceneByCentreRequest_class_data_.base(),
+    EnterSceneRequest_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::scene_manager::EnterSceneByCentreRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::scene_manager::EnterSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 player_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneByCentreRequest, _impl_.player_id_), 3>(),
-     {8, 3, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.player_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.player_id_), 3>(),
+     {8, 3, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.player_id_)}},
     // uint64 scene_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneByCentreRequest, _impl_.scene_id_), 4>(),
-     {16, 4, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.scene_id_)}},
-    // uint64 centre_node_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneByCentreRequest, _impl_.centre_node_id_), 5>(),
-     {24, 5, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.centre_node_id_)}},
-    // uint64 session_id = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneByCentreRequest, _impl_.session_id_), 6>(),
-     {32, 6, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.session_id_)}},
-    // string request_id = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.scene_id_), 4>(),
+     {16, 4, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_id_)}},
+    // uint64 session_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.session_id_), 5>(),
+     {24, 5, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.session_id_)}},
+    // string request_id = 4;
     {::_pbi::TcParser::FastUS1,
-     {42, 0, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.request_id_)}},
-    // string gate_id = 6;
+     {34, 0, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.request_id_)}},
+    // string gate_id = 5;
     {::_pbi::TcParser::FastUS1,
-     {50, 1, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.gate_id_)}},
-    // string gate_instance_id = 7;
+     {42, 1, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_id_)}},
+    // string gate_instance_id = 6;
     {::_pbi::TcParser::FastUS1,
-     {58, 2, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.gate_instance_id_)}},
+     {50, 2, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_instance_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 player_id = 1;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 scene_id = 2;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 4, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 centre_node_id = 3;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.centre_node_id_), _Internal::kHasBitsOffset + 5, 0,
+    // uint64 session_id = 3;
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 session_id = 4;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 6, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // string request_id = 5;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
+    // string request_id = 4;
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // string gate_id = 6;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.gate_id_), _Internal::kHasBitsOffset + 1, 0,
+    // string gate_id = 5;
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // string gate_instance_id = 7;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.gate_instance_id_), _Internal::kHasBitsOffset + 2, 0,
+    // string gate_instance_id = 6;
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_instance_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\47\0\0\0\0\12\7\20"
-    "scene_manager.EnterSceneByCentreRequest"
+    "\37\0\0\0\12\7\20\0"
+    "scene_manager.EnterSceneRequest"
     "request_id"
     "gate_id"
     "gate_instance_id"
   }},
 };
-PROTOBUF_NOINLINE void EnterSceneByCentreRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:scene_manager.EnterSceneByCentreRequest)
+PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:scene_manager.EnterSceneRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1482,7 +1468,7 @@ PROTOBUF_NOINLINE void EnterSceneByCentreRequest::Clear() {
       _impl_.gate_instance_id_.ClearNonDefaultToEmpty();
     }
   }
-  if ((cached_has_bits & 0x00000078u) != 0) {
+  if ((cached_has_bits & 0x00000038u) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.session_id_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.session_id_));
@@ -1492,17 +1478,17 @@ PROTOBUF_NOINLINE void EnterSceneByCentreRequest::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL EnterSceneByCentreRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL EnterSceneRequest::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const EnterSceneByCentreRequest& this_ = static_cast<const EnterSceneByCentreRequest&>(base);
+  const EnterSceneRequest& this_ = static_cast<const EnterSceneRequest&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL EnterSceneByCentreRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL EnterSceneRequest::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const EnterSceneByCentreRequest& this_ = *this;
+  const EnterSceneRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:scene_manager.EnterSceneByCentreRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:scene_manager.EnterSceneRequest)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1524,51 +1510,42 @@ PROTOBUF_NOINLINE void EnterSceneByCentreRequest::Clear() {
     }
   }
 
-  // uint64 centre_node_id = 3;
+  // uint64 session_id = 3;
   if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
-    if (this_._internal_centre_node_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          3, this_._internal_centre_node_id(), target);
-    }
-  }
-
-  // uint64 session_id = 4;
-  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          4, this_._internal_session_id(), target);
+          3, this_._internal_session_id(), target);
     }
   }
 
-  // string request_id = 5;
+  // string request_id = 4;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (!this_._internal_request_id().empty()) {
       const ::std::string& _s = this_._internal_request_id();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneByCentreRequest.request_id");
-      target = stream->WriteStringMaybeAliased(5, _s, target);
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneRequest.request_id");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
     }
   }
 
-  // string gate_id = 6;
+  // string gate_id = 5;
   if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (!this_._internal_gate_id().empty()) {
       const ::std::string& _s = this_._internal_gate_id();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneByCentreRequest.gate_id");
-      target = stream->WriteStringMaybeAliased(6, _s, target);
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneRequest.gate_id");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
     }
   }
 
-  // string gate_instance_id = 7;
+  // string gate_instance_id = 6;
   if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (!this_._internal_gate_instance_id().empty()) {
       const ::std::string& _s = this_._internal_gate_instance_id();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneByCentreRequest.gate_instance_id");
-      target = stream->WriteStringMaybeAliased(7, _s, target);
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneRequest.gate_instance_id");
+      target = stream->WriteStringMaybeAliased(6, _s, target);
     }
   }
 
@@ -1577,18 +1554,18 @@ PROTOBUF_NOINLINE void EnterSceneByCentreRequest::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:scene_manager.EnterSceneByCentreRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:scene_manager.EnterSceneRequest)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t EnterSceneByCentreRequest::ByteSizeLong(const MessageLite& base) {
-  const EnterSceneByCentreRequest& this_ = static_cast<const EnterSceneByCentreRequest&>(base);
+::size_t EnterSceneRequest::ByteSizeLong(const MessageLite& base) {
+  const EnterSceneRequest& this_ = static_cast<const EnterSceneRequest&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t EnterSceneByCentreRequest::ByteSizeLong() const {
-  const EnterSceneByCentreRequest& this_ = *this;
+::size_t EnterSceneRequest::ByteSizeLong() const {
+  const EnterSceneRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:scene_manager.EnterSceneByCentreRequest)
+  // @@protoc_insertion_point(message_byte_size_start:scene_manager.EnterSceneRequest)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1597,22 +1574,22 @@ PROTOBUF_NOINLINE void EnterSceneByCentreRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000007fu) != 0) {
-    // string request_id = 5;
+  if ((cached_has_bits & 0x0000003fu) != 0) {
+    // string request_id = 4;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_request_id().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                         this_._internal_request_id());
       }
     }
-    // string gate_id = 6;
+    // string gate_id = 5;
     if ((cached_has_bits & 0x00000002u) != 0) {
       if (!this_._internal_gate_id().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                         this_._internal_gate_id());
       }
     }
-    // string gate_instance_id = 7;
+    // string gate_instance_id = 6;
     if ((cached_has_bits & 0x00000004u) != 0) {
       if (!this_._internal_gate_instance_id().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
@@ -1633,15 +1610,8 @@ PROTOBUF_NOINLINE void EnterSceneByCentreRequest::Clear() {
             this_._internal_scene_id());
       }
     }
-    // uint64 centre_node_id = 3;
+    // uint64 session_id = 3;
     if ((cached_has_bits & 0x00000020u) != 0) {
-      if (this_._internal_centre_node_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_centre_node_id());
-      }
-    }
-    // uint64 session_id = 4;
-    if ((cached_has_bits & 0x00000040u) != 0) {
       if (this_._internal_session_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_session_id());
@@ -1652,16 +1622,16 @@ PROTOBUF_NOINLINE void EnterSceneByCentreRequest::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void EnterSceneByCentreRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<EnterSceneByCentreRequest*>(&to_msg);
-  auto& from = static_cast<const EnterSceneByCentreRequest&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:scene_manager.EnterSceneByCentreRequest)
+void EnterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<EnterSceneRequest*>(&to_msg);
+  auto& from = static_cast<const EnterSceneRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:scene_manager.EnterSceneRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000007fu) != 0) {
+  if ((cached_has_bits & 0x0000003fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_request_id().empty()) {
         _this->_internal_set_request_id(from._internal_request_id());
@@ -1700,11 +1670,6 @@ void EnterSceneByCentreRequest::MergeImpl(::google::protobuf::MessageLite& to_ms
       }
     }
     if ((cached_has_bits & 0x00000020u) != 0) {
-      if (from._internal_centre_node_id() != 0) {
-        _this->_impl_.centre_node_id_ = from._impl_.centre_node_id_;
-      }
-    }
-    if ((cached_has_bits & 0x00000040u) != 0) {
       if (from._internal_session_id() != 0) {
         _this->_impl_.session_id_ = from._impl_.session_id_;
       }
@@ -1714,15 +1679,15 @@ void EnterSceneByCentreRequest::MergeImpl(::google::protobuf::MessageLite& to_ms
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void EnterSceneByCentreRequest::CopyFrom(const EnterSceneByCentreRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:scene_manager.EnterSceneByCentreRequest)
+void EnterSceneRequest::CopyFrom(const EnterSceneRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:scene_manager.EnterSceneRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void EnterSceneByCentreRequest::InternalSwap(EnterSceneByCentreRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void EnterSceneRequest::InternalSwap(EnterSceneRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -1732,129 +1697,129 @@ void EnterSceneByCentreRequest::InternalSwap(EnterSceneByCentreRequest* PROTOBUF
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_id_, &other->_impl_.gate_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_instance_id_, &other->_impl_.gate_instance_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.session_id_)
-      + sizeof(EnterSceneByCentreRequest::_impl_.session_id_)
-      - PROTOBUF_FIELD_OFFSET(EnterSceneByCentreRequest, _impl_.player_id_)>(
+      PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.session_id_)
+      + sizeof(EnterSceneRequest::_impl_.session_id_)
+      - PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));
 }
 
-::google::protobuf::Metadata EnterSceneByCentreRequest::GetMetadata() const {
+::google::protobuf::Metadata EnterSceneRequest::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class EnterSceneByCentreResponse::_Internal {
+class EnterSceneResponse::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<EnterSceneByCentreResponse>()._impl_._has_bits_);
+      decltype(::std::declval<EnterSceneResponse>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(EnterSceneByCentreResponse, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_._has_bits_);
 };
 
-EnterSceneByCentreResponse::EnterSceneByCentreResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+EnterSceneResponse::EnterSceneResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, EnterSceneByCentreResponse_class_data_.base()) {
+    : ::google::protobuf::Message(arena, EnterSceneResponse_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:scene_manager.EnterSceneByCentreResponse)
+  // @@protoc_insertion_point(arena_constructor:scene_manager.EnterSceneResponse)
 }
-PROTOBUF_NDEBUG_INLINE EnterSceneByCentreResponse::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE EnterSceneResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::scene_manager::EnterSceneByCentreResponse& from_msg)
+    const ::scene_manager::EnterSceneResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         error_message_(arena, from.error_message_) {}
 
-EnterSceneByCentreResponse::EnterSceneByCentreResponse(
+EnterSceneResponse::EnterSceneResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const EnterSceneByCentreResponse& from)
+    const EnterSceneResponse& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, EnterSceneByCentreResponse_class_data_.base()) {
+    : ::google::protobuf::Message(arena, EnterSceneResponse_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  EnterSceneByCentreResponse* const _this = this;
+  EnterSceneResponse* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   _impl_.error_code_ = from._impl_.error_code_;
 
-  // @@protoc_insertion_point(copy_constructor:scene_manager.EnterSceneByCentreResponse)
+  // @@protoc_insertion_point(copy_constructor:scene_manager.EnterSceneResponse)
 }
-PROTOBUF_NDEBUG_INLINE EnterSceneByCentreResponse::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE EnterSceneResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
         error_message_(arena) {}
 
-inline void EnterSceneByCentreResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void EnterSceneResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.error_code_ = {};
 }
-EnterSceneByCentreResponse::~EnterSceneByCentreResponse() {
-  // @@protoc_insertion_point(destructor:scene_manager.EnterSceneByCentreResponse)
+EnterSceneResponse::~EnterSceneResponse() {
+  // @@protoc_insertion_point(destructor:scene_manager.EnterSceneResponse)
   SharedDtor(*this);
 }
-inline void EnterSceneByCentreResponse::SharedDtor(MessageLite& self) {
-  EnterSceneByCentreResponse& this_ = static_cast<EnterSceneByCentreResponse&>(self);
+inline void EnterSceneResponse::SharedDtor(MessageLite& self) {
+  EnterSceneResponse& this_ = static_cast<EnterSceneResponse&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.error_message_.Destroy();
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL EnterSceneByCentreResponse::PlacementNew_(
+inline void* PROTOBUF_NONNULL EnterSceneResponse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) EnterSceneByCentreResponse(arena);
+  return ::new (mem) EnterSceneResponse(arena);
 }
-constexpr auto EnterSceneByCentreResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(EnterSceneByCentreResponse),
-                                            alignof(EnterSceneByCentreResponse));
+constexpr auto EnterSceneResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(EnterSceneResponse),
+                                            alignof(EnterSceneResponse));
 }
-constexpr auto EnterSceneByCentreResponse::InternalGenerateClassData_() {
+constexpr auto EnterSceneResponse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_EnterSceneByCentreResponse_default_instance_._instance,
+          &_EnterSceneResponse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &EnterSceneByCentreResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<EnterSceneByCentreResponse>(),
+          &EnterSceneResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<EnterSceneResponse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &EnterSceneByCentreResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<EnterSceneByCentreResponse>(), &EnterSceneByCentreResponse::ByteSizeLong,
-              &EnterSceneByCentreResponse::_InternalSerialize,
+          &EnterSceneResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<EnterSceneResponse>(), &EnterSceneResponse::ByteSizeLong,
+              &EnterSceneResponse::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(EnterSceneByCentreResponse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_._cached_size_),
           false,
       },
-      &EnterSceneByCentreResponse::kDescriptorMethods,
+      &EnterSceneResponse::kDescriptorMethods,
       &descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull EnterSceneByCentreResponse_class_data_ =
-        EnterSceneByCentreResponse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull EnterSceneResponse_class_data_ =
+        EnterSceneResponse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-EnterSceneByCentreResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&EnterSceneByCentreResponse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(EnterSceneByCentreResponse_class_data_.tc_table);
-  return EnterSceneByCentreResponse_class_data_.base();
+EnterSceneResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&EnterSceneResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(EnterSceneResponse_class_data_.tc_table);
+  return EnterSceneResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 62, 2>
-EnterSceneByCentreResponse::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 54, 2>
+EnterSceneResponse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(EnterSceneByCentreResponse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -1863,38 +1828,38 @@ EnterSceneByCentreResponse::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    EnterSceneByCentreResponse_class_data_.base(),
+    EnterSceneResponse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::scene_manager::EnterSceneByCentreResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::scene_manager::EnterSceneResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string error_message = 2;
     {::_pbi::TcParser::FastUS1,
-     {18, 0, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreResponse, _impl_.error_message_)}},
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_message_)}},
     // uint32 error_code = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneByCentreResponse, _impl_.error_code_), 1>(),
-     {8, 1, 0, PROTOBUF_FIELD_OFFSET(EnterSceneByCentreResponse, _impl_.error_code_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneResponse, _impl_.error_code_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_code_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 error_code = 1;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // string error_message = 2;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneByCentreResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\50\0\15\0\0\0\0\0"
-    "scene_manager.EnterSceneByCentreResponse"
+    "\40\0\15\0\0\0\0\0"
+    "scene_manager.EnterSceneResponse"
     "error_message"
   }},
 };
-PROTOBUF_NOINLINE void EnterSceneByCentreResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:scene_manager.EnterSceneByCentreResponse)
+PROTOBUF_NOINLINE void EnterSceneResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:scene_manager.EnterSceneResponse)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1910,17 +1875,17 @@ PROTOBUF_NOINLINE void EnterSceneByCentreResponse::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL EnterSceneByCentreResponse::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL EnterSceneResponse::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const EnterSceneByCentreResponse& this_ = static_cast<const EnterSceneByCentreResponse&>(base);
+  const EnterSceneResponse& this_ = static_cast<const EnterSceneResponse&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL EnterSceneByCentreResponse::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL EnterSceneResponse::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const EnterSceneByCentreResponse& this_ = *this;
+  const EnterSceneResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:scene_manager.EnterSceneByCentreResponse)
+  // @@protoc_insertion_point(serialize_to_array_start:scene_manager.EnterSceneResponse)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1938,7 +1903,7 @@ PROTOBUF_NOINLINE void EnterSceneByCentreResponse::Clear() {
     if (!this_._internal_error_message().empty()) {
       const ::std::string& _s = this_._internal_error_message();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneByCentreResponse.error_message");
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneResponse.error_message");
       target = stream->WriteStringMaybeAliased(2, _s, target);
     }
   }
@@ -1948,18 +1913,18 @@ PROTOBUF_NOINLINE void EnterSceneByCentreResponse::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:scene_manager.EnterSceneByCentreResponse)
+  // @@protoc_insertion_point(serialize_to_array_end:scene_manager.EnterSceneResponse)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t EnterSceneByCentreResponse::ByteSizeLong(const MessageLite& base) {
-  const EnterSceneByCentreResponse& this_ = static_cast<const EnterSceneByCentreResponse&>(base);
+::size_t EnterSceneResponse::ByteSizeLong(const MessageLite& base) {
+  const EnterSceneResponse& this_ = static_cast<const EnterSceneResponse&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t EnterSceneByCentreResponse::ByteSizeLong() const {
-  const EnterSceneByCentreResponse& this_ = *this;
+::size_t EnterSceneResponse::ByteSizeLong() const {
+  const EnterSceneResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:scene_manager.EnterSceneByCentreResponse)
+  // @@protoc_insertion_point(message_byte_size_start:scene_manager.EnterSceneResponse)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1988,10 +1953,10 @@ PROTOBUF_NOINLINE void EnterSceneByCentreResponse::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void EnterSceneByCentreResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<EnterSceneByCentreResponse*>(&to_msg);
-  auto& from = static_cast<const EnterSceneByCentreResponse&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:scene_manager.EnterSceneByCentreResponse)
+void EnterSceneResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<EnterSceneResponse*>(&to_msg);
+  auto& from = static_cast<const EnterSceneResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:scene_manager.EnterSceneResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2017,15 +1982,15 @@ void EnterSceneByCentreResponse::MergeImpl(::google::protobuf::MessageLite& to_m
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void EnterSceneByCentreResponse::CopyFrom(const EnterSceneByCentreResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:scene_manager.EnterSceneByCentreResponse)
+void EnterSceneResponse::CopyFrom(const EnterSceneResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:scene_manager.EnterSceneResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void EnterSceneByCentreResponse::InternalSwap(EnterSceneByCentreResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void EnterSceneResponse::InternalSwap(EnterSceneResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -2035,45 +2000,45 @@ void EnterSceneByCentreResponse::InternalSwap(EnterSceneByCentreResponse* PROTOB
   swap(_impl_.error_code_, other->_impl_.error_code_);
 }
 
-::google::protobuf::Metadata EnterSceneByCentreResponse::GetMetadata() const {
+::google::protobuf::Metadata EnterSceneResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class LeaveSceneByCentreRequest::_Internal {
+class LeaveSceneRequest::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<LeaveSceneByCentreRequest>()._impl_._has_bits_);
+      decltype(::std::declval<LeaveSceneRequest>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_._has_bits_);
 };
 
-LeaveSceneByCentreRequest::LeaveSceneByCentreRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+LeaveSceneRequest::LeaveSceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, LeaveSceneByCentreRequest_class_data_.base()) {
+    : ::google::protobuf::Message(arena, LeaveSceneRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:scene_manager.LeaveSceneByCentreRequest)
+  // @@protoc_insertion_point(arena_constructor:scene_manager.LeaveSceneRequest)
 }
-PROTOBUF_NDEBUG_INLINE LeaveSceneByCentreRequest::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE LeaveSceneRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::scene_manager::LeaveSceneByCentreRequest& from_msg)
+    const ::scene_manager::LeaveSceneRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         request_id_(arena, from.request_id_) {}
 
-LeaveSceneByCentreRequest::LeaveSceneByCentreRequest(
+LeaveSceneRequest::LeaveSceneRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const LeaveSceneByCentreRequest& from)
+    const LeaveSceneRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, LeaveSceneByCentreRequest_class_data_.base()) {
+    : ::google::protobuf::Message(arena, LeaveSceneRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  LeaveSceneByCentreRequest* const _this = this;
+  LeaveSceneRequest* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -2082,138 +2047,133 @@ LeaveSceneByCentreRequest::LeaveSceneByCentreRequest(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, centre_node_id_) -
+           offsetof(Impl_, scene_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::centre_node_id_));
+               sizeof(Impl_::scene_id_));
 
-  // @@protoc_insertion_point(copy_constructor:scene_manager.LeaveSceneByCentreRequest)
+  // @@protoc_insertion_point(copy_constructor:scene_manager.LeaveSceneRequest)
 }
-PROTOBUF_NDEBUG_INLINE LeaveSceneByCentreRequest::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE LeaveSceneRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
         request_id_(arena) {}
 
-inline void LeaveSceneByCentreRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void LeaveSceneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, centre_node_id_) -
+           offsetof(Impl_, scene_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::centre_node_id_));
+               sizeof(Impl_::scene_id_));
 }
-LeaveSceneByCentreRequest::~LeaveSceneByCentreRequest() {
-  // @@protoc_insertion_point(destructor:scene_manager.LeaveSceneByCentreRequest)
+LeaveSceneRequest::~LeaveSceneRequest() {
+  // @@protoc_insertion_point(destructor:scene_manager.LeaveSceneRequest)
   SharedDtor(*this);
 }
-inline void LeaveSceneByCentreRequest::SharedDtor(MessageLite& self) {
-  LeaveSceneByCentreRequest& this_ = static_cast<LeaveSceneByCentreRequest&>(self);
+inline void LeaveSceneRequest::SharedDtor(MessageLite& self) {
+  LeaveSceneRequest& this_ = static_cast<LeaveSceneRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.request_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL LeaveSceneByCentreRequest::PlacementNew_(
+inline void* PROTOBUF_NONNULL LeaveSceneRequest::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) LeaveSceneByCentreRequest(arena);
+  return ::new (mem) LeaveSceneRequest(arena);
 }
-constexpr auto LeaveSceneByCentreRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(LeaveSceneByCentreRequest),
-                                            alignof(LeaveSceneByCentreRequest));
+constexpr auto LeaveSceneRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(LeaveSceneRequest),
+                                            alignof(LeaveSceneRequest));
 }
-constexpr auto LeaveSceneByCentreRequest::InternalGenerateClassData_() {
+constexpr auto LeaveSceneRequest::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_LeaveSceneByCentreRequest_default_instance_._instance,
+          &_LeaveSceneRequest_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &LeaveSceneByCentreRequest::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<LeaveSceneByCentreRequest>(),
+          &LeaveSceneRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<LeaveSceneRequest>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &LeaveSceneByCentreRequest::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<LeaveSceneByCentreRequest>(), &LeaveSceneByCentreRequest::ByteSizeLong,
-              &LeaveSceneByCentreRequest::_InternalSerialize,
+          &LeaveSceneRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<LeaveSceneRequest>(), &LeaveSceneRequest::ByteSizeLong,
+              &LeaveSceneRequest::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_._cached_size_),
           false,
       },
-      &LeaveSceneByCentreRequest::kDescriptorMethods,
+      &LeaveSceneRequest::kDescriptorMethods,
       &descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull LeaveSceneByCentreRequest_class_data_ =
-        LeaveSceneByCentreRequest::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull LeaveSceneRequest_class_data_ =
+        LeaveSceneRequest::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-LeaveSceneByCentreRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&LeaveSceneByCentreRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(LeaveSceneByCentreRequest_class_data_.tc_table);
-  return LeaveSceneByCentreRequest_class_data_.base();
+LeaveSceneRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&LeaveSceneRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(LeaveSceneRequest_class_data_.tc_table);
+  return LeaveSceneRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 58, 2>
-LeaveSceneByCentreRequest::_table_ = {
+const ::_pbi::TcParseTable<2, 3, 0, 50, 2>
+LeaveSceneRequest::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967288,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    LeaveSceneByCentreRequest_class_data_.base(),
+    LeaveSceneRequest_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::scene_manager::LeaveSceneByCentreRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::scene_manager::LeaveSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // string request_id = 4;
-    {::_pbi::TcParser::FastUS1,
-     {34, 0, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.request_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint64 player_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaveSceneByCentreRequest, _impl_.player_id_), 1>(),
-     {8, 1, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.player_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaveSceneRequest, _impl_.player_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.player_id_)}},
     // uint64 scene_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaveSceneByCentreRequest, _impl_.scene_id_), 2>(),
-     {16, 2, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.scene_id_)}},
-    // uint64 centre_node_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaveSceneByCentreRequest, _impl_.centre_node_id_), 3>(),
-     {24, 3, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.centre_node_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaveSceneRequest, _impl_.scene_id_), 2>(),
+     {16, 2, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.scene_id_)}},
+    // string request_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 0, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.request_id_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 player_id = 1;
-    {PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 scene_id = 2;
-    {PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 centre_node_id = 3;
-    {PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.centre_node_id_), _Internal::kHasBitsOffset + 3, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // string request_id = 4;
-    {PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
+    // string request_id = 3;
+    {PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\47\0\0\0\12\0\0\0"
-    "scene_manager.LeaveSceneByCentreRequest"
+    "\37\0\0\12\0\0\0\0"
+    "scene_manager.LeaveSceneRequest"
     "request_id"
   }},
 };
-PROTOBUF_NOINLINE void LeaveSceneByCentreRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:scene_manager.LeaveSceneByCentreRequest)
+PROTOBUF_NOINLINE void LeaveSceneRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:scene_manager.LeaveSceneRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -2223,27 +2183,27 @@ PROTOBUF_NOINLINE void LeaveSceneByCentreRequest::Clear() {
   if ((cached_has_bits & 0x00000001u) != 0) {
     _impl_.request_id_.ClearNonDefaultToEmpty();
   }
-  if ((cached_has_bits & 0x0000000eu) != 0) {
+  if ((cached_has_bits & 0x00000006u) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.centre_node_id_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.centre_node_id_));
+        reinterpret_cast<char*>(&_impl_.scene_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.scene_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL LeaveSceneByCentreRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL LeaveSceneRequest::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const LeaveSceneByCentreRequest& this_ = static_cast<const LeaveSceneByCentreRequest&>(base);
+  const LeaveSceneRequest& this_ = static_cast<const LeaveSceneRequest&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL LeaveSceneByCentreRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL LeaveSceneRequest::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const LeaveSceneByCentreRequest& this_ = *this;
+  const LeaveSceneRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:scene_manager.LeaveSceneByCentreRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:scene_manager.LeaveSceneRequest)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -2265,22 +2225,13 @@ PROTOBUF_NOINLINE void LeaveSceneByCentreRequest::Clear() {
     }
   }
 
-  // uint64 centre_node_id = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
-    if (this_._internal_centre_node_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          3, this_._internal_centre_node_id(), target);
-    }
-  }
-
-  // string request_id = 4;
+  // string request_id = 3;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (!this_._internal_request_id().empty()) {
       const ::std::string& _s = this_._internal_request_id();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.LeaveSceneByCentreRequest.request_id");
-      target = stream->WriteStringMaybeAliased(4, _s, target);
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.LeaveSceneRequest.request_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
     }
   }
 
@@ -2289,18 +2240,18 @@ PROTOBUF_NOINLINE void LeaveSceneByCentreRequest::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:scene_manager.LeaveSceneByCentreRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:scene_manager.LeaveSceneRequest)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t LeaveSceneByCentreRequest::ByteSizeLong(const MessageLite& base) {
-  const LeaveSceneByCentreRequest& this_ = static_cast<const LeaveSceneByCentreRequest&>(base);
+::size_t LeaveSceneRequest::ByteSizeLong(const MessageLite& base) {
+  const LeaveSceneRequest& this_ = static_cast<const LeaveSceneRequest&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t LeaveSceneByCentreRequest::ByteSizeLong() const {
-  const LeaveSceneByCentreRequest& this_ = *this;
+::size_t LeaveSceneRequest::ByteSizeLong() const {
+  const LeaveSceneRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:scene_manager.LeaveSceneByCentreRequest)
+  // @@protoc_insertion_point(message_byte_size_start:scene_manager.LeaveSceneRequest)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -2309,8 +2260,8 @@ PROTOBUF_NOINLINE void LeaveSceneByCentreRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
-    // string request_id = 4;
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    // string request_id = 3;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_request_id().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
@@ -2331,28 +2282,21 @@ PROTOBUF_NOINLINE void LeaveSceneByCentreRequest::Clear() {
             this_._internal_scene_id());
       }
     }
-    // uint64 centre_node_id = 3;
-    if ((cached_has_bits & 0x00000008u) != 0) {
-      if (this_._internal_centre_node_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_centre_node_id());
-      }
-    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
 }
 
-void LeaveSceneByCentreRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<LeaveSceneByCentreRequest*>(&to_msg);
-  auto& from = static_cast<const LeaveSceneByCentreRequest&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:scene_manager.LeaveSceneByCentreRequest)
+void LeaveSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaveSceneRequest*>(&to_msg);
+  auto& from = static_cast<const LeaveSceneRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:scene_manager.LeaveSceneRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
+  if ((cached_has_bits & 0x00000007u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_request_id().empty()) {
         _this->_internal_set_request_id(from._internal_request_id());
@@ -2372,25 +2316,20 @@ void LeaveSceneByCentreRequest::MergeImpl(::google::protobuf::MessageLite& to_ms
         _this->_impl_.scene_id_ = from._impl_.scene_id_;
       }
     }
-    if ((cached_has_bits & 0x00000008u) != 0) {
-      if (from._internal_centre_node_id() != 0) {
-        _this->_impl_.centre_node_id_ = from._impl_.centre_node_id_;
-      }
-    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void LeaveSceneByCentreRequest::CopyFrom(const LeaveSceneByCentreRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:scene_manager.LeaveSceneByCentreRequest)
+void LeaveSceneRequest::CopyFrom(const LeaveSceneRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:scene_manager.LeaveSceneRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void LeaveSceneByCentreRequest::InternalSwap(LeaveSceneByCentreRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void LeaveSceneRequest::InternalSwap(LeaveSceneRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -2398,14 +2337,14 @@ void LeaveSceneByCentreRequest::InternalSwap(LeaveSceneByCentreRequest* PROTOBUF
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_id_, &other->_impl_.request_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.centre_node_id_)
-      + sizeof(LeaveSceneByCentreRequest::_impl_.centre_node_id_)
-      - PROTOBUF_FIELD_OFFSET(LeaveSceneByCentreRequest, _impl_.player_id_)>(
+      PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.scene_id_)
+      + sizeof(LeaveSceneRequest::_impl_.scene_id_)
+      - PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));
 }
 
-::google::protobuf::Metadata LeaveSceneByCentreRequest::GetMetadata() const {
+::google::protobuf::Metadata LeaveSceneRequest::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

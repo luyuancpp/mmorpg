@@ -60,7 +60,6 @@ bool IsZoneSingletonNodeType(uint32_t nodeType) {
 	switch (nodeType) {
 	case DeployNodeService:
 	case DbNodeService:
-	case CentreNodeService:
 	case RedisNodeService:
 	case EtcdNodeService:
 	case MailNodeService:

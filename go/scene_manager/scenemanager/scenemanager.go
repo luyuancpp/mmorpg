@@ -15,25 +15,25 @@ import (
 )
 
 type (
-	CreateSceneRequest         = scene_manager.CreateSceneRequest
-	CreateSceneResponse        = scene_manager.CreateSceneResponse
-	DestroySceneRequest        = scene_manager.DestroySceneRequest
-	EnterSceneByCentreRequest  = scene_manager.EnterSceneByCentreRequest
-	EnterSceneByCentreResponse = scene_manager.EnterSceneByCentreResponse
-	GateCommand                = scene_manager.GateCommand
-	GateHeartbeat              = scene_manager.GateHeartbeat
-	LeaveSceneByCentreRequest  = scene_manager.LeaveSceneByCentreRequest
-	Empty                      = base.Empty
+	CreateSceneRequest  = scene_manager.CreateSceneRequest
+	CreateSceneResponse = scene_manager.CreateSceneResponse
+	DestroySceneRequest = scene_manager.DestroySceneRequest
+	EnterSceneRequest   = scene_manager.EnterSceneRequest
+	EnterSceneResponse  = scene_manager.EnterSceneResponse
+	GateCommand         = scene_manager.GateCommand
+	GateHeartbeat       = scene_manager.GateHeartbeat
+	LeaveSceneRequest   = scene_manager.LeaveSceneRequest
+	Empty               = base.Empty
 
 	SceneManager interface {
 		// 在指定节点创建一个场景（由 Scene 节点实现具体创建）
 		CreateScene(ctx context.Context, in *CreateSceneRequest, opts ...grpc.CallOption) (*CreateSceneResponse, error)
 		// 销毁场景
 		DestroyScene(ctx context.Context, in *DestroySceneRequest, opts ...grpc.CallOption) (*Empty, error)
-		// Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
-		EnterSceneByCentre(ctx context.Context, in *EnterSceneByCentreRequest, opts ...grpc.CallOption) (*EnterSceneByCentreResponse, error)
-		// Centre 请求玩家离开场景（或切换场景前的离开）
-		LeaveSceneByCentre(ctx context.Context, in *LeaveSceneByCentreRequest, opts ...grpc.CallOption) (*Empty, error)
+		// 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+		EnterScene(ctx context.Context, in *EnterSceneRequest, opts ...grpc.CallOption) (*EnterSceneResponse, error)
+		// 请求玩家离开场景（或切换场景前的离开）
+		LeaveScene(ctx context.Context, in *LeaveSceneRequest, opts ...grpc.CallOption) (*Empty, error)
 		// Gate 连接（保持长连接，双向流）
 		GateConnect(ctx context.Context, opts ...grpc.CallOption) (scene_manager.SceneManager_GateConnectClient, error)
 	}
@@ -61,16 +61,16 @@ func (m *defaultSceneManager) DestroyScene(ctx context.Context, in *DestroyScene
 	return client.DestroyScene(ctx, in, opts...)
 }
 
-// Centre 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
-func (m *defaultSceneManager) EnterSceneByCentre(ctx context.Context, in *EnterSceneByCentreRequest, opts ...grpc.CallOption) (*EnterSceneByCentreResponse, error) {
+// 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+func (m *defaultSceneManager) EnterScene(ctx context.Context, in *EnterSceneRequest, opts ...grpc.CallOption) (*EnterSceneResponse, error) {
 	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
-	return client.EnterSceneByCentre(ctx, in, opts...)
+	return client.EnterScene(ctx, in, opts...)
 }
 
-// Centre 请求玩家离开场景（或切换场景前的离开）
-func (m *defaultSceneManager) LeaveSceneByCentre(ctx context.Context, in *LeaveSceneByCentreRequest, opts ...grpc.CallOption) (*Empty, error) {
+// 请求玩家离开场景（或切换场景前的离开）
+func (m *defaultSceneManager) LeaveScene(ctx context.Context, in *LeaveSceneRequest, opts ...grpc.CallOption) (*Empty, error) {
 	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
-	return client.LeaveSceneByCentre(ctx, in, opts...)
+	return client.LeaveScene(ctx, in, opts...)
 }
 
 // Gate 连接（保持长连接，双向流）

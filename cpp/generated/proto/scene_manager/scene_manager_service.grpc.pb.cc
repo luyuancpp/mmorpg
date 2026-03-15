@@ -19,13 +19,14 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/sync_stream.h>
+#include <grpcpp/ports_def.inc>
 namespace scene_manager {
 
 static const char* SceneManager_method_names[] = {
   "/scene_manager.SceneManager/CreateScene",
   "/scene_manager.SceneManager/DestroyScene",
-  "/scene_manager.SceneManager/EnterSceneByCentre",
-  "/scene_manager.SceneManager/LeaveSceneByCentre",
+  "/scene_manager.SceneManager/EnterScene",
+  "/scene_manager.SceneManager/LeaveScene",
 };
 
 std::unique_ptr< SceneManager::Stub> SceneManager::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -37,8 +38,8 @@ std::unique_ptr< SceneManager::Stub> SceneManager::NewStub(const std::shared_ptr
 SceneManager::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_CreateScene_(SceneManager_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_DestroyScene_(SceneManager_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_EnterSceneByCentre_(SceneManager_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LeaveSceneByCentre_(SceneManager_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_EnterScene_(SceneManager_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LeaveScene_(SceneManager_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status SceneManager::Stub::CreateScene(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest& request, ::scene_manager::CreateSceneResponse* response) {
@@ -87,48 +88,48 @@ void SceneManager::Stub::async::DestroyScene(::grpc::ClientContext* context, con
   return result;
 }
 
-::grpc::Status SceneManager::Stub::EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::scene_manager::EnterSceneByCentreResponse* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::scene_manager::EnterSceneByCentreRequest, ::scene_manager::EnterSceneByCentreResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_EnterSceneByCentre_, context, request, response);
+::grpc::Status SceneManager::Stub::EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::scene_manager::EnterSceneResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::scene_manager::EnterSceneRequest, ::scene_manager::EnterSceneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_EnterScene_, context, request, response);
 }
 
-void SceneManager::Stub::async::EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::scene_manager::EnterSceneByCentreRequest, ::scene_manager::EnterSceneByCentreResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnterSceneByCentre_, context, request, response, std::move(f));
+void SceneManager::Stub::async::EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::scene_manager::EnterSceneRequest, ::scene_manager::EnterSceneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnterScene_, context, request, response, std::move(f));
 }
 
-void SceneManager::Stub::async::EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, ::grpc::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnterSceneByCentre_, context, request, response, reactor);
+void SceneManager::Stub::async::EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnterScene_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>* SceneManager::Stub::PrepareAsyncEnterSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::scene_manager::EnterSceneByCentreResponse, ::scene_manager::EnterSceneByCentreRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_EnterSceneByCentre_, context, request);
+::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneResponse>* SceneManager::Stub::PrepareAsyncEnterSceneRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::scene_manager::EnterSceneResponse, ::scene_manager::EnterSceneRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_EnterScene_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>* SceneManager::Stub::AsyncEnterSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneResponse>* SceneManager::Stub::AsyncEnterSceneRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
-    this->PrepareAsyncEnterSceneByCentreRaw(context, request, cq);
+    this->PrepareAsyncEnterSceneRaw(context, request, cq);
   result->StartCall();
   return result;
 }
 
-::grpc::Status SceneManager::Stub::LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::scene_manager::LeaveSceneByCentreRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaveSceneByCentre_, context, request, response);
+::grpc::Status SceneManager::Stub::LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::scene_manager::LeaveSceneRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaveScene_, context, request, response);
 }
 
-void SceneManager::Stub::async::LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::scene_manager::LeaveSceneByCentreRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveSceneByCentre_, context, request, response, std::move(f));
+void SceneManager::Stub::async::LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::scene_manager::LeaveSceneRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveScene_, context, request, response, std::move(f));
 }
 
-void SceneManager::Stub::async::LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveSceneByCentre_, context, request, response, reactor);
+void SceneManager::Stub::async::LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveScene_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* SceneManager::Stub::PrepareAsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::scene_manager::LeaveSceneByCentreRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaveSceneByCentre_, context, request);
+::grpc::ClientAsyncResponseReader< ::Empty>* SceneManager::Stub::PrepareAsyncLeaveSceneRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::scene_manager::LeaveSceneRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaveScene_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::Empty>* SceneManager::Stub::AsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::Empty>* SceneManager::Stub::AsyncLeaveSceneRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
-    this->PrepareAsyncLeaveSceneByCentreRaw(context, request, cq);
+    this->PrepareAsyncLeaveSceneRaw(context, request, cq);
   result->StartCall();
   return result;
 }
@@ -157,22 +158,22 @@ SceneManager::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneManager_method_names[2],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< SceneManager::Service, ::scene_manager::EnterSceneByCentreRequest, ::scene_manager::EnterSceneByCentreResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< SceneManager::Service, ::scene_manager::EnterSceneRequest, ::scene_manager::EnterSceneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](SceneManager::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::scene_manager::EnterSceneByCentreRequest* req,
-             ::scene_manager::EnterSceneByCentreResponse* resp) {
-               return service->EnterSceneByCentre(ctx, req, resp);
+             const ::scene_manager::EnterSceneRequest* req,
+             ::scene_manager::EnterSceneResponse* resp) {
+               return service->EnterScene(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneManager_method_names[3],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< SceneManager::Service, ::scene_manager::LeaveSceneByCentreRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< SceneManager::Service, ::scene_manager::LeaveSceneRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](SceneManager::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::scene_manager::LeaveSceneByCentreRequest* req,
+             const ::scene_manager::LeaveSceneRequest* req,
              ::Empty* resp) {
-               return service->LeaveSceneByCentre(ctx, req, resp);
+               return service->LeaveScene(ctx, req, resp);
              }, this)));
 }
 
@@ -193,14 +194,14 @@ SceneManager::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status SceneManager::Service::EnterSceneByCentre(::grpc::ServerContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response) {
+::grpc::Status SceneManager::Service::EnterScene(::grpc::ServerContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response) {
   (void) context;
   (void) request;
   (void) response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status SceneManager::Service::LeaveSceneByCentre(::grpc::ServerContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response) {
+::grpc::Status SceneManager::Service::LeaveScene(::grpc::ServerContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response) {
   (void) context;
   (void) request;
   (void) response;
@@ -209,4 +210,5 @@ SceneManager::Service::~Service() {
 
 
 }  // namespace scene_manager
+#include <grpcpp/ports_undef.inc>
 

@@ -68,18 +68,18 @@ class DestroySceneRequest;
 struct DestroySceneRequestDefaultTypeInternal;
 extern DestroySceneRequestDefaultTypeInternal _DestroySceneRequest_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull DestroySceneRequest_class_data_;
-class EnterSceneByCentreRequest;
-struct EnterSceneByCentreRequestDefaultTypeInternal;
-extern EnterSceneByCentreRequestDefaultTypeInternal _EnterSceneByCentreRequest_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull EnterSceneByCentreRequest_class_data_;
-class EnterSceneByCentreResponse;
-struct EnterSceneByCentreResponseDefaultTypeInternal;
-extern EnterSceneByCentreResponseDefaultTypeInternal _EnterSceneByCentreResponse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull EnterSceneByCentreResponse_class_data_;
-class LeaveSceneByCentreRequest;
-struct LeaveSceneByCentreRequestDefaultTypeInternal;
-extern LeaveSceneByCentreRequestDefaultTypeInternal _LeaveSceneByCentreRequest_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull LeaveSceneByCentreRequest_class_data_;
+class EnterSceneRequest;
+struct EnterSceneRequestDefaultTypeInternal;
+extern EnterSceneRequestDefaultTypeInternal _EnterSceneRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull EnterSceneRequest_class_data_;
+class EnterSceneResponse;
+struct EnterSceneResponseDefaultTypeInternal;
+extern EnterSceneResponseDefaultTypeInternal _EnterSceneResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull EnterSceneResponse_class_data_;
+class LeaveSceneRequest;
+struct LeaveSceneRequestDefaultTypeInternal;
+extern LeaveSceneRequestDefaultTypeInternal _LeaveSceneRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull LeaveSceneRequest_class_data_;
 }  // namespace scene_manager
 namespace google {
 namespace protobuf {
@@ -93,30 +93,30 @@ namespace scene_manager {
 
 // -------------------------------------------------------------------
 
-class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:scene_manager.LeaveSceneByCentreRequest) */ {
+class LeaveSceneRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:scene_manager.LeaveSceneRequest) */ {
  public:
-  inline LeaveSceneByCentreRequest() : LeaveSceneByCentreRequest(nullptr) {}
-  ~LeaveSceneByCentreRequest() PROTOBUF_FINAL;
+  inline LeaveSceneRequest() : LeaveSceneRequest(nullptr) {}
+  ~LeaveSceneRequest() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(LeaveSceneByCentreRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(LeaveSceneRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(LeaveSceneByCentreRequest));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(LeaveSceneRequest));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR LeaveSceneByCentreRequest(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR LeaveSceneRequest(::google::protobuf::internal::ConstantInitialized);
 
-  inline LeaveSceneByCentreRequest(const LeaveSceneByCentreRequest& from) : LeaveSceneByCentreRequest(nullptr, from) {}
-  inline LeaveSceneByCentreRequest(LeaveSceneByCentreRequest&& from) noexcept
-      : LeaveSceneByCentreRequest(nullptr, ::std::move(from)) {}
-  inline LeaveSceneByCentreRequest& operator=(const LeaveSceneByCentreRequest& from) {
+  inline LeaveSceneRequest(const LeaveSceneRequest& from) : LeaveSceneRequest(nullptr, from) {}
+  inline LeaveSceneRequest(LeaveSceneRequest&& from) noexcept
+      : LeaveSceneRequest(nullptr, ::std::move(from)) {}
+  inline LeaveSceneRequest& operator=(const LeaveSceneRequest& from) {
     CopyFrom(from);
     return *this;
   }
-  inline LeaveSceneByCentreRequest& operator=(LeaveSceneByCentreRequest&& from) noexcept {
+  inline LeaveSceneRequest& operator=(LeaveSceneRequest&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -144,13 +144,13 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const LeaveSceneByCentreRequest& default_instance() {
-    return *reinterpret_cast<const LeaveSceneByCentreRequest*>(
-        &_LeaveSceneByCentreRequest_default_instance_);
+  static const LeaveSceneRequest& default_instance() {
+    return *reinterpret_cast<const LeaveSceneRequest*>(
+        &_LeaveSceneRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 5;
-  friend void swap(LeaveSceneByCentreRequest& a, LeaveSceneByCentreRequest& b) { a.Swap(&b); }
-  inline void Swap(LeaveSceneByCentreRequest* PROTOBUF_NONNULL other) {
+  friend void swap(LeaveSceneRequest& a, LeaveSceneRequest& b) { a.Swap(&b); }
+  inline void Swap(LeaveSceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -158,7 +158,7 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(LeaveSceneByCentreRequest* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(LeaveSceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -166,13 +166,13 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  LeaveSceneByCentreRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<LeaveSceneByCentreRequest>(arena);
+  LeaveSceneRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<LeaveSceneRequest>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const LeaveSceneByCentreRequest& from);
+  void CopyFrom(const LeaveSceneRequest& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const LeaveSceneByCentreRequest& from) { LeaveSceneByCentreRequest::MergeImpl(*this, from); }
+  void MergeFrom(const LeaveSceneRequest& from) { LeaveSceneRequest::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -208,18 +208,18 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(LeaveSceneByCentreRequest* PROTOBUF_NONNULL other);
+  void InternalSwap(LeaveSceneRequest* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "scene_manager.LeaveSceneByCentreRequest"; }
+  static ::absl::string_view FullMessageName() { return "scene_manager.LeaveSceneRequest"; }
 
  protected:
-  explicit LeaveSceneByCentreRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  LeaveSceneByCentreRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const LeaveSceneByCentreRequest& from);
-  LeaveSceneByCentreRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, LeaveSceneByCentreRequest&& from) noexcept
-      : LeaveSceneByCentreRequest(arena) {
+  explicit LeaveSceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  LeaveSceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const LeaveSceneRequest& from);
+  LeaveSceneRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, LeaveSceneRequest&& from) noexcept
+      : LeaveSceneRequest(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -236,12 +236,11 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kRequestIdFieldNumber = 4,
+    kRequestIdFieldNumber = 3,
     kPlayerIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
-    kCentreNodeIdFieldNumber = 3,
   };
-  // string request_id = 4;
+  // string request_id = 3;
   void clear_request_id() ;
   const ::std::string& request_id() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
@@ -276,22 +275,12 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
   void _internal_set_scene_id(::uint64_t value);
 
   public:
-  // uint64 centre_node_id = 3;
-  void clear_centre_node_id() ;
-  ::uint64_t centre_node_id() const;
-  void set_centre_node_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_centre_node_id() const;
-  void _internal_set_centre_node_id(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:scene_manager.LeaveSceneByCentreRequest)
+  // @@protoc_insertion_point(class_scope:scene_manager.LeaveSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 4,
-                                   0, 58,
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 50,
                                    2>
       _table_;
 
@@ -309,46 +298,45 @@ class LeaveSceneByCentreRequest final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const LeaveSceneByCentreRequest& from_msg);
+        const LeaveSceneRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr request_id_;
     ::uint64_t player_id_;
     ::uint64_t scene_id_;
-    ::uint64_t centre_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
   friend struct ::TableStruct_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull LeaveSceneByCentreRequest_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull LeaveSceneRequest_class_data_;
 // -------------------------------------------------------------------
 
-class EnterSceneByCentreResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:scene_manager.EnterSceneByCentreResponse) */ {
+class EnterSceneResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:scene_manager.EnterSceneResponse) */ {
  public:
-  inline EnterSceneByCentreResponse() : EnterSceneByCentreResponse(nullptr) {}
-  ~EnterSceneByCentreResponse() PROTOBUF_FINAL;
+  inline EnterSceneResponse() : EnterSceneResponse(nullptr) {}
+  ~EnterSceneResponse() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(EnterSceneByCentreResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(EnterSceneResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterSceneByCentreResponse));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterSceneResponse));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR EnterSceneByCentreResponse(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR EnterSceneResponse(::google::protobuf::internal::ConstantInitialized);
 
-  inline EnterSceneByCentreResponse(const EnterSceneByCentreResponse& from) : EnterSceneByCentreResponse(nullptr, from) {}
-  inline EnterSceneByCentreResponse(EnterSceneByCentreResponse&& from) noexcept
-      : EnterSceneByCentreResponse(nullptr, ::std::move(from)) {}
-  inline EnterSceneByCentreResponse& operator=(const EnterSceneByCentreResponse& from) {
+  inline EnterSceneResponse(const EnterSceneResponse& from) : EnterSceneResponse(nullptr, from) {}
+  inline EnterSceneResponse(EnterSceneResponse&& from) noexcept
+      : EnterSceneResponse(nullptr, ::std::move(from)) {}
+  inline EnterSceneResponse& operator=(const EnterSceneResponse& from) {
     CopyFrom(from);
     return *this;
   }
-  inline EnterSceneByCentreResponse& operator=(EnterSceneByCentreResponse&& from) noexcept {
+  inline EnterSceneResponse& operator=(EnterSceneResponse&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -376,13 +364,13 @@ class EnterSceneByCentreResponse final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const EnterSceneByCentreResponse& default_instance() {
-    return *reinterpret_cast<const EnterSceneByCentreResponse*>(
-        &_EnterSceneByCentreResponse_default_instance_);
+  static const EnterSceneResponse& default_instance() {
+    return *reinterpret_cast<const EnterSceneResponse*>(
+        &_EnterSceneResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 4;
-  friend void swap(EnterSceneByCentreResponse& a, EnterSceneByCentreResponse& b) { a.Swap(&b); }
-  inline void Swap(EnterSceneByCentreResponse* PROTOBUF_NONNULL other) {
+  friend void swap(EnterSceneResponse& a, EnterSceneResponse& b) { a.Swap(&b); }
+  inline void Swap(EnterSceneResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -390,7 +378,7 @@ class EnterSceneByCentreResponse final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(EnterSceneByCentreResponse* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(EnterSceneResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -398,13 +386,13 @@ class EnterSceneByCentreResponse final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  EnterSceneByCentreResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<EnterSceneByCentreResponse>(arena);
+  EnterSceneResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<EnterSceneResponse>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const EnterSceneByCentreResponse& from);
+  void CopyFrom(const EnterSceneResponse& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const EnterSceneByCentreResponse& from) { EnterSceneByCentreResponse::MergeImpl(*this, from); }
+  void MergeFrom(const EnterSceneResponse& from) { EnterSceneResponse::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -440,18 +428,18 @@ class EnterSceneByCentreResponse final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(EnterSceneByCentreResponse* PROTOBUF_NONNULL other);
+  void InternalSwap(EnterSceneResponse* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "scene_manager.EnterSceneByCentreResponse"; }
+  static ::absl::string_view FullMessageName() { return "scene_manager.EnterSceneResponse"; }
 
  protected:
-  explicit EnterSceneByCentreResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  EnterSceneByCentreResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterSceneByCentreResponse& from);
-  EnterSceneByCentreResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EnterSceneByCentreResponse&& from) noexcept
-      : EnterSceneByCentreResponse(arena) {
+  explicit EnterSceneResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  EnterSceneResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterSceneResponse& from);
+  EnterSceneResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EnterSceneResponse&& from) noexcept
+      : EnterSceneResponse(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -496,12 +484,12 @@ class EnterSceneByCentreResponse final : public ::google::protobuf::Message
   void _internal_set_error_code(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneByCentreResponse)
+  // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 62,
+                                   0, 54,
                                    2>
       _table_;
 
@@ -519,7 +507,7 @@ class EnterSceneByCentreResponse final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const EnterSceneByCentreResponse& from_msg);
+        const EnterSceneResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr error_message_;
@@ -530,33 +518,33 @@ class EnterSceneByCentreResponse final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull EnterSceneByCentreResponse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull EnterSceneResponse_class_data_;
 // -------------------------------------------------------------------
 
-class EnterSceneByCentreRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:scene_manager.EnterSceneByCentreRequest) */ {
+class EnterSceneRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:scene_manager.EnterSceneRequest) */ {
  public:
-  inline EnterSceneByCentreRequest() : EnterSceneByCentreRequest(nullptr) {}
-  ~EnterSceneByCentreRequest() PROTOBUF_FINAL;
+  inline EnterSceneRequest() : EnterSceneRequest(nullptr) {}
+  ~EnterSceneRequest() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(EnterSceneByCentreRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(EnterSceneRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterSceneByCentreRequest));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterSceneRequest));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR EnterSceneByCentreRequest(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR EnterSceneRequest(::google::protobuf::internal::ConstantInitialized);
 
-  inline EnterSceneByCentreRequest(const EnterSceneByCentreRequest& from) : EnterSceneByCentreRequest(nullptr, from) {}
-  inline EnterSceneByCentreRequest(EnterSceneByCentreRequest&& from) noexcept
-      : EnterSceneByCentreRequest(nullptr, ::std::move(from)) {}
-  inline EnterSceneByCentreRequest& operator=(const EnterSceneByCentreRequest& from) {
+  inline EnterSceneRequest(const EnterSceneRequest& from) : EnterSceneRequest(nullptr, from) {}
+  inline EnterSceneRequest(EnterSceneRequest&& from) noexcept
+      : EnterSceneRequest(nullptr, ::std::move(from)) {}
+  inline EnterSceneRequest& operator=(const EnterSceneRequest& from) {
     CopyFrom(from);
     return *this;
   }
-  inline EnterSceneByCentreRequest& operator=(EnterSceneByCentreRequest&& from) noexcept {
+  inline EnterSceneRequest& operator=(EnterSceneRequest&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -584,13 +572,13 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const EnterSceneByCentreRequest& default_instance() {
-    return *reinterpret_cast<const EnterSceneByCentreRequest*>(
-        &_EnterSceneByCentreRequest_default_instance_);
+  static const EnterSceneRequest& default_instance() {
+    return *reinterpret_cast<const EnterSceneRequest*>(
+        &_EnterSceneRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 3;
-  friend void swap(EnterSceneByCentreRequest& a, EnterSceneByCentreRequest& b) { a.Swap(&b); }
-  inline void Swap(EnterSceneByCentreRequest* PROTOBUF_NONNULL other) {
+  friend void swap(EnterSceneRequest& a, EnterSceneRequest& b) { a.Swap(&b); }
+  inline void Swap(EnterSceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -598,7 +586,7 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(EnterSceneByCentreRequest* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(EnterSceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -606,13 +594,13 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  EnterSceneByCentreRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<EnterSceneByCentreRequest>(arena);
+  EnterSceneRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<EnterSceneRequest>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const EnterSceneByCentreRequest& from);
+  void CopyFrom(const EnterSceneRequest& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const EnterSceneByCentreRequest& from) { EnterSceneByCentreRequest::MergeImpl(*this, from); }
+  void MergeFrom(const EnterSceneRequest& from) { EnterSceneRequest::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -648,18 +636,18 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(EnterSceneByCentreRequest* PROTOBUF_NONNULL other);
+  void InternalSwap(EnterSceneRequest* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "scene_manager.EnterSceneByCentreRequest"; }
+  static ::absl::string_view FullMessageName() { return "scene_manager.EnterSceneRequest"; }
 
  protected:
-  explicit EnterSceneByCentreRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  EnterSceneByCentreRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterSceneByCentreRequest& from);
-  EnterSceneByCentreRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EnterSceneByCentreRequest&& from) noexcept
-      : EnterSceneByCentreRequest(arena) {
+  explicit EnterSceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  EnterSceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterSceneRequest& from);
+  EnterSceneRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EnterSceneRequest&& from) noexcept
+      : EnterSceneRequest(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -676,15 +664,14 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kRequestIdFieldNumber = 5,
-    kGateIdFieldNumber = 6,
-    kGateInstanceIdFieldNumber = 7,
+    kRequestIdFieldNumber = 4,
+    kGateIdFieldNumber = 5,
+    kGateInstanceIdFieldNumber = 6,
     kPlayerIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
-    kCentreNodeIdFieldNumber = 3,
-    kSessionIdFieldNumber = 4,
+    kSessionIdFieldNumber = 3,
   };
-  // string request_id = 5;
+  // string request_id = 4;
   void clear_request_id() ;
   const ::std::string& request_id() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
@@ -699,7 +686,7 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_request_id();
 
   public:
-  // string gate_id = 6;
+  // string gate_id = 5;
   void clear_gate_id() ;
   const ::std::string& gate_id() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
@@ -714,7 +701,7 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_gate_id();
 
   public:
-  // string gate_instance_id = 7;
+  // string gate_instance_id = 6;
   void clear_gate_instance_id() ;
   const ::std::string& gate_instance_id() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
@@ -749,17 +736,7 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
   void _internal_set_scene_id(::uint64_t value);
 
   public:
-  // uint64 centre_node_id = 3;
-  void clear_centre_node_id() ;
-  ::uint64_t centre_node_id() const;
-  void set_centre_node_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_centre_node_id() const;
-  void _internal_set_centre_node_id(::uint64_t value);
-
-  public:
-  // uint64 session_id = 4;
+  // uint64 session_id = 3;
   void clear_session_id() ;
   ::uint64_t session_id() const;
   void set_session_id(::uint64_t value);
@@ -769,12 +746,12 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
   void _internal_set_session_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneByCentreRequest)
+  // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 7,
-                                   0, 81,
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
+                                   0, 73,
                                    2>
       _table_;
 
@@ -792,7 +769,7 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const EnterSceneByCentreRequest& from_msg);
+        const EnterSceneRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr request_id_;
@@ -800,7 +777,6 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr gate_instance_id_;
     ::uint64_t player_id_;
     ::uint64_t scene_id_;
-    ::uint64_t centre_node_id_;
     ::uint64_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -808,7 +784,7 @@ class EnterSceneByCentreRequest final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull EnterSceneByCentreRequest_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull EnterSceneRequest_class_data_;
 // -------------------------------------------------------------------
 
 class DestroySceneRequest final : public ::google::protobuf::Message
@@ -1763,145 +1739,121 @@ inline void DestroySceneRequest::_internal_set_scene_id(::uint64_t value) {
 
 // -------------------------------------------------------------------
 
-// EnterSceneByCentreRequest
+// EnterSceneRequest
 
 // uint64 player_id = 1;
-inline void EnterSceneByCentreRequest::clear_player_id() {
+inline void EnterSceneRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint64_t EnterSceneByCentreRequest::player_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreRequest.player_id)
+inline ::uint64_t EnterSceneRequest::player_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.player_id)
   return _internal_player_id();
 }
-inline void EnterSceneByCentreRequest::set_player_id(::uint64_t value) {
+inline void EnterSceneRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
   _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreRequest.player_id)
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.player_id)
 }
-inline ::uint64_t EnterSceneByCentreRequest::_internal_player_id() const {
+inline ::uint64_t EnterSceneRequest::_internal_player_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.player_id_;
 }
-inline void EnterSceneByCentreRequest::_internal_set_player_id(::uint64_t value) {
+inline void EnterSceneRequest::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
 }
 
 // uint64 scene_id = 2;
-inline void EnterSceneByCentreRequest::clear_scene_id() {
+inline void EnterSceneRequest::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint64_t EnterSceneByCentreRequest::scene_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreRequest.scene_id)
+inline ::uint64_t EnterSceneRequest::scene_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.scene_id)
   return _internal_scene_id();
 }
-inline void EnterSceneByCentreRequest::set_scene_id(::uint64_t value) {
+inline void EnterSceneRequest::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
   _impl_._has_bits_[0] |= 0x00000010u;
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreRequest.scene_id)
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.scene_id)
 }
-inline ::uint64_t EnterSceneByCentreRequest::_internal_scene_id() const {
+inline ::uint64_t EnterSceneRequest::_internal_scene_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.scene_id_;
 }
-inline void EnterSceneByCentreRequest::_internal_set_scene_id(::uint64_t value) {
+inline void EnterSceneRequest::_internal_set_scene_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = value;
 }
 
-// uint64 centre_node_id = 3;
-inline void EnterSceneByCentreRequest::clear_centre_node_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.centre_node_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000020u;
-}
-inline ::uint64_t EnterSceneByCentreRequest::centre_node_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreRequest.centre_node_id)
-  return _internal_centre_node_id();
-}
-inline void EnterSceneByCentreRequest::set_centre_node_id(::uint64_t value) {
-  _internal_set_centre_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreRequest.centre_node_id)
-}
-inline ::uint64_t EnterSceneByCentreRequest::_internal_centre_node_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.centre_node_id_;
-}
-inline void EnterSceneByCentreRequest::_internal_set_centre_node_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.centre_node_id_ = value;
-}
-
-// uint64 session_id = 4;
-inline void EnterSceneByCentreRequest::clear_session_id() {
+// uint64 session_id = 3;
+inline void EnterSceneRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
-inline ::uint64_t EnterSceneByCentreRequest::session_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreRequest.session_id)
+inline ::uint64_t EnterSceneRequest::session_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.session_id)
   return _internal_session_id();
 }
-inline void EnterSceneByCentreRequest::set_session_id(::uint64_t value) {
+inline void EnterSceneRequest::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreRequest.session_id)
+  _impl_._has_bits_[0] |= 0x00000020u;
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.session_id)
 }
-inline ::uint64_t EnterSceneByCentreRequest::_internal_session_id() const {
+inline ::uint64_t EnterSceneRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void EnterSceneByCentreRequest::_internal_set_session_id(::uint64_t value) {
+inline void EnterSceneRequest::_internal_set_session_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
 
-// string request_id = 5;
-inline void EnterSceneByCentreRequest::clear_request_id() {
+// string request_id = 4;
+inline void EnterSceneRequest::clear_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.request_id_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::std::string& EnterSceneByCentreRequest::request_id() const
+inline const ::std::string& EnterSceneRequest::request_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.request_id)
   return _internal_request_id();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void EnterSceneByCentreRequest::set_request_id(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void EnterSceneRequest::set_request_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.request_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.request_id)
 }
-inline ::std::string* PROTOBUF_NONNULL EnterSceneByCentreRequest::mutable_request_id()
+inline ::std::string* PROTOBUF_NONNULL EnterSceneRequest::mutable_request_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_request_id();
-  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneRequest.request_id)
   return _s;
 }
-inline const ::std::string& EnterSceneByCentreRequest::_internal_request_id() const {
+inline const ::std::string& EnterSceneRequest::_internal_request_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.request_id_.Get();
 }
-inline void EnterSceneByCentreRequest::_internal_set_request_id(const ::std::string& value) {
+inline void EnterSceneRequest::_internal_set_request_id(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.request_id_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL EnterSceneByCentreRequest::_internal_mutable_request_id() {
+inline ::std::string* PROTOBUF_NONNULL EnterSceneRequest::_internal_mutable_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   return _impl_.request_id_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE EnterSceneByCentreRequest::release_request_id() {
+inline ::std::string* PROTOBUF_NULLABLE EnterSceneRequest::release_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneRequest.request_id)
   if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
     return nullptr;
   }
@@ -1912,7 +1864,7 @@ inline ::std::string* PROTOBUF_NULLABLE EnterSceneByCentreRequest::release_reque
   }
   return released;
 }
-inline void EnterSceneByCentreRequest::set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value) {
+inline void EnterSceneRequest::set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
@@ -1923,50 +1875,50 @@ inline void EnterSceneByCentreRequest::set_allocated_request_id(::std::string* P
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_id_.IsDefault()) {
     _impl_.request_id_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneRequest.request_id)
 }
 
-// string gate_id = 6;
-inline void EnterSceneByCentreRequest::clear_gate_id() {
+// string gate_id = 5;
+inline void EnterSceneRequest::clear_gate_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_id_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline const ::std::string& EnterSceneByCentreRequest::gate_id() const
+inline const ::std::string& EnterSceneRequest::gate_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreRequest.gate_id)
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.gate_id)
   return _internal_gate_id();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void EnterSceneByCentreRequest::set_gate_id(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void EnterSceneRequest::set_gate_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
   _impl_.gate_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreRequest.gate_id)
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.gate_id)
 }
-inline ::std::string* PROTOBUF_NONNULL EnterSceneByCentreRequest::mutable_gate_id()
+inline ::std::string* PROTOBUF_NONNULL EnterSceneRequest::mutable_gate_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_gate_id();
-  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneByCentreRequest.gate_id)
+  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneRequest.gate_id)
   return _s;
 }
-inline const ::std::string& EnterSceneByCentreRequest::_internal_gate_id() const {
+inline const ::std::string& EnterSceneRequest::_internal_gate_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.gate_id_.Get();
 }
-inline void EnterSceneByCentreRequest::_internal_set_gate_id(const ::std::string& value) {
+inline void EnterSceneRequest::_internal_set_gate_id(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
   _impl_.gate_id_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL EnterSceneByCentreRequest::_internal_mutable_gate_id() {
+inline ::std::string* PROTOBUF_NONNULL EnterSceneRequest::_internal_mutable_gate_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
   return _impl_.gate_id_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE EnterSceneByCentreRequest::release_gate_id() {
+inline ::std::string* PROTOBUF_NULLABLE EnterSceneRequest::release_gate_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneByCentreRequest.gate_id)
+  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneRequest.gate_id)
   if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
     return nullptr;
   }
@@ -1977,7 +1929,7 @@ inline ::std::string* PROTOBUF_NULLABLE EnterSceneByCentreRequest::release_gate_
   }
   return released;
 }
-inline void EnterSceneByCentreRequest::set_allocated_gate_id(::std::string* PROTOBUF_NULLABLE value) {
+inline void EnterSceneRequest::set_allocated_gate_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
@@ -1988,50 +1940,50 @@ inline void EnterSceneByCentreRequest::set_allocated_gate_id(::std::string* PROT
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.gate_id_.IsDefault()) {
     _impl_.gate_id_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneByCentreRequest.gate_id)
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneRequest.gate_id)
 }
 
-// string gate_instance_id = 7;
-inline void EnterSceneByCentreRequest::clear_gate_instance_id() {
+// string gate_instance_id = 6;
+inline void EnterSceneRequest::clear_gate_instance_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_instance_id_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline const ::std::string& EnterSceneByCentreRequest::gate_instance_id() const
+inline const ::std::string& EnterSceneRequest::gate_instance_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreRequest.gate_instance_id)
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.gate_instance_id)
   return _internal_gate_instance_id();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void EnterSceneByCentreRequest::set_gate_instance_id(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void EnterSceneRequest::set_gate_instance_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
   _impl_.gate_instance_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreRequest.gate_instance_id)
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.gate_instance_id)
 }
-inline ::std::string* PROTOBUF_NONNULL EnterSceneByCentreRequest::mutable_gate_instance_id()
+inline ::std::string* PROTOBUF_NONNULL EnterSceneRequest::mutable_gate_instance_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_gate_instance_id();
-  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneByCentreRequest.gate_instance_id)
+  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneRequest.gate_instance_id)
   return _s;
 }
-inline const ::std::string& EnterSceneByCentreRequest::_internal_gate_instance_id() const {
+inline const ::std::string& EnterSceneRequest::_internal_gate_instance_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.gate_instance_id_.Get();
 }
-inline void EnterSceneByCentreRequest::_internal_set_gate_instance_id(const ::std::string& value) {
+inline void EnterSceneRequest::_internal_set_gate_instance_id(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
   _impl_.gate_instance_id_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL EnterSceneByCentreRequest::_internal_mutable_gate_instance_id() {
+inline ::std::string* PROTOBUF_NONNULL EnterSceneRequest::_internal_mutable_gate_instance_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
   return _impl_.gate_instance_id_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE EnterSceneByCentreRequest::release_gate_instance_id() {
+inline ::std::string* PROTOBUF_NULLABLE EnterSceneRequest::release_gate_instance_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneByCentreRequest.gate_instance_id)
+  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneRequest.gate_instance_id)
   if ((_impl_._has_bits_[0] & 0x00000004u) == 0) {
     return nullptr;
   }
@@ -2042,7 +1994,7 @@ inline ::std::string* PROTOBUF_NULLABLE EnterSceneByCentreRequest::release_gate_
   }
   return released;
 }
-inline void EnterSceneByCentreRequest::set_allocated_gate_instance_id(::std::string* PROTOBUF_NULLABLE value) {
+inline void EnterSceneRequest::set_allocated_gate_instance_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000004u;
@@ -2053,78 +2005,78 @@ inline void EnterSceneByCentreRequest::set_allocated_gate_instance_id(::std::str
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.gate_instance_id_.IsDefault()) {
     _impl_.gate_instance_id_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneByCentreRequest.gate_instance_id)
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneRequest.gate_instance_id)
 }
 
 // -------------------------------------------------------------------
 
-// EnterSceneByCentreResponse
+// EnterSceneResponse
 
 // uint32 error_code = 1;
-inline void EnterSceneByCentreResponse::clear_error_code() {
+inline void EnterSceneResponse::clear_error_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.error_code_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t EnterSceneByCentreResponse::error_code() const {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreResponse.error_code)
+inline ::uint32_t EnterSceneResponse::error_code() const {
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneResponse.error_code)
   return _internal_error_code();
 }
-inline void EnterSceneByCentreResponse::set_error_code(::uint32_t value) {
+inline void EnterSceneResponse::set_error_code(::uint32_t value) {
   _internal_set_error_code(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreResponse.error_code)
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneResponse.error_code)
 }
-inline ::uint32_t EnterSceneByCentreResponse::_internal_error_code() const {
+inline ::uint32_t EnterSceneResponse::_internal_error_code() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.error_code_;
 }
-inline void EnterSceneByCentreResponse::_internal_set_error_code(::uint32_t value) {
+inline void EnterSceneResponse::_internal_set_error_code(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.error_code_ = value;
 }
 
 // string error_message = 2;
-inline void EnterSceneByCentreResponse::clear_error_message() {
+inline void EnterSceneResponse::clear_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.error_message_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::std::string& EnterSceneByCentreResponse::error_message() const
+inline const ::std::string& EnterSceneResponse::error_message() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneByCentreResponse.error_message)
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneResponse.error_message)
   return _internal_error_message();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void EnterSceneByCentreResponse::set_error_message(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void EnterSceneResponse::set_error_message(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.error_message_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneByCentreResponse.error_message)
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneResponse.error_message)
 }
-inline ::std::string* PROTOBUF_NONNULL EnterSceneByCentreResponse::mutable_error_message()
+inline ::std::string* PROTOBUF_NONNULL EnterSceneResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_error_message();
-  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneByCentreResponse.error_message)
+  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneResponse.error_message)
   return _s;
 }
-inline const ::std::string& EnterSceneByCentreResponse::_internal_error_message() const {
+inline const ::std::string& EnterSceneResponse::_internal_error_message() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.error_message_.Get();
 }
-inline void EnterSceneByCentreResponse::_internal_set_error_message(const ::std::string& value) {
+inline void EnterSceneResponse::_internal_set_error_message(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.error_message_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL EnterSceneByCentreResponse::_internal_mutable_error_message() {
+inline ::std::string* PROTOBUF_NONNULL EnterSceneResponse::_internal_mutable_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   return _impl_.error_message_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE EnterSceneByCentreResponse::release_error_message() {
+inline ::std::string* PROTOBUF_NULLABLE EnterSceneResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneByCentreResponse.error_message)
+  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneResponse.error_message)
   if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
     return nullptr;
   }
@@ -2135,7 +2087,7 @@ inline ::std::string* PROTOBUF_NULLABLE EnterSceneByCentreResponse::release_erro
   }
   return released;
 }
-inline void EnterSceneByCentreResponse::set_allocated_error_message(::std::string* PROTOBUF_NULLABLE value) {
+inline void EnterSceneResponse::set_allocated_error_message(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
@@ -2146,126 +2098,102 @@ inline void EnterSceneByCentreResponse::set_allocated_error_message(::std::strin
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.error_message_.IsDefault()) {
     _impl_.error_message_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneByCentreResponse.error_message)
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneResponse.error_message)
 }
 
 // -------------------------------------------------------------------
 
-// LeaveSceneByCentreRequest
+// LeaveSceneRequest
 
 // uint64 player_id = 1;
-inline void LeaveSceneByCentreRequest::clear_player_id() {
+inline void LeaveSceneRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t LeaveSceneByCentreRequest::player_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneByCentreRequest.player_id)
+inline ::uint64_t LeaveSceneRequest::player_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneRequest.player_id)
   return _internal_player_id();
 }
-inline void LeaveSceneByCentreRequest::set_player_id(::uint64_t value) {
+inline void LeaveSceneRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneByCentreRequest.player_id)
+  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneRequest.player_id)
 }
-inline ::uint64_t LeaveSceneByCentreRequest::_internal_player_id() const {
+inline ::uint64_t LeaveSceneRequest::_internal_player_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.player_id_;
 }
-inline void LeaveSceneByCentreRequest::_internal_set_player_id(::uint64_t value) {
+inline void LeaveSceneRequest::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
 }
 
 // uint64 scene_id = 2;
-inline void LeaveSceneByCentreRequest::clear_scene_id() {
+inline void LeaveSceneRequest::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint64_t LeaveSceneByCentreRequest::scene_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneByCentreRequest.scene_id)
+inline ::uint64_t LeaveSceneRequest::scene_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneRequest.scene_id)
   return _internal_scene_id();
 }
-inline void LeaveSceneByCentreRequest::set_scene_id(::uint64_t value) {
+inline void LeaveSceneRequest::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneByCentreRequest.scene_id)
+  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneRequest.scene_id)
 }
-inline ::uint64_t LeaveSceneByCentreRequest::_internal_scene_id() const {
+inline ::uint64_t LeaveSceneRequest::_internal_scene_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.scene_id_;
 }
-inline void LeaveSceneByCentreRequest::_internal_set_scene_id(::uint64_t value) {
+inline void LeaveSceneRequest::_internal_set_scene_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = value;
 }
 
-// uint64 centre_node_id = 3;
-inline void LeaveSceneByCentreRequest::clear_centre_node_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.centre_node_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000008u;
-}
-inline ::uint64_t LeaveSceneByCentreRequest::centre_node_id() const {
-  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneByCentreRequest.centre_node_id)
-  return _internal_centre_node_id();
-}
-inline void LeaveSceneByCentreRequest::set_centre_node_id(::uint64_t value) {
-  _internal_set_centre_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneByCentreRequest.centre_node_id)
-}
-inline ::uint64_t LeaveSceneByCentreRequest::_internal_centre_node_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.centre_node_id_;
-}
-inline void LeaveSceneByCentreRequest::_internal_set_centre_node_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.centre_node_id_ = value;
-}
-
-// string request_id = 4;
-inline void LeaveSceneByCentreRequest::clear_request_id() {
+// string request_id = 3;
+inline void LeaveSceneRequest::clear_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.request_id_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::std::string& LeaveSceneByCentreRequest::request_id() const
+inline const ::std::string& LeaveSceneRequest::request_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneRequest.request_id)
   return _internal_request_id();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void LeaveSceneByCentreRequest::set_request_id(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void LeaveSceneRequest::set_request_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.request_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneRequest.request_id)
 }
-inline ::std::string* PROTOBUF_NONNULL LeaveSceneByCentreRequest::mutable_request_id()
+inline ::std::string* PROTOBUF_NONNULL LeaveSceneRequest::mutable_request_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_request_id();
-  // @@protoc_insertion_point(field_mutable:scene_manager.LeaveSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_mutable:scene_manager.LeaveSceneRequest.request_id)
   return _s;
 }
-inline const ::std::string& LeaveSceneByCentreRequest::_internal_request_id() const {
+inline const ::std::string& LeaveSceneRequest::_internal_request_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.request_id_.Get();
 }
-inline void LeaveSceneByCentreRequest::_internal_set_request_id(const ::std::string& value) {
+inline void LeaveSceneRequest::_internal_set_request_id(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.request_id_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL LeaveSceneByCentreRequest::_internal_mutable_request_id() {
+inline ::std::string* PROTOBUF_NONNULL LeaveSceneRequest::_internal_mutable_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   return _impl_.request_id_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE LeaveSceneByCentreRequest::release_request_id() {
+inline ::std::string* PROTOBUF_NULLABLE LeaveSceneRequest::release_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:scene_manager.LeaveSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_release:scene_manager.LeaveSceneRequest.request_id)
   if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
     return nullptr;
   }
@@ -2276,7 +2204,7 @@ inline ::std::string* PROTOBUF_NULLABLE LeaveSceneByCentreRequest::release_reque
   }
   return released;
 }
-inline void LeaveSceneByCentreRequest::set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value) {
+inline void LeaveSceneRequest::set_allocated_request_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
@@ -2287,7 +2215,7 @@ inline void LeaveSceneByCentreRequest::set_allocated_request_id(::std::string* P
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_id_.IsDefault()) {
     _impl_.request_id_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:scene_manager.LeaveSceneByCentreRequest.request_id)
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.LeaveSceneRequest.request_id)
 }
 
 #ifdef __GNUC__

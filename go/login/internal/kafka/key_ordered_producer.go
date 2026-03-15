@@ -9,11 +9,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"login/internal/logic/pkg/consistent"
+	db_proto "login/proto/service/go/grpc/db"
+
 	"github.com/IBM/sarama"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
-	"login/internal/logic/pkg/consistent"
-	db_proto "login/proto/service/go/grpc/db"
 )
 
 // ProducerMeta 消息元数据，用于payload回收
@@ -357,6 +358,15 @@ func (p *KeyOrderedKafkaProducer) AddPartitions(newPartitions []int32) error {
 	logx.Infof("分区添加完成: 主题=%s, 原数量=%d, 新增=%d, 总数量=%d",
 		p.topic, p.partitionCnt-added, added, p.partitionCnt)
 	return nil
+}
+
+// SendToTopic sends raw bytes to an arbitrary Kafka topic (not the configured topic).
+func (p *KeyOrderedKafkaProducer) SendToTopic(topic string, data []byte) error {
+	_, _, err := p.producer.SendMessage(&sarama.ProducerMessage{
+		Topic: topic,
+		Value: sarama.ByteEncoder(data),
+	})
+	return err
 }
 
 // Close 优雅关闭生产者（实现事务关闭流程）

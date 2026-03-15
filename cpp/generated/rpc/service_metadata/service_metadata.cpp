@@ -256,8 +256,8 @@ namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::en
 namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerEnterSceneByCentre(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerLeaveSceneByCentre(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 std::array<RpcService, 94> gRpcServiceRegistry;
@@ -356,8 +356,8 @@ void InitMessageInfo()
     gRpcServiceRegistry[SceneNodeHandshakeMessageId] = RpcService{"Scene", "NodeHandshake", std::make_unique_for_overwrite<::NodeHandshakeRequest>(), std::make_unique_for_overwrite<::NodeHandshakeResponse>(), std::make_unique_for_overwrite<SceneImpl>(), 0, eNodeType::SceneNodeService};
     gRpcServiceRegistry[SceneManagerCreateSceneMessageId] = RpcService{"SceneManager", "CreateScene", std::make_unique_for_overwrite<::scene_manager::CreateSceneRequest>(), std::make_unique_for_overwrite<::scene_manager::CreateSceneResponse>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerCreateScene};
     gRpcServiceRegistry[SceneManagerDestroySceneMessageId] = RpcService{"SceneManager", "DestroyScene", std::make_unique_for_overwrite<::scene_manager::DestroySceneRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerDestroyScene};
-    gRpcServiceRegistry[SceneManagerEnterSceneByCentreMessageId] = RpcService{"SceneManager", "EnterSceneByCentre", std::make_unique_for_overwrite<::scene_manager::EnterSceneByCentreRequest>(), std::make_unique_for_overwrite<::scene_manager::EnterSceneByCentreResponse>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerEnterSceneByCentre};
-    gRpcServiceRegistry[SceneManagerLeaveSceneByCentreMessageId] = RpcService{"SceneManager", "LeaveSceneByCentre", std::make_unique_for_overwrite<::scene_manager::LeaveSceneByCentreRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveSceneByCentre};
+    gRpcServiceRegistry[SceneManagerEnterSceneMessageId] = RpcService{"SceneManager", "EnterScene", std::make_unique_for_overwrite<::scene_manager::EnterSceneRequest>(), std::make_unique_for_overwrite<::scene_manager::EnterSceneResponse>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerEnterScene};
+    gRpcServiceRegistry[SceneManagerLeaveSceneMessageId] = RpcService{"SceneManager", "LeaveScene", std::make_unique_for_overwrite<::scene_manager::LeaveSceneRequest>(), std::make_unique_for_overwrite<::Empty>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveScene};
 
     gClientMessageIdWhitelist.emplace(ClientPlayerLoginLoginMessageId);
     gClientMessageIdWhitelist.emplace(ClientPlayerLoginCreatePlayerMessageId);
