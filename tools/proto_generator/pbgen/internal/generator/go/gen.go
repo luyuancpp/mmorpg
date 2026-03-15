@@ -6,10 +6,11 @@ import (
 	"strings"
 	"sync"
 
-	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"pbgen/logger"
+
+	"go.uber.org/zap"
 )
 
 func GenerateGoProto(rootDir string) error {
