@@ -11,7 +11,6 @@
 #include "grpc_client/login/login_grpc_client.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
-#include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/game_client_player_service_metadata.h"
@@ -212,13 +211,12 @@ void ParseMessageFromRequestBody(Message& message, const Request& request, const
 
 void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr& conn)
 {
-    // 重要: 此消息一定要发，不能只通过centre 的gate disconnect去发
-    // 重要: 比如:登录还没到centre, gate的disconnect 先到centre，登录的消息后到centre,创建session，那么centre server 永远删除不了这个sessionid了
-    // 重要 登录时候断开应该登录服务器也告诉centre
+    // 重要: 断开通知必须发给 Login，由 Login 的 sessionmanager 管理 disconnect lease
+    // 重要: Gate 不再通知 Centre（Centre 已移除）
 
     const auto sessionId = entt::to_integral(GetSessionId(conn));
 
-    // 处理登录服务器和中心服务器的断开通知
+    // 处理登录服务器的断开通知
     const auto& loginNode = ResolveSessionTargetNode(sessionId, eNodeType::LoginNodeService);
     if (loginNode)
     {
@@ -226,12 +224,10 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
         request.set_session_id(sessionId);
         SessionDetails sessionDetails;
         sessionDetails.set_session_id(sessionId);
+        sessionDetails.set_gate_node_id(gNode->GetNodeId());
+        sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
         loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request, { kSessionBinMetaKey }, SerializeSessionDetails(sessionDetails));
     }
-
-    GateSessionDisconnectRequest request;
-    request.mutable_session_info()->set_session_id(sessionId);
-	gNode->SendMessageToZoneCentre(CentreGateSessionDisconnectMessageId, request);
 
     // 删除会话
     tlsSessionManager.sessions().erase(sessionId);
@@ -300,6 +296,8 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 		return ;
 	}
     sessionDetails.set_player_id(sessionIt->second.playerId);
+    sessionDetails.set_gate_node_id(gNode->GetNodeId());
+    sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
 
 	if (rpcHandlerMeta .messageSender){
 		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta .targetNodeType);

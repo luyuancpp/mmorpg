@@ -17,7 +17,7 @@ void {{ .ClassName }}::UnRegister()
 }
 
 {{- range .EventMessages }}
-void {{ $.ClassName }}::{{ .Name }}Handler(const {{ .Name }}& event)
+void {{ $.ClassName }}::{{ .Name }}Handler(const {{ .QualifiedName }}& event)
 {
 {{ index $.UserCodeBlocks .Signature }}
 }

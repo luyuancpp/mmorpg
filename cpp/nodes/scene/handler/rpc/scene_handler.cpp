@@ -32,10 +32,146 @@
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
+#include "proto/db/proto_option.pb.h"
+#include "network/node_utils.h"
+#include <unordered_map>
+#include <string>
+#include <sstream>
+#include <time/system/time.h>
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
 using namespace muduo::net;
+
+namespace {
+
+MessagePriority GetMethodPriority(const google::protobuf::MethodDescriptor* method)
+{
+	if (!method) {
+		return MESSAGE_PRIORITY_NORMAL;
+	}
+
+	const auto& options = method->options();
+	if (!options.HasExtension(OptionMessagePriority)) {
+		return MESSAGE_PRIORITY_NORMAL;
+	}
+
+	return options.GetExtension(OptionMessagePriority);
+}
+
+MessagePriority ResolveRoutedMessagePriority(const RoutePlayerMessageRequest& request)
+{
+	ClientRequest clientRequest;
+	if (!clientRequest.ParseFromString(request.body())) {
+		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+	}
+
+	if (clientRequest.message_id() >= gRpcServiceRegistry.size()) {
+		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+	}
+
+	const auto& messageInfo = gRpcServiceRegistry[clientRequest.message_id()];
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end()) {
+		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+	}
+
+	google::protobuf::Service* service = serviceIt->second->service();
+	if (!service || !service->GetDescriptor()) {
+		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+	}
+
+	return GetMethodPriority(service->GetDescriptor()->FindMethodByName(messageInfo.methodName));
+}
+
+bool IsImportantPriority(const MessagePriority priority)
+{
+	return priority == MESSAGE_PRIORITY_IMPORTANT;
+}
+
+thread_local std::unordered_map<std::string, uint64_t> g_recentImportantFallbackKeys;
+constexpr uint64_t kImportantFallbackDedupeWindowMs = 3000;
+
+std::string BuildImportantFallbackKey(const RoutePlayerMessageRequest& request, const Guid playerId)
+{
+	ClientRequest routedClientRequest;
+	uint64_t requestId = 0;
+	uint32_t messageId = 0;
+	if (routedClientRequest.ParseFromString(request.body())) {
+		requestId = routedClientRequest.id();
+		messageId = routedClientRequest.message_id();
+	}
+
+	std::ostringstream ss;
+	ss << playerId << ':' << requestId << ':' << messageId;
+	return ss.str();
+}
+
+bool ShouldSendImportantFallback(const RoutePlayerMessageRequest& request, const Guid playerId)
+{
+	const uint64_t nowMs = TimeSystem::NowMilliseconds();
+	const std::string key = BuildImportantFallbackKey(request, playerId);
+
+	for (auto it = g_recentImportantFallbackKeys.begin(); it != g_recentImportantFallbackKeys.end();) {
+		if (nowMs > it->second + kImportantFallbackDedupeWindowMs) {
+			it = g_recentImportantFallbackKeys.erase(it);
+		} else {
+			++it;
+		}
+	}
+
+	const auto found = g_recentImportantFallbackKeys.find(key);
+	if (found != g_recentImportantFallbackKeys.end()) {
+		return false;
+	}
+
+	g_recentImportantFallbackKeys[key] = nowMs;
+	return true;
+}
+
+bool TryFallbackToCentreForImportantRoute(const RoutePlayerMessageRequest& request,
+	const Guid playerId,
+	const char* reason)
+{
+	if (!ShouldSendImportantFallback(request, playerId)) {
+		LOG_WARN << "RoutePlayerStringMsg IMPORTANT fallback deduped, reason=" << reason
+				 << ", player_id=" << playerId;
+		return false;
+	}
+
+	auto* centreNodeInfo = FindZoneUniqueNodeInfo(GetZoneId(), eNodeType::CentreNodeService);
+	if (!centreNodeInfo) {
+		LOG_ERROR << "RoutePlayerStringMsg IMPORTANT fallback failed: centre node not found, reason="
+				  << reason << ", player_id=" << playerId;
+		return false;
+	}
+
+	auto& centreRegistry = tlsNodeContextManager.GetRegistry(eNodeType::CentreNodeService);
+	const entt::entity centreEntity{ centreNodeInfo->node_id() };
+	if (!centreRegistry.valid(centreEntity)) {
+		LOG_ERROR << "RoutePlayerStringMsg IMPORTANT fallback failed: centre entity invalid, reason="
+				  << reason << ", centre_node_id=" << centreNodeInfo->node_id() << ", player_id=" << playerId;
+		return false;
+	}
+
+	const auto centreSession = centreRegistry.try_get<RpcSession>(centreEntity);
+	if (!centreSession) {
+		LOG_ERROR << "RoutePlayerStringMsg IMPORTANT fallback failed: centre session missing, reason="
+				  << reason << ", centre_node_id=" << centreNodeInfo->node_id() << ", player_id=" << playerId;
+		return false;
+	}
+
+	RoutePlayerMessageRequest fallbackRequest(request);
+	// Let centre re-resolve the freshest route to avoid forwarding stale hops.
+	fallbackRequest.clear_node_list();
+	centreSession->SendRequest(CentreRoutePlayerStringMsgMessageId, fallbackRequest);
+
+	LOG_WARN << "RoutePlayerStringMsg IMPORTANT fallback sent to centre, reason=" << reason
+			 << ", centre_node_id=" << centreNodeInfo->node_id() << ", player_id=" << playerId;
+	return true;
+}
+
+}  // namespace
 
 ///<<< END WRITING YOUR CODE
 
@@ -394,6 +530,8 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 
 	// Local fast path: player already loaded on this scene and no further route nodes.
 	const Guid playerId = request->player_info().player_id();
+	const MessagePriority routedPriority = ResolveRoutedMessagePriority(*request);
+	const bool importantRoute = IsImportantPriority(routedPriority);
 	if (playerId != kInvalidGuid) {
 		const auto localPlayer = GetPlayer(playerId);
 		if (localPlayer != entt::null && request->node_list_size() == 0) {
@@ -403,7 +541,12 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 	}
 
 	if (request->node_list_size() == 0) {
-		LOG_WARN << "RoutePlayerStringMsg has no next node, player_id=" << playerId;
+		if (importantRoute) {
+			LOG_ERROR << "RoutePlayerStringMsg IMPORTANT route dropped: no next node, player_id=" << playerId;
+			TryFallbackToCentreForImportantRoute(*request, playerId, "no_next_node");
+		} else {
+			LOG_WARN << "RoutePlayerStringMsg NORMAL route dropped: no next node, player_id=" << playerId;
+		}
 		return;
 	}
 
@@ -415,15 +558,27 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 	entt::entity nextNodeEntity{ nextNode.node_id() };
 	auto& nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
 	if (!nextRegistry.valid(nextNodeEntity)) {
-		LOG_ERROR << "RoutePlayerStringMsg next node not found, node_type=" << nextNode.node_type()
-				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		if (importantRoute) {
+			LOG_ERROR << "RoutePlayerStringMsg IMPORTANT route dropped: next node not found, node_type=" << nextNode.node_type()
+					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+			TryFallbackToCentreForImportantRoute(*request, playerId, "next_node_not_found");
+		} else {
+			LOG_WARN << "RoutePlayerStringMsg NORMAL route dropped: next node not found, node_type=" << nextNode.node_type()
+					 << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		}
 		return;
 	}
 
 	const auto nextSession = nextRegistry.try_get<RpcSession>(nextNodeEntity);
 	if (!nextSession) {
-		LOG_ERROR << "RoutePlayerStringMsg next node session missing, node_type=" << nextNode.node_type()
-				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		if (importantRoute) {
+			LOG_ERROR << "RoutePlayerStringMsg IMPORTANT route dropped: next node session missing, node_type=" << nextNode.node_type()
+					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+			TryFallbackToCentreForImportantRoute(*request, playerId, "next_node_session_missing");
+		} else {
+			LOG_WARN << "RoutePlayerStringMsg NORMAL route dropped: next node session missing, node_type=" << nextNode.node_type()
+					 << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		}
 		return;
 	}
 
@@ -438,8 +593,14 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 		nextSession->SendRequest(CentreRoutePlayerStringMsgMessageId, nextRequest);
 		return;
 	default:
-		LOG_ERROR << "RoutePlayerStringMsg unsupported next node_type=" << nextNode.node_type()
-				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		if (importantRoute) {
+			LOG_ERROR << "RoutePlayerStringMsg IMPORTANT route dropped: unsupported next node_type=" << nextNode.node_type()
+					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+			TryFallbackToCentreForImportantRoute(*request, playerId, "unsupported_next_node_type");
+		} else {
+			LOG_WARN << "RoutePlayerStringMsg NORMAL route dropped: unsupported next node_type=" << nextNode.node_type()
+					 << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		}
 		return;
 	}
 ///<<< END WRITING YOUR CODE

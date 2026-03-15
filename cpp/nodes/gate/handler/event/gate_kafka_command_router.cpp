@@ -85,6 +85,34 @@ void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::
         EnqueueGateKafkaEvent(event);
         return;
     }
+    case contracts::kafka::GateCommand::BindSession: {
+        if (!command.payload().empty()) {
+            if (!DecodeAndEnqueueGateKafkaEvent<contracts::kafka::BindSessionEvent>(topic, command.payload())) {
+                LOG_WARN << "BindSession payload decode failed for session " << command.session_id();
+            }
+            return;
+        }
+
+        contracts::kafka::BindSessionEvent event;
+        event.set_session_id(command.session_id());
+        event.set_player_id(command.player_id());
+        EnqueueGateKafkaEvent(event);
+        return;
+    }
+    case contracts::kafka::GateCommand::LeaseExpired: {
+        if (!command.payload().empty()) {
+            if (!DecodeAndEnqueueGateKafkaEvent<contracts::kafka::PlayerLeaseExpiredEvent>(topic, command.payload())) {
+                LOG_WARN << "LeaseExpired payload decode failed for session " << command.session_id();
+            }
+            return;
+        }
+
+        contracts::kafka::PlayerLeaseExpiredEvent event;
+        event.set_player_id(command.player_id());
+        event.set_session_id(command.session_id());
+        EnqueueGateKafkaEvent(event);
+        return;
+    }
     default:
         LOG_WARN << "Unknown GateCommand type: " << command.command_type();
         return;

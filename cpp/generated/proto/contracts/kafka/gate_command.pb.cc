@@ -102,21 +102,22 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n(proto/contracts/kafka/gate_command.pro"
-    "to\022\017contracts.kafka\"\264\002\n\013GateCommand\022>\n\014c"
+    "to\022\017contracts.kafka\"\327\002\n\013GateCommand\022>\n\014c"
     "ommand_type\030\001 \001(\0162(.contracts.kafka.Gate"
     "Command.CommandType\022\021\n\tplayer_id\030\002 \001(\004\022\026"
     "\n\016target_node_id\030\003 \001(\r\022\022\n\nsession_id\030\004 \001"
     "(\004\022\017\n\007payload\030\005 \001(\014\022\026\n\016target_gate_id\030\006 "
     "\001(\r\022\032\n\022target_instance_id\030\007 \001(\t\022\025\n\010event"
-    "_id\030\010 \001(\rH\000\210\001\001\"=\n\013CommandType\022\017\n\013RoutePl"
-    "ayer\020\000\022\016\n\nKickPlayer\020\001\022\r\n\tBroadcast\020\002B\013\n"
-    "\t_event_idB\021Z\017contracts/kafkab\006proto3"
+    "_id\030\010 \001(\rH\000\210\001\001\"`\n\013CommandType\022\017\n\013RoutePl"
+    "ayer\020\000\022\016\n\nKickPlayer\020\001\022\r\n\tBroadcast\020\002\022\017\n"
+    "\013BindSession\020\003\022\020\n\014LeaseExpired\020\004B\013\n\t_eve"
+    "nt_idB\021Z\017contracts/kafkab\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto = {
     false,
     false,
-    397,
+    432,
     descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto,
     "proto/contracts/kafka/gate_command.proto",
     &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto_once,
@@ -136,7 +137,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL GateCommand_CommandTy
   return file_level_enum_descriptors_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t GateCommand_CommandType_internal_data_[] = {
-    196608u, 0u, };
+    327680u, 0u, };
 // ===================================================================
 
 class GateCommand::_Internal {

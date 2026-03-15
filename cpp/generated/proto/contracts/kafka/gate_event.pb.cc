@@ -53,6 +53,74 @@ struct RoutePlayerEventDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutePlayerEventDefaultTypeInternal _RoutePlayerEvent_default_instance_;
 
+inline constexpr PlayerLeaseExpiredEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        scene_node_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        gate_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        gate_instance_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_id_{::uint64_t{0u}},
+        session_id_{::uint64_t{0u}},
+        scene_id_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerLeaseExpiredEvent::PlayerLeaseExpiredEvent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PlayerLeaseExpiredEvent_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerLeaseExpiredEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerLeaseExpiredEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerLeaseExpiredEventDefaultTypeInternal() {}
+  union {
+    PlayerLeaseExpiredEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerLeaseExpiredEventDefaultTypeInternal _PlayerLeaseExpiredEvent_default_instance_;
+
+inline constexpr PlayerDisconnectedEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        gate_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        gate_instance_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        session_id_{::uint64_t{0u}},
+        player_id_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerDisconnectedEvent::PlayerDisconnectedEvent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PlayerDisconnectedEvent_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerDisconnectedEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerDisconnectedEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerDisconnectedEventDefaultTypeInternal() {}
+  union {
+    PlayerDisconnectedEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerDisconnectedEventDefaultTypeInternal _PlayerDisconnectedEvent_default_instance_;
+
 inline constexpr KickPlayerEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -77,6 +145,33 @@ struct KickPlayerEventDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 KickPlayerEventDefaultTypeInternal _KickPlayerEvent_default_instance_;
+
+inline constexpr BindSessionEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        session_id_{::uint64_t{0u}},
+        player_id_{::uint64_t{0u}},
+        session_version_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR BindSessionEvent::BindSessionEvent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(BindSessionEvent_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct BindSessionEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BindSessionEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BindSessionEventDefaultTypeInternal() {}
+  union {
+    BindSessionEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BindSessionEventDefaultTypeInternal _BindSessionEvent_default_instance_;
 }  // namespace kafka
 }  // namespace contracts
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -98,16 +193,57 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::KickPlayerEvent, _impl_.session_id_),
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerDisconnectedEvent, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerDisconnectedEvent, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerDisconnectedEvent, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerDisconnectedEvent, _impl_.gate_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerDisconnectedEvent, _impl_.gate_instance_id_),
+        2,
+        3,
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLeaseExpiredEvent, _impl_._has_bits_),
+        9, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLeaseExpiredEvent, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLeaseExpiredEvent, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLeaseExpiredEvent, _impl_.scene_node_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLeaseExpiredEvent, _impl_.scene_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLeaseExpiredEvent, _impl_.gate_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLeaseExpiredEvent, _impl_.gate_instance_id_),
+        3,
+        4,
+        0,
+        5,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.session_version_),
+        0,
+        1,
+        2,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::contracts::kafka::RoutePlayerEvent)},
         {7, sizeof(::contracts::kafka::KickPlayerEvent)},
+        {12, sizeof(::contracts::kafka::PlayerDisconnectedEvent)},
+        {23, sizeof(::contracts::kafka::PlayerLeaseExpiredEvent)},
+        {38, sizeof(::contracts::kafka::BindSessionEvent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::contracts::kafka::_RoutePlayerEvent_default_instance_._instance,
     &::contracts::kafka::_KickPlayerEvent_default_instance_._instance,
+    &::contracts::kafka::_PlayerDisconnectedEvent_default_instance_._instance,
+    &::contracts::kafka::_PlayerLeaseExpiredEvent_default_instance_._instance,
+    &::contracts::kafka::_BindSessionEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -115,19 +251,28 @@ const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2e
     "\022\017contracts.kafka\">\n\020RoutePlayerEvent\022\022\n"
     "\nsession_id\030\001 \001(\004\022\026\n\016target_node_id\030\002 \001("
     "\r\"%\n\017KickPlayerEvent\022\022\n\nsession_id\030\001 \001(\004"
-    "B\021Z\017contracts/kafkab\006proto3"
+    "\"k\n\027PlayerDisconnectedEvent\022\022\n\nsession_i"
+    "d\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\017\n\007gate_id\030\003 "
+    "\001(\t\022\030\n\020gate_instance_id\030\004 \001(\t\"\224\001\n\027Player"
+    "LeaseExpiredEvent\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\n"
+    "session_id\030\002 \001(\004\022\025\n\rscene_node_id\030\003 \001(\t\022"
+    "\020\n\010scene_id\030\004 \001(\004\022\017\n\007gate_id\030\005 \001(\t\022\030\n\020ga"
+    "te_instance_id\030\006 \001(\t\"R\n\020BindSessionEvent"
+    "\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022"
+    "\027\n\017session_version\030\003 \001(\004B\021Z\017contracts/ka"
+    "fkab\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto = {
     false,
     false,
-    187,
+    531,
     descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
     "proto/contracts/kafka/gate_event.proto",
     &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once,
     nullptr,
     0,
-    2,
+    5,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto::offsets,
@@ -649,6 +794,1153 @@ void KickPlayerEvent::InternalSwap(KickPlayerEvent* PROTOBUF_RESTRICT PROTOBUF_N
 }
 
 ::google::protobuf::Metadata KickPlayerEvent::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PlayerDisconnectedEvent::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PlayerDisconnectedEvent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_._has_bits_);
+};
+
+PlayerDisconnectedEvent::PlayerDisconnectedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerDisconnectedEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:contracts.kafka.PlayerDisconnectedEvent)
+}
+PROTOBUF_NDEBUG_INLINE PlayerDisconnectedEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::contracts::kafka::PlayerDisconnectedEvent& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        gate_id_(arena, from.gate_id_),
+        gate_instance_id_(arena, from.gate_instance_id_) {}
+
+PlayerDisconnectedEvent::PlayerDisconnectedEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PlayerDisconnectedEvent& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerDisconnectedEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PlayerDisconnectedEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, session_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, session_id_),
+           offsetof(Impl_, player_id_) -
+               offsetof(Impl_, session_id_) +
+               sizeof(Impl_::player_id_));
+
+  // @@protoc_insertion_point(copy_constructor:contracts.kafka.PlayerDisconnectedEvent)
+}
+PROTOBUF_NDEBUG_INLINE PlayerDisconnectedEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        gate_id_(arena),
+        gate_instance_id_(arena) {}
+
+inline void PlayerDisconnectedEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, session_id_),
+           0,
+           offsetof(Impl_, player_id_) -
+               offsetof(Impl_, session_id_) +
+               sizeof(Impl_::player_id_));
+}
+PlayerDisconnectedEvent::~PlayerDisconnectedEvent() {
+  // @@protoc_insertion_point(destructor:contracts.kafka.PlayerDisconnectedEvent)
+  SharedDtor(*this);
+}
+inline void PlayerDisconnectedEvent::SharedDtor(MessageLite& self) {
+  PlayerDisconnectedEvent& this_ = static_cast<PlayerDisconnectedEvent&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.gate_id_.Destroy();
+  this_._impl_.gate_instance_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PlayerDisconnectedEvent::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PlayerDisconnectedEvent(arena);
+}
+constexpr auto PlayerDisconnectedEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(PlayerDisconnectedEvent),
+                                            alignof(PlayerDisconnectedEvent));
+}
+constexpr auto PlayerDisconnectedEvent::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PlayerDisconnectedEvent_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PlayerDisconnectedEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PlayerDisconnectedEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PlayerDisconnectedEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PlayerDisconnectedEvent>(), &PlayerDisconnectedEvent::ByteSizeLong,
+              &PlayerDisconnectedEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_._cached_size_),
+          false,
+      },
+      &PlayerDisconnectedEvent::kDescriptorMethods,
+      &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PlayerDisconnectedEvent_class_data_ =
+        PlayerDisconnectedEvent::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerDisconnectedEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerDisconnectedEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PlayerDisconnectedEvent_class_data_.tc_table);
+  return PlayerDisconnectedEvent_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 71, 2>
+PlayerDisconnectedEvent::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PlayerDisconnectedEvent_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::contracts::kafka::PlayerDisconnectedEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string gate_instance_id = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.gate_instance_id_)}},
+    // uint64 session_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerDisconnectedEvent, _impl_.session_id_), 2>(),
+     {8, 2, 0, PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.session_id_)}},
+    // uint64 player_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerDisconnectedEvent, _impl_.player_id_), 3>(),
+     {16, 3, 0, PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.player_id_)}},
+    // string gate_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.gate_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 session_id = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.session_id_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 player_id = 2;
+    {PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // string gate_id = 3;
+    {PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.gate_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string gate_instance_id = 4;
+    {PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.gate_instance_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\47\0\0\7\20\0\0\0"
+    "contracts.kafka.PlayerDisconnectedEvent"
+    "gate_id"
+    "gate_instance_id"
+  }},
+};
+PROTOBUF_NOINLINE void PlayerDisconnectedEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:contracts.kafka.PlayerDisconnectedEvent)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.gate_id_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.gate_instance_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if ((cached_has_bits & 0x0000000cu) != 0) {
+    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.player_id_) -
+        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.player_id_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PlayerDisconnectedEvent::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PlayerDisconnectedEvent& this_ = static_cast<const PlayerDisconnectedEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PlayerDisconnectedEvent::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PlayerDisconnectedEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:contracts.kafka.PlayerDisconnectedEvent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 session_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_session_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_session_id(), target);
+    }
+  }
+
+  // uint64 player_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_player_id(), target);
+    }
+  }
+
+  // string gate_id = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_gate_id().empty()) {
+      const ::std::string& _s = this_._internal_gate_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "contracts.kafka.PlayerDisconnectedEvent.gate_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // string gate_instance_id = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_gate_instance_id().empty()) {
+      const ::std::string& _s = this_._internal_gate_instance_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "contracts.kafka.PlayerDisconnectedEvent.gate_instance_id");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:contracts.kafka.PlayerDisconnectedEvent)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PlayerDisconnectedEvent::ByteSizeLong(const MessageLite& base) {
+  const PlayerDisconnectedEvent& this_ = static_cast<const PlayerDisconnectedEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PlayerDisconnectedEvent::ByteSizeLong() const {
+  const PlayerDisconnectedEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:contracts.kafka.PlayerDisconnectedEvent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    // string gate_id = 3;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_gate_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_gate_id());
+      }
+    }
+    // string gate_instance_id = 4;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_gate_instance_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_gate_instance_id());
+      }
+    }
+    // uint64 session_id = 1;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_session_id());
+      }
+    }
+    // uint64 player_id = 2;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PlayerDisconnectedEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerDisconnectedEvent*>(&to_msg);
+  auto& from = static_cast<const PlayerDisconnectedEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:contracts.kafka.PlayerDisconnectedEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_gate_id().empty()) {
+        _this->_internal_set_gate_id(from._internal_gate_id());
+      } else {
+        if (_this->_impl_.gate_id_.IsDefault()) {
+          _this->_internal_set_gate_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_gate_instance_id().empty()) {
+        _this->_internal_set_gate_instance_id(from._internal_gate_instance_id());
+      } else {
+        if (_this->_impl_.gate_instance_id_.IsDefault()) {
+          _this->_internal_set_gate_instance_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerDisconnectedEvent::CopyFrom(const PlayerDisconnectedEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:contracts.kafka.PlayerDisconnectedEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PlayerDisconnectedEvent::InternalSwap(PlayerDisconnectedEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_id_, &other->_impl_.gate_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_instance_id_, &other->_impl_.gate_instance_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.player_id_)
+      + sizeof(PlayerDisconnectedEvent::_impl_.player_id_)
+      - PROTOBUF_FIELD_OFFSET(PlayerDisconnectedEvent, _impl_.session_id_)>(
+          reinterpret_cast<char*>(&_impl_.session_id_),
+          reinterpret_cast<char*>(&other->_impl_.session_id_));
+}
+
+::google::protobuf::Metadata PlayerDisconnectedEvent::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PlayerLeaseExpiredEvent::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PlayerLeaseExpiredEvent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_._has_bits_);
+};
+
+PlayerLeaseExpiredEvent::PlayerLeaseExpiredEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerLeaseExpiredEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:contracts.kafka.PlayerLeaseExpiredEvent)
+}
+PROTOBUF_NDEBUG_INLINE PlayerLeaseExpiredEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::contracts::kafka::PlayerLeaseExpiredEvent& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        scene_node_id_(arena, from.scene_node_id_),
+        gate_id_(arena, from.gate_id_),
+        gate_instance_id_(arena, from.gate_instance_id_) {}
+
+PlayerLeaseExpiredEvent::PlayerLeaseExpiredEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PlayerLeaseExpiredEvent& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerLeaseExpiredEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PlayerLeaseExpiredEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, player_id_),
+           offsetof(Impl_, scene_id_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::scene_id_));
+
+  // @@protoc_insertion_point(copy_constructor:contracts.kafka.PlayerLeaseExpiredEvent)
+}
+PROTOBUF_NDEBUG_INLINE PlayerLeaseExpiredEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        scene_node_id_(arena),
+        gate_id_(arena),
+        gate_instance_id_(arena) {}
+
+inline void PlayerLeaseExpiredEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           0,
+           offsetof(Impl_, scene_id_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::scene_id_));
+}
+PlayerLeaseExpiredEvent::~PlayerLeaseExpiredEvent() {
+  // @@protoc_insertion_point(destructor:contracts.kafka.PlayerLeaseExpiredEvent)
+  SharedDtor(*this);
+}
+inline void PlayerLeaseExpiredEvent::SharedDtor(MessageLite& self) {
+  PlayerLeaseExpiredEvent& this_ = static_cast<PlayerLeaseExpiredEvent&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.scene_node_id_.Destroy();
+  this_._impl_.gate_id_.Destroy();
+  this_._impl_.gate_instance_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PlayerLeaseExpiredEvent::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PlayerLeaseExpiredEvent(arena);
+}
+constexpr auto PlayerLeaseExpiredEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(PlayerLeaseExpiredEvent),
+                                            alignof(PlayerLeaseExpiredEvent));
+}
+constexpr auto PlayerLeaseExpiredEvent::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PlayerLeaseExpiredEvent_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PlayerLeaseExpiredEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PlayerLeaseExpiredEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PlayerLeaseExpiredEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PlayerLeaseExpiredEvent>(), &PlayerLeaseExpiredEvent::ByteSizeLong,
+              &PlayerLeaseExpiredEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_._cached_size_),
+          false,
+      },
+      &PlayerLeaseExpiredEvent::kDescriptorMethods,
+      &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PlayerLeaseExpiredEvent_class_data_ =
+        PlayerLeaseExpiredEvent::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerLeaseExpiredEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerLeaseExpiredEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PlayerLeaseExpiredEvent_class_data_.tc_table);
+  return PlayerLeaseExpiredEvent_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 6, 0, 84, 2>
+PlayerLeaseExpiredEvent::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_._has_bits_),
+    0, // no _extensions_
+    6, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967232,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    6,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PlayerLeaseExpiredEvent_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::contracts::kafka::PlayerLeaseExpiredEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 player_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerLeaseExpiredEvent, _impl_.player_id_), 3>(),
+     {8, 3, 0, PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.player_id_)}},
+    // uint64 session_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerLeaseExpiredEvent, _impl_.session_id_), 4>(),
+     {16, 4, 0, PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.session_id_)}},
+    // string scene_node_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.scene_node_id_)}},
+    // uint64 scene_id = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerLeaseExpiredEvent, _impl_.scene_id_), 5>(),
+     {32, 5, 0, PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.scene_id_)}},
+    // string gate_id = 5;
+    {::_pbi::TcParser::FastUS1,
+     {42, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.gate_id_)}},
+    // string gate_instance_id = 6;
+    {::_pbi::TcParser::FastUS1,
+     {50, 2, 0, PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.gate_instance_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 session_id = 2;
+    {PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.session_id_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // string scene_node_id = 3;
+    {PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.scene_node_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint64 scene_id = 4;
+    {PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.scene_id_), _Internal::kHasBitsOffset + 5, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // string gate_id = 5;
+    {PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.gate_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string gate_instance_id = 6;
+    {PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.gate_instance_id_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\47\0\0\15\0\7\20\0"
+    "contracts.kafka.PlayerLeaseExpiredEvent"
+    "scene_node_id"
+    "gate_id"
+    "gate_instance_id"
+  }},
+};
+PROTOBUF_NOINLINE void PlayerLeaseExpiredEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:contracts.kafka.PlayerLeaseExpiredEvent)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.scene_node_id_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.gate_id_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      _impl_.gate_instance_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if ((cached_has_bits & 0x00000038u) != 0) {
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.scene_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.scene_id_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PlayerLeaseExpiredEvent::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PlayerLeaseExpiredEvent& this_ = static_cast<const PlayerLeaseExpiredEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PlayerLeaseExpiredEvent::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PlayerLeaseExpiredEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:contracts.kafka.PlayerLeaseExpiredEvent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 player_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_player_id(), target);
+    }
+  }
+
+  // uint64 session_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (this_._internal_session_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_session_id(), target);
+    }
+  }
+
+  // string scene_node_id = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_scene_node_id().empty()) {
+      const ::std::string& _s = this_._internal_scene_node_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "contracts.kafka.PlayerLeaseExpiredEvent.scene_node_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // uint64 scene_id = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+    if (this_._internal_scene_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_scene_id(), target);
+    }
+  }
+
+  // string gate_id = 5;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_gate_id().empty()) {
+      const ::std::string& _s = this_._internal_gate_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "contracts.kafka.PlayerLeaseExpiredEvent.gate_id");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
+    }
+  }
+
+  // string gate_instance_id = 6;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (!this_._internal_gate_instance_id().empty()) {
+      const ::std::string& _s = this_._internal_gate_instance_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "contracts.kafka.PlayerLeaseExpiredEvent.gate_instance_id");
+      target = stream->WriteStringMaybeAliased(6, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:contracts.kafka.PlayerLeaseExpiredEvent)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PlayerLeaseExpiredEvent::ByteSizeLong(const MessageLite& base) {
+  const PlayerLeaseExpiredEvent& this_ = static_cast<const PlayerLeaseExpiredEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PlayerLeaseExpiredEvent::ByteSizeLong() const {
+  const PlayerLeaseExpiredEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:contracts.kafka.PlayerLeaseExpiredEvent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000003fu) != 0) {
+    // string scene_node_id = 3;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_scene_node_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_scene_node_id());
+      }
+    }
+    // string gate_id = 5;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_gate_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_gate_id());
+      }
+    }
+    // string gate_instance_id = 6;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!this_._internal_gate_instance_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_gate_instance_id());
+      }
+    }
+    // uint64 player_id = 1;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+    // uint64 session_id = 2;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_session_id());
+      }
+    }
+    // uint64 scene_id = 4;
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (this_._internal_scene_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_scene_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PlayerLeaseExpiredEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerLeaseExpiredEvent*>(&to_msg);
+  auto& from = static_cast<const PlayerLeaseExpiredEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:contracts.kafka.PlayerLeaseExpiredEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000003fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_scene_node_id().empty()) {
+        _this->_internal_set_scene_node_id(from._internal_scene_node_id());
+      } else {
+        if (_this->_impl_.scene_node_id_.IsDefault()) {
+          _this->_internal_set_scene_node_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_gate_id().empty()) {
+        _this->_internal_set_gate_id(from._internal_gate_id());
+      } else {
+        if (_this->_impl_.gate_id_.IsDefault()) {
+          _this->_internal_set_gate_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!from._internal_gate_instance_id().empty()) {
+        _this->_internal_set_gate_instance_id(from._internal_gate_instance_id());
+      } else {
+        if (_this->_impl_.gate_instance_id_.IsDefault()) {
+          _this->_internal_set_gate_instance_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (from._internal_scene_id() != 0) {
+        _this->_impl_.scene_id_ = from._impl_.scene_id_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerLeaseExpiredEvent::CopyFrom(const PlayerLeaseExpiredEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:contracts.kafka.PlayerLeaseExpiredEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PlayerLeaseExpiredEvent::InternalSwap(PlayerLeaseExpiredEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.scene_node_id_, &other->_impl_.scene_node_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_id_, &other->_impl_.gate_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_instance_id_, &other->_impl_.gate_instance_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.scene_id_)
+      + sizeof(PlayerLeaseExpiredEvent::_impl_.scene_id_)
+      - PROTOBUF_FIELD_OFFSET(PlayerLeaseExpiredEvent, _impl_.player_id_)>(
+          reinterpret_cast<char*>(&_impl_.player_id_),
+          reinterpret_cast<char*>(&other->_impl_.player_id_));
+}
+
+::google::protobuf::Metadata PlayerLeaseExpiredEvent::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class BindSessionEvent::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<BindSessionEvent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_._has_bits_);
+};
+
+BindSessionEvent::BindSessionEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BindSessionEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:contracts.kafka.BindSessionEvent)
+}
+BindSessionEvent::BindSessionEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BindSessionEvent& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BindSessionEvent_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE BindSessionEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void BindSessionEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, session_id_),
+           0,
+           offsetof(Impl_, session_version_) -
+               offsetof(Impl_, session_id_) +
+               sizeof(Impl_::session_version_));
+}
+BindSessionEvent::~BindSessionEvent() {
+  // @@protoc_insertion_point(destructor:contracts.kafka.BindSessionEvent)
+  SharedDtor(*this);
+}
+inline void BindSessionEvent::SharedDtor(MessageLite& self) {
+  BindSessionEvent& this_ = static_cast<BindSessionEvent&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL BindSessionEvent::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) BindSessionEvent(arena);
+}
+constexpr auto BindSessionEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(BindSessionEvent),
+                                            alignof(BindSessionEvent));
+}
+constexpr auto BindSessionEvent::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_BindSessionEvent_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &BindSessionEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BindSessionEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &BindSessionEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BindSessionEvent>(), &BindSessionEvent::ByteSizeLong,
+              &BindSessionEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_._cached_size_),
+          false,
+      },
+      &BindSessionEvent::kDescriptorMethods,
+      &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull BindSessionEvent_class_data_ =
+        BindSessionEvent::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+BindSessionEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BindSessionEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BindSessionEvent_class_data_.tc_table);
+  return BindSessionEvent_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+BindSessionEvent::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    BindSessionEvent_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::contracts::kafka::BindSessionEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 session_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionEvent, _impl_.session_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_id_)}},
+    // uint64 player_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionEvent, _impl_.player_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.player_id_)}},
+    // uint64 session_version = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionEvent, _impl_.session_version_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_version_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 session_id = 1;
+    {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 player_id = 2;
+    {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 session_version = 3;
+    {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_version_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:contracts.kafka.BindSessionEvent)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.session_version_) -
+        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.session_version_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL BindSessionEvent::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const BindSessionEvent& this_ = static_cast<const BindSessionEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL BindSessionEvent::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const BindSessionEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:contracts.kafka.BindSessionEvent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 session_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_session_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_session_id(), target);
+    }
+  }
+
+  // uint64 player_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_player_id(), target);
+    }
+  }
+
+  // uint64 session_version = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_session_version() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_session_version(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:contracts.kafka.BindSessionEvent)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t BindSessionEvent::ByteSizeLong(const MessageLite& base) {
+  const BindSessionEvent& this_ = static_cast<const BindSessionEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t BindSessionEvent::ByteSizeLong() const {
+  const BindSessionEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:contracts.kafka.BindSessionEvent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    // uint64 session_id = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_session_id());
+      }
+    }
+    // uint64 player_id = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+    // uint64 session_version = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_session_version() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_session_version());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void BindSessionEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BindSessionEvent*>(&to_msg);
+  auto& from = static_cast<const BindSessionEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:contracts.kafka.BindSessionEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_session_version() != 0) {
+        _this->_impl_.session_version_ = from._impl_.session_version_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void BindSessionEvent::CopyFrom(const BindSessionEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:contracts.kafka.BindSessionEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void BindSessionEvent::InternalSwap(BindSessionEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_version_)
+      + sizeof(BindSessionEvent::_impl_.session_version_)
+      - PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_id_)>(
+          reinterpret_cast<char*>(&_impl_.session_id_),
+          reinterpret_cast<char*>(&other->_impl_.session_id_));
+}
+
+::google::protobuf::Metadata BindSessionEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -5,8 +5,16 @@ import (
 	"encoding/base64"
 	"errors"
 	"flag"
-	"fmt"
-	"github.com/google/uuid"
+	"login/internal/config"
+	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/pkg/node"
+	loginserver "login/internal/server/clientplayerlogin"
+	"login/internal/svc"
+	login_proto "login/proto/common"
+	login_proto_login "login/proto/service/go/grpc/login"
+	"net"
+	"strconv"
+
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
@@ -16,16 +24,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
-	"login/internal/config"
-	"login/internal/logic/pkg/centre"
-	"login/internal/logic/pkg/ctxkeys"
-	"login/internal/logic/pkg/node"
-	loginserver "login/internal/server/clientplayerlogin"
-	"login/internal/svc"
-	login_proto "login/proto/common"
-	login_proto_login "login/proto/service/go/grpc/login"
-	"net"
-	"strconv"
 )
 
 var configFile = flag.String("loginService", "etc/login.yaml", "the config file path")
@@ -79,12 +77,6 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 
 	ctx.SetNodeId(int64(loginNode.Info.NodeId))
 	logx.Infof("Login node registered: %+v", loginNode.Info.String())
-
-	// 获取并连接到 Centre 节点
-	if err := connectToCentreNodes(ctx, loginNode); err != nil {
-		logx.Errorf("Failed to connect to centre nodes: %v", err)
-		return err
-	}
 
 	// 启动 gRPC 服务器
 	if err := startServer(cfg, ctx); err != nil {
@@ -172,93 +164,4 @@ func splitHostPort(address string) (string, uint32, error) {
 		return "", 0, err
 	}
 	return host, uint32(portInt), nil
-}
-
-func connectToCentreNodes(ctx *svc.ServiceContext, loginNode *node.Node) error {
-	zoneId := config.AppConfig.Node.ZoneId
-	nodeType := uint32(login_proto.ENodeType_CentreNodeService)
-
-	prefix := node.BuildRpcPrefix(
-		login_proto.ENodeType_name[int32(login_proto.ENodeType_CentreNodeService)],
-		zoneId,
-		nodeType,
-	)
-
-	watcher := node.NewNodeWatcher(loginNode.Client, prefix)
-
-	// 1. 获取当前节点列表并连接
-	nodes, err := watcher.Range()
-	if err != nil {
-		return fmt.Errorf("range centre nodes failed: %w", err)
-	}
-
-	for _, n := range nodes {
-		if n.ZoneId == zoneId {
-			logx.Infof("Connecting to centre node: %+v", n.String())
-			client, err := centre.NewCentreClient(n.Endpoint.Ip, n.Endpoint.Port, n.NodeUuid)
-			if err != nil {
-				logx.Errorf("Failed to connect to centre node: %v", err)
-			} else {
-				ctx.SetCentreClient(client)
-			}
-			break // 只连接一个，如需多连接可移除 break
-		}
-	}
-
-	// 2. 实时监听中心节点的变动
-	go func() {
-		events := watcher.Watch(context.Background())
-		for event := range events {
-			switch event.Type {
-
-			case node.NodeAdded:
-				if event.Info.ZoneId == zoneId {
-					old := ctx.GetCentreClient()
-
-					// 若已经是同一个 UUID，则跳过
-					nodeUuid, err := uuid.Parse(event.Info.NodeUuid)
-					if err != nil {
-						logx.Errorf("Invalid UUID in event: %v", event.Info.NodeUuid)
-						continue
-					}
-
-					if old != nil && old.NodeUuid == nodeUuid {
-						continue
-					}
-
-					logx.Infof("New centre node detected: uuid=%s, info=%+v", event.Info.NodeUuid, event.Info)
-
-					client, err := centre.NewCentreClient(event.Info.Endpoint.Ip, event.Info.Endpoint.Port, event.Info.NodeUuid)
-					if err != nil {
-						logx.Errorf("Failed to connect to centre node: %v", err)
-						continue
-					}
-
-					if old != nil {
-						old.Close()
-					}
-
-					ctx.SetCentreClient(client)
-				}
-
-			case node.NodeRemoved:
-				if event.Info.ZoneId == zoneId {
-					centreNode := ctx.GetCentreClient()
-					nodeUuid, err := uuid.Parse(event.Info.NodeUuid)
-					if err != nil {
-						logx.Errorf("Invalid UUID in event: %v", event.Info.NodeUuid)
-						continue
-					}
-
-					if centreNode != nil && centreNode.NodeUuid == nodeUuid {
-						logx.Infof("Centre centreNode removed: %+v", event.Info.String())
-						centreNode.Close()
-						ctx.SetCentreClient(nil)
-					}
-				}
-			}
-		}
-	}()
-
-	return nil
 }

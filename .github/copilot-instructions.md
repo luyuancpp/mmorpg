@@ -16,7 +16,7 @@
 
 2. **Scene Manager Implementation (Go-Zero)**:
    - `SceneManager` is implemented in Go using go-zero.
-   - It handles `EnterSceneByCentre` requests by looking up player location in Redis.
+   - It handles `EnterScene` requests by looking up player location in Redis.
    - Instead of maintaining a gRPC stream to Gate, it now pushes `RoutePlayer` commands to the appropriate Kafka topic.
    - Configuration requires Kafka brokers in `etc/scenemanagerservice.yaml`.
 

@@ -7,6 +7,10 @@
 #include "gate_globals.h"
 #include "node/system/node/node.h"
 #include "network/network_constants.h"
+#include "network/rpc_session.h"
+#include "threading/node_context_manager.h"
+#include "rpc/service_metadata/scene_service_metadata.h"
+#include "proto/common/base/message.pb.h"
 
 #include "proto/common/component/player_network_comp.pb.h"
 #include <session/manager/session_manager.h>
@@ -80,10 +84,9 @@ void GateHandler::KickSessionByCentre(::google::protobuf::RpcController* control
 		return;
 	}
 
-	// 执行断开（发送断开通知给 Centre，断开 socket）
+	// 执行断开（旧版通过 Centre gRPC 调用，新版主要通过 Kafka KickPlayer 事件）
 	//CloseSession(sessionId);
-	// Gate 会发送 GateSessionDisconnect 到 Centre (或 Centre 会收到)
-	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
+	LOG_INFO << "Session kicked via gRPC: " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }
 
@@ -100,6 +103,74 @@ void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controll
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+	if (!request || !response) {
+		return;
+	}
+
+	response->set_body(request->body());
+	response->mutable_player_info()->CopyFrom(request->player_info());
+	response->mutable_node_list()->CopyFrom(request->node_list());
+
+	const Guid playerId = request->player_info().player_id();
+	if (request->node_list_size() == 0) {
+		auto targetSessionIt = tlsSessionManager.sessions().end();
+		for (auto it = tlsSessionManager.sessions().begin(); it != tlsSessionManager.sessions().end(); ++it) {
+			if (it->second.playerId == playerId) {
+				targetSessionIt = it;
+				break;
+			}
+		}
+
+		if (targetSessionIt == tlsSessionManager.sessions().end()) {
+			LOG_WARN << "RoutePlayerMessage: target player session not found on gate, player_id=" << playerId;
+			return;
+		}
+
+		ClientRequest routedClientRequest;
+		if (!routedClientRequest.ParseFromString(request->body())) {
+			LOG_ERROR << "RoutePlayerMessage: failed to parse ClientRequest body, player_id=" << playerId;
+			return;
+		}
+
+		MessageContent outbound;
+		outbound.set_id(routedClientRequest.id());
+		outbound.set_message_id(routedClientRequest.message_id());
+		outbound.set_serialized_message(routedClientRequest.body());
+		gGateCodec->send(targetSessionIt->second.conn, outbound);
+		return;
+	}
+
+	RoutePlayerMessageRequest nextRequest(*request);
+	nextRequest.mutable_node_list()->DeleteSubrange(0, 1);
+
+	const auto& nextNode = request->node_list(0);
+	const entt::entity nextNodeEntity{ nextNode.node_id() };
+	auto& nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
+	if (!nextRegistry.valid(nextNodeEntity)) {
+		LOG_ERROR << "RoutePlayerMessage: next node not found, node_type=" << nextNode.node_type()
+				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		return;
+	}
+
+	const auto nextSession = nextRegistry.try_get<RpcSession>(nextNodeEntity);
+	if (!nextSession) {
+		LOG_ERROR << "RoutePlayerMessage: next node session missing, node_type=" << nextNode.node_type()
+				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		return;
+	}
+
+	switch (nextNode.node_type()) {
+	case eNodeType::SceneNodeService:
+		nextSession->SendRequest(SceneRoutePlayerStringMsgMessageId, nextRequest);
+		return;
+	case eNodeType::GateNodeService:
+		nextSession->SendRequest(GateRoutePlayerMessageMessageId, nextRequest);
+		return;
+	default:
+		LOG_ERROR << "RoutePlayerMessage: unsupported next node_type=" << nextNode.node_type()
+				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
+		return;
+	}
 	///<<< END WRITING YOUR CODE
 }
 

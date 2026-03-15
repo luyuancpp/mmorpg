@@ -11,10 +11,10 @@ constexpr uint32_t SceneManagerDestroySceneMessageId = 16;
 constexpr uint32_t SceneManagerDestroySceneIndex = 1;
 #define SceneManagerDestroySceneMethod  ::SceneManager_Stub::descriptor()->method(1)
 
-constexpr uint32_t SceneManagerEnterSceneByCentreMessageId = 46;
-constexpr uint32_t SceneManagerEnterSceneByCentreIndex = 2;
-#define SceneManagerEnterSceneByCentreMethod  ::SceneManager_Stub::descriptor()->method(2)
+constexpr uint32_t SceneManagerEnterSceneMessageId = 46;
+constexpr uint32_t SceneManagerEnterSceneIndex = 2;
+#define SceneManagerEnterSceneMethod  ::SceneManager_Stub::descriptor()->method(2)
 
-constexpr uint32_t SceneManagerLeaveSceneByCentreMessageId = 85;
-constexpr uint32_t SceneManagerLeaveSceneByCentreIndex = 3;
-#define SceneManagerLeaveSceneByCentreMethod  ::SceneManager_Stub::descriptor()->method(3)
+constexpr uint32_t SceneManagerLeaveSceneMessageId = 85;
+constexpr uint32_t SceneManagerLeaveSceneIndex = 3;
+#define SceneManagerLeaveSceneMethod  ::SceneManager_Stub::descriptor()->method(3)

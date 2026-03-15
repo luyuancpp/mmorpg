@@ -5,13 +5,10 @@ import (
 	"login/internal/constants"
 	"login/internal/logic/pkg/fsmstore"
 	"login/internal/logic/pkg/loginsessionstore"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 )
-
-type CentreClient interface {
-	Send(msg interface{}, msgId uint32) error
-}
 
 func CleanupSession(
 	ctx context.Context,

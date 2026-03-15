@@ -60,6 +60,21 @@ func collectFieldsByName(message *descriptorpb.DescriptorProto) map[string]*desc
 	return fields
 }
 
+func resolveGateEventMessage(commandName string, eventMessageMap map[string]*descriptorpb.DescriptorProto) (string, *descriptorpb.DescriptorProto) {
+	candidates := []string{
+		commandName + "Event",
+		"Player" + commandName + "Event",
+	}
+
+	for _, candidate := range candidates {
+		if msg, ok := eventMessageMap[candidate]; ok {
+			return candidate, msg
+		}
+	}
+
+	return "", nil
+}
+
 func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 	gateCommandFd := findProtoFileBySuffix("contracts.kafka", "gate_command.proto")
 	if gateCommandFd == nil {
@@ -101,9 +116,8 @@ func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 	cases := make([]gateKafkaRouterCase, 0)
 	for _, enumValue := range commandTypeEnum.GetValue() {
 		commandName := enumValue.GetName()
-		eventMessageName := commandName + "Event"
-		eventMsg, ok := eventMessageMap[eventMessageName]
-		if !ok {
+		eventMessageName, eventMsg := resolveGateEventMessage(commandName, eventMessageMap)
+		if eventMsg == nil {
 			continue
 		}
 

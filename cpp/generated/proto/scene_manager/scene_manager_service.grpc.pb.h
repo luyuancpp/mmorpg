@@ -28,7 +28,8 @@
 
 namespace scene_manager {
 
-// SceneManager Service: Responsible for scene creation/destruction and Centre -> Scene routing
+// SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
+// No longer requires Centre — Login/player_locator drive the flow directly.
 class SceneManager final {
  public:
   static constexpr char const* service_full_name() {
@@ -53,21 +54,21 @@ class SceneManager final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncDestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncDestroySceneRaw(context, request, cq));
     }
-    // Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
-    virtual ::grpc::Status EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::scene_manager::EnterSceneByCentreResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>> AsyncEnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>>(AsyncEnterSceneByCentreRaw(context, request, cq));
+    // Login/player_locator requests a player to enter a scene
+    virtual ::grpc::Status EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::scene_manager::EnterSceneResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneResponse>> AsyncEnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneResponse>>(AsyncEnterSceneRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>> PrepareAsyncEnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>>(PrepareAsyncEnterSceneByCentreRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneResponse>> PrepareAsyncEnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneResponse>>(PrepareAsyncEnterSceneRaw(context, request, cq));
     }
-    // Centre requests a player to leave a scene (or leave before switching scenes)
-    virtual ::grpc::Status LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::Empty* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncLeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncLeaveSceneByCentreRaw(context, request, cq));
+    // Login/player_locator requests a player to leave a scene
+    virtual ::grpc::Status LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncLeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncLeaveSceneRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncLeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncLeaveSceneByCentreRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncLeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncLeaveSceneRaw(context, request, cq));
     }
     class async_interface {
      public:
@@ -78,12 +79,12 @@ class SceneManager final {
       // Destroy a scene
       virtual void DestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
       virtual void DestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      // Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
-      virtual void EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      // Centre requests a player to leave a scene (or leave before switching scenes)
-      virtual void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // Login/player_locator requests a player to enter a scene
+      virtual void EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // Login/player_locator requests a player to leave a scene
+      virtual void LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -93,10 +94,10 @@ class SceneManager final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::CreateSceneResponse>* PrepareAsyncCreateSceneRaw(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncDestroySceneRaw(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncDestroySceneRaw(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>* AsyncEnterSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneByCentreResponse>* PrepareAsyncEnterSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneResponse>* AsyncEnterSceneRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::scene_manager::EnterSceneResponse>* PrepareAsyncEnterSceneRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncLeaveSceneRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncLeaveSceneRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -115,19 +116,19 @@ class SceneManager final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncDestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncDestroySceneRaw(context, request, cq));
     }
-    ::grpc::Status EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::scene_manager::EnterSceneByCentreResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>> AsyncEnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>>(AsyncEnterSceneByCentreRaw(context, request, cq));
+    ::grpc::Status EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::scene_manager::EnterSceneResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneResponse>> AsyncEnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneResponse>>(AsyncEnterSceneRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>> PrepareAsyncEnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>>(PrepareAsyncEnterSceneByCentreRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneResponse>> PrepareAsyncEnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneResponse>>(PrepareAsyncEnterSceneRaw(context, request, cq));
     }
-    ::grpc::Status LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::Empty* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncLeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(AsyncLeaveSceneByCentreRaw(context, request, cq));
+    ::grpc::Status LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncLeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(AsyncLeaveSceneRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncLeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncLeaveSceneByCentreRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncLeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncLeaveSceneRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
@@ -136,10 +137,10 @@ class SceneManager final {
       void CreateScene(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest* request, ::scene_manager::CreateSceneResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void DestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
       void DestroyScene(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, std::function<void(::grpc::Status)>) override;
-      void EnterSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
-      void LeaveSceneByCentre(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response, std::function<void(::grpc::Status)>) override;
+      void EnterScene(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
+      void LeaveScene(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -155,14 +156,14 @@ class SceneManager final {
     ::grpc::ClientAsyncResponseReader< ::scene_manager::CreateSceneResponse>* PrepareAsyncCreateSceneRaw(::grpc::ClientContext* context, const ::scene_manager::CreateSceneRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncDestroySceneRaw(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncDestroySceneRaw(::grpc::ClientContext* context, const ::scene_manager::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>* AsyncEnterSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneByCentreResponse>* PrepareAsyncEnterSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncLeaveSceneByCentreRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneByCentreRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneResponse>* AsyncEnterSceneRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::scene_manager::EnterSceneResponse>* PrepareAsyncEnterSceneRaw(::grpc::ClientContext* context, const ::scene_manager::EnterSceneRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncLeaveSceneRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncLeaveSceneRaw(::grpc::ClientContext* context, const ::scene_manager::LeaveSceneRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_CreateScene_;
     const ::grpc::internal::RpcMethod rpcmethod_DestroyScene_;
-    const ::grpc::internal::RpcMethod rpcmethod_EnterSceneByCentre_;
-    const ::grpc::internal::RpcMethod rpcmethod_LeaveSceneByCentre_;
+    const ::grpc::internal::RpcMethod rpcmethod_EnterScene_;
+    const ::grpc::internal::RpcMethod rpcmethod_LeaveScene_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -174,10 +175,10 @@ class SceneManager final {
     virtual ::grpc::Status CreateScene(::grpc::ServerContext* context, const ::scene_manager::CreateSceneRequest* request, ::scene_manager::CreateSceneResponse* response);
     // Destroy a scene
     virtual ::grpc::Status DestroyScene(::grpc::ServerContext* context, const ::scene_manager::DestroySceneRequest* request, ::Empty* response);
-    // Centre requests a player to enter a scene, SceneManager routes to the specific Scene node
-    virtual ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response);
-    // Centre requests a player to leave a scene (or leave before switching scenes)
-    virtual ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response);
+    // Login/player_locator requests a player to enter a scene
+    virtual ::grpc::Status EnterScene(::grpc::ServerContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response);
+    // Login/player_locator requests a player to leave a scene
+    virtual ::grpc::Status LeaveScene(::grpc::ServerContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_CreateScene : public BaseClass {
@@ -220,46 +221,46 @@ class SceneManager final {
     }
   };
   template <class BaseClass>
-  class WithAsyncMethod_EnterSceneByCentre : public BaseClass {
+  class WithAsyncMethod_EnterScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithAsyncMethod_EnterSceneByCentre() {
+    WithAsyncMethod_EnterScene() {
       ::grpc::Service::MarkMethodAsync(2);
     }
-    ~WithAsyncMethod_EnterSceneByCentre() override {
+    ~WithAsyncMethod_EnterScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneByCentreRequest* /*request*/, ::scene_manager::EnterSceneByCentreResponse* /*response*/) override {
+    ::grpc::Status EnterScene(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneRequest* /*request*/, ::scene_manager::EnterSceneResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestEnterSceneByCentre(::grpc::ServerContext* context, ::scene_manager::EnterSceneByCentreRequest* request, ::grpc::ServerAsyncResponseWriter< ::scene_manager::EnterSceneByCentreResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestEnterScene(::grpc::ServerContext* context, ::scene_manager::EnterSceneRequest* request, ::grpc::ServerAsyncResponseWriter< ::scene_manager::EnterSceneResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
-  class WithAsyncMethod_LeaveSceneByCentre : public BaseClass {
+  class WithAsyncMethod_LeaveScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithAsyncMethod_LeaveSceneByCentre() {
+    WithAsyncMethod_LeaveScene() {
       ::grpc::Service::MarkMethodAsync(3);
     }
-    ~WithAsyncMethod_LeaveSceneByCentre() override {
+    ~WithAsyncMethod_LeaveScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveScene(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestLeaveSceneByCentre(::grpc::ServerContext* context, ::scene_manager::LeaveSceneByCentreRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestLeaveScene(::grpc::ServerContext* context, ::scene_manager::LeaveSceneRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_CreateScene<WithAsyncMethod_DestroyScene<WithAsyncMethod_EnterSceneByCentre<WithAsyncMethod_LeaveSceneByCentre<Service > > > > AsyncService;
+  typedef WithAsyncMethod_CreateScene<WithAsyncMethod_DestroyScene<WithAsyncMethod_EnterScene<WithAsyncMethod_LeaveScene<Service > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_CreateScene : public BaseClass {
    private:
@@ -315,60 +316,60 @@ class SceneManager final {
       ::grpc::CallbackServerContext* /*context*/, const ::scene_manager::DestroySceneRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithCallbackMethod_EnterSceneByCentre : public BaseClass {
+  class WithCallbackMethod_EnterScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithCallbackMethod_EnterSceneByCentre() {
+    WithCallbackMethod_EnterScene() {
       ::grpc::Service::MarkMethodCallback(2,
-          new ::grpc::internal::CallbackUnaryHandler< ::scene_manager::EnterSceneByCentreRequest, ::scene_manager::EnterSceneByCentreResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::scene_manager::EnterSceneRequest, ::scene_manager::EnterSceneResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::scene_manager::EnterSceneByCentreRequest* request, ::scene_manager::EnterSceneByCentreResponse* response) { return this->EnterSceneByCentre(context, request, response); }));}
-    void SetMessageAllocatorFor_EnterSceneByCentre(
-        ::grpc::MessageAllocator< ::scene_manager::EnterSceneByCentreRequest, ::scene_manager::EnterSceneByCentreResponse>* allocator) {
+                   ::grpc::CallbackServerContext* context, const ::scene_manager::EnterSceneRequest* request, ::scene_manager::EnterSceneResponse* response) { return this->EnterScene(context, request, response); }));}
+    void SetMessageAllocatorFor_EnterScene(
+        ::grpc::MessageAllocator< ::scene_manager::EnterSceneRequest, ::scene_manager::EnterSceneResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::scene_manager::EnterSceneByCentreRequest, ::scene_manager::EnterSceneByCentreResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::scene_manager::EnterSceneRequest, ::scene_manager::EnterSceneResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~WithCallbackMethod_EnterSceneByCentre() override {
+    ~WithCallbackMethod_EnterScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneByCentreRequest* /*request*/, ::scene_manager::EnterSceneByCentreResponse* /*response*/) override {
+    ::grpc::Status EnterScene(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneRequest* /*request*/, ::scene_manager::EnterSceneResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* EnterSceneByCentre(
-      ::grpc::CallbackServerContext* /*context*/, const ::scene_manager::EnterSceneByCentreRequest* /*request*/, ::scene_manager::EnterSceneByCentreResponse* /*response*/)  { return nullptr; }
+    virtual ::grpc::ServerUnaryReactor* EnterScene(
+      ::grpc::CallbackServerContext* /*context*/, const ::scene_manager::EnterSceneRequest* /*request*/, ::scene_manager::EnterSceneResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithCallbackMethod_LeaveSceneByCentre : public BaseClass {
+  class WithCallbackMethod_LeaveScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithCallbackMethod_LeaveSceneByCentre() {
+    WithCallbackMethod_LeaveScene() {
       ::grpc::Service::MarkMethodCallback(3,
-          new ::grpc::internal::CallbackUnaryHandler< ::scene_manager::LeaveSceneByCentreRequest, ::Empty>(
+          new ::grpc::internal::CallbackUnaryHandler< ::scene_manager::LeaveSceneRequest, ::Empty>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::scene_manager::LeaveSceneByCentreRequest* request, ::Empty* response) { return this->LeaveSceneByCentre(context, request, response); }));}
-    void SetMessageAllocatorFor_LeaveSceneByCentre(
-        ::grpc::MessageAllocator< ::scene_manager::LeaveSceneByCentreRequest, ::Empty>* allocator) {
+                   ::grpc::CallbackServerContext* context, const ::scene_manager::LeaveSceneRequest* request, ::Empty* response) { return this->LeaveScene(context, request, response); }));}
+    void SetMessageAllocatorFor_LeaveScene(
+        ::grpc::MessageAllocator< ::scene_manager::LeaveSceneRequest, ::Empty>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::scene_manager::LeaveSceneByCentreRequest, ::Empty>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::scene_manager::LeaveSceneRequest, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~WithCallbackMethod_LeaveSceneByCentre() override {
+    ~WithCallbackMethod_LeaveScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveScene(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* LeaveSceneByCentre(
-      ::grpc::CallbackServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
+    virtual ::grpc::ServerUnaryReactor* LeaveScene(
+      ::grpc::CallbackServerContext* /*context*/, const ::scene_manager::LeaveSceneRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_CreateScene<WithCallbackMethod_DestroyScene<WithCallbackMethod_EnterSceneByCentre<WithCallbackMethod_LeaveSceneByCentre<Service > > > > CallbackService;
+  typedef WithCallbackMethod_CreateScene<WithCallbackMethod_DestroyScene<WithCallbackMethod_EnterScene<WithCallbackMethod_LeaveScene<Service > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_CreateScene : public BaseClass {
@@ -405,35 +406,35 @@ class SceneManager final {
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_EnterSceneByCentre : public BaseClass {
+  class WithGenericMethod_EnterScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithGenericMethod_EnterSceneByCentre() {
+    WithGenericMethod_EnterScene() {
       ::grpc::Service::MarkMethodGeneric(2);
     }
-    ~WithGenericMethod_EnterSceneByCentre() override {
+    ~WithGenericMethod_EnterScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneByCentreRequest* /*request*/, ::scene_manager::EnterSceneByCentreResponse* /*response*/) override {
+    ::grpc::Status EnterScene(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneRequest* /*request*/, ::scene_manager::EnterSceneResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_LeaveSceneByCentre : public BaseClass {
+  class WithGenericMethod_LeaveScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithGenericMethod_LeaveSceneByCentre() {
+    WithGenericMethod_LeaveScene() {
       ::grpc::Service::MarkMethodGeneric(3);
     }
-    ~WithGenericMethod_LeaveSceneByCentre() override {
+    ~WithGenericMethod_LeaveScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveScene(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -479,42 +480,42 @@ class SceneManager final {
     }
   };
   template <class BaseClass>
-  class WithRawMethod_EnterSceneByCentre : public BaseClass {
+  class WithRawMethod_EnterScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawMethod_EnterSceneByCentre() {
+    WithRawMethod_EnterScene() {
       ::grpc::Service::MarkMethodRaw(2);
     }
-    ~WithRawMethod_EnterSceneByCentre() override {
+    ~WithRawMethod_EnterScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneByCentreRequest* /*request*/, ::scene_manager::EnterSceneByCentreResponse* /*response*/) override {
+    ::grpc::Status EnterScene(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneRequest* /*request*/, ::scene_manager::EnterSceneResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestEnterSceneByCentre(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestEnterScene(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
-  class WithRawMethod_LeaveSceneByCentre : public BaseClass {
+  class WithRawMethod_LeaveScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawMethod_LeaveSceneByCentre() {
+    WithRawMethod_LeaveScene() {
       ::grpc::Service::MarkMethodRaw(3);
     }
-    ~WithRawMethod_LeaveSceneByCentre() override {
+    ~WithRawMethod_LeaveScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveScene(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestLeaveSceneByCentre(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestLeaveScene(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -563,47 +564,47 @@ class SceneManager final {
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithRawCallbackMethod_EnterSceneByCentre : public BaseClass {
+  class WithRawCallbackMethod_EnterScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawCallbackMethod_EnterSceneByCentre() {
+    WithRawCallbackMethod_EnterScene() {
       ::grpc::Service::MarkMethodRawCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->EnterSceneByCentre(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->EnterScene(context, request, response); }));
     }
-    ~WithRawCallbackMethod_EnterSceneByCentre() override {
+    ~WithRawCallbackMethod_EnterScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneByCentreRequest* /*request*/, ::scene_manager::EnterSceneByCentreResponse* /*response*/) override {
+    ::grpc::Status EnterScene(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneRequest* /*request*/, ::scene_manager::EnterSceneResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* EnterSceneByCentre(
+    virtual ::grpc::ServerUnaryReactor* EnterScene(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithRawCallbackMethod_LeaveSceneByCentre : public BaseClass {
+  class WithRawCallbackMethod_LeaveScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawCallbackMethod_LeaveSceneByCentre() {
+    WithRawCallbackMethod_LeaveScene() {
       ::grpc::Service::MarkMethodRawCallback(3,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LeaveSceneByCentre(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LeaveScene(context, request, response); }));
     }
-    ~WithRawCallbackMethod_LeaveSceneByCentre() override {
+    ~WithRawCallbackMethod_LeaveScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveScene(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* LeaveSceneByCentre(
+    virtual ::grpc::ServerUnaryReactor* LeaveScene(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -661,62 +662,62 @@ class SceneManager final {
     virtual ::grpc::Status StreamedDestroyScene(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::scene_manager::DestroySceneRequest,::Empty>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
-  class WithStreamedUnaryMethod_EnterSceneByCentre : public BaseClass {
+  class WithStreamedUnaryMethod_EnterScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithStreamedUnaryMethod_EnterSceneByCentre() {
+    WithStreamedUnaryMethod_EnterScene() {
       ::grpc::Service::MarkMethodStreamed(2,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::scene_manager::EnterSceneByCentreRequest, ::scene_manager::EnterSceneByCentreResponse>(
+          ::scene_manager::EnterSceneRequest, ::scene_manager::EnterSceneResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::scene_manager::EnterSceneByCentreRequest, ::scene_manager::EnterSceneByCentreResponse>* streamer) {
-                       return this->StreamedEnterSceneByCentre(context,
+                     ::scene_manager::EnterSceneRequest, ::scene_manager::EnterSceneResponse>* streamer) {
+                       return this->StreamedEnterScene(context,
                          streamer);
                   }));
     }
-    ~WithStreamedUnaryMethod_EnterSceneByCentre() override {
+    ~WithStreamedUnaryMethod_EnterScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status EnterSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneByCentreRequest* /*request*/, ::scene_manager::EnterSceneByCentreResponse* /*response*/) override {
+    ::grpc::Status EnterScene(::grpc::ServerContext* /*context*/, const ::scene_manager::EnterSceneRequest* /*request*/, ::scene_manager::EnterSceneResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedEnterSceneByCentre(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::scene_manager::EnterSceneByCentreRequest,::scene_manager::EnterSceneByCentreResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedEnterScene(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::scene_manager::EnterSceneRequest,::scene_manager::EnterSceneResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
-  class WithStreamedUnaryMethod_LeaveSceneByCentre : public BaseClass {
+  class WithStreamedUnaryMethod_LeaveScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithStreamedUnaryMethod_LeaveSceneByCentre() {
+    WithStreamedUnaryMethod_LeaveScene() {
       ::grpc::Service::MarkMethodStreamed(3,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::scene_manager::LeaveSceneByCentreRequest, ::Empty>(
+          ::scene_manager::LeaveSceneRequest, ::Empty>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::scene_manager::LeaveSceneByCentreRequest, ::Empty>* streamer) {
-                       return this->StreamedLeaveSceneByCentre(context,
+                     ::scene_manager::LeaveSceneRequest, ::Empty>* streamer) {
+                       return this->StreamedLeaveScene(context,
                          streamer);
                   }));
     }
-    ~WithStreamedUnaryMethod_LeaveSceneByCentre() override {
+    ~WithStreamedUnaryMethod_LeaveScene() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status LeaveSceneByCentre(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneByCentreRequest* /*request*/, ::Empty* /*response*/) override {
+    ::grpc::Status LeaveScene(::grpc::ServerContext* /*context*/, const ::scene_manager::LeaveSceneRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedLeaveSceneByCentre(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::scene_manager::LeaveSceneByCentreRequest,::Empty>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedLeaveScene(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::scene_manager::LeaveSceneRequest,::Empty>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_EnterSceneByCentre<WithStreamedUnaryMethod_LeaveSceneByCentre<Service > > > > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_EnterScene<WithStreamedUnaryMethod_LeaveScene<Service > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_EnterSceneByCentre<WithStreamedUnaryMethod_LeaveSceneByCentre<Service > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_EnterScene<WithStreamedUnaryMethod_LeaveScene<Service > > > > StreamedService;
 };
 
 }  // namespace scene_manager

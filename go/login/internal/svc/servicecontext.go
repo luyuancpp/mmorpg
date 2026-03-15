@@ -3,24 +3,25 @@ package svc
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/bwmarrin/snowflake"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
+
+	kafkapb "login/contracts/kafka"
 	"login/internal/config"
 	"login/internal/kafka"
-	"login/internal/logic/pkg/centre"
 	"login/internal/logic/pkg/taskmanager"
 	login_proto "login/proto/common"
-	"sync/atomic"
 	"time"
 )
 
 type ServiceContext struct {
-	RedisClient *redis.Client
-	SnowFlake   *snowflake.Node
-	NodeInfo    login_proto.NodeInfo
-	// 使用 atomic.Value 安全存储 CentreClient
-	centreClient  atomic.Value // 类型为 *centre.CentreClient
+	RedisClient   *redis.Client
+	SnowFlake     *snowflake.Node
+	NodeInfo      login_proto.NodeInfo
 	KafkaClient   *kafka.KeyOrderedKafkaProducer
 	TaskExecutor  *taskmanager.TaskExecutor
 	ExpandMonitor *kafka.ExpandMonitor
@@ -49,7 +50,6 @@ func NewServiceContext() *ServiceContext {
 	if err != nil {
 		logx.Error(err)
 		panic(err)
-		return nil
 	}
 
 	monitor, err := kafka.NewExpandMonitor(
@@ -63,7 +63,6 @@ func NewServiceContext() *ServiceContext {
 	if err != nil {
 		logx.Error(err)
 		panic(err)
-		return nil
 	}
 
 	// 初始化 TaskExecutor
@@ -94,18 +93,26 @@ func (c *ServiceContext) SetNodeId(nodeId int64) {
 	c.SnowFlake = node
 }
 
-// SetCentreClient 设置中心节点客户端
-func (s *ServiceContext) SetCentreClient(c *centre.Client) {
-	s.centreClient.Store(c)
-}
-
-// GetCentreClient 获取当前中心节点客户端
-func (s *ServiceContext) GetCentreClient() *centre.Client {
-	value := s.centreClient.Load()
-	if value == nil {
-		return nil
+// KickOldSession sends a KickPlayer command to the old Gate via Kafka.
+func (s *ServiceContext) KickOldSession(ctx context.Context, gateID string, gateInstanceID string, sessionID uint64, sessionVersion uint64) {
+	cmd := &kafkapb.GateCommand{
+		CommandType:      kafkapb.GateCommand_KickPlayer,
+		SessionId:        sessionID,
+		TargetInstanceId: gateInstanceID,
 	}
-	return value.(*centre.Client)
+	gateNodeID, _ := strconv.ParseUint(gateID, 10, 32)
+	cmd.TargetGateId = uint32(gateNodeID)
+
+	data, err := proto.Marshal(cmd)
+	if err != nil {
+		logx.Errorf("KickOldSession marshal failed: %v", err)
+		return
+	}
+
+	topic := fmt.Sprintf("gate-%s", gateID)
+	if err := s.KafkaClient.SendToTopic(topic, data); err != nil {
+		logx.Errorf("KickOldSession send to %s failed: %v", topic, err)
+	}
 }
 
 func (s *ServiceContext) Stop() {

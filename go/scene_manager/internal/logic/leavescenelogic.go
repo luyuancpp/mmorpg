@@ -10,22 +10,22 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type LeaveSceneByCentreLogic struct {
+type LeaveSceneLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
 }
 
-func NewLeaveSceneByCentreLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveSceneByCentreLogic {
-	return &LeaveSceneByCentreLogic{
+func NewLeaveSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveSceneLogic {
+	return &LeaveSceneLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
 		Logger: logx.WithContext(ctx),
 	}
 }
 
-// Centre 请求玩家离开场景（或切换场景前的离开）
-func (l *LeaveSceneByCentreLogic) LeaveSceneByCentre(in *scene_manager.LeaveSceneByCentreRequest) (*base.Empty, error) {
+// 请求玩家离开场景（或切换场景前的离开）
+func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base.Empty, error) {
 	// 1. Check if player is actually in this scene (idempotency)
 	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
 	if err != nil || currentLoc == nil {
