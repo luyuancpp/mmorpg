@@ -42,12 +42,71 @@
 #include <atomic>
 #include <future>
 #include <chrono>
+#include <cstdlib>
+#include <cerrno>
+#include <optional>
 
 namespace {
 std::atomic<Node*> gNodeAtomic{ nullptr };
 
+const char* GetNonEmptyEnv(const char* name) {
+	const char* value = std::getenv(name);
+	if (value == nullptr || value[0] == '\0') {
+		return nullptr;
+	}
+	return value;
+}
+
+std::string ResolveNodeIp() {
+	// Prefer K8s Downward API pod IP, then explicit override, then legacy hostname resolve.
+	if (const char* podIp = GetNonEmptyEnv("POD_IP")) {
+		return podIp;
+	}
+
+	if (const char* nodeIp = GetNonEmptyEnv("NODE_IP")) {
+		return nodeIp;
+	}
+
+	return localip();
+}
+
+std::optional<uint16_t> TryResolveNodePortFromEnv() {
+	const char* rawPort = GetNonEmptyEnv("RPC_PORT");
+	if (rawPort == nullptr) {
+		rawPort = GetNonEmptyEnv("NODE_PORT");
+	}
+
+	if (rawPort == nullptr) {
+		return std::nullopt;
+	}
+
+	errno = 0;
+	char* endPtr = nullptr;
+	const long parsedPort = std::strtol(rawPort, &endPtr, 10);
+	if (errno != 0 || endPtr == rawPort || *endPtr != '\0' || parsedPort <= 0 || parsedPort > 65535) {
+		LOG_WARN << "Ignore invalid env port value. RPC_PORT/NODE_PORT=" << rawPort;
+		return std::nullopt;
+	}
+
+	return static_cast<uint16_t>(parsedPort);
+}
+
 void StdoutOutput(const char* msg, int len) {
 	std::fwrite(msg, 1, static_cast<size_t>(len), stdout);
+}
+
+std::string FormatKafkaPartitions(const std::vector<int32_t>& partitions) {
+	if (partitions.empty()) {
+		return "all";
+	}
+
+	std::vector<std::string> partitionTokens;
+	partitionTokens.reserve(partitions.size());
+	for (int32_t partition : partitions) {
+		partitionTokens.emplace_back(std::to_string(partition));
+	}
+
+	return boost::algorithm::join(partitionTokens, ",");
 }
 }
 
@@ -91,7 +150,7 @@ NodeInfo& Node::GetNodeInfo() const {
 void Node::Initialize() {
 	eventLoop->assertInLoopThread();
 	LOG_DEBUG << "Node initializing...";
-    SetupTimeZone();
+	SetupTimeZone();
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();
@@ -105,8 +164,19 @@ void Node::Initialize() {
 
 void Node::InitRpcServer() {
 	NodeInfo& localNodeInfo = GetNodeInfo();
-	localNodeInfo.mutable_endpoint()->set_ip(localip());
-	localNodeInfo.mutable_endpoint()->set_port(get_available_port(GetNodeType() * 10000));
+	const std::string endpointIp = ResolveNodeIp();
+	localNodeInfo.mutable_endpoint()->set_ip(endpointIp);
+
+	uint16_t endpointPort = 0;
+	if (const auto envPort = TryResolveNodePortFromEnv(); envPort) {
+		endpointPort = *envPort;
+	}
+	else {
+		endpointPort = get_available_port(GetNodeType() * 10000);
+	}
+	localNodeInfo.mutable_endpoint()->set_port(endpointPort);
+
+	LOG_INFO << "Node endpoint resolved. ip=" << endpointIp << ", port=" << endpointPort;
 	localNodeInfo.set_node_type(GetNodeType());
 	localNodeInfo.set_scene_node_type(tlsNodeConfigManager.GetGameConfig().scene_node_type());
 	localNodeInfo.set_protocol_type(PROTOCOL_TCP);
@@ -152,6 +222,10 @@ bool Node::RegisterKafkaMessageHandler(const std::vector<std::string>& topics,
 		LOG_ERROR << "Kafka subscribe failed. group_id=" << groupId;
 		return false;
 	}
+
+	LOG_INFO << "Kafka subscribe succeeded. group_id=" << groupId
+		<< ", topics=" << boost::algorithm::join(topics, ",")
+		<< ", partitions=" << FormatKafkaPartitions(partitions);
 
 	if (!kafkaPollingStarted) {
 		StartKafkaPolling();
@@ -452,7 +526,8 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& connectedEvent) {
 }
 
 void Node::StartNodeRegistrationHealthMonitor() {
-	serviceHealthMonitorTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().health_check_interval(), [this]() {
+	serviceHealthMonitorTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().health_check_interval(),
+		[this, reRegistrationRequested = false]() mutable {
 		if (nullptr == rpcServer)
 		{
 			return;
@@ -476,13 +551,19 @@ void Node::StartNodeRegistrationHealthMonitor() {
 		auto& registeredNodesForType = *serviceNodesByType[currentNode.node_type()].mutable_node_list();
 		for (const auto& registeredNode : registeredNodesForType) {
 			if (IsCurrentNode(registeredNode)) {
+				reRegistrationRequested = false;
 				return ;
 			}
 		}
 
 		// Node snapshot disappeared from service discovery.
 		// Re-register with the same node_id; do not run full re-allocation flow.
+		if (reRegistrationRequested) {
+			return;
+		}
+
 		serviceDiscoveryManager.etcdService.RequestReRegistration();
+		reRegistrationRequested = true;
 		}
 	);
 }
