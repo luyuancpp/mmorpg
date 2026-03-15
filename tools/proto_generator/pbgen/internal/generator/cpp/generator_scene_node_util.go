@@ -1,10 +1,11 @@
 package cpp
 
 import (
-	messageoption "github.com/luyuancpp/protooption"
 	"pbgen/internal"
 	"pbgen/internal/utils"
 	"strings"
+
+	messageoption "github.com/luyuancpp/protooption"
 )
 
 func isSceneOwnedMethod(m *internal.MethodInfo) bool {
