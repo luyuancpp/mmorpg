@@ -258,6 +258,9 @@
     <ClCompile Include="data_service\data_service.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="data_service\data_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="centre\centre_player.pb.h">
@@ -501,6 +504,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="data_service\data_service.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="data_service\data_service.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
