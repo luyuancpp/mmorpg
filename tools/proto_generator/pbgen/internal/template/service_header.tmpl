@@ -1,0 +1,53 @@
+#pragma once
+#include <memory>
+#include <string>
+#include <array>
+#include <functional>
+#include <vector>
+#include <unordered_set>
+#include <google/protobuf/message.h>
+#include <google/protobuf/service.h>
+#include "entt/src/entt/entity/registry.hpp"
+
+struct RpcService {
+	const char* serviceName{nullptr};
+	const char* methodName{nullptr};
+	std::unique_ptr<::google::protobuf::Message> requestPrototype;
+	std::unique_ptr<::google::protobuf::Message> responsePrototype;
+	std::unique_ptr<::google::protobuf::Service> handlerInstance;
+	uint32_t protocolType{0};
+	uint32_t targetNodeType{0};
+	std::function<void (
+		entt::registry& registry,
+		entt::entity nodeEntity,
+		const google::protobuf::Message& message,
+		const std::vector<std::string>& metaKeys,
+		const std::vector<std::string>& metaValues
+	)> messageSender;
+};
+
+struct ProtoEvent {
+	const char* eventName{nullptr};
+	std::unique_ptr<::google::protobuf::Message> prototype;
+	void (*dispatcher)(const ::google::protobuf::Message& message){nullptr};
+};
+
+constexpr uint32_t kMaxMessageLen = {{ .MaxMessageLen }};
+constexpr uint32_t kMaxEventLen = {{ .MaxEventLen }};
+
+{{- range .EventConstantLines }}
+{{ . }}
+{{- end }}
+
+extern std::array<RpcService, kMaxMessageLen> gRpcServiceRegistry;
+extern std::array<ProtoEvent, kMaxEventLen> gProtoEventRegistry;
+extern std::unordered_set<uint32_t> gClientMessageIdWhitelist;
+
+using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
+
+void InitMessageInfo();
+void InitEventInfo();
+bool IsValidEventId(uint32_t eventId);
+MessageUniquePtr NewEventMessage(uint32_t eventId);
+MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload);
+void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& message);

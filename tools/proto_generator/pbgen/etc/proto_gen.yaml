@@ -1,0 +1,400 @@
+# Proto代码生成器配置文件
+# 基于常量定义的配置映射
+
+paths:
+  # 项目根目录及基础路径
+  output_root: "../../../"
+  proto_dir: "{{output_root}}proto/"
+  proto_parent_include_path: "{{output_root}}"
+  third_party_dir: "third_party/"
+  grpc_dir: "{{output_root}}{{third_party_dir}}grpc/"
+  protobuf_dir: "{{grpc_dir}}third_party/protobuf/src/"
+
+  # 节点与生成目录
+  node_go_dir: "{{output_root}}go/"
+  node_cpp_dir: "{{output_root}}cpp/"
+  node_pkg_dir: "cpp/libs/"
+  node_libs_engine: "{{node_pkg_dir}}engine/"
+  node_lib_game: "{{node_pkg_dir}}services/"
+  node_pkg_logic_scene: "{{node_lib_game}}scene/"
+  scene_node_dir: "{{node_cpp_dir}}nodes/scene/"
+  gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
+  robot: "tools/robot/"
+  robot_generated: "{{output_root}}generated/robot/"
+  robot_proto: "{{robot_generated}}proto/"  # robot专用proto源目录
+  robot_generated_proto: "{{robot_generated}}/proto/"  # robot生成的proto目录
+  generated_dir: "cpp/generated/"
+
+  # 工具与临时目录
+  tool_dir: "tools/"
+  temp_file_gen_dir: "{{output_root}}{{tool_dir}}generated/temp/files/"
+  proto_buf_desc_dir: "{{temp_file_gen_dir}}proto_desc/"
+  all_in_one_desc: "{{proto_buf_desc_dir}}all_in_one.desc"
+  grpc_temp_dir: "{{temp_file_gen_dir}}grpc/"
+  proto_buf_c_temp_dir: "{{temp_file_gen_dir}}"
+  player_storage_temp_dir: "{{temp_file_gen_dir}}/node/game/storage/"
+
+  # 输出目录
+  proto_buf_c_proto_output_dir: "{{output_root}}{{generated_dir}}"
+  generated_output_dir: "{{output_root}}{{generated_dir}}"
+  grpc_output_dir: "{{output_root}}{{generated_dir}}"
+  grpc_proto_output_dir: "{{output_root}}{{generated_dir}}proto/"
+  robot_generated_output_dir: "{{output_root}}{{robot}}generated/"
+  robot_go_game_pb_dir: "{{robot_generated_output_dir}}pb/game"
+  robot_go_gen_dir: "{{output_root}}{{robot_generated}}"
+  generated_rpc_dir: "{{generated_output_dir}}rpc/"
+  service_info_dir: "{{generated_rpc_dir}}service_metadata/"
+  proto_buf_c_lua_dir: "{{generated_output_dir}}lua/"
+  cpp_gen_grpc_dir: "{{output_root}}{{generated_dir}}grpc_client/"
+  util_generator_dir: "{{output_root}}{{generated_dir}}proto_helpers/"
+  generator_dir: "generated/"
+  generator_proto_dir: "{{output_root}}{{generator_dir}}proto/"
+  project_generated_dir: "{{output_root}}generated/"
+  table_generator_dir: "{{project_generated_dir}}data/"
+  game_rpc_proto_path: "{{proto_dir}}common/base/"
+  tools_dir: "{{output_root}}{{tool_dir}}"
+
+  # 特定文件路径
+  service_id_file: "{{proto_dir}}service_id.txt"
+  event_id_file: "{{proto_dir}}event_id.txt"
+  robot_message_id_file: "{{robot_go_game_pb_dir}}/message_id.go"
+  robot_proto_import_path: "{{output_root}}{{robot_proto}}"  # robot proto导入路径
+  service_cpp_file: "{{service_info_dir}}service_metadata.cpp"
+  service_header_file: "{{service_info_dir}}service_metadata.h"
+  grpc_init_cpp_file: "{{cpp_gen_grpc_dir}}grpc_init_client.cpp"
+  grpc_init_head_file: "{{cpp_gen_grpc_dir}}grpc_init_client.h"
+  gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"
+  gen_util_head_file: "{{util_generator_dir}}proto_util.h"
+  robot_msg_body_handler_file: "{{output_root}}{{robot}}logic/handler/message_body_handler.go"
+  player_storage_system_dir: "{{output_root}}{{node_pkg_logic_scene}}player/system/"
+  player_data_loader_file: "{{player_storage_system_dir}}player_data_loader.h"
+
+  event_handler_source_directory: "handler/event/"
+  scene_node_event_handler_directory: "{{scene_node_dir}}{{event_handler_source_directory}}"
+  gate_node_event_handler_directory: "{{gate_node_dir}}{{event_handler_source_directory}}"
+
+  # Scene 属性同步生成目录
+  scene_attribute_sync_dir: "{{output_root}}{{node_pkg_dir}}/services/scene/generated/attribute/"
+
+
+# 目录命名常量（专门存放目录名/路径片段常量）
+directory_names:
+  generated_rpc_name: "rpc/"               # RPC生成目录名
+  service_info_name: "service_metadata/"   # 服务元数据目录名
+  proto_dir_name: "proto/"                 # Proto目录名
+  go_zero_proto_dir_name: "go-zero/" # Go-zero Proto目录名
+  robot_proto_name: "{{robot_proto}}"      # Robot Proto目录名常量
+  robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero Proto目录名常量
+  model_dir_name: "model/"                 # 模型目录名
+  service_include_dir: "rpc/"              # 服务导入目录名
+  normal_go_proto: "proto/"                 # 新增：普通Go代码目录名（不含斜杠，路径拼接时统一添加）
+  go_grpc_base_dir_name: "service/grpc/"  # Go GRPC服务根目录路径片段
+
+# 文件扩展名配置（仅存放文件后缀/扩展名）
+file_extensions:
+  proto: ".proto"
+  pb_cc: ".pb.cc"
+  pb_h: ".pb.h"
+  grpc_pb_cc: ".grpc.pb.cc"
+  grpc_pb_h: ".grpc.pb.h"
+  header: ".h"
+  cpp: ".cpp"
+  handler_h: "_handler.h"
+  handler_cpp: "_handler.cpp"
+  replied_handler_h: "_response_handler.h"
+  replied_handler_cpp: "_response_handler.cpp"
+
+  grpc_client: "_grpc_client"
+  grpc_client_h: "_grpc_client.h"
+  grpc_client_cpp: "_grpc_client.cpp"
+  loader_cpp: "_loader.cpp"
+
+  # 原有配置中的扩展名
+  replied_handler_header_extension: "_response_handler.h"
+  cpp_replied_handler_ex: "_response_handler.cpp"
+  model_sql_extension: "mysql_database_table.sql"
+  message_id_go_file: "message_id.go"
+  event_id_go_file: "event_id.go"
+  service_info_extension: "_service_metadata"
+  register_replied_handler_cpp_extension: "register{{cpp_replied_handler_ex}}"
+  register_handler_cpp_extension: "register{{handler_cpp}}"
+
+# 命名规则配置（业务逻辑命名常量）
+naming:
+  message_id: "MessageId"
+  event_id: "EventId"
+  method_index: "Index"
+  handler_file: "Handler"
+  replied_handler_file: "Reply"
+  event_handler_base: "event_handler"
+  empty_response: "Empty"
+  mysql_name: "mysql"
+  player_service: "player_service_interface.cpp"
+  player_replied_service: "player_rpc_response_handler.cpp"
+  complete_queue: "CompleteQueue"
+  database_prefix: "db"
+  db_proto_file: "db_base.proto"
+  db_table_file: "mysql_database_table.proto"
+  db_table_list_json: "mysql_database_table_list.json"
+  game_rpc_proto: "game_rpc.proto"
+  grpc_name: "grpc"
+
+  # 原有配置中的命名常量
+  player_service_include_name: "#include \"rpc/player_service_interface.h\"\n"
+  player_service_replied_include_name: "#include \"rpc/player_rpc_response_handler.h\"\n"
+  macro_return_include_name: "#include \"macros/return_define.h\""
+  node_enum_name: "eNodeType"
+  node_service_suffix: "nodeservice"
+  go_package: "generated/pb/game"
+  go_robot_package: "robot"
+  google_method_controller: "::google::protobuf::RpcController* controller, "
+  player_method_controller: "entt::entity player,"
+  include_end_line: "\"\n"
+  include_begin: "#include \""
+  your_code_begin: "///<<< BEGIN WRITING YOUR CODE"
+  your_code_end: "///<<< END WRITING YOUR CODE"
+  your_code_pair: "{{your_code_begin}}\n{{your_code_end}}"
+
+# 路径列表配置
+path_lists:
+  # Proto目录列表（按原顺序保留）
+  proto_directories:
+    - "common/base/"
+    - "common/component/"
+    - "common/event/"
+    - "contracts/kafka/"
+    - "common/base/"
+    - "common/base/"
+    - "player_locator/"
+    - "common/constants/"
+    - "etcd/"
+    - "login/"
+    - "db/"
+    - "scene/"
+    - "gate/"
+    - "chat/"
+    - "team/"
+    - "mail/"
+    - "database/"
+
+  # robot专用Proto目录列表
+  robot_proto_directories:
+    - "{{robot_proto}}common/base/"
+    - "{{robot_proto}}rpc/"
+    - "{{robot_proto}}message/"
+
+  # 方法处理器目录列表
+  method_handler_directories:
+    robot: "{{output_root}}{{robot}}logic/handler/"
+    scene_node: "{{scene_node_dir}}handler/rpc/"
+    scene_node_player: "{{scene_node_dir}}handler/rpc/player/"
+    scene_node_replied: "{{scene_node_dir}}rpc_replies/"
+    scene_node_player_replied: "{{scene_node_dir}}rpc_replies/player/"
+    gate_node: "{{gate_node_dir}}handler/rpc/"
+    gate_node_replied: "{{gate_node_dir}}rpc_replies/"
+    gate_node_player: "{{gate_node_dir}}handler/rpc/player/"
+    gate_node_player_replied: "{{gate_node_dir}}rpc_replies/player/"
+
+  # 节点类型配置
+  node_types:
+    tcp_node: 0
+    grpc_node: 1
+    http_node: 2
+
+  proto_dirs:
+    common: "common/base/"
+    logic_component: "common/component/"
+    logic_event: "common/event/"
+    contracts_kafka: "contracts/kafka/"
+    logic: "common/"
+    constants: "common/constants/"
+    database: "common/database/"
+
+    player_locator: "player_locator/"
+    login: "login/"
+    db: "db/"
+    chat: "chat/"
+    team: "team/"
+    mail: "mail/"
+
+    scene: "scene/"
+    gate: "gate/"
+
+    etcd: "etcd/"
+
+# 生成器开关配置
+generators:
+  enable_cpp: true
+  enable_go: true
+  enable_handler: true
+  enable_rpc_response: true
+  enable_robot_proto: true  # 启用robot proto生成
+  enable_robot_go_zero: true  # 启用robot go-zero proto生成
+  enable_attribute_sync: true
+
+# 模板映射配置
+mappings:
+  handler:
+    path: "handlers/{{proto_dir}}/{{proto_file}}_handler.cpp"
+    template: "templates/handler.tmpl"
+    lang: "cpp"
+  rpc_response:
+    path: "rpc_response/{{proto_dir}}/{{proto_file}}_response.cpp"
+    template: "templates/rpc_response.tmpl"
+    lang: "cpp"
+  go_grpc:
+    path: "go/{{proto_dir}}/{{proto_file}}_grpc.pb.go"
+    template: "templates/go_grpc.tmpl"
+    lang: "go"
+  robot_go_grpc:
+    path: "{{robot_go_gen_dir}}/{{proto_dir}}/{{proto_file}}_grpc.pb.go"
+    template: "templates/robot_go_grpc.tmpl"
+    lang: "go"
+  attribute_sync_cpp:
+    path: "{{proto_dir}}/{{proto_file}}_attribute_sync.cpp"
+    template: "internal/template/attribute_sync.cpp.tmpl"
+    lang: "cpp"
+  attribute_sync_h:
+    path: "{{proto_dir}}/{{proto_file}}_attribute_sync.h"
+    template: "internal/template/attribute_sync.h.tmpl"
+    lang: "cpp"
+
+
+# Proto解析器配置
+parser:
+  include_paths:
+    - "../../proto/common"
+    - "../../proto/service"
+    - "../../{{robot_proto}}"  # 添加robot proto到include路径
+  ignore_files:
+    - "test_*.proto"
+    - "deprecated_*.proto"
+    - "{{robot_proto}}test_*.proto"  # 忽略robot测试proto
+
+# 日志配置
+log:
+  level: "info"
+  output: "stdout"
+  file_path: "pbgen.log"
+
+domain_meta:
+
+  login:
+    source: "{{proto_dir}}login/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/login/proto"
+        handler: "go/generated/login/handler"
+        grpc:    "go/generated/login/grpc"
+      cpp:
+        proto:   "cpp/generated/login/proto"
+        handler: "cpp/generated/login/handler"
+        grpc:    "cpp/generated/login/grpc"
+
+  scene:
+    source: "{{proto_dir}}scene/"
+    rpc:
+      type: rpc
+    outputs:
+      cpp:
+        proto: "cpp/generated/nodes/scene/proto"
+        handler: "cpp/generated/nodes/scene/handler"
+        attribute_sync: "cpp/generated/nodes/scene/generated/attribute"
+
+  gate:
+    source: "{{proto_dir}}gate/"
+    rpc:
+      type: rpc
+    outputs:
+      cpp:
+        proto: "cpp/generated/nodes/gate/proto"
+        handler: "cpp/generated/nodes/gate/handler"
+        attribute_sync: "cpp/generated/nodes/gate/generated/attribute"
+
+  chat:
+    source: "{{proto_dir}}chat/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/chat/proto"
+        handler: "go/generated/chat/handler"
+        grpc:    "go/generated/chat/grpc"
+      cpp:
+        proto:   "cpp/generated/chat/proto"
+        handler: "cpp/generated/chat/handler"
+        grpc:    "cpp/generated/chat/grpc"
+
+  db:
+    source: "{{proto_dir}}db/"
+    rpc:
+      type: rpc
+    outputs:
+      go:
+        proto:   "go/generated/db/proto"
+        handler: "go/generated/db/handler"
+      cpp:
+        proto:   "cpp/generated/db/proto"
+        handler: "cpp/generated/db/handler"
+
+  scene_manager:
+    source: "{{proto_dir}}scene_manager/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/scene_manager/proto"
+        handler: "go/generated/scene_manager/handler"
+        grpc:    "go/generated/scene_manager/grpc"
+      cpp:
+        proto:   "cpp/generated/scene_manager/proto"
+        handler: "cpp/generated/scene_manager/handler"
+        grpc:    "cpp/generated/scene_manager/grpc"
+
+  data_service:
+    source: "{{proto_dir}}data_service/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/data_service/proto"
+        handler: "go/generated/data_service/handler"
+        grpc:    "go/generated/data_service/grpc"
+      cpp:
+        proto:   "cpp/generated/data_service/proto"
+        handler: "cpp/generated/data_service/handler"
+        grpc:    "cpp/generated/data_service/grpc"
+
+  etcd:
+    source: "{{proto_dir}}etcd/"
+    rpc:
+      type: etcd
+    outputs:
+      go:
+        proto:   "go/generated/etcd/proto"
+        handler: "go/generated/etcd/handler"
+      cpp:
+        proto:   "cpp/generated/etcd/proto"
+        handler: "cpp/generated/etcd/handler"
+
+  common:
+    source: "{{proto_dir}}common/"
+    rpc:
+      type: none
+    outputs:
+      go:
+        proto: "go/generated/common/proto"
+      cpp:
+        proto: "cpp/generated/common/proto"
+
+  contracts:
+    source: "{{proto_dir}}contracts/"
+    rpc:
+      type: none
+    outputs:
+      go:
+        proto: "go/generated/contracts/proto"
+      cpp:
+        proto: "cpp/generated/contracts/proto"
