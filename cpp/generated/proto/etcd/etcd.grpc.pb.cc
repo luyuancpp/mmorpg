@@ -19,6 +19,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/sync_stream.h>
+#include <grpcpp/ports_def.inc>
 namespace etcdserverpb {
 
 static const char* KV_method_names[] = {
@@ -525,4 +526,5 @@ Lease::Service::~Service() {
 
 
 }  // namespace etcdserverpb
+#include <grpcpp/ports_undef.inc>
 

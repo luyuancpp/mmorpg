@@ -3,6 +3,7 @@ package cpp
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"pbgen/internal"
 	_config "pbgen/internal/config"
@@ -35,6 +36,14 @@ func BuildProtocCpp(wg *sync.WaitGroup) {
 		go func(meta _config.DomainMeta) {
 			defer wg.Done()
 			dir := meta.Source
+			rpcType := strings.ToLower(strings.TrimSpace(meta.Rpc.Type))
+			if rpcType != "grpc" && rpcType != "etcd" {
+				logger.Global.Info("GRPC C++批量构建跳过: 非GRPC域",
+					zap.String("目录", dir),
+					zap.String("rpc_type", rpcType),
+				)
+				return
+			}
 			if err := BuildProtoGrpcCpp(wg, dir); err != nil {
 				logger.Global.Warn("GRPC C++批量构建失败",
 					zap.String("目录", dir),
@@ -152,13 +161,6 @@ func CopyCppOutputs(wg *sync.WaitGroup, protoFiles []string, tempDir, destDir st
 
 // BuildProtoGrpcCpp 生成指定目录下Proto文件的C++ GRPC服务代码
 func BuildProtoGrpcCpp(wg *sync.WaitGroup, protoDir string) error {
-	if !(utils2.HasGrpcService(strings.ToLower(protoDir)) || utils2.HasEtcdService(protoDir)) {
-		logger.Global.Info("GRPC C++生成: 无GRPC服务定义，跳过",
-			zap.String("目录", protoDir),
-		)
-		return nil
-	}
-
 	if _, statErr := os.Stat(protoDir); statErr != nil {
 		if os.IsNotExist(statErr) {
 			logger.Global.Warn("GRPC C++生成: Proto目录不存在，跳过",
@@ -204,6 +206,11 @@ func GenerateCppGrpc(protoFiles []string) error {
 		grpcPlugin += ".exe"
 	}
 
+	grpcPluginPath, err := exec.LookPath(grpcPlugin)
+	if err != nil {
+		return fmt.Errorf("定位gRPC C++插件失败(%s): %w", grpcPlugin, err)
+	}
+
 	grpcTempDir := _config.Global.Paths.GrpcTempDir
 
 	protoParentDir := _config.Global.Paths.OutputRoot
@@ -212,7 +219,7 @@ func GenerateCppGrpc(protoFiles []string) error {
 
 	args := []string{
 		fmt.Sprintf("--grpc_out=%s", grpcTempDir),
-		fmt.Sprintf("--plugin=protoc-gen-grpc=%s", grpcPlugin),
+		fmt.Sprintf("--plugin=protoc-gen-grpc=%s", grpcPluginPath),
 		fmt.Sprintf("--proto_path=%s", protoParentDir),
 		fmt.Sprintf("--proto_path=%s", protoBufferDir),
 	}

@@ -4,8 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
-
 void ScenePlayerReply::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -14,7 +12,6 @@ void ScenePlayerReply::Centre2GsLogin(entt::entity player,const ::Centre2GsLogin
 
 }
 
-
 void ScenePlayerReply::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -22,4 +19,3 @@ void ScenePlayerReply::ExitGame(entt::entity player,const ::GameNodeExitGameRequ
 ///<<< END WRITING YOUR CODE
 
 }
-
