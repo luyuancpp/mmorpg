@@ -1,8 +1,6 @@
 #include "player_event_handler.h"
 #include "threading/dispatcher_manager.h"
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
 {
     dispatcher.sink<RegisterPlayerEvent>().connect<&PlayerEventHandler::RegisterPlayerEventHandler>();
@@ -18,16 +16,13 @@ void PlayerEventHandler::UnRegister()
 }
 void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }
 void PlayerEventHandler::PlayerUpgradeEventHandler(const PlayerUpgradeEvent& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }
 void PlayerEventHandler::InitializePlayerComponentsEventHandler(const InitializePlayerComponentsEvent& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }

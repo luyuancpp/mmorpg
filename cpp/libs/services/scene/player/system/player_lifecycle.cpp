@@ -20,6 +20,7 @@
 #include "node/system/zone_utils.h"
 #include "table/proto/tip/cross_server_error_tip.pb.h"
 #include "player_tip.h"
+#include "modules/scene/comp/scene_comp.h"
 #include <engine/infra/messaging/kafka/kafka_producer.h>
 #include "threading/player_manager.h"
 #include "core/system/redis.h"
@@ -106,19 +107,43 @@ void PlayerLifecycleSystem::LeaveGs(entt::entity player)
 
 void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 {
+	if (!tlsRegistryManager.actorRegistry.valid(player))
+	{
+		LOG_ERROR << "OnPlayerLogin: invalid player entity";
+		return;
+	}
+
+	const auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
+	auto& enterState = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player);
+	enterState.set_enter_gs_type(enterGsType);
+
+	auto* sceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player);
+	if (sceneEntity == nullptr || !tlsRegistryManager.sceneRegistry.valid(sceneEntity->sceneEntity))
+	{
+		LOG_WARN << "OnPlayerLogin: player has no valid scene binding yet, player=" << playerId
+			<< " enter_gs_type=" << enterGsType;
+		return;
+	}
+
 	switch (enterGsType)
 	{
 	case LOGIN_FIRST:
-		// First time login logic
+		LOG_INFO << "OnPlayerLogin: first login, player=" << playerId;
+		PlayerSceneSystem::HandleEnterScene(player, sceneEntity->sceneEntity);
 		break;
 	case LOGIN_REPLACE:
-		// Replace login logic (e.g., when another session is active)
+		LOG_INFO << "OnPlayerLogin: replace login (new device/session), player=" << playerId;
+		PlayerSceneSystem::HandleEnterScene(player, sceneEntity->sceneEntity);
 		break;
 	case LOGIN_RECONNECT:
-		// Reconnect logic (e.g., rejoining after disconnect)
+		LOG_INFO << "OnPlayerLogin: reconnect login, player=" << playerId;
+		PlayerSceneSystem::HandleEnterScene(player, sceneEntity->sceneEntity);
+		break;
+	case LOGIN_NONE:
+		LOG_DEBUG << "OnPlayerLogin: LOGIN_NONE ignored, player=" << playerId;
 		break;
 	default:
-		LOG_ERROR << "Unknown login type: " << enterGsType;
+		LOG_ERROR << "OnPlayerLogin: unknown login type=" << enterGsType << " player=" << playerId;
 		break;
 	}
 }

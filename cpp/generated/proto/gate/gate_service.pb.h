@@ -68,10 +68,6 @@ class BroadcastToPlayersRequest;
 struct BroadcastToPlayersRequestDefaultTypeInternal;
 extern BroadcastToPlayersRequestDefaultTypeInternal _BroadcastToPlayersRequest_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull BroadcastToPlayersRequest_class_data_;
-class KickSessionRequest;
-struct KickSessionRequestDefaultTypeInternal;
-extern KickSessionRequestDefaultTypeInternal _KickSessionRequest_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull KickSessionRequest_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -81,209 +77,6 @@ namespace protobuf {
 // ===================================================================
 
 
-// -------------------------------------------------------------------
-
-class KickSessionRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:KickSessionRequest) */ {
- public:
-  inline KickSessionRequest() : KickSessionRequest(nullptr) {}
-  ~KickSessionRequest() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(KickSessionRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(KickSessionRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR KickSessionRequest(::google::protobuf::internal::ConstantInitialized);
-
-  inline KickSessionRequest(const KickSessionRequest& from) : KickSessionRequest(nullptr, from) {}
-  inline KickSessionRequest(KickSessionRequest&& from) noexcept
-      : KickSessionRequest(nullptr, ::std::move(from)) {}
-  inline KickSessionRequest& operator=(const KickSessionRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline KickSessionRequest& operator=(KickSessionRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const KickSessionRequest& default_instance() {
-    return *reinterpret_cast<const KickSessionRequest*>(
-        &_KickSessionRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 0;
-  friend void swap(KickSessionRequest& a, KickSessionRequest& b) { a.Swap(&b); }
-  inline void Swap(KickSessionRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(KickSessionRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  KickSessionRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<KickSessionRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const KickSessionRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const KickSessionRequest& from) { KickSessionRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(KickSessionRequest* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "KickSessionRequest"; }
-
- protected:
-  explicit KickSessionRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  KickSessionRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const KickSessionRequest& from);
-  KickSessionRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, KickSessionRequest&& from) noexcept
-      : KickSessionRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kSessionIdFieldNumber = 1,
-    kExpectedSessionVersionFieldNumber = 2,
-  };
-  // uint64 session_id = 1;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint64 expected_session_version = 2;
-  void clear_expected_session_version() ;
-  ::uint64_t expected_session_version() const;
-  void set_expected_session_version(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_expected_session_version() const;
-  void _internal_set_expected_session_version(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:KickSessionRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 0,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const KickSessionRequest& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
-    ::uint64_t expected_session_version_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fgate_2fgate_5fservice_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull KickSessionRequest_class_data_;
 // -------------------------------------------------------------------
 
 class BindSessionToGateResponse final : public ::google::protobuf::Message
@@ -341,7 +134,7 @@ class BindSessionToGateResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const BindSessionToGateResponse*>(
         &_BindSessionToGateResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 1;
   friend void swap(BindSessionToGateResponse& a, BindSessionToGateResponse& b) { a.Swap(&b); }
   inline void Swap(BindSessionToGateResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -556,7 +349,7 @@ class BindSessionToGateRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const BindSessionToGateRequest*>(
         &_BindSessionToGateRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 1;
+  static constexpr int kIndexInFileMessages = 0;
   friend void swap(BindSessionToGateRequest& a, BindSessionToGateRequest& b) { a.Swap(&b); }
   inline void Swap(BindSessionToGateRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -771,7 +564,7 @@ class BroadcastToPlayersRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const BroadcastToPlayersRequest*>(
         &_BroadcastToPlayersRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(BroadcastToPlayersRequest& a, BroadcastToPlayersRequest& b) { a.Swap(&b); }
   inline void Swap(BroadcastToPlayersRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -959,10 +752,6 @@ class Gate : public ::google::protobuf::Service {
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void KickSessionByCentre(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::KickSessionRequest* PROTOBUF_NONNULL request,
-                        ::Empty* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void RouteNodeMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::RouteMessageRequest* PROTOBUF_NONNULL request,
                         ::RouteMessageResponse* PROTOBUF_NONNULL response,
@@ -1023,10 +812,6 @@ class Gate_Stub final : public Gate {
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void KickSessionByCentre(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::KickSessionRequest* PROTOBUF_NONNULL request,
-                        ::Empty* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void RouteNodeMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::RouteMessageRequest* PROTOBUF_NONNULL request,
                         ::RouteMessageResponse* PROTOBUF_NONNULL response,
@@ -1063,58 +848,6 @@ class Gate_Stub final : public Gate {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
-// -------------------------------------------------------------------
-
-// KickSessionRequest
-
-// uint64 session_id = 1;
-inline void KickSessionRequest::clear_session_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-inline ::uint64_t KickSessionRequest::session_id() const {
-  // @@protoc_insertion_point(field_get:KickSessionRequest.session_id)
-  return _internal_session_id();
-}
-inline void KickSessionRequest::set_session_id(::uint64_t value) {
-  _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:KickSessionRequest.session_id)
-}
-inline ::uint64_t KickSessionRequest::_internal_session_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.session_id_;
-}
-inline void KickSessionRequest::_internal_set_session_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = value;
-}
-
-// uint64 expected_session_version = 2;
-inline void KickSessionRequest::clear_expected_session_version() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.expected_session_version_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
-}
-inline ::uint64_t KickSessionRequest::expected_session_version() const {
-  // @@protoc_insertion_point(field_get:KickSessionRequest.expected_session_version)
-  return _internal_expected_session_version();
-}
-inline void KickSessionRequest::set_expected_session_version(::uint64_t value) {
-  _internal_set_expected_session_version(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:KickSessionRequest.expected_session_version)
-}
-inline ::uint64_t KickSessionRequest::_internal_expected_session_version() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.expected_session_version_;
-}
-inline void KickSessionRequest::_internal_set_expected_session_version(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.expected_session_version_ = value;
-}
-
 // -------------------------------------------------------------------
 
 // BindSessionToGateRequest

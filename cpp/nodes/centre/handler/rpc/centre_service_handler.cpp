@@ -7,22 +7,30 @@
 #include "table/code/mainscene_table.h"
 #include "session/system/session.h"
 #include "rpc/player_service_interface.h"
+#include "rpc/player_rpc_response_handler.h"
 #include "muduo/net/Callbacks.h"
+#include "muduo/net/TcpConnection.h"
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
+#include "network/codec/message_response_dispatcher.h"
 #include "network/error_handling_system.h"
 #include "table/proto/tip/login_error_tip.pb.h"
 #include "player/system/player_lifecycle.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
+#include "proto/common/component/scene_comp.pb.h"
+#include "proto/common/event/scene_event.pb.h"
 #include "proto/common/base/node.pb.h"
 #include "scene/system/player_change_scene.h"
+#include "scene/system/player_scene.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
+#include "rpc/service_metadata/game_player_scene_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"
+#include "threading/dispatcher_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/defer/defer.h"
 #include "core/utils/proto/proto_field_checker.h"
@@ -36,6 +44,7 @@
 #include "threading/player_manager.h"
 #include "threading/message_context.h"
 #include <modules/scene/comp/scene_node_comp.h>
+#include <modules/scene/comp/scene_comp.h>
 #include <scene/system/scene.h>
 #include <time/system/time.h>
 #include <utils/hash/sha.h>
@@ -50,6 +59,153 @@ struct DelayedCleanupTimer {
 constexpr std::size_t kMaxPlayerSize{ 50000 };
 
 extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
+extern MessageResponseDispatcher gRpcResponseDispatcher;
+std::unordered_map<std::string, std::unique_ptr<PlayerService>> gPlayerService;
+std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> gPlayerServiceReplied;
+
+void InitServiceHandler()
+{
+	gNodeService.emplace("Centre", std::make_unique<CentreHandler>());
+}
+
+void InitPlayerService()
+{
+	// Centre player services have been decommissioned.
+}
+
+entt::entity GetPlayerEntityBySessionId(uint64_t session_id);
+void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp);
+void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, Timestamp timestamp);
+
+void InitReply()
+{
+	gRpcResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(GatePlayerEnterGameNodeMessageId,
+		std::bind(&OnGatePlayerEnterGameNodeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gRpcResponseDispatcher.registerMessageCallback<::BindSessionToGateResponse>(GateBindSessionToGateMessageId,
+		std::bind(&OnGateBindSessionToGateReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+}
+
+void InitPlayerServiceReplied()
+{
+	// Centre-side player replied handlers have been decommissioned.
+}
+
+namespace {
+void OnSceneCreatedHandler(const OnSceneCreated& event)
+{
+}
+
+void OnSceneDestroyedHandler(const OnSceneDestroyed& event)
+{
+}
+
+void BeforeEnterSceneHandler(const BeforeEnterScene& event)
+{
+}
+
+void AfterEnterSceneHandler(const AfterEnterScene& event)
+{
+}
+
+void BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
+{
+	const auto player = entt::to_entity(event.entity());
+
+	const auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+
+	GsLeaveSceneRequest leaveSceneRequest;
+
+	if (!changeSceneQueue.empty())
+	{
+		const auto& changeSceneInfo = *changeSceneQueue.front();
+		*leaveSceneRequest.mutable_change_scene_info() = changeSceneInfo;
+	}
+
+	SendMessageToPlayerOnSceneNode(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
+
+	LOG_INFO << "Player is leaving scene "
+		<< tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player)
+		<< ", Scene GUID: "
+		<< tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(tlsRegistryManager.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity).guid();
+}
+
+void AfterLeaveSceneHandler(const AfterLeaveScene& event)
+{
+}
+
+void S2CEnterSceneHandler(const S2CEnterScene& event)
+{
+	PlayerSceneSystem::SendToGameNodeEnterScene(entt::to_entity(event.entity()));
+}
+} // namespace
+
+void RegisterSceneEventHandlers()
+{
+	dispatcher.sink<OnSceneCreated>().connect<&OnSceneCreatedHandler>();
+	dispatcher.sink<OnSceneDestroyed>().connect<&OnSceneDestroyedHandler>();
+	dispatcher.sink<BeforeEnterScene>().connect<&BeforeEnterSceneHandler>();
+	dispatcher.sink<AfterEnterScene>().connect<&AfterEnterSceneHandler>();
+	dispatcher.sink<BeforeLeaveScene>().connect<&BeforeLeaveSceneHandler>();
+	dispatcher.sink<AfterLeaveScene>().connect<&AfterLeaveSceneHandler>();
+	dispatcher.sink<S2CEnterScene>().connect<&S2CEnterSceneHandler>();
+}
+
+void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp)
+{
+	const auto player = GetPlayerEntityBySessionId(replied->session_info().session_id());
+	if (entt::null == player)
+	{
+		LOG_TRACE << "session player not found " << replied->session_info().session_id();
+		return;
+	}
+
+	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
+	PlayerLifecycleSystem::ProcessPlayerSessionState(player);
+	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(player);
+	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
+}
+
+void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, Timestamp timestamp)
+{
+	const uint64_t sessionId = replied->session_id();
+	const Guid playerId = replied->player_id();
+	const uint64_t respVersion = replied->session_version();
+
+	auto it = tlsPlayerList.find(playerId);
+	if (it == tlsPlayerList.end()) {
+		LOG_INFO << "BindResp ignored: player not exist, player=" << playerId;
+		return;
+	}
+
+	entt::entity playerEntity = it->second;
+	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!sessionPB) {
+		LOG_INFO << "BindResp ignored: no snapshot, player=" << playerId;
+		return;
+	}
+
+	if (sessionPB->session_version() != respVersion) {
+		LOG_INFO << "BindResp ignored: version mismatch "
+			<< "resp=" << respVersion
+			<< " cur=" << sessionPB->session_version()
+			<< " player=" << playerId;
+		return;
+	}
+
+	if (sessionPB->gate_session_id() != sessionId) {
+		LOG_INFO << "BindResp ignored: session mismatch "
+			<< "resp=" << sessionId
+			<< " cur=" << sessionPB->gate_session_id()
+			<< " player=" << playerId;
+		return;
+	}
+
+	SessionMap()[sessionId] = playerId;
+
+	LOG_INFO << "BindResp accepted: session=" << sessionId
+		<< " player=" << playerId
+		<< " version=" << respVersion;
+}
 
 void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeoutMs) {
 	tlsRegistryManager.actorRegistry.get_or_emplace<DelayedCleanupTimer>(playerEntity).timer.RunAfter(static_cast<double>(timeoutMs) / 1000.0,
@@ -160,18 +316,6 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
 		// 只有在旧 token 未过期且与新 token 相同的情况下认为是 Reconnect
 		if (oldTokenValid && oldLoginToken == newLoginToken) return EnterGameDecision::ShortReconnect;
 		return EnterGameDecision::ReplaceLogin;
-	}
-
-	// 发送 kick（携带期望版本）
-	bool SendKickForOldSession(uint64_t oldSessionId, uint64_t expectedVersion)
-	{
-		if (oldSessionId == kInvalidSessionId) return false;
-		KickSessionRequest kickMsg;
-		kickMsg.set_session_id(oldSessionId);
-		kickMsg.set_expected_session_version(expectedVersion);
-		SendMessageToGateById(GateKickSessionByCentreMessageId, kickMsg, GetGateNodeId(oldSessionId));
-		LOG_INFO << "Requested kick for old session: " << oldSessionId << " expected_version=" << expectedVersion;
-		return true;
 	}
 
 	// 更新/创建 player 的 session snapshot（写入新的 sessionId + token）
@@ -488,7 +632,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
         // record in-memory last_request_id for non-persistent idempotency
         if (!requestId.empty()) SetInMemoryLastRequestId(playerId, requestId);
         if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-            SendKickForOldSession(oldSessionId, oldVersion);
             SessionMap().erase(oldSessionId);
         }
         SessionMap()[sessionId] = playerId;
@@ -501,7 +644,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
             LOG_DEBUG << "Duplicate in-memory request detected for player: " << playerId << " req=" << requestId;
             if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
                 SessionMap().erase(oldSessionId);
-                SendKickForOldSession(oldSessionId, oldVersion);
             }
             SessionMap()[sessionId] = playerId;
             return;
@@ -511,7 +653,6 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
         if (!requestId.empty()) SetInMemoryLastRequestId(playerId, requestId);
         if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
             SessionMap().erase(oldSessionId);
-            SendKickForOldSession(oldSessionId, oldVersion);
         }
         SessionMap()[sessionId] = playerId;
     }

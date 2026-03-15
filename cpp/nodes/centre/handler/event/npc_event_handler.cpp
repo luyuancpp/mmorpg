@@ -1,8 +1,6 @@
 #include "npc_event_handler.h"
 #include "threading/dispatcher_manager.h"
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
 {
     dispatcher.sink<InitializeNpcComponentsEvent>().connect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
@@ -14,6 +12,5 @@ void NpcEventHandler::UnRegister()
 }
 void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }

@@ -76,7 +76,6 @@ const GateSendMessageToPlayerMessageId = 72
 const LeaseLeaseRevokeMessageId = 73
 const GateRoutePlayerMessageMessageId = 74
 const ScenePlayerSyncSyncAttribute60FramesMessageId = 75
-const GateKickSessionByCentreMessageId = 76
 const SceneSkillClientPlayerGetSkillListMessageId = 77
 const SceneRouteNodeStringMsgMessageId = 78
 const SceneSceneClientPlayerNotifyEnterSceneMessageId = 79

@@ -9,7 +9,6 @@ void SceneScenePlayerReply::EnterScene(entt::entity player,const ::GsEnterSceneR
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void SceneScenePlayerReply::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
@@ -17,7 +16,6 @@ void SceneScenePlayerReply::LeaveScene(entt::entity player,const ::GsLeaveSceneR
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void SceneScenePlayerReply::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
@@ -25,5 +23,4 @@ void SceneScenePlayerReply::EnterSceneS2C(entt::entity player,const ::EnterScene
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }

@@ -1,8 +1,6 @@
 #include "actor_combat_state_event_handler.h"
 #include "threading/dispatcher_manager.h"
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 void ActorCombatStateEventHandler::Register()
 {
     dispatcher.sink<CombatStateAddedPbEvent>().connect<&ActorCombatStateEventHandler::CombatStateAddedPbEventHandler>();
@@ -16,11 +14,9 @@ void ActorCombatStateEventHandler::UnRegister()
 }
 void ActorCombatStateEventHandler::CombatStateAddedPbEventHandler(const CombatStateAddedPbEvent& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }
 void ActorCombatStateEventHandler::CombatStateRemovedPbEventHandler(const CombatStateRemovedPbEvent& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }

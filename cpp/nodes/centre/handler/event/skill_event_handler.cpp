@@ -1,8 +1,6 @@
 #include "skill_event_handler.h"
 #include "threading/dispatcher_manager.h"
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 void SkillEventHandler::Register()
 {
     dispatcher.sink<SkillExecutedEvent>().connect<&SkillEventHandler::SkillExecutedEventHandler>();
@@ -14,6 +12,5 @@ void SkillEventHandler::UnRegister()
 }
 void SkillEventHandler::SkillExecutedEventHandler(const SkillExecutedEvent& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }

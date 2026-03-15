@@ -9,7 +9,6 @@ void ScenePlayerReply::Centre2GsLogin(entt::entity player,const ::Centre2GsLogin
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void ScenePlayerReply::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,
@@ -17,5 +16,4 @@ void ScenePlayerReply::ExitGame(entt::entity player,const ::GameNodeExitGameRequ
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }

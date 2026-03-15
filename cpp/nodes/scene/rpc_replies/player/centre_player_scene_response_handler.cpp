@@ -9,7 +9,6 @@ void CentrePlayerSceneReply::EnterScene(entt::entity player,const ::CentreEnterS
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void CentrePlayerSceneReply::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
@@ -17,7 +16,6 @@ void CentrePlayerSceneReply::LeaveScene(entt::entity player,const ::CentreLeaveS
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void CentrePlayerSceneReply::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
@@ -25,7 +23,6 @@ void CentrePlayerSceneReply::LeaveSceneAsyncSavePlayerComplete(entt::entity play
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void CentrePlayerSceneReply::SceneInfoC2S(entt::entity player,const ::CentreSceneInfoRequest* request,
@@ -33,5 +30,4 @@ void CentrePlayerSceneReply::SceneInfoC2S(entt::entity player,const ::CentreScen
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }

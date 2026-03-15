@@ -24,6 +24,9 @@
     <ClCompile Include="handler\event\gate_kafka_command_router.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="handler\event\player_event_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -31,12 +34,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="handler\rpc\gate_service_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_replies\centre_scene_response_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_replies\centre_service_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="rpc_replies\game_scene_response_handler.cpp">
@@ -71,16 +68,13 @@
     <ClInclude Include="handler\event\gate_kafka_command_router.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="handler\event\player_event_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="handler\rpc\client_message_processor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="handler\rpc\gate_service_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rpc_replies\centre_scene_response_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rpc_replies\centre_service_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="rpc_replies\game_scene_response_handler.h">
