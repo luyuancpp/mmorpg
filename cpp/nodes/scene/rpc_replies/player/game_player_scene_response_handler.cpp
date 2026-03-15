@@ -4,8 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
-
 void SceneScenePlayerReply::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -13,7 +11,6 @@ void SceneScenePlayerReply::EnterScene(entt::entity player,const ::GsEnterSceneR
 ///<<< END WRITING YOUR CODE
 
 }
-
 
 void SceneScenePlayerReply::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
@@ -23,7 +20,6 @@ void SceneScenePlayerReply::LeaveScene(entt::entity player,const ::GsLeaveSceneR
 
 }
 
-
 void SceneScenePlayerReply::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
 	::EnterScenerS2CResponse* response)
 {
@@ -31,4 +27,3 @@ void SceneScenePlayerReply::EnterSceneS2C(entt::entity player,const ::EnterScene
 ///<<< END WRITING YOUR CODE
 
 }
-
