@@ -6,7 +6,7 @@ Etcd:
   NodeTTLSeconds: 60   # 服务存活超时（单位：秒）：超过该时间无心跳，Etcd标记服务“下线”
 
 # 表格数据目录配置（存储静态配置表、业务数据表等文件的根路径）
-TableDataDirectory: "../generated/generated_tables/"  # 路径可自定义（相对路径/绝对路径均可）
+TableDataDirectory: "../generated/tables/"  # 路径可自定义（相对路径/绝对路径均可）
 # 示例说明：若配置为 "./data/table"，则角色配置表可能存于 "./data/table/role_config.xlsx"，道具表存于 "./data/table/item_config.json"
 
 # 日志配置（控制日志输出级别）
