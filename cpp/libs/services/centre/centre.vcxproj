@@ -18,13 +18,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="player\system\player_lifecycle.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="player\comp\player.h" />
-    <ClInclude Include="player\system\player_lifecycle.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
