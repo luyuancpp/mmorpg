@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "node/system/node/node.h"
 #include "scene/scene/system/game_node_scene.h"
-#include <modules/scene/system/scene_common.h>
 ///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()
 {
@@ -34,7 +33,6 @@ void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    SceneCommon::SetSequenceNodeId(gNode->GetNodeId());
     GameNodeSceneSystem::InitializeNodeScenes();
 ///<<< END WRITING YOUR CODE
 }

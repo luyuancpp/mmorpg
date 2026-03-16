@@ -1,7 +1,6 @@
 ﻿#include "player_lifecycle.h"
 #include "muduo/base/Logging.h"
 
-#include "modules/scene/comp/scene_comp.h"
 #include "session/system/session.h"
 #include "player/comp/player.h"
 #include "scene/system/player_change_scene.h"

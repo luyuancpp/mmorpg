@@ -19,7 +19,6 @@
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/base/node.pb.h"
-#include "modules/scene/system/scene_common.h"
 #include "rpc/service_metadata/service_metadata.h"
 #include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
@@ -550,7 +549,6 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
         return;
     }
 
-    SceneCommon::EnterScene({ .scene = sceneEntity, .enter = player });
     PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
 	///<<< END WRITING YOUR CODE
 }

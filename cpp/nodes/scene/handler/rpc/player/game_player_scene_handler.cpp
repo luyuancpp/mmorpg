@@ -9,7 +9,6 @@
 #include "modules/scene/comp/scene_comp.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "network/player_message_utils.h"
-#include <modules/scene/system/scene_common.h>
 
 ///<<< END WRITING YOUR CODE
 
