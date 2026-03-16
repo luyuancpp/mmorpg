@@ -42,7 +42,7 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes --no-maint-notify
+    command: redis-server --appendonly yes
     volumes:
       - redis-data:/data
     restart: unless-stopped
@@ -79,12 +79,17 @@ services:
       - "9849:9849"  # 服务端grpc端口
     environment:
       - MODE=standalone  # 单机模式（适合开发测试）
+      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_IDENTITY_KEY=serverIdentity
+      - NACOS_AUTH_IDENTITY_VALUE=security
+      - NACOS_AUTH_TOKEN=VGhpc0lzQURldk9ubHlUb2tlblN0cmluZ0Zvck5hY29zMzIh
       - SPRING_DATASOURCE_PLATFORM=mysql  # 可选：结合MySQL持久化配置
       - MYSQL_SERVICE_HOST=mysql  # 连接上面的MySQL容器
       - MYSQL_SERVICE_PORT=3306
       - MYSQL_SERVICE_DB_NAME=nacos_db  # Nacos专用数据库
       - MYSQL_SERVICE_USER=root
       - MYSQL_SERVICE_PASSWORD=root123
+      - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
       - MYSQL_DATABASE_NUM=1
     volumes:
       - nacos-data:/home/nacos/data
@@ -103,7 +108,10 @@ services:
       - "2380:2380"  # 集群节点通信端口
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes  # 开发环境关闭认证（生产需开启）
-      - ETCD_ADVERTISE_CLIENT_URLS=http://${HOST_IP:-host.docker.internal}:2379  # 客户端暴露地址
+      - ETCD_NAME=default
+      - ETCD_INITIAL_CLUSTER=default=http://etcd:2380
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379,http://${HOST_IP:-host.docker.internal}:2379  # 客户端暴露地址
       - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379  # 监听客户端地址
       - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380  # 监听节点通信地址
     volumes:
