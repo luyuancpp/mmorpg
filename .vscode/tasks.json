@@ -1,0 +1,60 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "pbgen: build",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"pbgen-build"
+			],
+			"group": "build",
+			"problemMatcher": [
+				"$go"
+			]
+		},
+		{
+			"label": "pbgen: run",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"pbgen-run",
+				"-ConfigPath",
+				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml"
+			],
+			"problemMatcher": [
+				"$go"
+			]
+		},
+		{
+			"label": "tools: tree",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"tree"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "verify: grpc_client build",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/tools/scripts/verify_grpc_client_build.ps1"
+			],
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}
