@@ -12,6 +12,7 @@
 #include <node_config_manager.h>
 #include <threading/registry_manager.h>
 #include <threading/entity_manager.h>
+#include "node/system/grpc_channel_cache.h"
 
 void NodeConnector::ConnectToNode(const NodeInfo& nodeInfo) {
 	if (gNode->IsCurrentNode(nodeInfo)) {
@@ -61,8 +62,7 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo& nodeInfo) {
 	}
 
 	const auto& grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(nodeEntity,
-		grpc::CreateChannel(::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port()),
-			grpc::InsecureChannelCredentials()));
+		grpc_channel_cache::GetOrCreateChannel(::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port())));
 
 	InitGrpcNode(grpcChannel, targetRegistry, nodeEntity);
 	targetRegistry.emplace<NodeInfo>(nodeEntity, nodeInfo);

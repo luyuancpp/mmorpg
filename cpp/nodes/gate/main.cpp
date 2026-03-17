@@ -10,6 +10,7 @@
 #include "handler/event/event_handler.h"
 #include "handler/event/gate_kafka_command_router.h"
 #include "grpc_client/grpc_init_client.h"
+#include "node/system/grpc_channel_cache.h"
 #include "session/system/session.h"
 #include "session/manager/session_manager.h"
 #include "node/system/node/node_kafka_command_handler.h"
@@ -34,6 +35,12 @@ void startGateNode(EventLoop& loop)
     });
     RpcClientSessionHandler rpcClientHandler(codec, protobufDispatcher);
     gGateCodec = &codec;
+
+    LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
+        << ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs()
+        << ", EventEngine pool reserve=" << (grpc_channel_cache::ConfiguredThreadPoolReserveThreads() > 0
+            ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolReserveThreads())
+            : std::string("default"));
 
     // ── gRPC 响应 → 客户端 TCP 桥接 ────────────────────────────────────────
     SetIfEmptyHandler([&rpcClientHandler](const ClientContext& ctx, const ::google::protobuf::Message& reply) {
@@ -76,6 +83,10 @@ void startGateNode(EventLoop& loop)
             [](const std::string& topic, const contracts::kafka::GateCommand& command) {
                 DispatchGateKafkaCommand(topic, command);
             });
+    });
+
+    loop.runEvery(10.0, [] {
+        LOG_INFO << "gRPC channel cache: active targets=" << grpc_channel_cache::CachedTargetCount();
     });
 
     loop.loop();

@@ -7,6 +7,7 @@
 #include "node/system/node/node_allocator.h"
 #include "grpc_client/grpc_init_client.h"
 #include "grpc_client/etcd/etcd_grpc_client.h"
+#include "node/system/grpc_channel_cache.h"
 #include "threading/redis_manager.h"
 #include "threading/node_context_manager.h"
 #include <node_config_manager.h>
@@ -17,7 +18,9 @@ void EtcdService::Init() {
 	InitHandlers();
 
 	const std::string& etcdAddr = *tlsNodeConfigManager.GetBaseDeployConfig().etcd_hosts().begin();
-	auto channel = grpc::CreateChannel(etcdAddr, grpc::InsecureChannelCredentials());
+	auto channel = grpc_channel_cache::GetOrCreateChannel(etcdAddr);
+	LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
+		<< ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs();
 
 	InitGrpcNode(channel, tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService));
 

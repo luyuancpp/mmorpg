@@ -15,6 +15,7 @@ param(
 	[int]$CentreReplicas = 1,
 	[int]$GateReplicas = 2,
 	[int]$SceneReplicas = 4,
+	[int]$GrpcThreadPoolReserveThreads = 1,
 	[ValidateSet("ClusterIP", "NodePort", "LoadBalancer")]
 	[string]$GateServiceType = "NodePort",
 	[int]$GateServicePort = 18000,
@@ -207,6 +208,14 @@ function New-NodeDeploymentYaml {
 		[Parameter(Mandatory = $true)][string]$ConfigMapName
 	)
 
+	$grpcEnvBlock = ""
+	if ($NodeName -eq "gate" -and $GrpcThreadPoolReserveThreads -gt 0) {
+		$grpcEnvBlock = @"
+			- name: GRPC_THREAD_POOL_RESERVE_THREADS
+			  value: "$GrpcThreadPoolReserveThreads"
+"@
+	}
+
 	return @"
 apiVersion: apps/v1
 kind: Deployment
@@ -238,6 +247,7 @@ spec:
 			  value: "$RpcPort"
 			- name: NODE_PORT
 			  value: "$RpcPort"
+$grpcEnvBlock
 		  volumeMounts:
 			- name: node-config
 			  mountPath: /app/bin/etc
