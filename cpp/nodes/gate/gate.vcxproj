@@ -107,6 +107,10 @@
     <OutDir>../../../bin/vsout/</OutDir>
     <IntDir>../../../bin/vsout/$(ProjectName)/</IntDir>
     <GenerateManifest>false</GenerateManifest>
+    <LocalDebuggerCommand>$(ProjectDir)..\..\..\bin\gate.exe</LocalDebuggerCommand>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)..\..\..\bin</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerEnvironment>GRPC_THREAD_POOL_RESERVE_THREADS=2%0D%0AGRPC_THREAD_POOL_MAX_THREADS=8%0D%0A$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <GenerateManifest>false</GenerateManifest>

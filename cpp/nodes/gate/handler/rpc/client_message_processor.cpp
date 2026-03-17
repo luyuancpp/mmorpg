@@ -235,6 +235,17 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     LOG_TRACE << "Disconnected session id: " << sessionId;
 }
 
+// 高水位回调：客户端发送缓冲区超过阈值，说明客户端不在正常消费数据（断网/外挂/慢客户端），直接踢掉
+static constexpr size_t kClientHighWaterMark = 2 * 1024 * 1024; // 2MB
+
+static void OnClientHighWaterMark(const muduo::net::TcpConnectionPtr& conn, size_t oldLen)
+{
+	const auto sessionId = RpcClientSessionHandler::GetSessionId(conn);
+	LOG_WARN << "Client high water mark triggered, session_id=" << sessionId
+		<< ", buffered=" << oldLen << " bytes, forcing close";
+	conn->forceClose();
+}
+
 void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
 {
 	auto sessionId = tlsSessionManager.session_id_gen().Generate();
@@ -246,6 +257,8 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 	// 用session id 防止改包把消息发给其他玩家
 
 	conn->setContext(sessionId);
+	conn->setHighWaterMarkCallback(OnClientHighWaterMark, kClientHighWaterMark);
+
 	SessionInfo session;
 	session.conn = conn;
 	tlsSessionManager.sessions().emplace(sessionId, std::move(session));

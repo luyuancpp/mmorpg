@@ -19,9 +19,42 @@
 #include "proto/contracts/kafka/gate_command.pb.h"
 #include "gate_globals.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#include <TlHelp32.h>
+#endif
+
 ProtobufCodec* gGateCodec = nullptr;
 
 namespace {
+
+int GetCurrentProcessThreadCount()
+{
+#ifdef _WIN32
+    const DWORD pid = GetCurrentProcessId();
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    THREADENTRY32 entry;
+    entry.dwSize = sizeof(THREADENTRY32);
+    int threadCount = 0;
+    if (Thread32First(snapshot, &entry)) {
+        do {
+            if (entry.th32OwnerProcessID == pid) {
+                ++threadCount;
+            }
+            entry.dwSize = sizeof(THREADENTRY32);
+        } while (Thread32Next(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+    return threadCount;
+#else
+    return -1;
+#endif
+}
 
 void startGateNode(EventLoop& loop)
 {
@@ -40,7 +73,10 @@ void startGateNode(EventLoop& loop)
         << ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs()
         << ", EventEngine pool reserve=" << (grpc_channel_cache::ConfiguredThreadPoolReserveThreads() > 0
             ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolReserveThreads())
-            : std::string("default"));
+            : std::string("default"))
+        << ", EventEngine pool max=" << (grpc_channel_cache::ConfiguredThreadPoolMaxThreads() > 0
+            ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolMaxThreads())
+            : std::string("unlimited"));
 
     // ── gRPC 响应 → 客户端 TCP 桥接 ────────────────────────────────────────
     SetIfEmptyHandler([&rpcClientHandler](const ClientContext& ctx, const ::google::protobuf::Message& reply) {
@@ -86,7 +122,7 @@ void startGateNode(EventLoop& loop)
     });
 
     loop.runEvery(10.0, [] {
-        LOG_INFO << "gRPC channel cache: active targets=" << grpc_channel_cache::CachedTargetCount();
+        LOG_INFO << "gRPC process threads=" << GetCurrentProcessThreadCount();
     });
 
     loop.loop();

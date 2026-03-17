@@ -54,10 +54,8 @@ bool KafkaManager::Subscribe(const KafkaConfig& config,
 	const std::string brokers = JoinBrokers(config);
 	const std::string effectiveGroupId = groupId.empty() ? config.group_id() : groupId;
 
-	if (!KafkaProducer::Instance().init(brokers)) {
-		LOG_ERROR << "KafkaManager: Failed to initialize Kafka producer for brokers: " << brokers;
-		return false;
-	}
+	// Defer producer creation until first Publish() call to save rdkafka threads.
+	KafkaProducer::Instance().setBrokers(brokers);
 
 	KafkaConsumer::Instance().stop();
 	if (!KafkaConsumer::Instance().init(
@@ -101,7 +99,9 @@ void KafkaManager::Poll() {
 void KafkaManager::Shutdown() {
 	KafkaConsumer::Instance().stop();
 
-	KafkaProducer::Instance().poll(); // flush if needed
-	
+	if (KafkaProducer::Instance().initialized()) {
+		KafkaProducer::Instance().poll(); // flush if needed
+	}
+
 	LOG_INFO << "KafkaManager has been shut down.";
 }

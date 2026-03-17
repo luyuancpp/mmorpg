@@ -18,7 +18,8 @@ bool KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 	conf_->set("bootstrap.servers", brokers, errstr);
 	conf_->set("group.id", groupId, errstr);
 	conf_->set("enable.auto.commit", "true", errstr);
-	conf_->set("auto.offset.reset", "earliest", errstr);  // 可根据需求改为 latest
+	conf_->set("auto.offset.reset", "earliest", errstr);
+	conf_->set("enable.sparse.connections", "true", errstr);
 
 	consumer_.reset(RdKafka::KafkaConsumer::create(conf_.get(), errstr));
 	if (!consumer_) {
