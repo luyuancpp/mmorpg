@@ -1,7 +1,15 @@
 ﻿#include "kafka_producer.h"
 #include "muduo/base/Logging.h"
 
+void KafkaProducer::setBrokers(const std::string& brokers) {
+	if (producer_) return; // already created
+	pendingBrokers_ = brokers;
+	LOG_INFO << "KafkaProducer: brokers stored for lazy init: " << brokers;
+}
+
 bool KafkaProducer::init(const std::string& brokers) {
+	if (producer_) return true; // idempotent
+
 	std::string errstr;
 
 	conf_.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
@@ -11,8 +19,8 @@ bool KafkaProducer::init(const std::string& brokers) {
 		return false;
 	}
 
-	// 设置回调，非阻塞时用来检测消息是否送达
 	conf_->set("dr_cb", this, errstr);
+	conf_->set("enable.sparse.connections", "true", errstr);
 
 	producer_.reset(RdKafka::Producer::create(conf_.get(), errstr));
 	if (!producer_) {
@@ -20,8 +28,15 @@ bool KafkaProducer::init(const std::string& brokers) {
 		return false;
 	}
 
+	pendingBrokers_.clear();
 	LOG_INFO << "KafkaProducer initialized for brokers: " << brokers;
 	return true;
+}
+
+bool KafkaProducer::ensureInitialized() {
+	if (producer_) return true;
+	if (pendingBrokers_.empty()) return false;
+	return init(pendingBrokers_);
 }
 
 KafkaProducer::~KafkaProducer() {
@@ -33,8 +48,8 @@ KafkaProducer::~KafkaProducer() {
 
 RdKafka::ErrorCode KafkaProducer::send(const std::string& topic, const std::string& message,
 	const std::string& key, int32_t partition) {
-	if (!producer_) {
-		LOG_ERROR << "KafkaProducer send requested before successful initialization.";
+	if (!ensureInitialized()) {
+		LOG_ERROR << "KafkaProducer send requested but no brokers configured.";
 		return RdKafka::ERR__STATE;
 	}
 

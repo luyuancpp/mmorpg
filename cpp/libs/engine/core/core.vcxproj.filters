@@ -96,6 +96,9 @@
     <ClInclude Include="utils\stat\stat.h" />
     <ClInclude Include="utils\hash\sha.h" />
     <ClInclude Include="utils\proto\message_uitil.h" />
+    <ClInclude Include="node\system\grpc_channel_cache.h" />
+    <ClInclude Include="node\system\node\node_kafka_command_handler.h" />
+    <ClInclude Include="node\system\node\simple_node.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="network\autogen.bat" />

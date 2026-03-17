@@ -51,6 +51,19 @@ inline int ConfiguredThreadPoolReserveThreads() {
     return GetGrpcThreadPoolReserveThreads();
 }
 
+inline int GetGrpcThreadPoolMaxThreads() {
+    const char* env = std::getenv("GRPC_THREAD_POOL_MAX_THREADS");
+    if (env == nullptr || env[0] == '\0') {
+        return 0;
+    }
+    const int parsed = std::atoi(env);
+    return parsed > 0 ? parsed : 0;
+}
+
+inline int ConfiguredThreadPoolMaxThreads() {
+    return GetGrpcThreadPoolMaxThreads();
+}
+
 inline std::unordered_map<std::string, std::weak_ptr<grpc::Channel>>& ChannelCache() {
     static std::unordered_map<std::string, std::weak_ptr<grpc::Channel>> channelCache;
     return channelCache;

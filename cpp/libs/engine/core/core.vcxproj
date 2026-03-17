@@ -464,10 +464,13 @@
     <ClInclude Include="node\system\etcd\etcd_helper.h" />
     <ClInclude Include="node\system\etcd\etcd_manager.h" />
     <ClInclude Include="node\system\etcd\etcd_service.h" />
+    <ClInclude Include="node\system\grpc_channel_cache.h" />
     <ClInclude Include="node\system\node\node.h" />
     <ClInclude Include="node\system\node\node_allocator.h" />
     <ClInclude Include="node\system\node\node_connector.h" />
+    <ClInclude Include="node\system\node\node_kafka_command_handler.h" />
     <ClInclude Include="node\system\node\node_util.h" />
+    <ClInclude Include="node\system\node\simple_node.h" />
     <ClInclude Include="node\system\registration\registration_manager.h" />
     <ClInclude Include="node\system\discovery\service_discovery_manager.h" />
     <ClInclude Include="time\comp\timer_task_comp.h" />
