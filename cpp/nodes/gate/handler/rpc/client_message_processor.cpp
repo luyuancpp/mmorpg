@@ -242,7 +242,9 @@ static void OnClientHighWaterMark(const muduo::net::TcpConnectionPtr& conn, size
 {
 	const auto sessionId = RpcClientSessionHandler::GetSessionId(conn);
 	LOG_WARN << "Client high water mark triggered, session_id=" << sessionId
-		<< ", buffered=" << oldLen << " bytes, forcing close";
+		<< ", buffered=" << oldLen
+		<< " bytes, threshold=" << kClientHighWaterMark
+		<< " bytes, forcing close";
 	conn->forceClose();
 }
 
