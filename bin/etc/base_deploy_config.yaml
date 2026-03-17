@@ -27,7 +27,6 @@ services:
 service_discovery_prefixes:
   - "SceneNodeService.rpc"  # 场景节点服务（RPC类型）的Etcd存储前缀
   - "GateNodeService.rpc"   # 网关节点服务（RPC类型）的Etcd存储前缀
-  - "CentreNodeService.rpc" # 中心节点服务（RPC类型）的Etcd存储前缀
   - "LoginNodeService.rpc"  # 登录节点服务（RPC类型）的Etcd存储前缀
 
 # Kafka 配置（分布式消息队列，用于异步通信、日志收集、事件分发等）

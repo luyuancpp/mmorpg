@@ -1055,9 +1055,6 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 		case eNodeType::GateNodeService:
 			nextSession->SendRequest(GateRoutePlayerMessageMessageId, nextRequest);
 			return;
-		case eNodeType::CentreNodeService:
-			nextSession->SendRequest(CentreRoutePlayerStringMsgMessageId, nextRequest);
-			return;
 		default:
 			LOG_ERROR << "RoutePlayerStringMsg: unsupported next node_type=" << nextNode.node_type()
 					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;

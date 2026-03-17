@@ -6,6 +6,3 @@
 
 #include "engine/core/type_define/type_define.h"
 
-void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid player_id);
-void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
-

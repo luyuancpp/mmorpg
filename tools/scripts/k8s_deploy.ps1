@@ -161,7 +161,6 @@ HealthCheckInterval: 1
 service_discovery_prefixes:
   - "SceneNodeService.rpc"
   - "GateNodeService.rpc"
-  - "CentreNodeService.rpc"
   - "LoginNodeService.rpc"
 Kafka:
   Brokers:

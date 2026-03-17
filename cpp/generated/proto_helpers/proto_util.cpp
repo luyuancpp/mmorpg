@@ -4,9 +4,7 @@
 
 bool IsTcpNodeType(uint32_t nodeType) {
 	static const std::unordered_set<uint32_t> validTypes = {
-		eNodeType::DeployNodeService,
-		eNodeType::DbNodeService,
-		eNodeType::CentreNodeService,
+		eNodeType::UnknownNodeService,
 		eNodeType::SceneNodeService,
 		eNodeType::GateNodeService,
 		eNodeType::LoginNodeService,

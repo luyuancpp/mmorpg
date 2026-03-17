@@ -34,7 +34,7 @@
 //       muduo::net::EventLoop loop;
 //       SimpleNode<ChatHandler> node(&loop, "logs/chat",
 //                                    ChatNodeService,
-//                                    { CentreNodeService });
+//                                    {});
 //       loop.loop();
 //       google::protobuf::ShutdownProtobufLibrary();
 //   }
@@ -44,8 +44,7 @@
 //   class InstanceNode : public SimpleNode<InstanceHandler> {
 //   public:
 //       InstanceNode(muduo::net::EventLoop* loop)
-//           : SimpleNode(loop, "logs/instance", InstanceNodeService,
-//                        { CentreNodeService }) {}
+//           : SimpleNode(loop, "logs/instance", InstanceNodeService, {}) {}
 //   protected:
 //       void OnAfterStartRpcServer() override {
 //           cleanupTimer_.RunEvery(60s, &InstanceSystem::CleanupExpiredInstances);
