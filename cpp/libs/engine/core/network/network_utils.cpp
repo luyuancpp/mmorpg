@@ -58,8 +58,6 @@ std::string FormatIpAndPort(const std::string& ip, uint32_t port)
 
 bool IsZoneSingletonNodeType(uint32_t nodeType) {
 	switch (nodeType) {
-	case DeployNodeService:
-	case DbNodeService:
 	case RedisNodeService:
 	case EtcdNodeService:
 	case MailNodeService:

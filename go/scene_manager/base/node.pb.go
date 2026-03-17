@@ -24,9 +24,7 @@ const (
 type ENodeType int32
 
 const (
-	ENodeType_DeployNodeService        ENodeType = 0  // 部署节点服务
-	ENodeType_DbNodeService            ENodeType = 1  // 数据库节点服务
-	ENodeType_CentreNodeService        ENodeType = 2  // 场景切换中心服务器服务
+	ENodeType_UnknownNodeService       ENodeType = 0  // 未知节点服务
 	ENodeType_SceneNodeService         ENodeType = 3  // 场景服务器服务
 	ENodeType_GateNodeService          ENodeType = 4  // 网关节点服务
 	ENodeType_LoginNodeService         ENodeType = 5  // 登录服务器节点服务
@@ -54,9 +52,7 @@ const (
 // Enum value maps for ENodeType.
 var (
 	ENodeType_name = map[int32]string{
-		0:  "DeployNodeService",
-		1:  "DbNodeService",
-		2:  "CentreNodeService",
+		0:  "UnknownNodeService",
 		3:  "SceneNodeService",
 		4:  "GateNodeService",
 		5:  "LoginNodeService",
@@ -81,9 +77,7 @@ var (
 		24: "PlayerLocatorNodeService",
 	}
 	ENodeType_value = map[string]int32{
-		"DeployNodeService":        0,
-		"DbNodeService":            1,
-		"CentreNodeService":        2,
+		"UnknownNodeService":       0,
 		"SceneNodeService":         3,
 		"GateNodeService":          4,
 		"LoginNodeService":         5,
@@ -242,11 +236,9 @@ var File_proto_common_base_node_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_node_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/common/base/node.proto*\xbb\x04\n" +
-	"\teNodeType\x12\x15\n" +
-	"\x11DeployNodeService\x10\x00\x12\x11\n" +
-	"\rDbNodeService\x10\x01\x12\x15\n" +
-	"\x11CentreNodeService\x10\x02\x12\x14\n" +
+	"\x1cproto/common/base/node.proto*\x92\x04\n" +
+	"\teNodeType\x12\x16\n" +
+	"\x12UnknownNodeService\x10\x00\x12\x14\n" +
 	"\x10SceneNodeService\x10\x03\x12\x13\n" +
 	"\x0fGateNodeService\x10\x04\x12\x14\n" +
 	"\x10LoginNodeService\x10\x05\x12\x14\n" +

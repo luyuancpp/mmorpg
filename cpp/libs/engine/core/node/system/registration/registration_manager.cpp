@@ -127,12 +127,6 @@ void NodeHandshakeManager::TriggerNodeConnectionEvent(entt::registry& registry, 
 		connectEvent.set_entity(entt::to_integral(entity));
 		connectEvent.set_node_type(nodeInfo.node_type());
 		dispatcher.trigger(connectEvent);
-		if (nodeInfo.node_type() == CentreNodeService) {
-			OnConnect2CentrePbEvent centreEvent;
-			centreEvent.set_entity(entt::to_integral(entity));
-			dispatcher.trigger(centreEvent);
-			LOG_INFO << "CentreNode connected, entity: " << entt::to_integral(entity);
-		}
 		registry.remove<TimerTaskComp>(entity);
 		break;
 	}

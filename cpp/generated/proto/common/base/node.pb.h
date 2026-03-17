@@ -71,9 +71,7 @@ internal::EnumTraitsT<::eSceneNodeType_internal_data_>
 }  // namespace google
 
 enum eNodeType : int {
-  DeployNodeService = 0,
-  DbNodeService = 1,
-  CentreNodeService = 2,
+  UnknownNodeService = 0,
   SceneNodeService = 3,
   GateNodeService = 4,
   LoginNodeService = 5,
@@ -110,7 +108,7 @@ inline constexpr eNodeType eNodeType_MIN =
 inline constexpr eNodeType eNodeType_MAX =
     static_cast<eNodeType>(26);
 inline bool eNodeType_IsValid(int value) {
-  return 0 <= value && value <= 26;
+  return 0 <= value && value <= 26 && ((134217721u >> value) & 1) != 0;
 }
 inline constexpr int eNodeType_ARRAYSIZE = 26 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eNodeType_descriptor();

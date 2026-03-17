@@ -2,9 +2,7 @@ syntax = "proto3";
 option go_package = "robot/proto/common/base;base";
 
 enum eNodeType {
-    DeployNodeService      = 0;  // 部署节点服务
-    DbNodeService          = 1;  // 数据库节点服务
-    CentreNodeService      = 2;  // 场景切换中心服务器服务
+  UnknownNodeService     = 0;  // 未知节点服务
     SceneNodeService       = 3;  // 场景服务器服务
     GateNodeService        = 4;  // 网关节点服务
     LoginNodeService       = 5;  // 登录服务器节点服务
