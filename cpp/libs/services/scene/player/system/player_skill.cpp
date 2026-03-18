@@ -3,7 +3,7 @@
 #include "table/code/class_table.h"
 #include "proto/common/component/player_skill_comp.pb.h"
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 void PlayerSkillSystem::InitializePlayerComponentsHandler(entt::entity player)
 {
@@ -22,3 +22,4 @@ void PlayerSkillSystem::RegisterPlayer(entt::entity player)
 		}
 	}
 }
+

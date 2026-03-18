@@ -1,4 +1,4 @@
-﻿#include "game_channel.h"
+#include "game_channel.h"
 #include <boost/get_pointer.hpp>
 #include <google/protobuf/descriptor.h>
 #include "muduo/base/Logging.h"
@@ -8,7 +8,7 @@
 #include "rpc/service_metadata/service_metadata.h"
 #include "core/utils/stat/stat.h"
 #include "network/codec/message_response_dispatcher.h"
-#include "threading/rpc_manager.h"
+#include "thread_context/rpc_manager.h"
 
 using namespace std::placeholders;
 
@@ -359,4 +359,5 @@ void GameChannel::SendGameRpcMessage(const GameRpcMessage& message) {
     // 记录消息统计信息
     LogMessageStatistics(message);
 }
+
 

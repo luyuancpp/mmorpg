@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 #include <unordered_map>
 
 #include "engine/core/type_define/type_define.h"
-#include "engine/threading/entity_manager.h"
+#include "engine/thread_context/entity_manager.h"
 #include "proto/scene/player_scene.pb.h"
 
 #define actorCreateMessage tlsRegistryManager.globalRegistry.get<ActorCreateS2C>(GlobalEntity())

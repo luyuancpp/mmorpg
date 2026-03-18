@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include <cstdint>
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 entt::entity GlobalEntity();
 
@@ -52,3 +52,4 @@ tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity())
 return; \
 } \
 }
+

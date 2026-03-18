@@ -1,4 +1,4 @@
-﻿#include "actor_attribute_calculator.h"
+#include "actor_attribute_calculator.h"
 
 #include <array>
 #include <ranges>
@@ -10,7 +10,7 @@
 #include "scene/combat/buff/comp/buff.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <boost/dynamic_bitset.hpp>
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 

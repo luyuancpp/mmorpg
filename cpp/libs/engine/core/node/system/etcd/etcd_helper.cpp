@@ -1,9 +1,9 @@
-﻿#include "etcd_helper.h"
+#include "etcd_helper.h"
 #include <google/protobuf/util/json_util.h>
-#include "threading/redis_manager.h"
+#include "thread_context/redis_manager.h"
 #include "grpc_client/etcd/etcd_grpc_client.h"
 #include <muduo/base/Logging.h>
-#include "threading/node_context_manager.h"
+#include "thread_context/node_context_manager.h"
 
 void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string& key) {
     etcdserverpb::PutRequest request;
@@ -136,3 +136,4 @@ void EtcdHelper::DeleteRange(const std::string& key, bool isPrefix) {
 
 	SendKVDeleteRange(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), request);
 }
+

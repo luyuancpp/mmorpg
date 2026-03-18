@@ -3,7 +3,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "player/system/player_lifecycle.h"
-#include "threading/redis_manager.h"
+#include "thread_context/redis_manager.h"
 
 thread_local RedisSystem tlsRedisSystem;
 

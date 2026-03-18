@@ -1,10 +1,10 @@
 #include "mission_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/system/mission.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 ///<<< END WRITING YOUR CODE
 void MissionEventHandler::Register()
@@ -51,3 +51,4 @@ void MissionEventHandler::OnMissionAwardEventHandler(const OnMissionAwardEvent& 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+

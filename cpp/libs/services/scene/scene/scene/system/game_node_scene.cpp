@@ -10,7 +10,7 @@
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"
 #include "scene/scene/manager/scene_nav.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
 

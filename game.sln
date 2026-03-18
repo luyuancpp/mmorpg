@@ -146,7 +146,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "cpp\libs\engine\cor
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "session", "cpp\libs\engine\session\session.vcxproj", "{FA8524DA-D5B6-4785-8B1C-F43E985E56AA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "threading", "cpp\libs\engine\threading\threading.vcxproj", "{8B95AB85-AA83-465D-8B10-19CCF03A3654}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "thread_context", "cpp\libs\engine\thread_context\thread_context.vcxproj", "{8B95AB85-AA83-465D-8B10-19CCF03A3654}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{888892CD-6FBC-4F2C-A77E-0CE9A3422DBE}"
 EndProject
@@ -533,3 +533,5 @@ Global
 		SolutionGuid = {39DD7ACD-8F24-4314-9D3C-74F6B00572A2}
 	EndGlobalSection
 EndGlobal
+
+

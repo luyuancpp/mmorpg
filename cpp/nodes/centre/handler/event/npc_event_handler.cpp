@@ -1,5 +1,5 @@
 #include "npc_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 void NpcEventHandler::Register()
 {
@@ -14,3 +14,4 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
 {
 
 }
+

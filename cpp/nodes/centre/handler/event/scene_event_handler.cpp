@@ -1,5 +1,5 @@
 #include "scene_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 void SceneEventHandler::Register()
 {
@@ -50,3 +50,4 @@ void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& event)
 {
 
 }
+

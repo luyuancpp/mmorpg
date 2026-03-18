@@ -3,8 +3,8 @@
 
 #include "type_define/type_define.h"
 
-#include <threading/registry_manager.h>
-#include <threading/entity_manager.h>
+#include <thread_context/registry_manager.h>
+#include <thread_context/entity_manager.h>
 
 using SessionList = std::unordered_map<Guid, Guid>;
 

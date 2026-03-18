@@ -11,10 +11,10 @@
 #include <network/node_utils.h>
 #include "proto/common/event/server_event.pb.h"
 #include <proto_helpers/proto_util.h>
-#include "threading/node_context_manager.h"
-#include <threading/registry_manager.h>
-#include <threading/entity_manager.h>
-#include <threading/rpc_manager.h>
+#include "thread_context/node_context_manager.h"
+#include <thread_context/registry_manager.h>
+#include <thread_context/entity_manager.h>
+#include <thread_context/rpc_manager.h>
 #include "proto/common/base/message.pb.h"
 
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
@@ -131,3 +131,4 @@ void NodeHandshakeManager::TriggerNodeConnectionEvent(entt::registry& registry, 
 		break;
 	}
 }
+

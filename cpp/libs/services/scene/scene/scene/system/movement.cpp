@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "proto/common/component/actor_comp.pb.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 void MovementSystem::Update(const double delta)
 {
@@ -19,3 +19,4 @@ void MovementSystem::Update(const double delta)
 		//LOG_TRACE << "Entity " << entt::to_integral(entity) << " moved to (" << location.x() << ", " << location.y() << ", " << location.z() << ")";
 	}
 }
+

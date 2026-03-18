@@ -9,8 +9,8 @@
 #include "core/utils/id/snow_flake.h"
 #include "table/code/item_table.h"
 #include "core/utils/defer/defer.h"
-#include <threading/snow_flake_manager.h>
-#include "threading/redis_manager.h"
+#include <thread_context/snow_flake_manager.h>
+#include "thread_context/redis_manager.h"
 
 Bag::Bag()
     : entity(tlsRegistryManager.itemRegistry.create())
@@ -566,3 +566,4 @@ bool Bag::CanStack(const ItemPBComponent& litem, const ItemPBComponent& ritem)
 {
 	return litem.config_id() == ritem.config_id();
 }
+

@@ -1,5 +1,5 @@
 #include "scene_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
@@ -70,3 +70,4 @@ void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& event)
 
 ///<<< END WRITING YOUR CODE
 }
+

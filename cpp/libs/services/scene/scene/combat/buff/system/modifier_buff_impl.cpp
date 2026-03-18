@@ -1,4 +1,4 @@
-﻿#include "modifier_buff_impl.h"
+#include "modifier_buff_impl.h"
 
 #include "table/code/buff_table.h"
 #include "table/proto/buff_table.pb.h"
@@ -8,7 +8,7 @@
 #include "scene/combat/buff/comp/buff.h"
 #include "scene/combat/buff/constants/buff.h"
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {
@@ -108,3 +108,4 @@ bool ModifierBuffImplSystem::IsMovementSpeedBuff(const BuffTable* buffTable) {
     return buffTable->bufftype() == kBuffTypeMovementSpeedReduction || 
            buffTable->bufftype() == kBuffTypeMovementSpeedBoost;
 }
+

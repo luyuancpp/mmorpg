@@ -8,8 +8,8 @@
 
 #include "proto/common/component/game_node_comp.pb.h"
 #include "proto/common/base/node.pb.h"
-#include "threading/node_context_manager.h"
-#include <threading/registry_manager.h>
+#include "thread_context/node_context_manager.h"
+#include <thread_context/registry_manager.h>
 #include <muduo/base/Logging.h>
 #include <modules/scene/comp/scene_node_comp.h>
 #include <scene/system/scene_node_state.h>
@@ -918,3 +918,4 @@ int32_t main(int argc, char** argv)
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+

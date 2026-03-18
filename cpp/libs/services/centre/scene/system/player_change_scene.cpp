@@ -7,8 +7,8 @@
 #include "muduo/base/Logging.h"
 #include "proto/common/event/scene_event.pb.h"
 #include "time/system/time.h"
-#include <engine/threading/registry_manager.h>
-#include <engine/threading/dispatcher_manager.h>
+#include <engine/thread_context/registry_manager.h>
+#include <engine/thread_context/dispatcher_manager.h>
 #include <modules/scene/system/scene_common.h>
 
 
@@ -180,3 +180,4 @@ void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 		break;
 	}
 }
+

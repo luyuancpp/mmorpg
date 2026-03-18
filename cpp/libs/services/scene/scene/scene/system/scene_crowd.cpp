@@ -7,7 +7,7 @@
 
 #include "proto/common/event/scene_event.pb.h"
 #include <proto/common/component/actor_comp.pb.h>
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <muduo/base/Logging.h>
 
 void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
@@ -64,3 +64,4 @@ void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 	// Placeholder for any necessary cleanup or handling before leaving the scene
 	// No implementation needed currently
 }
+

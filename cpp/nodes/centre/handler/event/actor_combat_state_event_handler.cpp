@@ -1,5 +1,5 @@
 #include "actor_combat_state_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 void ActorCombatStateEventHandler::Register()
 {
@@ -20,3 +20,4 @@ void ActorCombatStateEventHandler::CombatStateRemovedPbEventHandler(const Combat
 {
 
 }
+

@@ -4,15 +4,15 @@
 
 #include "core/network/message_system.h"
 
-#include "threading/redis_manager.h"
+#include "thread_context/redis_manager.h"
 
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 
 #include "network/player_message_utils.h"
 #include "network/node_message_utils.h"
 #include "network/network_utils.h"
-#include <threading/registry_manager.h>
-#include "engine/threading/node_context_manager.h"
+#include <thread_context/registry_manager.h>
+#include "engine/thread_context/node_context_manager.h"
 #include "proto/common/component/team_comp.pb.h"
 #include "proto/scene_manager/storage.pb.h"
 #include "proto/scene_manager/scene_manager_service.pb.h"
@@ -164,3 +164,4 @@ void PlayerSceneSystem::HandleBeforeLeaveScene(entt::entity player)
 {
 
 }
+

@@ -4,7 +4,7 @@
 
 #include "scene/scene/comp/scene_node_scene.h"
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 void InterestSystem::AddWatcher(const entt::entity watcher, const entt::entity target) {
     if (watcher == entt::null || target == entt::null) return;
@@ -46,3 +46,4 @@ void InterestSystem::NotifyWatchers(const entt::entity target) {
 
 void InterestSystem::NotifyWatcher(entt::entity watcher, entt::entity target) {
 }
+

@@ -4,8 +4,8 @@
 #include "proto/common/event/actor_event.pb.h"
 #include "proto/common/event/npc_event.pb.h"
 
-#include <threading/registry_manager.h>
-#include <threading/dispatcher_manager.h>
+#include <thread_context/registry_manager.h>
+#include <thread_context/dispatcher_manager.h>
 
 void NpcSystem::CreateNpc()
 {
@@ -21,3 +21,4 @@ void NpcSystem::CreateNpc()
 
     tlsRegistryManager.actorRegistry.get_or_emplace<LevelPbComponent>(npc).set_level(1);
 }
+

@@ -7,7 +7,7 @@
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/event/player_event.pb.h"
 
-#include "threading/redis_manager.h"
+#include "thread_context/redis_manager.h"
 #include "time/system/time.h"
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/defer/defer.h"
@@ -22,9 +22,9 @@
 #include "player_tip.h"
 #include "modules/scene/comp/scene_comp.h"
 #include <engine/infra/messaging/kafka/kafka_producer.h>
-#include "threading/player_manager.h"
+#include "thread_context/player_manager.h"
 #include "core/system/redis.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 #include "player_scene.h"
 
 struct PlayerSceneEnterContext
@@ -347,3 +347,4 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 
 	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis";
 }
+

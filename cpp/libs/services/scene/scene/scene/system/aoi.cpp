@@ -1,4 +1,4 @@
-﻿#include "aoi.h"
+#include "aoi.h"
 
 #include "hexagons_grid.h"
 #include "core/network/message_system.h"
@@ -14,7 +14,7 @@
 #include "core/utils/stat/stat.h"
 #include "type_alias/actor.h"
 #include "network/player_message_utils.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <modules/scene/comp/scene_comp.h>
 
 
@@ -200,3 +200,4 @@ void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::en
 
     BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, actorDestroyMessage, observersToNotify);
 }
+

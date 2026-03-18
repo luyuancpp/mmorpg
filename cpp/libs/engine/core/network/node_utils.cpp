@@ -1,7 +1,7 @@
 #include "node_utils.h"
 
-#include "threading/registry_manager.h"
-#include <threading/entity_manager.h>
+#include "thread_context/registry_manager.h"
+#include <thread_context/entity_manager.h>
 
 NodeInfo* FindZoneUniqueNodeInfo(uint32_t zoneId, uint32_t nodeType) {
 	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
@@ -25,3 +25,4 @@ uint32_t GetZoneId()
 {
 	return GetNodeInfo().zone_id();
 }
+

@@ -1,17 +1,17 @@
-﻿#include "node_connector.h"
+#include "node_connector.h"
 #include "proto/common/base/common.pb.h"
 #include "node_util.h"
 #include <muduo/base/Logging.h>
 #include <network/rpc_client.h>
 #include <network/node_utils.h>
 #include <grpc_client/grpc_init_client.h>
-#include <threading/redis_manager.h>
+#include <thread_context/redis_manager.h>
 #include "node.h"
 #include "network/network_utils.h"
-#include "threading/node_context_manager.h"
+#include "thread_context/node_context_manager.h"
 #include <node_config_manager.h>
-#include <threading/registry_manager.h>
-#include <threading/entity_manager.h>
+#include <thread_context/registry_manager.h>
+#include <thread_context/entity_manager.h>
 #include "node/system/grpc_channel_cache.h"
 
 void NodeConnector::ConnectToNode(const NodeInfo& nodeInfo) {

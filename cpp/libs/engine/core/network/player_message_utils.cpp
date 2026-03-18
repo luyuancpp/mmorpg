@@ -1,7 +1,7 @@
-﻿#include "player_message_utils.h"
+#include "player_message_utils.h"
 
 #include "proto/common/component/player_network_comp.pb.h"
-#include "threading/redis_manager.h"
+#include "thread_context/redis_manager.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "muduo/base/Logging.h"
 #include "network_utils.h"
@@ -9,9 +9,9 @@
 #include "rpc/service_metadata/service_metadata.h"
 #include "network/node_utils.h"
 #include <rpc/service_metadata/scene_service_metadata.h>
-#include "threading/node_context_manager.h"
-#include "threading/player_manager.h"
-#include <threading/registry_manager.h>
+#include "thread_context/node_context_manager.h"
+#include "thread_context/player_manager.h"
+#include <thread_context/registry_manager.h>
 
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -361,3 +361,4 @@ void CallMethodOnPlayerNode(
 
 	session->CallRemoteMethod(remoteMethodId, request);
 }
+

@@ -1,7 +1,7 @@
 #include <array>
 #include "service_metadata.h"
 #include "proto/common/base/node.pb.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 #include "proto/data_service/data_service.pb.h"
 #include "proto/etcd/etcd.pb.h"
@@ -452,3 +452,4 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 
 	dispatchFn(message);
 }
+
