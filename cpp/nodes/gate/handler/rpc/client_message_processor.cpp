@@ -199,11 +199,11 @@ void ParseMessageFromRequestBody(Message& message, const Request& request, const
 
     // 检查请求体是否有效
     const std::string& requestBody = request->body();
-    if (requestBody.empty()) {
-        return;
-    }
+	if (requestBody.empty()) {
+		return;
+	}
 
-    if (!message.ParseFromArray(requestBody.data(), requestBody.size())) {
+	if (!message.ParseFromString(requestBody)) {
         LOG_ERROR << "Failed to parse client message body for session id: " << sessionId;
         return; // 解析失败时，避免发送无效消息
     }

@@ -130,7 +130,10 @@ void savePbCallback(hiredis::Hiredis* c, redisReply* reply, google::protobuf::Me
 
 void loadPbCallback(hiredis::Hiredis* c, redisReply* reply, google::protobuf::Message& pb)
 {
-    pb.ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
+    if (!pb.ParseFromArray(reply->str, static_cast<int32_t>(reply->len)))
+    {
+        LOG_ERROR << "Failed to parse protobuf from redis reply in loadPbCallback";
+    }
     LOG_INFO << pb.DebugString() << " " << redisReplyToString(reply);
 }
 

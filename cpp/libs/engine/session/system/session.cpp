@@ -3,6 +3,7 @@
 #include "proto/common/base/session.pb.h"
 #include <muduo/base/Logging.h>
 #include <grpcpp/grpcpp.h>
+#include <limits>
 #include "core/utils/encode/base64.h"
 
 constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
@@ -24,7 +25,12 @@ SessionDetailsPtr GetSessionDetailsByClientContext(const grpc::ClientContext& co
             }
 
             auto sessionDetails = std::make_unique<SessionDetails>();
-            if (sessionDetails->ParseFromArray(decoded.data(), decoded.size())) {
+            if (decoded.size() > static_cast<size_t>(std::numeric_limits<int>::max())) {
+                LOG_ERROR << "Session details payload too large: " << decoded.size();
+                return nullptr;
+            }
+
+            if (sessionDetails->ParseFromArray(decoded.data(), static_cast<int>(decoded.size()))) {
                 return sessionDetails;
             }
             else {
