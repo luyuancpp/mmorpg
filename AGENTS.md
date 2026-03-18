@@ -1,0 +1,98 @@
+# PROJECT KNOWLEDGE BASE
+
+**Generated:** 2026-03-17
+**Commit:** 8e60ff5f9
+**Branch:** main
+
+## OVERVIEW
+Polyglot MMORPG backend. C++ carries runtime nodes and scene-domain logic; Go carries go-zero services; Java carries auth/web helpers; `proto/` is the contract source; `generated/` holds checked-in outputs; `deploy/k8s/` and `tools/` hold operational workflows.
+
+## STRUCTURE
+```text
+mmorpg/
+├── cpp/          # Runtime nodes, shared C++ services, tests
+├── go/           # Go microservices and generated service-local stubs
+├── java/         # Spring Boot / Sa-Token auth-side services
+├── proto/        # Source contracts and service IDs
+├── generated/    # Checked-in generated proto/table outputs
+├── deploy/       # Docker Compose + Kubernetes deployment assets
+├── tools/        # pbgen, exporters, robot tooling, dev scripts
+├── docs/         # Ops/docs snapshots
+└── test/         # Non-C++ test scaffolding / placeholders
+```
+
+## WHERE TO LOOK
+| Task | Location | Notes |
+|------|----------|-------|
+| Scene node startup | `cpp/nodes/scene/main.cpp` | Node bootstrap + Kafka consumer registration |
+| Gate node startup | `cpp/nodes/gate/main.cpp` | Client TCP bridge + Kafka routing |
+| C++ gameplay/domain logic | `cpp/libs/services/scene/` | Systems, comps, world, actor/player logic |
+| Go login service | `go/login/login.go` | etcd registration + grpc startup |
+| Go scene manager | `go/scene_manager/scenemanagerservice.go` | go-zero scene manager + load reporter |
+| Go data service | `go/data_service/dataservice.go` | go-zero RPC service pattern |
+| Java auth grpc node | `java/sa_token_node/` | Maven Spring Boot auth/grpc service |
+| Proto contracts | `proto/` | Authoritative source; regenerate consumers after edits |
+| Checked-in generated contracts | `generated/proto/` | Review only; do not hand-edit |
+| Local/dev infra | `deploy/docker-compose.yml` | Kafka, Redis, MySQL, Nacos, etcd |
+| K8s release flow | `deploy/k8s/README.md` | Runtime image + zone lifecycle |
+| Shared dev scripts | `tools/scripts/dev_tools.ps1` | pbgen, k8s, tree, naming audit/apply |
+| Robot/load tooling | `tools/robot_client/main.go` | One-client-one-goroutine rule |
+
+## CONVENTIONS
+- Prefer verb-based, thin RPC handlers. Heavy logic belongs in systems/services, not transport wrappers.
+- `proto/` is the edit target. `generated/` and language-local generated `proto/` trees are outputs.
+- In generated-style C++ files with `///<<< BEGIN WRITING YOUR CODE`, keep custom logic inside guarded regions.
+- Use **Scene Node** naming; do not introduce fresh **Game Node** terminology for the same role.
+- Gate/scene control routing is Kafka-based now. Trace request flow through topic wiring, not just direct RPC.
+- Go services follow go-zero / `zrpc.MustNewServer` bootstrap and enable grpc reflection only in dev/test modes.
+- K8s exposure is environment-specific: managed cloud prefers `LoadBalancer`; bare metal prefers `NodePort` + external L4.
+- `tools/scripts/dev_tools.ps1` is the preferred shell entrypoint for pbgen, tree, naming, and k8s operations.
+
+## ANTI-PATTERNS (THIS PROJECT)
+- Hand-editing files under `generated/` or generated `*.pb.go` / generated proto output trees.
+- Expanding transport handlers with gameplay/business logic instead of delegating into services/systems.
+- Editing scaffolded C++ code outside `BEGIN WRITING YOUR CODE` blocks without deliberate framework work.
+- Assuming gate/scene communication is still direct stream-based; current architecture routes control messages via Kafka.
+- Recommending `LoadBalancer` as a universal K8s default.
+- Treating root `Dockerfile` as the production K8s runtime image.
+- Routine changes under `third_party/`.
+- Renaming large source trees without first using naming audit/apply workflow.
+
+## UNIQUE STYLES
+- Repo keeps generated outputs checked in.
+- C++ runtime code is split between node-facing adapters (`cpp/nodes/*`) and deeper reusable scene services (`cpp/libs/services/scene/*`).
+- Go services are separate mini-roots, not a single monolith module.
+- `tools/proto/pbgen` is retained for compatibility, but `tools/proto_generator/pbgen` is the canonical source project.
+- Robot tooling explicitly enforces one client per goroutine.
+
+## COMMANDS
+```bash
+# C++
+msbuild game.sln /m /p:Configuration=Debug /p:Platform=x64
+cd cpp\nodes\scene && cmake -S . -B build && cmake --build build --config Debug
+clang-tidy <file.cpp> --config-file=cpp\.clang-tidy
+
+# Go
+cd go && build.bat
+cd go\login && go run login.go
+cd go\login && go test ./...
+
+# Java
+cd java\sa_token_node && mvn clean install
+cd java\sa_token_node && mvn test
+
+# Tools / proto generation
+pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-build
+pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-run
+
+# K8s
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -ZoneName yesterday -ZoneId 101 -OpsProfile managed-cloud -NodeImage <image> -WaitReady
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-up -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml -OpsProfile managed-cloud -NodeImage <image> -WaitReady
+```
+
+## NOTES
+- `.github/workflows/cr.yml` runs an OpenAI-backed code-review action and requires `OPENAI_API_KEY`.
+- `go/build.bat` regenerates Go-side rpc/proto outputs for db/login/data-service-related flows.
+- `deploy/docker-compose.yml` is for local/dev-style infra; `deploy/k8s/` is a separate production-style path.
+- `k8s-zone-down` deletes the entire namespace; treat it as destructive teardown.
+- For cross-language changes: edit `proto/` first, regenerate, then rebuild the consuming C++/Go/Java services.

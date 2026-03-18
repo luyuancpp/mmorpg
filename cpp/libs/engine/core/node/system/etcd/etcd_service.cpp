@@ -18,9 +18,10 @@ void EtcdService::Init() {
 	InitHandlers();
 
 	const std::string& etcdAddr = *tlsNodeConfigManager.GetBaseDeployConfig().etcd_hosts().begin();
-	auto channel = grpc_channel_cache::GetOrCreateChannel(etcdAddr);
-	LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
-		<< ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs();
+	auto& grpcChannelCache = gNode->GetGrpcChannelCache();
+	auto channel = grpcChannelCache.GetOrCreateChannel(etcdAddr);
+	LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpcChannelCache.ConfiguredMaxThreads()
+		<< ", backup poll interval ms=" << grpcChannelCache.ConfiguredBackupPollIntervalMs();
 
 	InitGrpcNode(channel, tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService));
 

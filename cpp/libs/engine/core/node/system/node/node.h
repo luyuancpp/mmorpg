@@ -17,6 +17,7 @@
 #include "node/system/etcd/etcd_manager.h"
 #include "node/system/registration/registration_manager.h"
 #include "node/system/discovery/service_discovery_manager.h"
+#include "node/system/grpc_channel_cache.h"
 
 
 enum class NodeIdConflictReason
@@ -57,6 +58,7 @@ public:
     std::string GetIp();
     uint32_t GetPort();
 	EtcdManager& GetEtcdManager() { return etcdManager; }
+	grpc_channel_cache::GrpcChannelCache& GetGrpcChannelCache() { return grpcChannelCache; }
 
     // 节点注册与服务处理
     void HandleServiceNodeStop(const std::string& key, const std::string& nodeJson);
@@ -122,6 +124,7 @@ protected:
     EtcdManager etcdManager;
     NodeHandshakeManager nodeRegistrationManager;
     ServiceDiscoveryManager serviceDiscoveryManager;
+    grpc_channel_cache::GrpcChannelCache grpcChannelCache;
     std::atomic<bool> shutdownStarted{ false };
     bool kafkaPollingStarted{ false };
 };
