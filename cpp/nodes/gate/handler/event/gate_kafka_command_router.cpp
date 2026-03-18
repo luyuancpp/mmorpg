@@ -5,7 +5,7 @@
 #include "proto/contracts/kafka/gate_command.pb.h"
 #include "proto/contracts/kafka/gate_event.pb.h"
 #include "rpc/service_metadata/service_metadata.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 #include "muduo/base/Logging.h"
 
 namespace {
@@ -118,3 +118,4 @@ void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::
         return;
     }
 }
+

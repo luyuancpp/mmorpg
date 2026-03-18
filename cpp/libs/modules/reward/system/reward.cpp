@@ -1,11 +1,11 @@
-﻿#include "reward.h"
+#include "reward.h"
 
 #include "muduo/base/Logging.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/reward_error_tip.pb.h"
 #include "reward/comp/reward.h"
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <sstream>
 
 uint32_t RewardClaimSystem::ClaimRewardByRewardId(uint32_t rewardId, RewardBitset& claimedRewards) {

@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 entt::entity GlobalEntity();
 
@@ -20,3 +20,4 @@ void SendErrorToClient(const Request& request, Response& response, uint32_t err)
     // 根据语义决定是否 clear（不建议无条件清全局)
     // tip->Clear();
 }
+

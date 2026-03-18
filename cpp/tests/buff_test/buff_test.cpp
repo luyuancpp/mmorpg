@@ -1,4 +1,4 @@
-﻿#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "scene/combat/buff/system/buff.h"
 #include "table/code/buff_table.h"
@@ -9,7 +9,7 @@
 #include "time/comp/timer_task_comp.h"
 #include "table/proto/tip/buff_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 
 
@@ -88,3 +88,4 @@ int main(int argc, char** argv) {
 	tlsRegistryManager.actorRegistry.clear(); // Clean up thread-local storage after all tests
 	return ret;
 }
+

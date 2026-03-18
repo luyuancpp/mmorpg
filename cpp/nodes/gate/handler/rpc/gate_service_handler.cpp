@@ -8,7 +8,7 @@
 #include "node/system/node/node.h"
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
-#include "threading/node_context_manager.h"
+#include "thread_context/node_context_manager.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "proto/common/base/message.pb.h"
@@ -194,3 +194,4 @@ void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controlle
 	response->set_player_id(request->player_id());
 ///<<< END WRITING YOUR CODE
 }
+

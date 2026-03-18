@@ -1,8 +1,8 @@
-﻿#include "kafka_manager.h"
+#include "kafka_manager.h"
 #include "proto/common/base/config.pb.h"
 #include <muduo/base/Logging.h>
 #include <boost/algorithm/string/join.hpp>
-#include "threading/redis_manager.h"
+#include "thread_context/redis_manager.h"
 
 #include <node_config_manager.h>
 
@@ -105,3 +105,4 @@ void KafkaManager::Shutdown() {
 
 	LOG_INFO << "KafkaManager has been shut down.";
 }
+

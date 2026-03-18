@@ -4,10 +4,10 @@
 #include "gate_globals.h"
 #include "network/codec/dispatcher.h"
 #include "rpc/service_metadata/service_metadata.h"
-#include "threading/redis_manager.h"
+#include "thread_context/redis_manager.h"
 #include "core/utils/defer/defer.h"
 #include "session/manager/session_manager.h"
-#include "threading/message_context.h"
+#include "thread_context/message_context.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "proto/common/base/message.pb.h"
 
@@ -57,3 +57,4 @@ void OnRoutePlayerStringMsgReply(const TcpConnectionPtr& conn, const std::shared
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 }
+

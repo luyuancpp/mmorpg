@@ -7,7 +7,7 @@
 #include "engine/core/node/constants/node_constants.h"
 
 #include "proto/common/base/common.pb.h"
-#include "engine/threading/registry_manager.h"
+#include "engine/thread_context/registry_manager.h"
 #include "proto/common/component/game_node_comp.pb.h"
 
 using SceneList = std::unordered_map<uint32_t, EntityUnorderedSet>;

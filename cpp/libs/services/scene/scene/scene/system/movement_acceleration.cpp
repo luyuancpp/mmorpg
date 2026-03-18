@@ -3,7 +3,7 @@
 #include "proto/common/component/comp.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 void MovementAccelerationSystem::Update(const double delta)
 {
@@ -19,3 +19,4 @@ void MovementAccelerationSystem::Update(const double delta)
 		//LOG_TRACE << "Entity " << entity << " moved to (" << location.x() << ", " << location.y() << ", " << location.z() << ")";
 	}
 }
+

@@ -1,4 +1,4 @@
-﻿#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include "table/code/condition_table.h"
 #include "table/code/mission_table.h"
@@ -12,8 +12,8 @@
 
 #include "proto/common/component/mission_comp.pb.h"
 #include "proto/common/event/mission_event.pb.h"
-#include <threading/registry_manager.h>
-#include <threading/dispatcher_manager.h>
+#include <thread_context/registry_manager.h>
+#include <thread_context/dispatcher_manager.h>
 #include <config.h>
 #include <node_config_manager.h>
 
@@ -652,4 +652,5 @@ int main(int argc, char** argv)
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+
 

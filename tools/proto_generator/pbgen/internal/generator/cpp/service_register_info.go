@@ -262,7 +262,7 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 	const serviceInfoCppTemplate = `#include <array>
 #include "service_metadata.h"
 #include "proto/common/base/node.pb.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 {{range .Includes -}}
 {{ . }}
@@ -733,3 +733,4 @@ func WriteServiceRegisterInfoFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go writePlayerServiceInstanceFiles(wg, "repliedInstance", IsNoOpHandler, _config.Global.PathLists.MethodHandlerDirectories.GateNodePlayerReplied, _config.Global.Naming.PlayerRepliedService)
 }
+

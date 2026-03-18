@@ -3,7 +3,7 @@
 #include "proto/common/component/npc_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 bool EntitySystem::IsPlayer(const entt::entity entityId)
 {
@@ -24,4 +24,5 @@ bool EntitySystem::IsNotNpc(const entt::entity entityId)
 {
     return  !tlsRegistryManager.actorRegistry.any_of<Npc>(entityId);
 }
+
 

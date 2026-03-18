@@ -4,7 +4,7 @@
 #include "attributedelta10framess2c_attribute_sync.h"
 
 // 引擎核心依赖
-#include "engine/threading/registry_manager.h"
+#include "engine/thread_context/registry_manager.h"
 // 场景相关依赖
 #include "scene/scene/comp/scene_node_scene.h"
 // 网络相关依赖

@@ -12,8 +12,8 @@
 #include "network/node_message_utils.h"
 #include "network/node_utils.h"
 #include "node/system/zone_utils.h"
-#include "engine/threading/node_context_manager.h"
-#include "engine/threading/registry_manager.h"
+#include "engine/thread_context/node_context_manager.h"
+#include "engine/thread_context/registry_manager.h"
 #include <modules/scene/system/scene_common.h>
 #include "scene_node_selector.h"
 #include "scene.h"
@@ -329,3 +329,4 @@ void PlayerSceneSystem::PushInitialChangeSceneInfo(entt::entity playerEntity, en
 
 	PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo);
 }
+

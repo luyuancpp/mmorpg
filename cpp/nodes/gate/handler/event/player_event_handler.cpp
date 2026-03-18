@@ -1,5 +1,5 @@
 #include "player_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -17,3 +17,4 @@ void PlayerEventHandler::PlayerLifecycleCommandHandler(const contracts::kafka::P
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+

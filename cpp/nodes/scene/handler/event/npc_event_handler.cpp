@@ -1,9 +1,9 @@
 #include "npc_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "npc/system/npc.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <muduo/base/Logging.h>
 ///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
@@ -28,3 +28,4 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
 
 ///<<< END WRITING YOUR CODE
 }
+

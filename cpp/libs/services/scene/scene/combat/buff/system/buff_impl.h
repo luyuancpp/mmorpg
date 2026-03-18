@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "table/code/buff_table.h"
 #include "scene/combat/buff/system/buff.h"
@@ -10,8 +10,8 @@
 
 #include "time/system/time.h"
 #include "core/utils/defer/defer.h"
-#include <threading/registry_manager.h>
-#include "threading/dispatcher_manager.h"
+#include <thread_context/registry_manager.h>
+#include "thread_context/dispatcher_manager.h"
 
 // BuffImplSystem: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑
 class BuffImplSystem {
@@ -175,3 +175,4 @@ private:
 
 
 };
+

@@ -9,7 +9,7 @@
 #include "time/system/time_cooldown.h"
 #include "table/proto/tip/skill_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 using ::testing::_;
 using ::testing::Return;
@@ -277,3 +277,4 @@ int main(int argc, char** argv) {
     tlsRegistryManager.actorRegistry.clear(); // Clean up thread-local storage after all tests
     return ret;
 }
+

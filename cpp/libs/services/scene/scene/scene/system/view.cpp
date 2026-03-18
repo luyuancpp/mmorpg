@@ -1,4 +1,4 @@
-﻿#include "view.h"
+#include "view.h"
 
 #include "grid.h"
 #include "proto/common/component/comp.pb.h"
@@ -11,8 +11,8 @@
 
 #include "engine/core/type_define/type_define.h"
 #include "network/player_message_utils.h"
-#include <threading/registry_manager.h>
-#include <threading/entity_manager.h>
+#include <thread_context/registry_manager.h>
+#include <thread_context/entity_manager.h>
 
 void ViewSystem::Initialize()
 {
@@ -170,3 +170,4 @@ void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
     transform.mutable_rotation()->set_y(yaw);
     transform.mutable_rotation()->set_z(0); // Z轴旋转保持为0
 }
+

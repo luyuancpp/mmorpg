@@ -1,4 +1,4 @@
-﻿#include "actor_action_state.h"
+#include "actor_action_state.h"
 
 #include <ranges>
 
@@ -8,7 +8,7 @@
 #include "engine/core/macros/return_define.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/event/actor_event.pb.h"
-#include "engine/threading/dispatcher_manager.h"
+#include "engine/thread_context/dispatcher_manager.h"
 
 namespace {
     // 检查某个动作是否与当前状态冲突，若冲突，返回对应的错误码
@@ -134,3 +134,4 @@ uint32_t ActorActionStateSystem::RemoveState(entt::entity actorEntity, uint32_t 
     actorStatePbComponent.mutable_state_list()->erase(actorState);
     return kSuccess;
 }
+

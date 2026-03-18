@@ -1,5 +1,5 @@
 #include "gate_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include <session/manager/session_manager.h>
@@ -104,3 +104,4 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
         << ", session_version=" << event.session_version();
 ///<<< END WRITING YOUR CODE
 }
+

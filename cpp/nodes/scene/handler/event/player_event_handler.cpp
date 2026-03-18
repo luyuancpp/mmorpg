@@ -1,9 +1,9 @@
 #include "player_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "player/system/player_skill.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <muduo/base/Logging.h>
 ///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
@@ -52,3 +52,4 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 
 ///<<< END WRITING YOUR CODE
 }
+

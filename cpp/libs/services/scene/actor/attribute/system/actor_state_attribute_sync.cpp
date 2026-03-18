@@ -12,7 +12,7 @@
 
 #include "frame/manager/frame_time.h"
 #include "network/player_message_utils.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <actor/attribute/comp/actor_attribute.h>
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 #include <generated/attribute/attributedelta60framess2c_attribute_sync.h>
@@ -176,3 +176,4 @@ void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const En
         break;
     }
 }
+

@@ -1,4 +1,4 @@
-﻿#include "etcd_service.h"
+#include "etcd_service.h"
 #include "etcd_helper.h"
 #include "etcd_manager.h"
 #include <google/protobuf/util/json_util.h>
@@ -8,10 +8,10 @@
 #include "grpc_client/grpc_init_client.h"
 #include "grpc_client/etcd/etcd_grpc_client.h"
 #include "node/system/grpc_channel_cache.h"
-#include "threading/redis_manager.h"
-#include "threading/node_context_manager.h"
+#include "thread_context/redis_manager.h"
+#include "thread_context/node_context_manager.h"
 #include <node_config_manager.h>
-#include <threading/snow_flake_manager.h>
+#include <thread_context/snow_flake_manager.h>
 #include <time/system/time.h>
 
 void EtcdService::Init() {
@@ -363,3 +363,4 @@ void EtcdService::ActivateSnowFlakeAfterGuard() {
 		},
 		"GET %s", guardKey.c_str());
 }
+

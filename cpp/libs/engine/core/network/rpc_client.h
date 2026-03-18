@@ -9,7 +9,7 @@
 #include "network/game_channel.h"
 
 #include "rpc_connection_event.h"
-#include <threading/dispatcher_manager.h>
+#include <thread_context/dispatcher_manager.h>
 
 using namespace muduo;
 using namespace muduo::net;

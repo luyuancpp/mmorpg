@@ -3,9 +3,9 @@
 #include "proto/common/base/node.pb.h"
 #include <muduo/base/Logging.h>
 #include "etcd_helper.h"
-#include <threading/redis_manager.h>
+#include <thread_context/redis_manager.h>
 #include "grpc_client/etcd/etcd_grpc_client.h"
-#include "threading/node_context_manager.h"
+#include "thread_context/node_context_manager.h"
 #include <node_config_manager.h>
 #include <node/system/node/node.h>
 #include <time/system/time.h>
@@ -104,3 +104,4 @@ void EtcdManager::WriteSnowFlakeGuard() {
 	redis->command([](hiredis::Hiredis*, redisReply*) {},
 		"SETEX %s %u %llu", key.c_str(), guardTtl, static_cast<unsigned long long>(nowSeconds));
 }
+

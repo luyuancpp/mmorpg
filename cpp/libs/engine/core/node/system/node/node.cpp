@@ -1,4 +1,4 @@
-﻿#include "node.h"
+#include "node.h"
 #include <regex>
 #include <grpcpp/create_channel.h>
 #include <boost/uuid/uuid_io.hpp>
@@ -22,7 +22,7 @@
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
-#include "threading/redis_manager.h"
+#include "thread_context/redis_manager.h"
 #include "time/system/time.h"
 #include "network/network_utils.h"
 #include "proto_helpers/proto_util.h"
@@ -32,11 +32,11 @@
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/node/node_connector.h"
 #include "node/system/node/node_allocator.h"
-#include "threading/node_context_manager.h"
+#include "thread_context/node_context_manager.h"
 #include <node_config_manager.h>
-#include <threading/registry_manager.h>
-#include "threading/thread_local_entity_container.h"
-#include <threading/entity_manager.h>
+#include <thread_context/registry_manager.h>
+#include "thread_context/thread_local_entity_container.h"
+#include <thread_context/entity_manager.h>
 #include <cstdio>
 #include <atomic>
 #include <future>
@@ -559,5 +559,6 @@ void Node::StartNodeRegistrationHealthMonitor() {
 		}
 	);
 }
+
 
 

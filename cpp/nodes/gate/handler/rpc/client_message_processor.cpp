@@ -18,9 +18,9 @@
 #include "node/system/node/node_util.h"
 #include "google/protobuf/descriptor.h"
 #include "proto/common/event/node_event.pb.h"
-#include "threading/node_context_manager.h"
+#include "thread_context/node_context_manager.h"
 #include <session/manager/session_manager.h>
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 #include <network/node_utils.h>
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t targetNodeType) {
@@ -379,3 +379,4 @@ void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEve
 		session.second.SetNodeId(pb.node_type(), kInvalidNodeId);
 	}
 }
+

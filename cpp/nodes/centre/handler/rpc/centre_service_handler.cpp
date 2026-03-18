@@ -29,8 +29,8 @@
 #include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
 #include "rpc/service_metadata/service_metadata.h"
-#include "threading/redis_manager.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/redis_manager.h"
+#include "thread_context/dispatcher_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/defer/defer.h"
 #include "core/utils/proto/proto_field_checker.h"
@@ -40,9 +40,9 @@
 #include "type_alias/player_redis.h"
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
-#include "threading/node_context_manager.h"
-#include "threading/player_manager.h"
-#include "threading/message_context.h"
+#include "thread_context/node_context_manager.h"
+#include "thread_context/player_manager.h"
+#include "thread_context/message_context.h"
 #include <modules/scene/comp/scene_node_comp.h>
 #include <modules/scene/comp/scene_comp.h>
 #include <scene/system/scene.h>
@@ -1154,3 +1154,4 @@ void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller,
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 	///<<< END WRITING YOUR CODE
 }
+

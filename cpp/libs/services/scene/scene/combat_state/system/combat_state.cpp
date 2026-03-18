@@ -1,4 +1,4 @@
-﻿#include "combat_state.h"
+#include "combat_state.h"
 
 #include <ranges>
 
@@ -10,7 +10,7 @@
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include "proto/common/event/actor_combat_state_event.pb.h"
 
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 
 // 初始化实体的战斗状态组件
 
@@ -103,3 +103,4 @@ uint32_t CombatStateSystem::ValidateSkillUsage(const entt::entity entityId, cons
     // 所有检查通过，技能使用成功
     return kSuccess;
 }
+

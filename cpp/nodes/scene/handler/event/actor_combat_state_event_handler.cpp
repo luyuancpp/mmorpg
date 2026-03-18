@@ -1,9 +1,9 @@
 #include "actor_combat_state_event_handler.h"
-#include "threading/dispatcher_manager.h"
+#include "thread_context/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "scene/combat_state/system/combat_state.h"
-#include <threading/dispatcher_manager.h>
+#include <thread_context/dispatcher_manager.h>
 ///<<< END WRITING YOUR CODE
 void ActorCombatStateEventHandler::Register()
 {
@@ -28,3 +28,4 @@ void ActorCombatStateEventHandler::CombatStateRemovedPbEventHandler(const Combat
 	CombatStateSystem::RemoveCombatState(event);
 ///<<< END WRITING YOUR CODE
 }
+

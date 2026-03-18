@@ -1,11 +1,11 @@
-﻿#include "modules/reward/system/reward.h"
+#include "modules/reward/system/reward.h"
 #include <gtest/gtest.h>
 
 #include "table/code/reward_table.h"
 #include "table/code/bit_index/reward_table_id_bit_index.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/reward_error_tip.pb.h"
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <config.h>
 #include <node_config_manager.h>
 
@@ -105,3 +105,4 @@ int main(int argc, char** argv)
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }
+

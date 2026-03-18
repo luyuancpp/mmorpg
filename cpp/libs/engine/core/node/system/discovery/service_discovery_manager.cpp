@@ -1,5 +1,5 @@
 #include "service_discovery_manager.h"
-#include <threading/redis_manager.h>
+#include <thread_context/redis_manager.h>
 #include "node/system/etcd/etcd_helper.h"
 #include <muduo/base/Logging.h>
 #include "node/system/node/node_util.h"
@@ -8,8 +8,8 @@
 #include "google/protobuf/util/json_util.h"
 #include <network/node_utils.h>
 #include <node_config_manager.h>
-#include <threading/registry_manager.h>
-#include <threading/entity_manager.h>
+#include <thread_context/registry_manager.h>
+#include <thread_context/entity_manager.h>
 
 void ServiceDiscoveryManager::Init()
 {
@@ -93,3 +93,4 @@ void ServiceDiscoveryManager::HandleServiceNodeStart(const std::string& key, con
 		AddServiceNode(value, nodeType);
 	}
 }
+

@@ -1,15 +1,15 @@
-﻿#include "node_allocator.h"
+#include "node_allocator.h"
 #include <muduo/base/Logging.h>
 #include <network/network_utils.h>
 #include "node.h"
 #include "node/system/etcd/etcd_manager.h"
 #include "node/system/etcd/etcd_helper.h"
 #include <network/node_utils.h>
-#include <threading/redis_manager.h>
+#include <thread_context/redis_manager.h>
 #include <node_config_manager.h>
-#include <threading/registry_manager.h>
+#include <thread_context/registry_manager.h>
 #include <core/utils/id/snow_flake.h>
-#include <threading/entity_manager.h>
+#include <thread_context/entity_manager.h>
 
 uint32_t tryPortId{ 0 };
 
@@ -153,3 +153,4 @@ void NodeAllocator::AcquireNodePort() {
 
 	gNode->GetEtcdManager().RegisterNodePort();
 }
+

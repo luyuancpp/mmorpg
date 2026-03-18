@@ -21,7 +21,7 @@ import (
 )
 
 const playerLoaderTemplate = `
-#include "threading/registry_manager.h"
+#include "thread_context/registry_manager.h"
 #include "proto/logic/database/mysql_database_table.pb.h"
 
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message){
@@ -245,3 +245,4 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 
 	return utils.WriteFileIfChanged(fileName, []byte(utils.NormalizeGeneratedLayout(rendered.String())))
 }
+

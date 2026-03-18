@@ -1,4 +1,4 @@
-﻿#include "player_lifecycle.h"
+#include "player_lifecycle.h"
 #include "muduo/base/Logging.h"
 
 #include "session/system/session.h"
@@ -11,7 +11,7 @@
 #include "rpc/service_metadata/game_player_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
-#include "engine/threading/redis_manager.h"
+#include "engine/thread_context/redis_manager.h"
 #include "engine/core/utils/defer/defer.h"
 #include "proto/common/base/node.pb.h"
 #include "table/code/constants/global_abnormal_logout_table_id_constants.h"
@@ -23,8 +23,8 @@
 #include "engine/core/network/rpc_session.h"
 #include "engine/core/network/player_message_utils.h"
 #include "engine/core/type_alias/player_session_type_alias.h"
-#include "engine/threading/node_context_manager.h"
-#include "engine/threading/player_manager.h"
+#include "engine/thread_context/node_context_manager.h"
+#include "engine/thread_context/player_manager.h"
 #include <modules/scene/system/scene_common.h>
 
 void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData, const std::any& extra)
@@ -259,3 +259,4 @@ void PlayerLifecycleSystem::Logout(Guid playerID)
 	DestroyEntity(tlsRegistryManager.actorRegistry, playerEntity);
 	LOG_INFO << "Destroyed player entity: " << playerID;
 }
+
