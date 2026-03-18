@@ -104,7 +104,10 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       std::unique_ptr<google::protobuf::Message> d(out.response);
       if (!message.response().empty())
       {
-        out.response->ParseFromString(message.response());
+        if (!out.response->ParseFromString(message.response()))
+        {
+          LOG_ERROR << "RpcChannel failed to parse RPC response, id=" << id;
+        }
       }
       if (out.done)
       {

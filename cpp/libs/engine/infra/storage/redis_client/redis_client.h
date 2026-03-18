@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <any>
+#include <limits>
 
 #include "muduo/base/Logging.h"
 #include "muduo/contrib/hiredis/Hiredis.h"
@@ -168,7 +169,12 @@ private:
 		}
 
 		element->message_value = CreateMessage();
-		if (!element->message_value->ParseFromArray(reply->str, static_cast<int>(reply->len)))
+		if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+		{
+			LOG_ERROR << "Redis payload too large for ParseFromArray, key: " << element->redis_key
+				<< ", len=" << reply->len;
+		}
+		else if (!element->message_value->ParseFromArray(reply->str, static_cast<int>(reply->len)))
 		{
 			LOG_ERROR << "ParseFromArray failed for key: " << element->redis_key;
 		}

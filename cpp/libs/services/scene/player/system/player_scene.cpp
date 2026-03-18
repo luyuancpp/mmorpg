@@ -21,6 +21,7 @@
 #include <proto/common/component/player_network_comp.pb.h>
 #include <proto/common/base/node.pb.h>
 #include <proto/common/base/common.pb.h>
+#include <limits>
 
 // Callback wrapper for Hiredis
 void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
@@ -37,7 +38,13 @@ void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
 	}
 
 	TeamInfo teamInfo;
-	if (!teamInfo.ParseFromArray(reply->str, reply->len))
+	if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+	{
+		LOG_ERROR << "TeamInfo payload too large for protobuf parser, len=" << reply->len;
+		return;
+	}
+
+	if (!teamInfo.ParseFromArray(reply->str, static_cast<int>(reply->len)))
 	{
 		LOG_ERROR << "Failed to parse TeamInfo from Redis for player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 		return;
@@ -72,7 +79,13 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 	}
 
 	storage::PlayerLocation loc;
-	if (!loc.ParseFromArray(reply->str, reply->len))
+	if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+	{
+		LOG_ERROR << "PlayerLocation payload too large for protobuf parser, len=" << reply->len;
+		return;
+	}
+
+	if (!loc.ParseFromArray(reply->str, static_cast<int>(reply->len)))
 	{
 		LOG_ERROR << "Failed to parse PlayerLocation from Redis for player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 		return;
