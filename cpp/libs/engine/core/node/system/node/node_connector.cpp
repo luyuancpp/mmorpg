@@ -61,11 +61,12 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo& nodeInfo) {
 		return;
 	}
 
-	const auto& grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(nodeEntity,
-		grpc_channel_cache::GetOrCreateChannel(::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port())));
+	const auto target = ::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
+	auto cachedChannel = gNode->GetGrpcChannelCache().GetOrCreateChannel(target);
+	const auto& grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(createdId, std::move(cachedChannel));
 
-	InitGrpcNode(grpcChannel, targetRegistry, nodeEntity);
-	targetRegistry.emplace<NodeInfo>(nodeEntity, nodeInfo);
+	InitGrpcNode(grpcChannel, targetRegistry, createdId);
+	targetRegistry.emplace<NodeInfo>(createdId, nodeInfo);
 
 	LOG_INFO << "Connecting to GRPC node, ID: " << nodeInfo.node_id()
 		<< ", IP: " << nodeInfo.endpoint().ip()
