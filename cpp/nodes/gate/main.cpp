@@ -1,10 +1,10 @@
-#include "grpc/third_party/abseil-cpp/absl/log/initialize.h"
 #include "muduo/base/CrossPlatformAdapterFunction.h"
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoopThreadPool.h"
 
 #include "node/system/node/simple_node.h"
 #include "node/system/node/node.h"
+#include "node/system/node/node_entry.h"
 #include "handler/rpc/gate_service_handler.h"
 #include "handler/rpc/client_message_processor.h"
 #include "handler/event/event_handler.h"
@@ -19,56 +19,32 @@
 #include "proto/contracts/kafka/gate_command.pb.h"
 #include "gate_globals.h"
 
-#ifdef _WIN32
-#include <Windows.h>
-#include <TlHelp32.h>
-#endif
+#include <utility>
 
 ProtobufCodec* gGateCodec = nullptr;
 
 namespace {
 
-int GetCurrentProcessThreadCount()
-{
-#ifdef _WIN32
-    const DWORD pid = GetCurrentProcessId();
-    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-    if (snapshot == INVALID_HANDLE_VALUE) {
-        return -1;
+struct GateRuntimeContext {
+    ProtobufDispatcher protobufDispatcher;
+    ProtobufCodec codec;
+    RpcClientSessionHandler rpcClientHandler;
+
+    GateRuntimeContext()
+        : protobufDispatcher([](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp) {
+            LOG_ERROR << "Unknown message: " << std::string(msg->GetTypeName());
+            conn->shutdown();
+        })
+        , codec([this](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp ts) {
+            protobufDispatcher.onProtobufMessage(conn, msg, ts);
+        })
+        , rpcClientHandler(codec, protobufDispatcher)
+    {
     }
+};
 
-    THREADENTRY32 entry;
-    entry.dwSize = sizeof(THREADENTRY32);
-    int threadCount = 0;
-    if (Thread32First(snapshot, &entry)) {
-        do {
-            if (entry.th32OwnerProcessID == pid) {
-                ++threadCount;
-            }
-            entry.dwSize = sizeof(THREADENTRY32);
-        } while (Thread32Next(snapshot, &entry));
-    }
-
-    CloseHandle(snapshot);
-    return threadCount;
-#else
-    return -1;
-#endif
-}
-
-void startGateNode(EventLoop& loop)
+void LogGrpcThreadConfig()
 {
-    // ── TCP 层基础设施 ──────────────────────────────────────────────────────
-    ProtobufDispatcher protobufDispatcher([](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp) {
-        LOG_ERROR << "Unknown message: " << std::string(msg->GetTypeName());
-        conn->shutdown();
-    });
-    ProtobufCodec codec([&protobufDispatcher](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp ts) {
-        protobufDispatcher.onProtobufMessage(conn, msg, ts);
-    });
-    RpcClientSessionHandler rpcClientHandler(codec, protobufDispatcher);
-    gGateCodec = &codec;
-
     LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
         << ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs()
         << ", EventEngine pool reserve=" << (grpc_channel_cache::ConfiguredThreadPoolReserveThreads() > 0
@@ -77,64 +53,59 @@ void startGateNode(EventLoop& loop)
         << ", EventEngine pool max=" << (grpc_channel_cache::ConfiguredThreadPoolMaxThreads() > 0
             ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolMaxThreads())
             : std::string("unlimited"));
-
-    // ── gRPC 响应 → 客户端 TCP 桥接 ────────────────────────────────────────
-    SetIfEmptyHandler([&rpcClientHandler](const ClientContext& ctx, const ::google::protobuf::Message& reply) {
-        auto sd = GetSessionDetailsByClientContext(ctx);
-        if (!sd) return;
-        auto it = tlsSessionManager.sessions().find(sd->session_id());
-        if (it == tlsSessionManager.sessions().end()) return;
-        rpcClientHandler.SendMessageToClient(it->second.conn, reply);
-    });
-
-    // ── 节点 ────────────────────────────────────────────────────────────────
-    SimpleNode<GateHandler> node(&loop, "logs/gate", GateNodeService,
-        Node::CanConnectNodeTypeList{ SceneNodeService, LoginNodeService });
-    EventHandler::Register();
-
-    // 启动后：挂载客户端 TCP 回调 + session ID 初始化
-    node.SetAfterStart([&codec, &rpcClientHandler](SimpleNode<GateHandler>& n) {
-        n.GetTcpServer().setConnectionCallback(
-            [&rpcClientHandler](const TcpConnectionPtr& conn) {
-                rpcClientHandler.OnConnection(conn);
-            });
-        n.GetTcpServer().setMessageCallback(
-            [&codec](const TcpConnectionPtr& conn, muduo::net::Buffer* buf, Timestamp ts) {
-                codec.onMessage(conn, buf, ts);
-            });
-        tlsSessionManager.session_id_gen().set_node_id(n.GetNodeId());
-    });
-
-    // Kafka: unified registration path for all node command-consumers.
-    node.SetKafkaHandlers([](SimpleNode<GateHandler>& n) {
-        node::kafka::KafkaCommandHandlerOptions options;
-        options.topicPrefix = "gate";
-        options.groupPrefix = "gate-group";
-        options.nodeIdFieldNames = { "target_gate_id", "target_node_id" };
-        options.instanceIdFieldNames = { "target_instance_id" };
-
-        return node::kafka::RegisterKafkaCommandHandler<contracts::kafka::GateCommand>(
-            n,
-            options,
-            [](const std::string& topic, const contracts::kafka::GateCommand& command) {
-                DispatchGateKafkaCommand(topic, command);
-            });
-    });
-
-    loop.runEvery(10.0, [] {
-        LOG_INFO << "gRPC process threads=" << GetCurrentProcessThreadCount();
-    });
-
-    loop.loop();
 }
 
 } // namespace
 
 int main(int argc, char* argv[])
 {
-    absl::InitializeLog();
-    EventLoop loop;
-    startGateNode(loop);
-    google::protobuf::ShutdownProtobufLibrary();
-    return 0;
+    return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext>(
+        "logs/gate",
+        GateNodeService,
+        Node::CanConnectNodeTypeList{ SceneNodeService, LoginNodeService },
+        [](EventLoop&, GateRuntimeContext& context) {
+            gGateCodec = &context.codec;
+            LogGrpcThreadConfig();
+        },
+        [](SimpleNode<GateHandler>& node, GateRuntimeContext& context) {
+            // ── gRPC 响应 → 客户端 TCP 桥接 ────────────────────────────────────────
+            SetIfEmptyHandler([&context](const ClientContext& ctx, const ::google::protobuf::Message& reply) {
+                auto sd = GetSessionDetailsByClientContext(ctx);
+                if (!sd) return;
+                auto it = tlsSessionManager.sessions().find(sd->session_id());
+                if (it == tlsSessionManager.sessions().end()) return;
+                context.rpcClientHandler.SendMessageToClient(it->second.conn, reply);
+            });
+
+            EventHandler::Register();
+
+            // 启动后：挂载客户端 TCP 回调 + session ID 初始化
+            node.SetAfterStart([&context](SimpleNode<GateHandler>& n) {
+                n.GetTcpServer().setConnectionCallback(
+                    [&context](const TcpConnectionPtr& conn) {
+                        context.rpcClientHandler.OnConnection(conn);
+                    });
+                n.GetTcpServer().setMessageCallback(
+                    [&context](const TcpConnectionPtr& conn, muduo::net::Buffer* buf, Timestamp ts) {
+                        context.codec.onMessage(conn, buf, ts);
+                    });
+                tlsSessionManager.session_id_gen().set_node_id(n.GetNodeId());
+            });
+
+            // Kafka: unified registration path for all node command-consumers.
+            node.SetKafkaHandlers([](SimpleNode<GateHandler>& n) {
+                node::kafka::KafkaCommandHandlerOptions options;
+                options.topicPrefix = "gate";
+                options.groupPrefix = "gate-group";
+                options.nodeIdFieldNames = { "target_gate_id", "target_node_id" };
+                options.instanceIdFieldNames = { "target_instance_id" };
+
+                return node::kafka::RegisterKafkaCommandHandler<contracts::kafka::GateCommand>(
+                    n,
+                    options,
+                    [](const std::string& topic, const contracts::kafka::GateCommand& command) {
+                        DispatchGateKafkaCommand(topic, command);
+                    });
+            });
+        });
 }
