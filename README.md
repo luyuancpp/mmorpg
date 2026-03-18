@@ -45,6 +45,17 @@ make
 ./mmorpg
 ```
 
+## 🧱 C++ Node Main Templates
+
+If you are adding a new C++ node entrypoint, use the templates under `cpp/nodes/_template/`:
+
+- `cpp/nodes/_template/main.simple.cpp.example`
+	- For nodes without long-lived runtime-owned state.
+- `cpp/nodes/_template/main.with_context.cpp.example`
+	- For nodes that need runtime-owned state (timers/codecs/bridges).
+- `cpp/nodes/_template/README.md`
+	- Step-by-step checklist and placeholder replacement guide.
+
 ## 📝 License
 
 This project is licensed under the **MIT License** – see the [LICENSE](./LICENSE) file for details.

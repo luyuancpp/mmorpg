@@ -18,6 +18,7 @@ cpp/
 |------|----------|-------|
 | Scene process bootstrap | `nodes/scene/main.cpp` | Registers node + Kafka command handlers |
 | Gate process bootstrap | `nodes/gate/main.cpp` | TCP client bridge + session wiring |
+| New node `main.cpp` templates | `nodes/_template/` | Use `main.simple.cpp.example` or `main.with_context.cpp.example` |
 | Node-local RPC handlers | `nodes/*/handler/rpc/` | Thin transport adapters |
 | Node-local event handlers | `nodes/*/handler/event/` | Event-driven edge logic |
 | Async/reply handling | `nodes/*/rpc_replies/` | `On<Domain><Method>Reply` style |
@@ -30,7 +31,16 @@ cpp/
 - Do not hand-edit `cpp/generated/` outputs.
 - Use **Scene Node** naming, matching current project terminology.
 - Scene/gate command consumers are wired in `main.cpp` via `topicPrefix` / `groupPrefix` options.
+- New node entrypoints should start from `nodes/_template/README.md` and reuse `node::entry::RunSimpleNodeMain...` helpers.
 - Reply handlers are adapters; they should not become business-logic owners.
+
+### Node Main PR Checklist (Summary)
+- Start from `nodes/_template/main.simple.cpp.example` or `nodes/_template/main.with_context.cpp.example`.
+- Keep startup logic thin; do not move gameplay/business logic into `main.cpp`.
+- Ensure node main uses `node::entry::RunSimpleNodeMain...` helpers.
+- Ensure Kafka topic/group and routing fields match the node contract.
+- Ensure thread observability is active by default (or intentionally disabled via `NODE_THREAD_MONITOR_ENABLED=0`).
+- Do not hand-edit generated outputs while wiring new node startup.
 
 ## ANTI-PATTERNS
 - Embedding large gameplay branches inside node handlers.

@@ -1,0 +1,46 @@
+#include "muduo/net/EventLoop.h"
+
+#include "node/system/node/simple_node.h"
+#include "node/system/node/node.h"
+#include "node/system/node/node_entry.h"
+#include "node/system/node/node_kafka_command_handler.h"
+
+#include "handler/rpc/your_node_handler.h"
+#include "handler/event/event_handler.h"
+#include "handler/event/your_node_kafka_command_router.h"
+#include "proto/contracts/kafka/your_node_command.pb.h"
+
+using namespace muduo;
+using namespace muduo::net;
+
+int main(int argc, char* argv[])
+{
+    return node::entry::RunSimpleNodeMain<YourNodeHandler>(
+        "logs/your_node",
+        YourNodeService,
+        Node::CanConnectNodeTypeList{ /* SceneNodeService, LoginNodeService, ... */ },
+        [](SimpleNode<YourNodeHandler>& node) {
+            EventHandler::Register();
+
+            // Optional: node lifecycle callbacks.
+            node.SetAfterStart([](SimpleNode<YourNodeHandler>& n) {
+                // (void)n;
+            });
+
+            // Kafka: unified registration path for all node command-consumers.
+            node.SetKafkaHandlers([](SimpleNode<YourNodeHandler>& n) {
+                node::kafka::KafkaCommandHandlerOptions options;
+                options.topicPrefix = "your-node";
+                options.groupPrefix = "your-node-group";
+                options.nodeIdFieldNames = { "target_your_node_id", "target_node_id" };
+                options.instanceIdFieldNames = { "target_instance_id" };
+
+                return node::kafka::RegisterKafkaCommandHandler<contracts::kafka::YourNodeCommand>(
+                    n,
+                    options,
+                    [](const std::string& topic, const contracts::kafka::YourNodeCommand& command) {
+                        DispatchYourNodeKafkaCommand(topic, command);
+                    });
+            });
+        });
+}

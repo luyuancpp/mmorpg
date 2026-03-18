@@ -1,6 +1,7 @@
 #pragma once
 
 #include "node/system/node/node.h"
+#include "node/system/node/thread_observability.h"
 
 // SimpleNode<THandler> — 用于快速创建标准 node，消除重复样板代码。
 //
@@ -69,6 +70,7 @@ public:
         GetNodeInfo().set_node_type(nodeType);
         targetNodeTypeWhitelist = std::move(connectTo);
         Initialize();
+        node::observability::RegisterThreadObservability(*loop, logDir);
     }
 
     ::google::protobuf::Service* GetNodeReplyService() override { return &handler_; }

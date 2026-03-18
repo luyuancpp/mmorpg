@@ -1,0 +1,13 @@
+// Template chooser for new node main entry.
+//
+// Prefer one of these templates:
+// 1) main.simple.cpp.example
+//    - Use when node setup has no long-lived runtime-owned state.
+//
+// 2) main.with_context.cpp.example
+//    - Use when setup needs runtime-owned state (timers/codecs/bridges/etc.).
+//
+// Both templates use:
+// - node::entry::RunSimpleNodeMain...
+// - SimpleNode auto thread observability
+// - unified Kafka handler registration pattern

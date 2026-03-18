@@ -26,6 +26,7 @@ mmorpg/
 |------|----------|-------|
 | Scene node startup | `cpp/nodes/scene/main.cpp` | Node bootstrap + Kafka consumer registration |
 | Gate node startup | `cpp/nodes/gate/main.cpp` | Client TCP bridge + Kafka routing |
+| C++ node main templates | `cpp/nodes/_template/` | Use `main.simple.cpp.example` or `main.with_context.cpp.example` |
 | C++ gameplay/domain logic | `cpp/libs/services/scene/` | Systems, comps, world, actor/player logic |
 | Go login service | `go/login/login.go` | etcd registration + grpc startup |
 | Go scene manager | `go/scene_manager/scenemanagerservice.go` | go-zero scene manager + load reporter |
@@ -44,9 +45,18 @@ mmorpg/
 - In generated-style C++ files with `///<<< BEGIN WRITING YOUR CODE`, keep custom logic inside guarded regions.
 - Use **Scene Node** naming; do not introduce fresh **Game Node** terminology for the same role.
 - Gate/scene control routing is Kafka-based now. Trace request flow through topic wiring, not just direct RPC.
+- New C++ node entrypoints should start from `cpp/nodes/_template/README.md` and reuse `node::entry::RunSimpleNodeMain...` helpers.
 - Go services follow go-zero / `zrpc.MustNewServer` bootstrap and enable grpc reflection only in dev/test modes.
 - K8s exposure is environment-specific: managed cloud prefers `LoadBalancer`; bare metal prefers `NodePort` + external L4.
 - `tools/scripts/dev_tools.ps1` is the preferred shell entrypoint for pbgen, tree, naming, and k8s operations.
+
+### C++ Node Main PR Checklist (Summary)
+- Start from `cpp/nodes/_template/main.simple.cpp.example` or `cpp/nodes/_template/main.with_context.cpp.example`.
+- Keep startup logic thin; do not move gameplay/business logic into `main.cpp`.
+- Ensure node main uses `node::entry::RunSimpleNodeMain...` helpers.
+- Ensure Kafka topic/group and routing fields match the node contract.
+- Ensure thread observability is active by default (or intentionally disabled via `NODE_THREAD_MONITOR_ENABLED=0`).
+- Do not hand-edit generated outputs while wiring new node startup.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - Hand-editing files under `generated/` or generated `*.pb.go` / generated proto output trees.
