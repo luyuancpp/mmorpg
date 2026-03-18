@@ -1,11 +1,24 @@
 ﻿#pragma once
 
-#include "clang-tidy/ClangTidyCheck.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
 
-class NoMemberRawPointerCheck : public clang::tidy::ClangTidyCheck {
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+/// MatchFinder callback that reports raw-pointer FieldDecl members.
+class NoMemberRawPointerCheck
+    : public clang::ast_matchers::MatchFinder::MatchCallback {
 public:
-	using ClangTidyCheck::ClangTidyCheck;
+    explicit NoMemberRawPointerCheck(std::vector<std::string> skipPatterns);
 
-	void registerMatchers(clang::ast_matchers::MatchFinder* Finder) override;
-	void check(const clang::ast_matchers::MatchFinder::MatchResult& Result) override;
+    void run(const clang::ast_matchers::MatchFinder::MatchResult& Result) override;
+
+    int violationCount() const { return Count; }
+
+private:
+    std::vector<std::string> SkipPatterns;
+    std::set<std::pair<std::string, unsigned>> Seen; // dedup across TUs
+    int Count = 0;
 };

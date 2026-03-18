@@ -72,3 +72,9 @@ tools/generated/
 tools/proto-generator/pbgen/bin/
 tools/proto-generator/pbgen/.idea/
 _copilot_session_transfer/
+
+# raw-pointer-member check cache markers
+.no_raw_ptr_check_ok
+
+# clang plugin build artifacts
+cpp/plugin/build/

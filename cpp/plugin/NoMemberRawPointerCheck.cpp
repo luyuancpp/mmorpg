@@ -1,27 +1,35 @@
 ﻿#include "NoMemberRawPointerCheck.h"
 
-#include "clang/ASTMatchers/ASTMatchers.h"
-#include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/AST/Decl.h"
+#include "clang/Basic/SourceManager.h"
+#include "llvm/Support/raw_ostream.h"
 
-using namespace clang;
-using namespace clang::ast_matchers;
+NoMemberRawPointerCheck::NoMemberRawPointerCheck(
+    std::vector<std::string> skipPatterns)
+    : SkipPatterns(std::move(skipPatterns)) {}
 
-void NoMemberRawPointerCheck::registerMatchers(MatchFinder* Finder) {
+void NoMemberRawPointerCheck::run(
+    const clang::ast_matchers::MatchFinder::MatchResult& Result) {
+    const auto* FD = Result.Nodes.getNodeAs<clang::FieldDecl>("ptrField");
+    if (!FD) return;
+    if (FD->isImplicit()) return;
 
-	// Match any member field (including static) if its type is a raw pointer
-	Finder->addMatcher(
-		fieldDecl(
-			hasType(pointerType())     // any raw pointer type
-		).bind("ptrField"),
-		this
-	);
-}
+    auto& SM = *Result.SourceManager;
+    auto Loc = FD->getLocation();
 
-void NoMemberRawPointerCheck::check(const clang::ast_matchers::MatchFinder::MatchResult& Result) {
-	const FieldDecl* Field = Result.Nodes.getNodeAs<FieldDecl>("ptrField");
-	if (!Field) return;
+    if (SM.isInSystemHeader(Loc)) return;
 
-	diag(Field->getLocation(),
-		"Declaring raw pointer member variables in classes/structs is prohibited (including static members): '%0' of type '%1'")
-		<< Field->getName() << Field->getType().getAsString();
+    std::string File = SM.getFilename(Loc).str();
+    for (const auto& Pat : SkipPatterns) {
+        if (File.find(Pat) != std::string::npos) return;
+    }
+
+    unsigned Line = SM.getSpellingLineNumber(Loc);
+    if (!Seen.insert({File, Line}).second) return; // already reported
+
+    llvm::errs() << File << ":" << Line
+                 << ": error: raw pointer member '" << FD->getName()
+                 << "' (type '" << FD->getType().getAsString()
+                 << "') is prohibited\n";
+    ++Count;
 }
