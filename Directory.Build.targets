@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
+  <ItemDefinitionGroup
+      Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and '$(Configuration)' == 'Debug'">
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalOptions>/DEBUG:FASTLINK %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+
   <Target Name="NoRawPointerMemberCheck" BeforeTargets="PreBuildEvent"
           Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and $([System.String]::Copy('$(MSBuildProjectDirectory)').Contains('\\third_party\\')) != 'True'">
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)tools\scripts\check_no_raw_pointer_member.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -ProjectName &quot;$(ProjectName)&quot;" />
