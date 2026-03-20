@@ -139,14 +139,26 @@ function Resolve-Tool([string]$Name) {
     return $cmd.Source
 }
 
+function Resolve-OptionalTool([string]$Name) {
+    $cmd = Get-Command $Name -ErrorAction SilentlyContinue
+    if (-not $cmd) { return $null }
+    return $cmd.Source
+}
+
 function Convert-ToCMakePath([string]$Path) {
     return $Path -replace '\\', '/'
 }
 
 $CMake = Resolve-Tool 'cmake'
 $Ninja = Resolve-Tool 'ninja'
+$Nasm  = Resolve-OptionalTool 'nasm'
 Write-Host "[info] cmake : $CMake"
 Write-Host "[info] ninja : $Ninja"
+if ($Nasm) {
+    Write-Host "[info] nasm  : $Nasm"
+} else {
+    Write-Host "[warn] nasm not found on PATH. Falling back to OPENSSL_NO_ASM=ON for BoringSSL."
+}
 
 function Find-ClExe {
     $vswhereLocations = @(
@@ -183,8 +195,15 @@ Write-Host "[info] VS    : $($msvc.VsPath)"
 Write-Host "[info] MSVC  : $($msvc.MsvcVer)"
 Write-Host "[info] cl.exe: $($msvc.ClExe)"
 
-$ClExeCMakePath = Convert-ToCMakePath $msvc.ClExe
 $NinjaCMakePath = Convert-ToCMakePath $Ninja
+$GrpcExtraArgs = @()
+if ($Nasm) {
+    $nasmCMakePath = Convert-ToCMakePath $Nasm
+    $GrpcExtraArgs += "-DCMAKE_ASM_NASM_COMPILER=$nasmCMakePath"
+} else {
+    # Ninja generator does not auto-disable BoringSSL ASM when NASM is missing.
+    $GrpcExtraArgs += "-DOPENSSL_NO_ASM=ON"
+}
 
 function Enter-MsvcEnv([hashtable]$Msvc) {
     $vcvars = Join-Path $Msvc.VsPath 'VC\Auxiliary\Build\vcvars64.bat'
@@ -202,15 +221,24 @@ function Enter-MsvcEnv([hashtable]$Msvc) {
 
 Enter-MsvcEnv $msvc
 
+# After vcvars64 loads, cl.exe is on PATH. Verify it is reachable.
+$clOnPath = Get-Command cl.exe -ErrorAction SilentlyContinue
+if (-not $clOnPath) {
+    Write-Error "cl.exe not on PATH after loading vcvars64. MSVC environment setup may have failed."
+}
+Write-Host "[info] cl.exe on PATH: $($clOnPath.Source)"
+
 if ($Jobs -le 0) {
     $Jobs = [System.Environment]::ProcessorCount
 }
 Write-Host "[info] Parallel jobs: $Jobs"
 
+# Use short name 'cl' since vcvars64 has put cl.exe on PATH.
+# This avoids CMake path-escaping issues with long paths containing spaces.
 $CommonArgs = @(
     "-G", "Ninja",
-    "-DCMAKE_C_COMPILER=$ClExeCMakePath",
-    "-DCMAKE_CXX_COMPILER=$ClExeCMakePath",
+    "-DCMAKE_C_COMPILER=cl",
+    "-DCMAKE_CXX_COMPILER=cl",
     "-DCMAKE_MAKE_PROGRAM=$NinjaCMakePath",
     "-DCMAKE_CXX_STANDARD=20",
     "-DCMAKE_CXX_STANDARD_REQUIRED=ON",
@@ -248,8 +276,11 @@ function Invoke-GrpcBuild {
         $cacheCompilerLine = Select-String -Path $cachePath -Pattern '^CMAKE_C_COMPILER:FILEPATH=' -SimpleMatch:$false | Select-Object -First 1
         if ($cacheCompilerLine) {
             $cachedCompiler = $cacheCompilerLine.Line.Split('=', 2)[1]
-            if ((Convert-ToCMakePath $cachedCompiler) -ne $ClExeCMakePath) {
-                Write-Host "[clean] Cached compiler changed from $cachedCompiler to $ClExeCMakePath - resetting $buildPath ..."
+            $cachedName = [System.IO.Path]::GetFileNameWithoutExtension($cachedCompiler)
+            # We now pass 'cl' to CMake; cache stores a resolved full path.
+            # Reset only if the cached compiler is a completely different toolchain.
+            if ($cachedName -ne 'cl') {
+                Write-Host "[clean] Cached compiler is not cl ($cachedCompiler) - resetting $buildPath ..."
                 Remove-Item -Recurse -Force $buildPath
             }
         }
@@ -260,7 +291,8 @@ function Invoke-GrpcBuild {
     Write-Host "[1/3] CMake configure ($BuildType) ..."
     $configArgs = $CommonArgs + @(
         "-DCMAKE_BUILD_TYPE=$BuildType",
-        "-DCMAKE_INSTALL_PREFIX=$installPath",
+        "-DCMAKE_INSTALL_PREFIX=$installPath"
+    ) + $GrpcExtraArgs + @(
         $GrpcRoot
     )
     & $CMake @configArgs -B $buildPath
