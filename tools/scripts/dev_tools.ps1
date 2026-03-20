@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("pbgen-build", "pbgen-run", "tree", "naming-audit", "naming-apply", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all")]
+    [ValidateSet("pbgen-build", "pbgen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -9,6 +9,7 @@ param(
     [string]$Style = "snake",
 
     [int]$MaxChanges = 0,
+    [int]$Jobs = 0,
 
     [string]$ZoneName = "yesterday",
     [int]$ZoneId = 101,
@@ -31,6 +32,10 @@ param(
     [string]$GateServiceType = "NodePort",
     [int]$GateServicePort = 18000,
     [switch]$SkipInfra,
+    [bool]$BuildRelease = $true,
+    [bool]$BuildDebug = $true,
+    [switch]$Clean,
+    [switch]$SkipToolCheck,
     [switch]$DryRun,
     [switch]$WaitReady,
     [int]$WaitTimeoutSeconds = 180,
@@ -96,6 +101,33 @@ function Invoke-NamingApply {
     }
 
     & $scriptPath -Mode apply -Style $Style -MaxChanges $MaxChanges -Confirm:$false
+}
+
+function Invoke-ThirdPartyGrpcBuild {
+    $scriptPath = Join-Path $ScriptDir "third_party\build_grpc.ps1"
+    if (-not (Test-Path $scriptPath)) {
+        throw "third_party/build_grpc.ps1 not found: $scriptPath"
+    }
+
+    $bound = $script:PSBoundParameters
+    $args = @{}
+    if ($bound.ContainsKey('BuildRelease')) {
+        $args.BuildRelease = $BuildRelease
+    }
+    if ($bound.ContainsKey('BuildDebug')) {
+        $args.BuildDebug = $BuildDebug
+    }
+    if ($bound.ContainsKey('Jobs')) {
+        $args.Jobs = $Jobs
+    }
+    if ($Clean) {
+        $args.Clean = $true
+    }
+    if ($SkipToolCheck) {
+        $args.SkipToolCheck = $true
+    }
+
+    & $scriptPath @args
 }
 
 function Invoke-K8sDeploy {
@@ -225,6 +257,7 @@ switch ($Command) {
     "tree" { Invoke-Tree }
     "naming-audit" { Invoke-NamingAudit }
     "naming-apply" { Invoke-NamingApply }
+    "third-party-grpc-build" { Invoke-ThirdPartyGrpcBuild }
     "k8s-zone-up" { Invoke-K8sDeploy -K8sCommand "zone-up" }
     "k8s-zone-down" { Invoke-K8sDeploy -K8sCommand "zone-down" }
     "k8s-zone-status" { Invoke-K8sDeploy -K8sCommand "zone-status" }

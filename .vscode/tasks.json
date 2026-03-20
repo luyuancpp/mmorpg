@@ -55,6 +55,50 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "third_party: grpc build",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"third-party-grpc-build"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "third_party: grpc build release",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"third-party-grpc-build",
+				"-BuildDebug:$false"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "third_party: grpc build debug",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"third-party-grpc-build",
+				"-BuildRelease:$false"
+			],
+			"group": "build",
+			"problemMatcher": []
 		}
 	]
 }
