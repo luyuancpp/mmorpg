@@ -104,16 +104,23 @@ function Ensure-Tool([string]$Name) {
         winget upgrade --id $def.WingetId --accept-source-agreements --accept-package-agreements --silent
     }
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "winget $Name install/upgrade failed (exit code $LASTEXITCODE). Install manually."
-    }
+    $wingetExit = $LASTEXITCODE
 
-    # Refresh PATH so the new binary is visible in this session.
+    # Refresh PATH so the new/existing binary is visible in this session.
     $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
     $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
     $env:Path    = "$machinePath;$userPath"
 
     $newVer = Get-ToolVersion $Name
+    if ($newVer -and $newVer -ge $def.MinVersion) {
+        Write-Host "[info] $Name $newVer is OK after winget (>= $($def.MinVersion))"
+        return
+    }
+
+    if ($wingetExit -ne 0) {
+        Write-Error "winget $Name install/upgrade failed (exit code $wingetExit) and $Name $newVer is still not adequate. Install manually."
+    }
+
     if (-not $newVer) {
         Write-Error "$Name still not found on PATH after install. You may need to restart your terminal."
     }
