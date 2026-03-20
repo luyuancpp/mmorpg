@@ -2,11 +2,53 @@
 
 PowerShell and shell scripts for common development tasks.
 
+## Directory Rules
+
+- [scripts](../../scripts) is for thin entrypoints and bootstrap tasks only, such as environment setup, submodule sync, or simple one-shot launch commands.
+- [tools/scripts](.) is the canonical home for maintained engineering scripts.
+- [tools/scripts/third_party](third_party) stores third-party build and maintenance scripts, such as gRPC or future protobuf/redis builds.
+- If a top-level convenience command is needed, keep it as a thin wrapper that forwards into [tools/scripts](.) instead of copying logic.
+- Do not place project-maintained scripts under vendored directories such as [third_party](../../third_party); treat those trees as upstream-owned whenever possible.
+
 ## Available Scripts
 
 ### dev_tools.ps1
 
 Main entry point for tool commands on Windows.
+
+Supported commands include:
+
+- `pbgen-build`
+- `pbgen-run`
+- `tree`
+- `naming-audit`
+- `naming-apply`
+- `third-party-grpc-build`
+- `k8s-*`
+
+### third_party/build_grpc.ps1
+
+Canonical Windows PowerShell entrypoint for building vendored gRPC from [third_party/grpc](../../third_party/grpc).
+
+```powershell
+pwsh -File tools/scripts/third_party/build_grpc.ps1
+```
+
+Features:
+
+- Auto-detects Visual Studio / MSVC with `vswhere`
+- Auto-installs or upgrades `cmake` and `ninja` through `winget` when needed
+- Builds both Release and Debug into `third_party/grpc/install_vs2026` and `third_party/grpc/install_vs2026_dbg`
+
+Legacy batch launcher is also available at [tools/scripts/third_party/build_grpc_vs2026_v145.bat](third_party/build_grpc_vs2026_v145.bat).
+
+Top-level thin wrapper: [scripts/build_grpc.ps1](../../scripts/build_grpc.ps1)
+
+VS Code tasks are available in [/.vscode/tasks.json](../../.vscode/tasks.json):
+
+- `third_party: grpc build`
+- `third_party: grpc build release`
+- `third_party: grpc build debug`
 
 #### Commands
 
@@ -16,6 +58,12 @@ pwsh -File dev_tools.ps1 -Command pbgen-build
 
 # Run pbgen with default config
 pwsh -File dev_tools.ps1 -Command pbgen-run
+
+# Build vendored gRPC via the canonical third-party script
+pwsh -File dev_tools.ps1 -Command third-party-grpc-build
+
+# Build vendored gRPC from VS Code Tasks
+# Run Task -> third_party: grpc build
 
 # Run pbgen with custom config
 pwsh -File dev_tools.ps1 -Command pbgen-run -ConfigPath <path-to-config>
@@ -43,6 +91,9 @@ pwsh -File dev_tools.ps1 -Command k8s-zone-status -ZoneName yesterday
 pwsh -File dev_tools.ps1 -Command k8s-zone-down -ZoneName yesterday
 pwsh -File dev_tools.ps1 -Command k8s-all-status -ZonesConfigPath deploy/k8s/zones.yaml
 pwsh -File dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath deploy/k8s/zones.yaml
+
+# gRPC release-only rebuild with explicit flags
+pwsh -File dev_tools.ps1 -Command third-party-grpc-build -BuildDebug:$false -Clean -Jobs 8
 
 # Preflight/build/push/release runtime image for k8s
 pwsh -File dev_tools.ps1 -Command k8s-stage-runtime -BinarySourceRoot D:/linux-build/bin -ZoneInfoSource bin/zoneinfo -TableSource generated/tables
