@@ -1,7 +1,11 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("pbgen-build", "pbgen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all")]
+    [ValidateSet("pbgen-build", "pbgen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "git-stats")]
     [string]$Command,
+
+    [int]$StatsYear  = (Get-Date).Year,
+    [int]$StatsMonth = (Get-Date).Month,
+    [string]$StatsAuthor = "",
 
     [string]$ConfigPath = "",
 
@@ -48,6 +52,23 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 $PbgenDir = Join-Path $RepoRoot "tools\proto_generator\pbgen"
+
+function Invoke-GitStats {
+    $scriptPath = Join-Path $ScriptDir "git_stats.ps1"
+    if (-not (Test-Path $scriptPath)) {
+        throw "git_stats.ps1 not found: $scriptPath"
+    }
+
+    $args = @{
+        Year  = $StatsYear
+        Month = $StatsMonth
+    }
+    if (-not [string]::IsNullOrWhiteSpace($StatsAuthor)) {
+        $args.Author = $StatsAuthor
+    }
+
+    & $scriptPath @args
+}
 
 function Invoke-PbgenBuild {
     Push-Location $PbgenDir
@@ -270,5 +291,6 @@ switch ($Command) {
     "k8s-push-image" { Invoke-K8sImage -ImageCommand "push-image" }
     "k8s-release-zone" { Invoke-K8sImage -ImageCommand "release-zone" }
     "k8s-release-all" { Invoke-K8sImage -ImageCommand "release-all" }
+    "git-stats" { Invoke-GitStats }
     default { throw "Unsupported command: $Command" }
 }
