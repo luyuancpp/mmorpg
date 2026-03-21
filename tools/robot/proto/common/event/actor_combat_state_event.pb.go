@@ -155,7 +155,7 @@ const file_proto_common_event_actor_combat_state_event_proto_rawDesc = "" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12$\n" +
 	"\x0esource_buff_id\x18\x02 \x01(\x04R\fsourceBuffId\x12\x1d\n" +
 	"\n" +
-	"state_type\x18\x03 \x01(\rR\tstateTypeB Z\x1erobot/proto/common/event;eventb\x06proto3"
+	"state_type\x18\x03 \x01(\rR\tstateTypeB\x1aZ\x18robot/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_actor_combat_state_event_proto_rawDescOnce sync.Once

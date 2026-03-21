@@ -208,9 +208,27 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 		)
 	}
 
-	goOutputDir := outputDir
-	protoRootDir := protoRootPath
-	protoBufferDir := _config.Global.Paths.ProtobufDir
+	absOutputDir, err := filepath.Abs(outputDir)
+	if err != nil {
+		logger.Global.Fatal("Go GRPC生成: 获取输出目录绝对路径失败",
+			zap.String("output_dir", outputDir),
+			zap.Error(err),
+		)
+	}
+	absProtoRootDir, err := filepath.Abs(protoRootPath)
+	if err != nil {
+		logger.Global.Fatal("Go GRPC生成: 获取proto根目录绝对路径失败",
+			zap.String("proto_root", protoRootPath),
+			zap.Error(err),
+		)
+	}
+	absProtobufDir, err := filepath.Abs(_config.Global.Paths.ProtobufDir)
+	if err != nil {
+		logger.Global.Fatal("Go GRPC生成: 获取protobuf目录绝对路径失败",
+			zap.String("protobuf_dir", _config.Global.Paths.ProtobufDir),
+			zap.Error(err),
+		)
+	}
 
 	protocPath, err := resolveProtocPath()
 	if err != nil {
@@ -220,10 +238,10 @@ func GenerateGoGrpc(protoFiles []string, outputDir string, protoRootPath string)
 	}
 
 	args := []string{
-		"--go_out=" + goOutputDir,
-		"--go-grpc_out=" + goOutputDir,
-		"--proto_path=" + protoRootDir,
-		"--proto_path=" + protoBufferDir,
+		"--go_out=" + absOutputDir,
+		"--go-grpc_out=" + absOutputDir,
+		"--proto_path=" + absProtoRootDir,
+		"--proto_path=" + absProtobufDir,
 	}
 
 	for _, file := range protoFiles {
@@ -249,9 +267,9 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 	wg.Add(1) // 补充wg计数，确保主流程等待该goroutine完成
 	go func() {
 		defer wg.Done()
-		grpcDirs := utils2.GetGRPCSubdirectoryNames()
+		goProtoDirs := utils2.GetGoProtoDomainNames()
 
-		for _, dirName := range grpcDirs {
+		for _, dirName := range goProtoDirs {
 			destDir := filepath.ToSlash(_config.Global.Paths.GeneratorProtoDir + dirName + "/" + _config.Global.DirectoryNames.ProtoDirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
@@ -269,7 +287,7 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 			}
 		}
 
-		for _, dirName := range grpcDirs {
+		for _, dirName := range goProtoDirs {
 			destDir := filepath.ToSlash(_config.Global.Paths.GeneratorProtoDir + dirName + "/" + _config.Global.DirectoryNames.GoZeroProtoDirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
@@ -427,8 +445,8 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 
 // BuildGrpcServiceProto 并发处理所有GRPC目录
 func BuildGrpcServiceProto(wg *sync.WaitGroup) {
-	grpcDirs := utils2.GetGRPCSubdirectoryNames()
-	for _, dirName := range grpcDirs {
+	goProtoDirs := utils2.GetGoProtoDomainNames()
+	for _, dirName := range goProtoDirs {
 		wg.Add(1)
 
 		go func(currentDir string) {

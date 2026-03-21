@@ -32,7 +32,7 @@ service_discovery_prefixes:
 # Kafka 配置（分布式消息队列，用于异步通信、日志收集、事件分发等）
 Kafka:
   Brokers:
-    - "127.0.0.1:9092"  # Kafka 集群 Broker 地址（单机填1个，集群需填所有Broker IP:端口）
+    - "localhost:9092"  # Kafka 集群 Broker 地址（单机填1个，集群需填所有Broker IP:端口）
   Topics: 
     - "game-events"               # 默认消息主题（如游戏内事件：角色升级、道具交易等）
   GroupID: "game-consumer-group"  # Kafka 消费者组ID（同组消费者共同消费主题消息，避免重复消费）

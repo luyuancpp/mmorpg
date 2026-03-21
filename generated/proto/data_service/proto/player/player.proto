@@ -1,1 +1,1 @@
-option go_package = "data_service/proto/player;player";
+option go_package = "data_service/proto/player";

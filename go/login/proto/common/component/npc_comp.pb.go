@@ -62,7 +62,7 @@ var File_proto_common_component_npc_comp_proto protoreflect.FileDescriptor
 const file_proto_common_component_npc_comp_proto_rawDesc = "" +
 	"\n" +
 	"%proto/common/component/npc_comp.proto\"\x05\n" +
-	"\x03NpcB(Z&login/proto/common/component;componentb\x06proto3"
+	"\x03NpcB\x1eZ\x1clogin/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_npc_comp_proto_rawDescOnce sync.Once

@@ -188,7 +188,7 @@ const file_proto_common_component_player_login_comp_proto_rawDesc = "" +
 	"\vLOGIN_FIRST\x10\x01\x12\x11\n" +
 	"\rLOGIN_REPLACE\x10\x02\x12\x13\n" +
 	"\x0fLOGIN_RECONNECT\x10\x03\x12\x16\n" +
-	"\x12LOGIN_DISCONNECTED\x10\x04B(Z&robot/proto/common/component;componentb\x06proto3"
+	"\x12LOGIN_DISCONNECTED\x10\x04B\x1eZ\x1crobot/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_login_comp_proto_rawDescOnce sync.Once

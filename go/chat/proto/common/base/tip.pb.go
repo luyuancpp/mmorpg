@@ -82,7 +82,7 @@ const file_proto_common_base_tip_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1e\n" +
 	"\n" +
 	"parameters\x18\x02 \x03(\tR\n" +
-	"parametersB\x1dZ\x1bchat/proto/common/base;baseb\x06proto3"
+	"parametersB\x18Z\x16chat/proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_tip_proto_rawDescOnce sync.Once

@@ -24,7 +24,7 @@ var File_proto_common_constants_scene_proto protoreflect.FileDescriptor
 
 const file_proto_common_constants_scene_proto_rawDesc = "" +
 	"\n" +
-	"\"proto/common/constants/scene.protoB'Z%chat/proto/common/constants;constantsb\x06proto3"
+	"\"proto/common/constants/scene.protoB\x1dZ\x1bchat/proto/common/constantsb\x06proto3"
 
 var file_proto_common_constants_scene_proto_goTypes = []any{}
 var file_proto_common_constants_scene_proto_depIdxs = []int32{

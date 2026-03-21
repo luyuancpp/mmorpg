@@ -10,8 +10,8 @@ import (
 	"login/internal/logic/pkg/node"
 	loginserver "login/internal/server/clientplayerlogin"
 	"login/internal/svc"
-	login_proto "login/proto/common"
-	login_proto_login "login/proto/service/go/grpc/login"
+	login_proto "login/proto/common/base"
+	login_proto_login "login/proto/login"
 	"net"
 	"strconv"
 

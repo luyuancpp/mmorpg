@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+option go_package = "contracts/proto/player_locator";
+package playerlocator;
+
+import "proto/common/base/empty.proto";
+
+// 玩家位置结构
+message PlayerLocation {
+  int64 uid = 1;
+  string server_id = 2;
+  bool online = 3;
+  bool migrating = 4;
+  int32 scene_id = 5;
+  string token = 6;
+  int64 ts = 7;
+}
+
+message PlayerId {
+  int64 uid = 1;
+}
+
+// ----- Session management (replaces Centre SessionMap) -----
+
+enum PlayerSessionState {
+  SESSION_STATE_UNKNOWN = 0;
+  SESSION_STATE_ONLINE = 1;          // 正常在线
+  SESSION_STATE_DISCONNECTING = 2;   // 断线中, 等待重连 (30s lease)
+  SESSION_STATE_OFFLINE = 3;         // 已下线
+}
+
+message PlayerSession {
+  uint64 player_id = 1;
+  uint64 session_id = 2;         // Gate session ID
+  string gate_id = 3;            // Gate node ID
+  string gate_instance_id = 4;   // Gate instance UUID (防僵尸消息)
+  string scene_node_id = 5;      // 当前 Scene node ID
+  uint64 scene_id = 6;           // 当前 scene ID
+  string token_id = 7;           // SHA256(login_token)
+  uint64 token_expiry_ms = 8;
+  uint64 session_version = 9;    // 每次真正变更+1, 防旧连接消息
+  PlayerSessionState state = 10;
+  int64 last_active_ts = 11;     // 最后活跃时间 (unix ms)
+  string request_id = 12;        // 最近一次登录 request_id (幂等)
+  string account = 13;           // 账号名 (Login 用于 reconnect 决策)
+}
+
+message SetSessionRequest {
+  PlayerSession session = 1;
+}
+
+message GetSessionRequest {
+  uint64 player_id = 1;
+}
+
+message GetSessionResponse {
+  PlayerSession session = 1;
+  bool found = 2;
+}
+
+// 断线请求: 标记 DISCONNECTING + 启动 TTL lease
+message SetDisconnectingRequest {
+  uint64 player_id = 1;
+  uint64 session_id = 2;
+  uint32 lease_ttl_seconds = 3;  // 默认 30s
+}
+
+// 重连请求: 取消 lease, 恢复 ONLINE
+message ReconnectRequest {
+  uint64 player_id = 1;
+  uint64 new_session_id = 2;
+  string gate_id = 3;
+  string gate_instance_id = 4;
+  string token_id = 5;
+  uint64 token_expiry_ms = 6;
+  string request_id = 7;
+  string account = 8;           // 账号名 (Login 传入)
+}
+
+message ReconnectResponse {
+  bool success = 1;
+  PlayerSession session = 2;  // 更新后的 session
+  string error_message = 3;
+}
+
+// Lease 到期清理结果
+message LeaseExpiredEvent {
+  uint64 player_id = 1;
+  uint64 session_id = 2;
+  string scene_node_id = 3;
+  uint64 scene_id = 4;
+  string gate_id = 5;
+  string gate_instance_id = 6;
+}
+
+service PlayerLocator {
+  rpc SetLocation(PlayerLocation) returns (Empty);
+  rpc GetLocation(PlayerId) returns (PlayerLocation);
+  rpc MarkOffline(PlayerId) returns (Empty);
+
+  // Session management (replaces Centre)
+  rpc SetSession(SetSessionRequest) returns (Empty);
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+  rpc SetDisconnecting(SetDisconnectingRequest) returns (Empty);
+  rpc Reconnect(ReconnectRequest) returns (ReconnectResponse);
+}

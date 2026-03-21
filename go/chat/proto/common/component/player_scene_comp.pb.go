@@ -136,7 +136,7 @@ const file_proto_common_component_player_scene_comp_proto_rawDesc = "" +
 	"\x1dPlayerSceneContextPBComponent\x12:\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x1b.PlayerSceneInfoPBComponentR\tsceneInfo\x12L\n" +
-	"\x14scene_info_last_time\x18\x02 \x01(\v2\x1b.PlayerSceneInfoPBComponentR\x11sceneInfoLastTimeB'Z%chat/proto/common/component;componentb\x06proto3"
+	"\x14scene_info_last_time\x18\x02 \x01(\v2\x1b.PlayerSceneInfoPBComponentR\x11sceneInfoLastTimeB\x1dZ\x1bchat/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_scene_comp_proto_rawDescOnce sync.Once

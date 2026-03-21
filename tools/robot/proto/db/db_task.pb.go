@@ -205,7 +205,7 @@ const file_proto_db_db_task_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\x12\x1c\n" +
-	"\ttimestamp\x18\x04 \x01(\x03R\ttimestampB\x13Z\x11robot/proto/db;dbb\x06proto3"
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestampB\x10Z\x0erobot/proto/dbb\x06proto3"
 
 var (
 	file_proto_db_db_task_proto_rawDescOnce sync.Once

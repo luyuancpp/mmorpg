@@ -2,11 +2,12 @@ package centre
 
 import (
 	"fmt"
+	common "login/proto/common/base"
+
 	"github.com/google/uuid"
 	"github.com/luyuancpp/muduoclient-new/muduo"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
-	"login/proto/common"
 )
 
 type Client struct {

@@ -341,7 +341,7 @@ const file_proto_scene_player_state_attribute_sync_proto_rawDesc = "" +
 	"\x14SyncAttribute5Frames\x12\x19.AttributeDelta5FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute10Frames\x12\x1a.AttributeDelta10FramesS2C\x1a\x06.Empty\x12;\n" +
 	"\x15SyncAttribute30Frames\x12\x1a.AttributeDelta30FramesS2C\x1a\x06.Empty\x12;\n" +
-	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.Empty\x1a\x05\x80\xa8\xc3\x01\x01B'\x98\xd4a\x03Z\x1edata_service/proto/scene;scene\x80\x01\x01b\x06proto3"
+	"\x15SyncAttribute60Frames\x12\x1a.AttributeDelta60FramesS2C\x1a\x06.Empty\x1a\x05\x80\xa8\xc3\x01\x01B!\x98\xd4a\x03Z\x18data_service/proto/scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_player_state_attribute_sync_proto_rawDescOnce sync.Once

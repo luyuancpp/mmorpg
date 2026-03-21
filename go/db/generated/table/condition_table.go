@@ -6,7 +6,7 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "db/generated/pb/table"
 )
 
 type ConditionTableManager struct {

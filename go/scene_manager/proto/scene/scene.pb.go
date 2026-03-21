@@ -524,7 +524,7 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\n" +
 	"EnterScene\x12\x1b.Centre2GsEnterSceneRequest\x1a\x06.Empty\x128\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\x12>\n" +
-	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB(\x98\xd4a\x03Z\x1fscene_manager/proto/scene;scene\x80\x01\x01b\x06proto3"
+	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB\"\x98\xd4a\x03Z\x19scene_manager/proto/scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_scene_proto_rawDescOnce sync.Once

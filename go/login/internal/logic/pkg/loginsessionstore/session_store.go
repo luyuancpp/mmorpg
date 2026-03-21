@@ -3,7 +3,7 @@ package loginsessionstore
 import (
 	"context"
 	"fmt"
-	login_proto "login/proto/service/go/grpc/login"
+	login_proto "login/proto/login"
 	"time"
 
 	"github.com/redis/go-redis/v9"

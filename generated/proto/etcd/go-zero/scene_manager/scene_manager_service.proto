@@ -1,0 +1,65 @@
+﻿syntax = "proto3";
+package scene_manager;
+
+import "proto/common/base/node.proto";
+import "proto/common/base/empty.proto";
+import "proto/contracts/kafka/gate_command.proto";
+
+option go_package = "scene_manager/scene_manager";
+
+// SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
+// No longer requires Centre — Login/player_locator drive the flow directly.
+service SceneManager {
+  // Create a scene on a specific node (implemented by the Scene node)
+  rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}
+
+  // Destroy a scene
+  rpc DestroyScene(DestroySceneRequest) returns (Empty) {}
+
+  // Login/player_locator requests a player to enter a scene
+  rpc EnterScene(EnterSceneRequest) returns (EnterSceneResponse) {}
+
+  // Login/player_locator requests a player to leave a scene
+  rpc LeaveScene(LeaveSceneRequest) returns (Empty) {}
+}
+
+message CreateSceneRequest {
+  // Scene config ID
+  uint64 scene_conf_id = 1;
+  // Optional: Specify creation on a specific Scene node
+  string target_node_id = 2;
+}
+
+message CreateSceneResponse {
+  // Global scene ID (allocated by Scene node)
+  uint64 scene_id = 1;
+  // ID of the node where it resides
+  string node_id = 2;
+  // Creation result: 0 for success, non-zero for error code
+  uint32 error_code = 3;
+  string error_message = 4;
+}
+
+message DestroySceneRequest {
+  uint64 scene_id = 1;
+}
+
+message EnterSceneRequest {
+  uint64 player_id = 1;
+  uint64 scene_id = 2;          // Target scene
+  uint64 session_id = 3;        // Gate session ID
+  string request_id = 4;        // Idempotency ID (optional)
+  string gate_id = 5;           // Gate Node ID
+  string gate_instance_id = 6;  // Gate Instance ID (for Kafka message validation)
+}
+
+message EnterSceneResponse {
+  uint32 error_code = 1;
+  string error_message = 2;
+}
+
+message LeaveSceneRequest {
+  uint64 player_id = 1;
+  uint64 scene_id = 2;
+  string request_id = 3;
+}

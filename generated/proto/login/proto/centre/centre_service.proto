@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "login/proto/centre;centre";
+option go_package = "login/proto/centre";
 
 import "proto/db/proto_option.proto";
 import "proto/common/base/common.proto";

@@ -85,3 +85,21 @@ func GetGRPCSubdirectoryNames() []string {
 
 	return names
 }
+
+// GetGoProtoDomainNames returns domain names that have Go outputs defined,
+// regardless of rpc.type. This includes domains like "db" (rpc.type: rpc)
+// that still need Go proto generation.
+func GetGoProtoDomainNames() []string {
+	var names []string
+
+	for domain, meta := range _config.Global.DomainMeta {
+		if domain == "" {
+			continue
+		}
+		if _, hasGo := meta.Outputs["go"]; hasGo {
+			names = append(names, domain)
+		}
+	}
+
+	return names
+}

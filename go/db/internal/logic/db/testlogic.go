@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"db/internal/svc"
-	"db/proto/service/go/grpc/db"
+	"db/proto/db"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

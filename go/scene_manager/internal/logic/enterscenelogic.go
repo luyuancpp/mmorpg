@@ -4,7 +4,7 @@ import (
 	"context"
 	kafkacontracts "contracts/kafka"
 	"fmt"
-	game "generated/pb/game"
+	game "scene_manager/generated/pb/game"
 	"strconv"
 
 	"scene_manager/internal/svc"
@@ -74,7 +74,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Invalid gate id"}, nil
 		}
 
-		eventId := game.ContractsKafkaRoutePlayerEventEventId
+		eventId := uint32(game.ContractsKafkaRoutePlayerEventEventId)
 		event := &kafkacontracts.RoutePlayerEvent{
 			SessionId:    in.SessionId,
 			TargetNodeId: uint32(targetNodeId),
@@ -93,7 +93,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 			Payload:          payload,
 			TargetGateId:     uint32(targetGateId),
 			TargetInstanceId: in.GateInstanceId,
-			EventId:          &eventId,
+			EventId:          eventId,
 		}
 
 		bytes, err := proto.Marshal(cmd)
@@ -113,7 +113,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 			}
 		}
 	} else {
-		l.Logger.Warnf("No GateID in EnterScene request for player %d", in.PlayerId)
+		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
 
 	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, in.SceneId, l.svcCtx.Config.NodeID)

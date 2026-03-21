@@ -300,7 +300,7 @@ const file_proto_common_component_scene_comp_proto_rawDesc = "" +
 	"\reWaitingEnter\x10\x02\x12\x11\n" +
 	"\reEnterSucceed\x10\x03\x12\x15\n" +
 	"\x11eGateEnterSucceed\x10\x04\x12\t\n" +
-	"\x05eDone\x10\x05B(Z&login/proto/common/component;componentb\x06proto3"
+	"\x05eDone\x10\x05B\x1eZ\x1clogin/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_scene_comp_proto_rawDescOnce sync.Once

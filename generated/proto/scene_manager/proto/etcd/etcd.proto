@@ -5,7 +5,7 @@ import "proto/etcd/kv.proto";
 import "proto/etcd/version.proto";
 
 
-option go_package = "scene_manager/proto/etcd;etcd";
+option go_package = "scene_manager/proto/etcd";
 package etcdserverpb;
 
 service KV {

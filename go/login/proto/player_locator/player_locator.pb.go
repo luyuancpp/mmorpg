@@ -878,7 +878,7 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\n" +
 	"GetSession\x12 .playerlocator.GetSessionRequest\x1a!.playerlocator.GetSessionResponse\x12B\n" +
 	"\x10SetDisconnecting\x12&.playerlocator.SetDisconnectingRequest\x1a\x06.Empty\x12N\n" +
-	"\tReconnect\x12\x1f.playerlocator.ReconnectRequest\x1a .playerlocator.ReconnectResponseB+Z)login/proto/player_locator;player_locatorb\x06proto3"
+	"\tReconnect\x12\x1f.playerlocator.ReconnectRequest\x1a .playerlocator.ReconnectResponseB\x1cZ\x1alogin/proto/player_locatorb\x06proto3"
 
 var (
 	file_proto_player_locator_player_locator_proto_rawDescOnce sync.Once

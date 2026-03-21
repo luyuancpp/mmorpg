@@ -7,7 +7,7 @@ package scenemanager
 import (
 	"context"
 
-	"scene_manager/base"
+	"scene_manager/proto/common/base"
 	"scene_manager/scene_manager"
 
 	"github.com/zeromicro/go-zero/zrpc"
@@ -20,8 +20,6 @@ type (
 	DestroySceneRequest = scene_manager.DestroySceneRequest
 	EnterSceneRequest   = scene_manager.EnterSceneRequest
 	EnterSceneResponse  = scene_manager.EnterSceneResponse
-	GateCommand         = scene_manager.GateCommand
-	GateHeartbeat       = scene_manager.GateHeartbeat
 	LeaveSceneRequest   = scene_manager.LeaveSceneRequest
 	Empty               = base.Empty
 
@@ -34,8 +32,6 @@ type (
 		EnterScene(ctx context.Context, in *EnterSceneRequest, opts ...grpc.CallOption) (*EnterSceneResponse, error)
 		// 请求玩家离开场景（或切换场景前的离开）
 		LeaveScene(ctx context.Context, in *LeaveSceneRequest, opts ...grpc.CallOption) (*Empty, error)
-		// Gate 连接（保持长连接，双向流）
-		GateConnect(ctx context.Context, opts ...grpc.CallOption) (scene_manager.SceneManager_GateConnectClient, error)
 	}
 
 	defaultSceneManager struct {
@@ -71,10 +67,4 @@ func (m *defaultSceneManager) EnterScene(ctx context.Context, in *EnterSceneRequ
 func (m *defaultSceneManager) LeaveScene(ctx context.Context, in *LeaveSceneRequest, opts ...grpc.CallOption) (*Empty, error) {
 	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
 	return client.LeaveScene(ctx, in, opts...)
-}
-
-// Gate 连接（保持长连接，双向流）
-func (m *defaultSceneManager) GateConnect(ctx context.Context, opts ...grpc.CallOption) (scene_manager.SceneManager_GateConnectClient, error) {
-	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
-	return client.GateConnect(ctx, opts...)
 }

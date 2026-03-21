@@ -135,7 +135,7 @@ const file_proto_common_component_team_comp_proto_rawDesc = "" +
 	"\bTeamInfo\x12\x17\n" +
 	"\ateam_id\x18\x01 \x01(\x04R\x06teamId\x12\x1b\n" +
 	"\tleader_id\x18\x02 \x01(\x04R\bleaderId\x12\x18\n" +
-	"\amembers\x18\x03 \x03(\x04R\amembersB/Z-data_service/proto/common/component;componentb\x06proto3"
+	"\amembers\x18\x03 \x03(\x04R\amembersB%Z#data_service/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_team_comp_proto_rawDescOnce sync.Once

@@ -1,1 +1,1 @@
-option go_package = "scene_manager/proto/player;player";
+option go_package = "scene_manager/proto/player";

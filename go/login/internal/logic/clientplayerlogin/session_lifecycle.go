@@ -7,7 +7,7 @@ import (
 	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
-	login_proto_common "login/proto/common"
+	login_proto_common "login/proto/common/base"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

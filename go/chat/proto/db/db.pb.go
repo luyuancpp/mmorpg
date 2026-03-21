@@ -122,7 +122,7 @@ const file_proto_db_db_proto_rawDesc = "" +
 	"\fTestResponse\x12\x1c\n" +
 	"\x05empty\x18\x01 \x01(\v2\x06.EmptyR\x05empty2)\n" +
 	"\x02db\x12#\n" +
-	"\x04Test\x12\f.TestRequest\x1a\r.TestResponseB\x16\x98\xd4a\x05Z\x10chat/proto/db;dbb\x06proto3"
+	"\x04Test\x12\f.TestRequest\x1a\r.TestResponseB\x13\x98\xd4a\x05Z\rchat/proto/dbb\x06proto3"
 
 var (
 	file_proto_db_db_proto_rawDescOnce sync.Once

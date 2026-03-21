@@ -407,7 +407,7 @@ const file_proto_common_component_buff_comp_proto_rawDesc = "" +
 	"\vdamage_type\x18\x05 \x01(\rR\n" +
 	"damageType\"H\n" +
 	")BuffNoDamageOrSkillHitInLastSecondsPbComp\x12\x1b\n" +
-	"\tlast_time\x18\x01 \x01(\x04R\blastTimeB0Z.scene_manager/proto/common/component;componentb\x06proto3"
+	"\tlast_time\x18\x01 \x01(\x04R\blastTimeB&Z$scene_manager/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_buff_comp_proto_rawDescOnce sync.Once

@@ -21,73 +21,18 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type GateCommand_CommandType int32
-
-const (
-	GateCommand_RoutePlayer  GateCommand_CommandType = 0 // Switch player routing
-	GateCommand_KickPlayer   GateCommand_CommandType = 1 // Kick session offline
-	GateCommand_Broadcast    GateCommand_CommandType = 2 // Broadcast message
-	GateCommand_BindSession  GateCommand_CommandType = 3 // Bind session to player (replaces Centre)
-	GateCommand_LeaseExpired GateCommand_CommandType = 4 // Disconnect lease expired, clean up
-)
-
-// Enum value maps for GateCommand_CommandType.
-var (
-	GateCommand_CommandType_name = map[int32]string{
-		0: "RoutePlayer",
-		1: "KickPlayer",
-		2: "Broadcast",
-		3: "BindSession",
-		4: "LeaseExpired",
-	}
-	GateCommand_CommandType_value = map[string]int32{
-		"RoutePlayer":  0,
-		"KickPlayer":   1,
-		"Broadcast":    2,
-		"BindSession":  3,
-		"LeaseExpired": 4,
-	}
-)
-
-func (x GateCommand_CommandType) Enum() *GateCommand_CommandType {
-	p := new(GateCommand_CommandType)
-	*p = x
-	return p
-}
-
-func (x GateCommand_CommandType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (GateCommand_CommandType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_contracts_kafka_gate_command_proto_enumTypes[0].Descriptor()
-}
-
-func (GateCommand_CommandType) Type() protoreflect.EnumType {
-	return &file_proto_contracts_kafka_gate_command_proto_enumTypes[0]
-}
-
-func (x GateCommand_CommandType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use GateCommand_CommandType.Descriptor instead.
-func (GateCommand_CommandType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_contracts_kafka_gate_command_proto_rawDescGZIP(), []int{0, 0}
-}
-
 // Transport contract for Kafka messages sent to Gate.
-// Keep this schema transport-facing and map it to in-process events in C++.
+// Command type is identified by event_id (from global event_id registry).
+// Payload carries the serialized per-event proto (e.g. RoutePlayerEvent, KickPlayerEvent).
 type GateCommand struct {
-	state            protoimpl.MessageState  `protogen:"open.v1"`
-	CommandType      GateCommand_CommandType `protobuf:"varint,1,opt,name=command_type,json=commandType,proto3,enum=contracts.kafka.GateCommand_CommandType" json:"command_type,omitempty"`
-	PlayerId         uint64                  `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	TargetNodeId     uint32                  `protobuf:"varint,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`            // Target Scene node ID for routing
-	SessionId        uint64                  `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                       // Gate session ID
-	Payload          []byte                  `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                             // Optional extension payload
-	TargetGateId     uint32                  `protobuf:"varint,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`            // Target Gate ID
-	TargetInstanceId string                  `protobuf:"bytes,7,opt,name=target_instance_id,json=targetInstanceId,proto3" json:"target_instance_id,omitempty"` // Target Gate instance UUID to avoid stale commands
-	EventId          *uint32                 `protobuf:"varint,8,opt,name=event_id,json=eventId,proto3,oneof" json:"event_id,omitempty"`                       // Generic in-process event ID for payload decoding
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId         uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	TargetNodeId     uint32                 `protobuf:"varint,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`            // Target Scene node ID for routing
+	SessionId        uint64                 `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                       // Gate session ID
+	Payload          []byte                 `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                             // Serialized event proto (decoded via event_id)
+	TargetGateId     uint32                 `protobuf:"varint,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`            // Target Gate ID
+	TargetInstanceId string                 `protobuf:"bytes,7,opt,name=target_instance_id,json=targetInstanceId,proto3" json:"target_instance_id,omitempty"` // Target Gate instance UUID to avoid stale commands
+	EventId          uint32                 `protobuf:"varint,8,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`                             // Global event ID — identifies payload type
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -120,13 +65,6 @@ func (x *GateCommand) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GateCommand.ProtoReflect.Descriptor instead.
 func (*GateCommand) Descriptor() ([]byte, []int) {
 	return file_proto_contracts_kafka_gate_command_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *GateCommand) GetCommandType() GateCommand_CommandType {
-	if x != nil {
-		return x.CommandType
-	}
-	return GateCommand_RoutePlayer
 }
 
 func (x *GateCommand) GetPlayerId() uint64 {
@@ -172,8 +110,8 @@ func (x *GateCommand) GetTargetInstanceId() string {
 }
 
 func (x *GateCommand) GetEventId() uint32 {
-	if x != nil && x.EventId != nil {
-		return *x.EventId
+	if x != nil {
+		return x.EventId
 	}
 	return 0
 }
@@ -182,25 +120,16 @@ var File_proto_contracts_kafka_gate_command_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_gate_command_proto_rawDesc = "" +
 	"\n" +
-	"(proto/contracts/kafka/gate_command.proto\x12\x0fcontracts.kafka\"\xb9\x03\n" +
-	"\vGateCommand\x12K\n" +
-	"\fcommand_type\x18\x01 \x01(\x0e2(.contracts.kafka.GateCommand.CommandTypeR\vcommandType\x12\x1b\n" +
+	"(proto/contracts/kafka/gate_command.proto\x12\x0fcontracts.kafka\"\xfe\x01\n" +
+	"\vGateCommand\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12$\n" +
 	"\x0etarget_node_id\x18\x03 \x01(\rR\ftargetNodeId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x04 \x01(\x04R\tsessionId\x12\x18\n" +
 	"\apayload\x18\x05 \x01(\fR\apayload\x12$\n" +
 	"\x0etarget_gate_id\x18\x06 \x01(\rR\ftargetGateId\x12,\n" +
-	"\x12target_instance_id\x18\a \x01(\tR\x10targetInstanceId\x12\x1e\n" +
-	"\bevent_id\x18\b \x01(\rH\x00R\aeventId\x88\x01\x01\"`\n" +
-	"\vCommandType\x12\x0f\n" +
-	"\vRoutePlayer\x10\x00\x12\x0e\n" +
-	"\n" +
-	"KickPlayer\x10\x01\x12\r\n" +
-	"\tBroadcast\x10\x02\x12\x0f\n" +
-	"\vBindSession\x10\x03\x12\x10\n" +
-	"\fLeaseExpired\x10\x04B\v\n" +
-	"\t_event_idB\x11Z\x0fcontracts/kafkab\x06proto3"
+	"\x12target_instance_id\x18\a \x01(\tR\x10targetInstanceId\x12\x19\n" +
+	"\bevent_id\x18\b \x01(\rR\aeventIdJ\x04\b\x01\x10\x02B\x11Z\x0fcontracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_gate_command_proto_rawDescOnce sync.Once
@@ -214,19 +143,16 @@ func file_proto_contracts_kafka_gate_command_proto_rawDescGZIP() []byte {
 	return file_proto_contracts_kafka_gate_command_proto_rawDescData
 }
 
-var file_proto_contracts_kafka_gate_command_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_proto_contracts_kafka_gate_command_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_contracts_kafka_gate_command_proto_goTypes = []any{
-	(GateCommand_CommandType)(0), // 0: contracts.kafka.GateCommand.CommandType
-	(*GateCommand)(nil),          // 1: contracts.kafka.GateCommand
+	(*GateCommand)(nil), // 0: contracts.kafka.GateCommand
 }
 var file_proto_contracts_kafka_gate_command_proto_depIdxs = []int32{
-	0, // 0: contracts.kafka.GateCommand.command_type:type_name -> contracts.kafka.GateCommand.CommandType
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_proto_contracts_kafka_gate_command_proto_init() }
@@ -234,20 +160,18 @@ func file_proto_contracts_kafka_gate_command_proto_init() {
 	if File_proto_contracts_kafka_gate_command_proto != nil {
 		return
 	}
-	file_proto_contracts_kafka_gate_command_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_contracts_kafka_gate_command_proto_rawDesc), len(file_proto_contracts_kafka_gate_command_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_proto_contracts_kafka_gate_command_proto_goTypes,
 		DependencyIndexes: file_proto_contracts_kafka_gate_command_proto_depIdxs,
-		EnumInfos:         file_proto_contracts_kafka_gate_command_proto_enumTypes,
 		MessageInfos:      file_proto_contracts_kafka_gate_command_proto_msgTypes,
 	}.Build()
 	File_proto_contracts_kafka_gate_command_proto = out.File

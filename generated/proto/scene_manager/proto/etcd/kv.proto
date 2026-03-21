@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "scene_manager/proto/etcd;etcd";
+option go_package = "scene_manager/proto/etcd";
 package mvccpb;
 
 

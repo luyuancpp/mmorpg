@@ -4,13 +4,14 @@ package node
 import (
 	"context"
 	"fmt"
+	"login/internal/config"
+	etcd "login/internal/logic/pkg/etcd"
+	login_proto "login/proto/common/base"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"login/internal/config"
-	etcd "login/internal/logic/pkg/etcd"
-	login_proto "login/proto/common"
-	"time"
 )
 
 type Node struct {

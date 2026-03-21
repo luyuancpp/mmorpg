@@ -71,7 +71,7 @@ const file_proto_common_component_player_async_comp_proto_rawDesc = "" +
 	"\n" +
 	".proto/common/component/player_async_comp.proto\"K\n" +
 	"#PlayerGameNodeEnteryInfoPBComponent\x12$\n" +
-	"\x0ecentre_node_id\x18\x01 \x01(\rR\fcentreNodeIdB'Z%chat/proto/common/component;componentb\x06proto3"
+	"\x0ecentre_node_id\x18\x01 \x01(\rR\fcentreNodeIdB\x1dZ\x1bchat/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_async_comp_proto_rawDescOnce sync.Once

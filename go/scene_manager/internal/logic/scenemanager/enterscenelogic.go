@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"scene_manager/internal/svc"
-	"scene_manager/proto/scene_manager/scene_manager"
+	"scene_manager/scene_manager"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

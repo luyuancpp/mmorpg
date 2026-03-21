@@ -127,7 +127,7 @@ const file_proto_common_component_player_skill_comp_proto_rawDesc = "" +
 	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\"T\n" +
 	"\x1aPlayerSkillListPBComponent\x126\n" +
 	"\n" +
-	"skill_list\x18\x01 \x03(\v2\x17.PlayerSkillPBComponentR\tskillListB0Z.scene_manager/proto/common/component;componentb\x06proto3"
+	"skill_list\x18\x01 \x03(\v2\x17.PlayerSkillPBComponentR\tskillListB&Z$scene_manager/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_skill_comp_proto_rawDescOnce sync.Once

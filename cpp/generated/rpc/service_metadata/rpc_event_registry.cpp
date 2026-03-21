@@ -522,10 +522,6 @@ bool IsClientMessageId(uint32_t messageId)
 	}
 }
 
-void InitEventInfo()
-{
-}
-
 bool IsValidEventId(uint32_t eventId)
 {
 	return eventId < kMaxEventCount;

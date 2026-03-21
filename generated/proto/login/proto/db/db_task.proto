@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "login/proto/db;db";
+option go_package = "login/proto/db";
 package taskpb;
 
 

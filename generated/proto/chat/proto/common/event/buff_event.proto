@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "chat/proto/common/event;event";
+option go_package = "chat/proto/common/event";
 
 
 
@@ -9,5 +9,7 @@ message BuffTestEvet
 {
   uint64 period = 1;
   uint64 periodic_timer = 2;
+  uint32 period_done = 3;
+}periodic_timer = 2;
   uint32 period_done = 3;
 }

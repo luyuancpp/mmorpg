@@ -3,8 +3,6 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
-	"github.com/redis/go-redis/v9"
-	"google.golang.org/protobuf/proto"
 	"login/data"
 	"login/generated/pb/table"
 	"login/internal/config"
@@ -14,11 +12,14 @@ import (
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/svc"
-	login_proto_common "login/proto/common"
-	login_data_base "login/proto/logic/database"
-	login_proto "login/proto/service/go/grpc/login"
+	login_proto_common "login/proto/common/base"
+	login_data_base "login/proto/common/database"
+	login_proto "login/proto/login"
 	"strconv"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

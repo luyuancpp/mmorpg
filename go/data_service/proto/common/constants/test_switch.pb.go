@@ -75,7 +75,7 @@ const file_proto_common_constants_test_switch_proto_rawDesc = "" +
 	"(proto/common/constants/test_switch.proto*E\n" +
 	"\reTestFlagType\x12\x1a\n" +
 	"\x16kTestMessageStatistics\x10\x00\x12\x18\n" +
-	"\x14kTestClearEmptyTiles\x10\x01B/Z-data_service/proto/common/constants;constantsb\x06proto3"
+	"\x14kTestClearEmptyTiles\x10\x01B%Z#data_service/proto/common/constantsb\x06proto3"
 
 var (
 	file_proto_common_constants_test_switch_proto_rawDescOnce sync.Once

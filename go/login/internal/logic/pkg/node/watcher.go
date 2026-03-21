@@ -3,15 +3,16 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/zeromicro/go-zero/core/logx"
-	"go.etcd.io/etcd/api/v3/mvccpb"
-	"go.etcd.io/etcd/client/v3"
-	"go.etcd.io/etcd/client/v3/namespace"
-	"google.golang.org/protobuf/encoding/protojson"
 	"log"
 	"login/internal/config"
-	login_proto "login/proto/common"
+	login_proto "login/proto/common/base"
 	"sync"
+
+	"github.com/zeromicro/go-zero/core/logx"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/namespace"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // NodeEventType 表示节点事件类型

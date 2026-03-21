@@ -642,7 +642,7 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x1cderived_attributes_component\x18\x06 \x01(\v2\x1a.BaseAttributesPbComponentR\x1aderivedAttributesComponent\x12:\n" +
 	"\x0flevel_component\x18\a \x01(\v2\x11.LevelPbComponentR\x0elevelComponent:5\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"i\n" +
 	"\x11player_database_1\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:7\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01B&Z$robot/proto/common/database;databaseb\x06proto3"
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:7\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01B\x1dZ\x1brobot/proto/common/databaseb\x06proto3"
 
 var (
 	file_proto_common_database_mysql_database_table_proto_rawDescOnce sync.Once

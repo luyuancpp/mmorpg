@@ -14,8 +14,8 @@ import (
 )
 
 type (
-	TestRequest  = db_db.TestRequest
-	TestResponse = db_db.TestResponse
+	TestRequest  = db.TestRequest
+	TestResponse = db.TestResponse
 
 	Db interface {
 		Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error)
@@ -33,6 +33,6 @@ func NewDb(cli zrpc.Client) Db {
 }
 
 func (m *defaultDb) Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error) {
-	client := db_db.NewDbClient(m.cli.Conn())
+	client := db.NewDbClient(m.cli.Conn())
 	return client.Test(ctx, in, opts...)
 }
