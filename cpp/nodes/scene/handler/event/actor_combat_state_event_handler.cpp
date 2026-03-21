@@ -28,4 +28,3 @@ void ActorCombatStateEventHandler::CombatStateRemovedPbEventHandler(const Combat
 	CombatStateSystem::RemoveCombatState(event);
 ///<<< END WRITING YOUR CODE
 }
-

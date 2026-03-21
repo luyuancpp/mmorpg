@@ -17,4 +17,3 @@ void SkillEventHandler::SkillExecutedEventHandler(const SkillExecutedEvent& even
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-

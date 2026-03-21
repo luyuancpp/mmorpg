@@ -569,4 +569,3 @@ void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, 
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
-

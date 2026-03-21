@@ -37,9 +37,8 @@ inline constexpr GateCommand::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
-        command_type_{static_cast< ::contracts::kafka::GateCommand_CommandType >(0)},
-        target_node_id_{0u},
         session_id_{::uint64_t{0u}},
+        target_node_id_{0u},
         target_gate_id_{0u},
         event_id_{0u} {}
 
@@ -64,8 +63,8 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GateCommandDefaultTypeInternal _GateCommand_default_instance_;
 }  // namespace kafka
 }  // namespace contracts
-static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
-    file_level_enum_descriptors_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto[1];
+static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
+    file_level_enum_descriptors_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_service_descriptors_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto = nullptr;
 const ::uint32_t
@@ -73,8 +72,7 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_._has_bits_),
-        11, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.command_type_),
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.target_node_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.session_id_),
@@ -82,14 +80,13 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.target_gate_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.target_instance_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.event_id_),
-        3,
         2,
         4,
-        5,
+        3,
         0,
-        6,
+        5,
         1,
-        7,
+        6,
 };
 
 static const ::_pbi::MigrationSchema
@@ -102,22 +99,18 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n(proto/contracts/kafka/gate_command.pro"
-    "to\022\017contracts.kafka\"\327\002\n\013GateCommand\022>\n\014c"
-    "ommand_type\030\001 \001(\0162(.contracts.kafka.Gate"
-    "Command.CommandType\022\021\n\tplayer_id\030\002 \001(\004\022\026"
-    "\n\016target_node_id\030\003 \001(\r\022\022\n\nsession_id\030\004 \001"
-    "(\004\022\017\n\007payload\030\005 \001(\014\022\026\n\016target_gate_id\030\006 "
-    "\001(\r\022\032\n\022target_instance_id\030\007 \001(\t\022\025\n\010event"
-    "_id\030\010 \001(\rH\000\210\001\001\"`\n\013CommandType\022\017\n\013RoutePl"
-    "ayer\020\000\022\016\n\nKickPlayer\020\001\022\r\n\tBroadcast\020\002\022\017\n"
-    "\013BindSession\020\003\022\020\n\014LeaseExpired\020\004B\013\n\t_eve"
-    "nt_idB\021Z\017contracts/kafkab\006proto3"
+    "to\022\017contracts.kafka\"\251\001\n\013GateCommand\022\021\n\tp"
+    "layer_id\030\002 \001(\004\022\026\n\016target_node_id\030\003 \001(\r\022\022"
+    "\n\nsession_id\030\004 \001(\004\022\017\n\007payload\030\005 \001(\014\022\026\n\016t"
+    "arget_gate_id\030\006 \001(\r\022\032\n\022target_instance_i"
+    "d\030\007 \001(\t\022\020\n\010event_id\030\010 \001(\rJ\004\010\001\020\002B\021Z\017contr"
+    "acts/kafkab\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto = {
     false,
     false,
-    432,
+    258,
     descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto,
     "proto/contracts/kafka/gate_command.proto",
     &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto_once,
@@ -132,12 +125,6 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontra
 };
 namespace contracts {
 namespace kafka {
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL GateCommand_CommandType_descriptor() {
-  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto);
-  return file_level_enum_descriptors_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto[0];
-}
-PROTOBUF_CONSTINIT const uint32_t GateCommand_CommandType_internal_data_[] = {
-    327680u, 0u, };
 // ===================================================================
 
 class GateCommand::_Internal {
@@ -261,16 +248,16 @@ GateCommand::GetClassData() const {
   return GateCommand_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 8, 0, 62, 2>
+const ::_pbi::TcParseTable<3, 7, 0, 54, 2>
 GateCommand::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(GateCommand, _impl_._has_bits_),
     0, // no _extensions_
     8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967040,  // skipmap
+    4294967041,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    8,  // num_field_entries
+    7,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     GateCommand_class_data_.base(),
@@ -280,12 +267,10 @@ GateCommand::_table_ = {
     ::_pbi::TcParser::GetTable<::contracts::kafka::GateCommand>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // optional uint32 event_id = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.event_id_), 7>(),
-     {64, 7, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.event_id_)}},
-    // .contracts.kafka.GateCommand.CommandType command_type = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.command_type_), 3>(),
-     {8, 3, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.command_type_)}},
+    // uint32 event_id = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.event_id_), 6>(),
+     {64, 6, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.event_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint64 player_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateCommand, _impl_.player_id_), 2>(),
      {16, 2, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.player_id_)}},
@@ -293,23 +278,20 @@ GateCommand::_table_ = {
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.target_node_id_), 4>(),
      {24, 4, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_node_id_)}},
     // uint64 session_id = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateCommand, _impl_.session_id_), 5>(),
-     {32, 5, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.session_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateCommand, _impl_.session_id_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.session_id_)}},
     // bytes payload = 5;
     {::_pbi::TcParser::FastBS1,
      {42, 0, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.payload_)}},
     // uint32 target_gate_id = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.target_gate_id_), 6>(),
-     {48, 6, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_gate_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.target_gate_id_), 5>(),
+     {48, 5, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_gate_id_)}},
     // string target_instance_id = 7;
     {::_pbi::TcParser::FastUS1,
      {58, 1, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_instance_id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .contracts.kafka.GateCommand.CommandType command_type = 1;
-    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.command_type_), _Internal::kHasBitsOffset + 3, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // uint64 player_id = 2;
     {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.player_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
@@ -317,24 +299,24 @@ GateCommand::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_node_id_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 session_id = 4;
-    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.session_id_), _Internal::kHasBitsOffset + 5, 0,
+    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.session_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // bytes payload = 5;
     {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.payload_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
     // uint32 target_gate_id = 6;
-    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_gate_id_), _Internal::kHasBitsOffset + 6, 0,
+    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_gate_id_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // string target_instance_id = 7;
     {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_instance_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // optional uint32 event_id = 8;
-    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.event_id_), _Internal::kHasBitsOffset + 7, 0,
+    // uint32 event_id = 8;
+    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.event_id_), _Internal::kHasBitsOffset + 6, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
-    "\33\0\0\0\0\0\0\22\0\0\0\0\0\0\0\0"
+    "\33\0\0\0\0\0\22\0"
     "contracts.kafka.GateCommand"
     "target_instance_id"
   }},
@@ -355,7 +337,7 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
       _impl_.target_instance_id_.ClearNonDefaultToEmpty();
     }
   }
-  if ((cached_has_bits & 0x000000fcu) != 0) {
+  if ((cached_has_bits & 0x0000007cu) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.event_id_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.event_id_));
@@ -379,15 +361,6 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // .contracts.kafka.GateCommand.CommandType command_type = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
-    if (this_._internal_command_type() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteEnumToArray(
-          1, this_._internal_command_type(), target);
-    }
-  }
-
   // uint64 player_id = 2;
   if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_player_id() != 0) {
@@ -407,7 +380,7 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
   }
 
   // uint64 session_id = 4;
-  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -424,7 +397,7 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
   }
 
   // uint32 target_gate_id = 6;
-  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
     if (this_._internal_target_gate_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -442,12 +415,13 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
     }
   }
 
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // optional uint32 event_id = 8;
-  if ((cached_has_bits & 0x00000080u) != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        8, this_._internal_event_id(), target);
+  // uint32 event_id = 8;
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+    if (this_._internal_event_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          8, this_._internal_event_id(), target);
+    }
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -475,7 +449,7 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x000000ffu) != 0) {
+  if ((cached_has_bits & 0x0000007fu) != 0) {
     // bytes payload = 5;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_payload().empty()) {
@@ -497,11 +471,11 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
             this_._internal_player_id());
       }
     }
-    // .contracts.kafka.GateCommand.CommandType command_type = 1;
+    // uint64 session_id = 4;
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (this_._internal_command_type() != 0) {
-        total_size += 1 +
-                      ::_pbi::WireFormatLite::EnumSize(this_._internal_command_type());
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_session_id());
       }
     }
     // uint32 target_node_id = 3;
@@ -511,24 +485,19 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
             this_._internal_target_node_id());
       }
     }
-    // uint64 session_id = 4;
-    if ((cached_has_bits & 0x00000020u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint32 target_gate_id = 6;
-    if ((cached_has_bits & 0x00000040u) != 0) {
+    if ((cached_has_bits & 0x00000020u) != 0) {
       if (this_._internal_target_gate_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_target_gate_id());
       }
     }
-    // optional uint32 event_id = 8;
-    if ((cached_has_bits & 0x00000080u) != 0) {
-      total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-          this_._internal_event_id());
+    // uint32 event_id = 8;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (this_._internal_event_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_event_id());
+      }
     }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -544,7 +513,7 @@ void GateCommand::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x000000ffu) != 0) {
+  if ((cached_has_bits & 0x0000007fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_payload().empty()) {
         _this->_internal_set_payload(from._internal_payload());
@@ -569,8 +538,8 @@ void GateCommand::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (from._internal_command_type() != 0) {
-        _this->_impl_.command_type_ = from._impl_.command_type_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
@@ -579,17 +548,14 @@ void GateCommand::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
       }
     }
     if ((cached_has_bits & 0x00000020u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
-      }
-    }
-    if ((cached_has_bits & 0x00000040u) != 0) {
       if (from._internal_target_gate_id() != 0) {
         _this->_impl_.target_gate_id_ = from._impl_.target_gate_id_;
       }
     }
-    if ((cached_has_bits & 0x00000080u) != 0) {
-      _this->_impl_.event_id_ = from._impl_.event_id_;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (from._internal_event_id() != 0) {
+        _this->_impl_.event_id_ = from._impl_.event_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;

@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	kafkapb "login/contracts/kafka"
+	game "login/generated/pb/game"
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/taskmanager"
@@ -103,10 +104,12 @@ func (c *ServiceContext) SetNodeId(nodeId int64) {
 
 // KickSessionOnGate sends a KickPlayer command to the target Gate via Kafka.
 func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint64) error {
+	eventId := uint32(game.ContractsKafkaKickPlayerEventEventId)
+
 	cmd := &kafkapb.GateCommand{
-		CommandType:      kafkapb.GateCommand_KickPlayer,
 		SessionId:        sessionID,
 		TargetInstanceId: gateInstanceID,
+		EventId:          &eventId,
 	}
 
 	gateNodeID, err := strconv.ParseUint(gateID, 10, 32)

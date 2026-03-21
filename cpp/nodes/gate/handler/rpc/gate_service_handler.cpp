@@ -194,4 +194,3 @@ void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controlle
 	response->set_player_id(request->player_id());
 ///<<< END WRITING YOUR CODE
 }
-
