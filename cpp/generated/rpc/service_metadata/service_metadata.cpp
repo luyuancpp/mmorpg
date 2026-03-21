@@ -69,189 +69,6 @@ class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer {};
 class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
 class ScenePlayerSyncImpl final : public ScenePlayerSync {};
 class SceneImpl final : public Scene {};
-namespace {
-
-void DispatchAcceptMissionEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const AcceptMissionEvent&>(message));
-}
-
-void DispatchAfterEnterScene(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const AfterEnterScene&>(message));
-}
-
-void DispatchAfterLeaveScene(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const AfterLeaveScene&>(message));
-}
-
-void DispatchBeKillEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const BeKillEvent&>(message));
-}
-
-void DispatchBeforeEnterScene(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const BeforeEnterScene&>(message));
-}
-
-void DispatchBeforeLeaveScene(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const BeforeLeaveScene&>(message));
-}
-
-void DispatchBuffTestEvet(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const BuffTestEvet&>(message));
-}
-
-void DispatchCombatStateAddedPbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const CombatStateAddedPbEvent&>(message));
-}
-
-void DispatchCombatStateRemovedPbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const CombatStateRemovedPbEvent&>(message));
-}
-
-void DispatchConnectToNodePbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const ConnectToNodePbEvent&>(message));
-}
-
-void DispatchContractsKafkaBindSessionEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const contracts::kafka::BindSessionEvent&>(message));
-}
-
-void DispatchContractsKafkaKickPlayerEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const contracts::kafka::KickPlayerEvent&>(message));
-}
-
-void DispatchContractsKafkaPlayerDisconnectedEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const contracts::kafka::PlayerDisconnectedEvent&>(message));
-}
-
-void DispatchContractsKafkaPlayerLeaseExpiredEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const contracts::kafka::PlayerLeaseExpiredEvent&>(message));
-}
-
-void DispatchContractsKafkaPlayerLifecycleCommand(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const contracts::kafka::PlayerLifecycleCommand&>(message));
-}
-
-void DispatchContractsKafkaRoutePlayerEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const contracts::kafka::RoutePlayerEvent&>(message));
-}
-
-void DispatchInitializeActorComponentsEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const InitializeActorComponentsEvent&>(message));
-}
-
-void DispatchInitializeNpcComponentsEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const InitializeNpcComponentsEvent&>(message));
-}
-
-void DispatchInitializePlayerComponentsEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const InitializePlayerComponentsEvent&>(message));
-}
-
-void DispatchInterruptCurrentStatePbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const InterruptCurrentStatePbEvent&>(message));
-}
-
-void DispatchMissionConditionEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const MissionConditionEvent&>(message));
-}
-
-void DispatchOnAcceptedMissionEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnAcceptedMissionEvent&>(message));
-}
-
-void DispatchOnConnect2CentrePbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnConnect2CentrePbEvent&>(message));
-}
-
-void DispatchOnConnect2Login(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnConnect2Login&>(message));
-}
-
-void DispatchOnMissionAwardEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnMissionAwardEvent&>(message));
-}
-
-void DispatchOnNodeAddPbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnNodeAddPbEvent&>(message));
-}
-
-void DispatchOnNodeConnectedPbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnNodeConnectedPbEvent&>(message));
-}
-
-void DispatchOnNodeRemovePbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnNodeRemovePbEvent&>(message));
-}
-
-void DispatchOnSceneCreated(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnSceneCreated&>(message));
-}
-
-void DispatchOnSceneDestroyed(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnSceneDestroyed&>(message));
-}
-
-void DispatchOnServerStart(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const OnServerStart&>(message));
-}
-
-void DispatchPlayerMigrationPbEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const PlayerMigrationPbEvent&>(message));
-}
-
-void DispatchPlayerUpgradeEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const PlayerUpgradeEvent&>(message));
-}
-
-void DispatchRegisterPlayerEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const RegisterPlayerEvent&>(message));
-}
-
-void DispatchS2CEnterScene(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const S2CEnterScene&>(message));
-}
-
-void DispatchSkillExecutedEvent(const google::protobuf::Message& message)
-{
-    dispatcher.enqueue(static_cast<const SkillExecutedEvent&>(message));
-}
-
-} // namespace
 
 namespace data_service{void SendDataServiceLoadPlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceSavePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -284,7 +101,7 @@ namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 std::array<RpcService, 94> gRpcServiceRegistry;
-std::array<ProtoEvent, 36> gProtoEventRegistry;
+std::array<std::unique_ptr<google::protobuf::Message>, 36> gEventPrototypes;
 
 void InitMessageInfo()
 {
@@ -384,59 +201,55 @@ void InitMessageInfo()
 
 void InitEventInfo()
 {
-	gProtoEventRegistry[AcceptMissionEventEventId] = ProtoEvent{"AcceptMissionEvent", std::make_unique<AcceptMissionEvent>(), &DispatchAcceptMissionEvent};
-	gProtoEventRegistry[AfterEnterSceneEventId] = ProtoEvent{"AfterEnterScene", std::make_unique<AfterEnterScene>(), &DispatchAfterEnterScene};
-	gProtoEventRegistry[AfterLeaveSceneEventId] = ProtoEvent{"AfterLeaveScene", std::make_unique<AfterLeaveScene>(), &DispatchAfterLeaveScene};
-	gProtoEventRegistry[BeKillEventEventId] = ProtoEvent{"BeKillEvent", std::make_unique<BeKillEvent>(), &DispatchBeKillEvent};
-	gProtoEventRegistry[BeforeEnterSceneEventId] = ProtoEvent{"BeforeEnterScene", std::make_unique<BeforeEnterScene>(), &DispatchBeforeEnterScene};
-	gProtoEventRegistry[BeforeLeaveSceneEventId] = ProtoEvent{"BeforeLeaveScene", std::make_unique<BeforeLeaveScene>(), &DispatchBeforeLeaveScene};
-	gProtoEventRegistry[BuffTestEvetEventId] = ProtoEvent{"BuffTestEvet", std::make_unique<BuffTestEvet>(), &DispatchBuffTestEvet};
-	gProtoEventRegistry[CombatStateAddedPbEventEventId] = ProtoEvent{"CombatStateAddedPbEvent", std::make_unique<CombatStateAddedPbEvent>(), &DispatchCombatStateAddedPbEvent};
-	gProtoEventRegistry[CombatStateRemovedPbEventEventId] = ProtoEvent{"CombatStateRemovedPbEvent", std::make_unique<CombatStateRemovedPbEvent>(), &DispatchCombatStateRemovedPbEvent};
-	gProtoEventRegistry[ConnectToNodePbEventEventId] = ProtoEvent{"ConnectToNodePbEvent", std::make_unique<ConnectToNodePbEvent>(), &DispatchConnectToNodePbEvent};
-	gProtoEventRegistry[ContractsKafkaBindSessionEventEventId] = ProtoEvent{"contracts::kafka::BindSessionEvent", std::make_unique<contracts::kafka::BindSessionEvent>(), &DispatchContractsKafkaBindSessionEvent};
-	gProtoEventRegistry[ContractsKafkaKickPlayerEventEventId] = ProtoEvent{"contracts::kafka::KickPlayerEvent", std::make_unique<contracts::kafka::KickPlayerEvent>(), &DispatchContractsKafkaKickPlayerEvent};
-	gProtoEventRegistry[ContractsKafkaPlayerDisconnectedEventEventId] = ProtoEvent{"contracts::kafka::PlayerDisconnectedEvent", std::make_unique<contracts::kafka::PlayerDisconnectedEvent>(), &DispatchContractsKafkaPlayerDisconnectedEvent};
-	gProtoEventRegistry[ContractsKafkaPlayerLeaseExpiredEventEventId] = ProtoEvent{"contracts::kafka::PlayerLeaseExpiredEvent", std::make_unique<contracts::kafka::PlayerLeaseExpiredEvent>(), &DispatchContractsKafkaPlayerLeaseExpiredEvent};
-	gProtoEventRegistry[ContractsKafkaPlayerLifecycleCommandEventId] = ProtoEvent{"contracts::kafka::PlayerLifecycleCommand", std::make_unique<contracts::kafka::PlayerLifecycleCommand>(), &DispatchContractsKafkaPlayerLifecycleCommand};
-	gProtoEventRegistry[ContractsKafkaRoutePlayerEventEventId] = ProtoEvent{"contracts::kafka::RoutePlayerEvent", std::make_unique<contracts::kafka::RoutePlayerEvent>(), &DispatchContractsKafkaRoutePlayerEvent};
-	gProtoEventRegistry[InitializeActorComponentsEventEventId] = ProtoEvent{"InitializeActorComponentsEvent", std::make_unique<InitializeActorComponentsEvent>(), &DispatchInitializeActorComponentsEvent};
-	gProtoEventRegistry[InitializeNpcComponentsEventEventId] = ProtoEvent{"InitializeNpcComponentsEvent", std::make_unique<InitializeNpcComponentsEvent>(), &DispatchInitializeNpcComponentsEvent};
-	gProtoEventRegistry[InitializePlayerComponentsEventEventId] = ProtoEvent{"InitializePlayerComponentsEvent", std::make_unique<InitializePlayerComponentsEvent>(), &DispatchInitializePlayerComponentsEvent};
-	gProtoEventRegistry[InterruptCurrentStatePbEventEventId] = ProtoEvent{"InterruptCurrentStatePbEvent", std::make_unique<InterruptCurrentStatePbEvent>(), &DispatchInterruptCurrentStatePbEvent};
-	gProtoEventRegistry[MissionConditionEventEventId] = ProtoEvent{"MissionConditionEvent", std::make_unique<MissionConditionEvent>(), &DispatchMissionConditionEvent};
-	gProtoEventRegistry[OnAcceptedMissionEventEventId] = ProtoEvent{"OnAcceptedMissionEvent", std::make_unique<OnAcceptedMissionEvent>(), &DispatchOnAcceptedMissionEvent};
-	gProtoEventRegistry[OnConnect2CentrePbEventEventId] = ProtoEvent{"OnConnect2CentrePbEvent", std::make_unique<OnConnect2CentrePbEvent>(), &DispatchOnConnect2CentrePbEvent};
-	gProtoEventRegistry[OnConnect2LoginEventId] = ProtoEvent{"OnConnect2Login", std::make_unique<OnConnect2Login>(), &DispatchOnConnect2Login};
-	gProtoEventRegistry[OnMissionAwardEventEventId] = ProtoEvent{"OnMissionAwardEvent", std::make_unique<OnMissionAwardEvent>(), &DispatchOnMissionAwardEvent};
-	gProtoEventRegistry[OnNodeAddPbEventEventId] = ProtoEvent{"OnNodeAddPbEvent", std::make_unique<OnNodeAddPbEvent>(), &DispatchOnNodeAddPbEvent};
-	gProtoEventRegistry[OnNodeConnectedPbEventEventId] = ProtoEvent{"OnNodeConnectedPbEvent", std::make_unique<OnNodeConnectedPbEvent>(), &DispatchOnNodeConnectedPbEvent};
-	gProtoEventRegistry[OnNodeRemovePbEventEventId] = ProtoEvent{"OnNodeRemovePbEvent", std::make_unique<OnNodeRemovePbEvent>(), &DispatchOnNodeRemovePbEvent};
-	gProtoEventRegistry[OnSceneCreatedEventId] = ProtoEvent{"OnSceneCreated", std::make_unique<OnSceneCreated>(), &DispatchOnSceneCreated};
-	gProtoEventRegistry[OnSceneDestroyedEventId] = ProtoEvent{"OnSceneDestroyed", std::make_unique<OnSceneDestroyed>(), &DispatchOnSceneDestroyed};
-	gProtoEventRegistry[OnServerStartEventId] = ProtoEvent{"OnServerStart", std::make_unique<OnServerStart>(), &DispatchOnServerStart};
-	gProtoEventRegistry[PlayerMigrationPbEventEventId] = ProtoEvent{"PlayerMigrationPbEvent", std::make_unique<PlayerMigrationPbEvent>(), &DispatchPlayerMigrationPbEvent};
-	gProtoEventRegistry[PlayerUpgradeEventEventId] = ProtoEvent{"PlayerUpgradeEvent", std::make_unique<PlayerUpgradeEvent>(), &DispatchPlayerUpgradeEvent};
-	gProtoEventRegistry[RegisterPlayerEventEventId] = ProtoEvent{"RegisterPlayerEvent", std::make_unique<RegisterPlayerEvent>(), &DispatchRegisterPlayerEvent};
-	gProtoEventRegistry[S2CEnterSceneEventId] = ProtoEvent{"S2CEnterScene", std::make_unique<S2CEnterScene>(), &DispatchS2CEnterScene};
-	gProtoEventRegistry[SkillExecutedEventEventId] = ProtoEvent{"SkillExecutedEvent", std::make_unique<SkillExecutedEvent>(), &DispatchSkillExecutedEvent};
+	gEventPrototypes[AcceptMissionEventEventId] = std::make_unique<AcceptMissionEvent>();
+	gEventPrototypes[AfterEnterSceneEventId] = std::make_unique<AfterEnterScene>();
+	gEventPrototypes[AfterLeaveSceneEventId] = std::make_unique<AfterLeaveScene>();
+	gEventPrototypes[BeKillEventEventId] = std::make_unique<BeKillEvent>();
+	gEventPrototypes[BeforeEnterSceneEventId] = std::make_unique<BeforeEnterScene>();
+	gEventPrototypes[BeforeLeaveSceneEventId] = std::make_unique<BeforeLeaveScene>();
+	gEventPrototypes[BuffTestEvetEventId] = std::make_unique<BuffTestEvet>();
+	gEventPrototypes[CombatStateAddedPbEventEventId] = std::make_unique<CombatStateAddedPbEvent>();
+	gEventPrototypes[CombatStateRemovedPbEventEventId] = std::make_unique<CombatStateRemovedPbEvent>();
+	gEventPrototypes[ConnectToNodePbEventEventId] = std::make_unique<ConnectToNodePbEvent>();
+	gEventPrototypes[ContractsKafkaBindSessionEventEventId] = std::make_unique<contracts::kafka::BindSessionEvent>();
+	gEventPrototypes[ContractsKafkaKickPlayerEventEventId] = std::make_unique<contracts::kafka::KickPlayerEvent>();
+	gEventPrototypes[ContractsKafkaPlayerDisconnectedEventEventId] = std::make_unique<contracts::kafka::PlayerDisconnectedEvent>();
+	gEventPrototypes[ContractsKafkaPlayerLeaseExpiredEventEventId] = std::make_unique<contracts::kafka::PlayerLeaseExpiredEvent>();
+	gEventPrototypes[ContractsKafkaPlayerLifecycleCommandEventId] = std::make_unique<contracts::kafka::PlayerLifecycleCommand>();
+	gEventPrototypes[ContractsKafkaRoutePlayerEventEventId] = std::make_unique<contracts::kafka::RoutePlayerEvent>();
+	gEventPrototypes[InitializeActorComponentsEventEventId] = std::make_unique<InitializeActorComponentsEvent>();
+	gEventPrototypes[InitializeNpcComponentsEventEventId] = std::make_unique<InitializeNpcComponentsEvent>();
+	gEventPrototypes[InitializePlayerComponentsEventEventId] = std::make_unique<InitializePlayerComponentsEvent>();
+	gEventPrototypes[InterruptCurrentStatePbEventEventId] = std::make_unique<InterruptCurrentStatePbEvent>();
+	gEventPrototypes[MissionConditionEventEventId] = std::make_unique<MissionConditionEvent>();
+	gEventPrototypes[OnAcceptedMissionEventEventId] = std::make_unique<OnAcceptedMissionEvent>();
+	gEventPrototypes[OnConnect2CentrePbEventEventId] = std::make_unique<OnConnect2CentrePbEvent>();
+	gEventPrototypes[OnConnect2LoginEventId] = std::make_unique<OnConnect2Login>();
+	gEventPrototypes[OnMissionAwardEventEventId] = std::make_unique<OnMissionAwardEvent>();
+	gEventPrototypes[OnNodeAddPbEventEventId] = std::make_unique<OnNodeAddPbEvent>();
+	gEventPrototypes[OnNodeConnectedPbEventEventId] = std::make_unique<OnNodeConnectedPbEvent>();
+	gEventPrototypes[OnNodeRemovePbEventEventId] = std::make_unique<OnNodeRemovePbEvent>();
+	gEventPrototypes[OnSceneCreatedEventId] = std::make_unique<OnSceneCreated>();
+	gEventPrototypes[OnSceneDestroyedEventId] = std::make_unique<OnSceneDestroyed>();
+	gEventPrototypes[OnServerStartEventId] = std::make_unique<OnServerStart>();
+	gEventPrototypes[PlayerMigrationPbEventEventId] = std::make_unique<PlayerMigrationPbEvent>();
+	gEventPrototypes[PlayerUpgradeEventEventId] = std::make_unique<PlayerUpgradeEvent>();
+	gEventPrototypes[RegisterPlayerEventEventId] = std::make_unique<RegisterPlayerEvent>();
+	gEventPrototypes[S2CEnterSceneEventId] = std::make_unique<S2CEnterScene>();
+	gEventPrototypes[SkillExecutedEventEventId] = std::make_unique<SkillExecutedEvent>();
 }
 
 bool IsValidEventId(uint32_t eventId)
 {
-	if (eventId >= gProtoEventRegistry.size()) {
-		return false;
-	}
-	return gProtoEventRegistry[eventId].prototype != nullptr;
+	return eventId < kMaxEventLen && gEventPrototypes[eventId] != nullptr;
 }
 
 MessageUniquePtr NewEventMessage(uint32_t eventId)
 {
-	if (!IsValidEventId(eventId)) {
+	if (eventId >= kMaxEventLen || !gEventPrototypes[eventId]) {
 		return nullptr;
 	}
-
-	return MessageUniquePtr(gProtoEventRegistry[eventId].prototype->New());
+	return MessageUniquePtr(gEventPrototypes[eventId]->New());
 }
 
 MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload)
@@ -445,24 +258,52 @@ MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload)
 	if (!message) {
 		return nullptr;
 	}
-
 	if (!message->ParseFromString(payload)) {
 		return nullptr;
 	}
-
 	return message;
 }
 
 void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& message)
 {
-	if (!IsValidEventId(eventId)) {
-		return;
+	switch (eventId) {
+	case AcceptMissionEventEventId: dispatcher.enqueue(static_cast<const AcceptMissionEvent&>(message)); break;
+	case AfterEnterSceneEventId: dispatcher.enqueue(static_cast<const AfterEnterScene&>(message)); break;
+	case AfterLeaveSceneEventId: dispatcher.enqueue(static_cast<const AfterLeaveScene&>(message)); break;
+	case BeKillEventEventId: dispatcher.enqueue(static_cast<const BeKillEvent&>(message)); break;
+	case BeforeEnterSceneEventId: dispatcher.enqueue(static_cast<const BeforeEnterScene&>(message)); break;
+	case BeforeLeaveSceneEventId: dispatcher.enqueue(static_cast<const BeforeLeaveScene&>(message)); break;
+	case BuffTestEvetEventId: dispatcher.enqueue(static_cast<const BuffTestEvet&>(message)); break;
+	case CombatStateAddedPbEventEventId: dispatcher.enqueue(static_cast<const CombatStateAddedPbEvent&>(message)); break;
+	case CombatStateRemovedPbEventEventId: dispatcher.enqueue(static_cast<const CombatStateRemovedPbEvent&>(message)); break;
+	case ConnectToNodePbEventEventId: dispatcher.enqueue(static_cast<const ConnectToNodePbEvent&>(message)); break;
+	case ContractsKafkaBindSessionEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::BindSessionEvent&>(message)); break;
+	case ContractsKafkaKickPlayerEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::KickPlayerEvent&>(message)); break;
+	case ContractsKafkaPlayerDisconnectedEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::PlayerDisconnectedEvent&>(message)); break;
+	case ContractsKafkaPlayerLeaseExpiredEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::PlayerLeaseExpiredEvent&>(message)); break;
+	case ContractsKafkaPlayerLifecycleCommandEventId: dispatcher.enqueue(static_cast<const contracts::kafka::PlayerLifecycleCommand&>(message)); break;
+	case ContractsKafkaRoutePlayerEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::RoutePlayerEvent&>(message)); break;
+	case InitializeActorComponentsEventEventId: dispatcher.enqueue(static_cast<const InitializeActorComponentsEvent&>(message)); break;
+	case InitializeNpcComponentsEventEventId: dispatcher.enqueue(static_cast<const InitializeNpcComponentsEvent&>(message)); break;
+	case InitializePlayerComponentsEventEventId: dispatcher.enqueue(static_cast<const InitializePlayerComponentsEvent&>(message)); break;
+	case InterruptCurrentStatePbEventEventId: dispatcher.enqueue(static_cast<const InterruptCurrentStatePbEvent&>(message)); break;
+	case MissionConditionEventEventId: dispatcher.enqueue(static_cast<const MissionConditionEvent&>(message)); break;
+	case OnAcceptedMissionEventEventId: dispatcher.enqueue(static_cast<const OnAcceptedMissionEvent&>(message)); break;
+	case OnConnect2CentrePbEventEventId: dispatcher.enqueue(static_cast<const OnConnect2CentrePbEvent&>(message)); break;
+	case OnConnect2LoginEventId: dispatcher.enqueue(static_cast<const OnConnect2Login&>(message)); break;
+	case OnMissionAwardEventEventId: dispatcher.enqueue(static_cast<const OnMissionAwardEvent&>(message)); break;
+	case OnNodeAddPbEventEventId: dispatcher.enqueue(static_cast<const OnNodeAddPbEvent&>(message)); break;
+	case OnNodeConnectedPbEventEventId: dispatcher.enqueue(static_cast<const OnNodeConnectedPbEvent&>(message)); break;
+	case OnNodeRemovePbEventEventId: dispatcher.enqueue(static_cast<const OnNodeRemovePbEvent&>(message)); break;
+	case OnSceneCreatedEventId: dispatcher.enqueue(static_cast<const OnSceneCreated&>(message)); break;
+	case OnSceneDestroyedEventId: dispatcher.enqueue(static_cast<const OnSceneDestroyed&>(message)); break;
+	case OnServerStartEventId: dispatcher.enqueue(static_cast<const OnServerStart&>(message)); break;
+	case PlayerMigrationPbEventEventId: dispatcher.enqueue(static_cast<const PlayerMigrationPbEvent&>(message)); break;
+	case PlayerUpgradeEventEventId: dispatcher.enqueue(static_cast<const PlayerUpgradeEvent&>(message)); break;
+	case RegisterPlayerEventEventId: dispatcher.enqueue(static_cast<const RegisterPlayerEvent&>(message)); break;
+	case S2CEnterSceneEventId: dispatcher.enqueue(static_cast<const S2CEnterScene&>(message)); break;
+	case SkillExecutedEventEventId: dispatcher.enqueue(static_cast<const SkillExecutedEvent&>(message)); break;
+	default:
+		break;
 	}
-
-	auto dispatchFn = gProtoEventRegistry[eventId].dispatcher;
-	if (dispatchFn == nullptr) {
-		return;
-	}
-
-	dispatchFn(message);
 }
