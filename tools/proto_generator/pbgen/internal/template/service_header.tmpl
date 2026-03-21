@@ -35,10 +35,6 @@ struct ProtoEvent {
 constexpr uint32_t kMaxMessageLen = {{ .MaxMessageLen }};
 constexpr uint32_t kMaxEventLen = {{ .MaxEventLen }};
 
-{{- range .EventConstantLines }}
-{{ . }}
-{{- end }}
-
 extern std::array<RpcService, kMaxMessageLen> gRpcServiceRegistry;
 extern std::array<ProtoEvent, kMaxEventLen> gProtoEventRegistry;
 extern std::unordered_set<uint32_t> gClientMessageIdWhitelist;

@@ -478,7 +478,7 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 	tmplData := ServiceInfoCppData{
 		Includes:             includes,
 		ServiceInfoIncludes:  serviceInfoIncludes,
-		EventIncludesBlock:   strings.Join(eventIncludes, "\n") + "\n",
+		EventIncludesBlock:   strings.Join(eventIncludes, "\n") + "\n" + strings.Join(EventIdHeaderIncludes(), "\n") + "\n",
 		HandlerClasses:       handlerClasses,
 		EventDispatchers:     eventDispatchers,
 		InitLines:            initLines,
@@ -513,20 +513,13 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 func writeServiceInfoHeadFile(wg *sync.WaitGroup) {
 	defer wg.Done()
 	type HeaderTemplateData struct {
-		MaxMessageLen      uint64
-		MaxEventLen        uint64
-		EventConstantLines []string
-	}
-
-	eventConstantLines := make([]string, 0, len(globalProtoEventList))
-	for _, event := range globalProtoEventList {
-		eventConstantLines = append(eventConstantLines, fmt.Sprintf("constexpr uint32_t %s%s = %d;", event.IdName, _config.Global.Naming.EventId, event.Id))
+		MaxMessageLen uint64
+		MaxEventLen   uint64
 	}
 
 	data := HeaderTemplateData{
-		MaxMessageLen:      internal.MessageIdLen(),
-		MaxEventLen:        EventIdLen(),
-		EventConstantLines: eventConstantLines,
+		MaxMessageLen: internal.MessageIdLen(),
+		MaxEventLen:   EventIdLen(),
 	}
 
 	err := utils2.RenderTemplateToFile("internal/template/service_header.tmpl", _config.Global.Paths.ServiceHeaderFile, data)
@@ -720,6 +713,7 @@ func writePlayerServiceInstanceFiles(wg *sync.WaitGroup, serviceType string, isP
 }
 
 func WriteServiceRegisterInfoFile(wg *sync.WaitGroup) {
+	writeEventIdHeaderFiles()
 	wg.Add(1)
 	go writeServiceInfoCppFile(wg)
 	wg.Add(1)
@@ -733,4 +727,3 @@ func WriteServiceRegisterInfoFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go writePlayerServiceInstanceFiles(wg, "repliedInstance", IsNoOpHandler, _config.Global.PathLists.MethodHandlerDirectories.GateNodePlayerReplied, _config.Global.Naming.PlayerRepliedService)
 }
-

@@ -45,6 +45,20 @@
 #include "proto/common/event/server_event.pb.h"
 #include "proto/common/event/player_migration_event.pb.h"
 #include "proto/common/event/skill_event.pb.h"
+#include "common_event_mission_event_event_id.h"
+#include "common_event_scene_event_event_id.h"
+#include "common_event_combat_event_event_id.h"
+#include "common_event_buff_event_event_id.h"
+#include "common_event_actor_combat_state_event_event_id.h"
+#include "common_event_node_event_event_id.h"
+#include "contracts_kafka_gate_event_event_id.h"
+#include "contracts_kafka_player_event_event_id.h"
+#include "common_event_actor_event_event_id.h"
+#include "common_event_npc_event_event_id.h"
+#include "common_event_player_event_event_id.h"
+#include "common_event_server_event_event_id.h"
+#include "common_event_player_migration_event_event_id.h"
+#include "common_event_skill_event_event_id.h"
 
 class GateImpl final : public Gate {};
 class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon {};
