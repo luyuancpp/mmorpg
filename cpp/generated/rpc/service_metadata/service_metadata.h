@@ -4,7 +4,6 @@
 #include <array>
 #include <functional>
 #include <vector>
-#include <unordered_set>
 #include <google/protobuf/message.h>
 #include <google/protobuf/service.h>
 #include "entt/src/entt/entity/registry.hpp"
@@ -30,9 +29,9 @@ constexpr uint32_t kMaxMessageLen = 94;
 constexpr uint32_t kMaxEventLen = 36;
 
 extern std::array<RpcService, kMaxMessageLen> gRpcServiceRegistry;
-extern std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 
 void InitMessageInfo();
 void InitEventInfo();
 bool IsValidEventId(uint32_t eventId);
+bool IsClientMessageId(uint32_t messageId);
 bool DispatchProtoEvent(uint32_t eventId, const std::string& payload);
