@@ -41,6 +41,7 @@ param(
     [bool]$BuildRelease  = $true,
     [bool]$BuildDebug    = $true,
     [int]   $Jobs          = 0,
+    [string]$PreferredMsvcVersion = '14.51',
     [switch]$Clean,
     [switch]$SkipToolCheck
 )
@@ -149,6 +150,27 @@ function Convert-ToCMakePath([string]$Path) {
     return $Path -replace '\\', '/'
 }
 
+function Remove-DirectoryRobust([string]$Path) {
+    if (-not (Test-Path $Path)) {
+        return
+    }
+
+    try {
+        Remove-Item -Recurse -Force $Path -ErrorAction Stop
+    } catch {
+        $quotedPath = '"' + $Path + '"'
+        $quotedChildren = '"' + (Join-Path $Path '*') + '"'
+        cmd.exe /d /s /c "attrib -r -s -h /s /d $quotedChildren >nul 2>&1 & rd /s /q $quotedPath"
+        if (Test-Path $Path) {
+            Start-Sleep -Milliseconds 500
+            cmd.exe /d /s /c "rd /s /q $quotedPath"
+        }
+        if (Test-Path $Path) {
+            throw
+        }
+    }
+}
+
 $CMake = Resolve-Tool 'cmake'
 $Ninja = Resolve-Tool 'ninja'
 $Nasm  = Resolve-OptionalTool 'nasm'
@@ -160,7 +182,7 @@ if ($Nasm) {
     Write-Host "[warn] nasm not found on PATH. Falling back to OPENSSL_NO_ASM=ON for BoringSSL."
 }
 
-function Find-ClExe {
+function Find-ClExe([string]$PreferredVersionPrefix) {
     $vswhereLocations = @(
         "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe",
         "$env:ProgramFiles\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -175,10 +197,26 @@ function Find-ClExe {
     $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
     if (-not $vsPath) { Write-Error "No VS installation with C++ VC tools found." }
 
-    $msvcVersionFile = Join-Path $vsPath 'VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt'
-    if (-not (Test-Path $msvcVersionFile)) { Write-Error "Cannot determine MSVC toolset version." }
+    $msvcRoot = Join-Path $vsPath 'VC\Tools\MSVC'
+    if (-not (Test-Path $msvcRoot)) { Write-Error "MSVC tools directory not found: $msvcRoot" }
 
-    $msvcVer = (Get-Content $msvcVersionFile -Raw).Trim()
+    $allMsvcVersions = @(Get-ChildItem -Path $msvcRoot -Directory | Select-Object -ExpandProperty Name)
+    if ($allMsvcVersions.Count -eq 0) { Write-Error "No MSVC toolset found under $msvcRoot" }
+
+    $msvcVer = $null
+    if (-not [string]::IsNullOrWhiteSpace($PreferredVersionPrefix)) {
+        $msvcVer = $allMsvcVersions |
+            Where-Object { $_ -like "$PreferredVersionPrefix*" } |
+            Sort-Object { [version]$_ } -Descending |
+            Select-Object -First 1
+    }
+
+    if (-not $msvcVer) {
+        $msvcVer = $allMsvcVersions |
+            Sort-Object { [version]$_ } -Descending |
+            Select-Object -First 1
+    }
+
     $clPath = Join-Path $vsPath "VC\Tools\MSVC\$msvcVer\bin\Hostx64\x64\cl.exe"
     if (-not (Test-Path $clPath)) { Write-Error "cl.exe not found at $clPath" }
 
@@ -190,7 +228,7 @@ function Find-ClExe {
     }
 }
 
-$msvc = Find-ClExe
+$msvc = Find-ClExe -PreferredVersionPrefix $PreferredMsvcVersion
 Write-Host "[info] VS    : $($msvc.VsPath)"
 Write-Host "[info] MSVC  : $($msvc.MsvcVer)"
 Write-Host "[info] cl.exe: $($msvc.ClExe)"
@@ -209,14 +247,16 @@ function Enter-MsvcEnv([hashtable]$Msvc) {
     $vcvars = Join-Path $Msvc.VsPath 'VC\Auxiliary\Build\vcvars64.bat'
     if (-not (Test-Path $vcvars)) { Write-Error "vcvars64.bat not found at $vcvars" }
 
-    $envBlock = cmd /c "`"$vcvars`" >nul 2>&1 && set" 2>&1
+    $versionParts = $Msvc.MsvcVer.Split('.')
+    $vcvarsVer = if ($versionParts.Length -ge 2) { "$($versionParts[0]).$($versionParts[1])" } else { $Msvc.MsvcVer }
+    $envBlock = cmd /c "`"$vcvars`" -vcvars_ver=$vcvarsVer >nul 2>&1 && set" 2>&1
     foreach ($line in $envBlock) {
         if ($line -match '^([^=]+)=(.*)$') {
             [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process')
         }
     }
 
-    Write-Host "[info] MSVC environment loaded from vcvars64.bat"
+    Write-Host "[info] MSVC environment loaded from vcvars64.bat (vcvars_ver=$vcvarsVer)"
 }
 
 Enter-MsvcEnv $msvc
@@ -240,14 +280,16 @@ $CommonArgs = @(
     "-DCMAKE_C_COMPILER=cl",
     "-DCMAKE_CXX_COMPILER=cl",
     "-DCMAKE_MAKE_PROGRAM=$NinjaCMakePath",
-    "-DCMAKE_CXX_STANDARD=20",
+    "-DCMAKE_CXX_FLAGS=/std:c++17",
+    "-DCMAKE_CXX_STANDARD=17",
     "-DCMAKE_CXX_STANDARD_REQUIRED=ON",
     "-DCMAKE_CXX_EXTENSIONS=OFF",
     "-DgRPC_BUILD_TESTS=OFF",
     "-DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=OFF",
     "-Dprotobuf_BUILD_TESTS=OFF",
     "-DABSL_BUILD_TESTING=OFF",
-    "-DABSL_BUILD_TEST_HELPERS=OFF"
+    "-DABSL_BUILD_TEST_HELPERS=OFF",
+    "-DABSL_PROPAGATE_CXX_STD=OFF"
 )
 
 function Invoke-GrpcBuild {
@@ -268,12 +310,16 @@ function Invoke-GrpcBuild {
 
     if ($Clean -and (Test-Path $buildPath)) {
         Write-Host "[clean] Removing $buildPath ..."
-        Remove-Item -Recurse -Force $buildPath
+        Remove-DirectoryRobust $buildPath
     }
 
     $cachePath = Join-Path $buildPath 'CMakeCache.txt'
+    $expectedCxxFlags = '/std:c++17'
+    $expectedCxxStandard = '17'
     if (Test-Path $cachePath) {
         $cacheCompilerLine = Select-String -Path $cachePath -Pattern '^CMAKE_C_COMPILER:FILEPATH=' -SimpleMatch:$false | Select-Object -First 1
+        $cacheCxxFlagsLine = Select-String -Path $cachePath -Pattern '^CMAKE_CXX_FLAGS:STRING=' -SimpleMatch:$false | Select-Object -First 1
+        $cacheCxxStandardLine = Select-String -Path $cachePath -Pattern '^CMAKE_CXX_STANDARD:UNINITIALIZED=|^CMAKE_CXX_STANDARD:STRING=' -SimpleMatch:$false | Select-Object -First 1
         if ($cacheCompilerLine) {
             $cachedCompiler = $cacheCompilerLine.Line.Split('=', 2)[1]
             $cachedName = [System.IO.Path]::GetFileNameWithoutExtension($cachedCompiler)
@@ -281,7 +327,26 @@ function Invoke-GrpcBuild {
             # Reset only if the cached compiler is a completely different toolchain.
             if ($cachedName -ne 'cl') {
                 Write-Host "[clean] Cached compiler is not cl ($cachedCompiler) - resetting $buildPath ..."
-                Remove-Item -Recurse -Force $buildPath
+                Remove-DirectoryRobust $buildPath
+            } elseif (-not $cachedCompiler.StartsWith($msvc.MsvcBase, [System.StringComparison]::OrdinalIgnoreCase)) {
+                Write-Host "[clean] Cached compiler is from a different MSVC toolset ($cachedCompiler) - resetting $buildPath ..."
+                Remove-DirectoryRobust $buildPath
+            }
+        }
+
+        if ((Test-Path $buildPath) -and $cacheCxxFlagsLine) {
+            $cachedCxxFlags = $cacheCxxFlagsLine.Line.Split('=', 2)[1]
+            if ($cachedCxxFlags -ne $expectedCxxFlags) {
+                Write-Host "[clean] Cached CMAKE_CXX_FLAGS is '$cachedCxxFlags' instead of '$expectedCxxFlags' - resetting $buildPath ..."
+                Remove-DirectoryRobust $buildPath
+            }
+        }
+
+        if ((Test-Path $buildPath) -and $cacheCxxStandardLine) {
+            $cachedCxxStandard = $cacheCxxStandardLine.Line.Split('=', 2)[1]
+            if ($cachedCxxStandard -ne $expectedCxxStandard) {
+                Write-Host "[clean] Cached CMAKE_CXX_STANDARD is '$cachedCxxStandard' instead of '$expectedCxxStandard' - resetting $buildPath ..."
+                Remove-DirectoryRobust $buildPath
             }
         }
     }
@@ -295,8 +360,24 @@ function Invoke-GrpcBuild {
     ) + $GrpcExtraArgs + @(
         $GrpcRoot
     )
-    & $CMake @configArgs -B $buildPath
-    if ($LASTEXITCODE -ne 0) { Write-Error "CMake configure failed for $BuildType" }
+
+    $configured = $false
+    for ($attempt = 1; $attempt -le 2 -and -not $configured; $attempt++) {
+        & $CMake @configArgs -B $buildPath
+        if ($LASTEXITCODE -eq 0) {
+            $configured = $true
+            break
+        }
+
+        if ($attempt -eq 1) {
+            Write-Host "[retry] CMake configure failed for $BuildType. Resetting $buildPath and retrying once ..."
+            if (Test-Path $buildPath) {
+                Remove-DirectoryRobust $buildPath
+            }
+            New-Item -ItemType Directory -Path $buildPath | Out-Null
+        }
+    }
+    if (-not $configured) { Write-Error "CMake configure failed for $BuildType" }
 
     Write-Host "[2/3] Building ($BuildType) ..."
     & $CMake --build $buildPath --config $BuildType -j $Jobs
