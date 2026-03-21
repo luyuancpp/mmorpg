@@ -166,16 +166,13 @@ void Node::InitRpcServer() {
 	const std::string endpointIp = ResolveNodeIp();
 	localNodeInfo.mutable_endpoint()->set_ip(endpointIp);
 
-	uint16_t endpointPort = 0;
+	// Port is resolved later by AcquireNodePort() via etcd, unless overridden by env.
 	if (const auto envPort = TryResolveNodePortFromEnv(); envPort) {
-		endpointPort = *envPort;
+		localNodeInfo.mutable_endpoint()->set_port(*envPort);
+		LOG_INFO << "Node port from environment: " << *envPort;
 	}
-	else {
-		endpointPort = get_available_port(GetNodeType() * 10000);
-	}
-	localNodeInfo.mutable_endpoint()->set_port(endpointPort);
 
-	LOG_INFO << "Node endpoint resolved. ip=" << endpointIp << ", port=" << endpointPort;
+	LOG_INFO << "Node endpoint resolved. ip=" << endpointIp;
 	localNodeInfo.set_node_type(GetNodeType());
 	localNodeInfo.set_scene_node_type(tlsNodeConfigManager.GetGameConfig().scene_node_type());
 	localNodeInfo.set_protocol_type(PROTOCOL_TCP);

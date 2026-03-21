@@ -2,7 +2,7 @@
 
 ## Project Guidelines
 - Prefer clearer, verb-based RPC handler names and thin wrapper pattern: keep generated RPC method names but delegate work to well-named internal functions (e.g., ProcessClientPlayerMessage).
-- Avoid static usage in code where possible.
+- Avoid static usage in code where possible. Prefer stateful components like gRPC channel cache to be owned by Node rather than implemented with static storage.
 - Kubernetes external gate exposure guidance: managed cloud K8s should generally prefer `LoadBalancer`; self-hosted / bare metal K8s should generally prefer `NodePort` behind an external L4 load balancer. Do not recommend `LoadBalancer` as a one-size-fits-all default when the cluster lacks a mature LB implementation.
 
 ## Recent Architectural Decisions (2025-03-09)

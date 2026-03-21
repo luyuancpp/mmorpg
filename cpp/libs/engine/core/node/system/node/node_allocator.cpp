@@ -11,6 +11,11 @@
 #include <core/utils/id/snow_flake.h>
 #include <thread_context/entity_manager.h>
 
+#ifdef _WIN32
+#include <WinSock2.h>
+#pragma comment(lib, "ws2_32.lib")
+#endif
+
 uint32_t tryPortId{ 0 };
 
 void NodeAllocator::AcquireNode() {
@@ -82,19 +87,41 @@ bool IsPortReservedType(uint32_t type)
 	return type == eNodeType::GateNodeService;
 }
 
+bool IsLocalPortAvailable(uint16_t port) {
+	SOCKET sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock == INVALID_SOCKET) {
+		return false;
+	}
+
+	sockaddr_in addr{};
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = INADDR_ANY;
+	addr.sin_port = htons(port);
+
+	int optval = 1;
+	::setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+		reinterpret_cast<const char*>(&optval), sizeof(optval));
+
+	bool available = (::bind(sock, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) == 0);
+	::closesocket(sock);
+	return available;
+}
+
 uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 	uint32_t minPort, uint32_t maxPort, uint32_t tryPortId)
 {
 	// 优先从 tryPortId 到 maxPort
 	for (uint32_t port = tryPortId; port <= maxPort; ++port) {
-		if (usedPorts.find(port) == usedPorts.end()) {
+		if (usedPorts.find(port) == usedPorts.end()
+			&& IsLocalPortAvailable(static_cast<uint16_t>(port))) {
 			return port;
 		}
 	}
 
 	// 再从 minPort 到 tryPortId - 1
 	for (uint32_t port = minPort; port < tryPortId; ++port) {
-		if (usedPorts.find(port) == usedPorts.end()) {
+		if (usedPorts.find(port) == usedPorts.end()
+			&& IsLocalPortAvailable(static_cast<uint16_t>(port))) {
 			return port;
 		}
 	}
