@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v6.31.1
-// source: proto/data_service/data_service.proto
+// source: data_service.proto
 
 package data_service
 
@@ -32,7 +32,7 @@ type LoadPlayerDataRequest struct {
 
 func (x *LoadPlayerDataRequest) Reset() {
 	*x = LoadPlayerDataRequest{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[0]
+	mi := &file_data_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *LoadPlayerDataRequest) String() string {
 func (*LoadPlayerDataRequest) ProtoMessage() {}
 
 func (x *LoadPlayerDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[0]
+	mi := &file_data_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *LoadPlayerDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadPlayerDataRequest.ProtoReflect.Descriptor instead.
 func (*LoadPlayerDataRequest) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{0}
+	return file_data_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *LoadPlayerDataRequest) GetPlayerId() uint64 {
@@ -85,7 +85,7 @@ type LoadPlayerDataResponse struct {
 
 func (x *LoadPlayerDataResponse) Reset() {
 	*x = LoadPlayerDataResponse{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[1]
+	mi := &file_data_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -97,7 +97,7 @@ func (x *LoadPlayerDataResponse) String() string {
 func (*LoadPlayerDataResponse) ProtoMessage() {}
 
 func (x *LoadPlayerDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[1]
+	mi := &file_data_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -110,7 +110,7 @@ func (x *LoadPlayerDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadPlayerDataResponse.ProtoReflect.Descriptor instead.
 func (*LoadPlayerDataResponse) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{1}
+	return file_data_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *LoadPlayerDataResponse) GetErrorCode() uint32 {
@@ -145,7 +145,7 @@ type SavePlayerDataRequest struct {
 
 func (x *SavePlayerDataRequest) Reset() {
 	*x = SavePlayerDataRequest{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[2]
+	mi := &file_data_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -157,7 +157,7 @@ func (x *SavePlayerDataRequest) String() string {
 func (*SavePlayerDataRequest) ProtoMessage() {}
 
 func (x *SavePlayerDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[2]
+	mi := &file_data_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -170,7 +170,7 @@ func (x *SavePlayerDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SavePlayerDataRequest.ProtoReflect.Descriptor instead.
 func (*SavePlayerDataRequest) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{2}
+	return file_data_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SavePlayerDataRequest) GetPlayerId() uint64 {
@@ -204,7 +204,7 @@ type SavePlayerDataResponse struct {
 
 func (x *SavePlayerDataResponse) Reset() {
 	*x = SavePlayerDataResponse{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[3]
+	mi := &file_data_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -216,7 +216,7 @@ func (x *SavePlayerDataResponse) String() string {
 func (*SavePlayerDataResponse) ProtoMessage() {}
 
 func (x *SavePlayerDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[3]
+	mi := &file_data_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -229,7 +229,7 @@ func (x *SavePlayerDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SavePlayerDataResponse.ProtoReflect.Descriptor instead.
 func (*SavePlayerDataResponse) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{3}
+	return file_data_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SavePlayerDataResponse) GetErrorCode() uint32 {
@@ -256,7 +256,7 @@ type GetPlayerFieldRequest struct {
 
 func (x *GetPlayerFieldRequest) Reset() {
 	*x = GetPlayerFieldRequest{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[4]
+	mi := &file_data_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -268,7 +268,7 @@ func (x *GetPlayerFieldRequest) String() string {
 func (*GetPlayerFieldRequest) ProtoMessage() {}
 
 func (x *GetPlayerFieldRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[4]
+	mi := &file_data_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -281,7 +281,7 @@ func (x *GetPlayerFieldRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerFieldRequest.ProtoReflect.Descriptor instead.
 func (*GetPlayerFieldRequest) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{4}
+	return file_data_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetPlayerFieldRequest) GetPlayerId() uint64 {
@@ -308,7 +308,7 @@ type GetPlayerFieldResponse struct {
 
 func (x *GetPlayerFieldResponse) Reset() {
 	*x = GetPlayerFieldResponse{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[5]
+	mi := &file_data_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +320,7 @@ func (x *GetPlayerFieldResponse) String() string {
 func (*GetPlayerFieldResponse) ProtoMessage() {}
 
 func (x *GetPlayerFieldResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[5]
+	mi := &file_data_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +333,7 @@ func (x *GetPlayerFieldResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerFieldResponse.ProtoReflect.Descriptor instead.
 func (*GetPlayerFieldResponse) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{5}
+	return file_data_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetPlayerFieldResponse) GetErrorCode() uint32 {
@@ -362,7 +362,7 @@ type SetPlayerFieldRequest struct {
 
 func (x *SetPlayerFieldRequest) Reset() {
 	*x = SetPlayerFieldRequest{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[6]
+	mi := &file_data_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -374,7 +374,7 @@ func (x *SetPlayerFieldRequest) String() string {
 func (*SetPlayerFieldRequest) ProtoMessage() {}
 
 func (x *SetPlayerFieldRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[6]
+	mi := &file_data_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -387,7 +387,7 @@ func (x *SetPlayerFieldRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPlayerFieldRequest.ProtoReflect.Descriptor instead.
 func (*SetPlayerFieldRequest) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{6}
+	return file_data_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SetPlayerFieldRequest) GetPlayerId() uint64 {
@@ -428,7 +428,7 @@ type SetPlayerFieldResponse struct {
 
 func (x *SetPlayerFieldResponse) Reset() {
 	*x = SetPlayerFieldResponse{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[7]
+	mi := &file_data_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -440,7 +440,7 @@ func (x *SetPlayerFieldResponse) String() string {
 func (*SetPlayerFieldResponse) ProtoMessage() {}
 
 func (x *SetPlayerFieldResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[7]
+	mi := &file_data_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -453,7 +453,7 @@ func (x *SetPlayerFieldResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPlayerFieldResponse.ProtoReflect.Descriptor instead.
 func (*SetPlayerFieldResponse) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{7}
+	return file_data_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SetPlayerFieldResponse) GetErrorCode() uint32 {
@@ -480,7 +480,7 @@ type RegisterPlayerZoneRequest struct {
 
 func (x *RegisterPlayerZoneRequest) Reset() {
 	*x = RegisterPlayerZoneRequest{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[8]
+	mi := &file_data_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -492,7 +492,7 @@ func (x *RegisterPlayerZoneRequest) String() string {
 func (*RegisterPlayerZoneRequest) ProtoMessage() {}
 
 func (x *RegisterPlayerZoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[8]
+	mi := &file_data_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -505,7 +505,7 @@ func (x *RegisterPlayerZoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterPlayerZoneRequest.ProtoReflect.Descriptor instead.
 func (*RegisterPlayerZoneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{8}
+	return file_data_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RegisterPlayerZoneRequest) GetPlayerId() uint64 {
@@ -531,7 +531,7 @@ type GetPlayerHomeZoneRequest struct {
 
 func (x *GetPlayerHomeZoneRequest) Reset() {
 	*x = GetPlayerHomeZoneRequest{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[9]
+	mi := &file_data_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -543,7 +543,7 @@ func (x *GetPlayerHomeZoneRequest) String() string {
 func (*GetPlayerHomeZoneRequest) ProtoMessage() {}
 
 func (x *GetPlayerHomeZoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[9]
+	mi := &file_data_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -556,7 +556,7 @@ func (x *GetPlayerHomeZoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerHomeZoneRequest.ProtoReflect.Descriptor instead.
 func (*GetPlayerHomeZoneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{9}
+	return file_data_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetPlayerHomeZoneRequest) GetPlayerId() uint64 {
@@ -575,7 +575,7 @@ type GetPlayerHomeZoneResponse struct {
 
 func (x *GetPlayerHomeZoneResponse) Reset() {
 	*x = GetPlayerHomeZoneResponse{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[10]
+	mi := &file_data_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -587,7 +587,7 @@ func (x *GetPlayerHomeZoneResponse) String() string {
 func (*GetPlayerHomeZoneResponse) ProtoMessage() {}
 
 func (x *GetPlayerHomeZoneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[10]
+	mi := &file_data_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -600,7 +600,7 @@ func (x *GetPlayerHomeZoneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerHomeZoneResponse.ProtoReflect.Descriptor instead.
 func (*GetPlayerHomeZoneResponse) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{10}
+	return file_data_service_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetPlayerHomeZoneResponse) GetHomeZoneId() uint32 {
@@ -619,7 +619,7 @@ type BatchGetPlayerHomeZoneRequest struct {
 
 func (x *BatchGetPlayerHomeZoneRequest) Reset() {
 	*x = BatchGetPlayerHomeZoneRequest{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[11]
+	mi := &file_data_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -631,7 +631,7 @@ func (x *BatchGetPlayerHomeZoneRequest) String() string {
 func (*BatchGetPlayerHomeZoneRequest) ProtoMessage() {}
 
 func (x *BatchGetPlayerHomeZoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[11]
+	mi := &file_data_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -644,7 +644,7 @@ func (x *BatchGetPlayerHomeZoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetPlayerHomeZoneRequest.ProtoReflect.Descriptor instead.
 func (*BatchGetPlayerHomeZoneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{11}
+	return file_data_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *BatchGetPlayerHomeZoneRequest) GetPlayerIds() []uint64 {
@@ -663,7 +663,7 @@ type BatchGetPlayerHomeZoneResponse struct {
 
 func (x *BatchGetPlayerHomeZoneResponse) Reset() {
 	*x = BatchGetPlayerHomeZoneResponse{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[12]
+	mi := &file_data_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -675,7 +675,7 @@ func (x *BatchGetPlayerHomeZoneResponse) String() string {
 func (*BatchGetPlayerHomeZoneResponse) ProtoMessage() {}
 
 func (x *BatchGetPlayerHomeZoneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[12]
+	mi := &file_data_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -688,7 +688,7 @@ func (x *BatchGetPlayerHomeZoneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetPlayerHomeZoneResponse.ProtoReflect.Descriptor instead.
 func (*BatchGetPlayerHomeZoneResponse) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{12}
+	return file_data_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *BatchGetPlayerHomeZoneResponse) GetPlayerZoneMap() map[uint64]uint32 {
@@ -708,7 +708,7 @@ type DeletePlayerDataRequest struct {
 
 func (x *DeletePlayerDataRequest) Reset() {
 	*x = DeletePlayerDataRequest{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[13]
+	mi := &file_data_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -720,7 +720,7 @@ func (x *DeletePlayerDataRequest) String() string {
 func (*DeletePlayerDataRequest) ProtoMessage() {}
 
 func (x *DeletePlayerDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[13]
+	mi := &file_data_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -733,7 +733,7 @@ func (x *DeletePlayerDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePlayerDataRequest.ProtoReflect.Descriptor instead.
 func (*DeletePlayerDataRequest) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{13}
+	return file_data_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *DeletePlayerDataRequest) GetPlayerId() uint64 {
@@ -760,7 +760,7 @@ type DeletePlayerDataResponse struct {
 
 func (x *DeletePlayerDataResponse) Reset() {
 	*x = DeletePlayerDataResponse{}
-	mi := &file_proto_data_service_data_service_proto_msgTypes[14]
+	mi := &file_data_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -772,7 +772,7 @@ func (x *DeletePlayerDataResponse) String() string {
 func (*DeletePlayerDataResponse) ProtoMessage() {}
 
 func (x *DeletePlayerDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_data_service_data_service_proto_msgTypes[14]
+	mi := &file_data_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -785,7 +785,7 @@ func (x *DeletePlayerDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePlayerDataResponse.ProtoReflect.Descriptor instead.
 func (*DeletePlayerDataResponse) Descriptor() ([]byte, []int) {
-	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{14}
+	return file_data_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *DeletePlayerDataResponse) GetErrorCode() uint32 {
@@ -802,11 +802,11 @@ func (x *DeletePlayerDataResponse) GetKeysDeleted() uint32 {
 	return 0
 }
 
-var File_proto_data_service_data_service_proto protoreflect.FileDescriptor
+var File_data_service_proto protoreflect.FileDescriptor
 
-const file_proto_data_service_data_service_proto_rawDesc = "" +
+const file_data_service_proto_rawDesc = "" +
 	"\n" +
-	"%proto/data_service/data_service.proto\x12\fdata_service\x1a\x1bgoogle/protobuf/empty.proto\"L\n" +
+	"\x12data_service.proto\x12\fdata_service\x1a\x1bgoogle/protobuf/empty.proto\"L\n" +
 	"\x15LoadPlayerDataRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x16\n" +
 	"\x06fields\x18\x02 \x03(\tR\x06fields\"\xce\x01\n" +
@@ -882,19 +882,19 @@ const file_proto_data_service_data_service_proto_rawDesc = "" +
 	"\x10DeletePlayerData\x12%.data_service.DeletePlayerDataRequest\x1a&.data_service.DeletePlayerDataResponse\"\x00B\x1bZ\x19data_service/data_serviceb\x06proto3"
 
 var (
-	file_proto_data_service_data_service_proto_rawDescOnce sync.Once
-	file_proto_data_service_data_service_proto_rawDescData []byte
+	file_data_service_proto_rawDescOnce sync.Once
+	file_data_service_proto_rawDescData []byte
 )
 
-func file_proto_data_service_data_service_proto_rawDescGZIP() []byte {
-	file_proto_data_service_data_service_proto_rawDescOnce.Do(func() {
-		file_proto_data_service_data_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_data_service_data_service_proto_rawDesc), len(file_proto_data_service_data_service_proto_rawDesc)))
+func file_data_service_proto_rawDescGZIP() []byte {
+	file_data_service_proto_rawDescOnce.Do(func() {
+		file_data_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_data_service_proto_rawDesc), len(file_data_service_proto_rawDesc)))
 	})
-	return file_proto_data_service_data_service_proto_rawDescData
+	return file_data_service_proto_rawDescData
 }
 
-var file_proto_data_service_data_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
-var file_proto_data_service_data_service_proto_goTypes = []any{
+var file_data_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_data_service_proto_goTypes = []any{
 	(*LoadPlayerDataRequest)(nil),          // 0: data_service.LoadPlayerDataRequest
 	(*LoadPlayerDataResponse)(nil),         // 1: data_service.LoadPlayerDataResponse
 	(*SavePlayerDataRequest)(nil),          // 2: data_service.SavePlayerDataRequest
@@ -915,7 +915,7 @@ var file_proto_data_service_data_service_proto_goTypes = []any{
 	nil,                                    // 17: data_service.BatchGetPlayerHomeZoneResponse.PlayerZoneMapEntry
 	(*emptypb.Empty)(nil),                  // 18: google.protobuf.Empty
 }
-var file_proto_data_service_data_service_proto_depIdxs = []int32{
+var file_data_service_proto_depIdxs = []int32{
 	15, // 0: data_service.LoadPlayerDataResponse.data:type_name -> data_service.LoadPlayerDataResponse.DataEntry
 	16, // 1: data_service.SavePlayerDataRequest.data:type_name -> data_service.SavePlayerDataRequest.DataEntry
 	17, // 2: data_service.BatchGetPlayerHomeZoneResponse.player_zone_map:type_name -> data_service.BatchGetPlayerHomeZoneResponse.PlayerZoneMapEntry
@@ -942,26 +942,26 @@ var file_proto_data_service_data_service_proto_depIdxs = []int32{
 	0,  // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_proto_data_service_data_service_proto_init() }
-func file_proto_data_service_data_service_proto_init() {
-	if File_proto_data_service_data_service_proto != nil {
+func init() { file_data_service_proto_init() }
+func file_data_service_proto_init() {
+	if File_data_service_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_data_service_data_service_proto_rawDesc), len(file_proto_data_service_data_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_data_service_proto_rawDesc), len(file_data_service_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_data_service_data_service_proto_goTypes,
-		DependencyIndexes: file_proto_data_service_data_service_proto_depIdxs,
-		MessageInfos:      file_proto_data_service_data_service_proto_msgTypes,
+		GoTypes:           file_data_service_proto_goTypes,
+		DependencyIndexes: file_data_service_proto_depIdxs,
+		MessageInfos:      file_data_service_proto_msgTypes,
 	}.Build()
-	File_proto_data_service_data_service_proto = out.File
-	file_proto_data_service_data_service_proto_goTypes = nil
-	file_proto_data_service_data_service_proto_depIdxs = nil
+	File_data_service_proto = out.File
+	file_data_service_proto_goTypes = nil
+	file_data_service_proto_depIdxs = nil
 }
