@@ -278,7 +278,7 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 {{ . }}
 {{- end }}
 
-std::array<RpcService, {{ .MessageIdArraySize }}> gRpcServiceRegistry;
+std::array<RpcMethodMeta, {{ .MessageIdArraySize }}> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -374,6 +374,12 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 			continue
 		}
 
+		// Add service group separator for readability
+		if len(initLines) > 0 {
+			initLines = append(initLines, "")
+		}
+		initLines = append(initLines, fmt.Sprintf("// --- %s ---", service.Service()))
+
 		for _, method := range service.Methods {
 			basePath := strings.ToLower(path.Base(method.Path()))
 			messageId := method.KeyName() + _config.Global.Naming.MessageId
@@ -381,39 +387,32 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 			isClientMessage := internal.IsClientProtocolService(service.ServiceDescriptorProto)
 			nodeType := fmt.Sprintf("eNodeType::%sNodeService", strcase.ToCamel(basePath))
 
-			initLine := ""
+			// Emit multi-line RpcMethodMeta initialization grouped by field role:
+			//   line 1: assignment + opening brace
+			//   line 2: service, method
+			//   line 3: requestProto
+			//   line 4: responseProto
+			//   line 5: handler, protocol, nodeType [, sender] + closing brace
+			initLines = append(initLines, fmt.Sprintf("gRpcMethodRegistry[%s] = RpcMethodMeta{", messageId))
+			initLines = append(initLines, fmt.Sprintf(`    "%s", "%s",`, method.Service(), method.Method()))
+			initLines = append(initLines, fmt.Sprintf("    std::make_unique<%s>(),", method.CppRequest()))
+
 			if method.CcGenericServices() {
 				handler := service.Service() + "Impl"
-				initLine = fmt.Sprintf(
-					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique<%s>(), std::make_unique<%s>(), std::make_unique<%s>(), %d, %s};`,
-					messageId,
-					method.Service(),
-					method.Method(),
-					method.CppRequest(),
-					method.CppResponse(),
-					handler,
-					GetProtocol(method.Path()),
-					nodeType,
-				)
+				initLines = append(initLines, fmt.Sprintf("    std::make_unique<%s>(),", method.CppResponse()))
+				initLines = append(initLines, fmt.Sprintf(
+					"    std::make_unique<%s>(), %d, %s};",
+					handler, GetProtocol(method.Path()), nodeType))
 			} else {
 				declareFunction := "namespace " + method.Package() + "{void Send" +
 					service.Service() + method.Method() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
 				senderFunction = appendUniqueString(senderFunction, senderFunctionSet, declareFunction)
 				sendName := method.Package() + "::" + "Send" + service.Service() + method.Method()
-				initLine = fmt.Sprintf(
-					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique<%s>(), std::make_unique<%s>(), nullptr, %d, %s, %s};`,
-					messageId,
-					method.Service(),
-					method.Method(),
-					method.CppRequest(),
-					method.CppResponse(),
-					GetProtocol(method.Path()),
-					nodeType,
-					sendName,
-				)
+				initLines = append(initLines, fmt.Sprintf("    std::make_unique<%s>(),", method.CppResponse()))
+				initLines = append(initLines, fmt.Sprintf(
+					"    nullptr, %d, %s, %s};",
+					GetProtocol(method.Path()), nodeType, sendName))
 			}
-
-			initLines = append(initLines, initLine)
 
 			if isClientMessage {
 				clientIdLines = appendUniqueString(clientIdLines, clientIDSet, fmt.Sprintf("case %s:", messageId))
