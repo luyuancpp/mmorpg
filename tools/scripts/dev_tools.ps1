@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("pbgen-build", "pbgen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all")]
+    [ValidateSet("pbgen-build", "pbgen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -34,6 +34,11 @@ param(
     [switch]$SkipInfra,
     [bool]$BuildRelease = $true,
     [bool]$BuildDebug = $true,
+    # iwyu-run
+    [string]$NodePath = "cpp/nodes/scene",
+    [ValidateSet("auto", "iwyu", "clang-tidy")]
+    [string]$IwyuTool = "auto",
+    [switch]$FixIncludes,
     [switch]$Clean,
     [switch]$SkipToolCheck,
     [switch]$DryRun,
@@ -126,6 +131,21 @@ function Invoke-ThirdPartyGrpcBuild {
     if ($SkipToolCheck) {
         $args.SkipToolCheck = $true
     }
+
+    & $scriptPath @args
+}
+
+function Invoke-IwyuRun {
+    $scriptPath = Join-Path $ScriptDir "iwyu_run.ps1"
+    if (-not (Test-Path $scriptPath)) {
+        throw "iwyu_run.ps1 not found: $scriptPath"
+    }
+
+    $args = @{
+        NodePath = $NodePath
+        Tool     = $IwyuTool
+    }
+    if ($FixIncludes) { $args.Fix = $true }
 
     & $scriptPath @args
 }
@@ -258,6 +278,7 @@ switch ($Command) {
     "naming-audit" { Invoke-NamingAudit }
     "naming-apply" { Invoke-NamingApply }
     "third-party-grpc-build" { Invoke-ThirdPartyGrpcBuild }
+    "iwyu-run"              { Invoke-IwyuRun }
     "k8s-zone-up" { Invoke-K8sDeploy -K8sCommand "zone-up" }
     "k8s-zone-down" { Invoke-K8sDeploy -K8sCommand "zone-down" }
     "k8s-zone-status" { Invoke-K8sDeploy -K8sCommand "zone-status" }
