@@ -24,7 +24,7 @@ var File_proto_player_player_proto protoreflect.FileDescriptor
 
 const file_proto_player_player_proto_rawDesc = "" +
 	"\n" +
-	"\x19proto/player/player.protoB\x1aZ\x18chat/proto/player;player"
+	"\x19proto/player/player.protoB\x13Z\x11chat/proto/player"
 
 var file_proto_player_player_proto_goTypes = []any{}
 var file_proto_player_player_proto_depIdxs = []int32{

@@ -184,7 +184,7 @@ const file_proto_common_component_skill_comp_proto_rawDesc = "" +
 	"\x0eadditionalData\x18\b \x03(\v2,.SkillContextPBComponent.AdditionalDataEntryR\x0eadditionalData\x1aA\n" +
 	"\x13AdditionalDataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01B0Z.scene_manager/proto/common/component;componentb\x06proto3"
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01B&Z$scene_manager/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_skill_comp_proto_rawDescOnce sync.Once

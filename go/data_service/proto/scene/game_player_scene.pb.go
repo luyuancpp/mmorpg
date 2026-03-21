@@ -220,7 +220,7 @@ const file_proto_scene_game_player_scene_proto_rawDesc = "" +
 	"EnterScene\x12\x14.GsEnterSceneRequest\x1a\x16.google.protobuf.Empty\x12:\n" +
 	"\n" +
 	"LeaveScene\x12\x14.GsLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponse\x1a\x05\x80\xa8\xc3\x01\x01B'\x98\xd4a\x03Z\x1edata_service/proto/scene;scene\x80\x01\x01b\x06proto3"
+	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponse\x1a\x05\x80\xa8\xc3\x01\x01B!\x98\xd4a\x03Z\x18data_service/proto/scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_game_player_scene_proto_rawDescOnce sync.Once

@@ -90,7 +90,7 @@ var File_proto_common_base_empty_proto protoreflect.FileDescriptor
 const file_proto_common_base_empty_proto_rawDesc = "" +
 	"\n" +
 	"\x1dproto/common/base/empty.proto\"\a\n" +
-	"\x05EmptyB&Z$scene_manager/proto/common/base;baseb\x06proto3"
+	"\x05EmptyB!Z\x1fscene_manager/proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_empty_proto_rawDescOnce sync.Once

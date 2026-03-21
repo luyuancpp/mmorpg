@@ -16,7 +16,7 @@ import (
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/taskmanager"
-	login_proto "login/proto/common"
+	login_proto "login/proto/common/base"
 	plpb "login/proto/player_locator"
 	"time"
 )

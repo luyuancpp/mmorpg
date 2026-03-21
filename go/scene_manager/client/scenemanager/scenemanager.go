@@ -7,7 +7,8 @@ package scenemanager
 import (
 	"context"
 
-	"scene_manager/proto/scene_manager/scene_manager"
+	base "scene_manager/proto/common/base"
+	"scene_manager/scene_manager"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
@@ -20,6 +21,7 @@ type (
 	EnterSceneRequest   = scene_manager.EnterSceneRequest
 	EnterSceneResponse  = scene_manager.EnterSceneResponse
 	LeaveSceneRequest   = scene_manager.LeaveSceneRequest
+	Empty               = base.Empty
 
 	SceneManager interface {
 		// Create a scene on a specific node (implemented by the Scene node)

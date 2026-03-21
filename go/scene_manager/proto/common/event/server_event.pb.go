@@ -154,7 +154,7 @@ const file_proto_common_event_server_event_proto_rawDesc = "" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
 	"\x0fOnConnect2Login\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\"\x0f\n" +
-	"\rOnServerStartB(Z&scene_manager/proto/common/event;eventb\x06proto3"
+	"\rOnServerStartB\"Z scene_manager/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_server_event_proto_rawDescOnce sync.Once

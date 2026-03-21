@@ -1,5 +1,14 @@
-goctl rpc protoc ../generated/proto/login/proto/db/db.proto --proto_path=../generated/proto/login --proto_path=../third_party/grpc/third_party/protobuf/src/ --go_out=./db/proto/ --go-grpc_out=./db/proto/ --zrpc_out=./db -m
-goctl rpc protoc ../generated/proto/login/proto/login/login.proto --proto_path=../generated/proto/login --proto_path=../third_party/grpc/third_party/protobuf/src/ --go_out=./login/proto/ --go-grpc_out=./login/proto/ --zrpc_out=./login -m
-goctl rpc protoc ../generated/proto/scene_manager/proto/scene_manager/scene_manager_service.proto --proto_path=../generated/proto/scene_manager --proto_path=../third_party/grpc/third_party/protobuf/src/ --go_out=./scene_manager/proto/ --go-grpc_out=./scene_manager/proto/ --zrpc_out=./scene_manager -m
+cd db
+goctl rpc protoc ../../generated/proto/db/proto/db/db.proto --proto_path=../../generated/proto/db --proto_path=../../third_party/grpc/third_party/protobuf/src/ --go_out=./proto/ --go-grpc_out=./proto/ --zrpc_out=./ -m
+cd ..
+
+cd login
+goctl rpc protoc ../../generated/proto/login/proto/login/login.proto --proto_path=../../generated/proto/login --proto_path=../../third_party/grpc/third_party/protobuf/src/ --go_out=./proto/ --go-grpc_out=./proto/ --zrpc_out=./ -m
+cd ..
+
+cd scene_manager
+goctl rpc protoc ../../generated/proto/scene_manager/proto/scene_manager/scene_manager_service.proto --proto_path=../../generated/proto/scene_manager --proto_path=../../third_party/grpc/third_party/protobuf/src/ --go_out=../ --go-grpc_out=../ --zrpc_out=./ -m
+cd ..
+
 protoc --go_out=paths=source_relative:./data_service/data_service --go-grpc_out=paths=source_relative:./data_service/data_service --proto_path=../proto/data_service --proto_path=../third_party/grpc/third_party/protobuf/src ../proto/data_service/data_service.proto
 pause

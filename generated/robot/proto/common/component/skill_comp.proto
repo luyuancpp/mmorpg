@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "robot/proto/common/component;component";
+option go_package = "robot/proto/common/component";
 
 
 import "proto/common/component/actor_comp.proto";

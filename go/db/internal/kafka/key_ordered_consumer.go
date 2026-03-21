@@ -4,16 +4,18 @@ import (
 	"context"
 	db_config "db/internal/config"
 	"db/internal/logic/pkg/proto_sql"
-	db_proto "db/proto/service/go/grpc/db"
+	db_proto "db/proto/db"
 	"errors"
 	"fmt"
-	"github.com/luyuancpp/proto2mysql"
 	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/luyuancpp/proto2mysql"
+
 	"db/internal/locker"
+
 	"github.com/IBM/sarama"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"

@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "robot/proto/etcd;etcd";
+option go_package = "robot/proto/etcd";
 package mvccpb;
 
 

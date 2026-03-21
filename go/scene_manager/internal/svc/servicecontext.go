@@ -16,7 +16,7 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config: c,
-		Redis:  redis.MustNewRedis(c.Redis),
+		Redis:  redis.MustNewRedis(c.Redis.RedisConf),
 		Kafka: &kafka.Writer{
 			Addr:     kafka.TCP(c.Kafka.Brokers...),
 			Balancer: &kafka.LeastBytes{},

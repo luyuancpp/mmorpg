@@ -113,7 +113,7 @@ const file_proto_scene_game_player_proto_rawDesc = "" +
 	"\x17GameNodeExitGameRequest2\x94\x01\n" +
 	"\vScenePlayer\x12@\n" +
 	"\x0eCentre2GsLogin\x12\x16.Centre2GsLoginRequest\x1a\x16.google.protobuf.Empty\x12<\n" +
-	"\bExitGame\x12\x18.GameNodeExitGameRequest\x1a\x16.google.protobuf.Empty\x1a\x05\x80\xa8\xc3\x01\x01B\x1f\x98\xd4a\x03Z\x16chat/proto/scene;scene\x80\x01\x01b\x06proto3"
+	"\bExitGame\x12\x18.GameNodeExitGameRequest\x1a\x16.google.protobuf.Empty\x1a\x05\x80\xa8\xc3\x01\x01B\x19\x98\xd4a\x03Z\x10chat/proto/scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_game_player_proto_rawDescOnce sync.Once

@@ -111,7 +111,7 @@ const file_proto_common_component_frame_comp_proto_rawDesc = "" +
 	"\n" +
 	"target_fps\x18\x03 \x01(\rR\ttargetFps\x12)\n" +
 	"\x10time_accumulator\x18\x04 \x01(\x01R\x0ftimeAccumulator\x12#\n" +
-	"\rcurrent_frame\x18\x05 \x01(\x04R\fcurrentFrameB0Z.scene_manager/proto/common/component;componentb\x06proto3"
+	"\rcurrent_frame\x18\x05 \x01(\x04R\fcurrentFrameB&Z$scene_manager/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_frame_comp_proto_rawDescOnce sync.Once

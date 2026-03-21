@@ -14,7 +14,7 @@ import (
 
 type DbServer struct {
 	svcCtx *svc.ServiceContext
-	db_db.UnimplementedDbServer
+	db.UnimplementedDbServer
 }
 
 func NewDbServer(svcCtx *svc.ServiceContext) *DbServer {
@@ -23,7 +23,7 @@ func NewDbServer(svcCtx *svc.ServiceContext) *DbServer {
 	}
 }
 
-func (s *DbServer) Test(ctx context.Context, in *db_db.TestRequest) (*db_db.TestResponse, error) {
+func (s *DbServer) Test(ctx context.Context, in *db.TestRequest) (*db.TestResponse, error) {
 	l := dblogic.NewTestLogic(ctx, s.svcCtx)
 	return l.Test(in)
 }

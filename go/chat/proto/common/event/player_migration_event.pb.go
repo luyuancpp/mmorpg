@@ -145,7 +145,7 @@ const file_proto_common_event_player_migration_event_proto_rawDesc = "" +
 	"\ttimestamp\x18\a \x01(\x03R\ttimestamp\x12$\n" +
 	"\x0ecentre_node_id\x18\b \x01(\rR\fcentreNodeId\x12:\n" +
 	"\n" +
-	"scene_info\x18\t \x01(\v2\x1b.ChangeSceneInfoPBComponentR\tsceneInfoB\x1fZ\x1dchat/proto/common/event;eventb\x06proto3"
+	"scene_info\x18\t \x01(\v2\x1b.ChangeSceneInfoPBComponentR\tsceneInfoB\x19Z\x17chat/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_player_migration_event_proto_rawDescOnce sync.Once

@@ -266,7 +266,7 @@ const file_proto_common_event_mission_event_proto_rawDesc = "" +
 	"\x13OnMissionAwardEvent\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\x12\x1d\n" +
 	"\n" +
-	"mission_id\x18\x02 \x01(\rR\tmissionIdB\x1fZ\x1dchat/proto/common/event;eventb\x06proto3"
+	"mission_id\x18\x02 \x01(\rR\tmissionIdB\x19Z\x17chat/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_mission_event_proto_rawDescOnce sync.Once

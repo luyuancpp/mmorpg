@@ -98,7 +98,7 @@ const file_proto_common_event_skill_event_proto_rawDesc = "" +
 	"\bskill_id\x18\x01 \x01(\x04R\askillId\x12$\n" +
 	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\x12\x16\n" +
 	"\x06caster\x18\x03 \x01(\x04R\x06caster\x12\x16\n" +
-	"\x06target\x18\x04 \x01(\x04R\x06targetB\x1fZ\x1dchat/proto/common/event;eventb\x06proto3"
+	"\x06target\x18\x04 \x01(\x04R\x06targetB\x19Z\x17chat/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_skill_event_proto_rawDescOnce sync.Once

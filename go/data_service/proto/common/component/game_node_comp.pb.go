@@ -72,7 +72,7 @@ const file_proto_common_component_game_node_comp_proto_rawDesc = "" +
 	"+proto/common/component/game_node_comp.proto\"@\n" +
 	"\x1dGameNodePlayerInfoPBComponent\x12\x1f\n" +
 	"\vplayer_size\x18\x01 \x01(\rR\n" +
-	"playerSizeB/Z-data_service/proto/common/component;componentb\x06proto3"
+	"playerSizeB%Z#data_service/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_game_node_comp_proto_rawDescOnce sync.Once

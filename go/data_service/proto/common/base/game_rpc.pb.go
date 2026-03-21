@@ -240,7 +240,7 @@ const file_proto_common_base_game_rpc_proto_rawDesc = "" +
 	"\tNO_METHOD\x10\x03\x12\x13\n" +
 	"\x0fINVALID_REQUEST\x10\x04\x12\x14\n" +
 	"\x10INVALID_RESPONSE\x10\x05\x12\v\n" +
-	"\aTIMEOUT\x10\x06B%Z#data_service/proto/common/base;baseb\x06proto3"
+	"\aTIMEOUT\x10\x06B Z\x1edata_service/proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_game_rpc_proto_rawDescOnce sync.Once

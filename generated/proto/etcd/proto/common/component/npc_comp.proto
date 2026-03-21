@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "etcd/proto/common/component";
+
+
+
+message Npc
+{
+}
+

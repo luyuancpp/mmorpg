@@ -347,7 +347,7 @@ const file_proto_common_event_scene_event_proto_rawDesc = "" +
 	"\x0fAfterLeaveScene\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\"'\n" +
 	"\rS2CEnterScene\x12\x16\n" +
-	"\x06entity\x18\x01 \x01(\x04R\x06entityB Z\x1erobot/proto/common/event;eventb\x06proto3"
+	"\x06entity\x18\x01 \x01(\x04R\x06entityB\x1aZ\x18robot/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_scene_event_proto_rawDescOnce sync.Once

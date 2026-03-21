@@ -2,7 +2,7 @@ package ctxkeys
 
 import (
 	"context"
-	login_proto "login/proto/common"
+	login_proto "login/proto/common/base"
 )
 
 // 自定义类型，避免 key 冲突

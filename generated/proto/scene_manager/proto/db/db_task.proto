@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "scene_manager/proto/db;db";
+option go_package = "scene_manager/proto/db";
 package taskpb;
 
 

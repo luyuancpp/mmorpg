@@ -80,7 +80,7 @@ const file_proto_common_event_combat_event_proto_rawDesc = "" +
 	"%proto/common/event/combat_event.proto\"=\n" +
 	"\vBeKillEvent\x12\x16\n" +
 	"\x06caster\x18\x01 \x01(\x04R\x06caster\x12\x16\n" +
-	"\x06target\x18\x02 \x01(\x04R\x06targetB Z\x1elogin/proto/common/event;eventb\x06proto3"
+	"\x06target\x18\x02 \x01(\x04R\x06targetB\x1aZ\x18login/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_combat_event_proto_rawDescOnce sync.Once

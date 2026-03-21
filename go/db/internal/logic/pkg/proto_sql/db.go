@@ -3,17 +3,18 @@ package proto_sql
 import (
 	"database/sql"
 	"db/internal/config"
-	_ "db/proto/logic/database"
+	_ "db/proto/common/database"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/luyuancpp/proto2mysql"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"log"
-	"os"
 )
 
 type GameDB struct {

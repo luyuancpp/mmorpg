@@ -67,7 +67,7 @@ const file_proto_scene_game_scene_proto_rawDesc = "" +
 	"\rGameSceneTest2,\n" +
 	"\n" +
 	"SceneScene\x12\x1e\n" +
-	"\x04Test\x12\x0e.GameSceneTest\x1a\x06.EmptyB'\x98\xd4a\x03Z\x1edata_service/proto/scene;scene\x80\x01\x01b\x06proto3"
+	"\x04Test\x12\x0e.GameSceneTest\x1a\x06.EmptyB!\x98\xd4a\x03Z\x18data_service/proto/scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_game_scene_proto_rawDescOnce sync.Once

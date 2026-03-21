@@ -2878,7 +2878,7 @@ const file_proto_etcd_etcd_proto_rawDesc = "" +
 	"\vLeaseRevoke\x12 .etcdserverpb.LeaseRevokeRequest\x1a!.etcdserverpb.LeaseRevokeResponse\x12_\n" +
 	"\x0eLeaseKeepAlive\x12#.etcdserverpb.LeaseKeepAliveRequest\x1a$.etcdserverpb.LeaseKeepAliveResponse(\x010\x01\x12^\n" +
 	"\x0fLeaseTimeToLive\x12$.etcdserverpb.LeaseTimeToLiveRequest\x1a%.etcdserverpb.LeaseTimeToLiveResponse\x12R\n" +
-	"\vLeaseLeases\x12 .etcdserverpb.LeaseLeasesRequest\x1a!.etcdserverpb.LeaseLeasesResponseB\x1fZ\x1dscene_manager/proto/etcd;etcdb\x06proto3"
+	"\vLeaseLeases\x12 .etcdserverpb.LeaseLeasesRequest\x1a!.etcdserverpb.LeaseLeasesResponseB\x1aZ\x18scene_manager/proto/etcdb\x06proto3"
 
 var (
 	file_proto_etcd_etcd_proto_rawDescOnce sync.Once

@@ -24,7 +24,7 @@ var File_proto_common_component_item_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_item_comp_proto_rawDesc = "" +
 	"\n" +
-	"&proto/common/component/item_comp.protoB(Z&robot/proto/common/component;componentb\x06proto3"
+	"&proto/common/component/item_comp.protoB\x1eZ\x1crobot/proto/common/componentb\x06proto3"
 
 var file_proto_common_component_item_comp_proto_goTypes = []any{}
 var file_proto_common_component_item_comp_proto_depIdxs = []int32{

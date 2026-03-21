@@ -4,18 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"login/internal/config"
+	"login/internal/kafka"
+	"login/internal/logic/pkg/cache"
+	login_proto "login/proto/db"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"login/internal/config"
-	"login/internal/kafka"
-	"login/internal/logic/pkg/cache"
-	login_proto "login/proto/service/go/grpc/db"
-	"strconv"
-	"sync"
-	"time"
 )
 
 // Task status constants

@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"sync"
 
-	"go.uber.org/zap"
 	_config "pbgen/internal/config"
 	utils2 "pbgen/internal/utils"
 	"pbgen/logger"
+
+	"go.uber.org/zap"
 )
 
 // resolveGameProtoPath 解析游戏核心Proto文件路径
@@ -39,7 +40,7 @@ func BuildGeneratorProtoPath(dir string) string {
 func CopyProtoToGenDir(wg *sync.WaitGroup) {
 	wg.Add(1)
 
-	grpcDirs := utils2.GetGRPCSubdirectoryNames()
+	goProtoDirs := utils2.GetGoProtoDomainNames()
 
 	copyToDirs := []struct {
 		dirBuilder func(string) string
@@ -52,7 +53,7 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
 		for _, item := range copyToDirs {
-			for _, dir := range grpcDirs {
+			for _, dir := range goProtoDirs {
 				destDir := _config.Global.Paths.GeneratorProtoDir + item.dirBuilder(dir)
 				if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
 					logger.Global.Warn("Proto拷贝失败",

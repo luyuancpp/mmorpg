@@ -9,7 +9,8 @@ import (
 
 	"scene_manager/internal/logic"
 	"scene_manager/internal/svc"
-	"scene_manager/scene_manager/scene_manager"
+	base "scene_manager/proto/common/base"
+	"scene_manager/scene_manager"
 )
 
 type SceneManagerServer struct {
@@ -30,7 +31,7 @@ func (s *SceneManagerServer) CreateScene(ctx context.Context, in *scene_manager.
 }
 
 // 销毁场景
-func (s *SceneManagerServer) DestroyScene(ctx context.Context, in *scene_manager.DestroySceneRequest) (*scene_manager.Empty, error) {
+func (s *SceneManagerServer) DestroyScene(ctx context.Context, in *scene_manager.DestroySceneRequest) (*base.Empty, error) {
 	l := logic.NewDestroySceneLogic(ctx, s.svcCtx)
 	return l.DestroyScene(in)
 }
@@ -42,7 +43,7 @@ func (s *SceneManagerServer) EnterScene(ctx context.Context, in *scene_manager.E
 }
 
 // 请求玩家离开场景（或切换场景前的离开）
-func (s *SceneManagerServer) LeaveScene(ctx context.Context, in *scene_manager.LeaveSceneRequest) (*scene_manager.Empty, error) {
+func (s *SceneManagerServer) LeaveScene(ctx context.Context, in *scene_manager.LeaveSceneRequest) (*base.Empty, error) {
 	l := logic.NewLeaveSceneLogic(ctx, s.svcCtx)
 	return l.LeaveScene(in)
 }

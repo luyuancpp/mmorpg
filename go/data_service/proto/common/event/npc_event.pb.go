@@ -71,7 +71,7 @@ const file_proto_common_event_npc_event_proto_rawDesc = "" +
 	"\n" +
 	"\"proto/common/event/npc_event.proto\"A\n" +
 	"\x1cInitializeNpcComponentsEvent\x12!\n" +
-	"\factor_entity\x18\x01 \x01(\x04R\vactorEntityB'Z%data_service/proto/common/event;eventb\x06proto3"
+	"\factor_entity\x18\x01 \x01(\x04R\vactorEntityB!Z\x1fdata_service/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_npc_event_proto_rawDescOnce sync.Once

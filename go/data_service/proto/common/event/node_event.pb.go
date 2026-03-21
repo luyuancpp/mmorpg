@@ -245,7 +245,7 @@ const file_proto_common_event_node_event_proto_rawDesc = "" +
 	"\x14ConnectToNodePbEvent\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\rR\x06entity\x12\x1b\n" +
 	"\tnode_type\x18\x02 \x01(\rR\bnodeType\"\x18\n" +
-	"\x16OnNodeConnectedPbEventB'Z%data_service/proto/common/event;eventb\x06proto3"
+	"\x16OnNodeConnectedPbEventB!Z\x1fdata_service/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_node_event_proto_rawDescOnce sync.Once

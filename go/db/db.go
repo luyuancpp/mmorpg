@@ -6,7 +6,7 @@ import (
 	"db/internal/logic/pkg/proto_sql"
 	server "db/internal/server/db"
 	"db/internal/svc"
-	db_grpc "db/proto/service/go/grpc/db"
+	db_grpc "db/proto/db"
 	"flag"
 	"fmt"
 	"os"

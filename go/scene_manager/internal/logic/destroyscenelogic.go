@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"scene_manager/base"
 	"scene_manager/internal/svc"
+	"scene_manager/proto/common/base"
 	"scene_manager/scene_manager"
 
 	"github.com/zeromicro/go-zero/core/logx"

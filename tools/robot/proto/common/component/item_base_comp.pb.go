@@ -89,7 +89,7 @@ const file_proto_common_component_item_base_comp_proto_rawDesc = "" +
 	"\x0fItemPBComponent\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\x12\x1b\n" +
 	"\tconfig_id\x18\x02 \x01(\rR\bconfigId\x12\x12\n" +
-	"\x04size\x18\x03 \x01(\rR\x04sizeB(Z&robot/proto/common/component;componentb\x06proto3"
+	"\x04size\x18\x03 \x01(\rR\x04sizeB\x1eZ\x1crobot/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_item_base_comp_proto_rawDescOnce sync.Once

@@ -279,7 +279,7 @@ const file_proto_common_base_node_proto_rawDesc = "" +
 	"\x11eNodeProtocolType\x12\x10\n" +
 	"\fPROTOCOL_TCP\x10\x00\x12\x11\n" +
 	"\rPROTOCOL_GRPC\x10\x01\x12\x11\n" +
-	"\rPROTOCOL_HTTP\x10\x02B%Z#data_service/proto/common/base;baseb\x06proto3"
+	"\rPROTOCOL_HTTP\x10\x02B Z\x1edata_service/proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_node_proto_rawDescOnce sync.Once

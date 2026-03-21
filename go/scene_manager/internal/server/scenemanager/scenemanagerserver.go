@@ -7,9 +7,10 @@ package server
 import (
 	"context"
 
-	"scene_manager/internal/logic/scenemanager"
+	scenemanagerlogic "scene_manager/internal/logic/scenemanager"
 	"scene_manager/internal/svc"
-	"scene_manager/proto/scene_manager/scene_manager"
+	base "scene_manager/proto/common/base"
+	"scene_manager/scene_manager"
 )
 
 type SceneManagerServer struct {
@@ -30,7 +31,7 @@ func (s *SceneManagerServer) CreateScene(ctx context.Context, in *scene_manager.
 }
 
 // Destroy a scene
-func (s *SceneManagerServer) DestroyScene(ctx context.Context, in *scene_manager.DestroySceneRequest) (*scene_manager.Empty, error) {
+func (s *SceneManagerServer) DestroyScene(ctx context.Context, in *scene_manager.DestroySceneRequest) (*base.Empty, error) {
 	l := scenemanagerlogic.NewDestroySceneLogic(ctx, s.svcCtx)
 	return l.DestroyScene(in)
 }
@@ -42,7 +43,7 @@ func (s *SceneManagerServer) EnterScene(ctx context.Context, in *scene_manager.E
 }
 
 // Login/player_locator requests a player to leave a scene
-func (s *SceneManagerServer) LeaveScene(ctx context.Context, in *scene_manager.LeaveSceneRequest) (*scene_manager.Empty, error) {
+func (s *SceneManagerServer) LeaveScene(ctx context.Context, in *scene_manager.LeaveSceneRequest) (*base.Empty, error) {
 	l := scenemanagerlogic.NewLeaveSceneLogic(ctx, s.svcCtx)
 	return l.LeaveScene(in)
 }

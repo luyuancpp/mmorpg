@@ -74,7 +74,7 @@ const file_proto_common_constants_function_switch_proto_rawDesc = "" +
 	",proto/common/constants/function_switch.proto*M\n" +
 	"\x16eFunctionSwitchBitType\x12\x17\n" +
 	"\x13kFunctionSwitchTeam\x10\x00\x12\x1a\n" +
-	"\x16kFunctionSwitchFriends\x10\x01B(Z&robot/proto/common/constants;constantsb\x06proto3"
+	"\x16kFunctionSwitchFriends\x10\x01B\x1eZ\x1crobot/proto/common/constantsb\x06proto3"
 
 var (
 	file_proto_common_constants_function_switch_proto_rawDescOnce sync.Once

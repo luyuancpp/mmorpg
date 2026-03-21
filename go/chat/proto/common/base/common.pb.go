@@ -376,7 +376,7 @@ const file_proto_common_base_common_proto_rawDesc = "" +
 	"\bcreators\x18\x05 \x03(\v2#.SceneInfoPBComponent.CreatorsEntryR\bcreators\x1a;\n" +
 	"\rCreatorsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B\x1dZ\x1bchat/proto/common/base;baseb\x06proto3"
+	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B\x18Z\x16chat/proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_common_proto_rawDescOnce sync.Once

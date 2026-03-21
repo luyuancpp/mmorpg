@@ -220,7 +220,7 @@ const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\x12RoutePlayerMessage\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x128\n" +
 	"\x12BroadcastToPlayers\x12\x1a.BroadcastToPlayersRequest\x1a\x06.Empty\x12>\n" +
 	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponse\x12J\n" +
-	"\x11BindSessionToGate\x12\x19.BindSessionToGateRequest\x1a\x1a.BindSessionToGateResponseB%\x98\xd4a\x02Z\x1cdata_service/proto/gate;gate\x80\x01\x01b\x06proto3"
+	"\x11BindSessionToGate\x12\x19.BindSessionToGateRequest\x1a\x1a.BindSessionToGateResponseB \x98\xd4a\x02Z\x17data_service/proto/gate\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_gate_gate_service_proto_rawDescOnce sync.Once

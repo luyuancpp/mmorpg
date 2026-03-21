@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"pbgen/logger"
@@ -12,13 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
-// GenGoPackageOptWithPkg generates a go_package option with path and package name.
+// GenGoPackageOptWithPkg generates a go_package option with path only.
+// Avoids semicolon alias form ("path;pkg") which causes goctl to generate
+// broken import aliases like db_db or login_login.
 func GenGoPackageOptWithPkg(goPackagePath string) string {
-	pkgName := filepath.Base(goPackagePath)
-	pkgName = strings.ReplaceAll(pkgName, "-", "_")
-	pkgName = strings.ReplaceAll(pkgName, ".", "_")
-
-	return fmt.Sprintf("option go_package = \"%s;%s\";", goPackagePath, pkgName)
+	return fmt.Sprintf("option go_package = \"%s\";", goPackagePath)
 }
 
 func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
@@ -68,10 +65,21 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 		)
 	}
 
-	for _, line := range lines {
+	// Check if go_package already exists — if so, replace it with the correct one
+	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "option go_package =") {
-			return false, nil
+			var goPackageLine string
+			if isMulti {
+				goPackageLine = GenGoPackageOptWithAdjustedPath(goPackagePath)
+			} else {
+				goPackageLine = GenGoPackageOptWithPkg(goPackagePath)
+			}
+			if trimmed == goPackageLine {
+				return false, nil // already correct
+			}
+			lines[i] = goPackageLine
+			return writeProtoFile(protoFile, lines)
 		}
 	}
 
@@ -113,6 +121,10 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	newLines = append(newLines, goPackageLine)
 	newLines = append(newLines, lines[insertIndex:]...)
 
+	return writeProtoFile(protoFile, newLines)
+}
+
+func writeProtoFile(protoFile string, lines []string) (bool, error) {
 	output, err := os.Create(protoFile)
 	if err != nil {
 		logger.Global.Fatal("创建Proto文件写入句柄失败",
@@ -123,7 +135,7 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	defer output.Close()
 
 	writer := bufio.NewWriter(output)
-	for _, line := range newLines {
+	for _, line := range lines {
 		if _, err := writer.WriteString(line + "\n"); err != nil {
 			logger.Global.Fatal("写入Proto文件内容失败",
 				zap.String("文件路径", protoFile),

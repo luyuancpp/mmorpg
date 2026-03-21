@@ -100,7 +100,7 @@ const file_proto_common_base_session_proto_rawDesc = "" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12 \n" +
 	"\fgate_node_id\x18\x03 \x01(\rR\n" +
 	"gateNodeId\x12(\n" +
-	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceIdB\x1eZ\x1crobot/proto/common/base;baseb\x06proto3"
+	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceIdB\x19Z\x17robot/proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_session_proto_rawDescOnce sync.Once

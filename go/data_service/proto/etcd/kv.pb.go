@@ -249,7 +249,7 @@ const file_proto_etcd_kv_proto_rawDesc = "" +
 	"\tEventType\x12\a\n" +
 	"\x03PUT\x10\x00\x12\n" +
 	"\n" +
-	"\x06DELETE\x10\x01B\x1eZ\x1cdata_service/proto/etcd;etcdb\x06proto3"
+	"\x06DELETE\x10\x01B\x19Z\x17data_service/proto/etcdb\x06proto3"
 
 var (
 	file_proto_etcd_kv_proto_rawDescOnce sync.Once
