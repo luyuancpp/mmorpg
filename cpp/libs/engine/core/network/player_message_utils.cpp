@@ -177,7 +177,7 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 		return;
 	}
 
-	auto& rpcHandlerMeta = gRpcServiceRegistry[messageId];
+	auto& rpcHandlerMeta = gRpcMethodRegistry[messageId];
 
 	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
@@ -190,7 +190,7 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 	sessionDetails.set_session_id(playerSessionSnapshotPB->gate_session_id());
 	sessionDetails.set_player_id(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity));
 
-	if (!rpcHandlerMeta.messageSender) {
+	if (!rpcHandlerMeta.sender) {
 		LOG_ERROR << "Message sender not found for message ID: " << messageId;
 		return;
 	}
@@ -201,9 +201,9 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 		LOG_ERROR << "Node not found for type: " << rpcHandlerMeta.targetNodeType;
 		return;
 	}
-	rpcHandlerMeta.messageSender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType),
+	rpcHandlerMeta.sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType),
 		node,
-		*rpcHandlerMeta.requestPrototype,
+		*rpcHandlerMeta.requestProto,
 		{ kSessionBinMetaKey },
 		SerializeSessionDetails(sessionDetails));
 }
