@@ -42,13 +42,10 @@ bool DecodeAndDispatchGateKafkaEventById(const std::string& topic, const contrac
         return true;
     }
 
-    auto eventMessage = ParseEventMessage(command.event_id(), command.payload());
-    if (!eventMessage) {
+    if (!DispatchProtoEvent(command.event_id(), command.payload())) {
         LOG_WARN << "GateCommand payload decode failed, topic=" << topic << ", event_id=" << command.event_id();
         return true;
     }
-
-    DispatchProtoEvent(command.event_id(), *eventMessage);
     return true;
 }
 

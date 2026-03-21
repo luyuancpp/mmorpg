@@ -30,14 +30,9 @@ constexpr uint32_t kMaxMessageLen = {{ .MaxMessageLen }};
 constexpr uint32_t kMaxEventLen = {{ .MaxEventLen }};
 
 extern std::array<RpcService, kMaxMessageLen> gRpcServiceRegistry;
-extern std::array<std::unique_ptr<::google::protobuf::Message>, kMaxEventLen> gEventPrototypes;
 extern std::unordered_set<uint32_t> gClientMessageIdWhitelist;
-
-using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
 void InitMessageInfo();
 void InitEventInfo();
 bool IsValidEventId(uint32_t eventId);
-MessageUniquePtr NewEventMessage(uint32_t eventId);
-MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload);
-void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& message);
+bool DispatchProtoEvent(uint32_t eventId, const std::string& payload);
