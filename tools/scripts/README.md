@@ -35,12 +35,16 @@ Cross-platform include hygiene entrypoint.
 - Uses `include-what-you-use` when available
 - Falls back to `clang-tidy` with `misc-include-cleaner`
 - Supports dry-run and fix mode
+- Supports fast mode with changed files only (`-ChangedOnly`)
+- Supports batch node scan (`-NodePath` accepts multiple values)
+- In `-ChangedOnly` mode, if no C/C++ files changed under a node, that node is skipped without full-scan fallback
 
 Windows:
 
 ```powershell
 pwsh -File tools/scripts/dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene
 pwsh -File tools/scripts/dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/gate -IwyuTool clang-tidy -FixIncludes
+pwsh -File tools/scripts/dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene,cpp/nodes/gate -ChangedOnly
 ```
 
 Linux/macOS:
@@ -48,6 +52,7 @@ Linux/macOS:
 ```bash
 tools/scripts/iwyu_run.sh -NodePath cpp/nodes/scene -Tool auto
 tools/scripts/iwyu_run.sh -NodePath cpp/nodes/gate -Tool clang-tidy -Fix
+tools/scripts/iwyu_run.sh -NodePath cpp/nodes/scene,cpp/nodes/gate -ChangedOnly
 ```
 
 Dependencies:
@@ -98,6 +103,12 @@ pwsh -File dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene
 
 # Force clang-tidy mode and auto-fix include issues
 pwsh -File dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene -IwyuTool clang-tidy -FixIncludes
+
+# Fast mode: only check changed files in current diff range
+pwsh -File dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene -ChangedOnly
+
+# Batch scan multiple nodes
+pwsh -File dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene,cpp/nodes/gate -ChangedOnly
 
 # Build vendored gRPC from VS Code Tasks
 # Run Task -> third_party: grpc build

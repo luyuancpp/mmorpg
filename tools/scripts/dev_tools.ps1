@@ -35,10 +35,12 @@ param(
     [bool]$BuildRelease = $true,
     [bool]$BuildDebug = $true,
     # iwyu-run
-    [string]$NodePath = "cpp/nodes/scene",
+    [string[]]$NodePath = @("cpp/nodes/scene"),
     [ValidateSet("auto", "iwyu", "clang-tidy")]
     [string]$IwyuTool = "auto",
     [switch]$FixIncludes,
+    [switch]$ChangedOnly,
+    [string]$DiffBase = "",
     [switch]$Clean,
     [switch]$SkipToolCheck,
     [switch]$DryRun,
@@ -146,6 +148,8 @@ function Invoke-IwyuRun {
         Tool     = $IwyuTool
     }
     if ($FixIncludes) { $args.Fix = $true }
+    if ($ChangedOnly) { $args.ChangedOnly = $true }
+    if (-not [string]::IsNullOrWhiteSpace($DiffBase)) { $args.DiffBase = $DiffBase }
 
     & $scriptPath @args
 }
