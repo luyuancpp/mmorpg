@@ -1,7 +1,7 @@
 syntax = "proto3";
 package storage;
 
-option go_package = "scene_manager/internal/storage";
+option go_package = "chat/proto/scene_manager";
 
 // Redis: scene:{id}:info
 message SceneInfo {
