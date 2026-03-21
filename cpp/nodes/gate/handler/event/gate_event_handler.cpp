@@ -104,4 +104,3 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
         << ", session_version=" << event.session_version();
 ///<<< END WRITING YOUR CODE
 }
-

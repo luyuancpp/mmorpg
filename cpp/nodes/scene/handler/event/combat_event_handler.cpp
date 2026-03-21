@@ -17,4 +17,3 @@ void CombatEventHandler::BeKillEventHandler(const BeKillEvent& event)
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-

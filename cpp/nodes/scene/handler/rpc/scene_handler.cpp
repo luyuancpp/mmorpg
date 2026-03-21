@@ -19,7 +19,7 @@
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/base/node.pb.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "thread_context/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/proto/proto_field_checker.h"
@@ -62,11 +62,11 @@ MessagePriority ResolveRoutedMessagePriority(const RoutePlayerMessageRequest& re
 		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
 	}
 
-	if (clientRequest.message_id() >= gRpcServiceRegistry.size()) {
+	if (clientRequest.message_id() >= gRpcMethodRegistry.size()) {
 		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
 	}
 
-	const auto& messageInfo = gRpcServiceRegistry[clientRequest.message_id()];
+	const auto& messageInfo = gRpcMethodRegistry[clientRequest.message_id()];
 	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
 	if (serviceIt == gPlayerService.end()) {
 		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
@@ -141,13 +141,13 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 
     const auto& player = playerIt->second;
 
-    if (request->message_content().message_id() >= gRpcServiceRegistry.size())
+    if (request->message_content().message_id() >= gRpcMethodRegistry.size())
     {
         LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
         return;
     }
 
-    const auto& messageInfo = gRpcServiceRegistry[request->message_content().message_id()];
+    const auto& messageInfo = gRpcMethodRegistry[request->message_content().message_id()];
     const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
     if (serviceIt == gPlayerService.end())
     {
@@ -211,13 +211,13 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 		const auto& msg = request->message_content();
 		const uint64_t sessionId = request->session_id();
 
-		if (msg.message_id() >= gRpcServiceRegistry.size())
+		if (msg.message_id() >= gRpcMethodRegistry.size())
 		{
 			LOG_ERROR << "ProcessClientPlayerMessage: message_id not found " << msg.message_id();
 			return;
 		}
 
-		const auto& messageInfo = gRpcServiceRegistry.at(msg.message_id());
+		const auto& messageInfo = gRpcMethodRegistry.at(msg.message_id());
 		const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
 		if (serviceIt == gPlayerService.end())
 		{
@@ -340,14 +340,14 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
+	if (request->message_content().message_id() >= gRpcMethodRegistry.size())
 	{
 		LOG_ERROR << "message_id not found " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kMessageIdNotFound);
 		return;
 	}
 
-	const auto& messageInfo = gRpcServiceRegistry[request->message_content().message_id()];
+	const auto& messageInfo = gRpcMethodRegistry[request->message_content().message_id()];
 	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
 	if (serviceIt == gPlayerService.end())
 	{
@@ -569,4 +569,3 @@ void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, 
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 ///<<< END WRITING YOUR CODE
 }
-

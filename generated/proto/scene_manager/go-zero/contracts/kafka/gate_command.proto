@@ -4,22 +4,16 @@ package contracts.kafka;
 option go_package = "contracts/kafka";
 
 // Transport contract for Kafka messages sent to Gate.
-// Keep this schema transport-facing and map it to in-process events in C++.
+// Command type is identified by event_id (from global event_id registry).
+// Payload carries the serialized per-event proto (e.g. RoutePlayerEvent, KickPlayerEvent).
 message GateCommand {
-  enum CommandType {
-    RoutePlayer = 0;  // Switch player routing
-    KickPlayer = 1;   // Kick session offline
-    Broadcast = 2;    // Broadcast message
-    BindSession = 3;  // Bind session to player (replaces Centre)
-    LeaseExpired = 4; // Disconnect lease expired, clean up
-  }
+  reserved 1; // was CommandType enum field
 
-  CommandType command_type = 1;
   uint64 player_id = 2;
   uint32 target_node_id = 3;     // Target Scene node ID for routing
   uint64 session_id = 4;         // Gate session ID
-  bytes payload = 5;             // Optional extension payload
+  bytes payload = 5;             // Serialized event proto (decoded via event_id)
   uint32 target_gate_id = 6;     // Target Gate ID
   string target_instance_id = 7; // Target Gate instance UUID to avoid stale commands
-  optional uint32 event_id = 8;  // Generic in-process event ID for payload decoding
+  uint32 event_id = 8;           // Global event ID — identifies payload type
 }

@@ -24,7 +24,38 @@ Supported commands include:
 - `naming-audit`
 - `naming-apply`
 - `third-party-grpc-build`
+- `iwyu-run`
 - `k8s-*`
+
+### iwyu_run.ps1 / iwyu_run.sh
+
+Cross-platform include hygiene entrypoint.
+
+- Generates `compile_commands.json` under `<node>/build_iwyu`
+- Uses `include-what-you-use` when available
+- Falls back to `clang-tidy` with `misc-include-cleaner`
+- Supports dry-run and fix mode
+
+Windows:
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene
+pwsh -File tools/scripts/dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/gate -IwyuTool clang-tidy -FixIncludes
+```
+
+Linux/macOS:
+
+```bash
+tools/scripts/iwyu_run.sh -NodePath cpp/nodes/scene -Tool auto
+tools/scripts/iwyu_run.sh -NodePath cpp/nodes/gate -Tool clang-tidy -Fix
+```
+
+Dependencies:
+
+- `pwsh`
+- `cmake`
+- `clang-tidy` (required)
+- `include-what-you-use` (optional but preferred when available)
 
 ### third_party/build_grpc.ps1
 
@@ -61,6 +92,12 @@ pwsh -File dev_tools.ps1 -Command pbgen-run
 
 # Build vendored gRPC via the canonical third-party script
 pwsh -File dev_tools.ps1 -Command third-party-grpc-build
+
+# Run include cleaner (auto tool selection)
+pwsh -File dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene
+
+# Force clang-tidy mode and auto-fix include issues
+pwsh -File dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene -IwyuTool clang-tidy -FixIncludes
 
 # Build vendored gRPC from VS Code Tasks
 # Run Task -> third_party: grpc build

@@ -1,4 +1,10 @@
-Checks: '-*,myplugin-no-member-pointer'
+Checks: '-*,myplugin-no-member-pointer,misc-include-cleaner'
 CheckOptions:
   - key: myplugin-no-member-pointer.SomeOption
     value: true
+  # misc-include-cleaner: report headers that are included but not directly used,
+  # and headers that are used but only pulled in transitively.
+  # Requires a compile_commands.json (generated via cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON).
+  # Run via: pwsh tools/scripts/dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: ''

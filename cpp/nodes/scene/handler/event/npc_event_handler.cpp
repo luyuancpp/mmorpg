@@ -28,4 +28,3 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
 
 ///<<< END WRITING YOUR CODE
 }
-

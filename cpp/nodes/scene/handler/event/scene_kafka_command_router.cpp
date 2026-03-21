@@ -1,7 +1,7 @@
 #include "scene_kafka_command_router.h"
 
 #include "proto/contracts/kafka/scene_command.pb.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "muduo/base/Logging.h"
 
 void DispatchSceneKafkaCommand(const std::string& topic, const contracts::kafka::SceneCommand& command)
@@ -16,11 +16,7 @@ void DispatchSceneKafkaCommand(const std::string& topic, const contracts::kafka:
         return;
     }
 
-    auto eventMessage = ParseEventMessage(command.event_id(), command.payload());
-    if (!eventMessage) {
+    if (!DispatchProtoEvent(command.event_id(), command.payload())) {
         LOG_WARN << "SceneCommand payload decode failed, topic=" << topic << ", event_id=" << command.event_id();
-        return;
     }
-
-    DispatchProtoEvent(command.event_id(), *eventMessage);
 }

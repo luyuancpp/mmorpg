@@ -3,7 +3,7 @@
 
 #include "gate_globals.h"
 #include "network/codec/dispatcher.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "thread_context/redis_manager.h"
 #include "core/utils/defer/defer.h"
 #include "session/manager/session_manager.h"
@@ -32,7 +32,7 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 	}
 	
 	auto& route_data = replied->route_nodes(replied->route_nodes_size() - 1);
-	if ( route_data.message_id() >= gRpcServiceRegistry.size())
+	if ( route_data.message_id() >= gRpcMethodRegistry.size())
 	{
 		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;

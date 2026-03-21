@@ -239,3 +239,64 @@ func EventIdLen() uint64 {
 	}
 	return eventFileMaxId + 1
 }
+
+// eventIdHeaderFileName derives a unique header file name from a ProtoInclude path.
+// e.g. "proto/common/event/scene_event.pb.h" -> "common_event_scene_event_event_id.h"
+// e.g. "proto/contracts/kafka/player_event.pb.h" -> "contracts_kafka_player_event_event_id.h"
+func eventIdHeaderFileName(protoInclude string) string {
+	// Strip leading "proto/" prefix
+	name := strings.TrimPrefix(protoInclude, _config.Global.DirectoryNames.ProtoDirName)
+	// Strip ".pb.h" suffix
+	name = strings.TrimSuffix(name, ".pb.h")
+	// Replace path separators with underscores
+	name = strings.ReplaceAll(name, "/", "_")
+	return name + "_event_id.h"
+}
+
+// writeEventIdHeaderFiles writes per-proto-file event ID header files,
+// mirroring the pattern used by per-service message ID headers.
+func writeEventIdHeaderFiles() {
+	// Group events by their proto include path
+	groups := make(map[string][]*ProtoEventInfo)
+	var groupOrder []string
+	for _, event := range globalProtoEventList {
+		if _, seen := groups[event.ProtoInclude]; !seen {
+			groupOrder = append(groupOrder, event.ProtoInclude)
+		}
+		groups[event.ProtoInclude] = append(groups[event.ProtoInclude], event)
+	}
+
+	for _, protoInclude := range groupOrder {
+		events := groups[protoInclude]
+		headerFileName := eventIdHeaderFileName(protoInclude)
+
+		var builder strings.Builder
+		builder.WriteString("#pragma once\n#include <cstdint>\n\n")
+		for _, event := range events {
+			builder.WriteString(fmt.Sprintf("constexpr uint32_t %s%s = %d;\n",
+				event.IdName, _config.Global.Naming.EventId, event.Id))
+		}
+
+		outputPath := _config.Global.Paths.ServiceInfoDir + headerFileName
+		utils2.WriteFileIfChanged(outputPath, []byte(builder.String()))
+	}
+
+	logger.Global.Info("事件ID头文件生成完成",
+		zap.Int("file_count", len(groups)),
+		zap.Int("event_count", len(globalProtoEventList)),
+	)
+}
+
+// EventIdHeaderIncludes returns the #include lines for all per-proto-file event ID headers.
+func EventIdHeaderIncludes() []string {
+	seen := make(map[string]struct{})
+	var includes []string
+	for _, event := range globalProtoEventList {
+		if _, ok := seen[event.ProtoInclude]; ok {
+			continue
+		}
+		seen[event.ProtoInclude] = struct{}{}
+		includes = append(includes, fmt.Sprintf("#include \"%s\"", eventIdHeaderFileName(event.ProtoInclude)))
+	}
+	return includes
+}
