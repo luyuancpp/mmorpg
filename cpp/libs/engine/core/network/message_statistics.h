@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include <chrono>
 
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 
 #include "proto/common/base/statistics.pb.h"
 

@@ -3,7 +3,7 @@
 
 #include "gate_globals.h"
 #include "network/codec/dispatcher.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "thread_context/redis_manager.h"
 #include "core/utils/defer/defer.h"
 #include "session/manager/session_manager.h"

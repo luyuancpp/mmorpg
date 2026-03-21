@@ -1,7 +1,7 @@
 #include "scene_kafka_command_router.h"
 
 #include "proto/contracts/kafka/scene_command.pb.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "muduo/base/Logging.h"
 
 void DispatchSceneKafkaCommand(const std::string& topic, const contracts::kafka::SceneCommand& command)

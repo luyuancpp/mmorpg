@@ -10,7 +10,7 @@
 #include "node/system/node/node.h"
 #include "grpc_client/login/login_grpc_client.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/game_client_player_service_metadata.h"

@@ -6,7 +6,7 @@
 #include "muduo/base/Logging.h"
 #include "network_utils.h"
 #include "network/rpc_session.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "network/node_utils.h"
 #include <rpc/service_metadata/scene_service_metadata.h>
 #include "thread_context/node_context_manager.h"

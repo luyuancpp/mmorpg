@@ -5,7 +5,7 @@
 #include "muduo/net/TcpConnection.h"
 #include "network/message_statistics.h"
 #include "proto/common/base/empty.pb.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "core/utils/stat/stat.h"
 #include "network/codec/message_response_dispatcher.h"
 #include "thread_context/rpc_manager.h"
