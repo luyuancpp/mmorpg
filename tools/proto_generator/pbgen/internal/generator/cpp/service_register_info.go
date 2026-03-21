@@ -252,7 +252,7 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		HandlerClasses       []string
 		EventDispatchCases   []string
 		InitLines            []string
-		ClientMessageIdLines []string
+		ClientMessageIdCases []string
 		MessageIdArraySize   int
 		EventIdArraySize     int
 		SenderFunctions      []string
@@ -278,7 +278,6 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 {{ . }}
 {{- end }}
 
-std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 std::array<RpcService, {{ .MessageIdArraySize }}> gRpcServiceRegistry;
 
 void InitMessageInfo()
@@ -286,10 +285,18 @@ void InitMessageInfo()
 {{- range .InitLines }}
     {{ . }}
 {{- end }}
+}
 
-{{range .ClientMessageIdLines }}
-    {{ . }}
+bool IsClientMessageId(uint32_t messageId)
+{
+	switch (messageId) {
+{{- range .ClientMessageIdCases }}
+	{{ . }}
 {{- end }}
+		return true;
+	default:
+		return false;
+	}
 }
 
 void InitEventInfo()
@@ -409,7 +416,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 			initLines = append(initLines, initLine)
 
 			if isClientMessage {
-				clientIdLines = appendUniqueString(clientIdLines, clientIDSet, fmt.Sprintf("gClientMessageIdWhitelist.emplace(%s);", messageId))
+				clientIdLines = appendUniqueString(clientIdLines, clientIDSet, fmt.Sprintf("case %s:", messageId))
 			}
 		}
 	}
@@ -437,7 +444,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		HandlerClasses:       handlerClasses,
 		EventDispatchCases:   eventDispatchCases,
 		InitLines:            initLines,
-		ClientMessageIdLines: clientIdLines,
+		ClientMessageIdCases: clientIdLines,
 		MessageIdArraySize:   int(internal.MessageIdLen()),
 		EventIdArraySize:     int(EventIdLen()),
 		SenderFunctions:      senderFunction,

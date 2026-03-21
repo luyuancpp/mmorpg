@@ -353,7 +353,7 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 	}
 
 
-	if (request->message_id() >= gRpcServiceRegistry.size() || !gClientMessageIdWhitelist.contains(request->message_id())) {
+	if (request->message_id() >= gRpcServiceRegistry.size() || !IsClientMessageId(request->message_id())) {
 		LOG_ERROR << "Invalid or unauthorized message ID: " << request->message_id();
 		return;
 	}

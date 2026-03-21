@@ -99,7 +99,6 @@ namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 std::array<RpcService, 94> gRpcServiceRegistry;
 
 void InitMessageInfo()
@@ -176,26 +175,34 @@ void InitMessageInfo()
     gRpcServiceRegistry[SceneManagerDestroySceneMessageId] = RpcService{"SceneManager", "DestroyScene", std::make_unique<::scene_manager::DestroySceneRequest>(), std::make_unique<::Empty>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerDestroyScene};
     gRpcServiceRegistry[SceneManagerEnterSceneMessageId] = RpcService{"SceneManager", "EnterScene", std::make_unique<::scene_manager::EnterSceneRequest>(), std::make_unique<::scene_manager::EnterSceneResponse>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerEnterScene};
     gRpcServiceRegistry[SceneManagerLeaveSceneMessageId] = RpcService{"SceneManager", "LeaveScene", std::make_unique<::scene_manager::LeaveSceneRequest>(), std::make_unique<::Empty>(), nullptr, 0, eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveScene};
+}
 
-    gClientMessageIdWhitelist.emplace(ClientPlayerLoginLoginMessageId);
-    gClientMessageIdWhitelist.emplace(ClientPlayerLoginCreatePlayerMessageId);
-    gClientMessageIdWhitelist.emplace(ClientPlayerLoginEnterGameMessageId);
-    gClientMessageIdWhitelist.emplace(ClientPlayerLoginLeaveGameMessageId);
-    gClientMessageIdWhitelist.emplace(ClientPlayerLoginDisconnectMessageId);
-    gClientMessageIdWhitelist.emplace(SceneClientPlayerCommonSendTipToClientMessageId);
-    gClientMessageIdWhitelist.emplace(SceneClientPlayerCommonKickPlayerMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSceneClientPlayerEnterSceneMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSceneClientPlayerNotifyEnterSceneMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSceneClientPlayerSceneInfoC2SMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSceneClientPlayerNotifySceneInfoMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSceneClientPlayerNotifyActorCreateMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSceneClientPlayerNotifyActorDestroyMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSceneClientPlayerNotifyActorListCreateMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSceneClientPlayerNotifyActorListDestroyMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSkillClientPlayerReleaseSkillMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSkillClientPlayerNotifySkillUsedMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSkillClientPlayerNotifySkillInterruptedMessageId);
-    gClientMessageIdWhitelist.emplace(SceneSkillClientPlayerGetSkillListMessageId);
+bool IsClientMessageId(uint32_t messageId)
+{
+	switch (messageId) {
+	case ClientPlayerLoginLoginMessageId:
+	case ClientPlayerLoginCreatePlayerMessageId:
+	case ClientPlayerLoginEnterGameMessageId:
+	case ClientPlayerLoginLeaveGameMessageId:
+	case ClientPlayerLoginDisconnectMessageId:
+	case SceneClientPlayerCommonSendTipToClientMessageId:
+	case SceneClientPlayerCommonKickPlayerMessageId:
+	case SceneSceneClientPlayerEnterSceneMessageId:
+	case SceneSceneClientPlayerNotifyEnterSceneMessageId:
+	case SceneSceneClientPlayerSceneInfoC2SMessageId:
+	case SceneSceneClientPlayerNotifySceneInfoMessageId:
+	case SceneSceneClientPlayerNotifyActorCreateMessageId:
+	case SceneSceneClientPlayerNotifyActorDestroyMessageId:
+	case SceneSceneClientPlayerNotifyActorListCreateMessageId:
+	case SceneSceneClientPlayerNotifyActorListDestroyMessageId:
+	case SceneSkillClientPlayerReleaseSkillMessageId:
+	case SceneSkillClientPlayerNotifySkillUsedMessageId:
+	case SceneSkillClientPlayerNotifySkillInterruptedMessageId:
+	case SceneSkillClientPlayerGetSkillListMessageId:
+		return true;
+	default:
+		return false;
+	}
 }
 
 void InitEventInfo()
