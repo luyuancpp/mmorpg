@@ -1,63 +1,60 @@
 <#
 .SYNOPSIS
-    Run include-what-you-use (IWYU) or clang-tidy misc-include-cleaner on a C++ node.
+    Run include-what-you-use (IWYU) or clang-tidy misc-include-cleaner.
 
 .DESCRIPTION
-    1. Generates compile_commands.json via CMake for the target node.
+    1. Generates compile_commands.json via CMake for one or more C++ node paths.
     2. Runs IWYU (if available) or clang-tidy misc-include-cleaner as fallback.
     3. Optionally applies safe include removals with -Fix.
+    4. Supports fast mode by only checking changed files with -ChangedOnly.
 
     Tool auto-detection order: include-what-you-use -> clang-tidy.
 
 .PARAMETER NodePath
-    Path to the CMake node directory, relative to the repo root.
-    Defaults to "cpp/nodes/scene".
-    Example: "cpp/nodes/gate", "cpp/nodes/scene"
+    One or more node paths (relative to repo root).
+    Default: cpp/nodes/scene
 
 .PARAMETER Tool
-    Which tool to use: 'auto' (default), 'iwyu', or 'clang-tidy'.
+    Which tool to use: auto (default), iwyu, or clang-tidy.
 
 .PARAMETER Fix
     For clang-tidy: pass --fix to apply safe removals in-place.
-    For IWYU: run fix_includes.py if it exists in PATH.
+    For IWYU: run fix_includes.py / iwyu_tool.py if available.
 
 .PARAMETER BuildDir
-    Override the CMake build directory. Defaults to <NodePath>/build_iwyu.
+    Override CMake build directory. Allowed only when exactly one NodePath is given.
 
-.EXAMPLE
-    # Dry-run analysis on the scene node
-    pwsh -File tools/scripts/iwyu_run.ps1
+.PARAMETER ChangedOnly
+    Only analyze files changed in git diff range.
 
-    # Analysis on the gate node
-    pwsh -File tools/scripts/iwyu_run.ps1 -NodePath cpp/nodes/gate
-
-    # Apply fixes via clang-tidy
-    pwsh -File tools/scripts/iwyu_run.ps1 -Tool clang-tidy -Fix
+.PARAMETER DiffBase
+    Optional base ref for git diff, used as "<DiffBase>...HEAD".
+    If empty, auto-detect in this order:
+      1) origin/$env:GITHUB_BASE_REF...HEAD
+      2) HEAD~1...HEAD
 #>
 param(
-    [string]$NodePath  = "cpp/nodes/scene",
+    [string[]]$NodePath = @("cpp/nodes/scene"),
     [ValidateSet("auto", "iwyu", "clang-tidy")]
-    [string]$Tool      = "auto",
+    [string]$Tool = "auto",
     [switch]$Fix,
-    [string]$BuildDir  = ""
+    [string]$BuildDir = "",
+    [switch]$ChangedOnly,
+    [string]$DiffBase = ""
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$PathSep  = [System.IO.Path]::DirectorySeparatorChar
+$PathSep = [System.IO.Path]::DirectorySeparatorChar
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot ([System.IO.Path]::Combine("..", "..")))
 
-$RepoRoot  = Resolve-Path (Join-Path $PSScriptRoot ([System.IO.Path]::Combine("..", "..")))
-$AbsNode   = Join-Path $RepoRoot $NodePath
-$AbsBuild  = if ($BuildDir) { $BuildDir } else { Join-Path $AbsNode "build_iwyu" }
-
-# ─── helper ───────────────────────────────────────────────────────────────────
 function Find-Tool([string]$name) {
     $cmd = Get-Command $name -ErrorAction SilentlyContinue
-    return $cmd ? $cmd.Source : $null
+    if ($cmd) { return $cmd.Source }
+    return $null
 }
 
-# On Linux, clang-tidy may be installed as clang-tidy-18, clang-tidy-17, etc.
 function Find-ClangTidy {
     $direct = Find-Tool "clang-tidy"
     if ($direct) { return $direct }
@@ -71,7 +68,6 @@ function Find-ClangTidy {
     return $null
 }
 
-# On Linux, fix_includes.py may be 'iwyu_tool.py' or 'fix_includes.py'
 function Find-IwyuFix {
     foreach ($name in "fix_includes.py", "iwyu_tool.py") {
         $exe = Find-Tool $name
@@ -80,122 +76,199 @@ function Find-IwyuFix {
     return $null
 }
 
-function Require-CMakeLists {
-    if (-not (Test-Path (Join-Path $AbsNode "CMakeLists.txt"))) {
-        throw "CMakeLists.txt not found in '$AbsNode'. Check -NodePath."
-    }
-}
-
-# Cross-platform relative path (always forward slashes in output)
 function Get-RelPath([string]$full) {
     $base = $RepoRoot.Path.TrimEnd($PathSep)
-    return $full.Substring($base.Length + 1).Replace('\','/')
+    return $full.Substring($base.Length + 1).Replace('\\', '/')
 }
 
-# ─── resolve tool ─────────────────────────────────────────────────────────────
-$iwyuExe      = Find-Tool "include-what-you-use"
+function Resolve-DiffRange {
+    if (-not [string]::IsNullOrWhiteSpace($DiffBase)) {
+        return "$DiffBase...HEAD"
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_BASE_REF)) {
+        return "origin/$($env:GITHUB_BASE_REF)...HEAD"
+    }
+    return "HEAD~1...HEAD"
+}
+
+function Get-ChangedAbsFiles([string]$nodeRel) {
+    $result = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+    $range = Resolve-DiffRange
+    Write-Host "[iwyu-run] ChangedOnly enabled. Diff range: $range"
+
+    $gitOut = & git -C $RepoRoot.Path diff --name-only --diff-filter=ACMRT $range -- $nodeRel 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "[iwyu-run] git diff failed for range '$range'. Falling back to full scan for $nodeRel."
+        return $null
+    }
+
+    foreach ($line in $gitOut) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        $abs = Join-Path $RepoRoot.Path $line
+        if ((Test-Path $abs) -and ($abs -match '\.(c|cc|cpp|cxx)$')) {
+            $null = $result.Add((Resolve-Path $abs).Path)
+        }
+    }
+    return $result
+}
+
+function Resolve-CompileDbEntry($compileDb, [string]$filePath) {
+    $target = [System.IO.Path]::GetFullPath($filePath)
+    foreach ($entry in $compileDb) {
+        $entryFile = $entry.file
+        if (-not [System.IO.Path]::IsPathRooted($entryFile)) {
+            $entryFile = Join-Path $entry.directory $entryFile
+        }
+        $entryFull = [System.IO.Path]::GetFullPath($entryFile)
+        if ($entryFull -eq $target) {
+            return $entry
+        }
+    }
+    return $null
+}
+
+$iwyuExe = Find-Tool "include-what-you-use"
 $clangTidyExe = Find-ClangTidy
 
 $resolvedTool = switch ($Tool) {
-    "iwyu"       {
-        if (-not $iwyuExe) { throw "include-what-you-use not found in PATH.`nWindows: install LLVM; Linux: sudo apt install iwyu" }
+    "iwyu" {
+        if (-not $iwyuExe) { throw "include-what-you-use not found in PATH." }
         "iwyu"
     }
     "clang-tidy" {
-        if (-not $clangTidyExe) { throw "clang-tidy not found in PATH.`nWindows: winget install LLVM.LLVM; Linux: sudo apt install clang-tidy" }
+        if (-not $clangTidyExe) { throw "clang-tidy not found in PATH." }
         "clang-tidy"
     }
-    "auto"       {
-        if ($iwyuExe)          { Write-Host "[iwyu-run] Auto-selected tool: include-what-you-use"; "iwyu" }
-        elseif ($clangTidyExe) { Write-Host "[iwyu-run] Auto-selected tool: clang-tidy (misc-include-cleaner)"; "clang-tidy" }
-        else {
-            throw @"
-Neither include-what-you-use nor clang-tidy found in PATH.
-  Windows : winget install LLVM.LLVM
-  Linux   : sudo apt install clang-tidy   (or: sudo apt install iwyu)
-"@
+    "auto" {
+        if ($iwyuExe) {
+            Write-Host "[iwyu-run] Auto-selected tool: include-what-you-use"
+            "iwyu"
+        } elseif ($clangTidyExe) {
+            Write-Host "[iwyu-run] Auto-selected tool: clang-tidy (misc-include-cleaner)"
+            "clang-tidy"
+        } else {
+            throw "Neither include-what-you-use nor clang-tidy found in PATH."
         }
     }
 }
 
-# ─── step 1: generate compile_commands.json ───────────────────────────────────
-Require-CMakeLists
-Write-Host "[iwyu-run] Generating compile_commands.json in '$AbsBuild' ..."
-
-if (-not (Test-Path $AbsBuild)) { New-Item -ItemType Directory -Path $AbsBuild | Out-Null }
-
-& cmake -S $AbsNode -B $AbsBuild `
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON `
-    -DCMAKE_BUILD_TYPE=Debug `
-    2>&1 | ForEach-Object { Write-Verbose $_ }
-
-$compileCommandsJson = Join-Path $AbsBuild "compile_commands.json"
-if (-not (Test-Path $compileCommandsJson)) {
-    throw "cmake did not produce compile_commands.json in '$AbsBuild'."
-}
-Write-Host "[iwyu-run] compile_commands.json ready."
-
-# ─── step 2: collect source files ─────────────────────────────────────────────
-$srcExts = @("*.cpp","*.cc","*.cxx","*.c")
-$srcFiles = Get-ChildItem -Path $AbsNode -Recurse -File -Include $srcExts |
-    Where-Object { $_.FullName -notmatch [regex]::Escape("${PathSep}third_party${PathSep}") }
-
-if ($srcFiles.Count -eq 0) {
-    Write-Warning "[iwyu-run] No source files found under '$AbsNode'."
-    exit 0
+if (-not [string]::IsNullOrWhiteSpace($BuildDir) -and $NodePath.Count -ne 1) {
+    throw "-BuildDir can only be used with exactly one -NodePath value."
 }
 
-Write-Host "[iwyu-run] Found $($srcFiles.Count) source file(s) to analyse."
-
-# ─── step 3: run analysis ─────────────────────────────────────────────────────
 $reportLines = [System.Collections.Generic.List[string]]::new()
-$fixCount    = 0
+$totalHits = 0
+$scannedNodeCount = 0
+$skippedNodeCount = 0
 
-switch ($resolvedTool) {
+foreach ($nodeRel in $NodePath) {
+    if ([string]::IsNullOrWhiteSpace($nodeRel)) { continue }
 
-    "clang-tidy" {
+    $absNode = Join-Path $RepoRoot.Path $nodeRel
+    $absBuild = if ($BuildDir) { $BuildDir } else { Join-Path $absNode "build_iwyu" }
+
+    if (-not (Test-Path (Join-Path $absNode "CMakeLists.txt"))) {
+        throw "CMakeLists.txt not found in '$absNode'. Check -NodePath."
+    }
+
+    Write-Host "[iwyu-run] Node: $nodeRel"
+    Write-Host "[iwyu-run] Generating compile_commands.json in '$absBuild' ..."
+
+    if (-not (Test-Path $absBuild)) {
+        New-Item -ItemType Directory -Path $absBuild | Out-Null
+    }
+
+    & cmake -S $absNode -B $absBuild `
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON `
+        -DCMAKE_BUILD_TYPE=Debug `
+        2>&1 | ForEach-Object { Write-Verbose $_ }
+
+    $compileCommandsJson = Join-Path $absBuild "compile_commands.json"
+    if (-not (Test-Path $compileCommandsJson)) {
+        throw "cmake did not produce compile_commands.json in '$absBuild'."
+    }
+
+    $srcExts = @("*.cpp", "*.cc", "*.cxx", "*.c")
+    $srcFiles = Get-ChildItem -Path $absNode -Recurse -File -Include $srcExts |
+        Where-Object { $_.FullName -notmatch [regex]::Escape("${PathSep}third_party${PathSep}") }
+
+    if ($ChangedOnly) {
+        $changedSet = Get-ChangedAbsFiles $nodeRel
+        if ($null -eq $changedSet) {
+            # git diff failed: keep full scan as safe fallback
+        } elseif ($changedSet.Count -gt 0) {
+            $srcFiles = $srcFiles | Where-Object { $changedSet.Contains($_.FullName) }
+        } else {
+            $srcFiles = @()
+        }
+    }
+
+    if ($srcFiles.Count -eq 0) {
+        if ($ChangedOnly) {
+            Write-Host "[iwyu-run] No changed C/C++ files for '$nodeRel'; skip."
+        } else {
+            Write-Warning "[iwyu-run] No source files to analyze for '$nodeRel'."
+        }
+        $skippedNodeCount++
+        continue
+    }
+
+    Write-Host "[iwyu-run] Found $($srcFiles.Count) source file(s) to analyze in '$nodeRel'."
+    $scannedNodeCount++
+
+    $nodeHits = 0
+
+    if ($resolvedTool -eq "clang-tidy") {
         $checksArg = "--checks=-*,misc-include-cleaner"
-        $fixArg    = if ($Fix) { "--fix" } else { "" }
-        $fixHint   = if ($Fix) { " (--fix enabled)" } else { " (dry-run; use -Fix to apply)" }
+        $fixHint = if ($Fix) { " (--fix enabled)" } else { " (dry-run; use -Fix to apply)" }
         Write-Host "[iwyu-run] Running clang-tidy misc-include-cleaner$fixHint ..."
 
         foreach ($f in $srcFiles) {
-            $rel  = Get-RelPath $f.FullName
-            $args = @($f.FullName, $checksArg, "-p", $AbsBuild, "--header-filter=.*")
+            $rel = Get-RelPath $f.FullName
+            $args = @($f.FullName, $checksArg, "-p", $absBuild, "--header-filter=.*")
             if ($Fix) { $args += "--fix" }
 
             $out = & $clangTidyExe @args 2>&1
             $hits = $out | Where-Object { $_ -match "warning:|error:" }
             if ($hits) {
+                if ($nodeHits -eq 0) {
+                    $reportLines.Add("### $nodeRel ###")
+                }
                 $reportLines.Add("=== $rel ===")
                 $hits | ForEach-Object { $reportLines.Add("  $_") }
-                $fixCount += $hits.Count
+                $nodeHits += $hits.Count
             }
         }
-    }
-
-    "iwyu" {
+    } else {
         Write-Host "[iwyu-run] Running include-what-you-use ..."
         $iwyuOut = [System.Collections.Generic.List[string]]::new()
+        $compileDb = Get-Content $compileCommandsJson | ConvertFrom-Json
 
         foreach ($f in $srcFiles) {
             $rel = Get-RelPath $f.FullName
-            # Read compile flags from compile_commands.json
-            $db  = Get-Content $compileCommandsJson | ConvertFrom-Json
-            $entry = $db | Where-Object { $_.file -like "*$($f.Name)" } | Select-Object -First 1
+            $entry = Resolve-CompileDbEntry $compileDb $f.FullName
             if (-not $entry) { continue }
 
-            # Build IWYU invocation from compile command
-            $cmdParts = $entry.command -split '\s+'
-            $iwyuArgs = $cmdParts[1..$cmdParts.Length]   # drop the compiler exe
+            $cmd = $entry.command
+            if ([string]::IsNullOrWhiteSpace($cmd)) {
+                continue
+            }
+            $cmdParts = $cmd -split '\\s+'
+            if ($cmdParts.Count -lt 2) {
+                continue
+            }
+            $iwyuArgs = $cmdParts[1..($cmdParts.Count - 1)]
 
             $out = & $iwyuExe @iwyuArgs 2>&1
-            $report = $out -join "`n"
-            if ($report -match "should (add|remove)") {
+            $joined = $out -join "`n"
+            if ($joined -match "should (add|remove)") {
+                if ($nodeHits -eq 0) {
+                    $reportLines.Add("### $nodeRel ###")
+                }
                 $reportLines.Add("=== $rel ===")
                 $out | ForEach-Object { $reportLines.Add("  $_") }
                 $iwyuOut.AddRange([string[]]$out)
-                $fixCount++
+                $nodeHits++
             }
         }
 
@@ -205,23 +278,24 @@ switch ($resolvedTool) {
                 Write-Host "[iwyu-run] Applying fixes via $fixIncludes ..."
                 $iwyuOut | & python $fixIncludes
             } else {
-                Write-Warning "[iwyu-run] fix_includes.py / iwyu_tool.py not found in PATH; skipping auto-fix."
-                Write-Warning "[iwyu-run]   Linux  : sudo apt install iwyu  (includes fix_includes.py)"
-                Write-Warning "[iwyu-run]   Windows: extract fix_includes.py from the LLVM/IWYU package."
+                Write-Warning "[iwyu-run] fix_includes.py / iwyu_tool.py not found; skipping auto-fix."
             }
         }
     }
+
+    $totalHits += $nodeHits
 }
 
-# ─── step 4: report ───────────────────────────────────────────────────────────
 $reportPath = Join-Path $RepoRoot.Path "bin" "iwyu_report.txt"
 if ($reportLines.Count -gt 0) {
     $reportLines | Set-Content -Path $reportPath -Encoding UTF8
     Write-Host ""
-    Write-Host "[iwyu-run] ── Report ($fixCount hit(s)) ──────────────────────────────────"
+    Write-Host "[iwyu-run] Report ($totalHits hit(s))"
     $reportLines | ForEach-Object { Write-Host $_ }
     Write-Host "[iwyu-run] Full report saved: $reportPath"
 } else {
-    Write-Host "[iwyu-run] No redundant includes detected. Project is clean."
+    Write-Host "[iwyu-run] No redundant includes detected."
     "No redundant includes detected." | Set-Content -Path $reportPath -Encoding UTF8
 }
+
+Write-Host "[iwyu-run] Summary: scanned_nodes=$scannedNodeCount skipped_nodes=$skippedNodeCount hits=$totalHits"
