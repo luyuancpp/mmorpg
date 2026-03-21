@@ -259,7 +259,7 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 	}
 
 	const serviceInfoCppTemplate = `#include <array>
-#include "service_metadata.h"
+#include "rpc_event_registry.h"
 #include "proto/common/base/node.pb.h"
 #include "thread_context/dispatcher_manager.h"
 

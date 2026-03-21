@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="service_metadata\service_metadata.h">
+    <ClInclude Include="service_metadata\rpc_event_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="service_metadata\player_state_attribute_sync_service_metadata.h">
@@ -74,7 +74,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="service_metadata\service_metadata.cpp">
+    <ClCompile Include="service_metadata\rpc_event_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

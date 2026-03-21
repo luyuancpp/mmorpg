@@ -59,8 +59,8 @@ paths:
   event_id_file: "{{proto_dir}}event_id.txt"
   robot_message_id_file: "{{robot_go_game_pb_dir}}/message_id.go"
   robot_proto_import_path: "{{output_root}}{{robot_proto}}"  # robot proto导入路径
-  service_cpp_file: "{{service_info_dir}}service_metadata.cpp"
-  service_header_file: "{{service_info_dir}}service_metadata.h"
+  service_cpp_file: "{{service_info_dir}}rpc_event_registry.cpp"
+  service_header_file: "{{service_info_dir}}rpc_event_registry.h"
   grpc_init_cpp_file: "{{cpp_gen_grpc_dir}}grpc_init_client.cpp"
   grpc_init_head_file: "{{cpp_gen_grpc_dir}}grpc_init_client.h"
   gen_util_cpp_file: "{{util_generator_dir}}proto_util.cpp"

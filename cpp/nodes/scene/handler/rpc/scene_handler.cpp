@@ -19,7 +19,7 @@
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/base/node.pb.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "thread_context/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/proto/proto_field_checker.h"

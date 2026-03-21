@@ -28,7 +28,7 @@
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "thread_context/redis_manager.h"
 #include "thread_context/dispatcher_manager.h"
 #include "type_alias/player_session_type_alias.h"
