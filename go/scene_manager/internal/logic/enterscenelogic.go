@@ -87,7 +87,6 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		}
 
 		cmd := &kafkacontracts.GateCommand{
-			CommandType:      kafkacontracts.GateCommand_RoutePlayer,
 			PlayerId:         in.PlayerId,
 			TargetNodeId:     uint32(targetNodeId),
 			SessionId:        in.SessionId,

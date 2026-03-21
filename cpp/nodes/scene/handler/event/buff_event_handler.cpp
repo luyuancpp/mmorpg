@@ -17,4 +17,3 @@ void BuffEventHandler::BuffTestEvetHandler(const BuffTestEvet& event)
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-

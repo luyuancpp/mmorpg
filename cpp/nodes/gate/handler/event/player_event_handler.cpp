@@ -17,4 +17,3 @@ void PlayerEventHandler::PlayerLifecycleCommandHandler(const contracts::kafka::P
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-

@@ -28,7 +28,6 @@
 #include "google/protobuf/message_lite.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
-#include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
 // @@protoc_insertion_point(includes)
 
@@ -55,8 +54,6 @@ extern const ::google::protobuf::internal::DescriptorTable descriptor_table_prot
 }  // extern "C"
 namespace contracts {
 namespace kafka {
-enum GateCommand_CommandType : int;
-extern const uint32_t GateCommand_CommandType_internal_data_[];
 class GateCommand;
 struct GateCommandDefaultTypeInternal;
 extern GateCommandDefaultTypeInternal _GateCommand_default_instance_;
@@ -65,53 +62,11 @@ extern const ::google::protobuf::internal::ClassDataFull GateCommand_class_data_
 }  // namespace contracts
 namespace google {
 namespace protobuf {
-template <>
-internal::EnumTraitsT<::contracts::kafka::GateCommand_CommandType_internal_data_>
-    internal::EnumTraitsImpl::value<::contracts::kafka::GateCommand_CommandType>;
 }  // namespace protobuf
 }  // namespace google
 
 namespace contracts {
 namespace kafka {
-enum GateCommand_CommandType : int {
-  GateCommand_CommandType_RoutePlayer = 0,
-  GateCommand_CommandType_KickPlayer = 1,
-  GateCommand_CommandType_Broadcast = 2,
-  GateCommand_CommandType_BindSession = 3,
-  GateCommand_CommandType_LeaseExpired = 4,
-  GateCommand_CommandType_GateCommand_CommandType_INT_MIN_SENTINEL_DO_NOT_USE_ =
-      ::std::numeric_limits<::int32_t>::min(),
-  GateCommand_CommandType_GateCommand_CommandType_INT_MAX_SENTINEL_DO_NOT_USE_ =
-      ::std::numeric_limits<::int32_t>::max(),
-};
-
-extern const uint32_t GateCommand_CommandType_internal_data_[];
-inline constexpr GateCommand_CommandType GateCommand_CommandType_CommandType_MIN =
-    static_cast<GateCommand_CommandType>(0);
-inline constexpr GateCommand_CommandType GateCommand_CommandType_CommandType_MAX =
-    static_cast<GateCommand_CommandType>(4);
-inline bool GateCommand_CommandType_IsValid(int value) {
-  return 0 <= value && value <= 4;
-}
-inline constexpr int GateCommand_CommandType_CommandType_ARRAYSIZE = 4 + 1;
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL GateCommand_CommandType_descriptor();
-template <typename T>
-const ::std::string& GateCommand_CommandType_Name(T value) {
-  static_assert(::std::is_same<T, GateCommand_CommandType>::value ||
-                    ::std::is_integral<T>::value,
-                "Incorrect type passed to CommandType_Name().");
-  return GateCommand_CommandType_Name(static_cast<GateCommand_CommandType>(value));
-}
-template <>
-inline const ::std::string& GateCommand_CommandType_Name(GateCommand_CommandType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<GateCommand_CommandType_descriptor, 0, 4>(
-      static_cast<int>(value));
-}
-inline bool GateCommand_CommandType_Parse(
-    ::absl::string_view name, GateCommand_CommandType* PROTOBUF_NONNULL value) {
-  return ::google::protobuf::internal::ParseNamedEnum<GateCommand_CommandType>(GateCommand_CommandType_descriptor(), name,
-                                           value);
-}
 
 // ===================================================================
 
@@ -258,38 +213,14 @@ class GateCommand final : public ::google::protobuf::Message
 
   ::google::protobuf::Metadata GetMetadata() const;
   // nested types ----------------------------------------------------
-  using CommandType = GateCommand_CommandType;
-  static constexpr CommandType RoutePlayer = GateCommand_CommandType_RoutePlayer;
-  static constexpr CommandType KickPlayer = GateCommand_CommandType_KickPlayer;
-  static constexpr CommandType Broadcast = GateCommand_CommandType_Broadcast;
-  static constexpr CommandType BindSession = GateCommand_CommandType_BindSession;
-  static constexpr CommandType LeaseExpired = GateCommand_CommandType_LeaseExpired;
-  static inline bool CommandType_IsValid(int value) {
-    return GateCommand_CommandType_IsValid(value);
-  }
-  static constexpr CommandType CommandType_MIN = GateCommand_CommandType_CommandType_MIN;
-  static constexpr CommandType CommandType_MAX = GateCommand_CommandType_CommandType_MAX;
-  static constexpr int CommandType_ARRAYSIZE = GateCommand_CommandType_CommandType_ARRAYSIZE;
-  static inline const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL CommandType_descriptor() {
-    return GateCommand_CommandType_descriptor();
-  }
-  template <typename T>
-  static inline const ::std::string& CommandType_Name(T value) {
-    return GateCommand_CommandType_Name(value);
-  }
-  static inline bool CommandType_Parse(
-      ::absl::string_view name, CommandType* PROTOBUF_NONNULL value) {
-    return GateCommand_CommandType_Parse(name, value);
-  }
 
   // accessors -------------------------------------------------------
   enum : int {
     kPayloadFieldNumber = 5,
     kTargetInstanceIdFieldNumber = 7,
     kPlayerIdFieldNumber = 2,
-    kCommandTypeFieldNumber = 1,
-    kTargetNodeIdFieldNumber = 3,
     kSessionIdFieldNumber = 4,
+    kTargetNodeIdFieldNumber = 3,
     kTargetGateIdFieldNumber = 6,
     kEventIdFieldNumber = 8,
   };
@@ -333,14 +264,14 @@ class GateCommand final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // .contracts.kafka.GateCommand.CommandType command_type = 1;
-  void clear_command_type() ;
-  ::contracts::kafka::GateCommand_CommandType command_type() const;
-  void set_command_type(::contracts::kafka::GateCommand_CommandType value);
+  // uint64 session_id = 4;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
 
   private:
-  ::contracts::kafka::GateCommand_CommandType _internal_command_type() const;
-  void _internal_set_command_type(::contracts::kafka::GateCommand_CommandType value);
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
 
   public:
   // uint32 target_node_id = 3;
@@ -353,16 +284,6 @@ class GateCommand final : public ::google::protobuf::Message
   void _internal_set_target_node_id(::uint32_t value);
 
   public:
-  // uint64 session_id = 4;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint32 target_gate_id = 6;
   void clear_target_gate_id() ;
   ::uint32_t target_gate_id() const;
@@ -373,8 +294,7 @@ class GateCommand final : public ::google::protobuf::Message
   void _internal_set_target_gate_id(::uint32_t value);
 
   public:
-  // optional uint32 event_id = 8;
-  bool has_event_id() const;
+  // uint32 event_id = 8;
   void clear_event_id() ;
   ::uint32_t event_id() const;
   void set_event_id(::uint32_t value);
@@ -388,8 +308,8 @@ class GateCommand final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 8,
-                                   0, 62,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
+                                   0, 54,
                                    2>
       _table_;
 
@@ -413,9 +333,8 @@ class GateCommand final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr payload_;
     ::google::protobuf::internal::ArenaStringPtr target_instance_id_;
     ::uint64_t player_id_;
-    int command_type_;
-    ::uint32_t target_node_id_;
     ::uint64_t session_id_;
+    ::uint32_t target_node_id_;
     ::uint32_t target_gate_id_;
     ::uint32_t event_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -441,30 +360,6 @@ extern const ::google::protobuf::internal::ClassDataFull GateCommand_class_data_
 // -------------------------------------------------------------------
 
 // GateCommand
-
-// .contracts.kafka.GateCommand.CommandType command_type = 1;
-inline void GateCommand::clear_command_type() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.command_type_ = 0;
-  _impl_._has_bits_[0] &= ~0x00000008u;
-}
-inline ::contracts::kafka::GateCommand_CommandType GateCommand::command_type() const {
-  // @@protoc_insertion_point(field_get:contracts.kafka.GateCommand.command_type)
-  return _internal_command_type();
-}
-inline void GateCommand::set_command_type(::contracts::kafka::GateCommand_CommandType value) {
-  _internal_set_command_type(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:contracts.kafka.GateCommand.command_type)
-}
-inline ::contracts::kafka::GateCommand_CommandType GateCommand::_internal_command_type() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::contracts::kafka::GateCommand_CommandType>(_impl_.command_type_);
-}
-inline void GateCommand::_internal_set_command_type(::contracts::kafka::GateCommand_CommandType value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.command_type_ = value;
-}
 
 // uint64 player_id = 2;
 inline void GateCommand::clear_player_id() {
@@ -518,7 +413,7 @@ inline void GateCommand::_internal_set_target_node_id(::uint32_t value) {
 inline void GateCommand::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint64_t GateCommand::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.GateCommand.session_id)
@@ -526,7 +421,7 @@ inline ::uint64_t GateCommand::session_id() const {
 }
 inline void GateCommand::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:contracts.kafka.GateCommand.session_id)
 }
 inline ::uint64_t GateCommand::_internal_session_id() const {
@@ -607,7 +502,7 @@ inline void GateCommand::set_allocated_payload(::std::string* PROTOBUF_NULLABLE 
 inline void GateCommand::clear_target_gate_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_gate_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline ::uint32_t GateCommand::target_gate_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.GateCommand.target_gate_id)
@@ -615,7 +510,7 @@ inline ::uint32_t GateCommand::target_gate_id() const {
 }
 inline void GateCommand::set_target_gate_id(::uint32_t value) {
   _internal_set_target_gate_id(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:contracts.kafka.GateCommand.target_gate_id)
 }
 inline ::uint32_t GateCommand::_internal_target_gate_id() const {
@@ -692,15 +587,11 @@ inline void GateCommand::set_allocated_target_instance_id(::std::string* PROTOBU
   // @@protoc_insertion_point(field_set_allocated:contracts.kafka.GateCommand.target_instance_id)
 }
 
-// optional uint32 event_id = 8;
-inline bool GateCommand::has_event_id() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000080u) != 0;
-  return value;
-}
+// uint32 event_id = 8;
 inline void GateCommand::clear_event_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.event_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000080u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
 }
 inline ::uint32_t GateCommand::event_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.GateCommand.event_id)
@@ -708,7 +599,7 @@ inline ::uint32_t GateCommand::event_id() const {
 }
 inline void GateCommand::set_event_id(::uint32_t value) {
   _internal_set_event_id(value);
-  _impl_._has_bits_[0] |= 0x00000080u;
+  _impl_._has_bits_[0] |= 0x00000040u;
   // @@protoc_insertion_point(field_set:contracts.kafka.GateCommand.event_id)
 }
 inline ::uint32_t GateCommand::_internal_event_id() const {
@@ -728,19 +619,6 @@ inline void GateCommand::_internal_set_event_id(::uint32_t value) {
 }  // namespace kafka
 }  // namespace contracts
 
-
-namespace google {
-namespace protobuf {
-
-template <>
-struct is_proto_enum<::contracts::kafka::GateCommand_CommandType> : std::true_type {};
-template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::contracts::kafka::GateCommand_CommandType>() {
-  return ::contracts::kafka::GateCommand_CommandType_descriptor();
-}
-
-}  // namespace protobuf
-}  // namespace google
 
 // @@protoc_insertion_point(global_scope)
 

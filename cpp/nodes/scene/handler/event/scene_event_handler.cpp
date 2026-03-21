@@ -70,4 +70,3 @@ void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& event)
 
 ///<<< END WRITING YOUR CODE
 }
-

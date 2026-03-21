@@ -452,4 +452,3 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 
 	dispatchFn(message);
 }
-

@@ -51,4 +51,3 @@ void MissionEventHandler::OnMissionAwardEventHandler(const OnMissionAwardEvent& 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
