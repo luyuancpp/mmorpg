@@ -10,7 +10,7 @@
 #include "node/system/node/node.h"
 #include "grpc_client/login/login_grpc_client.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/game_client_player_service_metadata.h"
@@ -271,7 +271,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 // Handle messages related to the game node
 void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
-    auto& handlerMeta = gRpcServiceRegistry[request->message_id()];
+    auto& handlerMeta = gRpcMethodRegistry[request->message_id()];
 
 	// 玩家没登录直接发其他消息，乱发消息
     entt::entity tcpNodeId = entt::entity{ GetEffectiveNodeId(session, handlerMeta.targetNodeType) };
@@ -300,8 +300,8 @@ void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr&
 }
 
 void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn){
-	auto& rpcHandlerMeta  = gRpcServiceRegistry[request->message_id()];
-	ParseMessageFromRequestBody(*rpcHandlerMeta .requestPrototype, request, sessionId);
+	auto& rpcHandlerMeta  = gRpcMethodRegistry[request->message_id()];
+	ParseMessageFromRequestBody(*rpcHandlerMeta .requestProto, request, sessionId);
 
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(sessionId);
@@ -314,7 +314,7 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
     sessionDetails.set_gate_node_id(gNode->GetNodeId());
     sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
 
-	if (rpcHandlerMeta .messageSender){
+	if (rpcHandlerMeta .sender){
 		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta .targetNodeType);
 		if (!node)
 		{
@@ -324,9 +324,9 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 		}
 
 		
-		rpcHandlerMeta .messageSender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta .targetNodeType), 
+		rpcHandlerMeta .sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta .targetNodeType), 
             *node, 
-            *rpcHandlerMeta .requestPrototype, 
+            *rpcHandlerMeta .requestProto, 
             { kSessionBinMetaKey }, 
             SerializeSessionDetails(sessionDetails));
 	}
@@ -353,7 +353,7 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 	}
 
 
-	if (request->message_id() >= gRpcServiceRegistry.size() || !gClientMessageIdWhitelist.contains(request->message_id())) {
+	if (request->message_id() >= gRpcMethodRegistry.size() || !IsClientMessageId(request->message_id())) {
 		LOG_ERROR << "Invalid or unauthorized message ID: " << request->message_id();
 		return;
 	}
@@ -362,10 +362,10 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 
     if (!ValidateClientMessage(session, request, conn)) return;
 
-	auto& messageInfo = gRpcServiceRegistry[request->message_id()];
-    if (messageInfo.protocolType == PROTOCOL_TCP){
+	auto& messageInfo = gRpcMethodRegistry[request->message_id()];
+    if (messageInfo.protocol == PROTOCOL_TCP){
 		HandleTcpNodeMessage(session, request, sessionId, conn);
-    }else if (messageInfo.protocolType == PROTOCOL_GRPC){
+    }else if (messageInfo.protocol == PROTOCOL_GRPC){
     	HandleGrpcNodeMessage(sessionId, request, conn);
     }
 }

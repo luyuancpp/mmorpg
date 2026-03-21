@@ -6,7 +6,8 @@
 
 #include "proto/contracts/kafka/gate_command.pb.h"
 #include "proto/contracts/kafka/gate_event.pb.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/contracts_kafka_gate_event_event_id.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "thread_context/dispatcher_manager.h"
 #include "muduo/base/Logging.h"
 
@@ -41,13 +42,10 @@ bool DecodeAndDispatchGateKafkaEventById(const std::string& topic, const contrac
         return true;
     }
 
-    auto eventMessage = ParseEventMessage(command.event_id(), command.payload());
-    if (!eventMessage) {
+    if (!DispatchProtoEvent(command.event_id(), command.payload())) {
         LOG_WARN << "GateCommand payload decode failed, topic=" << topic << ", event_id=" << command.event_id();
         return true;
     }
-
-    DispatchProtoEvent(command.event_id(), *eventMessage);
     return true;
 }
 

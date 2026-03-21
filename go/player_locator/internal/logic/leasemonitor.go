@@ -111,13 +111,17 @@ func handleLeaseExpiry(ctx context.Context, svcCtx *svc.ServiceContext, playerID
 		playerID, session.SessionId, session.GateId, session.SceneNodeId)
 }
 
+// ContractsKafkaPlayerLeaseExpiredEventEventId matches event_id.txt entry 34.
+// TODO: use generated constant once event_id.go is produced for player_locator.
+const contractsKafkaPlayerLeaseExpiredEventEventId uint32 = 34
+
 func sendLeaseExpiredToGate(ctx context.Context, svcCtx *svc.ServiceContext, session *pb.PlayerSession) {
 	if session.GateId == "" {
 		return
 	}
 
-	// Build inner event payload
-	event := &pb.LeaseExpiredEvent{
+	// Build inner event payload (use contracts/kafka type to match C++ dispatch)
+	event := &kafkapb.PlayerLeaseExpiredEvent{
 		PlayerId:       session.PlayerId,
 		SessionId:      session.SessionId,
 		SceneNodeId:    session.SceneNodeId,
@@ -127,18 +131,19 @@ func sendLeaseExpiredToGate(ctx context.Context, svcCtx *svc.ServiceContext, ses
 	}
 	eventPayload, err := proto.Marshal(event)
 	if err != nil {
-		logx.Errorf("LeaseMonitor: marshal LeaseExpiredEvent failed: %v", err)
+		logx.Errorf("LeaseMonitor: marshal PlayerLeaseExpiredEvent failed: %v", err)
 		return
 	}
 
 	// Wrap in GateCommand for the Gate Kafka consumer
+	eventId := contractsKafkaPlayerLeaseExpiredEventEventId
 	cmd := &kafkapb.GateCommand{
-		CommandType:      kafkapb.GateCommand_LeaseExpired,
 		PlayerId:         session.PlayerId,
 		SessionId:        session.SessionId,
 		Payload:          eventPayload,
 		TargetGateId:     parseGateID(session.GateId),
 		TargetInstanceId: session.GateInstanceId,
+		EventId:          &eventId,
 	}
 	cmdBytes, err := proto.Marshal(cmd)
 	if err != nil {

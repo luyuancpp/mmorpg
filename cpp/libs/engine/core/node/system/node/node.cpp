@@ -21,7 +21,7 @@
 #include "proto/common/event/node_event.pb.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
-#include "rpc/service_metadata/service_metadata.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include "thread_context/redis_manager.h"
 #include "time/system/time.h"
 #include "network/network_utils.h"

@@ -250,17 +250,16 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		ServiceInfoIncludes  []string
 		EventIncludesBlock   string
 		HandlerClasses       []string
-		EventDispatchers     []string
+		EventDispatchCases   []string
 		InitLines            []string
-		ClientMessageIdLines []string
+		ClientMessageIdCases []string
 		MessageIdArraySize   int
-		EventInitLines       []string
 		EventIdArraySize     int
 		SenderFunctions      []string
 	}
 
 	const serviceInfoCppTemplate = `#include <array>
-#include "service_metadata.h"
+#include "rpc_event_registry.h"
 #include "proto/common/base/node.pb.h"
 #include "thread_context/dispatcher_manager.h"
 
@@ -274,81 +273,50 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 {{range .HandlerClasses}}
 {{ . }}
 {{- end }}
-namespace {
-{{range .EventDispatchers}}
-{{ . }}
-{{- end }}
-} // namespace
 
 {{range .SenderFunctions}}
 {{ . }}
 {{- end }}
 
-std::unordered_set<uint32_t> gClientMessageIdWhitelist;
-std::array<RpcService, {{ .MessageIdArraySize }}> gRpcServiceRegistry;
-std::array<ProtoEvent, {{ .EventIdArraySize }}> gProtoEventRegistry;
+std::array<RpcMethodMeta, {{ .MessageIdArraySize }}> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
 {{- range .InitLines }}
     {{ . }}
 {{- end }}
+}
 
-{{range .ClientMessageIdLines }}
-    {{ . }}
+bool IsClientMessageId(uint32_t messageId)
+{
+	switch (messageId) {
+{{- range .ClientMessageIdCases }}
+	{{ . }}
 {{- end }}
+		return true;
+	default:
+		return false;
+	}
 }
 
 void InitEventInfo()
 {
-{{- range .EventInitLines }}
-	{{ . }}
-{{- end }}
 }
 
 bool IsValidEventId(uint32_t eventId)
 {
-	if (eventId >= gProtoEventRegistry.size()) {
+	return eventId < kMaxEventCount;
+}
+
+bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
+{
+	switch (eventId) {
+{{- range .EventDispatchCases }}
+	{{ . }}
+{{- end }}
+	default:
 		return false;
 	}
-	return gProtoEventRegistry[eventId].prototype != nullptr;
-}
-
-MessageUniquePtr NewEventMessage(uint32_t eventId)
-{
-	if (!IsValidEventId(eventId)) {
-		return nullptr;
-	}
-
-	return MessageUniquePtr(gProtoEventRegistry[eventId].prototype->New());
-}
-
-MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload)
-{
-	auto message = NewEventMessage(eventId);
-	if (!message) {
-		return nullptr;
-	}
-
-	if (!message->ParseFromString(payload)) {
-		return nullptr;
-	}
-
-	return message;
-}
-
-void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& message)
-{
-	if (!IsValidEventId(eventId)) {
-		return;
-	}
-
-	auto dispatchFn = gProtoEventRegistry[eventId].dispatcher;
-	if (dispatchFn == nullptr) {
-		return;
-	}
-
-	dispatchFn(message);
 }
 `
 
@@ -357,16 +325,14 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 		serviceInfoIncludes []string
 		eventIncludes       []string
 		handlerClasses      []string
-		eventDispatchers    []string
+		eventDispatchCases  []string
 		initLines           []string
 		clientIdLines       []string
-		eventInitLines      []string
 		senderFunction      []string
 		includeSet          = make(map[string]struct{})
 		serviceIncludeSet   = make(map[string]struct{})
 		eventIncludeSet     = make(map[string]struct{})
 		handlerClassSet     = make(map[string]struct{})
-		eventDispatcherSet  = make(map[string]struct{})
 		senderFunctionSet   = make(map[string]struct{})
 		clientIDSet         = make(map[string]struct{})
 	)
@@ -408,6 +374,12 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 			continue
 		}
 
+		// Add service group separator for readability
+		if len(initLines) > 0 {
+			initLines = append(initLines, "")
+		}
+		initLines = append(initLines, fmt.Sprintf("// --- %s ---", service.Service()))
+
 		for _, method := range service.Methods {
 			basePath := strings.ToLower(path.Base(method.Path()))
 			messageId := method.KeyName() + _config.Global.Naming.MessageId
@@ -415,76 +387,64 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 			isClientMessage := internal.IsClientProtocolService(service.ServiceDescriptorProto)
 			nodeType := fmt.Sprintf("eNodeType::%sNodeService", strcase.ToCamel(basePath))
 
-			initLine := ""
+			// Emit multi-line RpcMethodMeta initialization grouped by field role:
+			//   line 1: assignment + opening brace
+			//   line 2: serviceName, methodName
+			//   line 3: requestProto
+			//   line 4: responseProto
+			//   line 5: handler, protocol, targetNodeType [, sender] + closing brace
+			initLines = append(initLines, fmt.Sprintf("gRpcMethodRegistry[%s] = RpcMethodMeta{", messageId))
+			initLines = append(initLines, fmt.Sprintf(`    "%s", "%s",`, method.Service(), method.Method()))
+			initLines = append(initLines, fmt.Sprintf("    std::make_unique<%s>(),", method.CppRequest()))
+
 			if method.CcGenericServices() {
 				handler := service.Service() + "Impl"
-				initLine = fmt.Sprintf(
-					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique<%s>(), std::make_unique<%s>(), std::make_unique<%s>(), %d, %s};`,
-					messageId,
-					method.Service(),
-					method.Method(),
-					method.CppRequest(),
-					method.CppResponse(),
-					handler,
-					GetProtocol(method.Path()),
-					nodeType,
-				)
+				initLines = append(initLines, fmt.Sprintf("    std::make_unique<%s>(),", method.CppResponse()))
+				initLines = append(initLines, fmt.Sprintf(
+					"    std::make_unique<%s>(), %d, %s};",
+					handler, GetProtocol(method.Path()), nodeType))
 			} else {
 				declareFunction := "namespace " + method.Package() + "{void Send" +
 					service.Service() + method.Method() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
 				senderFunction = appendUniqueString(senderFunction, senderFunctionSet, declareFunction)
 				sendName := method.Package() + "::" + "Send" + service.Service() + method.Method()
-				initLine = fmt.Sprintf(
-					`gRpcServiceRegistry[%s] = RpcService{"%s", "%s", std::make_unique<%s>(), std::make_unique<%s>(), nullptr, %d, %s, %s};`,
-					messageId,
-					method.Service(),
-					method.Method(),
-					method.CppRequest(),
-					method.CppResponse(),
-					GetProtocol(method.Path()),
-					nodeType,
-					sendName,
-				)
+				initLines = append(initLines, fmt.Sprintf("    std::make_unique<%s>(),", method.CppResponse()))
+				initLines = append(initLines, fmt.Sprintf(
+					"    nullptr, %d, %s, %s};",
+					GetProtocol(method.Path()), nodeType, sendName))
 			}
 
-			initLines = append(initLines, initLine)
-
 			if isClientMessage {
-				clientIdLines = appendUniqueString(clientIdLines, clientIDSet, fmt.Sprintf("gClientMessageIdWhitelist.emplace(%s);", messageId))
+				clientIdLines = appendUniqueString(clientIdLines, clientIDSet, fmt.Sprintf("case %s:", messageId))
 			}
 		}
 	}
 
 	for _, event := range globalProtoEventList {
 		eventIncludes = appendUniqueString(eventIncludes, eventIncludeSet, fmt.Sprintf("#include \"%s\"", event.ProtoInclude))
-		dispatcherName := fmt.Sprintf("Dispatch%s", event.IdName)
-		dispatcherBody := fmt.Sprintf(
-			"void %s(const google::protobuf::Message& message)\n{\n    dispatcher.enqueue(static_cast<const %s&>(message));\n}\n",
-			dispatcherName,
-			event.QualifiedName,
+		eventIdRef := event.IdName + _config.Global.Naming.EventId
+		eventDispatchCases = append(eventDispatchCases,
+			fmt.Sprintf("case %s: {", eventIdRef),
+			fmt.Sprintf("\t%s event;", event.QualifiedName),
+			"\tif (!event.ParseFromString(payload)) {",
+			"\t\treturn false;",
+			"\t}",
+			"\tdispatcher.enqueue(event);",
+			"\treturn true;",
+			"}",
 		)
-		eventDispatchers = appendUniqueString(eventDispatchers, eventDispatcherSet, dispatcherBody)
-		eventInitLines = append(eventInitLines, fmt.Sprintf(
-			`gProtoEventRegistry[%s%s] = ProtoEvent{"%s", std::make_unique<%s>(), &%s};`,
-			event.IdName,
-			_config.Global.Naming.EventId,
-			event.QualifiedName,
-			event.QualifiedName,
-			dispatcherName,
-		))
 	}
 
 	// Step 3: Fill template data and render
 	tmplData := ServiceInfoCppData{
 		Includes:             includes,
 		ServiceInfoIncludes:  serviceInfoIncludes,
-		EventIncludesBlock:   strings.Join(eventIncludes, "\n") + "\n",
+		EventIncludesBlock:   strings.Join(eventIncludes, "\n") + "\n" + strings.Join(EventIdHeaderIncludes(), "\n") + "\n",
 		HandlerClasses:       handlerClasses,
-		EventDispatchers:     eventDispatchers,
+		EventDispatchCases:   eventDispatchCases,
 		InitLines:            initLines,
-		ClientMessageIdLines: clientIdLines,
+		ClientMessageIdCases: clientIdLines,
 		MessageIdArraySize:   int(internal.MessageIdLen()),
-		EventInitLines:       eventInitLines,
 		EventIdArraySize:     int(EventIdLen()),
 		SenderFunctions:      senderFunction,
 	}
@@ -513,20 +473,13 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 func writeServiceInfoHeadFile(wg *sync.WaitGroup) {
 	defer wg.Done()
 	type HeaderTemplateData struct {
-		MaxMessageLen      uint64
-		MaxEventLen        uint64
-		EventConstantLines []string
-	}
-
-	eventConstantLines := make([]string, 0, len(globalProtoEventList))
-	for _, event := range globalProtoEventList {
-		eventConstantLines = append(eventConstantLines, fmt.Sprintf("constexpr uint32_t %s%s = %d;", event.IdName, _config.Global.Naming.EventId, event.Id))
+		MaxMessageLen uint64
+		MaxEventLen   uint64
 	}
 
 	data := HeaderTemplateData{
-		MaxMessageLen:      internal.MessageIdLen(),
-		MaxEventLen:        EventIdLen(),
-		EventConstantLines: eventConstantLines,
+		MaxMessageLen: internal.MessageIdLen(),
+		MaxEventLen:   EventIdLen(),
 	}
 
 	err := utils2.RenderTemplateToFile("internal/template/service_header.tmpl", _config.Global.Paths.ServiceHeaderFile, data)
@@ -720,6 +673,7 @@ func writePlayerServiceInstanceFiles(wg *sync.WaitGroup, serviceType string, isP
 }
 
 func WriteServiceRegisterInfoFile(wg *sync.WaitGroup) {
+	writeEventIdHeaderFiles()
 	wg.Add(1)
 	go writeServiceInfoCppFile(wg)
 	wg.Add(1)
@@ -733,4 +687,3 @@ func WriteServiceRegisterInfoFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go writePlayerServiceInstanceFiles(wg, "repliedInstance", IsNoOpHandler, _config.Global.PathLists.MethodHandlerDirectories.GateNodePlayerReplied, _config.Global.Naming.PlayerRepliedService)
 }
-
