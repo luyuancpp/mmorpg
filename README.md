@@ -29,10 +29,6 @@ Designed for learning, experimentation, and prototyping of game server architect
 
 ### Prerequisites
 
-- Linux system (recommended Ubuntu)
-- C++17 compiler (e.g., `g++`)
-- `cmake` (version ≥ 3.12)
-- Lua library and headers
 
 ### Build & Run
 
@@ -44,6 +40,12 @@ cmake ..
 make
 ./mmorpg
 ```
+
+Include 清理（跨平台）:
+
+- 统一入口: `tools/scripts/dev_tools.ps1 -Command iwyu-run`
+- Linux/macOS 包装脚本: `tools/scripts/iwyu_run.sh`
+- 详细用法见 `tools/scripts/README.md`
 
 ## 🧱 C++ Node Main Templates
 
