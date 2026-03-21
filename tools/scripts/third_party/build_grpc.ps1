@@ -280,8 +280,8 @@ $CommonArgs = @(
     "-DCMAKE_C_COMPILER=cl",
     "-DCMAKE_CXX_COMPILER=cl",
     "-DCMAKE_MAKE_PROGRAM=$NinjaCMakePath",
-    "-DCMAKE_CXX_FLAGS=/std:c++17",
-    "-DCMAKE_CXX_STANDARD=17",
+    "-DCMAKE_CXX_FLAGS=/std:c++23",
+    "-DCMAKE_CXX_STANDARD=23",
     "-DCMAKE_CXX_STANDARD_REQUIRED=ON",
     "-DCMAKE_CXX_EXTENSIONS=OFF",
     "-DgRPC_BUILD_TESTS=OFF",
@@ -314,8 +314,8 @@ function Invoke-GrpcBuild {
     }
 
     $cachePath = Join-Path $buildPath 'CMakeCache.txt'
-    $expectedCxxFlags = '/std:c++17'
-    $expectedCxxStandard = '17'
+    $expectedCxxFlags = '/std:c++23'
+    $expectedCxxStandard = '23'
     if (Test-Path $cachePath) {
         $cacheCompilerLine = Select-String -Path $cachePath -Pattern '^CMAKE_C_COMPILER:FILEPATH=' -SimpleMatch:$false | Select-Object -First 1
         $cacheCxxFlagsLine = Select-String -Path $cachePath -Pattern '^CMAKE_CXX_FLAGS:STRING=' -SimpleMatch:$false | Select-Object -First 1
