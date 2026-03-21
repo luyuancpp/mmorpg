@@ -101,7 +101,6 @@ namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 std::array<RpcService, 94> gRpcServiceRegistry;
-std::array<std::unique_ptr<google::protobuf::Message>, 36> gEventPrototypes;
 
 void InitMessageInfo()
 {
@@ -201,109 +200,305 @@ void InitMessageInfo()
 
 void InitEventInfo()
 {
-	gEventPrototypes[AcceptMissionEventEventId] = std::make_unique<AcceptMissionEvent>();
-	gEventPrototypes[AfterEnterSceneEventId] = std::make_unique<AfterEnterScene>();
-	gEventPrototypes[AfterLeaveSceneEventId] = std::make_unique<AfterLeaveScene>();
-	gEventPrototypes[BeKillEventEventId] = std::make_unique<BeKillEvent>();
-	gEventPrototypes[BeforeEnterSceneEventId] = std::make_unique<BeforeEnterScene>();
-	gEventPrototypes[BeforeLeaveSceneEventId] = std::make_unique<BeforeLeaveScene>();
-	gEventPrototypes[BuffTestEvetEventId] = std::make_unique<BuffTestEvet>();
-	gEventPrototypes[CombatStateAddedPbEventEventId] = std::make_unique<CombatStateAddedPbEvent>();
-	gEventPrototypes[CombatStateRemovedPbEventEventId] = std::make_unique<CombatStateRemovedPbEvent>();
-	gEventPrototypes[ConnectToNodePbEventEventId] = std::make_unique<ConnectToNodePbEvent>();
-	gEventPrototypes[ContractsKafkaBindSessionEventEventId] = std::make_unique<contracts::kafka::BindSessionEvent>();
-	gEventPrototypes[ContractsKafkaKickPlayerEventEventId] = std::make_unique<contracts::kafka::KickPlayerEvent>();
-	gEventPrototypes[ContractsKafkaPlayerDisconnectedEventEventId] = std::make_unique<contracts::kafka::PlayerDisconnectedEvent>();
-	gEventPrototypes[ContractsKafkaPlayerLeaseExpiredEventEventId] = std::make_unique<contracts::kafka::PlayerLeaseExpiredEvent>();
-	gEventPrototypes[ContractsKafkaPlayerLifecycleCommandEventId] = std::make_unique<contracts::kafka::PlayerLifecycleCommand>();
-	gEventPrototypes[ContractsKafkaRoutePlayerEventEventId] = std::make_unique<contracts::kafka::RoutePlayerEvent>();
-	gEventPrototypes[InitializeActorComponentsEventEventId] = std::make_unique<InitializeActorComponentsEvent>();
-	gEventPrototypes[InitializeNpcComponentsEventEventId] = std::make_unique<InitializeNpcComponentsEvent>();
-	gEventPrototypes[InitializePlayerComponentsEventEventId] = std::make_unique<InitializePlayerComponentsEvent>();
-	gEventPrototypes[InterruptCurrentStatePbEventEventId] = std::make_unique<InterruptCurrentStatePbEvent>();
-	gEventPrototypes[MissionConditionEventEventId] = std::make_unique<MissionConditionEvent>();
-	gEventPrototypes[OnAcceptedMissionEventEventId] = std::make_unique<OnAcceptedMissionEvent>();
-	gEventPrototypes[OnConnect2CentrePbEventEventId] = std::make_unique<OnConnect2CentrePbEvent>();
-	gEventPrototypes[OnConnect2LoginEventId] = std::make_unique<OnConnect2Login>();
-	gEventPrototypes[OnMissionAwardEventEventId] = std::make_unique<OnMissionAwardEvent>();
-	gEventPrototypes[OnNodeAddPbEventEventId] = std::make_unique<OnNodeAddPbEvent>();
-	gEventPrototypes[OnNodeConnectedPbEventEventId] = std::make_unique<OnNodeConnectedPbEvent>();
-	gEventPrototypes[OnNodeRemovePbEventEventId] = std::make_unique<OnNodeRemovePbEvent>();
-	gEventPrototypes[OnSceneCreatedEventId] = std::make_unique<OnSceneCreated>();
-	gEventPrototypes[OnSceneDestroyedEventId] = std::make_unique<OnSceneDestroyed>();
-	gEventPrototypes[OnServerStartEventId] = std::make_unique<OnServerStart>();
-	gEventPrototypes[PlayerMigrationPbEventEventId] = std::make_unique<PlayerMigrationPbEvent>();
-	gEventPrototypes[PlayerUpgradeEventEventId] = std::make_unique<PlayerUpgradeEvent>();
-	gEventPrototypes[RegisterPlayerEventEventId] = std::make_unique<RegisterPlayerEvent>();
-	gEventPrototypes[S2CEnterSceneEventId] = std::make_unique<S2CEnterScene>();
-	gEventPrototypes[SkillExecutedEventEventId] = std::make_unique<SkillExecutedEvent>();
 }
 
 bool IsValidEventId(uint32_t eventId)
 {
-	return eventId < kMaxEventLen && gEventPrototypes[eventId] != nullptr;
+	return eventId < kMaxEventLen;
 }
 
-MessageUniquePtr NewEventMessage(uint32_t eventId)
-{
-	if (eventId >= kMaxEventLen || !gEventPrototypes[eventId]) {
-		return nullptr;
-	}
-	return MessageUniquePtr(gEventPrototypes[eventId]->New());
-}
-
-MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload)
-{
-	auto message = NewEventMessage(eventId);
-	if (!message) {
-		return nullptr;
-	}
-	if (!message->ParseFromString(payload)) {
-		return nullptr;
-	}
-	return message;
-}
-
-void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& message)
+bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 {
 	switch (eventId) {
-	case AcceptMissionEventEventId: dispatcher.enqueue(static_cast<const AcceptMissionEvent&>(message)); break;
-	case AfterEnterSceneEventId: dispatcher.enqueue(static_cast<const AfterEnterScene&>(message)); break;
-	case AfterLeaveSceneEventId: dispatcher.enqueue(static_cast<const AfterLeaveScene&>(message)); break;
-	case BeKillEventEventId: dispatcher.enqueue(static_cast<const BeKillEvent&>(message)); break;
-	case BeforeEnterSceneEventId: dispatcher.enqueue(static_cast<const BeforeEnterScene&>(message)); break;
-	case BeforeLeaveSceneEventId: dispatcher.enqueue(static_cast<const BeforeLeaveScene&>(message)); break;
-	case BuffTestEvetEventId: dispatcher.enqueue(static_cast<const BuffTestEvet&>(message)); break;
-	case CombatStateAddedPbEventEventId: dispatcher.enqueue(static_cast<const CombatStateAddedPbEvent&>(message)); break;
-	case CombatStateRemovedPbEventEventId: dispatcher.enqueue(static_cast<const CombatStateRemovedPbEvent&>(message)); break;
-	case ConnectToNodePbEventEventId: dispatcher.enqueue(static_cast<const ConnectToNodePbEvent&>(message)); break;
-	case ContractsKafkaBindSessionEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::BindSessionEvent&>(message)); break;
-	case ContractsKafkaKickPlayerEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::KickPlayerEvent&>(message)); break;
-	case ContractsKafkaPlayerDisconnectedEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::PlayerDisconnectedEvent&>(message)); break;
-	case ContractsKafkaPlayerLeaseExpiredEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::PlayerLeaseExpiredEvent&>(message)); break;
-	case ContractsKafkaPlayerLifecycleCommandEventId: dispatcher.enqueue(static_cast<const contracts::kafka::PlayerLifecycleCommand&>(message)); break;
-	case ContractsKafkaRoutePlayerEventEventId: dispatcher.enqueue(static_cast<const contracts::kafka::RoutePlayerEvent&>(message)); break;
-	case InitializeActorComponentsEventEventId: dispatcher.enqueue(static_cast<const InitializeActorComponentsEvent&>(message)); break;
-	case InitializeNpcComponentsEventEventId: dispatcher.enqueue(static_cast<const InitializeNpcComponentsEvent&>(message)); break;
-	case InitializePlayerComponentsEventEventId: dispatcher.enqueue(static_cast<const InitializePlayerComponentsEvent&>(message)); break;
-	case InterruptCurrentStatePbEventEventId: dispatcher.enqueue(static_cast<const InterruptCurrentStatePbEvent&>(message)); break;
-	case MissionConditionEventEventId: dispatcher.enqueue(static_cast<const MissionConditionEvent&>(message)); break;
-	case OnAcceptedMissionEventEventId: dispatcher.enqueue(static_cast<const OnAcceptedMissionEvent&>(message)); break;
-	case OnConnect2CentrePbEventEventId: dispatcher.enqueue(static_cast<const OnConnect2CentrePbEvent&>(message)); break;
-	case OnConnect2LoginEventId: dispatcher.enqueue(static_cast<const OnConnect2Login&>(message)); break;
-	case OnMissionAwardEventEventId: dispatcher.enqueue(static_cast<const OnMissionAwardEvent&>(message)); break;
-	case OnNodeAddPbEventEventId: dispatcher.enqueue(static_cast<const OnNodeAddPbEvent&>(message)); break;
-	case OnNodeConnectedPbEventEventId: dispatcher.enqueue(static_cast<const OnNodeConnectedPbEvent&>(message)); break;
-	case OnNodeRemovePbEventEventId: dispatcher.enqueue(static_cast<const OnNodeRemovePbEvent&>(message)); break;
-	case OnSceneCreatedEventId: dispatcher.enqueue(static_cast<const OnSceneCreated&>(message)); break;
-	case OnSceneDestroyedEventId: dispatcher.enqueue(static_cast<const OnSceneDestroyed&>(message)); break;
-	case OnServerStartEventId: dispatcher.enqueue(static_cast<const OnServerStart&>(message)); break;
-	case PlayerMigrationPbEventEventId: dispatcher.enqueue(static_cast<const PlayerMigrationPbEvent&>(message)); break;
-	case PlayerUpgradeEventEventId: dispatcher.enqueue(static_cast<const PlayerUpgradeEvent&>(message)); break;
-	case RegisterPlayerEventEventId: dispatcher.enqueue(static_cast<const RegisterPlayerEvent&>(message)); break;
-	case S2CEnterSceneEventId: dispatcher.enqueue(static_cast<const S2CEnterScene&>(message)); break;
-	case SkillExecutedEventEventId: dispatcher.enqueue(static_cast<const SkillExecutedEvent&>(message)); break;
+	case AcceptMissionEventEventId: {
+		AcceptMissionEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case AfterEnterSceneEventId: {
+		AfterEnterScene event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case AfterLeaveSceneEventId: {
+		AfterLeaveScene event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case BeKillEventEventId: {
+		BeKillEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case BeforeEnterSceneEventId: {
+		BeforeEnterScene event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case BeforeLeaveSceneEventId: {
+		BeforeLeaveScene event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case BuffTestEvetEventId: {
+		BuffTestEvet event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case CombatStateAddedPbEventEventId: {
+		CombatStateAddedPbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case CombatStateRemovedPbEventEventId: {
+		CombatStateRemovedPbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case ConnectToNodePbEventEventId: {
+		ConnectToNodePbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case ContractsKafkaBindSessionEventEventId: {
+		contracts::kafka::BindSessionEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case ContractsKafkaKickPlayerEventEventId: {
+		contracts::kafka::KickPlayerEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case ContractsKafkaPlayerDisconnectedEventEventId: {
+		contracts::kafka::PlayerDisconnectedEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case ContractsKafkaPlayerLeaseExpiredEventEventId: {
+		contracts::kafka::PlayerLeaseExpiredEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case ContractsKafkaPlayerLifecycleCommandEventId: {
+		contracts::kafka::PlayerLifecycleCommand event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case ContractsKafkaRoutePlayerEventEventId: {
+		contracts::kafka::RoutePlayerEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case InitializeActorComponentsEventEventId: {
+		InitializeActorComponentsEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case InitializeNpcComponentsEventEventId: {
+		InitializeNpcComponentsEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case InitializePlayerComponentsEventEventId: {
+		InitializePlayerComponentsEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case InterruptCurrentStatePbEventEventId: {
+		InterruptCurrentStatePbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case MissionConditionEventEventId: {
+		MissionConditionEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnAcceptedMissionEventEventId: {
+		OnAcceptedMissionEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnConnect2CentrePbEventEventId: {
+		OnConnect2CentrePbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnConnect2LoginEventId: {
+		OnConnect2Login event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnMissionAwardEventEventId: {
+		OnMissionAwardEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnNodeAddPbEventEventId: {
+		OnNodeAddPbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnNodeConnectedPbEventEventId: {
+		OnNodeConnectedPbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnNodeRemovePbEventEventId: {
+		OnNodeRemovePbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnSceneCreatedEventId: {
+		OnSceneCreated event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnSceneDestroyedEventId: {
+		OnSceneDestroyed event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case OnServerStartEventId: {
+		OnServerStart event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case PlayerMigrationPbEventEventId: {
+		PlayerMigrationPbEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case PlayerUpgradeEventEventId: {
+		PlayerUpgradeEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case RegisterPlayerEventEventId: {
+		RegisterPlayerEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case S2CEnterSceneEventId: {
+		S2CEnterScene event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
+	case SkillExecutedEventEventId: {
+		SkillExecutedEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		dispatcher.enqueue(event);
+		return true;
+	}
 	default:
-		break;
+		return false;
 	}
 }

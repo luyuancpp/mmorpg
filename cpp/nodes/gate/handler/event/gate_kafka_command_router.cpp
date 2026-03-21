@@ -63,12 +63,8 @@ void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::
         return;
     }
 
-    auto eventMessage = ParseEventMessage(command.event_id(), command.payload());
-    if (!eventMessage) {
+    if (!DispatchProtoEvent(command.event_id(), command.payload())) {
         LOG_WARN << "GateCommand payload decode failed, topic=" << topic << ", event_id=" << command.event_id();
-        return;
     }
-
-    DispatchProtoEvent(command.event_id(), *eventMessage);
 }
 
