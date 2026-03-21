@@ -250,7 +250,7 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		ServiceInfoIncludes  []string
 		EventIncludesBlock   string
 		HandlerClasses       []string
-		EventDispatchers     []string
+		EventDispatchCases   []string
 		InitLines            []string
 		ClientMessageIdLines []string
 		MessageIdArraySize   int
@@ -274,11 +274,6 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 {{range .HandlerClasses}}
 {{ . }}
 {{- end }}
-namespace {
-{{range .EventDispatchers}}
-{{ . }}
-{{- end }}
-} // namespace
 
 {{range .SenderFunctions}}
 {{ . }}
@@ -286,7 +281,7 @@ namespace {
 
 std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 std::array<RpcService, {{ .MessageIdArraySize }}> gRpcServiceRegistry;
-std::array<ProtoEvent, {{ .EventIdArraySize }}> gProtoEventRegistry;
+std::array<std::unique_ptr<google::protobuf::Message>, {{ .EventIdArraySize }}> gEventPrototypes;
 
 void InitMessageInfo()
 {
@@ -308,19 +303,15 @@ void InitEventInfo()
 
 bool IsValidEventId(uint32_t eventId)
 {
-	if (eventId >= gProtoEventRegistry.size()) {
-		return false;
-	}
-	return gProtoEventRegistry[eventId].prototype != nullptr;
+	return eventId < kMaxEventLen && gEventPrototypes[eventId] != nullptr;
 }
 
 MessageUniquePtr NewEventMessage(uint32_t eventId)
 {
-	if (!IsValidEventId(eventId)) {
+	if (eventId >= kMaxEventLen || !gEventPrototypes[eventId]) {
 		return nullptr;
 	}
-
-	return MessageUniquePtr(gProtoEventRegistry[eventId].prototype->New());
+	return MessageUniquePtr(gEventPrototypes[eventId]->New());
 }
 
 MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload)
@@ -329,26 +320,21 @@ MessageUniquePtr ParseEventMessage(uint32_t eventId, const std::string& payload)
 	if (!message) {
 		return nullptr;
 	}
-
 	if (!message->ParseFromString(payload)) {
 		return nullptr;
 	}
-
 	return message;
 }
 
 void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& message)
 {
-	if (!IsValidEventId(eventId)) {
-		return;
+	switch (eventId) {
+{{- range .EventDispatchCases }}
+	{{ . }}
+{{- end }}
+	default:
+		break;
 	}
-
-	auto dispatchFn = gProtoEventRegistry[eventId].dispatcher;
-	if (dispatchFn == nullptr) {
-		return;
-	}
-
-	dispatchFn(message);
 }
 `
 
@@ -357,7 +343,7 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 		serviceInfoIncludes []string
 		eventIncludes       []string
 		handlerClasses      []string
-		eventDispatchers    []string
+		eventDispatchCases  []string
 		initLines           []string
 		clientIdLines       []string
 		eventInitLines      []string
@@ -366,7 +352,6 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 		serviceIncludeSet   = make(map[string]struct{})
 		eventIncludeSet     = make(map[string]struct{})
 		handlerClassSet     = make(map[string]struct{})
-		eventDispatcherSet  = make(map[string]struct{})
 		senderFunctionSet   = make(map[string]struct{})
 		clientIDSet         = make(map[string]struct{})
 	)
@@ -457,21 +442,13 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 
 	for _, event := range globalProtoEventList {
 		eventIncludes = appendUniqueString(eventIncludes, eventIncludeSet, fmt.Sprintf("#include \"%s\"", event.ProtoInclude))
-		dispatcherName := fmt.Sprintf("Dispatch%s", event.IdName)
-		dispatcherBody := fmt.Sprintf(
-			"void %s(const google::protobuf::Message& message)\n{\n    dispatcher.enqueue(static_cast<const %s&>(message));\n}\n",
-			dispatcherName,
-			event.QualifiedName,
+		eventIdRef := event.IdName + _config.Global.Naming.EventId
+		eventDispatchCases = append(eventDispatchCases,
+			fmt.Sprintf(`case %s: dispatcher.enqueue(static_cast<const %s&>(message)); break;`, eventIdRef, event.QualifiedName),
 		)
-		eventDispatchers = appendUniqueString(eventDispatchers, eventDispatcherSet, dispatcherBody)
-		eventInitLines = append(eventInitLines, fmt.Sprintf(
-			`gProtoEventRegistry[%s%s] = ProtoEvent{"%s", std::make_unique<%s>(), &%s};`,
-			event.IdName,
-			_config.Global.Naming.EventId,
-			event.QualifiedName,
-			event.QualifiedName,
-			dispatcherName,
-		))
+		eventInitLines = append(eventInitLines,
+			fmt.Sprintf(`gEventPrototypes[%s] = std::make_unique<%s>();`, eventIdRef, event.QualifiedName),
+		)
 	}
 
 	// Step 3: Fill template data and render
@@ -480,7 +457,7 @@ void DispatchProtoEvent(uint32_t eventId, const google::protobuf::Message& messa
 		ServiceInfoIncludes:  serviceInfoIncludes,
 		EventIncludesBlock:   strings.Join(eventIncludes, "\n") + "\n" + strings.Join(EventIdHeaderIncludes(), "\n") + "\n",
 		HandlerClasses:       handlerClasses,
-		EventDispatchers:     eventDispatchers,
+		EventDispatchCases:   eventDispatchCases,
 		InitLines:            initLines,
 		ClientMessageIdLines: clientIdLines,
 		MessageIdArraySize:   int(internal.MessageIdLen()),

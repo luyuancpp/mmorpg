@@ -26,17 +26,11 @@ struct RpcService {
 	)> messageSender;
 };
 
-struct ProtoEvent {
-	const char* eventName{nullptr};
-	std::unique_ptr<::google::protobuf::Message> prototype;
-	void (*dispatcher)(const ::google::protobuf::Message& message){nullptr};
-};
-
 constexpr uint32_t kMaxMessageLen = {{ .MaxMessageLen }};
 constexpr uint32_t kMaxEventLen = {{ .MaxEventLen }};
 
 extern std::array<RpcService, kMaxMessageLen> gRpcServiceRegistry;
-extern std::array<ProtoEvent, kMaxEventLen> gProtoEventRegistry;
+extern std::array<std::unique_ptr<::google::protobuf::Message>, kMaxEventLen> gEventPrototypes;
 extern std::unordered_set<uint32_t> gClientMessageIdWhitelist;
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
