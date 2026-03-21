@@ -730,14 +730,14 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 		return;
 	}
 
-	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
+	if (request->message_content().message_id() >= gRpcMethodRegistry.size())
 	{
 		LOG_ERROR << "Message ID not found: " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kMessageIdNotFound);
 		return;
 	}
 
-	const auto& message_info = gRpcServiceRegistry.at(request->message_content().message_id());
+	const auto& message_info = gRpcMethodRegistry.at(request->message_content().message_id());
 
 	const auto service_it = gPlayerService.find(message_info.serviceName);
 	if (service_it == gPlayerService.end())
@@ -893,15 +893,15 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 
 	auto& route_data = request->route_nodes(request->route_nodes_size() - 1);
 
-	if (route_data.message_id() >= gRpcServiceRegistry.size())
+	if (route_data.message_id() >= gRpcMethodRegistry.size())
 	{
 		LOG_ERROR << "Message ID not found: " << route_data.message_id();
 		return;
 	}
 
-	const auto& messageInfo = gRpcServiceRegistry[route_data.message_id()];
+	const auto& messageInfo = gRpcMethodRegistry[route_data.message_id()];
 
-	if (!messageInfo.handlerInstance)
+	if (!messageInfo.handler)
 	{
 		LOG_ERROR << "Message service implementation not found for message ID: " << route_data.message_id();
 		return;

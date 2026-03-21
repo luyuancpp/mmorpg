@@ -305,7 +305,7 @@ void InitEventInfo()
 
 bool IsValidEventId(uint32_t eventId)
 {
-	return eventId < kMaxEventLen;
+	return eventId < kMaxEventCount;
 }
 
 bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
@@ -389,10 +389,10 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 
 			// Emit multi-line RpcMethodMeta initialization grouped by field role:
 			//   line 1: assignment + opening brace
-			//   line 2: service, method
+			//   line 2: serviceName, methodName
 			//   line 3: requestProto
 			//   line 4: responseProto
-			//   line 5: handler, protocol, nodeType [, sender] + closing brace
+			//   line 5: handler, protocol, targetNodeType [, sender] + closing brace
 			initLines = append(initLines, fmt.Sprintf("gRpcMethodRegistry[%s] = RpcMethodMeta{", messageId))
 			initLines = append(initLines, fmt.Sprintf(`    "%s", "%s",`, method.Service(), method.Method()))
 			initLines = append(initLines, fmt.Sprintf("    std::make_unique<%s>(),", method.CppRequest()))

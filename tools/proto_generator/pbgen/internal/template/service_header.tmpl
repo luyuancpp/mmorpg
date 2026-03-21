@@ -9,13 +9,13 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 struct RpcMethodMeta {
-	const char* service{nullptr};
-	const char* method{nullptr};
+	const char* serviceName{nullptr};
+	const char* methodName{nullptr};
 	std::unique_ptr<::google::protobuf::Message> requestProto;
 	std::unique_ptr<::google::protobuf::Message> responseProto;
 	std::unique_ptr<::google::protobuf::Service> handler;
 	uint32_t protocol{0};
-	uint32_t nodeType{0};
+	uint32_t targetNodeType{0};
 	std::function<void (
 		entt::registry& registry,
 		entt::entity nodeEntity,
@@ -26,7 +26,7 @@ struct RpcMethodMeta {
 };
 
 constexpr uint32_t kMaxRpcMethodCount = {{ .MaxMessageLen }};
-constexpr uint32_t kMaxEventLen = {{ .MaxEventLen }};
+constexpr uint32_t kMaxEventCount = {{ .MaxEventLen }};
 
 extern std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 

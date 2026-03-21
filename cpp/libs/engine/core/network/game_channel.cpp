@@ -1,4 +1,4 @@
-#include "game_channel.h"
+﻿#include "game_channel.h"
 #include <boost/get_pointer.hpp>
 #include <google/protobuf/descriptor.h>
 #include "muduo/base/Logging.h"
@@ -57,9 +57,9 @@ GameChannel::~GameChannel() {
 
 // 验证消息 ID 是否有效
 bool GameChannel::IsValidMessageId(uint32_t messageId) const {
-    if (messageId >= gRpcServiceRegistry.size()) {
+    if (messageId >= gRpcMethodRegistry.size()) {
         LOG_ERROR << "Invalid message ID: " << messageId
-            << " (valid range: 0 to " << gRpcServiceRegistry.size() << ")";
+            << " (valid range: 0 to " << gRpcMethodRegistry.size() << ")";
         return false;
     }
     return true;
@@ -257,14 +257,14 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessag
 void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
     if (!IsValidMessageId(rpcMessage.message_id())) return;
 
-    const auto& messageInfo = gRpcServiceRegistry[rpcMessage.message_id()];
-	if (!messageInfo.handlerInstance)
+    const auto& messageInfo = gRpcMethodRegistry[rpcMessage.message_id()];
+	if (!messageInfo.handler)
 	{
 		LOG_ERROR << "Message service implementation not found for message ID: " << rpcMessage.message_id();
 		return;
 	}
-    MessagePtr response(messageInfo.handlerInstance->GetResponsePrototype(
-        messageInfo.handlerInstance->GetDescriptor()->FindMethodByName(messageInfo.methodName)).New());
+    MessagePtr response(messageInfo.handler->GetResponsePrototype(
+        messageInfo.handler->GetDescriptor()->FindMethodByName(messageInfo.methodName)).New());
 
     if (!response->ParsePartialFromArray(rpcMessage.response().data(), static_cast<int32_t>(rpcMessage.response().size()))) {
         LOG_ERROR << "Failed to parse response for message ID: " << rpcMessage.message_id();
@@ -293,7 +293,7 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
         return;
     }
 
-    const auto& messageInfo = gRpcServiceRegistry[rpcMessage.message_id()];
+    const auto& messageInfo = gRpcMethodRegistry[rpcMessage.message_id()];
     auto it = services_->find(messageInfo.serviceName);
     if (it == services_->end()) {
         SendErrorResponse(rpcMessage, GameErrorCode::NO_SERVICE);
@@ -335,7 +335,7 @@ void GameChannel::SendErrorResponse(const GameRpcMessage& message, GameErrorCode
 
 void GameChannel::SendRouteResponse(uint32_t messageId, uint64_t id, const std::string& body) {
     // 检查 messageId 的合法性
-    if (messageId >= gRpcServiceRegistry.size()) {
+    if (messageId >= gRpcMethodRegistry.size()) {
         LOG_ERROR << "Invalid message_id: " << messageId;
         return;
     }
