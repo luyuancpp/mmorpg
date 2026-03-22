@@ -14,10 +14,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 
-// 初始化属性计算工具，不执行任何操作，但为将来可能的初始化逻辑预留
 void ActorAttributeCalculatorSystem::Initialize() {}
 
-// 更新速度属性
 void UpdateVelocity(entt::entity entity) {
     return;
     auto& velocity = tlsRegistryManager.actorRegistry.get_or_emplace<Velocity>(entity);
@@ -35,58 +33,42 @@ void UpdateVelocity(entt::entity entity) {
         velocity.set_z(velocity.z() - buffTable->movement_speed_reduction());
     }
 
-    // 使用封装函数设置运行时脏位（不要把脏位写回会被持久化的 proto）
+    // Set runtime dirty bit (do not write dirty bits back to persisted proto)
     SetActorBaseAttributesS2CAttrDirtyBit(entity, static_cast<std::size_t>(ActorBaseAttributesS2C::kVelocityFieldNumber));
 }
 
-// 更新生命值属性
 void UpdateHealth(entt::entity actorEntity) {
-    // 计算生命值属性的逻辑
 }
 
-// 更新能量值属性
 void UpdateEnergy(entt::entity actorEntity) {
-    // 计算能量值属性的逻辑
 }
 
-// 更新状态效果属性
 void UpdateStatusEffects(entt::entity actorEntity) {
-    // 更新实体的状态效果，例如中毒、减速等
 }
 
 void ResetCombatStateFlags(entt::entity actorEntity) {
-    // 获取 combatStateCollection 组件（包含所有状态）
     const auto& combatStates = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionPbComponent>(actorEntity);
-
-    // 获取基础属性的同步数据
     auto& syncData = tlsRegistryManager.actorRegistry.get_or_emplace<ActorBaseAttributesS2C>(actorEntity);
-
-    // 获取指向状态标志的指针
     auto* stateFlags = syncData.mutable_combat_state_flags()->mutable_state_flags();
 
-    // 清空现有状态标志
     stateFlags->clear();
 
-    // 遍历所有状态键并初始化为 false
     for (const auto& stateKey : combatStates.states() | std::views::keys) {
         stateFlags->emplace(stateKey, false);
     }
 }
 
-// 定义属性与计算函数的映射表
 std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs = { {
     {kVelocity, UpdateVelocity},
     {kHealth, UpdateHealth},
     {kEnergy, UpdateEnergy},
     {kCombatState, ResetCombatStateFlags}
     //{kStatusEffects, UpdateStatusEffects}
-    // 可以继续添加其他属性和计算函数
 } };
 
-// 标记属性需要更新的位
 void ActorAttributeCalculatorSystem::MarkAttributeForUpdate(const entt::entity actorEntity, const uint32_t attributeBit) {
     auto& attributeBits = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDirtyFlagsComp>(actorEntity).attributeBits;
-    attributeBits.set(attributeBit);  // 设置指定位，表示该属性需要更新
+    attributeBits.set(attributeBit);
 }
 
 void ActorAttributeCalculatorSystem::ImmediateCalculateAttributes(const entt::entity actorEntity, const uint32_t attributeBit)

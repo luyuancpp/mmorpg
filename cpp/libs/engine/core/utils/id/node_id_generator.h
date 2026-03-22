@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-//服务器重启以后失效的
+// IDs are transient; invalidated on server restart
 template <class T, size_t kNodeBit>
 class TransientNodeCompositeIdGenerator
 {

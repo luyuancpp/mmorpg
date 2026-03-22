@@ -13,7 +13,7 @@ public:
 	bool init(const std::string& brokers,
 		const std::string& groupId,
 		const std::vector<std::string>& topics,
-		const std::vector<int32_t>& partitions,  // 指定需要消费的分区
+		const std::vector<int32_t>& partitions,  // Partitions to consume
 		const MessageCallback& callback);
 
 	static KafkaConsumer& Instance() {
@@ -26,7 +26,7 @@ public:
 	bool start();
 	void stop();
 
-	// 非阻塞轮询方法
+	// Non-blocking poll
 	void poll();
 
 private:

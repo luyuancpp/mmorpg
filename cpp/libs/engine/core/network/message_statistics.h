@@ -10,4 +10,4 @@ extern std::array<MessageStatistics, kMaxRpcMethodCount> gMessageStatistics;
 
 extern std::array<std::chrono::steady_clock::time_point, kMaxRpcMethodCount> gStartTimes;
 
-extern uint64_t gTotalFlow; // 所有消息的总流量
+extern uint64_t gTotalFlow; // Total flow across all messages

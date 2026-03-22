@@ -312,7 +312,7 @@ void SkillSystem::HandleSkillDeactivate(const entt::entity casterEntity, const u
 uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	FetchAndValidateSkillTable(request->skill_table_id());
 
-	// 检查目标ID的有效性
+	// Validate target ID
 	if (!skillTable->targeting_mode().empty() && request->target_id() <= 0) {
 		LOG_ERROR << "Invalid target ID: " << request->target_id()
 			<< " provided for skill ID: " << request->skill_table_id()
@@ -320,28 +320,24 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillSkillRequest* request) 
 		return kSkillInvalidTargetId;
 	}
 
-	// 默认错误状态
 	uint32_t err = kSuccess;
 
-	// 遍历技能目标类型
 	for (auto& tabSkillType : skillTable->targeting_mode()) {
-		// 检查不需要目标的情况
 		if ((1 << tabSkillType) == kNoTargetRequired) {
-			return kSuccess;  // 无需进一步检查
+			return kSuccess;
 		}
 
-		// 检查是否为目标技能
 		if ((1 << tabSkillType) == kTargetedSkill) {
 			entt::entity target{ request->target_id() };
 
-			// 验证目标实体
+			// Validate target entity
 			if (!tlsRegistryManager.actorRegistry.valid(target)) {
 				LOG_ERROR << "Target entity with ID: " << request->target_id()
 					<< " is invalid or does not exist for skill ID: " << request->skill_table_id();
 				return kSkillInvalidTargetId;
 			}
 
-			// 检查目标实体类型
+			// Check target entity type
 			bool isValidTargetType = tlsRegistryManager.actorRegistry.any_of<Player>(target) || tlsRegistryManager.actorRegistry.any_of<Npc>(target);
 			if (!isValidTargetType) {
 				LOG_ERROR << "Target entity with ID: " << request->target_id()
@@ -350,16 +346,15 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillSkillRequest* request) 
 				return kSkillInvalidTargetId;
 			}
 
-			return kSuccess;  // 验证通过
+			return kSuccess;
 		}
 
-		// 检查范围技能
 		if ((1 << tabSkillType) == kAreaOfEffect) {
-			return kSuccess;  // 验证通过
+			return kSuccess;
 		}
 	}
 
-	return err;  // 返回错误状态（如果有）
+	return err;
 }
 
 uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const SkillTable* skillTable) {
@@ -515,8 +510,6 @@ void SkillSystem::RemoveEffect(entt::entity casterEntity, const uint64_t skillId
 	}
 }
 
-
-// 判断目标是否已死亡
 bool IsTargetDead(entt::entity targetEntity) {
     auto& targetBaseAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(targetEntity);
     return targetBaseAttributes.health() <= 0;
@@ -524,32 +517,28 @@ bool IsTargetDead(entt::entity targetEntity) {
 
 
 double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity target, double baseDamage) {
-    // 获取施法者的属性，例如力量和暴击率
     auto& casterAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(casterEntity);
     double critChance = casterAttributes.critchance();
     double strength = casterAttributes.strength();
 
-    // 获取目标的属性，例如护甲和抗性
     auto& targetAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(target);
     double armor = targetAttributes.armor();
     double resistance = targetAttributes.resistance();
 
-    // 计算暴击和穿透的影响
-    double finalDamage = baseDamage * (1 + strength * 0.1);  // 力量影响伤害
-    finalDamage = finalDamage - armor;  // 减去护甲值
-    finalDamage *= (1 - resistance * 0.01);  // 计算抗性的减伤效果
+    // Apply crit and penetration modifiers
+    double finalDamage = baseDamage * (1 + strength * 0.1);
+    finalDamage = finalDamage - armor;
+    finalDamage *= (1 - resistance * 0.01);
 
-    // 暴击处理
     if (rand() / static_cast<double>(RAND_MAX) < critChance) {
-        finalDamage *= 2;  // 暴击造成双倍伤害
+        finalDamage *= 2;
     }
 
-    return std::max(finalDamage, 0.0);  // 确保伤害不为负数
+    return std::max(finalDamage, 0.0);
 }
 
 
 void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponent& damageEvent) {
-    // 获取施法者的技能上下文
     auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
     auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
 
@@ -558,10 +547,8 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
         return;
     }
 
-    // 获取技能表
 	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
 
-    // 获取目标的 BaseAttributesPbComponent 用于判断是否死亡
     auto targetEntity = entt::to_entity(damageEvent.target());
 
 	if (!tlsRegistryManager.actorRegistry.valid(targetEntity))
@@ -569,37 +556,27 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
 		return;
 	}
 
-    // 如果目标已经死亡，停止进一步处理
     if (IsTargetDead(targetEntity)) {
         LOG_INFO << "Target is already dead, skipping damage calculation.";
         return;
     }
 
-    // 获取施法者的等级组件并设置伤害参数
     auto& levelComponent = tlsRegistryManager.actorRegistry.get_or_emplace<LevelPbComponent>(casterEntity);
     SkillTableManager::Instance().SetDamageParam({ static_cast<double>(levelComponent.level()) });
 
-    // 设置攻击者 ID
     damageEvent.set_attacker_id(entt::to_integral(casterEntity));
 
-    // 计算技能的基础伤害
     double baseDamage = SkillTableManager::Instance().GetDamage(skillContentIt->second->skilltableid());
-
-    // 计算最终伤害
     double finalDamage = CalculateFinalDamage(casterEntity, targetEntity, baseDamage);
-
-    // 设置最终的伤害值
     damageEvent.set_damage(finalDamage);
 }
 
 
-// 触发伤害前的事件
 void TriggerBeforeDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
     BuffSystem::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
     BuffSystem::OnBeforeTakeDamage(casterEntity, targetEntity, damageEvent);
 }
 
-// 处理目标生命值的减少
 void ApplyDamage(BaseAttributesPbComponent& baseAttributesPBComponent, const DamageEventPbComponent& damageEvent) {
     const auto damage = static_cast<uint64_t>(std::ceil(damageEvent.damage()));
 
@@ -611,7 +588,6 @@ void ApplyDamage(BaseAttributesPbComponent& baseAttributesPBComponent, const Dam
     }
 }
 
-// 触发被击杀事件
 void TriggerBeKillEvent(const entt::entity casterEntity, const entt::entity target) {
 	BeKillEvent beKillEvent;
 	beKillEvent.set_caster(entt::to_integral(casterEntity));
@@ -620,53 +596,38 @@ void TriggerBeKillEvent(const entt::entity casterEntity, const entt::entity targ
 	dispatcher.trigger(beKillEvent);
 }
 
-// 触发伤害后的事件
 void TriggerAfterDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
 	BuffSystem::OnAfterGiveDamage(casterEntity, targetEntity, damageEvent);
 	BuffSystem::OnAfterTakeDamage(casterEntity, targetEntity, damageEvent);
 }
 
-// 处理目标死亡逻辑
 void HandleTargetDeath(const entt::entity casterEntity, const entt::entity target, const DamageEventPbComponent& damageEvent) {
-    // 触发死亡前的事件
     BuffSystem::OnBeforeDead(target); 
-
-    // 触发死亡后的事件
     BuffSystem::OnAfterDead(target);
 
-    // 如果不是自杀，触发击杀事件
+    // Trigger kill event if not self-damage
     if (casterEntity != target) {
         BuffSystem::OnKill(casterEntity);
     }
 
-    // 生成并触发被击杀事件
     TriggerBeKillEvent(casterEntity, target);
 }
 
-// 处理具体的伤害逻辑
 void DealDamage(DamageEventPbComponent& damageEvent, const entt::entity caster, const entt::entity target) {
 	auto& baseAttributesPBComponent = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(target);
 
-	// 如果目标已死亡，直接返回
 	if (IsTargetDead(target)) {
 		return;
 	}
 
-	// 设置伤害事件的目标
 	damageEvent.set_target(entt::to_integral(target)); 
-
-	// 触发伤害前事件
 	TriggerBeforeDamageEvents(caster, target, damageEvent);
-
-	// 处理目标生命值的减少
 	ApplyDamage(baseAttributesPBComponent, damageEvent);
 
-	// 检查目标是否死亡
 	if (IsTargetDead(target)) {
 		HandleTargetDeath(caster, target, damageEvent);
 	}
 
-	// 触发伤害后事件
 	TriggerAfterDamageEvents(caster, target, damageEvent);
 }
 
@@ -690,10 +651,9 @@ void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64
 	DamageEventPbComponent damageEvent;
 	damageEvent.set_skill_id(skillId);
 	damageEvent.set_target(skillContext->target());
-	CalculateSkillDamage(casterEntity, damageEvent); // 计算伤害
-	DealDamage(damageEvent, casterEntity, targetEntity); // 处理伤害
+	CalculateSkillDamage(casterEntity, damageEvent);
+	DealDamage(damageEvent, casterEntity, targetEntity);
 
-	// 触发技能执行事件
 	SkillExecutedEvent skillExecutedEvent;
 	skillExecutedEvent.set_caster(entt::to_integral(casterEntity));
 	skillExecutedEvent.set_target(skillContext->target());

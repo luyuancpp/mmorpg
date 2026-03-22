@@ -6,24 +6,20 @@
 #include "muduo/net/TcpConnection.h"
 #include "network/game_channel.h"
 
-// RpcSession：封装了与 TcpConnection 相关的 RPC 操作
 class RpcSession
 {
 public:
-    // 构造函数：初始化 TcpConnection 和 GameChannel
     explicit RpcSession(const muduo::net::TcpConnectionPtr& conn,
         const std::string& uuid)
 		: connection(conn), 
           node_uuid(uuid),
           channel_(boost::any_cast<GameChannelPtr>(conn->getContext())) {}
 
-    // 检查连接是否有效
     [[nodiscard]] bool IsConnected() const
     {
         return connection && connection->connected();
     }
 
-    // 调用远程方法
     void CallRemoteMethod(uint32_t messageId, const ::google::protobuf::Message& request) const
     {
         if (!IsConnected()) {
@@ -33,7 +29,6 @@ public:
         channel_->CallRemoteMethod(messageId, request);
     }
 
-    // 发送请求
     void SendRequest(uint32_t messageId, const ::google::protobuf::Message& message) const
     {
         if (!IsConnected()) {
@@ -43,7 +38,6 @@ public:
         channel_->SendRequest(messageId, message);
     }
 
-    // 路由消息到节点
     void RouteMessageToNode(uint32_t messageId, const ::google::protobuf::Message& message) const
     {
         if (!IsConnected()) {
@@ -53,7 +47,6 @@ public:
         channel_->RouteMessageToNode(messageId, message);
     }
 
-    // 发送路由响应
     void SendRouteResponse(uint32_t messageId, uint64_t id, const std::string& messageBytes) const
     {
         if (!IsConnected()) {
@@ -63,10 +56,10 @@ public:
         channel_->SendRouteResponse(messageId, id, messageBytes);
     }
 
-    muduo::net::TcpConnectionPtr connection; // 连接对象
+    muduo::net::TcpConnectionPtr connection;
 
 private:
-    GameChannelPtr channel_; // 游戏通道对象
+    GameChannelPtr channel_;
 	std::string node_uuid;
 	bool handshaked = false;
 };

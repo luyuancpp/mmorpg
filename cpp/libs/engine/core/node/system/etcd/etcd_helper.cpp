@@ -11,7 +11,7 @@ void EtcdHelper::PutServiceNodeInfo(const NodeInfo& nodeInfo, const std::string&
     request.set_key(key);
 	request.set_prev_kv(true);
 
-    // 将 NodeInfo 序列化为 JSON 字符串，设置为 value
+
     std::string jsonValue;
     auto status = google::protobuf::util::MessageToJsonString(nodeInfo, &jsonValue);
     if (!status.ok()) {
@@ -59,9 +59,8 @@ void EtcdHelper::StopAllWatching() {
 }
 
 void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
-	// 创建 LeaseGrantRequest 请求对象
 	etcdserverpb::LeaseGrantRequest leaseReq;
-	leaseReq.set_ttl(ttlSeconds);  // 设置 TTL（生存时间）
+	leaseReq.set_ttl(ttlSeconds);
 
 	SendLeaseLeaseGrant(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), leaseReq);
 }
@@ -69,14 +68,13 @@ void EtcdHelper::GrantLease(uint32_t ttlSeconds) {
 void EtcdHelper::PutIfAbsent(const std::string& key, const std::string& newValue, int64_t currentVersion, int64_t lease) {
 	etcdserverpb::TxnRequest txn;
 
-	// Compare：version == 0 → key 不存在
+	// Compare: version == 0 means key does not exist
 	auto& compare = *txn.add_compare();
 	compare.set_key(key);
 	compare.set_target(etcdserverpb::Compare::VERSION);
 	compare.set_result(etcdserverpb::Compare::EQUAL);
 	compare.set_version(currentVersion);
 
-	// Success：put(key, value)
 	auto& successOp = *txn.add_success()->mutable_request_put();
 	successOp.set_key(key);
 	successOp.set_value(newValue);
@@ -130,7 +128,7 @@ void EtcdHelper::DeleteRange(const std::string& key, bool isPrefix) {
 
 	if (isPrefix) {
 		std::string range_end = key;
-		range_end.back() += 1;  // prefix 范围删除
+		range_end.back() += 1;  // prefix range delete
 		request.set_range_end(range_end);
 	}
 

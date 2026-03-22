@@ -10,7 +10,7 @@
 
 
 inline uint64_t StableHash64(const std::string& data) {
-	return XXH64(data.data(), data.size(), 0); // seed 可以设为固定值
+	return XXH64(data.data(), data.size(), 0);
 }
 
 inline uint64_t StableHash64(uint32_t val) {
@@ -59,7 +59,7 @@ public:
             return nodes_.end();
         }
 
-        // todo 这里在该节点前面加的话节点就变了
+        // TODO: inserting before this node changes the ring mapping
         auto it = nodes_.lower_bound(hash_id);
         if (it == nodes_.end()) {
             it = nodes_.begin();

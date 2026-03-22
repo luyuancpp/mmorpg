@@ -7,14 +7,12 @@ class FastQueue {
 public:
 	using Ptr = T*;
 
-	// 入队：构造一个元素并加入队列
 	Ptr enqueue(const T& value) {
-		Ptr ptr = pool.construct(value);  // 从池中分配并构造
+		Ptr ptr = pool.construct(value);
 		queue.push_back(ptr);
 		return ptr;
 	}
 
-	// 出队：移除并返回第一个元素指针
 	Ptr dequeue() {
 		if (queue.empty()) return nullptr;
 		Ptr ptr = queue.front();
@@ -22,14 +20,13 @@ public:
 		return ptr;
 	}
 
-	// 查看队头但不移除
 	Ptr front() const {
 		return queue.empty() ? nullptr : queue.front();
 	}
 
 	void clear() {
 		queue.clear();
-		// 如果确实想回收所有内存（慎用）：
+		// To reclaim all pool memory (use with caution):
 		// pool.purge_memory();
 	}
 

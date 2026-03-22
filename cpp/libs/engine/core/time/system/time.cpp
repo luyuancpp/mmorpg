@@ -6,21 +6,18 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 uint64_t PTimeToSeconds(const boost::posix_time::ptime& pt) {
-	// 1970年1月1日的时间点
 	boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1), boost::posix_time::time_duration(0, 0, 0));
-	return (pt - epoch).total_seconds();  // 返回自1970年以来的秒数
+	return (pt - epoch).total_seconds();
 }
 
 uint64_t PTimeToMilliseconds(const boost::posix_time::ptime& pt) {
-	// 1970年1月1日的时间点
 	boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1), boost::posix_time::time_duration(0, 0, 0));
-	return (pt - epoch).total_milliseconds();  // 返回自1970年以来的毫秒数
+	return (pt - epoch).total_milliseconds();
 }
 
 uint64_t PTimeToMicroseconds(const boost::posix_time::ptime& pt) {
-	// 1970年1月1日的时间点
 	boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1), boost::posix_time::time_duration(0, 0, 0));
-	return (pt - epoch).total_microseconds();  // 返回自1970年以来的微秒数
+	return (pt - epoch).total_microseconds();
 }
 
 uint64_t TimeSystem::NowMicroseconds(){

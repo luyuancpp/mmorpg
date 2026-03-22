@@ -69,7 +69,7 @@ public:
 		MessageKey message_key;
 		std::string redis_key;
 		MessageValuePtr message_value;
-		std::any extra_data;  // 用于存储附加信息
+		std::any extra_data;
 	};
 
 	using ElementPtr = std::shared_ptr<Element>;
@@ -104,7 +104,7 @@ public:
 			return;
 		}
 
-		// 调用 Lua 脚本原子执行 SET 和 SADD
+		// Atomically SET and SADD via Lua script
 		hiredis_.command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
 			"EVAL %s 1 %b %b",
 			kSaveAndMarkLuaScript,
@@ -118,7 +118,7 @@ public:
 		std::string redis_key = full_name() + ":" + std::to_string(key);
 		if (loading_queue_.find(redis_key) != loading_queue_.end())
 		{
-			return; // 已在加载中
+			return; // Already loading
 		}
 
 		ElementPtr element = std::make_shared<Element>();
@@ -139,7 +139,7 @@ public:
 		auto it = loading_queue_.find(redis_key);
 		if (it == loading_queue_.end())
 		{
-			return false; // 未找到，说明不在加载中
+			return false; // Not in loading queue
 		}
 
 		it->second->extra_data = std::move(new_extra_data);

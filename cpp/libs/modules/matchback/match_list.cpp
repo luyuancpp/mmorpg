@@ -349,8 +349,8 @@ namespace GameMMR
     {
         std::size_t matchsize = 0;
 
-        scene_camps_vec_type scenecamps(GetMaxSceneCampSize());//15v15: 2ÕóÓª
-        std::size_t nTeamSize = GetPerCampPlayerSize() / GetPerTeamMemberMaxSize();//15v15: 3¶ÓÎé
+        scene_camps_vec_type scenecamps(GetMaxSceneCampSize()); // e.g. 15v15: 2 camps
+        std::size_t nTeamSize = GetPerCampPlayerSize() / GetPerTeamMemberMaxSize(); // e.g. 15v15: 3 teams
 
         match_queue_type successList;
         i32_v_type  vEraseIndex;

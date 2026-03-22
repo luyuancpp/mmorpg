@@ -13,10 +13,10 @@
 #include <thread_context/registry_manager.h>
 #include "thread_context/dispatcher_manager.h"
 
-// BuffImplSystem: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑
+// BuffImplSystem: Handles buff lifecycle logic
 class BuffImplSystem {
 public:
-    // 定期调用逻辑 (每帧或定时触发)
+    // Periodic tick logic (per-frame or timer-triggered)
     static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
         if (!buffTable) return false;
 
@@ -28,7 +28,7 @@ public:
         }
     }
 
-    // Buff开始时的逻辑
+    // On buff start
     static bool OnBuffStart(const entt::entity parent, const BuffComp& buffComp, const BuffTable* buffTable) {
         if (!buffTable) return false;
 
@@ -40,7 +40,7 @@ public:
         }
     }
 
-    // Buff销毁时的逻辑
+    // On buff destroy
     static bool OnBuffDestroy(const entt::entity parent, uint64_t buffId, const BuffTable* buffTable) {
         if (!buffTable) return false;
 
@@ -52,7 +52,7 @@ public:
         }
     }
 
-    // 伤害结算前的逻辑
+    // Before damage is applied
     static void OnBeforeGiveDamage(
         const entt::entity casterEntity,
         const entt::entity targetEntity,
@@ -60,12 +60,12 @@ public:
         HandleBuffEffectsOnDamage(casterEntity, targetEntity, damageEvent);
     }
 
-    // 技能命中时的逻辑
+    // On skill hit
     static void OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity) {
         UpdateLastDamageOrSkillHitTime(casterEntity, targetEntity);
     }
 
-    // 更新最后一次伤害或技能命中时间
+    // Update last damage or skill hit timestamp
     static void UpdateLastDamageOrSkillHitTime(const entt::entity casterEntity, const entt::entity targetEntity) {
         UInt64Set buffsToRemoveTarget;
 
@@ -85,9 +85,8 @@ public:
         }
     }
 private:
-    // **具体实现部分**
 
-    // Silence Buff 开始逻辑
+    // Silence buff start handler
     static bool HandleBuffStartSilence(const entt::entity parent, const BuffComp& buffComp) {
         CombatStateAddedPbEvent event;
         event.set_actor_entity(entt::to_integral(parent));
@@ -98,7 +97,7 @@ private:
         return true;
     }
 
-    // Silence Buff 销毁逻辑
+    // Silence buff destroy handler
     static bool HandleBuffDestroySilence(const entt::entity parent, const uint64_t buffId) {
         CombatStateRemovedPbEvent event;
         event.set_actor_entity(entt::to_integral(parent));
@@ -109,7 +108,7 @@ private:
         return true;
     }
 
-    // 无伤害或技能命中时间检查逻辑
+    // No-damage-or-skill-hit duration check
     static bool HandleIntervalNoDamageOrSkillHit(
         const entt::entity parent,
         BuffComp& buffComp,
@@ -122,14 +121,14 @@ private:
 
         auto elapsedTime = TimeSystem::NowMilliseconds() - dataPtr->last_time();
         if (static_cast<double>(elapsedTime) > buffTable->nodamageorskillhitinlastseconds()) {
-            return true; // 条件满足
+            return true; // condition met
         }
 
         BuffSystem::AddSubBuffs(parent, buffTable, buffComp);
         return false;
     }
 
-    // Buff对伤害的影响
+    // Apply buff effects to damage
     static void HandleBuffEffectsOnDamage(
         const entt::entity casterEntity,
         const entt::entity targetEntity,
@@ -154,7 +153,7 @@ private:
 
     }
 
-    // 处理下一次基础攻击的 Buff 逻辑
+    // Next basic attack buff handler
     static void ApplyNextBasicAttackBuff(
         BuffComp& buffComp,
 		const BuffTable* buffTable,

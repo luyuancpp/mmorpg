@@ -153,7 +153,7 @@ void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity player)
 
 }
 
-//todo 检测
+//todo validate
 void PlayerLifecycleSystem::RemovePlayerSession(const Guid playerId)
 {
 	auto playerIt = tlsPlayerList.find(playerId);
@@ -218,7 +218,7 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 
 	PlayerLifecycleSystem::SavePlayerToRedis(player);
 
-	//todo 存完之后center 才能再次登录
+	// TODO: Only allow re-login after save completes
 
 }
 
@@ -279,24 +279,21 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& p
 
 	LOG_INFO << "[InitPlayerFromAllData] Init player: " << playerId;
 
-	// 1. 创建实体
 	auto player = tlsRegistryManager.actorRegistry.create();
 
-	// 2. 注册全局玩家实体映射
+	// Register in global player-entity map
 	if (const auto [it, inserted] = tlsPlayerList.emplace(playerId, player); !inserted)
 	{
 		LOG_ERROR << "[InitPlayerFromAllData] Player already exists in GlobalPlayerList: " << playerId;
 		return entt::null;
 	}
 
-	// 3. 设置基本组件
 	tlsRegistryManager.actorRegistry.emplace<Player>(player);
 	tlsRegistryManager.actorRegistry.emplace<Guid>(player, playerId);
 
-	// 4. 反序列化全量数据
 	PlayerAllDataMessageFieldsUnMarshal(player, playerAllData);
 
-	// 5. 初始化必要数据（仅首次注册时）
+	// First-time registration: initialize defaults
 	if (playerAllData.player_database_data().uint64_pb_component().registration_timestamp() <= 0)
 	{
 		tlsRegistryManager.actorRegistry.get_or_emplace<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
@@ -307,13 +304,12 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& p
 		dispatcher.trigger(registerPlayer);
 	}
 
-	// 6. 设置视野
 	tlsRegistryManager.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
 
 	// Centre decommissioned: centre_node_id no longer tracked in session snapshot.
 	// player_locator (Go) owns the canonical session/location record.
 
-	// 8. 初始化系统组件事件
+	// Fire component initialization events
 	InitializeActorComponentsEvent initActorEvent;
 	initActorEvent.set_actor_entity(entt::to_integral(player));
 	dispatcher.trigger(initActorEvent);
@@ -322,7 +318,6 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& p
 	initPlayerEvent.set_actor_entity(entt::to_integral(player));
 	dispatcher.trigger(initPlayerEvent);
 
-	// 9. 进入场景节点
 	EnterScene(player, enterInfo);
 
 	return player;

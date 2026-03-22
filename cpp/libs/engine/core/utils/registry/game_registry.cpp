@@ -18,7 +18,7 @@ void DestroyEntity(entt::registry& registry, entt::entity entity)
 
 entt::entity CreateEntityIfNotExists(entt::registry& registry, entt::entity id) {
 	if (registry.valid(id)) {
-		return entt::null; // 已存在，无法创建
+		return entt::null; // Already exists
 	}
 
 	entt::entity created = registry.create(id);
@@ -26,7 +26,7 @@ entt::entity CreateEntityIfNotExists(entt::registry& registry, entt::entity id) 
 		LOG_ERROR << "CreateEntityIfNotExists: Failed to create requested entity id=" << entt::to_integral(id)
 			<< ", but created id=" << entt::to_integral(created);
         PrintDefaultStackTrace();
-		DestroyEntity(registry, created); // 清理失败创建
+		DestroyEntity(registry, created); // Clean up failed creation
 		return entt::null;
 	}
 
@@ -35,7 +35,7 @@ entt::entity CreateEntityIfNotExists(entt::registry& registry, entt::entity id) 
 
 entt::entity RecreateEntity(entt::registry& registry, entt::entity id) {
 	if (registry.valid(id)) {
-		DestroyEntity(registry, id); // 先删除旧实体
+		DestroyEntity(registry, id); // Destroy old entity first
 	}
 
 	entt::entity created = registry.create(id);
@@ -43,7 +43,7 @@ entt::entity RecreateEntity(entt::registry& registry, entt::entity id) {
 		LOG_ERROR << "ResetEntity: Failed to reset entity id=" << entt::to_integral(id)
 			<< ", but created id=" << entt::to_integral(created);
         PrintDefaultStackTrace();
-		DestroyEntity(registry, created); // 清理异常创建
+		DestroyEntity(registry, created); // Clean up unexpected entity
 		return entt::null;
 	}
 

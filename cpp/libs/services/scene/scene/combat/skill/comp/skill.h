@@ -3,24 +3,24 @@
 #include "proto/common/component/skill_comp.pb.h"
 
 
-//前摇技能timer
+// Pre-cast timer
 struct CastingTimerComp
 {
     TimerTaskComp timer;
 };
 
-//后摇技能timer
+// Post-cast recovery timer
 struct RecoveryTimerComp
 {
     TimerTaskComp timer;
 };
 
-//引导技能timer
+// Channel finish timer
 struct ChannelFinishTimerComp
 {
     TimerTaskComp timer;
 };
-//引导技能timer
+// Channel interval timer
 struct ChannelIntervalTimerComp
 {
     TimerTaskComp timer;
@@ -28,5 +28,5 @@ struct ChannelIntervalTimerComp
 
 using SkillContextPtrComp = std::shared_ptr<SkillContextPBComponent>;
 
-// 存储技能上下文信息的容器
+// Skill context container
 using  SkillContextCompMap = std::unordered_map<uint64_t, SkillContextPtrComp>;

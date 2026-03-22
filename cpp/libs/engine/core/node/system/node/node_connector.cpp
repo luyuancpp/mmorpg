@@ -73,7 +73,7 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo& nodeInfo) {
 		<< ", Port: " << nodeInfo.endpoint().port()
 		<< ", NodeType: " << nodeInfo.node_type();
 
-	//todo 如果重连后连上了不同的gate会不会有异步问题
+	//todo potential async issue if reconnect reaches a different gate
 }
 
 void NodeConnector::ConnectToTcpNode(const NodeInfo& nodeInfo) {
@@ -126,7 +126,7 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& nodeInfo) {
 }
 
 void NodeConnector::ConnectToHttpNode(const NodeInfo&) {
-	// HTTP连接逻辑可扩展
+	// HTTP connection — extensible
 }
 
 void NodeConnector::ConnectAllNodes() {

@@ -13,7 +13,6 @@ public:
 		rng.seed(seed);
 	}
 
-	// 限定整数类型
 	template <std::integral IntType>
 	IntType Rand(IntType min, IntType max)
 	{
@@ -21,7 +20,6 @@ public:
 		return dist(rng);
 	}
 
-	// 限定浮点类型（float 或 double）
 	template <std::floating_point FloatType>
 	FloatType RandReal(FloatType min, FloatType max)
 	{

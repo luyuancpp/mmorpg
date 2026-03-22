@@ -11,7 +11,7 @@
 #include "proto/common/component/game_node_comp.pb.h"
 
 using SceneList = std::unordered_map<uint32_t, EntityUnorderedSet>;
-using ScenePlayers = EntityUnorderedSet; // 弱引用，要解除玩家和场景的耦合
+using ScenePlayers = EntityUnorderedSet; // weak refs; decouples players from scenes
 
 struct MainSceneNode
 {
@@ -70,7 +70,7 @@ private:
 
 
 struct NodeStateComp {
-	// 加上这个就能直接用枚举比较
+	// implicit conversion to enum for direct comparison
 	operator NodeState() const {
 		return state;
 	}
@@ -87,7 +87,7 @@ struct NodePressureComp {
 		return state;
 	}
 
-	// 可选：添加便捷比较
+	// convenience comparison operators
 	bool operator==(NodePressureState other) const {
 		return state == other;
 	}

@@ -1,6 +1,5 @@
 #include "actor_state_attribute_sync.h"
 
-// 引入必要的头文件
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
@@ -21,13 +20,11 @@
 #include <generated/attribute/attributedelta5framess2c_attribute_sync.h>
 #include <generated/attribute/attributedelta2framess2c_attribute_sync.h>
 
-// 定义帧同步频率的配置数组大小
 constexpr uint32_t kSyncFrequencyArraySize = 5;
 
-// 别名：定义同步频率数组类型
 using SyncFrequencyArray = std::array<uint32_t, kSyncFrequencyArraySize>;
 
-// 定义不同距离级别的同步频率
+// Sync frequencies per distance level
 constexpr SyncFrequencyArray kLevel1SyncFrequencies{
 	eAttributeSyncFrequency::kSyncEvery2Frames,
 	eAttributeSyncFrequency::kSyncEvery5Frames,
@@ -43,40 +40,34 @@ constexpr SyncFrequencyArray kLevel2SyncFrequencies{
 constexpr SyncFrequencyArray kLevel3SyncFrequencies{
 	eAttributeSyncFrequency::kSyncEvery2Frames };
 
-// 定义距离级别同步配置结构体，包含同步频率和获取实体列表的函数指针
+// Distance-level sync config: sync frequencies + entity list retrieval function
 struct DistanceSyncConfig {
 	const SyncFrequencyArray& syncFrequencies;
 	void (*retrieveEntityList)(const entt::entity, EntityVector&);
 };
 
-// 定义不同距离级别的同步配置
 constexpr DistanceSyncConfig kDistanceSyncConfigs[] = {
 	{kLevel1SyncFrequencies, ActorStateAttributeSyncSystem::GetNearbyLevel1Entities},
 	{kLevel2SyncFrequencies, ActorStateAttributeSyncSystem::GetNearbyLevel2Entities},
 	{kLevel3SyncFrequencies, ActorStateAttributeSyncSystem::GetNearbyLevel3Entities}
 };
 
-// 通用的同步函数，根据不同距离级别执行同步
+// Sync attributes for a given distance level
 void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& nearbyEntityList, const DistanceSyncConfig& distanceSyncConfig) {
 	const auto currentFrame = tlsFrameTimeManager.frameTime.current_frame();
 
-	// 获取该距离级别的实体列表
 	distanceSyncConfig.retrieveEntityList(entity, nearbyEntityList);
 
-	// 根据每个帧同步频率配置进行属性同步
 	for (const auto& frequency : distanceSyncConfig.syncFrequencies) {
-		// 添加检查，确保 frequency 大于 0
 		if (frequency > 0 && currentFrame % frequency == 0) {
 			ActorStateAttributeSyncSystem::SyncAttributes(entity, nearbyEntityList, frequency);
 		}
 	}
 
-	// 清空实体列表，为下一个距离级别的同步做准备
 	nearbyEntityList.clear();
 }
 
 
-// 系统更新函数，遍历每个实体并按距离级别进行属性同步
 void ActorStateAttributeSyncSystem::Update(const double delta)
 {
 	EntityVector nearbyEntityList;
@@ -88,19 +79,15 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 
 		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, aoiListComp.aoiList);
 
-		// 处理各距离级别的同步，迭代 kDistanceSyncConfigs 数组，动态处理距离级别
 		for (const auto& distanceSyncConfig : kDistanceSyncConfigs) {
 			SyncAttributesForDistanceLevel(entity, nearbyEntityList, distanceSyncConfig);
 		}
 	}
 }
 
-// 初始化同步工具类，当前没有初始化逻辑
 void ActorStateAttributeSyncSystem::Initialize() {
-	// 可添加全局初始化逻辑
 }
 
-// 获取附近一级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities) {
 	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
@@ -116,7 +103,6 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity e
 	}
 }
 
-// 获取附近二级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity entity, EntityVector& nearbyEntities) {
 	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
@@ -132,7 +118,6 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity e
 	}
 }
 
-// 获取附近三级实体列表
 void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity entity, EntityVector& nearbyEntities) {
 	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
@@ -147,7 +132,6 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity e
 	}
 }
 
-// 同步属性，根据频率决定同步内容
 void ActorStateAttributeSyncSystem::SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency) {
     if (nearbyEntities.empty()) return;
 

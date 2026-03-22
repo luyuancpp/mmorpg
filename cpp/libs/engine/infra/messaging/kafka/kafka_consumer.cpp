@@ -7,13 +7,12 @@ constexpr int kMaxMessagesPerPoll = 128;
 
 bool KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 	const std::vector<std::string>& topics,
-	const std::vector<int32_t>& partitions,  // 需要消费的分区
+	const std::vector<int32_t>& partitions,
 	const MessageCallback& callback) {
 	msgCallback_ = callback;
 
 	std::string errstr;
 
-	// 配置 Kafka consumer
 	conf_.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
 	conf_->set("bootstrap.servers", brokers, errstr);
 	conf_->set("group.id", groupId, errstr);
@@ -27,7 +26,7 @@ bool KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 		return false;
 	}
 
-	// 如果需要指定消费的分区，使用 assign()
+	// Use assign() for specific partitions
 	if (!partitions.empty()) {
 		std::vector<RdKafka::TopicPartition*> assignedPartitions;
 		for (int32_t partition : partitions) {
@@ -52,7 +51,7 @@ bool KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 		LOG_INFO << "Assigned to specific partitions.";
 	}
 	else {
-		// 默认使用订阅方式，如果没有指定分区
+		// Fall back to subscribe mode
 		RdKafka::ErrorCode err = consumer_->subscribe(topics);
 		if (err) {
 			LOG_ERROR << "Failed to subscribe to topics: " << RdKafka::err2str(err);
@@ -85,7 +84,7 @@ void KafkaConsumer::stop() {
 	if (running_) {
 		running_ = false;
 		if (consumer_) {
-			consumer_->close();  // 正确关闭 consumer
+			consumer_->close();
 		}
 	}
 }

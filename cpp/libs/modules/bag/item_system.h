@@ -12,5 +12,5 @@ struct InitItemParam
 	ItemPBComponent itemPBComp;
 };
 
-//todo 放装备列表，装备有一堆自己的guild
+//todo equipment list with unique guids per piece
 void InitItem(InitItemParam& param);

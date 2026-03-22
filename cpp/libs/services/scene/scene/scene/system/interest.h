@@ -15,11 +15,11 @@ public:
 
     static void RemoveAoiEntity(const entt::entity watcher, const entt::entity target);
 
-    // 通知所有关注某个实体的观察者
+    // Notify all watchers observing a target entity
     static void NotifyWatchers(const entt::entity target);
 
 private:
-    // 更新观察者的逻辑
+    // Watcher notification logic
     static void NotifyWatcher(entt::entity watcher, entt::entity target);
 };
 

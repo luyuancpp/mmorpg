@@ -36,17 +36,16 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_
 
     auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
 
-    // 如果 SessionMap 中没有记录当前 session，说明已经断开或无效
+    // Session not found in SessionMap — already disconnected or invalid
     if (SessionMap().find(sessionPbComp.gate_session_id()) == SessionMap().end())
     {
         return;
     }
 
-    // 如果 player 已存在（例如我们在 HandleFirstLogin 里已预写 snapshot），则复用该实体并更新组件；否则新建实体
+    // Reuse existing entity if player already exists; otherwise create a new one
     entt::entity playerEntity = entt::null;
     auto it = tlsPlayerList.find(playerId);
     if (it == tlsPlayerList.end()) {
-        // 创建新实体并注册到 tlsPlayerList
         playerEntity = tlsRegistryManager.actorRegistry.create();
         if (const auto [first, success] = tlsPlayerList.emplace(playerId, playerEntity); !success)
         {
@@ -54,7 +53,6 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_
             return;
         }
 
-        // 填充必要组件
         tlsRegistryManager.actorRegistry.emplace<Player>(playerEntity);
         tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity, playerId);
         tlsRegistryManager.actorRegistry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
@@ -65,11 +63,10 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_
         LOG_INFO << "Player login enter scene handled (created): " << playerId;
     }
     else {
-        // 实体已存在，更新或填充缺失的组件
+        // Entity exists — update or fill missing components
         playerEntity = it->second;
         auto& registry = tlsRegistryManager.actorRegistry;
 
-        // 更新 snapshot
         registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity) = sessionPbComp;
 
         if (!registry.try_get<Player>(playerEntity)) registry.emplace<Player>(playerEntity);

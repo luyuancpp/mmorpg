@@ -168,6 +168,6 @@ void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
     // Update transform rotation
     transform.mutable_rotation()->set_x(pitch);
     transform.mutable_rotation()->set_y(yaw);
-    transform.mutable_rotation()->set_z(0); // Z轴旋转保持为0
+    transform.mutable_rotation()->set_z(0); // Keep Z rotation at 0
 }
 

@@ -213,7 +213,7 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p) {
 
 void Bag::Neaten()
 {
-	std::vector<EntityVector> sameitemEnttiyMatrix;////每个元素里面存相同的物品列表
+	std::vector<EntityVector> sameitemEnttiyMatrix;////groups of identical stackable items
 
 	for (auto&& [e, item] : itemRegistry.view<ItemPBComponent>().each())
 	{
@@ -224,34 +224,32 @@ void Bag::Neaten()
 			continue;
 		}
 
-		if (item.size() >= itemTable->max_statck_size())//满的不计算了,包括了不可叠加的
+		if (item.size() >= itemTable->max_statck_size())//skip full stacks
 		{
 			continue;
 		}
-		//计算未满的
-		bool hasNotSameItem = true;//有没有相同的
+		bool hasNotSameItem = true;
 		for (auto& sameVector : sameitemEnttiyMatrix)
 		{
-			//看看是不是和第一个物品一样,一样则放到统计列表
 			auto& itemOther = itemRegistry.get_or_emplace<ItemPBComponent>(*sameVector.begin());
 			if (!CanStack(item, itemOther))
 			{
 				continue;
 			}
 
-			sameVector.emplace_back(e);//把可以叠加的放进相同物品列表里面
+			sameVector.emplace_back(e);
 			hasNotSameItem = false;
 			break;
 		}
 
 		if (hasNotSameItem)
 		{
-			sameitemEnttiyMatrix.emplace_back(EntityVector{e});//没有相同的直接放到新的物品列表里面
+			sameitemEnttiyMatrix.emplace_back(EntityVector{e});
 		}
 	}
 
 	GuidVector clearItemGuidList;
-	//开始叠加
+	//begin stacking
 	for (auto& itemList : sameitemEnttiyMatrix)
 	{
 		if (itemList.empty())
@@ -263,14 +261,13 @@ void Bag::Neaten()
 
 		FetchItemTableOrContinue(firstItem.config_id());
 	
-		//计算总的，然后用总的放到每个格子里面
 		uint32_t totalStackSize = 0;
 		for (auto& e : itemList)
 		{
 			totalStackSize += itemRegistry.get_or_emplace<ItemPBComponent>(e).size();
 		}
 
-		std::size_t index = 0;//计算过的物品下标
+		std::size_t index = 0;
 
 		for (index = 0; index < itemList.size(); ++index)
 		{
@@ -280,7 +277,7 @@ void Bag::Neaten()
 			if (totalStackSize <= itemTable->max_statck_size())
 			{
 				currentItem.set_size(totalStackSize);
-				++index;//下标加1，break并没有加
+				++index;
 				break;
 			}
 			else
@@ -295,13 +292,13 @@ void Bag::Neaten()
 			auto currentItemEntity = itemList[index];
 			auto currentItem = itemRegistry.get_or_emplace<ItemPBComponent>(currentItemEntity);
 
-			currentItem.set_size(0);//被清空的物品
+			currentItem.set_size(0);
 
 			clearItemGuidList.emplace_back(currentItem.item_id());
 		}
 	}
 
-	//清空物品清空格子
+	//destroy emptied items and grids
 	for (auto& it : clearItemGuidList)
 	{
 		DestroyItem(it);
@@ -309,7 +306,7 @@ void Bag::Neaten()
 
 	pos_.clear();
 
-	//重新计算物品位置
+	//recalculate item positions
 	for (auto& [guid, e] : items_)
 	{
 		auto& item = itemRegistry.get_or_emplace<ItemPBComponent>(e);
@@ -333,7 +330,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		return PrintStackAndReturnError(kInvalidTableData);
 	}
 
-	if (itemTable->max_statck_size() == 1)//不可以堆叠直接生成新guid
+	if (itemTable->max_statck_size() == 1)//non-stackable, create new guid per item
 	{
 		if (NotAdequateSize(itemPBCompCopy.size()))
 		{
@@ -341,7 +338,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
             return PrintStackAndReturnError(kBagAddItemBagFull);
 		}
 
-		if (itemPBCompCopy.size() == 1)//只有一个
+		if (itemPBCompCopy.size() == 1)//single item
 		{
 			auto newItem = itemRegistry.create();
 			auto& newItemPBComp = itemRegistry.emplace<ItemPBComponent>(newItem, std::move(itemPBCompCopy));
@@ -363,8 +360,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		}
 		else
 		{
-			//todo 放装备列表，装备有一堆自己的guild
-			//对于一个，放到新格子里面，占用 itemPBCompCopy.size的格子
+			//todo equipment list with unique guids
 			for (uint32_t i = 0; i < itemPBCompCopy.size(); ++i)
 			{
                 auto newItem = itemRegistry.create();
@@ -384,14 +380,14 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			}
 		}		
 	}
-	else if(itemTable->max_statck_size() > 1)//尝试堆叠到旧格子上
+	else if(itemTable->max_statck_size() > 1)//try stacking onto existing grids
 	{
-		EntityVector doStackItemList;//原来可以叠加的物品实体
+		EntityVector doStackItemList;//existing stackable item entities
 
 		std::size_t checkNeedStackSize = itemPBCompCopy.size();
         for (auto&& [e, item] : itemRegistry.view<ItemPBComponent>().each())
 		{
-			if (!CanStack(item, itemPBCompCopy))//堆叠判断
+			if (!CanStack(item, itemPBCompCopy))
 			{
 				continue;
 			}
@@ -401,7 +397,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			{
 				continue;
 			}
-			//可以叠加,先把叠加的物品放进去
+			//stackable, collect target entities
 			doStackItemList.emplace_back(e);
 
 			if (checkNeedStackSize > remainStackSize )
@@ -410,17 +406,16 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			}
 			else
 			{
-				checkNeedStackSize = 0;//能放完
+				checkNeedStackSize = 0;
 				break;
 			}
 		}
 
 		std::size_t needEmptyGridSize = 0;
 
-		//不可以放完继续检测,先检测格子够不够放，不够放就不行了
+		//remaining items don't fit, check if enough empty grids
 		if (checkNeedStackSize > 0)
 		{
-			//放不完的还需要多少个格子
 			needEmptyGridSize = CalculateStackGridSize(checkNeedStackSize, itemTable->max_statck_size());
 			if (NotAdequateSize(needEmptyGridSize))
 			{
@@ -428,8 +423,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			}
 		}
 
-		//检测完毕真正放叠加物品在这里
-		//叠加到物品里面
+		//apply stacking to existing items
 		auto needStackSize = itemPBCompCopy.size();
 		for (auto& e : doStackItemList)
 		{
@@ -438,7 +432,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			if (remain_stack_size >= needStackSize)
 			{
 				item.set_size(item.size() + needStackSize);
-				break;//可以放完了跳出循环，效率会高一点，不用遍历后面的了
+				break;
 			}
 			else
 			{
@@ -447,12 +441,12 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			}
 		}
 
-		if (needStackSize <= 0)//可以放完
+		if (needStackSize <= 0)//fully stacked
 		{
 			return kSuccess;
 		}
 
-		//放到新格子里面
+		//place remainder into new grids
 		for (size_t i = 0; i < needEmptyGridSize; ++i)
 		{
 			InitItemParam p;

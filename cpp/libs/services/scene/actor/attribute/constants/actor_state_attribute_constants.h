@@ -1,10 +1,10 @@
 #pragma once
 
 enum eAttributeSyncFrequency : uint32_t {
-    //kSyncEvery1Frame = 0,   // 每帧同步一次
-    kSyncEvery2Frames = 2,  // 每 2 帧同步一次
-    kSyncEvery5Frames = 5,  // 每 5 帧同步一次
-    kSyncEvery10Frames = 10, // 每 10 帧同步一次
-    kSyncEvery30Frames = 30,  // 每 30 帧同步一次
-    kSyncEvery60Frames = 60  // 每 60 帧同步一次
+    //kSyncEvery1Frame = 0,   // Sync every frame
+    kSyncEvery2Frames = 2,  // Sync every 2 frames
+    kSyncEvery5Frames = 5,  // Sync every 5 frames
+    kSyncEvery10Frames = 10, // Sync every 10 frames
+    kSyncEvery30Frames = 30,  // Sync every 30 frames
+    kSyncEvery60Frames = 60  // Sync every 60 frames
 };

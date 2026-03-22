@@ -110,7 +110,7 @@ bool IsLocalPortAvailable(uint16_t port) {
 uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 	uint32_t minPort, uint32_t maxPort, uint32_t tryPortId)
 {
-	// 优先从 tryPortId 到 maxPort
+	// Scan from tryPortId to maxPort first
 	for (uint32_t port = tryPortId; port <= maxPort; ++port) {
 		if (usedPorts.find(port) == usedPorts.end()
 			&& IsLocalPortAvailable(static_cast<uint16_t>(port))) {
@@ -118,7 +118,7 @@ uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 		}
 	}
 
-	// 再从 minPort 到 tryPortId - 1
+	// Wrap around from minPort to tryPortId - 1
 	for (uint32_t port = minPort; port < tryPortId; ++port) {
 		if (usedPorts.find(port) == usedPorts.end()
 			&& IsLocalPortAvailable(static_cast<uint16_t>(port))) {
@@ -126,7 +126,7 @@ uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 		}
 	}
 
-	return 0; // 没有可用端口
+	return 0; // No available port
 }
 
 void NodeAllocator::AcquireNodePort() {
@@ -144,7 +144,7 @@ void NodeAllocator::AcquireNodePort() {
 		constexpr uint32_t GATE_BASE_PORT = 10000;
 		constexpr uint32_t GATE_PORT_LIMIT = 19999;
 
-		// 默认初始为 BASE_PORT
+		// Reset to base if out of range
 		if (tryPortId < GATE_BASE_PORT || tryPortId > GATE_PORT_LIMIT) {
 			tryPortId = GATE_BASE_PORT;
 		}

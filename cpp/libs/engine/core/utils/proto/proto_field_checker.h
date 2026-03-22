@@ -6,7 +6,7 @@
 
 class ProtoFieldChecker {
 public:
-    // 检查字段大小是否超出阈值
+    // Check if repeated field sizes exceed threshold
     static bool CheckFieldSizes(const google::protobuf::Message& message, size_t threshold, std::string& output);
 
     static bool CheckFieldSizes(const google::protobuf::Message& message, size_t threshold);
