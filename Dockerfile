@@ -3,18 +3,17 @@ FROM gcc:latest
 RUN apt-get update && apt-get -y --no-install-recommends install \
     build-essential \
     gdb \
-    wget \ 
-    make  \
+    wget \
+    make \
     libboost-dev \
     vim
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-RUN mkdir /usr/src/turn-based-game
+RUN mkdir /usr/src/mmorpg
 
-COPY . /usr/src/turn-based-game
+COPY . /usr/src/mmorpg
 
-WORKDIR /usr/src/turn-based-game
+WORKDIR /usr/src/mmorpg
 
 CMD ["bash", "-c", "while true; do echo Hello Docker; sleep 1; done"]
-#CMD ["./autogen.sh"]

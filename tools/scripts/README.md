@@ -84,7 +84,7 @@ Features:
 
 Legacy batch launcher is also available at [tools/scripts/third_party/build_grpc_vs2026_v145.bat](third_party/build_grpc_vs2026_v145.bat).
 
-Top-level thin wrapper: [scripts/build_grpc.ps1](../../scripts/build_grpc.ps1)
+Legacy thin wrapper moved to: [tools/archived/build_grpc.ps1](../archived/build_grpc.ps1)
 
 VS Code tasks are available in [/.vscode/tasks.json](../../.vscode/tasks.json):
 
