@@ -116,10 +116,6 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 
 	auto& entrantTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entrant);
 	createMessage.mutable_transform()->CopyFrom(entrantTransform);
-
-	/*if (const auto guid = tlsThreadLocalEntityContainer.registry.try_get<Guid>(entrant)) {
-		createMessage.set_guid(*guid);
-	}*/
 }
 
 void ViewSystem::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)

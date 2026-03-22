@@ -44,20 +44,20 @@ public:
 	using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
 
 	static uint32_t GetMissionReward(const GetRewardParam& param);
-	static uint32_t AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComponent& comp);
-	static uint32_t AbandonMission(const AbandonParam& param, MissionsComponent& comp);
+	static uint32_t AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComponent& comp, const IMissionConfig& config);
+	static uint32_t AbandonMission(const AbandonParam& param, MissionsComponent& comp, const IMissionConfig& config);
 	static void CompleteAllMissions(entt::entity player, uint32_t op, MissionsComponent& comp);
-	static void HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComponent& comp);
+	static void HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComponent& comp, const IMissionConfig& config);
 
 private:
-	static void DeleteMissionClassification(entt::entity player, uint32_t missionId);
+	static void DeleteMissionClassification(entt::entity player, uint32_t missionId, const IMissionConfig& config);
 	static bool UpdateMission(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission);
-	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission);
+	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, const IMissionConfig& config);
 	static void UpdateMissionStatus(MissionPBComponent& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions);
-	static void OnMissionCompletion(entt::entity player, const UInt32Set& completedMissions);
-	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp);
-	static void RemoveMissionClassification(MissionsComponent& missionComp, uint32_t missionId);
-	static bool AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent& missionComp);
+	static void OnMissionCompletion(entt::entity player, const UInt32Set& completedMissions, const IMissionConfig& config);
+	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp, const IMissionConfig& config);
+	static void RemoveMissionClassification(MissionsComponent& missionComp, uint32_t missionId, const IMissionConfig& config);
+	static bool AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent& missionComp, const IMissionConfig& config);
 	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTable* conditionRow);
 };
 

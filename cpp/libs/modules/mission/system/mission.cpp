@@ -56,13 +56,12 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 }
 
 // Function to check conditions before accepting a mission
-uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp) {
+uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp, const IMissionConfig& config) {
 	// Check if mission is unaccepted and uncompleted
 	RETURN_ON_ERROR(missionComp.IsMissionUnaccepted(acceptEvent.mission_id()));
 	RETURN_ON_ERROR(missionComp.IsMissionUncompleted(acceptEvent.mission_id()));
 
 	// Ensure mission configuration is valid
-	const auto& config = MissionConfig::GetSingleton();
 	RETURN_IF_TRUE(!config.HasKey(acceptEvent.mission_id()), kInvalidTableId);
 
 	// Retrieve mission sub-type and type
@@ -79,12 +78,12 @@ uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptE
 }
 
 // Function to accept a mission
-uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp) {
+uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp, const IMissionConfig& config) {
 	// Convert entity ID to player entity
 	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
 
 	// Check acceptance conditions
-	auto ret = CheckMissionAcceptance(acceptEvent, missionComp);
+	auto ret = CheckMissionAcceptance(acceptEvent, missionComp, config);
 	if (ret != kSuccess) {
 		LOG_ERROR << "CheckMissionAcceptance failed for mission_id = " << acceptEvent.mission_id()
 			<< ", playerEntity = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
@@ -92,7 +91,6 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 	}
 
 	// Retrieve mission sub-type and type
-	const auto& config = MissionConfig::GetSingleton();
 	auto missionSubType = config.GetMissionSubType(acceptEvent.mission_id());
 	auto missionType = config.GetMissionType(acceptEvent.mission_id());
 
@@ -130,7 +128,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 }
 
 // Function to abandon a mission
-uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComponent& comp) {
+uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComponent& comp, const IMissionConfig& config) {
 	// Retrieve mission component for the player
 	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(param.playerEntity);
 
@@ -150,7 +148,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsCompon
 	missionComp.GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
 
 	// Delete mission classification
-	DeleteMissionClassification(param.playerEntity, param.missionId);
+	DeleteMissionClassification(param.playerEntity, param.missionId, config);
 	LOG_INFO << "Mission abandoned for playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity) << ", missionId = " << param.missionId;
 	return kSuccess;
 }
@@ -177,9 +175,8 @@ bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
 
 
 // Check if all conditions of a mission are fulfilled
-bool MissionSystem::AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent& missionComp) {
+bool MissionSystem::AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent& missionComp, const IMissionConfig& config) {
 	// Retrieve mission conditions from configuration
-	const auto& config = MissionConfig::GetSingleton();
 	const auto& conditions = config.GetConditionIds(missionId);
 
 	// Ensure progress matches condition requirements
@@ -195,7 +192,7 @@ bool MissionSystem::AreAllConditionsFulfilled(const MissionPBComponent& mission,
 	return true;
 }
 // Process mission condition events
-void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComponent& comp) {
+void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComponent& comp, const IMissionConfig& config) {
 	// Ignore if no conditions are provided
 	if (conditionEvent.condtion_ids().empty()) {
 		LOG_ERROR << "HandleMissionConditionEvent: Empty condition IDs for entity = " << conditionEvent.entity();
@@ -225,12 +222,12 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 		auto& mission = missionIter->second;
 
 		// Update mission progress
-		if (!UpdateMissionProgress(conditionEvent, mission)) {
+		if (!UpdateMissionProgress(conditionEvent, mission, config)) {
 			continue;
 		}
 
 		// Check if all conditions are now fulfilled
-		if (!AreAllConditionsFulfilled(mission, missionId, comp)) {
+		if (!AreAllConditionsFulfilled(mission, missionId, comp, config)) {
 			continue;
 		}
 
@@ -240,13 +237,12 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 	}
 
 	// Process completion events for completed missions
-	OnMissionCompletion(playerEntity, completedMissionsThisTime);
+	OnMissionCompletion(playerEntity, completedMissionsThisTime, config);
 }
 
 // Remove mission classification
-void MissionSystem::RemoveMissionClassification(MissionsComponent& missionComp, uint32_t missionId) {
+void MissionSystem::RemoveMissionClassification(MissionsComponent& missionComp, uint32_t missionId, const IMissionConfig& config) {
 	// Retrieve conditions from mission configuration
-	const auto& config = MissionConfig::GetSingleton();
 	const auto& configConditions = config.GetConditionIds(missionId);
 
 	// Remove mission classification based on condition type
@@ -257,15 +253,14 @@ void MissionSystem::RemoveMissionClassification(MissionsComponent& missionComp, 
 }
 
 // Delete mission classification
-void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId) {
+void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId, const IMissionConfig& config) {
 	// Retrieve mission component for the player
 	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 
 	// Remove mission classification
-	RemoveMissionClassification(missionComp, missionId);
+	RemoveMissionClassification(missionComp, missionId, config);
 
 	// Remove mission type filter if applicable
-	const auto& config = MissionConfig::GetSingleton();
 	auto missionSubType = config.GetMissionSubType(missionId);
 	if (missionSubType > 0 && missionComp.IsMissionTypeNotRepeated()) {
 		auto missionTypeSubTypePair = std::make_pair(config.GetMissionType(missionId), missionSubType);
@@ -274,7 +269,7 @@ void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint3
 }
 
 // Update mission progress based on event
-bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission) {
+bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, const IMissionConfig& config) {
 	// Ignore if no conditions are provided
 	if (conditionEvent.condtion_ids().empty()) {
 		return false;
@@ -286,7 +281,6 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 	bool missionUpdated = false;
 
 	// Retrieve mission conditions from configuration
-	const auto& config = MissionConfig::GetSingleton();
 	const auto& missionConditions = config.GetConditionIds(mission.id());
 
 	// Iterate through mission conditions and update progress
@@ -380,7 +374,7 @@ void MissionSystem::UpdateMissionStatus(MissionPBComponent& mission, const googl
 }
 
 // Process completion events for completed missions
-void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t>& completedMissionsThisTime) {
+void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t>& completedMissionsThisTime, const IMissionConfig& config) {
 	// Ignore if no missions are completed
 	if (completedMissionsThisTime.empty()) {
 		return;
@@ -389,60 +383,46 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 	// Retrieve mission component for the player
 	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
 
+	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(playerEntity);
+
 	// Process each completed mission
 	for (const auto& missionId : completedMissionsThisTime) {
-		// Delete mission classification
-		DeleteMissionClassification(playerEntity, missionId);
+		DeleteMissionClassification(playerEntity, missionId, config);
+		SetBit(MissionBitMap, missionComp.GetCompleteMissions(), missionId);
 
-		// Retrieve mission reward component for the player
-		auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(playerEntity);
+		// Determine reward action from config
+		switch (GetRewardAction(config, missionId))
+		{
+		case RewardAction::kAutoGrant:
+		{
+			OnMissionAwardEvent missionAwardEvent;
+			missionAwardEvent.set_entity(entt::to_integral(playerEntity));
+			missionAwardEvent.set_mission_id(missionId);
+			dispatcher.enqueue(missionAwardEvent);
+			break;
+		}
+		case RewardAction::kClaimable:
+			missionReward.mutable_can_reward_mission_id()->insert({ missionId, false });
+			break;
+		default:
+			break;
+		}
 
-		// Create mission condition event
+		// Enqueue acceptance events for next missions in the chain
+		AcceptMissionEvent acceptMissionEvent;
+		acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+		const auto& nextMissions = config.GetNextmissionTableIds(missionId);
+		for (int32_t i = 0; i < nextMissions.size(); ++i) {
+			acceptMissionEvent.set_mission_id(nextMissions.Get(i));
+			dispatcher.enqueue(acceptMissionEvent);
+		}
+
+		// Notify condition system that this mission was completed
 		MissionConditionEvent missionConditionEvent;
 		missionConditionEvent.set_entity(entt::to_integral(playerEntity));
 		missionConditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteMission));
 		missionConditionEvent.set_amount(1);
-
-		// Process mission completion rewards and events
-		const auto& config = MissionConfig::GetSingleton();
-		for (const auto& missionId : completedMissionsThisTime) {
-			// Mark mission as complete
-
-			SetBit(MissionBitMap, missionComp.GetCompleteMissions(), missionId);
-
-			// Determine reward action from config
-			switch (GetRewardAction(config, missionId))
-			{
-			case RewardAction::kAutoGrant:
-			{
-				OnMissionAwardEvent missionAwardEvent;
-				missionAwardEvent.set_entity(entt::to_integral(playerEntity));
-				missionAwardEvent.set_mission_id(missionId);
-				dispatcher.enqueue(missionAwardEvent);
-				break;
-			}
-			case RewardAction::kClaimable:
-				missionReward.mutable_can_reward_mission_id()->insert({ missionId, false });
-				break;
-			default:
-				break;
-			}
-
-			// Create mission acceptance event for next missions
-			AcceptMissionEvent acceptMissionEvent;
-			acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
-			const auto& nextMissions = config.GetNextmissionTableIds(missionId);
-
-			// Enqueue acceptance event for each next mission
-			for (int32_t i = 0; i < nextMissions.size(); ++i) {
-				acceptMissionEvent.set_mission_id(nextMissions.Get(i));
-				dispatcher.enqueue(acceptMissionEvent);
-			}
-
-			// Add mission ID to condition event for next processing
-			missionConditionEvent.clear_condtion_ids();
-			missionConditionEvent.mutable_condtion_ids()->Add(missionId);
-			dispatcher.enqueue(missionConditionEvent);
-		}
+		missionConditionEvent.mutable_condtion_ids()->Add(missionId);
+		dispatcher.enqueue(missionConditionEvent);
 	}
 }

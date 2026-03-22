@@ -4,6 +4,9 @@
 #include "rpc/service_metadata/game_scene_service_metadata.h"
 #include "network/codec/message_response_dispatcher.h"
 
+using namespace muduo;
+using namespace muduo::net;
+
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
