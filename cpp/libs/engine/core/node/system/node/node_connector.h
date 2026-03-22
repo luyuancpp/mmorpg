@@ -1,6 +1,6 @@
 #pragma once
 
-class NodeInfo;
+#include "node/system/node/node_util.h"
 
 class NodeConnector {
 public:

@@ -381,7 +381,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 			messageId := method.KeyName() + _config.Global.Naming.MessageId
 
 			isClientMessage := internal.IsClientProtocolService(service.ServiceDescriptorProto)
-			nodeType := fmt.Sprintf("eNodeType::%sNodeService", strcase.ToCamel(basePath))
+			nodeType := fmt.Sprintf("%s::%sNodeService", internal.NodeEnumCppQualifiedType, strcase.ToCamel(basePath))
 
 			// Emit multi-line RpcMethodMeta initialization grouped by field role:
 			//   line 1: assignment + opening brace
@@ -400,10 +400,10 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 					"    std::make_unique<%s>(), %d, %s};",
 					handler, GetProtocol(method.Path()), nodeType))
 			} else {
-				declareFunction := "namespace " + method.Package() + "{void Send" +
+				declareFunction := "namespace " + method.CppPackage() + "{void Send" +
 					service.Service() + method.Method() + "(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}"
 				senderFunction = appendUniqueString(senderFunction, senderFunctionSet, declareFunction)
-				sendName := method.Package() + "::" + "Send" + service.Service() + method.Method()
+				sendName := method.CppPackage() + "::" + "Send" + service.Service() + method.Method()
 				initLines = append(initLines, fmt.Sprintf("    std::make_unique<%s>(),", method.CppResponse()))
 				initLines = append(initLines, fmt.Sprintf(
 					"    nullptr, %d, %s, %s};",

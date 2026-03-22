@@ -15,16 +15,16 @@ using grpc::ClientAsyncResponseReader;
 
 namespace NodeUtils
 {
-	eNodeType GetServiceTypeFromPrefix(const std::string& prefix);
+	{{.NodeEnumCppType}} GetServiceTypeFromPrefix(const std::string& prefix);
 	entt::registry& GetRegistryForNodeType(uint32_t nodeType);
 	std::string GetRegistryName(const entt::registry& registry);
-	eNodeType GetRegistryType(const entt::registry& registry);
+	{{.NodeEnumCppType}} GetRegistryType(const entt::registry& registry);
 	bool IsSameNode(const std::string& uuid1, const std::string& uuid2);
-	bool IsNodeConnected(uint32_t nodeType, const NodeInfo& info);
+	bool IsNodeConnected(uint32_t nodeType, const {{.NodeInfoCppType}}& info);
 };
 
 {{ range.ServiceInfo }}
-namespace {{.Package}} {
+namespace {{.CppPackage}} {
     void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void Set{{.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void Init{{.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
@@ -34,13 +34,13 @@ namespace {{.Package}} {
 
 void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 {{ range.ServiceInfo }}
-    {{.Package}}::Set{{.FileBaseNameCamel}}IfEmptyHandler(handler);
+    {{.CppPackage}}::Set{{.FileBaseNameCamel}}IfEmptyHandler(handler);
 {{ end }}
 }
 
 void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
 {{ range.ServiceInfo }}
-    {{.Package}}::Set{{.FileBaseNameCamel}}Handler(handler);
+    {{.CppPackage}}::Set{{.FileBaseNameCamel}}Handler(handler);
 {{ end }}
 }
 
@@ -60,12 +60,12 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 
 {{- range $index, $m := .ServiceInfo }}
     {{- if eq $index 0 }}
-            if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-                {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            if ({{$.NodeEnumCppType}}::{{$m.BasePathForCpp}}NodeService == nodeType) {
+                {{$m.CppPackage}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
     {{- else }}
-            else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-                {{$m.Package}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            else if ({{$.NodeEnumCppType}}::{{$m.BasePathForCpp}}NodeService == nodeType) {
+                {{$m.CppPackage}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
     {{- end }}
 {{- end }}
@@ -79,12 +79,12 @@ void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, ent
     registry.emplace<grpc::CompletionQueue>(nodeEntity);
 {{- range $index, $m := .ServiceInfo }}
     {{- if eq $index 0 }}
-    if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
+    if ({{$.NodeEnumCppType}}::{{$m.BasePathForCpp}}NodeService == nodeType) {
+        {{$m.CppPackage}}::Init{{$m.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
     }
     {{- else }}
-    else if (eNodeType::{{$m.BasePathForCpp}}NodeService == nodeType) {
-        {{$m.Package}}::Init{{$m.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
+    else if ({{$.NodeEnumCppType}}::{{$m.BasePathForCpp}}NodeService == nodeType) {
+        {{$m.CppPackage}}::Init{{$m.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
     }
     {{- end }}
 {{- end }}

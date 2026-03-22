@@ -36,6 +36,7 @@ mmorpg/
 | Checked-in generated contracts | `generated/proto/` | Review only; do not hand-edit |
 | Local/dev infra | `deploy/docker-compose.yml` | Kafka, Redis, MySQL, Nacos, etcd |
 | Local Go service launcher | `tools/scripts/go_services.ps1` | start/stop/status/list all Go-zero services |
+| Local C++ node launcher | `tools/scripts/cpp_nodes.ps1` | start/stop/status/list gate/scene nodes |
 | Go service Docker images | `tools/scripts/go_svc_image.ps1` | build/push per-service Docker images |
 | K8s release flow | `deploy/k8s/README.md` | Runtime image + zone lifecycle |
 | Shared dev scripts | `tools/scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
@@ -110,6 +111,16 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-list
 # Go service Docker images
 pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build-images -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1
 pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-push-images -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1
+
+# C++ nodes (local dev)
+pwsh -File tools/scripts/dev_tools.ps1 -Command cpp-node-start [-GateCount 2] [-SceneCount 4]
+pwsh -File tools/scripts/dev_tools.ps1 -Command cpp-node-stop
+pwsh -File tools/scripts/dev_tools.ps1 -Command cpp-node-status
+
+# Unified dev (C++ nodes + Go services)
+pwsh -File tools/scripts/dev_tools.ps1 -Command dev-start [-GateCount 2] [-SceneCount 4]
+pwsh -File tools/scripts/dev_tools.ps1 -Command dev-stop
+pwsh -File tools/scripts/dev_tools.ps1 -Command dev-status
 ```
 
 ## NOTES

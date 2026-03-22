@@ -235,6 +235,98 @@
 				"go-svc-push-images"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "cpp-node: start all",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"cpp-node-start"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "cpp-node: stop all",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"cpp-node-stop"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "cpp-node: status",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"cpp-node-status"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: start all (C++ + Go)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"dev-start"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: stop all (C++ + Go)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"dev-stop"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: status (C++ + Go)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"dev-status"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: mprocs dashboard",
+			"type": "shell",
+			"command": "mprocs",
+			"args": [
+				"-c",
+				"${workspaceFolder}/tools/dev/mprocs.yaml"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: mprocs dashboard (2 gate + 4 scene)",
+			"type": "shell",
+			"command": "mprocs",
+			"args": [
+				"-c",
+				"${workspaceFolder}/tools/dev/mprocs.2g4s.yaml"
+			],
+			"problemMatcher": []
 		}
 	]
 }

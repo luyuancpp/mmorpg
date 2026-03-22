@@ -50,8 +50,8 @@ $LogDir     = Join-Path $RepoRoot "bin\logs\go_services"
 $ServiceCatalogue = [ordered]@{
     db              = @{ Dir = "db";              Entry = "db.go";                     Port = 6000;  Desc = "DB (Kafka consumer + MySQL)" }
     data_service    = @{ Dir = "data_service";    Entry = "dataservice.go";            Port = 9000;  Desc = "Data Service (multi-zone Redis)" }
-    login           = @{ Dir = "login";           Entry = "login.go";                  Port = 50000; Desc = "Login (gRPC + etcd)" }
     player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";         Port = 50100; Desc = "Player Locator (Redis cache)" }
+    login           = @{ Dir = "login";           Entry = "login.go";                  Port = 50000; Desc = "Login (gRPC + etcd)" }
     scene_manager   = @{ Dir = "scene_manager";   Entry = "scenemanagerservice.go";    Port = 60000; Desc = "Scene Manager (Kafka + Redis)" }
 }
 
@@ -71,9 +71,11 @@ function Resolve-ServiceList {
 
 function Read-PidFile {
     if (Test-Path $PidFile) {
-        return Get-Content $PidFile -Raw | ConvertFrom-Json
+        $raw = Get-Content $PidFile -Raw | ConvertFrom-Json
+        if ($null -eq $raw) { return [pscustomobject]@{} }
+        return $raw
     }
-    return @{}
+    return [pscustomobject]@{}
 }
 
 function Write-PidFile {
@@ -137,7 +139,7 @@ function Invoke-Start {
 
 function Invoke-Stop {
     $pids = Read-PidFile
-    if ($pids.PSObject.Properties.Count -eq 0) {
+    if (@($pids.PSObject.Properties).Count -eq 0) {
         Write-Host "No tracked services to stop." -ForegroundColor Yellow
         return
     }
@@ -146,17 +148,17 @@ function Invoke-Stop {
 
     foreach ($name in $names) {
         if ($pids.PSObject.Properties.Name -notcontains $name) { continue }
-        $pid = $pids.$name
+        $procId = $pids.$name
         try {
-            $proc = Get-Process -Id $pid -ErrorAction Stop
+            $proc = Get-Process -Id $procId -ErrorAction Stop
             if (-not $proc.HasExited) {
-                Stop-Process -Id $pid -Force
-                Write-Host "[stop]  $name (PID $pid)" -ForegroundColor Magenta
+                Stop-Process -Id $procId -Force
+                Write-Host "[stop]  $name (PID $procId)" -ForegroundColor Magenta
             } else {
-                Write-Host "[gone]  $name (PID $pid already exited)" -ForegroundColor DarkGray
+                Write-Host "[gone]  $name (PID $procId already exited)" -ForegroundColor DarkGray
             }
         } catch {
-            Write-Host "[gone]  $name (PID $pid not found)" -ForegroundColor DarkGray
+            Write-Host "[gone]  $name (PID $procId not found)" -ForegroundColor DarkGray
         }
         $pids.PSObject.Properties.Remove($name)
     }
@@ -166,7 +168,7 @@ function Invoke-Stop {
 
 function Invoke-Status {
     $pids = Read-PidFile
-    if ($pids.PSObject.Properties.Count -eq 0) {
+    if (@($pids.PSObject.Properties).Count -eq 0) {
         Write-Host "No tracked services." -ForegroundColor Yellow
         return
     }
@@ -174,17 +176,17 @@ function Invoke-Status {
     Write-Host ("{0,-18} {1,-8} {2,-8} {3}" -f "-------", "---", "----", "------")
     foreach ($prop in $pids.PSObject.Properties) {
         $name = $prop.Name
-        $pid  = $prop.Value
+        $procId  = $prop.Value
         $port = if ($ServiceCatalogue.Contains($name)) { $ServiceCatalogue[$name].Port } else { "?" }
         $status = "UNKNOWN"
         try {
-            $proc = Get-Process -Id $pid -ErrorAction Stop
+            $proc = Get-Process -Id $procId -ErrorAction Stop
             $status = if ($proc.HasExited) { "EXITED" } else { "RUNNING" }
         } catch {
             $status = "GONE"
         }
         $color = switch ($status) { "RUNNING" { "Green" } "EXITED" { "Red" } default { "DarkGray" } }
-        Write-Host ("{0,-18} {1,-8} {2,-8} {3}" -f $name, $pid, $port, $status) -ForegroundColor $color
+        Write-Host ("{0,-18} {1,-8} {2,-8} {3}" -f $name, $procId, $port, $status) -ForegroundColor $color
     }
 }
 

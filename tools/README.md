@@ -39,6 +39,10 @@ This directory hosts developer tooling and generated helper code.
 	`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.yaml`
 - Refresh tree output script:
 	`pwsh -File tools/scripts/dev_tools.ps1 -Command tree`
+- Run local services in one terminal dashboard (mprocs):
+	`mprocs -c tools/dev/mprocs.yaml`
+- Run local services in one terminal dashboard (mprocs, 2 gate + 4 scene):
+	`mprocs -c tools/dev/mprocs.2g4s.yaml`
 
 ## Notes
 
@@ -48,6 +52,7 @@ This directory hosts developer tooling and generated helper code.
 - `tools/scripts/dev_tools.ps1` is the preferred shell entry point for common tool commands.
 - See `tools/docs/proto_gen_naming_migration.md` for the explicit migration boundary and future rename checklist.
 - See `tools/docs/proto_gen_naming_audit.md` for the current post-migration audit snapshot.
+- `tools/scripts/dev_mprocs_proc.ps1` is a foreground process wrapper for mprocs. It is intended for log aggregation in a single terminal UI.
 
 ## Naming Policy
 

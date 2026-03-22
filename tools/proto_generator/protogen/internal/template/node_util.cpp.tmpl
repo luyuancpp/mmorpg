@@ -5,7 +5,7 @@
 bool IsTcpNodeType(uint32_t nodeType) {
 	static const std::unordered_set<uint32_t> validTypes = {
 	{{- range.NodeList }}
-		eNodeType::{{.}},
+		{{$.NodeEnumCppQualified}}::{{.}},
 	{{- end }}
 	};
 

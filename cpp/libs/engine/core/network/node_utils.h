@@ -1,7 +1,6 @@
 #pragma once
 #include "type_define/type_define.h"
-#include "proto/common/base/common.pb.h"
-#include "proto/common/base/node.pb.h"
+#include "node/system/node/node_util.h"
 
 using ServiceNodeList = std::array<NodeInfoListPBComponent, eNodeType_ARRAYSIZE>;
 

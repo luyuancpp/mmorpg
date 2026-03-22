@@ -2,7 +2,7 @@
 
 #include <boost/asio.hpp>
 #include <iostream>
-#include "proto/common/base/node.pb.h"
+#include "node/system/node/node_util.h"
 #include "proto/common/base/session.pb.h"
 
 

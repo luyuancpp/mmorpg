@@ -61,6 +61,17 @@
 - **Build all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build-images -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1`
 - **Push all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-push-images -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1`
 
+### C++ Nodes (Local Dev)
+- **Start all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command cpp-node-start`
+- **Start with counts**: `pwsh -File tools/scripts/dev_tools.ps1 -Command cpp-node-start -GateCount 2 -SceneCount 4`
+- **Stop all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command cpp-node-stop`
+- **Status**: `pwsh -File tools/scripts/dev_tools.ps1 -Command cpp-node-status`
+
+### Unified Dev (C++ + Go, one-click)
+- **Start all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command dev-start`
+- **Stop all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command dev-stop`
+- **Status**: `pwsh -File tools/scripts/dev_tools.ps1 -Command dev-status`
+
 ## High-Level Architecture
 
 - **Polyglot backend split by responsibility**:
