@@ -8,15 +8,23 @@ class SnowFlakeManager
 public:
 
 	void OnNodeStart(uint32_t nodeId) {
-		itemIdGenerator.set_node_id(nodeId);
+		itemIdGenerator_.set_node_id(nodeId);
 	}
 
 	void SetGuardTime(uint64_t guardUtcSeconds) {
-		itemIdGenerator.SetGuardTime(guardUtcSeconds);
+		itemIdGenerator_.SetGuardTime(guardUtcSeconds);
 	}
 
-	Guid lastGeneratorItemGuid{ kInvalidGuid };
-	SnowFlake itemIdGenerator;
+	Guid GenerateItemGuid() {
+		lastGeneratedItemGuid_ = itemIdGenerator_.Generate();
+		return lastGeneratedItemGuid_;
+	}
+
+	[[nodiscard]] Guid GetLastGeneratedItemGuid() const { return lastGeneratedItemGuid_; }
+
+private:
+	Guid lastGeneratedItemGuid_{ kInvalidGuid };
+	SnowFlake itemIdGenerator_;
 };
 
 extern thread_local SnowFlakeManager tlsSnowflakeManager;

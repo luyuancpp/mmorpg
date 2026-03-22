@@ -62,64 +62,64 @@ uint32_t Bag::GetItemPos(Guid guid) {
     return kInvalidU32Id;
 }
 
-uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
+uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& itemsToAdd) {
     auto emptySize = empty_grid_size();
-    U32U32UnorderedMap need_stack_sizes;
-    bool has_stack_item = false;
+    U32U32UnorderedMap pendingStackItems;
+    bool hasStackableItem = false;
 
-    for (const auto& try_item : try_add_item_map) {
-		FetchAndValidateItemTable(try_item.first);
+    for (const auto& [configId, count] : itemsToAdd) {
+		FetchAndValidateItemTable(configId);
 
         if (itemTable->max_statck_size() <= 0) {
-            LOG_ERROR << "config error:" << try_item.first << "player:" << PlayerGuid();
+            LOG_ERROR << "config error:" << configId << " player:" << PlayerGuid();
             return PrintStackAndReturnError(kInvalidTableData);
         }
 
         if (itemTable->max_statck_size() == 1) {
-            std::size_t need_grid_size = static_cast<std::size_t>(itemTable->max_statck_size() * try_item.second);
-            if (emptySize <= 0 || emptySize < need_grid_size) {
+            std::size_t needGridSize = static_cast<std::size_t>(itemTable->max_statck_size() * count);
+            if (emptySize <= 0 || emptySize < needGridSize) {
                 return PrintStackAndReturnError(kBagItemNotStacked);
             }
-            emptySize -= need_grid_size;
+            emptySize -= needGridSize;
         }
         else {
-            need_stack_sizes.emplace(try_item.first, try_item.second);
-            has_stack_item = true;
+            pendingStackItems.emplace(configId, count);
+            hasStackableItem = true;
         }
     }
 
-    if (!has_stack_item) {
+    if (!hasStackableItem) {
         return kSuccess;
     }
 
     for (const auto& [_, item] : itemRegistry.view<ItemPBComponent>().each()) {
-        for (auto& ji : need_stack_sizes) {
-            if (item.config_id() != ji.first) {
+        for (auto& [stackConfigId, stackCount] : pendingStackItems) {
+            if (item.config_id() != stackConfigId) {
                 continue;
             }
 
-			FetchItemTableOrContinue(ji.first);
-            auto remain_stack_size = itemTable->max_statck_size() - item.size();
-            if (remain_stack_size <= 0) {
+			FetchItemTableOrContinue(stackConfigId);
+            auto remainStackSize = itemTable->max_statck_size() - item.size();
+            if (remainStackSize <= 0) {
                 continue;
             }
 
-            if (ji.second <= remain_stack_size) {
-                need_stack_sizes.erase(ji.first);
+            if (stackCount <= remainStackSize) {
+                pendingStackItems.erase(stackConfigId);
                 break;
             }
 
-            ji.second -= remain_stack_size;
+            stackCount -= remainStackSize;
         }
     }
 
-    for (const auto& it : need_stack_sizes) {
-		FetchItemTableOrContinue(it.first);
-        auto need_grid_size = CalculateStackGridSize(it.second, itemTable->max_statck_size());
-        if (emptySize <= 0 || emptySize < need_grid_size) {
+    for (const auto& [configId, count] : pendingStackItems) {
+		FetchItemTableOrContinue(configId);
+        auto needGridSize = CalculateStackGridSize(count, itemTable->max_statck_size());
+        if (emptySize <= 0 || emptySize < needGridSize) {
             return PrintStackAndReturnError(kBagItemNotStacked);
         }
-        emptySize -= need_grid_size;
+        emptySize -= needGridSize;
     }
 
     return kSuccess;
@@ -213,7 +213,7 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p) {
 
 void Bag::Neaten()
 {
-	std::vector<EntityVector> sameitemEnttiyMatrix;////groups of identical stackable items
+	std::vector<EntityVector> stackableItemGroups; // groups of identical stackable items
 
 	for (auto&& [e, item] : itemRegistry.view<ItemPBComponent>().each())
 	{
@@ -229,7 +229,7 @@ void Bag::Neaten()
 			continue;
 		}
 		bool hasNotSameItem = true;
-		for (auto& sameVector : sameitemEnttiyMatrix)
+		for (auto& sameVector : stackableItemGroups)
 		{
 			auto& itemOther = itemRegistry.get_or_emplace<ItemPBComponent>(*sameVector.begin());
 			if (!CanStack(item, itemOther))
@@ -244,13 +244,13 @@ void Bag::Neaten()
 
 		if (hasNotSameItem)
 		{
-			sameitemEnttiyMatrix.emplace_back(EntityVector{e});
+			stackableItemGroups.emplace_back(EntityVector{e});
 		}
 	}
 
 	GuidVector clearItemGuidList;
 	//begin stacking
-	for (auto& itemList : sameitemEnttiyMatrix)
+	for (auto& itemList : stackableItemGroups)
 	{
 		if (itemList.empty())
 		{
@@ -332,7 +332,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 
 	if (itemTable->max_statck_size() == 1)//non-stackable, create new guid per item
 	{
-		if (NotAdequateSize(itemPBCompCopy.size()))
+		if (IsSpaceInsufficient(itemPBCompCopy.size()))
 		{
             // todo temp bag or mail
             return PrintStackAndReturnError(kBagAddItemBagFull);
@@ -417,7 +417,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		if (checkNeedStackSize > 0)
 		{
 			needEmptyGridSize = CalculateStackGridSize(checkNeedStackSize, itemTable->max_statck_size());
-			if (NotAdequateSize(needEmptyGridSize))
+			if (IsSpaceInsufficient(needEmptyGridSize))
 			{
 				return PrintStackAndReturnError(kBagAddItemBagFull);
 			}
@@ -505,14 +505,13 @@ void Bag::Unlock(std::size_t sz)
 
 Guid Bag::GeneratorItemGuid()
 {
-	tlsSnowflakeManager.lastGeneratorItemGuid = tlsSnowflakeManager.itemIdGenerator.Generate();
-	return  tlsSnowflakeManager.lastGeneratorItemGuid;
+	return tlsSnowflakeManager.GenerateItemGuid();
 }
 
 
 Guid Bag::LastGeneratorItemGuid()
 {
-	return tlsSnowflakeManager.lastGeneratorItemGuid;
+	return tlsSnowflakeManager.GetLastGeneratedItemGuid();
 }
 
 bool Bag::IsInvalidItemGuid(const ItemPBComponent& item)const

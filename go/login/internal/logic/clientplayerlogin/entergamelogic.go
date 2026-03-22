@@ -53,8 +53,8 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	ctx := l.ctx
 
 	// 1. Get Session
-	sessionDetails, ok := ctxkeys.GetSessionDetails(ctx)
-	if !ok || sessionDetails.SessionId <= 0 {
+	sessionDetails, sessionFound := ctxkeys.GetSessionDetails(ctx)
+	if !sessionFound || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
@@ -96,10 +96,10 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	defer func() {
-		ok, err := tryLocker.Release(ctx)
-		if err != nil {
-			logx.Errorf("Failed to release lock: %v", err)
-		} else if !ok {
+		released, releaseErr := tryLocker.Release(ctx)
+		if releaseErr != nil {
+			logx.Errorf("Failed to release lock: %v", releaseErr)
+		} else if !released {
 			logx.Infof("Lock was not held by us (possibly expired)")
 		}
 	}()
@@ -134,14 +134,14 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 
 	// 5. FSM state management (by sessionId)
 	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
-	f := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
+	playerFSM := data.InitPlayerFSM()
+	if err := fsmstore.LoadFSMState(ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); err != nil {
 		logx.Errorf("FSM Load failed: %v", err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginFsmFailed)
 		return resp, nil
 	}
 
-	if err := f.Event(ctx, data.EventEnterGame); err != nil {
+	if err := playerFSM.Event(ctx, data.EventEnterGame); err != nil {
 		logx.Errorf("FSM Event failed: %v", err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
 		return resp, nil

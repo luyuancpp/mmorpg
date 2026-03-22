@@ -61,7 +61,7 @@ void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
 	auto cb = [player](hiredis::Hiredis* c, redisReply* r) {
 		OnGetLeaderLocation(player, r);
 	};
-	tlsReids.GetZoneRedis()->command(cb, "GET player:%llu:location", leaderId);
+	tlsRedis.GetZoneRedis()->command(cb, "GET player:%llu:location", leaderId);
 }
 
 void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid)
@@ -168,7 +168,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 		auto cb = [player](hiredis::Hiredis* c, redisReply* r) {
 			OnGetTeamInfo(player, r);
 		};
-		tlsReids.GetZoneRedis()->command(cb, "GET team:%llu", teamIdComp->team_id());
+		tlsRedis.GetZoneRedis()->command(cb, "GET team:%llu", teamIdComp->team_id());
 	}
 }
 

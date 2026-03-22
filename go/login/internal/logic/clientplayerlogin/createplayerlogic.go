@@ -44,8 +44,8 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 
 	// 1. Get Session details
-	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
-	if !ok || sessionDetails.SessionId <= 0 {
+	sessionDetails, sessionFound := ctxkeys.GetSessionDetails(l.ctx)
+	if !sessionFound || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or invalid during player creation")
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
@@ -61,14 +61,14 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	account := session.Account
 
 	// 3. Lock (prevent concurrent character creation)
-	locker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
-	ok, err = locker.AcquireCreate(l.ctx, account)
-	if err != nil || !ok {
+	accountLocker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
+	lockAcquired, err := accountLocker.AcquireCreate(l.ctx, account)
+	if err != nil || !lockAcquired {
 		logx.Errorf("CreatePlayer lock acquire failed for account=%s: %v", account, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-	defer locker.ReleaseCreate(l.ctx, account)
+	defer accountLocker.ReleaseCreate(l.ctx, account)
 
 	// 4. Load account data
 	accountDataKey := constants.GetAccountDataKey(account)
@@ -86,13 +86,13 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 
 	// 5. FSM state management (by sessionId)
 	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
-	f := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
+	playerFSM := data.InitPlayerFSM()
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); err != nil {
 		logx.Errorf("Failed to load FSM state for session %s: %v", sessionIdStr, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMLoadFailed)}
 		return resp, nil
 	}
-	if err := f.Event(l.ctx, data.EventCreateChar); err != nil {
+	if err := playerFSM.Event(l.ctx, data.EventCreateChar); err != nil {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFsmFailed)}
 		logx.Errorf("FSM create_char failed, account: %s, err: %v", account, err)
 		return resp, nil
@@ -133,7 +133,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 
 	// 9. Save FSM state (by sessionId)
-	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
+	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); err != nil {
 		logx.Errorf("Failed to save FSM state, sessionId: %s, err: %v", sessionIdStr, err)
 	}
 

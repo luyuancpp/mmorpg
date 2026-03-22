@@ -7,6 +7,7 @@
 #include "core/type_define/type_define.h"
 #include "modules/mission/comp/missions_config_comp.h"
 #include "core/utils/registry/game_registry.h"
+#include "core/utils/bit_index/bit_index_util.h"
 #include "table/code/bit_index/mission_table_id_bit_index.h"
 
 class AcceptMissionEvent;
@@ -61,11 +62,7 @@ public:
 
     [[nodiscard]] bool IsComplete(const uint32_t missionId) const
     {
-        if (!MissionBitMap.contains(missionId))
-        {
-            return false;
-        }
-        return completedMissions.test(MissionBitMap.at(missionId));
+        return TestBit(MissionBitMap, completedMissions, missionId);
     }
 
     void AbandonMission(const uint32_t missionId);

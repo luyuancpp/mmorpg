@@ -1,4 +1,4 @@
 #include "redis_manager.h"
 
-thread_local RedisManager tlsReids;
+thread_local RedisManager tlsRedis;
 

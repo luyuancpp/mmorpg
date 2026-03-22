@@ -181,9 +181,9 @@ void Node::InitRpcServer() {
 
 	localNodeInfo.set_node_uuid(boost::uuids::to_string(uuidGenerator()));
 
-	InetAddress zoneRedisAddress(tlsNodeConfigManager.GetGameConfig().zone_redis().host(), tlsNodeConfigManager.GetGameConfig().zone_redis().port());
-	tlsReids.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, zoneRedisAddress);
-	tlsReids.GetZoneRedis()->connect();
+	muduo::net::InetAddress zoneRedisAddress(tlsNodeConfigManager.GetGameConfig().zone_redis().host(), tlsNodeConfigManager.GetGameConfig().zone_redis().port());
+	tlsRedis.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, zoneRedisAddress);
+	tlsRedis.GetZoneRedis()->connect();
 
 	LOG_DEBUG << "Node info: " << localNodeInfo.DebugString();
 }
@@ -253,7 +253,7 @@ void Node::StartRpcServer() {
 	}
 
 	NodeInfo& localNodeInfo = GetNodeInfo();
-	InetAddress rpcListenAddress(localNodeInfo.endpoint().ip(), localNodeInfo.endpoint().port());
+	muduo::net::InetAddress rpcListenAddress(localNodeInfo.endpoint().ip(), localNodeInfo.endpoint().port());
 
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, rpcListenAddress);
 	rpcServer->start();

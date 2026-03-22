@@ -931,7 +931,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	auto* next_route_data = mutable_request->add_route_nodes();
 	next_route_data->CopyFrom(tlsMessageContext.GetRoutingNodeInfo());
 	next_route_data->mutable_node_info()->CopyFrom(gNode->GetNodeInfo());
-	mutable_request->set_body(tlsMessageContext.RouteMsgBody());
+	mutable_request->set_body(tlsMessageContext.GetRouteMsgBody());
 	mutable_request->set_id(request->id());
 
 	switch (tlsMessageContext.GetNextRouteNodeType())

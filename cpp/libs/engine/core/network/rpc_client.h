@@ -11,40 +11,37 @@
 #include "rpc_connection_event.h"
 #include <thread_context/dispatcher_manager.h>
 
-using namespace muduo;
-using namespace muduo::net;
-
-class RpcClient : noncopyable
+class RpcClient : muduo::noncopyable
 {
 public:
-    RpcClient(EventLoop* loop,
-        const InetAddress& serverAddr)
+    RpcClient(muduo::net::EventLoop* loop,
+        const muduo::net::InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
         channel_(new GameChannel)
     {
         client_.setConnectionCallback(
-            std::bind(&RpcClient::onConnection, this, _1));
+            std::bind(&RpcClient::onConnection, this, std::placeholders::_1));
         client_.setMessageCallback(
-            std::bind(&GameChannel::HandleIncomingMessage, get_pointer(channel_), _1, _2, _3));
+            std::bind(&GameChannel::HandleIncomingMessage, muduo::get_pointer(channel_), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         client_.enableRetry();
     }
 
-    const InetAddress& local_addr()const
+    const muduo::net::InetAddress& local_addr()const
     {
         if (nullptr == client_.connection())
         {
-            static InetAddress s;
+            static muduo::net::InetAddress s;
             return s;
         }
 
         return client_.connection()->localAddress();
     }
 
-    const InetAddress& peer_addr()const
+    const muduo::net::InetAddress& peer_addr()const
     {
         if (nullptr == client_.connection())
         {
-            static InetAddress s;
+            static muduo::net::InetAddress s;
             return s;
         }
 
@@ -101,10 +98,10 @@ public:
         channel_->RouteMessageToNode(message_id, request);
     }
 
-	TcpConnectionPtr GetConnection() const {
+	muduo::net::TcpConnectionPtr GetConnection() const {
 		if (nullptr == client_.connection())
 		{
-			static TcpConnectionPtr c;
+			static muduo::net::TcpConnectionPtr c;
 			return c;
 		}
 
@@ -112,7 +109,7 @@ public:
 	}
 
 private:
-    void onConnection(const TcpConnectionPtr& conn)
+    void onConnection(const muduo::net::TcpConnectionPtr& conn)
     {
         if (conn->connected())
         {
@@ -131,7 +128,7 @@ private:
     }
 
     bool connected_{ false };
-    TcpClient client_;
+    muduo::net::TcpClient client_;
     GameChannelPtr channel_;
     std::map<std::string, ::google::protobuf::Service*> services_;
 };
