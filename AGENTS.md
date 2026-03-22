@@ -1,7 +1,6 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-03-17
-**Commit:** 8e60ff5f9
+**Updated:** 2026-03-22
 **Branch:** main
 
 ## OVERVIEW
@@ -11,14 +10,28 @@ Polyglot MMORPG backend. C++ carries runtime nodes and scene-domain logic; Go ca
 ```text
 mmorpg/
 ├── cpp/          # Runtime nodes, shared C++ services, tests
-├── go/           # Go microservices and generated service-local stubs
+│   ├── nodes/    #   Node entrypoints (scene, gate, centre) and handlers
+│   ├── libs/     #   Shared engine, ECS services, and game modules
+│   ├── generated/#   Auto-generated proto/grpc/table outputs
+│   └── tests/    #   C++ test suites (GTest)
+├── go/           # Go microservices (go-zero based)
+│   ├── login/    #   Player auth + node registration
+│   ├── scene_manager/ # Scene allocation + load balancing
+│   ├── data_service/  # Data layer RPC
+│   ├── db/            # Kafka consumer + MySQL persistence
+│   └── player_locator/# Player location lookup
 ├── java/         # Spring Boot / Sa-Token auth-side services
-├── proto/        # Source contracts and service IDs
+├── proto/        # Authoritative source contracts and service IDs
 ├── generated/    # Checked-in generated proto/table outputs
-├── deploy/       # Docker Compose + Kubernetes deployment assets
-├── tools/        # proto-gen (pbgen), exporters, robot tooling, dev scripts
+├── deploy/       # Docker Compose (dev) + Kubernetes (prod) manifests
+├── tools/        # proto-gen, exporters, robot tooling, dev scripts
+│   ├── scripts/  #   Central PowerShell dispatcher (dev_tools.ps1)
+│   ├── proto_generator/ # Canonical proto-gen source (Go)
+│   ├── archived/ #   Legacy scripts (retained for reference)
+│   └── dev/      #   mprocs dashboard configs
 ├── docs/         # Ops/docs snapshots
-└── test/         # Non-C++ test scaffolding / placeholders
+├── third_party/  # Vendored C++ dependencies (source)
+└── lib/          # Compiled library outputs (Windows .lib/.dll)
 ```
 
 ## WHERE TO LOOK
@@ -40,7 +53,8 @@ mmorpg/
 | Go service Docker images | `tools/scripts/go_svc_image.ps1` | build/push per-service Docker images |
 | K8s release flow | `deploy/k8s/README.md` | Runtime image + zone lifecycle |
 | Shared dev scripts | `tools/scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
-| Robot/load tooling | `tools/robot_client/main.go` | One-client-one-goroutine rule |
+| Robot proto/handlers | `tools/robot/` | Proto defs + message handlers for load testing |
+| Robot Go module | `robot/go.mod` | Standalone load client (one-client-one-goroutine rule) |
 
 ## CONVENTIONS
 - Prefer verb-based, thin RPC handlers. Heavy logic belongs in systems/services, not transport wrappers.
