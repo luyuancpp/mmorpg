@@ -38,5 +38,3 @@ message RewardListPBComponent
 {
 	map<uint32, bool> can_reward_mission_id = 1;
 }
-t32, bool> can_reward_mission_id = 1;
-}

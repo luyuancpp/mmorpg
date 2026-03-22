@@ -1,7 +1,7 @@
 syntax = "proto3";
 package contracts.kafka;
 
-option go_package = "contracts/kafka";
+option go_package = "etcd/proto/contracts/kafka";
 
 // Transport contract for Kafka messages sent to Scene nodes.
 // Topic convention: scene-{node_id}.

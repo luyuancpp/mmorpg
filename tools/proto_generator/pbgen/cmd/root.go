@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	_config "pbgen/internal/config"
 	"pbgen/logger"
+	"strings"
 	"syscall"
 	"time"
 
@@ -47,12 +48,25 @@ func waitForShutdownSignal() {
 	logger.Global.Info("程序开始优雅退出...")
 }
 
+func isEnabledEnv(key string) bool {
+	value := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
+	switch value {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
+}
+
 func main() {
 	defer logger.Sync()
 
 	start := time.Now()
 	logger.Global.Info("Program started", zap.Duration("elapsed", time.Since(start)))
-	startPprofServer()
+	enablePprof := isEnabledEnv("PBGEN_ENABLE_PPROF")
+	if enablePprof {
+		startPprofServer()
+	}
 
 	if err := _config.Load(); err != nil {
 		logger.Global.Fatal("配置初始化失败", zap.Error(err))
@@ -72,5 +86,10 @@ func main() {
 	runner.PrintStats()
 
 	logger.Global.Info("Total execution time", zap.Duration("elapsed", time.Since(start)))
-	waitForShutdownSignal()
+	if enablePprof {
+		waitForShutdownSignal()
+		return
+	}
+
+	logger.Global.Info("生成流程完成，默认直接退出。若需性能分析，请设置环境变量 PBGEN_ENABLE_PPROF=1")
 }

@@ -3,7 +3,7 @@ package data_service;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "data_service/data_service";
+option go_package = "db/proto/data_service";
 
 // DataService: Cross-realm transparent data proxy.
 // Scene Server calls this service with player_id only;

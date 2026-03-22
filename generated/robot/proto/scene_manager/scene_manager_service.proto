@@ -5,7 +5,7 @@ import "proto/common/base/node.proto";
 import "proto/common/base/empty.proto";
 import "proto/contracts/kafka/gate_command.proto";
 
-option go_package = "scene_manager/scene_manager";
+option go_package = "robot/proto/scene_manager";
 
 // SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
 // No longer requires Centre — Login/player_locator drive the flow directly.

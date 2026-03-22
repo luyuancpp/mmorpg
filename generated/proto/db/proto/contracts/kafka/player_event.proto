@@ -1,7 +1,7 @@
 syntax = "proto3";
 package contracts.kafka;
 
-option go_package = "contracts/kafka";
+option go_package = "db/proto/contracts/kafka";
 
 // Transport contract for player lifecycle events.
 // Topic: "player-events" (consumed by player_locator).

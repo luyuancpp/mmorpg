@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "scene_manager/proto/scene";
 
 import "proto/db/proto_option.proto";
 import "proto/common/component/actor_comp.proto";

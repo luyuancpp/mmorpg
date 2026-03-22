@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "chat/proto/common/component";
 
 
 import "proto/common/component/comp.proto";

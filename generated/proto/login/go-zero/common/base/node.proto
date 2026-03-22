@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "common/base";
 
 enum eNodeType {
   UnknownNodeService     = 0;  // 未知节点服务
