@@ -1,0 +1,12 @@
+{{.IncludeBegin}}{{.EventHandlerHeaderFileName}}{{.IncludeEndLine}}
+{{.CppIncludeData}}
+
+void EventHandler::Register()
+{
+{{.RegisterData}}
+}
+
+void EventHandler::UnRegister()
+{
+{{.UnRegisterData}}
+}

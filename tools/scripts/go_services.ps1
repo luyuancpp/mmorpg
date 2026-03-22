@@ -1,0 +1,207 @@
+<#
+.SYNOPSIS
+    Unified Go micro-service launcher for local Windows development.
+
+.DESCRIPTION
+    Starts one, several, or all implemented go-zero services in the go/ directory.
+    Each service runs as a separate background process; a stop command terminates them.
+
+.PARAMETER Command
+    start   – build & launch selected services (default: all)
+    stop    – gracefully stop running services launched by this script
+    status  – show which services are currently running
+    list    – print the available service catalogue
+
+.PARAMETER Services
+    Comma-separated service names to start (e.g. "login,db").
+    Defaults to all implemented services.
+
+.EXAMPLE
+    # Start every implemented Go service
+    pwsh -File tools/scripts/go_services.ps1 -Command start
+
+    # Start only login and db
+    pwsh -File tools/scripts/go_services.ps1 -Command start -Services login,db
+
+    # Check what's running
+    pwsh -File tools/scripts/go_services.ps1 -Command status
+
+    # Stop all services launched by this script
+    pwsh -File tools/scripts/go_services.ps1 -Command stop
+#>
+param(
+    [Parameter(Mandatory = $true)]
+    [ValidateSet("start", "stop", "status", "list")]
+    [string]$Command,
+
+    [string[]]$Services = @()
+)
+
+$ErrorActionPreference = "Stop"
+
+$ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
+$GoRoot     = Join-Path $RepoRoot "go"
+$PidFile    = Join-Path $RepoRoot "bin\go_services.pid.json"
+$LogDir     = Join-Path $RepoRoot "bin\logs\go_services"
+
+# ── Service catalogue ────────────────────────────────────────────────
+# Order matters: infrastructure-layer services first, then domain services.
+$ServiceCatalogue = [ordered]@{
+    db              = @{ Dir = "db";              Entry = "db.go";                     Port = 6000;  Desc = "DB (Kafka consumer + MySQL)" }
+    data_service    = @{ Dir = "data_service";    Entry = "dataservice.go";            Port = 9000;  Desc = "Data Service (multi-zone Redis)" }
+    login           = @{ Dir = "login";           Entry = "login.go";                  Port = 50000; Desc = "Login (gRPC + etcd)" }
+    player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";         Port = 50100; Desc = "Player Locator (Redis cache)" }
+    scene_manager   = @{ Dir = "scene_manager";   Entry = "scenemanagerservice.go";    Port = 60000; Desc = "Scene Manager (Kafka + Redis)" }
+}
+
+# ── Helpers ──────────────────────────────────────────────────────────
+function Resolve-ServiceList {
+    param([string[]]$Requested)
+    if ($Requested.Count -eq 0) {
+        return @($ServiceCatalogue.Keys)
+    }
+    foreach ($s in $Requested) {
+        if (-not $ServiceCatalogue.Contains($s)) {
+            throw "Unknown service '$s'. Run with -Command list to see available services."
+        }
+    }
+    return $Requested
+}
+
+function Read-PidFile {
+    if (Test-Path $PidFile) {
+        return Get-Content $PidFile -Raw | ConvertFrom-Json
+    }
+    return @{}
+}
+
+function Write-PidFile {
+    param($Map)
+    $dir = Split-Path -Parent $PidFile
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $Map | ConvertTo-Json | Set-Content $PidFile -Encoding UTF8
+}
+
+# ── Commands ─────────────────────────────────────────────────────────
+function Invoke-Start {
+    $names = Resolve-ServiceList -Requested $Services
+    $pids  = Read-PidFile
+
+    if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
+
+    foreach ($name in $names) {
+        $info = $ServiceCatalogue[$name]
+        $svcDir = Join-Path $GoRoot $info.Dir
+
+        if (-not (Test-Path $svcDir)) {
+            Write-Warning "Skipping '$name': directory $svcDir does not exist."
+            continue
+        }
+
+        # Skip if already running
+        if ($pids.PSObject.Properties.Name -contains $name) {
+            $existingPid = $pids.$name
+            try {
+                $proc = Get-Process -Id $existingPid -ErrorAction Stop
+                if (-not $proc.HasExited) {
+                    Write-Host "[skip]  $name (PID $existingPid already running on :$($info.Port))" -ForegroundColor Yellow
+                    continue
+                }
+            } catch {
+                # process gone; will restart
+            }
+        }
+
+        $entry   = Join-Path $svcDir $info.Entry
+        $logOut  = Join-Path $LogDir "$name.stdout.log"
+        $logErr  = Join-Path $LogDir "$name.stderr.log"
+
+        Write-Host "[start] $name  :$($info.Port)  ($($info.Desc))" -ForegroundColor Cyan
+
+        $proc = Start-Process -FilePath "go" `
+            -ArgumentList "run", $info.Entry `
+            -WorkingDirectory $svcDir `
+            -RedirectStandardOutput $logOut `
+            -RedirectStandardError  $logErr `
+            -PassThru `
+            -WindowStyle Hidden
+
+        $pids | Add-Member -NotePropertyName $name -NotePropertyValue $proc.Id -Force
+        Write-Host "        PID $($proc.Id)  logs -> bin\logs\go_services\$name.*.log" -ForegroundColor DarkGray
+    }
+
+    Write-PidFile $pids
+    Write-Host "`nAll requested services launched. Use -Command status to check health." -ForegroundColor Green
+}
+
+function Invoke-Stop {
+    $pids = Read-PidFile
+    if ($pids.PSObject.Properties.Count -eq 0) {
+        Write-Host "No tracked services to stop." -ForegroundColor Yellow
+        return
+    }
+
+    $names = if ($Services.Count -gt 0) { Resolve-ServiceList -Requested $Services } else { @($pids.PSObject.Properties.Name) }
+
+    foreach ($name in $names) {
+        if ($pids.PSObject.Properties.Name -notcontains $name) { continue }
+        $pid = $pids.$name
+        try {
+            $proc = Get-Process -Id $pid -ErrorAction Stop
+            if (-not $proc.HasExited) {
+                Stop-Process -Id $pid -Force
+                Write-Host "[stop]  $name (PID $pid)" -ForegroundColor Magenta
+            } else {
+                Write-Host "[gone]  $name (PID $pid already exited)" -ForegroundColor DarkGray
+            }
+        } catch {
+            Write-Host "[gone]  $name (PID $pid not found)" -ForegroundColor DarkGray
+        }
+        $pids.PSObject.Properties.Remove($name)
+    }
+
+    Write-PidFile $pids
+}
+
+function Invoke-Status {
+    $pids = Read-PidFile
+    if ($pids.PSObject.Properties.Count -eq 0) {
+        Write-Host "No tracked services." -ForegroundColor Yellow
+        return
+    }
+    Write-Host ("{0,-18} {1,-8} {2,-8} {3}" -f "SERVICE", "PID", "PORT", "STATUS") -ForegroundColor White
+    Write-Host ("{0,-18} {1,-8} {2,-8} {3}" -f "-------", "---", "----", "------")
+    foreach ($prop in $pids.PSObject.Properties) {
+        $name = $prop.Name
+        $pid  = $prop.Value
+        $port = if ($ServiceCatalogue.Contains($name)) { $ServiceCatalogue[$name].Port } else { "?" }
+        $status = "UNKNOWN"
+        try {
+            $proc = Get-Process -Id $pid -ErrorAction Stop
+            $status = if ($proc.HasExited) { "EXITED" } else { "RUNNING" }
+        } catch {
+            $status = "GONE"
+        }
+        $color = switch ($status) { "RUNNING" { "Green" } "EXITED" { "Red" } default { "DarkGray" } }
+        Write-Host ("{0,-18} {1,-8} {2,-8} {3}" -f $name, $pid, $port, $status) -ForegroundColor $color
+    }
+}
+
+function Invoke-List {
+    Write-Host "`nAvailable Go services:`n" -ForegroundColor Cyan
+    Write-Host ("{0,-18} {1,-8} {2}" -f "NAME", "PORT", "DESCRIPTION") -ForegroundColor White
+    Write-Host ("{0,-18} {1,-8} {2}" -f "----", "----", "-----------")
+    foreach ($kv in $ServiceCatalogue.GetEnumerator()) {
+        Write-Host ("{0,-18} {1,-8} {2}" -f $kv.Key, $kv.Value.Port, $kv.Value.Desc)
+    }
+    Write-Host ""
+}
+
+# ── Dispatch ─────────────────────────────────────────────────────────
+switch ($Command) {
+    "start"  { Invoke-Start }
+    "stop"   { Invoke-Stop }
+    "status" { Invoke-Status }
+    "list"   { Invoke-List }
+}
