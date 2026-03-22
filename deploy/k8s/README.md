@@ -14,7 +14,9 @@ This directory contains Kubernetes-only deployment assets for opening game zones
 
 ## Directory Layout
 
-- `manifests/infra/`: infra resources applied per namespace (`etcd`, `redis`, `kafka`).
+- `manifests/infra/`: infra resources applied per namespace (`etcd`, `redis`, `kafka`, `mysql`).
+- `manifests/go-svc/`: Go micro-service K8s manifests (`db`, `data-service`, `login`, `player-locator`, `scene-manager`).
+- `Dockerfile.go-svc`: multi-stage Dockerfile for building Go service images.
 - `zones.sample.json`: sample multi-zone definition file (JSON).
 - `zones.sample.yaml`: sample multi-zone definition file (YAML).
 
@@ -76,6 +78,49 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-release-zone `
   -ImageTag v1 `
   -WaitReady
 ```
+
+## Go Micro-Service Image Flow
+
+Go services use `deploy/k8s/Dockerfile.go-svc` (multi-stage build). Build context is the `go/` directory.
+Each service gets its own image: `{registry}/mmorpg-{service}:{tag}`.
+
+| Service | Image Name |
+|---------|------------|
+| db | `mmorpg-db` |
+| data-service | `mmorpg-data-service` |
+| login | `mmorpg-login` |
+| player-locator | `mmorpg-player-locator` |
+| scene-manager | `mmorpg-scene-manager` |
+
+### Build all Go service images
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build-images `
+  -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1
+```
+
+### Push all Go service images
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-push-images `
+  -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1
+```
+
+### Deploy Go services alongside a zone
+
+Pass `-GoSvcRegistry` to include Go services in zone deployment.
+Each service image is derived as `{GoSvcRegistry}/mmorpg-{svc}:{GoSvcTag}`:
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up `
+  -ZoneName yesterday -ZoneId 101 `
+  -OpsProfile managed-cloud `
+  -NodeImage ghcr.io/luyuancpp/mmorpg-node:latest `
+  -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1 `
+  -WaitReady
+```
+
+Omit `-GoSvcRegistry` or pass `-SkipGoSvc` to deploy only C++ nodes.
 
 ## Ops Recommendation
 
@@ -161,6 +206,9 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
 - `-GateServicePort`: external gate service port.
 - `-OpsProfile`: `managed-cloud`, `bare-metal`, or `custom`.
 - With `-OpsProfile custom`, the baseline default is `-GateServiceType NodePort` unless overridden.
+- `-GoSvcRegistry`: Docker registry for Go micro-services (e.g. `ghcr.io/luyuancpp`). If not set, Go services are skipped.
+- `-GoSvcTag`: Image tag for Go service images (default: `latest`).
+- `-SkipGoSvc`: explicitly skip Go service deployment even if `-GoSvcRegistry` is set.
 
 ## Important Notes
 

@@ -21,6 +21,9 @@ param(
 	[int]$GateServicePort = 18000,
 
 	[switch]$SkipInfra,
+	[switch]$SkipGoSvc,
+	[string]$GoSvcRegistry = "",
+	[string]$GoSvcTag = "latest",
 	[switch]$DryRun,
 	[switch]$WaitReady,
 	[int]$WaitTimeoutSeconds = 180,
@@ -35,6 +38,16 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 $K8sRoot = Join-Path $RepoRoot "deploy\k8s"
 $InfraManifestsDir = Join-Path $K8sRoot "manifests\infra"
+$GoSvcManifestsDir = Join-Path $K8sRoot "manifests\go-svc"
+
+# Go micro-service catalogue: name → { configMapName, manifestFile, port, configFlag, configFileName }
+$GoSvcCatalogue = @{
+	db              = @{ ConfigMap = "go-svc-db-config";              Manifest = "db.yaml";              Port = 6000;  ConfigFlag = "-f";              ConfigFile = "db.yaml";                    ImageName = "mmorpg-db" }
+	"data-service"  = @{ ConfigMap = "go-svc-data-service-config";    Manifest = "data-service.yaml";    Port = 9000;  ConfigFlag = "-f";              ConfigFile = "dataservice.yaml";            ImageName = "mmorpg-data-service" }
+	login           = @{ ConfigMap = "go-svc-login-config";           Manifest = "login.yaml";           Port = 50000; ConfigFlag = "-loginService";   ConfigFile = "login.yaml";                  ImageName = "mmorpg-login" }
+	"player-locator"= @{ ConfigMap = "go-svc-player-locator-config";  Manifest = "player-locator.yaml";  Port = 50100; ConfigFlag = "-f";              ConfigFile = "playerlocator.yaml";          ImageName = "mmorpg-player-locator" }
+	"scene-manager" = @{ ConfigMap = "go-svc-scene-manager-config";   Manifest = "scene-manager.yaml";   Port = 60000; ConfigFlag = "-f";              ConfigFile = "scenemanagerservice.yaml";    ImageName = "mmorpg-scene-manager" }
+}
 
 function Apply-OpsProfileDefaults {
 	switch ($OpsProfile) {
@@ -318,10 +331,249 @@ function Wait-ForZoneReady {
 	}
 
 	Write-Host "Waiting for zone workloads to become ready: namespace=$Namespace"
+	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "mysql"
 	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "centre"
 	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "gate"
 	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "scene"
+
+	if (-not $SkipGoSvc -and -not [string]::IsNullOrWhiteSpace($GoSvcRegistry)) {
+		foreach ($svcName in $GoSvcCatalogue.Keys) {
+			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $svcName
+		}
+	}
 	Write-Host "Zone workloads are ready: namespace=$Namespace"
+}
+
+function New-GoSvcConfigMapYaml {
+	param(
+		[Parameter(Mandatory = $true)][string]$SvcName,
+		[Parameter(Mandatory = $true)][int]$CurrentZoneId
+	)
+
+	$info = $GoSvcCatalogue[$SvcName]
+	$configMapName = $info.ConfigMap
+	$configFileName = $info.ConfigFile
+
+	$svcConfig = switch ($SvcName) {
+		"db" {
+@"
+Name: db.rpc
+ListenOn: 0.0.0.0:6000
+Etcd:
+  Hosts:
+    - "etcd:2379"
+  Key: db.rpc
+ServerConfig:
+  JsonPath: "/app/data/mysql_database_table_list.json"
+  Kafka:
+    Brokers: "kafka:9092"
+    GroupID: "db_rpc_consumer_group"
+    Topic: "db_task_topic"
+    PartitionCnt: 5
+    IsOfflineExpand: false
+  Database:
+    Hosts: "mysql:3306"
+    User: "root"
+    Passwd: "root"
+    DBName: "game"
+    MaxOpenConn: 10
+    MaxIdleConn: 3
+    Net: ""
+  RedisClient:
+    Hosts: "redis:6379"
+    DefaultTTLSeconds: 3600
+    Password: ""
+    DB: 0
+"@
+		}
+		"data-service" {
+@"
+Name: dataservice.rpc
+ListenOn: 0.0.0.0:9000
+Etcd:
+  Hosts:
+    - "etcd:2379"
+  Key: dataservice.rpc
+MappingRedis:
+  Host: redis:6379
+  Type: node
+  DB: 15
+Regions:
+  - Id: 1
+    Zones: [1]
+    Redis:
+      Addrs:
+        - redis:6379
+DevRedis:
+  Host: redis:6379
+  Type: node
+  DB: 0
+PlayerLockTTLSec: 3
+"@
+		}
+		"login" {
+@"
+Name: login.rpc
+ListenOn: 0.0.0.0:50000
+Timeout: 100000
+Etcd:
+  Hosts:
+    - "etcd:2379"
+  Key: login.rpc
+Node:
+  ZoneId: ${CurrentZoneId}
+  SessionExpireMin: 1
+  MaxLoginDevices: 3
+  LeaseTTL: 500
+  QueueShardCount: 50
+  MaxLoginDuration: 5m
+  LogoutGraceTime: 5s
+  RedisClient:
+    Host: redis:6379
+    Password: ""
+    DB: 0
+    DefaultTTL: 24h
+    DialTimeout: 3s
+    ReadTimeout: 3s
+    WriteTimeout: 3s
+Snowflake:
+  Epoch: 1721473263000
+  NodeBits: 13
+  StepBits: 9
+Locker:
+  AccountLockTTL: 10
+  PlayerLockTTL: 5
+Account:
+  MaxDevicesPerAccount: 3
+  CacheExpire: 12h
+Registry:
+  Etcd:
+    Hosts:
+      - "etcd:2379"
+    Key: loginservice.rpc
+    DialTimeout: 5s
+Timeouts:
+  EtcdDialTimeout: 5s
+  ServiceDiscoveryTimeout: 10s
+  TaskWaitTimeout: 5s
+  LoginTotalTimeout: 10s
+  RoleCacheExpire: 24h
+  TaskManagerCleanInterval: 5s
+  TaskBatchExpireTime: 10s
+PlayerLocatorRpc:
+  Etcd:
+    Hosts:
+      - "etcd:2379"
+    Key: playerlocator.rpc
+  Timeout: 5000
+Kafka:
+  Brokers: "kafka:9092"
+  GroupID: "db_rpc_consumer_group"
+  Topic: "db_task_topic"
+  PartitionCnt: 5
+  InitialPartition: 5
+  DialTimeout: 10s
+  ReadTimeout: 30s
+  WriteTimeout: 10s
+"@
+		}
+		"player-locator" {
+@"
+Name: playerlocator.rpc
+ListenOn: 0.0.0.0:50100
+Timeout: 10000
+Etcd:
+  Hosts:
+    - "etcd:2379"
+  Key: playerlocator.rpc
+Redis:
+  Host: redis:6379
+  Password: ""
+  DB: 0
+Kafka:
+  Brokers:
+    - "kafka:9092"
+Node:
+  ZoneId: ${CurrentZoneId}
+  LeaseTTL: 500
+Registry:
+  Etcd:
+    Hosts:
+      - "etcd:2379"
+    DialTimeout: 5s
+Lease:
+  DefaultTTLSeconds: 30
+  PollInterval: 1s
+  BatchSize: 100
+"@
+		}
+		"scene-manager" {
+@"
+Name: scenemanagerservice.rpc
+ListenOn: 0.0.0.0:60000
+Etcd:
+  Hosts:
+    - "etcd:2379"
+  Key: scenemanagerservice.rpc
+Redis:
+  Host: redis:6379
+  Type: node
+  Key: scenemanagerservice
+Kafka:
+  Brokers:
+    - "kafka:9092"
+NodeID: "node-1"
+"@
+		}
+		default {
+			throw "Unknown Go service: $SvcName"
+		}
+	}
+
+	return @"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: $configMapName
+data:
+  ${configFileName}: |
+$($svcConfig -split "`n" | ForEach-Object { "    `$_" } | Out-String)
+"@
+}
+
+function Apply-GoSvcManifests {
+	param(
+		[Parameter(Mandatory = $true)][string]$Namespace,
+		[Parameter(Mandatory = $true)][int]$CurrentZoneId
+	)
+
+	if ($SkipGoSvc) { return }
+	if ([string]::IsNullOrWhiteSpace($GoSvcRegistry)) {
+		Write-Host "[skip] Go services: -GoSvcRegistry not set, skipping Go service deployment."
+		return
+	}
+
+	Write-Host "Applying Go micro-service manifests to namespace $Namespace (registry=$GoSvcRegistry tag=$GoSvcTag)"
+
+	foreach ($svcName in $GoSvcCatalogue.Keys) {
+		$info = $GoSvcCatalogue[$svcName]
+		$svcImage = "$GoSvcRegistry/$($info.ImageName):$GoSvcTag"
+
+		# Apply ConfigMap
+		$cmYaml = New-GoSvcConfigMapYaml -SvcName $svcName -CurrentZoneId $CurrentZoneId
+		Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $cmYaml
+
+		# Apply manifest with image placeholder replaced
+		$manifestPath = Join-Path $GoSvcManifestsDir $info.Manifest
+		if (-not (Test-Path $manifestPath)) {
+			Write-Warning "Go service manifest not found: $manifestPath – skipping $svcName"
+			continue
+		}
+		$manifestContent = (Get-Content $manifestPath -Raw) -replace 'PLACEHOLDER_IMAGE', $svcImage
+		Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $manifestContent
+
+		Write-Host "  [applied] $svcName -> $svcImage (port $($info.Port))"
+	}
 }
 
 function Get-ZonesFromJson {
@@ -474,10 +726,11 @@ function Apply-Zone {
 	Ensure-Namespace -Namespace $namespace
 
 	if (-not $SkipInfra) {
-		Write-Host "Applying infra manifests (etcd/redis/kafka) to namespace $namespace"
+		Write-Host "Applying infra manifests (etcd/redis/kafka/mysql) to namespace $namespace"
 		Invoke-Kubectl -Args @("apply", "-n", $namespace, "-f", (Join-Path $InfraManifestsDir "etcd.yaml"))
 		Invoke-Kubectl -Args @("apply", "-n", $namespace, "-f", (Join-Path $InfraManifestsDir "redis.yaml"))
 		Invoke-Kubectl -Args @("apply", "-n", $namespace, "-f", (Join-Path $InfraManifestsDir "kafka.yaml"))
+		Invoke-Kubectl -Args @("apply", "-n", $namespace, "-f", (Join-Path $InfraManifestsDir "mysql.yaml"))
 	}
 
 	$configMapName = "node-config"
@@ -494,6 +747,8 @@ function Apply-Zone {
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $gateYaml
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $sceneYaml
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $gateServiceYaml
+
+	Apply-GoSvcManifests -Namespace $namespace -CurrentZoneId $CurrentZoneId
 
 	Wait-ForZoneReady -Namespace $namespace
 

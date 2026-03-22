@@ -162,6 +162,79 @@
 			],
 			"group": "build",
 			"problemMatcher": []
+		},
+		{
+			"label": "go-svc: start all",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"go-svc-start"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "go-svc: stop all",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"go-svc-stop"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "go-svc: status",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"go-svc-status"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "go-svc: list",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"go-svc-list"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "go-svc: build images",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"go-svc-build-images"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "go-svc: push images",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"go-svc-push-images"
+			],
+			"problemMatcher": []
 		}
 	]
 }

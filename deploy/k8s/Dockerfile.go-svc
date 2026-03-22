@@ -44,6 +44,9 @@ WORKDIR /app
 
 COPY --from=builder /app/service /app/service
 
+# Copy generated data files (e.g. mysql_database_table_list.json for db service)
+COPY --from=builder /src/generated/data/ /app/data/
+
 # Each service keeps its etc/ config inside the image as a default.
 # K8s deployments override it via ConfigMap mount at /app/etc/.
 ARG SERVICE

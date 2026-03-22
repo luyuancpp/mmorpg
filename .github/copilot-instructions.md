@@ -51,6 +51,16 @@
 - **Run tests**: `cd java\sa_token_node && mvn test`
 - **Run a single Java test**: `cd java\sa_token_node && mvn -Dtest=GrpcServerApplicationTests#contextLoads test`
 
+### Go Services (Local Dev)
+- **Start all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-start`
+- **Stop all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-stop`
+- **Status**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-status`
+- **List**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-list`
+
+### Go Service Docker Images
+- **Build all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build-images -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1`
+- **Push all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-push-images -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1`
+
 ## High-Level Architecture
 
 - **Polyglot backend split by responsibility**:
