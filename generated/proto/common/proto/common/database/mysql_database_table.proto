@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "common/proto/common/database";
 
 import "proto/db/proto_option.proto";
 import "proto/common/base/user_accounts.proto";

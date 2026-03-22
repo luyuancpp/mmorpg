@@ -1,7 +1,7 @@
 syntax = "proto3";
 package contracts.kafka;
 
-option go_package = "contracts/kafka";
+option go_package = "chat/proto/contracts/kafka";
 
 // Transport contract for Kafka messages sent to Gate.
 // Command type is identified by event_id (from global event_id registry).

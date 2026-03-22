@@ -1,7 +1,7 @@
 syntax = "proto3";
 package contracts.kafka;
 
-option go_package = "contracts/kafka";
+option go_package = "login/proto/contracts/kafka";
 
 // In-process events decoded from Gate Kafka transport payloads.
 // These are intentionally modeled like node event protos so handlers can stay split by file/domain.

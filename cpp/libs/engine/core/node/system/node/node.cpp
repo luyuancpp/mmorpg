@@ -1,4 +1,4 @@
-#include "node.h"
+﻿#include "node.h"
 #include <regex>
 #include <grpcpp/create_channel.h>
 #include <boost/uuid/uuid_io.hpp>
@@ -382,7 +382,6 @@ void InitPlayerServiceReplied();
 void InitServiceHandler();
 void Node::RegisterHandlers() {
 	InitMessageInfo();
-	InitEventInfo();
 	InitReply();
 	InitPlayerService();
 	InitPlayerServiceReplied();

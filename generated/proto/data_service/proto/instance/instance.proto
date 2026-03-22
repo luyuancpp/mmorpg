@@ -4,7 +4,6 @@ syntax = "proto3";
 
 import "proto/common/base/tip.proto";
 
-option go_package = "data_service/proto/instance";
 package instance;
 
 service Instance {

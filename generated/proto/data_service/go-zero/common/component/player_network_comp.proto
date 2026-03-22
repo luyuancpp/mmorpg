@@ -1,5 +1,4 @@
 syntax = "proto3";
-option go_package = "common/component";
 
 message PlayerSessionSnapshotPBComp {
     uint64 player_id = 1;
