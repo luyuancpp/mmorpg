@@ -1,0 +1,20 @@
+# mprocs dashboard for local MMORPG dev (Go services only).
+#
+# Run from repo root:
+#   mprocs -c tools/dev/mprocs.go-only.yaml
+
+procs:
+  go-db:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-db"]
+
+  go-data-service:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-data-service"]
+
+  go-player-locator:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-player-locator"]
+
+  go-login:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-login"]
+
+  go-scene-manager:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-scene-manager"]

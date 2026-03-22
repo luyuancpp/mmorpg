@@ -311,9 +311,12 @@
 		{
 			"label": "dev: mprocs dashboard",
 			"type": "shell",
-			"command": "mprocs",
+			"command": "pwsh",
 			"args": [
-				"-c",
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/tools/scripts/start_mprocs.ps1",
+				"-ConfigPath",
 				"${workspaceFolder}/tools/dev/mprocs.yaml"
 			],
 			"problemMatcher": []
@@ -321,10 +324,39 @@
 		{
 			"label": "dev: mprocs dashboard (2 gate + 4 scene)",
 			"type": "shell",
-			"command": "mprocs",
+			"command": "pwsh",
 			"args": [
-				"-c",
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/tools/scripts/start_mprocs.ps1",
+				"-ConfigPath",
 				"${workspaceFolder}/tools/dev/mprocs.2g4s.yaml"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: mprocs dashboard (Go only)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/tools/scripts/start_mprocs.ps1",
+				"-ConfigPath",
+				"${workspaceFolder}/tools/dev/mprocs.go-only.yaml"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: mprocs dashboard (C++ only)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-File",
+				"${workspaceFolder}/tools/scripts/start_mprocs.ps1",
+				"-ConfigPath",
+				"${workspaceFolder}/tools/dev/mprocs.cpp-only.yaml"
 			],
 			"problemMatcher": []
 		}

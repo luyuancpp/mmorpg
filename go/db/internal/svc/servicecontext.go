@@ -2,6 +2,7 @@ package svc
 
 import (
 	"db/internal/config"
+
 	"github.com/redis/go-redis/v9"
 )
 

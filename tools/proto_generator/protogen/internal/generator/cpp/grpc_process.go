@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"sort"
-	"strings"
 	"sync"
 	"text/template"
 
@@ -181,11 +180,8 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 				return
 			}
 
-			// Build qualified NodeInfo type from the same package as eNodeType
+			// NodeInfo is defined in common.proto (no package), so it stays in the global namespace.
 			nodeInfoCppType := "NodeInfo"
-			if idx := strings.LastIndex(internal.NodeEnumCppQualifiedType, "::"); idx >= 0 {
-				nodeInfoCppType = internal.NodeEnumCppQualifiedType[:idx] + "::NodeInfo"
-			}
 
 			cppData := struct {
 				ServiceInfo     []*internal.RPCServiceInfo
