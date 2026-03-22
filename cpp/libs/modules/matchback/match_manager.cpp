@@ -24,13 +24,13 @@ namespace GameMMR
     {
         m_pTeamList = p_team;
         m_vMatchList.resize(E_MATCH_MAX);
-        m_vMatchList[E_NOMAL_TEAM_MATCH].reset(new MatchMaking(E_NOMAL_TEAM_MATCH, m_pTeamList));
-        m_vMatchList[E_RELATION_UNION_ALLY].reset(new MatchMaking(E_RELATION_UNION_ALLY, m_pTeamList));
-        m_vMatchList[E_CROSS_SERVER_MATCH_DUNGEON_TYPE].reset(new MatchMaking(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, m_pTeamList));
-        m_vMatchList[E_MATCH_3V3].reset(new MatchMaking(E_MATCH_3V3, m_pTeamList));
-        m_vMatchList[E_MATCH_15V15].reset(new MatchMaking(E_MATCH_15V15, m_pTeamList));
-        m_vMatchList[E_TEST_NOMAL_TEAM_RANK_MATCH].reset(new MatchMaking(E_TEST_NOMAL_TEAM_RANK_MATCH, m_pTeamList));
-        m_vMatchList[E_TEST_GROUP_MATCH].reset(new MatchMaking(E_TEST_GROUP_MATCH, m_pTeamList));
+        m_vMatchList[E_NOMAL_TEAM_MATCH] = std::make_shared<MatchMaking>(E_NOMAL_TEAM_MATCH, m_pTeamList);
+        m_vMatchList[E_RELATION_UNION_ALLY] = std::make_shared<MatchMaking>(E_RELATION_UNION_ALLY, m_pTeamList);
+        m_vMatchList[E_CROSS_SERVER_MATCH_DUNGEON_TYPE] = std::make_shared<MatchMaking>(E_CROSS_SERVER_MATCH_DUNGEON_TYPE, m_pTeamList);
+        m_vMatchList[E_MATCH_3V3] = std::make_shared<MatchMaking>(E_MATCH_3V3, m_pTeamList);
+        m_vMatchList[E_MATCH_15V15] = std::make_shared<MatchMaking>(E_MATCH_15V15, m_pTeamList);
+        m_vMatchList[E_TEST_NOMAL_TEAM_RANK_MATCH] = std::make_shared<MatchMaking>(E_TEST_NOMAL_TEAM_RANK_MATCH, m_pTeamList);
+        m_vMatchList[E_TEST_GROUP_MATCH] = std::make_shared<MatchMaking>(E_TEST_GROUP_MATCH, m_pTeamList);
         
        
     }

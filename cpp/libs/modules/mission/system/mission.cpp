@@ -1,6 +1,7 @@
 #include "mission.h"
 #include <ranges>
 #include "engine/core/error_handling/error_handling.h"
+#include "engine/core/utils/bit_index/bit_index_util.h"
 #include "muduo/base/Logging.h"
 #include "table/code/condition_table.h"
 #include "mission/constants/mission.h"

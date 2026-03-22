@@ -62,7 +62,11 @@ public:
 
     [[nodiscard]] bool IsComplete(const uint32_t missionId) const
     {
-        return TestBit(MissionBitMap, completedMissions, missionId);
+        if (!MissionBitMap.contains(missionId))
+        {
+            return false;
+        }
+        return completedMissions.test(MissionBitMap.at(missionId));
     }
 
     void AbandonMission(const uint32_t missionId);
