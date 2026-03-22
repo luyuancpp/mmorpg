@@ -14,9 +14,6 @@ void MovementSystem::Update(const double delta)
 		location.set_x(location.x() + velocity.x() * delta);
 		location.set_y(location.y() + velocity.y() * delta);
 		location.set_z(location.z() + velocity.z() * delta);
-
-		// Optional: Log the updated position for debugging or logging purposes
-		//LOG_TRACE << "Entity " << entt::to_integral(entity) << " moved to (" << location.x() << ", " << location.y() << ", " << location.z() << ")";
 	}
 }
 

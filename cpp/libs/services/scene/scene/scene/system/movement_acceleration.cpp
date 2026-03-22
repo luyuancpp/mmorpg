@@ -14,9 +14,6 @@ void MovementAccelerationSystem::Update(const double delta)
 		location.set_x(location.x() + (velocity.x() + acceleration.x()) * delta);
 		location.set_y(location.y() + (velocity.y() + acceleration.y()) * delta);
 		location.set_z(location.z() + (velocity.z() + acceleration.z()) * delta);
-
-		// Optional: Log the updated position for debugging or logging purposes
-		//LOG_TRACE << "Entity " << entity << " moved to (" << location.x() << ", " << location.y() << ", " << location.z() << ")";
 	}
 }
 

@@ -4,6 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/system/mission.h"
+#include "modules/mission/comp/missions_config_comp.h"
 #include <thread_context/registry_manager.h>
 
 ///<<< END WRITING YOUR CODE
@@ -28,7 +29,7 @@ void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& ev
 	entt::entity entity = entt::to_entity(event.entity());
     auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComponent>(entity);
     auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
-	MissionSystem::AcceptMission(event, comp);
+	MissionSystem::AcceptMission(event, comp, MissionConfig::GetSingleton());
 ///<<< END WRITING YOUR CODE
 }
 void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& event)
@@ -37,7 +38,7 @@ void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEve
 	entt::entity entity = entt::to_entity(event.entity());
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComponent>(entity);
 	auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
-    MissionSystem::HandleMissionConditionEvent(event, comp);
+    MissionSystem::HandleMissionConditionEvent(event, comp, MissionConfig::GetSingleton());
 ///<<< END WRITING YOUR CODE
 }
 void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& event)
