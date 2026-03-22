@@ -1,75 +1,154 @@
 # MMORPG Server Framework
 
-A lightweight and educational MMORPG server-side framework written in modern C++.  
-Designed for learning, experimentation, and prototyping of game server architectures.
+A polyglot MMORPG server-side framework built with **C++**, **Go**, and **Java**.  
+Designed for learning, experimentation, and prototyping of scalable game server architectures.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🧩 **Entity-Component System (ECS)** for flexible game object modeling
-- ⚡ **High-performance networking** using Linux `epoll` and non-blocking sockets
-- 📜 **Lua scripting** for game logic extension and rapid iteration
-- 🔌 Modular server core with decoupled components
-- 🗺️ Base framework for building MMO-style simulations
-
----
-
-## 🧰 Tech Stack
-
-- C++17
-- `epoll`, non-blocking IO
-- Lua scripting integration
-- STL, custom ECS implementation
-- CMake for build system
+- **Entity-Component System (ECS)** — flexible game object modeling via [EnTT](https://github.com/skypjack/entt)
+- **Polyglot backend** — C++ runtime nodes, Go microservices (go-zero), Java auth (Spring Boot + sa-token)
+- **Proto-first contract design** — all service contracts defined in `proto/`, generated outputs checked in
+- **Kafka-based routing** — gate/scene control messaging decoupled via Kafka topics
+- **gRPC service mesh** — cross-service communication through gRPC with etcd discovery
+- **Lua scripting** — game logic extension and rapid iteration
+- **Kubernetes-ready** — deployment manifests and zone lifecycle management
 
 ---
 
-## 🚀 Getting Started
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Runtime nodes | C++17, EnTT ECS, muduo networking |
+| Microservices | Go (go-zero), gRPC, Kafka |
+| Auth/Web | Java (Spring Boot, sa-token, gRPC) |
+| Messaging | Kafka (gate/scene control), gRPC (service mesh) |
+| Storage | MySQL, Redis |
+| Discovery | etcd |
+| Build | MSBuild (C++), Go modules, Maven (Java) |
+| Deploy | Docker Compose (dev), Kubernetes (prod) |
+
+---
+
+## Project Structure
+
+```
+mmorpg/
+├── cpp/                # C++ runtime nodes (scene, gate, centre) and shared libraries
+│   ├── nodes/          #   Node entrypoints and transport handlers
+│   ├── libs/           #   Shared engine, ECS services, and game modules
+│   ├── generated/      #   Auto-generated proto/grpc/table outputs (do not edit)
+│   └── tests/          #   C++ test suites (GTest)
+├── go/                 # Go microservices (go-zero based)
+│   ├── login/          #   Player auth + node registration
+│   ├── scene_manager/  #   Scene allocation + load balancing
+│   ├── data_service/   #   Data layer RPC service
+│   ├── db/             #   Kafka consumer + MySQL persistence
+│   └── player_locator/ #   Player location lookup service
+├── java/               # Java auth services
+│   └── sa_token_node/  #   Spring Boot + sa-token + gRPC
+├── proto/              # Authoritative service contract definitions
+├── generated/          # Checked-in generated proto/table outputs
+├── deploy/             # Docker Compose (dev) + Kubernetes (prod) manifests
+├── tools/              # Proto generation, dev scripts, deployment utilities
+│   ├── scripts/        #   Central PowerShell tooling (dev_tools.ps1)
+│   ├── proto_generator/#   Canonical proto-gen source (Go)
+│   └── dev/            #   mprocs dashboard configs
+└── third_party/        # Vendored C++ dependencies (source)
+```
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
+- **C++**: Visual Studio 2022+ (Windows) or GCC 11+ (Linux), CMake 3.20+
+- **Go**: Go 1.21+, [go-zero](https://go-zero.dev/)
+- **Java**: JDK 17+, Maven 3.8+
+- **Infrastructure**: Docker + Docker Compose (for Kafka, Redis, MySQL, etcd)
 
-### Build & Run
+### Build
 
-```bash
-git clone https://github.com/luyuancpp/mmorpg.git
-cd mmorpg
-mkdir build && cd build
-cmake ..
-make
-./mmorpg
+```powershell
+# C++ — build the full solution (Windows)
+msbuild game.sln /m /p:Configuration=Debug /p:Platform=x64
+
+# Go — regenerate proto stubs and build
+cd go && build.bat
+
+# Java — build auth service
+cd java/sa_token_node && mvn clean install
 ```
 
-Include 清理（跨平台）:
+### Run (Local Dev)
 
-- 统一入口: `tools/scripts/dev_tools.ps1 -Command iwyu-run`
-- Linux/macOS 包装脚本: `tools/scripts/iwyu_run.sh`
-- 详细用法见 `tools/scripts/README.md`
+```powershell
+# Start infrastructure (Kafka, Redis, MySQL, etcd)
+docker compose -f deploy/docker-compose.yml up -d
 
-## Proto Generation
+# Start all Go services + C++ nodes
+pwsh -File tools/scripts/dev_tools.ps1 -Command dev-start
 
-Proto generation is driven by the repo tool entrypoint `tools/scripts/dev_tools.ps1`.
+# Check status
+pwsh -File tools/scripts/dev_tools.ps1 -Command dev-status
 
-- 查看命令帮助: `pwsh -File tools/scripts/dev_tools.ps1 -Command help`
-- 构建 proto-gen: `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`
-- 运行 proto-gen: `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`
-- VS Code 任务入口: `proto-gen: help`, `proto-gen: build`, `proto-gen: run`
+# Stop everything
+pwsh -File tools/scripts/dev_tools.ps1 -Command dev-stop
+```
 
-More details: `tools/README.md`, `tools/scripts/README.md`, `tools/proto_generator/README.md`
-Naming docs: `tools/docs/proto_gen_naming_audit.md`, `tools/docs/proto_gen_naming_migration.md`
+Or use the unified mprocs dashboard:
 
-## 🧱 C++ Node Main Templates
+```powershell
+mprocs -c tools/dev/mprocs.yaml
+```
 
-If you are adding a new C++ node entrypoint, use the templates under `cpp/nodes/_template/`:
+### Proto Generation
 
-- `cpp/nodes/_template/main.simple.cpp.example`
-	- For nodes without long-lived runtime-owned state.
-- `cpp/nodes/_template/main.with_context.cpp.example`
-	- For nodes that need runtime-owned state (timers/codecs/bridges).
-- `cpp/nodes/_template/README.md`
-	- Step-by-step checklist and placeholder replacement guide.
+```powershell
+# Show help
+pwsh -File tools/scripts/dev_tools.ps1 -Command help
 
-## 📝 License
+# Build proto-gen tool
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
 
-This project is licensed under the **MIT License** – see the [LICENSE](./LICENSE) file for details.
+# Run proto generation
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run
+```
+
+More details: [tools/README.md](tools/README.md), [tools/scripts/README.md](tools/scripts/README.md)
+
+---
+
+## C++ Node Templates
+
+To add a new C++ node, use the templates under `cpp/nodes/_template/`:
+
+| Template | Use case |
+|----------|----------|
+| `main.simple.cpp.example` | Nodes without long-lived runtime state |
+| `main.with_context.cpp.example` | Nodes needing runtime state (timers, codecs, bridges) |
+| `README.md` | Step-by-step checklist and placeholder guide |
+
+---
+
+## Testing
+
+```powershell
+# C++ tests (example)
+cpp\tests\bag_test\x64\Debug\bag_test.exe --gtest_filter=BagTest.AddNewGridItem
+
+# Go tests
+cd go\login && go test ./...
+
+# Java tests
+cd java\sa_token_node && mvn test
+```
+
+---
+
+## License
+
+This project is licensed under the **MIT License** — see [LICENSE](./LICENSE) for details.
