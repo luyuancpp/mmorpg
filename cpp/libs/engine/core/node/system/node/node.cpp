@@ -179,7 +179,7 @@ void Node::InitRpcServer() {
 	localNodeInfo.set_launch_time(TimeSystem::NowMicrosecondsUTC());
 	localNodeInfo.set_zone_id(tlsNodeConfigManager.GetGameConfig().zone_id());
 
-	localNodeInfo.set_node_uuid(boost::uuids::to_string(gen()));
+	localNodeInfo.set_node_uuid(boost::uuids::to_string(uuidGenerator()));
 
 	InetAddress zoneRedisAddress(tlsNodeConfigManager.GetGameConfig().zone_redis().host(), tlsNodeConfigManager.GetGameConfig().zone_redis().port());
 	tlsReids.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, zoneRedisAddress);
