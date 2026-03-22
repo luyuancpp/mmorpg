@@ -1,9 +1,13 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("pbgen-build", "pbgen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all")]
     [string]$Command,
 
     [string]$ConfigPath = "",
+
+    [switch]$EnablePprof,
+    [switch]$UseBinary,
+    [switch]$UseGoRun,
 
     [ValidateSet("snake", "kebab")]
     [string]$Style = "snake",
@@ -54,10 +58,10 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
-$PbgenDir = Join-Path $RepoRoot "tools\proto_generator\pbgen"
+$ProtoGenDir = Join-Path $RepoRoot "tools\proto_generator\pbgen"
 
-function Invoke-PbgenBuild {
-    Push-Location $PbgenDir
+function Invoke-ProtoGenBuild {
+    Push-Location $ProtoGenDir
     try {
         go build -v ./...
     }
@@ -66,19 +70,68 @@ function Invoke-PbgenBuild {
     }
 }
 
-function Invoke-PbgenRun {
-    Push-Location $PbgenDir
+function Invoke-ProtoGenRun {
+    Push-Location $ProtoGenDir
+    $previousConfigPath = $env:PROTO_GEN_CONFIG_PATH
+    $previousEnablePprof = $env:PBGEN_ENABLE_PPROF
     try {
+        if ($UseBinary -and $UseGoRun) {
+            throw "UseBinary and UseGoRun cannot be enabled at the same time."
+        }
+
         if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
-            $env:PROTO_GEN_CONFIG_PATH = Join-Path $PbgenDir "etc\proto_gen.yaml"
+            $env:PROTO_GEN_CONFIG_PATH = Join-Path $ProtoGenDir "etc\proto_gen.yaml"
         }
         else {
             $env:PROTO_GEN_CONFIG_PATH = $ConfigPath
         }
 
-        go run ./cmd
+        if ($EnablePprof) {
+            $env:PBGEN_ENABLE_PPROF = "1"
+        }
+        else {
+            Remove-Item Env:PBGEN_ENABLE_PPROF -ErrorAction SilentlyContinue
+        }
+
+        $protoGenExePath = Join-Path $ProtoGenDir "pbgen.exe"
+
+        if ($UseGoRun) {
+            go run ./cmd
+            return
+        }
+
+        if ($UseBinary) {
+            if (-not (Test-Path $protoGenExePath)) {
+                throw "proto-gen binary not found: $protoGenExePath. Please run proto-gen-build first."
+            }
+
+            & $protoGenExePath
+            return
+        }
+
+        # Default strategy: prefer prebuilt binary for faster startup, fallback to go run.
+        if (Test-Path $protoGenExePath) {
+            & $protoGenExePath
+        }
+        else {
+            go run ./cmd
+        }
     }
     finally {
+        if ($null -ne $previousConfigPath) {
+            $env:PROTO_GEN_CONFIG_PATH = $previousConfigPath
+        }
+        else {
+            Remove-Item Env:PROTO_GEN_CONFIG_PATH -ErrorAction SilentlyContinue
+        }
+
+        if ($null -ne $previousEnablePprof) {
+            $env:PBGEN_ENABLE_PPROF = $previousEnablePprof
+        }
+        else {
+            Remove-Item Env:PBGEN_ENABLE_PPROF -ErrorAction SilentlyContinue
+        }
+
         Pop-Location
     }
 }
@@ -275,9 +328,42 @@ function Invoke-K8sStageRuntime {
         -TableSource $TableSource
 }
 
+function Invoke-Help {
+    @"
+dev_tools.ps1 command help
+
+Primary proto generator commands:
+    -Command proto-gen-build
+    -Command proto-gen-run
+
+Compatibility aliases (legacy):
+    -Command pbgen-build
+    -Command pbgen-run
+
+Useful proto-gen flags:
+    -EnablePprof   Enable pprof wait mode (PBGEN_ENABLE_PPROF=1)
+    -UseBinary     Force running proto-gen binary (pbgen.exe)
+    -UseGoRun      Force running go run ./cmd
+
+Other common commands:
+    -Command tree
+    -Command naming-audit
+    -Command naming-apply
+    -Command third-party-grpc-build
+    -Command iwyu-run
+    -Command k8s-zone-up | k8s-zone-down | k8s-zone-status
+    -Command k8s-all-up | k8s-all-down | k8s-all-status
+    -Command k8s-stage-runtime
+    -Command k8s-image-preflight | k8s-build-image | k8s-push-image | k8s-release-zone | k8s-release-all
+"@ | Write-Output
+}
+
 switch ($Command) {
-    "pbgen-build" { Invoke-PbgenBuild }
-    "pbgen-run" { Invoke-PbgenRun }
+    "help" { Invoke-Help }
+    "pbgen-build" { Invoke-ProtoGenBuild }
+    "pbgen-run" { Invoke-ProtoGenRun }
+    "proto-gen-build" { Invoke-ProtoGenBuild }
+    "proto-gen-run" { Invoke-ProtoGenRun }
     "tree" { Invoke-Tree }
     "naming-audit" { Invoke-NamingAudit }
     "naming-apply" { Invoke-NamingApply }

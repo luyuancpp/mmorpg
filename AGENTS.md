@@ -16,7 +16,7 @@ mmorpg/
 ├── proto/        # Source contracts and service IDs
 ├── generated/    # Checked-in generated proto/table outputs
 ├── deploy/       # Docker Compose + Kubernetes deployment assets
-├── tools/        # pbgen, exporters, robot tooling, dev scripts
+├── tools/        # proto-gen (pbgen), exporters, robot tooling, dev scripts
 ├── docs/         # Ops/docs snapshots
 └── test/         # Non-C++ test scaffolding / placeholders
 ```
@@ -36,7 +36,7 @@ mmorpg/
 | Checked-in generated contracts | `generated/proto/` | Review only; do not hand-edit |
 | Local/dev infra | `deploy/docker-compose.yml` | Kafka, Redis, MySQL, Nacos, etcd |
 | K8s release flow | `deploy/k8s/README.md` | Runtime image + zone lifecycle |
-| Shared dev scripts | `tools/scripts/dev_tools.ps1` | pbgen, k8s, tree, naming audit/apply |
+| Shared dev scripts | `tools/scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
 | Robot/load tooling | `tools/robot_client/main.go` | One-client-one-goroutine rule |
 
 ## CONVENTIONS
@@ -48,7 +48,7 @@ mmorpg/
 - New C++ node entrypoints should start from `cpp/nodes/_template/README.md` and reuse `node::entry::RunSimpleNodeMain...` helpers.
 - Go services follow go-zero / `zrpc.MustNewServer` bootstrap and enable grpc reflection only in dev/test modes.
 - K8s exposure is environment-specific: managed cloud prefers `LoadBalancer`; bare metal prefers `NodePort` + external L4.
-- `tools/scripts/dev_tools.ps1` is the preferred shell entrypoint for pbgen, tree, naming, and k8s operations.
+- `tools/scripts/dev_tools.ps1` is the preferred shell entrypoint for proto-gen (pbgen), tree, naming, and k8s operations.
 
 ### C++ Node Main PR Checklist (Summary)
 - Start from `cpp/nodes/_template/main.simple.cpp.example` or `cpp/nodes/_template/main.with_context.cpp.example`.
@@ -72,7 +72,7 @@ mmorpg/
 - Repo keeps generated outputs checked in.
 - C++ runtime code is split between node-facing adapters (`cpp/nodes/*`) and deeper reusable scene services (`cpp/libs/services/scene/*`).
 - Go services are separate mini-roots, not a single monolith module.
-- `tools/proto/pbgen` is retained for compatibility, but `tools/proto_generator/pbgen` is the canonical source project.
+- `tools/proto/pbgen` is retained for compatibility, but `tools/proto_generator/pbgen` is the canonical source project for proto-gen (historical name: pbgen).
 - Robot tooling explicitly enforces one client per goroutine.
 
 ## COMMANDS
@@ -92,8 +92,8 @@ cd java\sa_token_node && mvn clean install
 cd java\sa_token_node && mvn test
 
 # Tools / proto generation
-pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-build
-pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-run
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run
 
 # K8s
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -ZoneName yesterday -ZoneId 101 -OpsProfile managed-cloud -NodeImage <image> -WaitReady

@@ -69,6 +69,8 @@ bin/*.txt
 go/pkg/
 *md5
 tools/generated/
+tools/proto_generator/pbgen/bin/
+tools/proto_generator/pbgen/.idea/
 tools/proto-generator/pbgen/bin/
 tools/proto-generator/pbgen/.idea/
 _copilot_session_transfer/

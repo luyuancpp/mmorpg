@@ -4,7 +4,8 @@ Historical logs, reports, and documentation for tools and build processes.
 
 ## Contents
 
-- `pbgen/` - Proto generation run logs and reports (historical archive)
+- `pbgen/` - Proto generator run logs and reports (historical archive)
+- `proto_gen_naming_migration.md` - Naming boundary, remaining intentional references, and migration checklist for `proto-gen` / `pbgen`
 - Other tool-specific documentation and outputs
 
 ## Organization
