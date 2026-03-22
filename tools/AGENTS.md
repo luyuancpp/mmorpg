@@ -8,12 +8,17 @@
 tools/
 ├── proto_generator/      # Canonical proto-gen source project
 ├── data_table_exporter/  # Table export scripts/templates
-├── robot_client/         # Runnable robot/load client
-├── scene_manager/        # Tool-side generated scene manager artifacts
+├── robot/                # Robot proto definitions + message handlers
+├── contracts/            # Tool-side Kafka message stubs
+├── data_service/         # Tool-side gRPC data service stubs
+├── scene_manager/        # Tool-side gRPC scene manager stubs
 ├── proto/                # Legacy proto-gen/pbgen tool bundle kept for compatibility
 ├── generated/            # Temporary/ignored generation workspace
+├── archived/             # Legacy scripts retained for reference
+├── dev/                  # mprocs dashboard configs
 ├── docs/                 # Tool snapshots and archived logs
-└── scripts/              # Preferred script entrypoints
+├── scripts/              # Preferred script entrypoints
+└── github.com/           # Go import path mirrors for proto extensions
 ```
 
 ## WHERE TO LOOK
@@ -22,7 +27,7 @@ tools/
 | Main script entrypoint | `scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
 | proto-gen source | `proto_generator/protogen/` | Canonical generator project |
 | Compatibility proto-gen bundle | `proto/` | Retained for existing local toolchains |
-| Robot entrypoint | `robot_client/main.go` | Enforces one-client-one-goroutine |
+| Robot proto/handlers | `robot/` | Proto defs + message handlers for load testing |
 | Archived generator logs | `docs/protogen/` | Historical runs only |
 
 ## CONVENTIONS
@@ -52,4 +57,4 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command naming-apply -MaxChanges 100
 ## NOTES
 - `tools/scripts/README.md` is the practical command catalog; keep new tool workflows wired through it.
 - High-risk rename exclusions already include generated files, IDE files, `*.vcxproj*`, `*.sln*`, and `*.pb.{h,cc,go}`.
-- `robot_client/README.md` describes build/run flow for the robot client; use it when changing that subtree.
+- `tools/robot/` contains proto definitions and message handlers for the robot load-testing framework.

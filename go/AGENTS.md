@@ -6,13 +6,22 @@
 ## STRUCTURE
 ```text
 go/
-├── login/           # Login grpc service
-├── scene_manager/   # Scene manager grpc service
-├── data_service/    # Data service grpc service
-├── player_locator/  # Player location service
-├── db/              # DB-related service/module
-├── contracts/       # Shared Go-side contracts/helpers
-└── generated/       # Generated Go outputs
+├── login/           # Login grpc service (active)
+├── scene_manager/   # Scene manager grpc service (active)
+├── data_service/    # Data service grpc service (active)
+├── player_locator/  # Player location service (active)
+├── db/              # Kafka consumer + MySQL persistence (active)
+├── contracts/       # Shared Go-side contracts/helpers (active, has go.mod)
+├── generated/       # Top-level generated Go outputs (has go.mod)
+├── chat/            # Chat service (stub — generated proto only, no entry point)
+├── guild/           # Guild service (stub — generated proto only, no entry point)
+├── instance/        # Instance service (stub — generated proto only, no entry point)
+├── mail/            # Mail service (stub — generated proto/model only, no entry point)
+├── team/            # Team service (stub — generated proto only, no entry point)
+├── common/          # Proto structure mirror (no go.mod, no hand-written code)
+├── etcd/            # Proto structure mirror (no go.mod, no hand-written code)
+├── github.com/      # Local vendor: luyuancpp/protooption (custom proto extensions)
+└── pkg/             # Go module cache (not project code)
 ```
 
 ## WHERE TO LOOK
