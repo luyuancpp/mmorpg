@@ -19,9 +19,9 @@ type ServiceContext struct {
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     c.Redis.Host,
-		Password: c.Redis.Password,
-		DB:       c.Redis.DB,
+		Addr:     c.RedisClient.Host,
+		Password: c.RedisClient.Password,
+		DB:       c.RedisClient.DB,
 	})
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {

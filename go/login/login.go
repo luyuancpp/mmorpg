@@ -33,30 +33,29 @@ const nodeType = login_proto.ENodeType_LoginNodeService
 func main() {
 	flag.Parse()
 
-	// 加载配置文件
+	// Load config file
 	conf.MustLoad(*configFile, &config.AppConfig)
 
 	ctx := svc.NewServiceContext()
 
 	defer ctx.Stop()
 
-	// 启动 gRPC 服务
+	// Start gRPC service
 	if err := startGRPCServer(config.AppConfig, ctx); err != nil {
 		logx.Errorf("Failed to start GRPC server: %v", err)
 	}
 }
 
-// startGRPCServer 启动 Login gRPC 服务并注册到 etcd
+// startGRPCServer starts the Login gRPC service and registers it to etcd.
 func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 
-	// 获取地址并启动 gRPC 服务
 	host, port, err := splitHostPort(config.AppConfig.ListenOn)
 	if err != nil {
 		logx.Errorf("Failed to parse listen address: %v", err)
 		return err
 	}
 
-	// 注册节点到 etcd
+	// Register node to etcd
 	loginNode := node.NewNode(uint32(nodeType), host, port, config.AppConfig.Node.LeaseTTL)
 	if loginNode == nil {
 		err = errors.New("failed to create node")
@@ -78,13 +77,12 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	ctx.SetNodeId(int64(loginNode.Info.NodeId))
 	logx.Infof("Login node registered: %+v", loginNode.Info.String())
 
-	// 启动 gRPC 服务器
+	// Start gRPC server
 	if err := startServer(cfg, ctx); err != nil {
 		logx.Errorf("Failed to start gRPC server: %v", err)
 		return err
 	}
 
-	// 正常启动后返回 nil
 	return nil
 }
 
@@ -97,7 +95,7 @@ func SessionInterceptor(
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		if vals, exists := md["x-session-detail-bin"]; exists && len(vals) > 0 {
-			// 解码 Base64
+			// Decode Base64
 			bin, err := base64.StdEncoding.DecodeString(vals[0])
 			if err != nil {
 				logx.Error("Base64 decode error:", err)
@@ -112,10 +110,10 @@ func SessionInterceptor(
 		}
 	}
 
-	// 执行实际的 handler
+	// Execute the actual handler
 	resp, err := handler(ctx, req)
 
-	// ---- 在这里加上返回的 session detail header ----
+	// ---- Attach session detail header to response ----
 	if detail, ok := ctxkeys.GetSessionDetails(ctx); ok {
 		if bin, err := proto.Marshal(detail); err == nil {
 			logx.Infof("Session info: %+v", detail)
@@ -130,13 +128,11 @@ func SessionInterceptor(
 	return resp, err
 }
 
-// startServer 启动并配置 gRPC 服务
+// startServer configures and starts the gRPC server.
 func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
-		// 注册服务
 		login_proto_login.RegisterClientPlayerLoginServer(grpcServer, loginserver.NewClientPlayerLoginServer(ctx))
 
-		// 在开发或测试模式下，启用反射
 		if cfg.Mode == service.DevMode || cfg.Mode == service.TestMode {
 			reflection.Register(grpcServer)
 		}
@@ -146,14 +142,14 @@ func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 
 	defer server.Stop()
 
-	// 启动 gRPC 服务器
+	// Start the gRPC server
 	logx.Infof("Starting Login RPC server at %s...", cfg.ListenOn)
 	server.Start()
 
 	return nil
 }
 
-// splitHostPort 将 address 拆解为 host 和 uint32 类型的 port
+// splitHostPort splits an address into host and uint32 port.
 func splitHostPort(address string) (string, uint32, error) {
 	host, portStr, err := net.SplitHostPort(address)
 	if err != nil {

@@ -43,7 +43,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		Players: make([]*login_proto.AccountSimplePlayerWrapper, 0),
 	}
 
-	// 1. 获取 Session 详情
+	// 1. Get Session details
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or invalid during player creation")
@@ -51,7 +51,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
-	// 2. 获取 LoginSessionInfo（含账号）
+	// 2. Get LoginSessionInfo (includes account)
 	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
 	if err != nil {
 		logx.Errorf("GetLoginSession failed: %v", err)
@@ -60,7 +60,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 	account := session.Account
 
-	// 3. 加锁（防止并发创建角色）
+	// 3. Lock (prevent concurrent character creation)
 	locker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
 	ok, err = locker.AcquireCreate(l.ctx, account)
 	if err != nil || !ok {
@@ -70,7 +70,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 	defer locker.ReleaseCreate(l.ctx, account)
 
-	// 4. 加载账户数据
+	// 4. Load account data
 	accountDataKey := constants.GetAccountDataKey(account)
 	cmd := l.svcCtx.RedisClient.Get(l.ctx, accountDataKey)
 	if err := cmd.Err(); err != nil {
@@ -84,7 +84,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, err
 	}
 
-	// 5. FSM 状态管理（基于 sessionId）
+	// 5. FSM state management (by sessionId)
 	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
 	f := data.InitPlayerFSM()
 	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
@@ -98,7 +98,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
-	// 6. 解码账户数据
+	// 6. Decode account data
 	userAccount := &login_data_base.UserAccounts{}
 	if err := proto.Unmarshal([]byte(cmd.Val()), userAccount); err != nil {
 		logx.Errorf("Failed to unmarshal user account, err: %v", err)
@@ -109,7 +109,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		userAccount.SimplePlayers = &login_proto_common.AccountSimplePlayerList{Players: make([]*login_proto_common.AccountSimplePlayer, 0)}
 	}
 
-	// 7. 创建角色
+	// 7. Create character
 	if len(userAccount.SimplePlayers.Players) >= 5 {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountPlayerFull)}
 		logx.Infof("Account player limit reached: %s", account)
@@ -119,7 +119,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	newPlayer := &login_proto_common.AccountSimplePlayer{PlayerId: newPlayerId}
 	userAccount.SimplePlayers.Players = append(userAccount.SimplePlayers.Players, newPlayer)
 
-	// 8. 回写 RedisClient
+	// 8. Write back to Redis
 	dataBytes, err := proto.Marshal(userAccount)
 	if err != nil {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataSerializeFailed)}
@@ -132,12 +132,12 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
-	// 9. 保存 FSM 状态（用 sessionId）
+	// 9. Save FSM state (by sessionId)
 	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
 		logx.Errorf("Failed to save FSM state, sessionId: %s, err: %v", sessionIdStr, err)
 	}
 
-	// 10. 返回角色信息
+	// 10. Return player info
 	for _, p := range userAccount.SimplePlayers.Players {
 		resp.Players = append(resp.Players, &login_proto.AccountSimplePlayerWrapper{Player: p})
 	}

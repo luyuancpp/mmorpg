@@ -5,22 +5,21 @@ import (
 	login_proto "login/proto/common/base"
 )
 
-// 自定义类型，避免 key 冲突
+// contextKey is a custom type to avoid key collisions.
 type contextKey string
 
 const (
 	SessionDetailsKey contextKey = "SessionDetailsKey"
-	// 这里可以继续添加更多 key
 )
 
-// 取 SessionDetails 的辅助函数
+// GetSessionDetails retrieves SessionDetails from the context.
 func GetSessionDetails(ctx context.Context) (*login_proto.SessionDetails, bool) {
 	v := ctx.Value(SessionDetailsKey)
 	detail, ok := v.(*login_proto.SessionDetails)
 	return detail, ok
 }
 
-// 放 SessionDetails 的辅助函数
+// WithSessionDetails stores SessionDetails in the context.
 func WithSessionDetails(ctx context.Context, detail *login_proto.SessionDetails) context.Context {
 	return context.WithValue(ctx, SessionDetailsKey, detail)
 }

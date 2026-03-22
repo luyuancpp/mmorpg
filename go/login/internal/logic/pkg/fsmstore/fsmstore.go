@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// RedisKeyFormat 返回 RedisClient 中保存 FSM 状态的 key
+// redisKey returns the Redis key for storing FSM state.
 func redisKey(account, roleId string) string {
 	return fmt.Sprintf("fsm_state:%s:%s", account, roleId)
 }
@@ -28,7 +28,7 @@ func LoadFSMState(ctx context.Context, redisClient *redis.Client, f *fsm.FSM, ac
 	key := redisKey(account, roleId)
 	state, err := redisClient.Get(ctx, key).Result()
 	if err == redis.Nil {
-		// 没有存过状态，忽略即可（可能是第一次登录）
+		// No saved state; first login
 		return nil
 	}
 	if err != nil {

@@ -4,8 +4,9 @@ package etcd
 import (
 	"context"
 	"fmt"
+
 	"github.com/zeromicro/go-zero/core/logx"
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 type NodeRegistry struct {
@@ -14,7 +15,6 @@ type NodeRegistry struct {
 }
 
 func NewNodeRegistry(client *clientv3.Client, ttl int64) (*NodeRegistry, error) {
-	// 创建租约
 	resp, err := client.Grant(context.Background(), ttl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to grant Lease: %v", err)
@@ -27,7 +27,6 @@ func NewNodeRegistry(client *clientv3.Client, ttl int64) (*NodeRegistry, error) 
 }
 
 func (r *NodeRegistry) RegisterNode(key string, value string) error {
-	// 注册节点
 	_, err := r.client.Put(context.Background(), key, value, clientv3.WithLease(r.Lease))
 	if err != nil {
 		return fmt.Errorf("failed to register node: %v", err)
@@ -36,7 +35,6 @@ func (r *NodeRegistry) RegisterNode(key string, value string) error {
 }
 
 func (r *NodeRegistry) KeepAlive(ctx context.Context) {
-	// 保持租约有效
 	ch, err := r.client.KeepAlive(ctx, r.Lease)
 	if err != nil {
 		logx.Error("Failed to keep alive Lease: %v", err)
@@ -60,9 +58,8 @@ func (r *NodeRegistry) KeepAlive(ctx context.Context) {
 	}()
 }
 
-// 新增 RevokeLease 方法来取消租约
+// RevokeLease revokes the etcd lease.
 func (r *NodeRegistry) RevokeLease() error {
-	// 取消租约
 	_, err := r.client.Revoke(context.Background(), r.Lease)
 	if err != nil {
 		return fmt.Errorf("failed to revoke lease: %v", err)

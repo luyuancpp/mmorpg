@@ -52,7 +52,6 @@ func (l *ReconnectLogic) Reconnect(in *pb.ReconnectRequest) (*pb.ReconnectRespon
 	session.TokenId = in.TokenId
 	session.TokenExpiryMs = in.TokenExpiryMs
 	session.RequestId = in.RequestId
-	session.Account = in.Account
 	session.SessionVersion++
 	session.State = pb.PlayerSessionState_SESSION_STATE_ONLINE
 	session.LastActiveTs = time.Now().UnixMilli()

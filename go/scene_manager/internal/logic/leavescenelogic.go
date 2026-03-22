@@ -24,7 +24,7 @@ func NewLeaveSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveS
 	}
 }
 
-// 请求玩家离开场景（或切换场景前的离开）
+// LeaveScene handles a player leaving a scene (or pre-transfer cleanup).
 func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base.Empty, error) {
 	// 1. Check if player is actually in this scene (idempotency)
 	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)

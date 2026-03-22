@@ -24,25 +24,24 @@ func NewSceneManagerServer(svcCtx *svc.ServiceContext) *SceneManagerServer {
 	}
 }
 
-// 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+// CreateScene creates a scene on the target node.
 func (s *SceneManagerServer) CreateScene(ctx context.Context, in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
 	l := logic.NewCreateSceneLogic(ctx, s.svcCtx)
 	return l.CreateScene(in)
 }
 
-// 销毁场景
 func (s *SceneManagerServer) DestroyScene(ctx context.Context, in *scene_manager.DestroySceneRequest) (*base.Empty, error) {
 	l := logic.NewDestroySceneLogic(ctx, s.svcCtx)
 	return l.DestroyScene(in)
 }
 
-// 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+// EnterScene routes a player into a scene.
 func (s *SceneManagerServer) EnterScene(ctx context.Context, in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
 	l := logic.NewEnterSceneLogic(ctx, s.svcCtx)
 	return l.EnterScene(in)
 }
 
-// 请求玩家离开场景（或切换场景前的离开）
+// LeaveScene handles a player leaving a scene.
 func (s *SceneManagerServer) LeaveScene(ctx context.Context, in *scene_manager.LeaveSceneRequest) (*base.Empty, error) {
 	l := logic.NewLeaveSceneLogic(ctx, s.svcCtx)
 	return l.LeaveScene(in)

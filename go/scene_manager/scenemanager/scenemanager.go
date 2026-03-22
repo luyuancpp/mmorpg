@@ -24,13 +24,13 @@ type (
 	Empty               = base.Empty
 
 	SceneManager interface {
-		// 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+		// CreateScene creates a scene on the target node.
 		CreateScene(ctx context.Context, in *CreateSceneRequest, opts ...grpc.CallOption) (*CreateSceneResponse, error)
-		// 销毁场景
+		// DestroyScene destroys a scene.
 		DestroyScene(ctx context.Context, in *DestroySceneRequest, opts ...grpc.CallOption) (*Empty, error)
-		// 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+		// EnterScene routes a player into a scene.
 		EnterScene(ctx context.Context, in *EnterSceneRequest, opts ...grpc.CallOption) (*EnterSceneResponse, error)
-		// 请求玩家离开场景（或切换场景前的离开）
+		// LeaveScene handles a player leaving a scene.
 		LeaveScene(ctx context.Context, in *LeaveSceneRequest, opts ...grpc.CallOption) (*Empty, error)
 	}
 
@@ -45,25 +45,24 @@ func NewSceneManager(cli zrpc.Client) SceneManager {
 	}
 }
 
-// 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+// CreateScene creates a scene on the target node.
 func (m *defaultSceneManager) CreateScene(ctx context.Context, in *CreateSceneRequest, opts ...grpc.CallOption) (*CreateSceneResponse, error) {
 	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
 	return client.CreateScene(ctx, in, opts...)
 }
 
-// 销毁场景
 func (m *defaultSceneManager) DestroyScene(ctx context.Context, in *DestroySceneRequest, opts ...grpc.CallOption) (*Empty, error) {
 	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
 	return client.DestroyScene(ctx, in, opts...)
 }
 
-// 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+// EnterScene routes a player into a scene.
 func (m *defaultSceneManager) EnterScene(ctx context.Context, in *EnterSceneRequest, opts ...grpc.CallOption) (*EnterSceneResponse, error) {
 	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
 	return client.EnterScene(ctx, in, opts...)
 }
 
-// 请求玩家离开场景（或切换场景前的离开）
+// LeaveScene handles a player leaving a scene.
 func (m *defaultSceneManager) LeaveScene(ctx context.Context, in *LeaveSceneRequest, opts ...grpc.CallOption) (*Empty, error) {
 	client := scene_manager.NewSceneManagerClient(m.cli.Conn())
 	return client.LeaveScene(ctx, in, opts...)

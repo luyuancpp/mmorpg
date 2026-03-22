@@ -4,25 +4,25 @@ import (
 	fsm "github.com/looplab/fsm"
 )
 
-// 状态定义
+// States
 const (
-	LoginProcessing    = "LoginProcessing"    // 登录处理中
-	WaitingToEnterGame = "WaitingToEnterGame" // 等待进入游戏
-	CreatingCharacter  = "CreatingCharacter"  // 创建角色
-	EnteringGame       = "EnteringGame"       // 进入游戏
+	LoginProcessing    = "LoginProcessing"
+	WaitingToEnterGame = "WaitingToEnterGame"
+	CreatingCharacter  = "CreatingCharacter"
+	EnteringGame       = "EnteringGame"
 )
 
-// 事件定义
+// Events
 const (
 	EventProcessLogin = "processLogin"
 	EventCreateChar   = "createCharacter"
 	EventEnterGame    = "enterGame"
 )
 
-// 初始化玩家状态机
+// InitPlayerFSM creates the player login state machine.
 func InitPlayerFSM() *fsm.FSM {
 	return fsm.NewFSM(
-		LoginProcessing, // 初始状态
+		LoginProcessing,
 		fsm.Events{
 			{Name: EventProcessLogin, Src: []string{LoginProcessing, CreatingCharacter}, Dst: WaitingToEnterGame},
 			{Name: EventCreateChar, Src: []string{WaitingToEnterGame}, Dst: CreatingCharacter},

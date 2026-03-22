@@ -2,21 +2,21 @@ package config
 
 import "github.com/zeromicro/go-zero/zrpc"
 
-// Config 全局配置结构体
+// Config is the global configuration.
 type Config struct {
 	zrpc.RpcServerConf
 	ServerConfig ServerConfig `json:"ServerConfig"`
 }
 
-// ServerConfig 服务核心配置
+// ServerConfig holds core service settings.
 type ServerConfig struct {
 	Database    DatabaseConfig `json:"Database"`
 	RedisClient RedisConfig    `json:"RedisClient"`
 	JsonPath    string         `json:"JsonPath"`
-	Kafka       KafkaConfig    `json:"Kafka"` // Kafka配置
+	Kafka       KafkaConfig    `json:"Kafka"`
 }
 
-// DatabaseConfig 数据库配置
+// DatabaseConfig holds database connection settings.
 type DatabaseConfig struct {
 	Hosts       string `json:"Hosts"`
 	User        string `json:"User"`
@@ -27,7 +27,7 @@ type DatabaseConfig struct {
 	Net         string `json:"Net"`
 }
 
-// RedisConfig Redis配置
+// RedisConfig holds Redis connection settings.
 type RedisConfig struct {
 	Hosts             string `json:"Hosts"`
 	DefaultTTLSeconds int    `json:"DefaultTTLSeconds"`
@@ -35,13 +35,13 @@ type RedisConfig struct {
 	DB                int    `json:"DB"`
 }
 
-// KafkaConfig Kafka配置结构体（包含分区数）
+// KafkaConfig holds Kafka consumer settings.
 type KafkaConfig struct {
-	Brokers         string `json:"Brokers"`         // Kafka集群地址（逗号分隔）
-	GroupID         string `json:"GroupID"`         // 消费者组ID
-	Topic           string `json:"Topic"`           // 消费主题名
-	PartitionCnt    int32  `json:"PartitionCnt"`    // 主题分区数量（新增）
-	IsOfflineExpand bool   `json:"IsOfflineExpand"` // 停服扩容开关：true=停服模式
+	Brokers         string `json:"Brokers"`         // Broker addresses (comma-separated)
+	GroupID         string `json:"GroupID"`         // Consumer group ID
+	Topic           string `json:"Topic"`           // Topic name
+	PartitionCnt    int32  `json:"PartitionCnt"`    // Partition count
+	IsOfflineExpand bool   `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
 }
 
-var AppConfig Config // 全局配置实例
+var AppConfig Config

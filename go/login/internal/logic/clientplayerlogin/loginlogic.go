@@ -39,12 +39,12 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 }
 
 func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResponse, error) {
-	//todo 账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
-	//todo 在链接过程中断了，换了gate新的gate 应该是可以上线成功的，消息要发到新的gate上,老的gate正常走断开流程
-	//todo gate异步同时登陆情况,老gate晚于新gate登录到controller会不会导致登录不成功了?这时候怎么处理
+	//todo Account login sessions stored in Redis immediately; consider memory pressure on day-1 mass registration and when to evict
+	//todo If connection breaks mid-flow and a new gate is used, login should succeed on the new gate; messages must route to new gate, old gate follows normal disconnect flow
+	//todo If async dual-gate login occurs and old gate's login arrives at controller after new gate's, could login fail? How to handle?
 	resp := &login_proto.LoginResponse{}
 
-	// 1. 分布式锁，重试机制
+	// 1. Distributed lock with retry
 	accountLocker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
 
 	ok, err := accountLocker.AcquireLogin(l.ctx, in.Account)
@@ -60,7 +60,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		}
 	}(accountLocker, l.ctx, in.Account)
 
-	// 2. 获取 Session
+	// 2. Get Session
 	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
@@ -71,7 +71,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	sessionId := strconv.FormatUint(sessionDetails.SessionId, 10)
 	logx.Infof("Start processing login for account=%s with sessionId=%s", in.Account, sessionId)
 
-	// 3. FSM 加载 + 执行 + 保存，出错立即返回
+	// 3. FSM load + execute + save; return immediately on error
 	f := data.InitPlayerFSM()
 
 	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
@@ -80,24 +80,24 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		return resp, nil
 	}
 
-	// 执行 FSM 事件
+	// Execute FSM event
 	if err := f.Event(l.ctx, data.EventProcessLogin); err != nil {
 		logx.Errorf("FSM transition error for sessionId=%s, account=%s, event=process_login, error: %v", sessionId, in.Account, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMEventFailed)}
 		return resp, nil
 	}
 
-	// 保存 FSM 状态
+	// Save FSM state
 	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
 		logx.Errorf("FSM save failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
-		// 不阻断，但记录错误
-		//todo 让客户端重新登录
+		// Non-blocking, but log the error
+		//todo Have the client re-login
 		return resp, nil
 	}
 
-	// 4. 限制设备数量
+	// 4. Limit device count
 
-	// 添加 SessionId 到设备集合
+	// Add SessionId to the device set
 	sessionKey := constants.GenerateSessionKey(in.Account)
 	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
 
@@ -112,7 +112,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		return resp, nil
 	}
 
-	// 限制最多 N 个设备
+	// Enforce max N devices per account
 	count, err := l.svcCtx.RedisClient.SCard(l.ctx, sessionKey).Result()
 	if err != nil {
 		logx.Errorf("RedisClient SCard error: %v", err)
@@ -123,14 +123,14 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	if count > config.AppConfig.Account.MaxDevicesPerAccount {
 		logx.Infof("Account %s exceeds device limit: %d > %d", in.Account, count, config.AppConfig.Account.MaxDevicesPerAccount)
 
-		// 可选：删除旧的 session（基于 TTL 或先入先出策略）
-		// 或通知客户端“已有设备登录，是否强制顶号”——这需要客户端支持。
+		// Optional: remove old sessions (by TTL or FIFO)
+		// Or prompt client "another device is logged in, force kick?" — requires client support.
 
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kTooManyDevices)}
 		return resp, nil
 	}
 
-	// 5. 构造并保存登录会话信息
+	// 5. Build and save login session info
 	sessionInfo := &login_proto.LoginSessionInfo{
 		Account:   in.Account,
 		RoleId:    0,
@@ -142,16 +142,16 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	}
 	if err := loginsessionstore.SaveLoginSession(l.ctx, l.svcCtx.RedisClient, sessionInfo, expire); err != nil {
 		logx.Errorf("Failed to save login session for account=%s: %v", in.Account, err)
-		// 不终止流程
+		// Non-blocking
 	}
 
-	// 6. 加载账户数据（改进 RedisClient 获取判断方式）
+	// 6. Load account data
 	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, in.Account, config.AppConfig.Account.CacheExpire)
 	if err != nil {
 		return nil, err
 	}
 
-	// 7. 返回角色列表
+	// 7. Return player list
 	if userAccount.SimplePlayers != nil {
 		for _, v := range userAccount.SimplePlayers.Players {
 			resp.Players = append(resp.Players, &login_proto.AccountSimplePlayerWrapper{Player: v})
@@ -164,12 +164,12 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string, ttl time.Duration) (*login_proto_data_base.UserAccounts, error) {
 	key := constants.GetAccountDataKey(account)
 
-	// 优先尝试从 Redis 获取
+	// Try Redis first
 	cmd := rdb.Get(ctx, key)
 	valueBytes, err := cmd.Bytes()
 
 	if errors.Is(err, redis.Nil) {
-		// Redis 无数据，创建空对象
+		// Not in Redis; create empty default
 		logx.Infof("UserAccounts not found for account=%s, initializing default", account)
 		userAccount := &login_proto_data_base.UserAccounts{}
 
@@ -179,7 +179,7 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 			return nil, err
 		}
 
-		// 保存到 Redis
+		// Save to Redis
 		err = rdb.Set(ctx, key, valueBytes, ttl).Err()
 		if err != nil {
 			logx.Errorf("Failed to save default UserAccounts to Redis for account=%s: %v", account, err)
@@ -194,7 +194,7 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 		return nil, err
 	}
 
-	// 反序列化返回
+	// Deserialize and return
 	userAccount := &login_proto_data_base.UserAccounts{}
 	if err := proto.Unmarshal(valueBytes, userAccount); err != nil {
 		logx.Errorf("Unmarshal user account failed for account=%s: %v", account, err)
@@ -204,24 +204,23 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 	return userAccount, nil
 }
 
-// 玩家登录成功后，启动登录时长定时器
+// startLoginDurationTimer starts a timer to force logout after MaxLoginDuration
 /*func startLoginDurationTimer(playerID string, loginTime time.Time, cfg NodeConfig) {
-	// 计算超时时间点
 	expireTime := loginTime.Add(cfg.MaxLoginDuration)
-	// 计算提醒时间点（超时前 LogoutGraceTime）
+	// Calculate reminder time (LogoutGraceTime before expiry)
 	remindTime := expireTime.Add(-cfg.LogoutGraceTime)
 
-	// 启动定时器
+	// Start the timer
 	go func() {
 		now := time.Now()
-		// 先等待到提醒时间
+		// Wait until reminder time
 		time.Sleep(remindTime.Sub(now))
-		// 推送超时提醒
+		// Push logout reminder
 		pushLogoutRemind(playerID, cfg.LogoutGraceTime)
 
-		// 继续等待到超时时间
+		// Wait until expiry
 		time.Sleep(cfg.LogoutGraceTime)
-		// 执行强制下线
-		forceLogout(playerID, "登录时长超过最大限制")
+		// Force logout
+		forceLogout(playerID, "login duration exceeded max limit")
 	}()
 }*/

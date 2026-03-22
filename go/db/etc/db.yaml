@@ -5,7 +5,7 @@ Etcd:
     - 127.0.0.1:2379
   Key: db.rpc
 ServerConfig:
-  JsonPath: "../../generated/generated_data/mysql_database_table_list.json"
+  JsonPath: "../../generated/data/mysql_database_table_list.json"
   # 新增 Kafka 配置，适配之前的 Kafka 消费者
   Kafka:
     Brokers: "127.0.0.1:9092"  # Kafka 集群地址（多个用逗号分隔，如 "ip1:9092,ip2:9092"）
@@ -15,9 +15,9 @@ ServerConfig:
     IsOfflineExpand: false              # 默认为false，动态扩容模式
   Database:
     Hosts: "127.0.0.1:3306"
-    User: "root"
-    Passwd: "root"
-    DBName: "game"
+    User: "appuser"
+    Passwd: "apppass123"
+    DBName: "testdb"
     MaxOpenConn: 10
     MaxIdleConn: 3
     Net: ""
