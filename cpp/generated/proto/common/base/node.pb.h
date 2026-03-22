@@ -50,26 +50,32 @@ struct TableStruct_proto_2fcommon_2fbase_2fnode_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto;
 }  // extern "C"
+namespace common {
+namespace base {
 enum eNodeProtocolType : int;
 extern const uint32_t eNodeProtocolType_internal_data_[];
 enum eNodeType : int;
 extern const uint32_t eNodeType_internal_data_[];
 enum eSceneNodeType : int;
 extern const uint32_t eSceneNodeType_internal_data_[];
+}  // namespace base
+}  // namespace common
 namespace google {
 namespace protobuf {
 template <>
-internal::EnumTraitsT<::eNodeProtocolType_internal_data_>
-    internal::EnumTraitsImpl::value<::eNodeProtocolType>;
+internal::EnumTraitsT<::common::base::eNodeProtocolType_internal_data_>
+    internal::EnumTraitsImpl::value<::common::base::eNodeProtocolType>;
 template <>
-internal::EnumTraitsT<::eNodeType_internal_data_>
-    internal::EnumTraitsImpl::value<::eNodeType>;
+internal::EnumTraitsT<::common::base::eNodeType_internal_data_>
+    internal::EnumTraitsImpl::value<::common::base::eNodeType>;
 template <>
-internal::EnumTraitsT<::eSceneNodeType_internal_data_>
-    internal::EnumTraitsImpl::value<::eSceneNodeType>;
+internal::EnumTraitsT<::common::base::eSceneNodeType_internal_data_>
+    internal::EnumTraitsImpl::value<::common::base::eSceneNodeType>;
 }  // namespace protobuf
 }  // namespace google
 
+namespace common {
+namespace base {
 enum eNodeType : int {
   UnknownNodeService = 0,
   SceneNodeService = 3,
@@ -226,28 +232,30 @@ inline bool eNodeProtocolType_Parse(
 #endif  // __GNUC__
 
 // @@protoc_insertion_point(namespace_scope)
+}  // namespace base
+}  // namespace common
 
 
 namespace google {
 namespace protobuf {
 
 template <>
-struct is_proto_enum<::eNodeType> : std::true_type {};
+struct is_proto_enum<::common::base::eNodeType> : std::true_type {};
 template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::eNodeType>() {
-  return ::eNodeType_descriptor();
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::common::base::eNodeType>() {
+  return ::common::base::eNodeType_descriptor();
 }
 template <>
-struct is_proto_enum<::eSceneNodeType> : std::true_type {};
+struct is_proto_enum<::common::base::eSceneNodeType> : std::true_type {};
 template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::eSceneNodeType>() {
-  return ::eSceneNodeType_descriptor();
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::common::base::eSceneNodeType>() {
+  return ::common::base::eSceneNodeType_descriptor();
 }
 template <>
-struct is_proto_enum<::eNodeProtocolType> : std::true_type {};
+struct is_proto_enum<::common::base::eNodeProtocolType> : std::true_type {};
 template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::eNodeProtocolType>() {
-  return ::eNodeProtocolType_descriptor();
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::common::base::eNodeProtocolType>() {
+  return ::common::base::eNodeProtocolType_descriptor();
 }
 
 }  // namespace protobuf

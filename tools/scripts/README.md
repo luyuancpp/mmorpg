@@ -28,6 +28,11 @@ Supported commands include:
 - `iwyu-run`
 - `k8s-*`
 
+Proto generator naming references:
+
+- Current naming-state snapshot: `../docs/proto_gen_naming_audit.md`
+- Compatibility boundary and migration rules: `../docs/proto_gen_naming_migration.md`
+
 ### iwyu_run.ps1 / iwyu_run.sh
 
 Cross-platform include hygiene entrypoint.
@@ -237,7 +242,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command tree
 pwsh -File dev_tools.ps1 -Command proto-gen-build
 
 # Run proto-gen
-pwsh -File dev_tools.ps1 -Command proto-gen-run -ConfigPath ../proto_generator/pbgen/etc/proto_gen.yaml
+pwsh -File dev_tools.ps1 -Command proto-gen-run -ConfigPath ../proto_generator/protogen/etc/proto_gen.yaml
 ```
 
 ## Notes

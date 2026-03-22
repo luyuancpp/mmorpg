@@ -3,6 +3,7 @@
 #include "proto/common/base/node.pb.h"
 #include "thread_context/dispatcher_manager.h"
 
+#include "proto/chat/chat.pb.h"
 #include "proto/data_service/data_service.pb.h"
 #include "proto/etcd/etcd.pb.h"
 #include "proto/gate/gate_service.pb.h"
@@ -17,6 +18,7 @@
 #include "proto/scene/scene.pb.h"
 #include "proto/scene_manager/scene_manager_service.pb.h"
 
+#include "rpc/service_metadata/chat_service_metadata.h"
 #include "rpc/service_metadata/data_service_service_metadata.h"
 #include "rpc/service_metadata/etcd_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
@@ -70,6 +72,8 @@ class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
 class ScenePlayerSyncImpl final : public ScenePlayerSync {};
 class SceneImpl final : public Scene {};
 
+namespace chatpb{void SendClientPlayerChatSendChat(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace chatpb{void SendClientPlayerChatPullChatHistory(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceLoadPlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceSavePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceGetPlayerField(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -103,6 +107,18 @@ std::array<RpcMethodMeta, 94> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
+    // --- ClientPlayerChat ---
+    gRpcMethodRegistry[ClientPlayerChatSendChatMessageId] = RpcMethodMeta{
+        "ClientPlayerChat", "SendChat",
+        std::make_unique<::chatpb::SendChatRequest>(),
+        std::make_unique<::chatpb::SendChatResponse>(),
+        nullptr, 0, eNodeType::ChatNodeService, chatpb::SendClientPlayerChatSendChat};
+    gRpcMethodRegistry[ClientPlayerChatPullChatHistoryMessageId] = RpcMethodMeta{
+        "ClientPlayerChat", "PullChatHistory",
+        std::make_unique<::chatpb::PullChatHistoryRequest>(),
+        std::make_unique<::chatpb::PullChatHistoryResponse>(),
+        nullptr, 0, eNodeType::ChatNodeService, chatpb::SendClientPlayerChatPullChatHistory};
+
     // --- DataService ---
     gRpcMethodRegistry[DataServiceLoadPlayerDataMessageId] = RpcMethodMeta{
         "DataService", "LoadPlayerData",
@@ -497,6 +513,8 @@ void InitMessageInfo()
 bool IsClientMessageId(uint32_t messageId)
 {
 	switch (messageId) {
+	case ClientPlayerChatSendChatMessageId:
+	case ClientPlayerChatPullChatHistoryMessageId:
 	case ClientPlayerLoginLoginMessageId:
 	case ClientPlayerLoginCreatePlayerMessageId:
 	case ClientPlayerLoginEnterGameMessageId:

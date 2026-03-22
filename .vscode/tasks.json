@@ -38,7 +38,7 @@
 				"-Command",
 				"proto-gen-run",
 				"-ConfigPath",
-				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml"
+				"${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml"
 			],
 			"problemMatcher": [
 				"$go"
@@ -54,7 +54,7 @@
 				"-Command",
 				"proto-gen-run",
 				"-ConfigPath",
-				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml",
+				"${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
 				"-EnablePprof"
 			],
 			"problemMatcher": [
@@ -71,7 +71,7 @@
 				"-Command",
 				"proto-gen-run",
 				"-ConfigPath",
-				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml",
+				"${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
 				"-UseBinary"
 			],
 			"problemMatcher": [
@@ -88,7 +88,7 @@
 				"-Command",
 				"proto-gen-run",
 				"-ConfigPath",
-				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml",
+				"${workspaceFolder}/tools/proto_generator/protogen/etc/proto_gen.yaml",
 				"-UseGoRun"
 			],
 			"problemMatcher": [

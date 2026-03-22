@@ -57,6 +57,7 @@ Proto generation is driven by the repo tool entrypoint `tools/scripts/dev_tools.
 - VS Code 任务入口: `proto-gen: help`, `proto-gen: build`, `proto-gen: run`
 
 More details: `tools/README.md`, `tools/scripts/README.md`, `tools/proto_generator/README.md`
+Naming docs: `tools/docs/proto_gen_naming_audit.md`, `tools/docs/proto_gen_naming_migration.md`
 
 ## 🧱 C++ Node Main Templates
 

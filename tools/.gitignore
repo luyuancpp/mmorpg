@@ -7,13 +7,13 @@ generated/
 **/temp/
 
 # Local logs and debug outputs from tool runs
-proto_generator/pbgen/*.txt
-proto_generator/pbgen/*.log
+proto_generator/protogen/*.txt
+proto_generator/protogen/*.log
 
 # Local binary/tool drops
 proto/zlibd.dll
 proto_generator/grpc_cpp_plugin.exe
-proto_generator/pbgen/*.exe
-proto_generator/pbgen/*.dll
-proto/pbgen/*.exe
-proto/pbgen/*.dll
+proto_generator/protogen/*.exe
+proto_generator/protogen/*.dll
+proto/protogen/*.exe
+proto/protogen/*.dll

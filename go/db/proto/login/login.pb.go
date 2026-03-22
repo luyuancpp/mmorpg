@@ -8,7 +8,7 @@ package login
 
 import (
 	base "db/proto/common/base"
-	_ "github.com/luyuancpp/protooption"
+	_ "db/proto/db"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

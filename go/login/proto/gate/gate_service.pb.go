@@ -7,10 +7,10 @@
 package gate
 
 import (
-	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	base "login/proto/common/base"
+	_ "login/proto/db"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"

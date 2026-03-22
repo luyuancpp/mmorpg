@@ -24,8 +24,8 @@ This directory hosts developer tooling and generated helper code.
 
 ## Archived Logs
 
-- Historical proto generator run logs are archived in `docs/pbgen/`.
-- Keep source directories under `proto_generator/pbgen/` focused on code and config.
+- Historical proto generator run logs are archived in `docs/protogen/`.
+- Keep source directories under `proto_generator/protogen/` focused on code and config.
 
 ## Quick Start
 
@@ -36,20 +36,21 @@ This directory hosts developer tooling and generated helper code.
 - Run proto-gen with default config:
 	`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`
 - Run proto-gen with custom config:
-	`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/pbgen/etc/proto_gen.yaml`
+	`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.yaml`
 - Refresh tree output script:
 	`pwsh -File tools/scripts/dev_tools.ps1 -Command tree`
 
 ## Notes
 
-- Existing build/run tasks already target `tools/proto_generator/pbgen` and remain unchanged.
-- `tools/proto/pbgen` is currently retained for compatibility with existing local toolchains.
+- Existing build/run tasks already target `tools/proto_generator/protogen` and remain unchanged.
+- `tools/proto/protogen` is currently retained for compatibility with existing local toolchains.
 - `dev_tools.ps1` still accepts `pbgen-build` / `pbgen-run` aliases for compatibility.
 - `tools/scripts/dev_tools.ps1` is the preferred shell entry point for common tool commands.
 - See `tools/docs/proto_gen_naming_migration.md` for the explicit migration boundary and future rename checklist.
+- See `tools/docs/proto_gen_naming_audit.md` for the current post-migration audit snapshot.
 
 ## Naming Policy
 
 - Use `proto-gen` as the primary user-facing name.
-- Treat `pbgen` as a historical compatibility alias.
-- Do not rename compatibility paths like `proto_generator/pbgen` or `docs/pbgen` without a separate migration plan.
+- Use `protogen` as the canonical internal directory/module name.
+- Treat `pbgen` as a historical compatibility alias for commands, binary names, and old environment variables.

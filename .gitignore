@@ -52,8 +52,8 @@ compile_commands.json
 x64/
 .vs/
 bin/zlib*
-tools/server/pbgen/.idea/
-tools/server/pbgen/bin/
+tools/server/protogen/.idea/
+tools/server/protogen/bin/
 common/src/pb/pb2sol2/
 build/
 Cmake/
@@ -69,10 +69,10 @@ bin/*.txt
 go/pkg/
 *md5
 tools/generated/
-tools/proto_generator/pbgen/bin/
-tools/proto_generator/pbgen/.idea/
-tools/proto-generator/pbgen/bin/
-tools/proto-generator/pbgen/.idea/
+tools/proto_generator/protogen/bin/
+tools/proto_generator/protogen/.idea/
+tools/proto-generator/protogen/bin/
+tools/proto-generator/protogen/.idea/
 _copilot_session_transfer/
 
 # raw-pointer-member check cache markers

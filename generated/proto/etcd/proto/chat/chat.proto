@@ -3,6 +3,7 @@ syntax = "proto3";
 import "proto/db/proto_option.proto";
 import "proto/common/base/tip.proto";
 
+option go_package = "etcd/proto/chat";
 package chatpb;
 
 option cc_generic_services = false;

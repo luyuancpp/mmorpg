@@ -7,12 +7,12 @@
 package scene
 
 import (
-	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	base "robot/proto/common/base"
 	component "robot/proto/common/component"
+	_ "robot/proto/db"
 	sync "sync"
 	unsafe "unsafe"
 )

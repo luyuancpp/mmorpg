@@ -242,7 +242,7 @@ var File_proto_common_base_node_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_node_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/common/base/node.proto*\xcb\x04\n" +
+	"\x1cproto/common/base/node.proto\x12\vcommon.base*\xcb\x04\n" +
 	"\teNodeType\x12\x16\n" +
 	"\x12UnknownNodeService\x10\x00\x12\x14\n" +
 	"\x10SceneNodeService\x10\x03\x12\x13\n" +
@@ -295,9 +295,9 @@ func file_proto_common_base_node_proto_rawDescGZIP() []byte {
 
 var file_proto_common_base_node_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_proto_common_base_node_proto_goTypes = []any{
-	(ENodeType)(0),         // 0: eNodeType
-	(ESceneNodeType)(0),    // 1: eSceneNodeType
-	(ENodeProtocolType)(0), // 2: eNodeProtocolType
+	(ENodeType)(0),         // 0: common.base.eNodeType
+	(ESceneNodeType)(0),    // 1: common.base.eSceneNodeType
+	(ENodeProtocolType)(0), // 2: common.base.eNodeProtocolType
 }
 var file_proto_common_base_node_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

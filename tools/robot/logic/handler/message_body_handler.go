@@ -23,6 +23,10 @@ func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent)
 
 	// Handle different message types
 	switch response.MessageId {
+	case game.ClientPlayerChatSendChatMessageId:
+		handleClientPlayerChatSendChat(player, response.SerializedMessage)
+	case game.ClientPlayerChatPullChatHistoryMessageId:
+		handleClientPlayerChatPullChatHistory(player, response.SerializedMessage)
 	case game.ClientPlayerLoginLoginMessageId:
 		handleClientPlayerLoginLogin(player, response.SerializedMessage)
 	case game.ClientPlayerLoginCreatePlayerMessageId:
@@ -65,6 +69,22 @@ func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent)
 		// Handle unknown message IDs
 		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId), zap.String("response", response.String()))
 	}
+}
+func handleClientPlayerChatSendChat(player *gameobject.Player, body []byte) {
+	message := &chat.SendChatResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal chat.SendChatResponse", zap.Error(err))
+		return
+	}
+	ClientPlayerChatSendChatHandler(player, message)
+}
+func handleClientPlayerChatPullChatHistory(player *gameobject.Player, body []byte) {
+	message := &chat.PullChatHistoryResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal chat.PullChatHistoryResponse", zap.Error(err))
+		return
+	}
+	ClientPlayerChatPullChatHistoryHandler(player, message)
 }
 func handleClientPlayerLoginLogin(player *gameobject.Player, body []byte) {
 	message := &login.LoginResponse{}

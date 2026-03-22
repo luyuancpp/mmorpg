@@ -8,7 +8,6 @@ package db
 
 import (
 	base "etcd/proto/common/base"
-	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -159,6 +158,7 @@ func file_proto_db_db_proto_init() {
 	if File_proto_db_db_proto != nil {
 		return
 	}
+	file_proto_db_proto_option_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

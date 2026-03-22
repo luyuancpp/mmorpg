@@ -5,6 +5,7 @@ import "proto/etcd/kv.proto";
 import "proto/etcd/version.proto";
 
 
+option go_package = "login/proto/etcd";
 package etcdserverpb;
 
 service KV {

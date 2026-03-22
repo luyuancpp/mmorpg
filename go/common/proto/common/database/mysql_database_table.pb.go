@@ -9,7 +9,7 @@ package database
 import (
 	base "common/proto/common/base"
 	component "common/proto/common/component"
-	_ "github.com/luyuancpp/protooption"
+	_ "common/proto/db"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

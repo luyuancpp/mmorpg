@@ -58,12 +58,23 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
-$ProtoGenDir = Join-Path $RepoRoot "tools\proto_generator\pbgen"
+$ProtoGenDir = Join-Path $RepoRoot "tools\proto_generator\protogen"
+$ProtoGenEnablePprofEnvVar = "PROTOGEN_ENABLE_PPROF"
+$LegacyProtoGenEnablePprofEnvVar = "PBGEN_ENABLE_PPROF"
 
 function Invoke-ProtoGenBuild {
     Push-Location $ProtoGenDir
     try {
-        go build -v ./...
+        $legacyProtoGenExePath = Join-Path $ProtoGenDir "pbgen.exe"
+        $primaryProtoGenExePath = Join-Path $ProtoGenDir "proto-gen.exe"
+        $staleCmdExePath = Join-Path $ProtoGenDir "cmd.exe"
+
+        go build -v -o $legacyProtoGenExePath ./cmd
+        Copy-Item -Path $legacyProtoGenExePath -Destination $primaryProtoGenExePath -Force
+
+        if (Test-Path $staleCmdExePath) {
+            Remove-Item $staleCmdExePath -Force -ErrorAction SilentlyContinue
+        }
     }
     finally {
         Pop-Location
@@ -72,28 +83,37 @@ function Invoke-ProtoGenBuild {
 
 function Invoke-ProtoGenRun {
     Push-Location $ProtoGenDir
-    $previousConfigPath = $env:PROTO_GEN_CONFIG_PATH
-    $previousEnablePprof = $env:PBGEN_ENABLE_PPROF
+    $previousConfigPath = [Environment]::GetEnvironmentVariable("PROTO_GEN_CONFIG_PATH", "Process")
+    $previousEnablePprof = [Environment]::GetEnvironmentVariable($ProtoGenEnablePprofEnvVar, "Process")
+    $previousLegacyEnablePprof = [Environment]::GetEnvironmentVariable($LegacyProtoGenEnablePprofEnvVar, "Process")
     try {
         if ($UseBinary -and $UseGoRun) {
             throw "UseBinary and UseGoRun cannot be enabled at the same time."
         }
 
         if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
-            $env:PROTO_GEN_CONFIG_PATH = Join-Path $ProtoGenDir "etc\proto_gen.yaml"
+            [Environment]::SetEnvironmentVariable("PROTO_GEN_CONFIG_PATH", (Join-Path $ProtoGenDir "etc\proto_gen.yaml"), "Process")
         }
         else {
-            $env:PROTO_GEN_CONFIG_PATH = $ConfigPath
+            $resolvedConfigPath = $ConfigPath
+            if (-not [System.IO.Path]::IsPathRooted($resolvedConfigPath)) {
+                $resolvedConfigPath = Join-Path $RepoRoot $resolvedConfigPath
+            }
+
+            $resolvedConfigPath = (Resolve-Path $resolvedConfigPath).Path
+            [Environment]::SetEnvironmentVariable("PROTO_GEN_CONFIG_PATH", $resolvedConfigPath, "Process")
         }
 
         if ($EnablePprof) {
-            $env:PBGEN_ENABLE_PPROF = "1"
+            [Environment]::SetEnvironmentVariable($ProtoGenEnablePprofEnvVar, "1", "Process")
         }
         else {
-            Remove-Item Env:PBGEN_ENABLE_PPROF -ErrorAction SilentlyContinue
+            [Environment]::SetEnvironmentVariable($ProtoGenEnablePprofEnvVar, $null, "Process")
+            [Environment]::SetEnvironmentVariable($LegacyProtoGenEnablePprofEnvVar, $null, "Process")
         }
 
-        $protoGenExePath = Join-Path $ProtoGenDir "pbgen.exe"
+        $primaryProtoGenExePath = Join-Path $ProtoGenDir "proto-gen.exe"
+        $legacyProtoGenExePath = Join-Path $ProtoGenDir "pbgen.exe"
 
         if ($UseGoRun) {
             go run ./cmd
@@ -101,17 +121,25 @@ function Invoke-ProtoGenRun {
         }
 
         if ($UseBinary) {
-            if (-not (Test-Path $protoGenExePath)) {
-                throw "proto-gen binary not found: $protoGenExePath. Please run proto-gen-build first."
+            if (Test-Path $primaryProtoGenExePath) {
+                & $primaryProtoGenExePath
+                return
             }
 
-            & $protoGenExePath
-            return
+            if (Test-Path $legacyProtoGenExePath) {
+                & $legacyProtoGenExePath
+                return
+            }
+
+            throw "proto-gen binary not found. Expected $primaryProtoGenExePath or $legacyProtoGenExePath. Please run proto-gen-build first."
         }
 
-        # Default strategy: prefer prebuilt binary for faster startup, fallback to go run.
-        if (Test-Path $protoGenExePath) {
-            & $protoGenExePath
+        # Default strategy: prefer prebuilt proto-gen binary for faster startup, fall back to the legacy name, then go run.
+        if (Test-Path $primaryProtoGenExePath) {
+            & $primaryProtoGenExePath
+        }
+        elseif (Test-Path $legacyProtoGenExePath) {
+            & $legacyProtoGenExePath
         }
         else {
             go run ./cmd
@@ -119,17 +147,24 @@ function Invoke-ProtoGenRun {
     }
     finally {
         if ($null -ne $previousConfigPath) {
-            $env:PROTO_GEN_CONFIG_PATH = $previousConfigPath
+            [Environment]::SetEnvironmentVariable("PROTO_GEN_CONFIG_PATH", $previousConfigPath, "Process")
         }
         else {
-            Remove-Item Env:PROTO_GEN_CONFIG_PATH -ErrorAction SilentlyContinue
+            [Environment]::SetEnvironmentVariable("PROTO_GEN_CONFIG_PATH", $null, "Process")
         }
 
         if ($null -ne $previousEnablePprof) {
-            $env:PBGEN_ENABLE_PPROF = $previousEnablePprof
+            [Environment]::SetEnvironmentVariable($ProtoGenEnablePprofEnvVar, $previousEnablePprof, "Process")
         }
         else {
-            Remove-Item Env:PBGEN_ENABLE_PPROF -ErrorAction SilentlyContinue
+            [Environment]::SetEnvironmentVariable($ProtoGenEnablePprofEnvVar, $null, "Process")
+        }
+
+        if ($null -ne $previousLegacyEnablePprof) {
+            [Environment]::SetEnvironmentVariable($LegacyProtoGenEnablePprofEnvVar, $previousLegacyEnablePprof, "Process")
+        }
+        else {
+            [Environment]::SetEnvironmentVariable($LegacyProtoGenEnablePprofEnvVar, $null, "Process")
         }
 
         Pop-Location
@@ -341,8 +376,8 @@ Compatibility aliases (legacy):
     -Command pbgen-run
 
 Useful proto-gen flags:
-    -EnablePprof   Enable pprof wait mode (PBGEN_ENABLE_PPROF=1)
-    -UseBinary     Force running proto-gen binary (pbgen.exe)
+    -EnablePprof   Enable pprof wait mode (PROTOGEN_ENABLE_PPROF=1)
+    -UseBinary     Force running proto-gen binary (proto-gen.exe, fallback: pbgen.exe)
     -UseGoRun      Force running go run ./cmd
 
 Other common commands:
@@ -355,6 +390,10 @@ Other common commands:
     -Command k8s-all-up | k8s-all-down | k8s-all-status
     -Command k8s-stage-runtime
     -Command k8s-image-preflight | k8s-build-image | k8s-push-image | k8s-release-zone | k8s-release-all
+
+Proto-gen naming docs:
+    tools/docs/proto_gen_naming_audit.md
+    tools/docs/proto_gen_naming_migration.md
 "@ | Write-Output
 }
 
