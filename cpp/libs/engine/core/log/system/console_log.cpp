@@ -1,6 +1,6 @@
 #include "console_log.h"
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 
 #include "log/macros/game_log.h"

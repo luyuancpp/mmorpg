@@ -189,7 +189,7 @@ namespace GameMMR
 
     void MatchUnit::CalcMatchLimit()
     {
-        if (NULL == m_pMatchElement)
+        if (nullptr == m_pMatchElement)
         {
             return;
         }
@@ -325,7 +325,7 @@ namespace GameMMR
 
     int32_t MatchUnit::CanMatch(const MatchInfo & myMember, const MatchInfo & otherMember)const
     {
-        if (NULL == m_pMatchElement)
+        if (nullptr == m_pMatchElement)
         {
             return OR_MATCH_UNIT_TABLE_ERROR;
         }

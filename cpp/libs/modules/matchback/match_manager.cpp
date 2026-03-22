@@ -99,7 +99,7 @@ namespace GameMMR
     {
         if (OR_OK != CheckMatchType(matchType))
         {
-            return NULL;
+            return nullptr;
         }
         return m_vMatchList[matchType]->ComeOutAScene();
   
@@ -191,7 +191,7 @@ namespace GameMMR
         for (match_list_type::iterator it = m_vMatchList.begin(); it != m_vMatchList.end(); ++it)
         {
             scenePtr = (*it)->GetScene(playerid);
-            if (NULL != scenePtr)
+            if (nullptr != scenePtr)
             {
                 return scenePtr;
             }
@@ -219,7 +219,7 @@ namespace GameMMR
         {
 
             scenePtr = (*it)->GetSceneFromSceneId(sceneId);
-            if (NULL != scenePtr)
+            if (nullptr != scenePtr)
             {
                 return scenePtr;
             }

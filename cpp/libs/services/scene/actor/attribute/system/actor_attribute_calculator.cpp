@@ -17,7 +17,6 @@
 void ActorAttributeCalculatorSystem::Initialize() {}
 
 void UpdateVelocity(entt::entity entity) {
-    return;
     auto& velocity = tlsRegistryManager.actorRegistry.get_or_emplace<Velocity>(entity);
     velocity.Clear();
 
@@ -89,9 +88,6 @@ void ActorAttributeCalculatorSystem::ImmediateCalculateAttributes(const entt::en
 
     updateFunction(actorEntity);
 }
-
-
-extern  std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs;
 
 void ActorAttributeCalculatorSystem::Update(double delta)
 {

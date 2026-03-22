@@ -3,7 +3,7 @@
 
 bool MotionModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)
 {
-    return true;
+    return false;
 }
 
 void MotionModifierBuffImplSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,

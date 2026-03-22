@@ -3,7 +3,6 @@
 #include "table/code/buff_table.h"
 #include "scene/combat/buff/system/buff_impl.h"
 #include "proto/common/component/buff_comp.pb.h"
-#include <ranges>
 #include <muduo/base/Logging.h>
 #include "table/proto/tip/buff_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -86,6 +85,10 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
         return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
     }
 
+    if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
+        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
+    }
+
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
     newBuff.buffPb.set_buff_id(newBuffId);
     newBuff.buffPb.set_buff_table_id(buffTableId);
@@ -94,10 +97,6 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 
     auto [fst, snd] = buffList.emplace(newBuffId, std::move(newBuff));
     OnBuffStart(parent, fst->second, buffTable);
-
-	if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
-		return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
-	}
 
     if (buffTable->duration() > 0) {
         fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
@@ -260,7 +259,7 @@ void BuffSystem::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, con
     if (ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
         return;
     }
-    else if (ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
+    else if (MotionModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
         return;
     }
 }
@@ -384,7 +383,7 @@ bool BuffSystem::AddSubBuffs(entt::entity parent,
 {
     if (nullptr == buffTable)
     {
-        return false;;
+        return false;
     }
 
     // Skip if sub-buffs already added

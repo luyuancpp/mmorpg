@@ -220,7 +220,7 @@ private:
         send_scene_callback_type m_oSendGameCallBack;
         enter_dungeon_callback m_oEnterDungeonCallBack;
 		mirror_match_callback_type m_oMirrorMatchCallBack;
-        const MatchElement * m_pMatchElement{ NULL };
+        const MatchElement * m_pMatchElement{ nullptr };
         std::size_t m_nkPerTeamMemberMaxSize{ 5 };
         std::size_t m_nkPerCampPlayerSize{ 1 };
         std::size_t m_nkMaxSceneCampSize{ 1 };
