@@ -18,7 +18,7 @@
 
 bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 {
-	// 在这里定义所有需要记录错误日志的有效 message_id
+	// Define which message IDs should log protocol errors for disconnected players
 	return true;// (message_id != 47 && message_id != 21 && message_id != 37);
 }
 

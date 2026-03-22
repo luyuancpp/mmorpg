@@ -91,7 +91,7 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& nodeInfo) {
 			}
 
 			if (auto* existingClient = targetRegistry.try_get<RpcClientPtr>(nodeEntity)) {
-				gNode->GetZombieClientList().push_back(*existingClient);
+				gNode->GetDisconnectedClientList().push_back(*existingClient);
 			}
 		}
 	}

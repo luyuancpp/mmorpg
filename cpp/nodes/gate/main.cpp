@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
             LogGrpcThreadConfig();
         },
         [](SimpleNode<GateHandler>& node, GateRuntimeContext& context) {
-            // ── gRPC 响应 → 客户端 TCP 桥接 ────────────────────────────────────────
+            // gRPC response -> client TCP bridge
             SetIfEmptyHandler([&context](const ClientContext& ctx, const ::google::protobuf::Message& reply) {
                 auto sd = GetSessionDetailsByClientContext(ctx);
                 if (!sd) return;
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 
             EventHandler::Register();
 
-            // 启动后：挂载客户端 TCP 回调 + session ID 初始化
+            // Post-startup: attach client TCP callbacks + initialize session ID generator
             node.SetAfterStart([&context](SimpleNode<GateHandler>& n) {
                 n.GetTcpServer().setConnectionCallback(
                     [&context](const TcpConnectionPtr& conn) {

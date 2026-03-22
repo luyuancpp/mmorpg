@@ -12,7 +12,6 @@ class RedisSystem
 public:
     RedisSystem() = default;
 
-    // 禁止拷贝和移动，确保单例唯一性
     RedisSystem(const RedisSystem&) = delete;
     RedisSystem& operator=(const RedisSystem&) = delete;
 

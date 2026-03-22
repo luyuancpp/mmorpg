@@ -15,7 +15,7 @@ void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLog
 	///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling Centre2GsLoginRequest for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
 
-	if (request->enter_gs_type() == LOGIN_NONE) // 登录，不是普通切换场景
+	if (request->enter_gs_type() == LOGIN_NONE) // Initial login, not a scene transfer
 	{
 		return;
 	}

@@ -20,7 +20,7 @@ namespace NodeUtils
 	std::string GetRegistryName(const entt::registry& registry);
 	common::base::eNodeType GetRegistryType(const entt::registry& registry);
 	bool IsSameNode(const std::string& uuid1, const std::string& uuid2);
-	bool IsNodeConnected(uint32_t nodeType, const common::base::NodeInfo& info);
+	bool IsNodeConnected(uint32_t nodeType, const NodeInfo& info);
 };
 
 namespace chatpb {

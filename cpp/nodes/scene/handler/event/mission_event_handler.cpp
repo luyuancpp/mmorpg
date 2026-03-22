@@ -43,7 +43,7 @@ void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEve
 void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-     //触发接任务自动匹配当前的任务进度,接受的时候已经拥有金币刷新任务的进度
+     // Trigger auto-matching of current mission progress on accept (e.g., update gold-refresh quest counters)
 ///<<< END WRITING YOUR CODE
 }
 void MissionEventHandler::OnMissionAwardEventHandler(const OnMissionAwardEvent& event)

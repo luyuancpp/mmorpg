@@ -83,6 +83,13 @@ game.slnLaunch.user
 test/
 vsout/
 
+# Abandoned stub directories (IDE-only, no tracked source)
+cpp/libs/game/
+cpp/libs/base/common/
+cpp/libs/base/core/
+cpp/libs/base/infra/
+cpp/libs/base/modules/
+
 # raw-pointer-member check cache markers
 .no_raw_ptr_check_ok
 

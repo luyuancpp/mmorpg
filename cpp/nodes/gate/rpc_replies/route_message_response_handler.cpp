@@ -37,7 +37,7 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;
 	}
-	//gate 和其他服务器不一样，直接返回消息给客户端
+	// Gate differs from other nodes: send response directly to client
 	const auto it = tlsSessionManager.sessions().find(replied->session_id());
 	if (it == tlsSessionManager.sessions().end())
 	{
