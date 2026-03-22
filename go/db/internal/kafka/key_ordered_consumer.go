@@ -27,6 +27,7 @@ import (
 
 const (
 	expandStatusExpireDuration = 30 * time.Minute
+	taskResultExpireDuration   = 5 * time.Minute
 )
 
 // ExpandStatus holds expansion state.
@@ -115,7 +116,7 @@ func handleDBReadOp(
 		if err := redisClient.LPush(ctx, resultKey, resBytes).Err(); err != nil {
 			return fmt.Sprintf("save read result failed: %v", err)
 		}
-		if err := redisClient.Expire(ctx, resultKey, 5*time.Minute).Err(); err != nil {
+		if err := redisClient.Expire(ctx, resultKey, taskResultExpireDuration).Err(); err != nil {
 			return fmt.Sprintf("set expire for result key failed: %v", err)
 		}
 	}

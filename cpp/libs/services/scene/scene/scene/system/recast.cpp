@@ -18,8 +18,8 @@ struct NavMeshTileHeader
 	int32_t dataSize{ 0 };
 };
 
-static const int NAVMESHSET_MAGIC = 'M' << 24 | 'S' << 16 | 'E' << 8 | 'T'; //'MSET';
-static const int NAVMESHSET_VERSION = 1;
+constexpr int NAVMESHSET_MAGIC = 'M' << 24 | 'S' << 16 | 'E' << 8 | 'T'; //'MSET';
+constexpr int NAVMESHSET_VERSION = 1;
 
 class StdFilePtrDeleter {
 public:
@@ -77,7 +77,7 @@ void RecastSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 		if (!tileHeader.tileRef || !tileHeader.dataSize)
 			break;
 
-		unsigned char* data = (unsigned char*)dtAlloc(tileHeader.dataSize, DT_ALLOC_TEMP);
+		unsigned char* data = static_cast<unsigned char*>(dtAlloc(tileHeader.dataSize, DT_ALLOC_TEMP));
 		if (!data) break;
 		std::memset(data, 0, tileHeader.dataSize);
 		readLen = fread(data, tileHeader.dataSize, 1, fp.get());
@@ -89,6 +89,5 @@ void RecastSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 		}
 		mesh->addTile(data, tileHeader.dataSize, DT_TILE_FREE_DATA, tileHeader.tileRef, 0);
 	}
-	return;
 }
 

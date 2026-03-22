@@ -942,7 +942,7 @@ namespace GameMMR
                     MatchInfo mi;
                     TeamMemberToMatchInfo(tMemberInfo, mi);
                     mi.set_roleid(m);
-                    pMyMatch.reset(new MatchUnit(pLeaderMatchUnit->MatchEloId(), pLeaderMatchUnit->GetMatchType(), mi));
+                    pMyMatch = std::make_shared<MatchUnit>(pLeaderMatchUnit->MatchEloId(), pLeaderMatchUnit->GetMatchType(), mi);
                   
                 }
               

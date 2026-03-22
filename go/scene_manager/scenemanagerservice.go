@@ -42,8 +42,3 @@ func main() {
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
 	s.Start()
 }
-
-func startLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
-	// Start load reporter in background
-	go logic.StartLoadReporter(ctx, svcCtx)
-}

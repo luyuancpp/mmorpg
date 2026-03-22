@@ -56,14 +56,14 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, cons
 	MessageCachedArray message_cached_array(message.ByteSizeLong());
 	message.SerializeWithCachedSizesToArray(message_cached_array.data());
 
-	redisReply* reply = (redisReply*)redisCommand(context_.get(),
+	auto* reply = static_cast<redisReply*>(redisCommand(context_.get(),
 		"EVAL %s 1 %b %b",
 		kSaveAndMarkLuaScript,
 		key.c_str(),
-		(size_t)key.length(),
+		static_cast<size_t>(key.length()),
 		message_cached_array.data(),
 		message_cached_array.size()
-	);
+	));
 
 	defer(freeReplyObject(reply));
 

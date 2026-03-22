@@ -11,13 +11,14 @@ import (
 )
 
 const (
-	NodeLoadKey      = "scene_nodes:load"
-	NodeSceneCountKey = "node:%s:scene_count"
+	NodeLoadKey        = "scene_nodes:load"
+	NodeSceneCountKey  = "node:%s:scene_count"
+	LoadReportInterval = 5 * time.Second
 )
 
 // StartLoadReporter starts a background task to report this node's load to Redis
 func StartLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(LoadReportInterval)
 	defer ticker.Stop()
 
 	// Initial report
@@ -42,7 +43,9 @@ func reportLoad(ctx context.Context, svcCtx *svc.ServiceContext) {
 	countStr, err := svcCtx.Redis.Get(sceneCountKey)
 	var currentLoad int64
 	if err == nil && countStr != "" {
-		fmt.Sscanf(countStr, "%d", &currentLoad)
+		if _, scanErr := fmt.Sscanf(countStr, "%d", &currentLoad); scanErr != nil {
+			logx.Errorf("Failed to parse scene count for %s: %v", svcCtx.Config.NodeID, scanErr)
+		}
 	}
 
 	// Update Redis ZSet with score = load
