@@ -1,0 +1,11 @@
+# mprocs dashboard for local MMORPG dev (C++ nodes only).
+#
+# Run from repo root:
+#   mprocs -c tools/dev/mprocs.cpp-only.yaml
+
+procs:
+  cpp-gate-1:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "cpp-gate"]
+
+  cpp-scene-1:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "cpp-scene"]

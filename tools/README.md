@@ -43,6 +43,10 @@ This directory hosts developer tooling and generated helper code.
 	`mprocs -c tools/dev/mprocs.yaml`
 - Run local services in one terminal dashboard (mprocs, 2 gate + 4 scene):
 	`mprocs -c tools/dev/mprocs.2g4s.yaml`
+- Run local services in one terminal dashboard (mprocs, Go only):
+	`mprocs -c tools/dev/mprocs.go-only.yaml`
+- Run local services in one terminal dashboard (mprocs, C++ only):
+	`mprocs -c tools/dev/mprocs.cpp-only.yaml`
 
 ## Notes
 
@@ -53,6 +57,7 @@ This directory hosts developer tooling and generated helper code.
 - See `tools/docs/proto_gen_naming_migration.md` for the explicit migration boundary and future rename checklist.
 - See `tools/docs/proto_gen_naming_audit.md` for the current post-migration audit snapshot.
 - `tools/scripts/dev_mprocs_proc.ps1` is a foreground process wrapper for mprocs. It is intended for log aggregation in a single terminal UI.
+- `tools/scripts/start_mprocs.ps1` checks whether mprocs is installed before launching a dashboard config.
 
 ## Naming Policy
 

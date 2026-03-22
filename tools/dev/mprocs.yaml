@@ -14,28 +14,28 @@
 
 procs:
   cpp-gate-1:
-    cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command cpp-gate
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "cpp-gate"]
 
   cpp-scene-1:
-    cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command cpp-scene
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "cpp-scene"]
 
   go-db:
-    cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command go-db
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-db"]
 
   go-data-service:
-    cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command go-data-service
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-data-service"]
 
   go-player-locator:
-    cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command go-player-locator
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-player-locator"]
 
   go-login:
-    cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command go-login
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-login"]
 
   go-scene-manager:
-    cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command go-scene-manager
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-scene-manager"]
 
 # To scale local node count, duplicate the process entries above, for example:
 #   cpp-gate-2:
-#     cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command cpp-gate
+#     cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "cpp-gate"]
 #   cpp-scene-2:
-#     cmd: pwsh -NoProfile -File tools/scripts/dev_mprocs_proc.ps1 -Command cpp-scene
+#     cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "cpp-scene"]

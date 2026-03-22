@@ -5,6 +5,14 @@
 - Avoid static usage in code where possible. Prefer stateful components like gRPC channel cache to be owned by Node rather than implemented with static storage.
 - Kubernetes external gate exposure guidance: managed cloud K8s should generally prefer `LoadBalancer`; self-hosted / bare metal K8s should generally prefer `NodePort` behind an external L4 load balancer. Do not recommend `LoadBalancer` as a one-size-fits-all default when the cluster lacks a mature LB implementation.
 
+## Reward System Design (Claimed-Status Ownership)
+1. **Problem**: `RewardBitset` bit index was keyed by `reward_table_id`. Changing/deleting reward table entries would corrupt saved player claim data.
+2. **Solution**: Each business system (quest, achievement, daily-login, etc.) owns its own bitset for claimed status. The bit index comes from that system's own table (e.g., `quest_table_id_bit_index.h`), **not** from the reward table.
+   - Reward table ID becomes a pure data reference ("what items/currency to give"), not a persistence key.
+   - Changing a quest's reward ID no longer affects claimed status.
+3. **Bitset type**: Prefer `std::bitset` per system (compile-time size from table generation, cache-friendly, zero allocation). Switch to `boost::dynamic_bitset` or `std::vector<bool>` only if runtime hot-reload of tables without recompilation is required.
+4. **`RewardClaimSystem` role**: Becomes a pure "dispatch reward items" utility. It no longer manages claimed state — each business system manages its own.
+
 ## Recent Architectural Decisions (2025-03-09)
 
 ### Scene Manager & Gate Communication
