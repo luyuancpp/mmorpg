@@ -20,7 +20,7 @@
 
 entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext)
 {
-	// 尝试进入上次成功进入的场景
+	// Try the last successfully entered scene
 	entt::entity currentSceneId = entt::entity{ sceneContext.scene_info().guid() };
 	if (tlsRegistryManager.sceneRegistry.valid(currentSceneId) &&
 		kSuccess == SceneCommon::CheckPlayerEnterScene({ .scene = currentSceneId, .enter = entt::null }))
@@ -28,7 +28,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 		return currentSceneId;
 	}
 
-	// 尝试进入上次登录但未成功进入的场景
+	// Try the scene from last login attempt
 	entt::entity lastSceneId = entt::entity{ sceneContext.scene_info_last_time().guid() };
 	if (tlsRegistryManager.sceneRegistry.valid(lastSceneId) &&
 		kSuccess == SceneCommon::CheckPlayerEnterScene({ .scene = lastSceneId, .enter = entt::null }))
@@ -36,7 +36,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 		return lastSceneId;
 	}
 
-	// 尝试找空闲的当前配置场景
+	// Try an available scene with the same config
 	if (sceneContext.scene_info().scene_confid() > 0)
 	{
 		entt::entity candidate = SceneNodeSelectorSystem::SelectAvailableScene({ sceneContext.scene_info().scene_confid() });
@@ -44,7 +44,7 @@ entt::entity PlayerSceneSystem::FindSceneForPlayerLogin(const PlayerSceneContext
 			return candidate;
 	}
 
-	// fallback：默认配置场景
+	// Fallback: default scene config
 	return SceneNodeSelectorSystem::SelectAvailableScene({ GetDefaultSceneConfigurationId() });
 }
 
@@ -289,20 +289,20 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity playerEntity, const SceneI
 
 void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 {
-	// 1. 检查前置状态（队列、玩家、场景）
+	// 1. Verify preconditions
 	if (!VerifyChangeSceneRequest(playerEntity))
 		return;
 
-	// 2. 查找目标场景（已有 or 分配）
+	// 2. Resolve target scene
 	auto toScene = ResolveTargetScene(playerEntity);
 	if (toScene == entt::null)
 		return;
 
-	// 3. 验证是否允许切换（节点、容量、重复）
+	// 3. Validate switch is allowed
 	if (!ValidateSceneSwitch(playerEntity, toScene))
 		return;
 
-	// 4. 发起切换
+	// 4. Execute scene change
 	ProcessSceneChange(playerEntity, toScene);
 }
 

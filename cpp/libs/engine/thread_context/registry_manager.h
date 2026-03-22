@@ -10,8 +10,7 @@ class RegistryManager
 public:
 	RegistryManager();
 
-    // 禁止拷贝和移动，确保单例唯一性
-    RegistryManager(const RegistryManager&) = delete;
+RegistryManager(const RegistryManager&) = delete;
     RegistryManager& operator=(const RegistryManager&) = delete;
 
 	entt::registry globalRegistry;

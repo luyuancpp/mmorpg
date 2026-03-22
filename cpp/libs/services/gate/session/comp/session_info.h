@@ -39,7 +39,7 @@ struct SessionInfo {
 	MessageLimiter messageLimiter;
 	uint64_t sessionVersion{ kInvalidGuid };
 private:
-	NodeMap nodeIds; // 稀疏结构，只保存设置过的 node
+	NodeMap nodeIds; // Sparse map, only stores assigned nodes
 };
 
 

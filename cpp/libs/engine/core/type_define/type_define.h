@@ -11,7 +11,7 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-// 类型别名
+// Type aliases
 using Guid = uint64_t;
 using NodeId = uint32_t;
 using SessionId = uint64_t;

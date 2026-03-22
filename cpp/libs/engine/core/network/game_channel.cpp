@@ -12,10 +12,9 @@
 
 using namespace std::placeholders;
 
-// ====================== 全局变量 ======================
+// ====================== Global Variables ======================
 constexpr  size_t kMaxMessageByteSize = 2048;
 
-// 处理未知的 Protobuf 消息
 void HandleUnknownProtobufMessage(const TcpConnectionPtr&, const MessagePtr& message, muduo::Timestamp) {
     LOG_ERROR << "Unknown Protobuf message received: " << message->GetTypeName().data();
 }
@@ -23,16 +22,16 @@ void HandleUnknownProtobufMessage(const TcpConnectionPtr&, const MessagePtr& mes
 void LogIfMessageTooLarge(const GameRpcMessage& rpcMessage) {
 	if (const size_t messageSize = rpcMessage.ByteSizeLong(); messageSize > kMaxMessageByteSize) {
 		LOG_ERROR << "RPC message size exceeds 2KB, message ID: "
-			<< rpcMessage.message_id()  // 假设所有消息都有这个字段
+			<< rpcMessage.message_id()
 			<< ", size: " << messageSize
 			<< ", message content: " << rpcMessage.DebugString();
 	}
 }
 
-// 全局响应分发器
+// Global response dispatcher
 MessageResponseDispatcher gRpcResponseDispatcher(std::bind(&HandleUnknownProtobufMessage, _1, _2, _3));
 
-// ====================== GameChannel 类实现 ======================
+// ====================== GameChannel Implementation ======================
 
 GameChannel::GameChannel()
     : codec_(std::bind(&GameChannel::HandleRpcMessage, this, _1, _2, _3)),
@@ -53,9 +52,8 @@ GameChannel::~GameChannel() {
     LOG_DEBUG << "GameChannel destroyed: " << this;
 }
 
-// ====================== 私有方法 ======================
+// ====================== Private Methods ======================
 
-// 验证消息 ID 是否有效
 bool GameChannel::IsValidMessageId(uint32_t messageId) const {
     if (messageId >= gRpcMethodRegistry.size()) {
         LOG_ERROR << "Invalid message ID: " << messageId
@@ -65,13 +63,11 @@ bool GameChannel::IsValidMessageId(uint32_t messageId) const {
     return true;
 }
 
-// 序列化消息
 bool GameChannel::SerializeMessage(const ProtobufMessage& message, std::string* output) const {
     output->resize(message.ByteSizeLong());
     return message.SerializePartialToArray(output->data(), static_cast<int32_t>(output->size()));
 }
 
-// 构造并发送请求消息
 void GameChannel::SendRpcRequestMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content) {
     if (!IsValidMessageId(messageId)) return;
 
@@ -91,7 +87,6 @@ void GameChannel::SendRpcRequestMessage(GameMessageType type, uint32_t messageId
     LogMessageStatistics(rpcMessage);
 }
 
-// 构造并发送响应消息
 void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content) {
     if (!IsValidMessageId(messageId)) return;
     
@@ -111,35 +106,30 @@ void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageI
     LogMessageStatistics(rpcMessage);
 }
 
-// 记录消息统计信息
 void GameChannel::LogMessageStatistics(const GameRpcMessage& message) const {
     if (!gFeatureSwitches[kTestMessageStatistics]) return;
 
-    // 获取消息 ID 和消息大小
     uint32_t messageId = message.message_id();
     uint64_t messageSize = message.ByteSizeLong();
 
     auto now = std::chrono::steady_clock::now();
     auto& statistic = gMessageStatistics[messageId];
 
-    // 如果是第一次记录，初始化时间
+    // Initialize start time on first record
     if (gStartTimes[messageId].time_since_epoch().count() <= 0) {
         gStartTimes[messageId] = now;
     }
 
-    // 更新统计信息
     statistic.set_count(statistic.count() + 1);
     statistic.set_flow_rate_total(statistic.flow_rate_total() + messageSize);
     gTotalFlow += messageSize;
 
-    // 计算流量速率
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - gStartTimes[messageId]).count();
     if (duration > 0) {
         uint64_t flowRatePerSecond = statistic.flow_rate_total() / duration;
         statistic.set_flow_rate_second(flowRatePerSecond);
     }
 
-    // 打印统计信息
     LOG_INFO << "Message ID: " << messageId
         << ", Count: " << statistic.count()
         << ", Total Flow: " << statistic.flow_rate_total()
@@ -147,7 +137,6 @@ void GameChannel::LogMessageStatistics(const GameRpcMessage& message) const {
         << " bytes/sec, Duration: " << duration << " sec";
 }
 
-// 启动消息统计
 void GameChannel::StartMessageStatistics() {
     gFeatureSwitches[kTestMessageStatistics] = true;
     gMessageStatistics.fill(MessageStatistics{});
@@ -157,11 +146,9 @@ void GameChannel::StartMessageStatistics() {
     LOG_INFO << "Message statistics started.";
 }
 
-// 停止消息统计
 void GameChannel::StopMessageStatistics() {
     gFeatureSwitches[kTestMessageStatistics] = false;
 
-    // 打印最终统计数据
     std::cout << "Final statistics:" << std::endl;
     for (uint32_t messageId = 0; messageId < gMessageStatistics.size(); ++messageId) {
         const auto& stats = gMessageStatistics[messageId];
@@ -179,9 +166,8 @@ void GameChannel::StopMessageStatistics() {
     LOG_INFO << "Message statistics stopped.";
 }
 
-// ====================== 公共方法 ======================
+// ====================== Public Methods ======================
 
-// 调用远程方法
 void GameChannel::CallRemoteMethod(const uint32_t messageId, const ProtobufMessage& request) {
     if (!IsValidMessageId(messageId)) {
         LOG_ERROR << "Failed to validate message ID for remote method call: " << messageId;
@@ -201,31 +187,27 @@ void GameChannel::CallRemoteMethod(const uint32_t messageId, const ProtobufMessa
     SendGameRpcMessage(rpcMessage);
 }
 
-// 发送请求消息
 void GameChannel::SendRequest(uint32_t messageId, const ProtobufMessage& request) {
     SendRpcRequestMessage(GameMessageType::REQUEST, messageId, &request);
 }
 
-// 路由消息到指定节点
 void GameChannel::RouteMessageToNode(uint32_t messageId, const ProtobufMessage& request) {
     SendRpcRequestMessage(GameMessageType::NODE_ROUTE, messageId, &request);
 }
 
-// 处理接收到的消息
 void GameChannel::HandleIncomingMessage(const TcpConnectionPtr& connection, muduo::net::Buffer* buffer, muduo::Timestamp receiveTime) {
     codec_.onMessage(connection, buffer, receiveTime);
 }
 
-// 定义 2KB 的常量
+// 2KB threshold for oversized-message logging
 
 void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessagePtr& messagePtr, muduo::Timestamp receiveTime) {
     assert(conn == connection_);
     const auto& rpcMessage = *messagePtr;
     
-    // 如果消息大小超过 2KB，记录错误日志
     if (const size_t messageSize = rpcMessage.ByteSizeLong(); messageSize > kMaxMessageByteSize) {
         LOG_ERROR << "RPC message size exceeds 2KB, message ID: " << rpcMessage.message_id() << ", size: " << messageSize
-                  << ", message content: " << rpcMessage.DebugString();  // 输出 Protobuf 消息内容
+                  << ", message content: " << rpcMessage.DebugString();
     }
 
     LOG_TRACE << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
@@ -253,7 +235,6 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessag
 }
 
 
-// 处理响应消息
 void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
     if (!IsValidMessageId(rpcMessage.message_id())) return;
 
@@ -324,7 +305,6 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
     }
 }
 
-// 发送错误响应
 void GameChannel::SendErrorResponse(const GameRpcMessage& message, GameErrorCode errorCode) {
     GameRpcMessage errorResponse;
     errorResponse.set_type(GameMessageType::RPC_ERROR);
@@ -334,29 +314,24 @@ void GameChannel::SendErrorResponse(const GameRpcMessage& message, GameErrorCode
 }
 
 void GameChannel::SendRouteResponse(uint32_t messageId, uint64_t id, const std::string& body) {
-    // 检查 messageId 的合法性
     if (messageId >= gRpcMethodRegistry.size()) {
         LOG_ERROR << "Invalid message_id: " << messageId;
         return;
     }
 
-    // 构造 GameRpcMessage 响应
     GameRpcMessage response;
-    response.set_type(GameMessageType::RESPONSE); // 设置消息类型为响应
-    response.set_message_id(messageId);         // 设置消息 ID
-    response.set_response(body);               // 设置响应内容
+    response.set_type(GameMessageType::RESPONSE);
+    response.set_message_id(messageId);
+    response.set_response(body);
 
-    // 发送响应消息
     SendGameRpcMessage(response);
 }
 
 void GameChannel::SendGameRpcMessage(const GameRpcMessage& message) {
     LogIfMessageTooLarge(message);
 
-    // 使用 codec_ 发送消息
     codec_.send(connection_, message);
 
-    // 记录消息统计信息
     LogMessageStatistics(message);
 }
 

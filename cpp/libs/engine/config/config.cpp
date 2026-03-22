@@ -6,7 +6,7 @@
 bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseConfig) {
 	YAML::Node root = YAML::LoadFile(filename);
 
-	// 解析 Etcd 配置
+	// Parse Etcd config
 	if (root["Etcd"]["Hosts"]) {
 		for (const auto& host : root["Etcd"]["Hosts"]) {
 			baseConfig.add_etcd_hosts(host.as<std::string>());
@@ -19,17 +19,14 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 		baseConfig.set_node_ttl_seconds(root["Etcd"]["NodeTTLSeconds"].as<uint32_t>());
 	}
 
-	// 日志级别
 	if (root["LogLevel"]) {
 		baseConfig.set_log_level(root["LogLevel"].as<uint32_t>());
 	}
 
-	// 健康检查间隔
 	if (root["HealthCheckInterval"]) {
 		baseConfig.set_health_check_interval(root["HealthCheckInterval"].as<uint32_t>());
 	}
 
-	// 服务列表
 	if (root["services"]) {
 		for (const auto& service : root["services"]) {
 			auto& s = *baseConfig.add_services();
@@ -38,7 +35,6 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 		}
 	}
 
-	// 服务发现前缀
 	if (root["service_discovery_prefixes"]) {
 		for (const auto& prefix : root["service_discovery_prefixes"]) {
 			baseConfig.add_service_discovery_prefixes(prefix.as<std::string>());
@@ -50,12 +46,11 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 		baseConfig.set_deployservice_prefix(root["deployservice_prefix"].as<std::string>());
 	}
 
-	// 读取配置表目录字段
 	if (root["TableDataDirectory"]) {
 		baseConfig.set_table_data_directory(root["TableDataDirectory"].as<std::string>());
 	}
 
-	// ✅ Kafka 配置读取
+	// Kafka config
 	if (root["Kafka"]) {
 		const YAML::Node& kafkaNode = root["Kafka"];
 		KafkaConfig& kafkaConfig = *baseConfig.mutable_kafka();
@@ -84,26 +79,21 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 	return true;
 }
 
-// 读取游戏配置
 bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {
-	// 读取 YAML 配置文件
 	YAML::Node root = YAML::LoadFile(filename);
 
-	// 解析场景节点类型 (uint32 类型)
 	if (root["SceneNodeType"]) {
 		gameConfig.set_scene_node_type(root["SceneNodeType"].as<uint32_t>());
 	}
 
-	// 解析区域ID (uint32 类型)
 	if (root["ZoneId"]) {
 		gameConfig.set_zone_id(root["ZoneId"].as<uint32_t>());
 	}
 
-	// 解析 zoneredis 配置
+	// Parse zone Redis config
 	if (root["zoneredis"]) {
 		YAML::Node zoneredisNode = root["zoneredis"];
 
-		// 检查并解析 Redis 配置
 		if (zoneredisNode["host"]) {
 			gameConfig.mutable_zone_redis()->set_host(zoneredisNode["host"].as<std::string>());
 		}

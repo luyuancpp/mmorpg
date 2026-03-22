@@ -117,7 +117,6 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& mess
 		gateList[gateNodeId].emplace(playerSessionSnapshotPB->gate_session_id());
 	}
 
-	// 构造广播请求并发送
 	for (auto&& [gateNodeId, sessionIdList] : gateList)
 	{
 		const auto gateNodeSession = gateNodeRegistry.try_get<RpcSession>(gateNodeId);

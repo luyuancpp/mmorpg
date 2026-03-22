@@ -5,10 +5,8 @@
 uint32_t GetZoneIdFromNodeId(NodeId nodeId) {
 	entt::entity nodeEntity{ nodeId };
 
-	// 获取 SceneNodeService 类型的 registry
 	auto& registry = NodeUtils::GetRegistryForNodeType(eNodeType::SceneNodeService);
 
-	// 尝试获取该节点的 NodeInfo 组件
 	const NodeInfo* nodeInfo = registry.try_get<NodeInfo>(nodeEntity);
 	if (!nodeInfo) {
 		return kInvalidNodeId;

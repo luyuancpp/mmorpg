@@ -4,13 +4,13 @@
 
 enum class eCondtionType : uint32_t
 {
-	kConditionKillMonster = 1,//杀怪	
-	kConditionTalkWithNpc = 2, //和npc对话
-	kConditionCompleteCondition = 3,//完成相应条件
-	kConditionUseItem = 4,//使用物品
-	kConditionInteraction = 5,//交互
-	kConditionLevelUp = 6,//升级
-	kConditionCustom = 7,//自定义条件
+	kConditionKillMonster = 1,//kill monster	
+	kConditionTalkWithNpc = 2, //talk with NPC
+	kConditionCompleteCondition = 3,//complete specified condition
+	kConditionUseItem = 4,//use item
+	kConditionInteraction = 5,//interact
+	kConditionLevelUp = 6,//level up
+	kConditionCustom = 7,//custom condition
 	kConditionCompleteMission = 8,
 	kConditionTypeMax,
 };

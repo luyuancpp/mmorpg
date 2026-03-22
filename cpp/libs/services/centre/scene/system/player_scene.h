@@ -27,9 +27,9 @@ public:
 };
 
 
-//跨服间切换,如果另一个跨服满了就不应该进去了
-//如果是跨服，就应该先跨服去处理
-//原来服务器之间换场景，不用通知跨服离开场景
-//todo 如果是进出镜像，一定保持在原来的gs切换,主世界分线和镜像没关系，这样就节省了玩家切换流程，效率也提高了
-//todo 跨服的时候重新上线
- //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
+// Cross-zone transfer: reject if target zone is full
+// Cross-zone requests should be routed to the target zone first
+// Intra-server scene changes don't need cross-zone leave notification
+// TODO: Mirror enter/exit must stay on the same GS; main-world sharding is independent of mirrors (saves a full player transfer)
+// TODO: Handle reconnect during cross-zone transfer
+// TODO: Cross-zone return must notify leave; handle case where origin server is full on return

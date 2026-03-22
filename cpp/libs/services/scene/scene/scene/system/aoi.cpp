@@ -20,7 +20,7 @@
 
 void AoiSystem::Update(double delta) {
     for (auto&& [entity, transform, sceneComp] : tlsRegistryManager.actorRegistry.view<Transform, SceneEntityComp>().each()) {
-        // 跳过无效场景
+        // Skip invalid scenes
         if (!tlsRegistryManager.sceneRegistry.valid(sceneComp.sceneEntity)) {
             LOG_ERROR << "Scene not found for entity " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(entity);
             continue;
@@ -28,15 +28,14 @@ void AoiSystem::Update(double delta) {
 
         auto& gridList = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComp.sceneEntity);
 
-        // 获取当前实体所在网格
+        // Get current hex grid position
         const auto currentHex = GridSystem::CalculateHexPosition(transform);
         const auto currentGridId = GridSystem::GetGridId(currentHex);
 
-        // 初始化网格变化信息
         GridSet gridsToEnter, gridsToLeave;
         UpdateGridState(entity, gridList, currentHex, currentGridId, gridsToEnter, gridsToLeave);
 
-        // 处理实体进入/离开视野
+        // Handle entity enter/leave visibility
         HandleEntityVisibility(entity, gridList, gridsToEnter, gridsToLeave);
     }
 }
@@ -44,12 +43,12 @@ void AoiSystem::Update(double delta) {
 void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gridList, const Hex& currentHex,
                                 const GridId currentGridId, GridSet& gridsToEnter, GridSet& gridsToLeave) {
     if (!tlsRegistryManager.actorRegistry.any_of<Hex>(entity)) {
-        // 首次加入场景
+        // First time entering scene
         gridList[currentGridId].entities.insert(entity);
         tlsRegistryManager.actorRegistry.emplace<Hex>(entity, currentHex);
         GridSystem::GetCurrentAndNeighborGridIds(currentHex, gridsToEnter);
     } else {
-        // 更新位置
+        // Position update
         const auto previousHex = tlsRegistryManager.actorRegistry.get<Hex>(entity);
         if (hex_distance(previousHex, currentHex) == 0) {
             return;
@@ -58,7 +57,7 @@ void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gr
         GridSystem::GetCurrentAndNeighborGridIds(previousHex, gridsToLeave);
         GridSystem::GetCurrentAndNeighborGridIds(currentHex, gridsToEnter);
 
-        // 移除交集的网格
+        // Remove intersection grids
         GridSet gridIntersection;
         std::ranges::set_intersection(gridsToLeave, gridsToEnter, std::inserter(gridIntersection, gridIntersection.begin()));
         for (const auto& gridId : gridIntersection) {
@@ -79,7 +78,7 @@ void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& g
                                        const GridSet& gridsToEnter, const GridSet& gridsToLeave) {
     EntityUnorderedSet entitiesEnteringView, entitiesLeavingView;
 
-    // 处理进入新网格的实体
+    // Entities entering grids
     for (const auto& gridId : gridsToEnter) {
         auto gridIt = gridList.find(gridId);
         if (gridIt == gridList.end()) continue;
@@ -98,7 +97,7 @@ void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& g
         }
     }
 
-    // 处理离开旧网格的实体
+    // Entities leaving grids
     for (const auto& gridId : gridsToLeave) {
         auto gridIt = gridList.find(gridId);
         if (gridIt == gridList.end()) continue;
@@ -121,7 +120,7 @@ void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& g
 void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity, 
                                               const EntityUnorderedSet& enteringEntities, 
                                               const EntityUnorderedSet& leavingEntities) {
-    // 通知进入视野的实体
+    // Notify entities entering view
     if (!enteringEntities.empty()) {
         actorListCreateMessage.Clear();
         for (auto& otherEntity : enteringEntities) {
@@ -130,7 +129,7 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
         SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, actorListCreateMessage, entity);
     }
 
-    // 通知离开视野的实体
+    // Notify entities leaving view
     if (!leavingEntities.empty()) {
         actorListDestroyMessage.Clear();
         for (auto& otherEntity : leavingEntities) {

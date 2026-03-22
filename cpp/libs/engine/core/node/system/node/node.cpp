@@ -375,7 +375,7 @@ void Node::ReleaseNodeId() {
 	EtcdHelper::RevokeLeaseAndCleanup(serviceDiscoveryManager.etcdService.GetLeaseId());
 }
 
-// 以下函数由各 node 二进制各自提供实现，链接器负责绑定（同 Go-zero 的 RegisterHandlers 模式）
+// These functions are provided by each node binary; the linker resolves them.
 void InitReply();
 void InitPlayerService();
 void InitPlayerServiceReplied();

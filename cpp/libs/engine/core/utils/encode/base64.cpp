@@ -14,16 +14,11 @@ std::string Base64Encode(const std::string& input) {
 }
 
 std::vector<uint8_t> Base64Decode(const std::string& input) {
-	// 计算解码后的大小
 	std::size_t output_size = decoded_size(input.size());
-
-	// 分配输出缓冲区
 	std::vector<uint8_t> output(output_size);
-
-	// 执行解码
 	auto result = decode(output.data(), input.data(), input.size());
 
-	// 修正大小（根据实际写入的字节）
+	// Trim to actual decoded size
 	output.resize(result.first);
 	return output;
 }

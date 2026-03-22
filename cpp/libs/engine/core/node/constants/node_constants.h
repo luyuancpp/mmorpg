@@ -8,30 +8,25 @@ inline static constexpr std::size_t kMaxPlayersPerScene = 1000;
 
 enum class NodeState : uint8_t
 {
-	//game server 正常状态
 	kNormal,
-	//game server 维护状态
 	kMaintain,
-	//崩溃状态
 	kCrash
 };
 
 enum class NodePressureState : uint8_t
 {
-	//无压力
 	kNoPressure,
-	//有压力
 	kPressure
 };
 
 enum class ServerSceneType : uint8_t
 {
-	//本服大世界场景
+	// local main-world scene
 	kMainSceneServer,
-	//跨服大世界
+	// cross-server main-world scene
 	kCrossMainSceneServer,
-	//本服普通场景
+	// local instanced scene
 	kSceneServer,
-	//跨服场景
+	// cross-server instanced scene
 	kCrossSceneServer
 };

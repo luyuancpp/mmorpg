@@ -34,26 +34,26 @@ public:
 	static void HandleSkillActivate(entt::entity casterEntity, uint64_t skillId);
 	static void HandleSkillDeactivate(entt::entity casterEntity, uint64_t skillId);
 
-    // 验证目标
+    // Validate target
     static uint32_t ValidateTarget(const ::ReleaseSkillSkillRequest* request);
 
-    // 检查冷却时间
+    // Check cooldown
     static uint32_t CheckCooldown(entt::entity casterEntity, const SkillTable* skillTable);
 
-    // 处理施法计时器
+    // Check cast timer
     static uint32_t CheckCasting(entt::entity casterEntity, const SkillTable* skillTable);
 
 	static uint32_t CheckRecovery(const entt::entity casterEntity, const SkillTable* skillTable);
 
 	static uint32_t CheckChannel(const entt::entity casterEntity, const SkillTable* skillTable);
 
-    // 广播技能使用消息
+    // Broadcast skill-used message
     static void BroadcastSkillUsedMessage(entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request);
 	
-    // 设置施法计时器
+    // Set up casting timer
     static void SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId);
 
-    // 发送技能中断消息
+    // Send skill-interrupted message
     static void SendSkillInterruptedMessage(entt::entity casterEntity, const uint32_t skillTableId) ;
 
 	static void TriggerSkillEffect(entt::entity casterEntity, uint64_t skillId);

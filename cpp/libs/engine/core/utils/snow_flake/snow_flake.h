@@ -171,7 +171,7 @@ private:
 
 	inline void CheckTimestampOverflow(uint64_t now_epoch, uint64_t kTimeShift, uint64_t epoch) {
 		constexpr uint64_t kSecondsPerYear = 31536000; // 365 * 24 * 60 * 60
-		constexpr uint64_t kTimeThreshold = 100000000; // 约 3.17 年
+		constexpr uint64_t kTimeThreshold = 100000000; // ~3.17 years
 
 		uint64_t max_time_value = (1ULL << (64 - kTimeShift));
 
@@ -359,7 +359,7 @@ private:
 #ifdef ENABLE_SNOWFLAKE_TESTING
 	std::atomic<uint64_t> mock_now_{ 0 };
 	std::atomic<bool> use_mock_time_{ false };
-	std::atomic<bool> static_mock_mode_{ false }; // ✅ 新增
+	std::atomic<bool> static_mock_mode_{ false };
 #endif
 
 };

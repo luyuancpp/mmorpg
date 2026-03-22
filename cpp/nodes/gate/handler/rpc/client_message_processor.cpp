@@ -38,7 +38,7 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t ta
 		return std::nullopt;
 	}
 
-	// 随机选一个
+	// Pick a random candidate
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<> dis(0, candidates.size() - 1);
@@ -75,10 +75,10 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
 
 }
 
-//todo 考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
+// TODO: Handle login service shutdown mid-request; replacement node can't resume
 std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_t nodeType)
 {
-	// 先判断是否是 zone 单例类型（全局唯一逻辑）
+	// Zone-singleton node type: single instance per zone
 	if (IsZoneSingletonNodeType(nodeType)) {
 		auto nodeInfo = FindZoneUniqueNodeInfo(gNode->GetNodeInfo().zone_id(), nodeType);
 		if (!nodeInfo) {
@@ -97,7 +97,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 		return entity;
 	}
 
-	// 普通节点：需要 session 绑定
+	// Regular node: requires session binding
 	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 	if (sessionIt == tlsSessionManager.sessions().end()) {
 		LOG_ERROR << "Session not found for session id: " << sessionId;
@@ -129,7 +129,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 
 void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
-    // todo如果我没登录就发送其他协议到controller game server 怎么办
+    // TODO: Handle unauthenticated messages sent before login
     if (conn->connected()){
         HandleConnectionEstablished(conn);
     }
@@ -195,9 +195,6 @@ bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo& session, const RpcC
 
 template <typename Message, typename Request>
 void ParseMessageFromRequestBody(Message& message, const Request& request, const uint64_t sessionId) {
-    // 设置会话ID
-
-    // 检查请求体是否有效
     const std::string& requestBody = request->body();
 	if (requestBody.empty()) {
 		return;
@@ -205,18 +202,18 @@ void ParseMessageFromRequestBody(Message& message, const Request& request, const
 
 	if (!message.ParseFromString(requestBody)) {
         LOG_ERROR << "Failed to parse client message body for session id: " << sessionId;
-        return; // 解析失败时，避免发送无效消息
+        return;
     }
 }
 
 void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr& conn)
 {
-    // 重要: 断开通知必须发给 Login，由 Login 的 sessionmanager 管理 disconnect lease
-    // 重要: Gate 不再通知 Centre（Centre 已移除）
+    // Disconnect notification goes to Login; its session manager owns the disconnect lease.
+    // Gate no longer notifies Centre (decommissioned).
 
     const auto sessionId = entt::to_integral(GetSessionId(conn));
 
-    // 处理登录服务器的断开通知
+    // Notify login node of disconnection
     const auto& loginNode = ResolveSessionTargetNode(sessionId, eNodeType::LoginNodeService);
     if (loginNode)
     {
@@ -229,13 +226,12 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
         loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request, { kSessionBinMetaKey }, SerializeSessionDetails(sessionDetails));
     }
 
-    // 删除会话
     tlsSessionManager.sessions().erase(sessionId);
 
     LOG_TRACE << "Disconnected session id: " << sessionId;
 }
 
-// 高水位回调：客户端发送缓冲区超过阈值，说明客户端不在正常消费数据（断网/外挂/慢客户端），直接踢掉
+// High-water-mark: output buffer exceeded threshold — client not consuming (disconnect/cheat/slow), force close.
 static constexpr size_t kClientHighWaterMark = 2 * 1024 * 1024; // 2MB
 
 static void OnClientHighWaterMark(const muduo::net::TcpConnectionPtr& conn, size_t oldLen)
@@ -256,7 +252,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 		sessionId = tlsSessionManager.session_id_gen().Generate();
 	}
 
-	// 用session id 防止改包把消息发给其他玩家
+	// Session ID prevents packet tampering / message misdirection
 
 	conn->setContext(sessionId);
 	conn->setHighWaterMarkCallback(OnClientHighWaterMark, kClientHighWaterMark);
@@ -273,7 +269,7 @@ void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr&
 {
     auto& handlerMeta = gRpcMethodRegistry[request->message_id()];
 
-	// 玩家没登录直接发其他消息，乱发消息
+	// Player sent message without being logged in — invalid node binding
     entt::entity tcpNodeId = entt::entity{ GetEffectiveNodeId(session, handlerMeta.targetNodeType) };
 	auto& registry = tlsNodeContextManager.GetRegistry(handlerMeta.targetNodeType);
 	if (!registry.valid(tcpNodeId))

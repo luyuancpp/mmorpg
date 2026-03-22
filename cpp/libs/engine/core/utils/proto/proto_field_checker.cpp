@@ -23,7 +23,7 @@ bool ProtoFieldChecker::CheckFieldSizes(const google::protobuf::Message& message
         }
         else if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE) {
             const google::protobuf::Message& nested_message = reflection->GetMessage(message, field);
-            exceeds_threshold |= CheckFieldSizes(nested_message, threshold, output); // 递归检查嵌套字段
+            exceeds_threshold |= CheckFieldSizes(nested_message, threshold, output); // Recurse into nested message
         }
     }
 
@@ -32,11 +32,11 @@ bool ProtoFieldChecker::CheckFieldSizes(const google::protobuf::Message& message
 }
 
 bool ProtoFieldChecker::CheckFieldSizes(const google::protobuf::Message& message, size_t threshold) {
-    std::string error_details; // 改名为 error_details，表示存储错误细节的字符串
-    const bool has_exceeding_fields = CheckFieldSizes(message, threshold, error_details); // result 改为 has_exceeding_fields，清楚表明其含义
+    std::string error_details;
+    const bool has_exceeding_fields = CheckFieldSizes(message, threshold, error_details);
 
     if (!has_exceeding_fields) {
-        LOG_ERROR << error_details; // 更清楚地表明是错误细节被输出
+        LOG_ERROR << error_details;
     }
 
     return has_exceeding_fields;
@@ -55,7 +55,7 @@ bool ProtoFieldChecker::CheckForNegativeInts(const google::protobuf::Message& me
         const google::protobuf::FieldDescriptor* field = descriptor->field(i);
 
         if (field->is_repeated()) {
-            // 检查 repeated int 类型字段是否有负数
+            // Check repeated int fields for negative values
             if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_INT32 ||
                 field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_INT64) {
                 const int32_t field_size = reflection->FieldSize(message, field);
@@ -72,7 +72,7 @@ bool ProtoFieldChecker::CheckForNegativeInts(const google::protobuf::Message& me
             }
         }
         else if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE) {
-            // 递归检查嵌套消息
+            // Recurse into nested message
             const google::protobuf::Message& nested_message = reflection->GetMessage(message, field);
             has_negative |= CheckForNegativeInts(nested_message, output);
         }
@@ -95,11 +95,11 @@ bool ProtoFieldChecker::CheckForNegativeInts(const google::protobuf::Message& me
 }
 
 bool ProtoFieldChecker::CheckForNegativeInts(const google::protobuf::Message& message) {
-    std::string negative_value_details; // 原 output 改为 negative_value_details，更明确表示存储负值的细节信息
-    const bool has_negative_values = CheckForNegativeInts(message, negative_value_details); // 原 result 改为 has_negative_values，更清晰地表示其作用
+    std::string negative_value_details;
+    const bool has_negative_values = CheckForNegativeInts(message, negative_value_details);
 
     if (has_negative_values) {
-        LOG_ERROR << negative_value_details; // 输出详细的负值信息
+        LOG_ERROR << negative_value_details;
     }
 
     return has_negative_values;

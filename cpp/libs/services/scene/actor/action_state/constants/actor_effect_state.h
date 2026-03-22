@@ -2,7 +2,7 @@
 #include <cstdint>
 
 enum eActorEffectStateType : uint32_t {
-    kNormal        = 0,   // 正常状态
-    kSilenced      = 1,   // 沉默状态
-    kStunned       = 2    // 眩晕状态
+    kNormal        = 0,   // Normal
+    kSilenced      = 1,   // Silenced
+    kStunned       = 2    // Stunned
 };

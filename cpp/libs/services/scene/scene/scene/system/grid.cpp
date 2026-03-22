@@ -39,42 +39,34 @@ void GridSystem::GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet) 
 
 void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSel)
 {
-    // 检查实体是否有效
     if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
         return;
     }
   
-    // 获取实体所在的 Hex 位置
     const auto hexPosition = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hexPosition) {
         return;
     }
 
-    // 获取实体的场景组件
     const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(entity);
     if (!sceneComponent) {
         return;
     }
 
-    // 获取场景中的网格列表
     auto& gridList = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->sceneEntity);
     
-    // 存储要扫描的网格 ID
     GridSet grids;
     GetCurrentAndNeighborGridIds(*hexPosition, grids);
 
-    // 遍历扫描到的网格 ID
     for (const auto& gridId : grids)
     {
-        // 检查网格 ID 是否在网格列表中
         auto gridIt = gridList.find(gridId);
         if (gridIt == gridList.end())
         {
             continue;
         }
 
-        // 遍历网格中的所有实体并将其添加到集合中
         for (const auto& gridEntity : gridIt->second.entities)
         {
             entites.emplace(gridEntity);
@@ -89,42 +81,34 @@ void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorde
 
 void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites)
 {
-    // 检查实体是否有效
     if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
         return;
     }
   
-    // 获取实体所在的 Hex 位置
     const auto hexPosition = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
     if (!hexPosition) {
         return;
     }
 
-    // 获取实体的场景组件
     const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(entity);
     if (!sceneComponent) {
         return;
     }
 
-    // 获取场景中的网格列表
     auto& gridList = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->sceneEntity);
     
-    // 存储要扫描的网格 ID
     GridSet inViewGrids;
     GetCurrentAndNeighborGridIds(*hexPosition, inViewGrids);
 
-    // 遍历扫描到的网格 ID
     for (const auto& gridId : inViewGrids)
     {
-        // 检查网格 ID 是否在网格列表中
         auto gridIt = gridList.find(gridId);
         if (gridIt == gridList.end())
         {
             continue;
         }
 
-        // 遍历网格中的所有实体并将其添加到集合中
         for (const auto& gridEntity : gridIt->second.entities)
         {
             if (gridEntity == entity)

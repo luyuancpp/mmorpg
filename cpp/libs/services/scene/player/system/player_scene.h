@@ -4,7 +4,7 @@
 
 #include "engine/core/type_define/type_define.h"
 
-//可以丢弃时间的派发器，比如提示,服务器压力大的时候可以把提示扔了
+// Dispatcher that can drop messages under load (e.g. tips)
 
 class PlayerSceneSystem
 {

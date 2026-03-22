@@ -16,9 +16,12 @@
 #include "core/system/id_generator.h"
 
 
-//todo  不能用 timer 战斗逻辑走帧，这样能保证buff的触发和结束都在帧逻辑里，避免timer回调时实体已经被销毁或者buff已经被移除等问题，效果对比明显，后续可以考虑把timer改成帧逻辑里统一处理buff的过期和周期触发等逻辑
+//todo  Combat logic must run on frames, not timers. This ensures buff triggers and expirations
+// happen within frame logic, avoiding issues where timer callbacks fire after entity
+// destruction or buff removal. Consider migrating all buff expiry and periodic triggers
+// to per-frame processing.
 
-// Buff ID生成逻辑
+// Generate unique buff ID
 uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 {
     uint64_t newBuffId = UINT64_MAX;
@@ -28,7 +31,7 @@ uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
     return newBuffId;
 }
 
-// 目标免疫判定
+// Check target immunity
 bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTableParam)
 {
     for (const auto& buff : buffList | std::views::values) {
@@ -42,7 +45,7 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTablePara
     return false;
 }
 
-// 创建 Buff 数据指针
+// Create buff data pointer
 BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     switch (buffTable->bufftype()) {
     case kBuffTypeNoDamageOrSkillHitInLastSeconds:
@@ -52,7 +55,7 @@ BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     }
 }
 
-// 添加或更新 Buff（有 abilityContext 参数的版本）
+// Add or update buff (with abilityContext)
 std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     const entt::entity parent,
     const uint32_t buffTableId,
@@ -112,7 +115,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     return std::make_tuple<uint32_t, uint64_t>(kSuccess, std::move(newBuffId));
 }
 
-// 添加或更新 Buff（无 abilityContext 参数的版本）
+// Add or update buff (without abilityContext)
 std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     const entt::entity parent,
     const uint32_t buffTableId)
@@ -121,7 +124,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 }
 
 
-// 移除 Buff
+// Remove buff
 void BuffSystem::RemoveBuff(const entt::entity parent, const uint64_t buffId)
 {
     OnBuffExpire(parent, buffId);
@@ -148,19 +151,19 @@ void BuffSystem::MarkBuffForRemoval(const entt::entity parent, uint64_t buffId) 
     pendingRemoveBuffs.emplace(buffId);
 }
 
-// 帧结束时统一移除所有待移除的 Buff
+    // Remove pending buffs at end of frame
 void BuffSystem::RemovePendingBuffs(const entt::entity parent, BuffListComp& buffListComp) {
     auto& pendingRemoveBuffs = tlsRegistryManager.actorRegistry.get_or_emplace<BuffPendingRemoveBuffs>(parent);
 
     for (const auto& buffId : pendingRemoveBuffs) {
-        buffListComp.erase(buffId);  // 删除 Buff
+        buffListComp.erase(buffId);
         LOG_TRACE << "Buff with ID " << buffId << " removed from entity at end of frame.\n";
     }
 
     pendingRemoveBuffs.clear();
 }
 
-// Buff 过期处理
+// Buff expiry handler
 void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 {
     auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
@@ -179,7 +182,7 @@ void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
     OnBuffDestroy(parent, buffId, buffTable);
 }
 
-// 检查是否可创建 Buff
+// Check if buff can be created
 uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32_t buffTableId)
 {
     FetchAndValidateBuffTable(buffTableId);
@@ -192,7 +195,7 @@ uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32
     return kSuccess;
 }
 
-// 处理已存在的 Buff
+// Handle existing buff (stack/refresh)
 bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
     const uint32_t buffTableId,
     const SkillContextPtrComp& abilityContext)
@@ -211,7 +214,7 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
     return false;
 }
 
-// Buff 觉醒处理
+// Buff awake handler (dispel on instantiation, before activation)
 uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId)
 {
     FetchAndValidateCustomBuffTable(add, buffTableId);
@@ -269,7 +272,7 @@ void BuffSystem::OnBuffDestroy(entt::entity parent, const uint64_t buffId, const
     }
 }
 
-// Buff 间隔处理
+// Buff periodic interval handler
 void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
 {
     auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
@@ -305,11 +308,11 @@ void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt:
     //public:
     //	bool HasFlag(int flag) const;
     //	bool HasChanceForDOT() const;
-    //	// 添加DOT Buff的实现
+    //	// DOT buff implementation
     //	void AddDOTBuff(entt::entity target);
     //};
     // 
-    // 检查并应用Buff效果
+    // Check and apply buff effects
     //	for (auto& buff : tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target)) {
     //		if (buff.second.HasFlag(DamageFlag_NotMiss)) {
     //			event.damageFlags |= DamageFlag_NotMiss;
@@ -320,10 +323,10 @@ void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt:
 
 void BuffSystem::OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
 {
-    // 检查并应用DOT效果
+    // Check and apply DOT effects
     //for (auto& buff : tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target)) {
     //	if (buff.second.HasChanceForDOT()) {
-    //		// 添加DOT Buff
+    //		// Add DOT buff
     //		AddDOTBuff(event.target);
     //	}
     //}
@@ -334,8 +337,8 @@ void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt:
     //auto& buffs = tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target);
     //for (auto& [buffId, buff] : buffs) {
     //	if (buff.HasShield()) {
-    //		// 假设护盾Buff会减少伤害
-    //		event.damageAmount *= 0.5f; // 示例：护盾减少50%伤害
+    //		// Shield buff reduces damage
+    //		event.damageAmount *= 0.5f; // Example: 50% damage reduction
     //	}
     //}
 }
@@ -344,11 +347,11 @@ void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::
 {
     BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::to_entity(damageEvent.attacker_id()), casterEntity);
 
-    // 检查并应用额外效果
+    // Check and apply post-damage effects
     //auto& buffs = tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target);
     //for (auto& [buffId, buff] : buffs) {
     //	if (buff.HasPostDamageEffect()) {
-    //		// 执行额外效果，例如添加额外的伤害效果
+    //		// Apply post-damage effects
     //		ApplyPostDamageEffects(event.target);
     //	}
     //}
@@ -384,25 +387,21 @@ bool BuffSystem::AddSubBuffs(entt::entity parent,
         return false;;
     }
 
-    // 如果已经添加过子 Buff，就跳过
+    // Skip if sub-buffs already added
     if (buffComp.buffPb.has_added_sub_buff()) {
         return false;
     }
 
-    // 标记为已经添加了子 Buff
     buffComp.buffPb.set_has_added_sub_buff(true);
 
-    // 遍历并添加子 Buff
     for (const auto& subBuff : buffTable->subbuff()) {
-        // 调用 BuffUtil 的 AddOrUpdateBuff 进行 Buff 添加或更新
         auto [result, newBuffId] = BuffSystem::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
 
-        // 如果 Buff 添加失败或者 Buff ID 无效，则跳过
         if (result != kSuccess || newBuffId == UINT64_MAX) {
             continue;
         }
 
-        // 将新添加的 Buff ID 添加到子 Buff 列表中，初始化为 false 表示未激活
+        // Add to sub-buff list (false = not yet activated)
         buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
     }
 
@@ -423,22 +422,18 @@ void BuffSystem::AddTargetSubBuffs(const entt::entity targetEntity,
     }
 }
 
-// 添加子 Buff，不进行已添加检查
 void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
     const BuffTable* buffTable,
     BuffComp& buffComp)
 {
-    // 直接添加子 Buff，不检查是否已添加过
     for (const auto& subBuff : buffTable->subbuff()) {
-        // 调用 BuffUtil 的 AddOrUpdateBuff 进行 Buff 添加或更新
         auto [result, newBuffId] = BuffSystem::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
 
-        // 如果 Buff 添加失败或者 Buff ID 无效，则跳过
         if (result != kSuccess || newBuffId == UINT64_MAX) {
             continue;
         }
 
-        // 将新添加的 Buff ID 添加到子 Buff 列表中，初始化为 false 表示未激活
+        // Add to sub-buff list (false = not yet activated)
         buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
     }
 }
@@ -459,7 +454,7 @@ void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffCo
 
     for (uint32_t i = 0; i < 5 && CanApplyMoreTicks(periodicBuff, buffTable); ++i ) {
         if (periodicTimer < buffTable->interval()) {
-            break;  // 如果定时器小于间隔，退出循环
+            break;
         }
         
         periodicTimer -= buffTable->interval();

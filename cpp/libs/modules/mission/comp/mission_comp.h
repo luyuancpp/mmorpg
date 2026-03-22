@@ -78,7 +78,7 @@ private:
     MissionListPBComponent missionsComp;
     EventMissionClassifyMap eventMissionsClassify; // key: classify mission by event type, value: mission list
     UInt32PairSet typeFilter;
-    bool missionTypeNotRepeated{ true }; //任务类型不能重复
+    bool missionTypeNotRepeated{ true }; //mission type must be unique
     MissionsBits completedMissions;
 };
 
@@ -97,7 +97,7 @@ struct MissionsContainerComponent {
 		return it->second;
 	}
 
-	// const 读接口
+	// const read accessor
 	const MissionsComponent* Get(uint32_t scope) const {
 		auto it = map.find(scope);
 		return (it == map.end()) ? nullptr : &it->second;

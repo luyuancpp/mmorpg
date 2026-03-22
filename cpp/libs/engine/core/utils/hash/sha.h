@@ -1,5 +1,5 @@
 ﻿#pragma once
-// 示例（直接放到 centre_service_handler.cpp 或 util 文件）
+
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
 #include <sstream>

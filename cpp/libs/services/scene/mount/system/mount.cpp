@@ -9,7 +9,6 @@
 inline uint32_t MountSystem::MountActor(const entt::entity actorEntity)
 {
     RETURN_FALSE_ON_ERROR(ActorActionStateSystem::TryPerformAction(actorEntity, kActorActionMountActor, kActorStateMounted));
-    // 执行上坐骑逻辑
     
     return kSuccess;
 }
@@ -19,7 +18,6 @@ uint32_t MountSystem::UnmountActor(const entt::entity actorEntity)
     if (!ActorActionStateSystem::HasState(actorEntity, kActorStateMounted)) {
         return kMountNotMounted;
     }
-    // 执行下坐骑逻辑
     return kSuccess;
 }
 

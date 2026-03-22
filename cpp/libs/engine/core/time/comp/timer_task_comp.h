@@ -8,7 +8,8 @@ using muduo::Timestamp;
 using muduo::net::TimerCallback;
 using muduo::net::EventLoop;
 
-//A类的定时器不能放到B类里面，否者B类定时(调用A类函数)器走的时候A已经销毁
+// Timer must be owned by its callback target; if B owns A's timer,
+// A may be destroyed before B's timer fires.
 class TimerTaskComp
 {
 public:

@@ -11,7 +11,7 @@ class PlayerGameNodeEnteryInfoPBComponent;
 class PlayerLifecycleSystem
 {
 public:
-	//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖
+	// What if the player disconnects during async load? Could cause data overwrite.
 	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message, const std::any& extra);
 	static void HandlePlayerAsyncSaved(Guid player_id, PlayerAllData& message);
 	static void EnterScene(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enter_info);

@@ -4,44 +4,38 @@
 #include "table/code/messagelimiter_table.h"
 #include "time/system/time.h"
 
-// 构造函数，初始化默认的最大请求数和时间窗口
 MessageLimiter::MessageLimiter(uint8_t defaultMaxRequests, uint64_t defaultTimeWindow)
     : defaultMaxRequests(defaultMaxRequests), defaultTimeWindow(defaultTimeWindow) {}
 
 uint32_t MessageLimiter::CanSend(uint32_t messageId) {
-    // 获取当前时间（毫秒）
     const auto currentTime = TimeSystem::NowSeconds();
 
-    // 获取当前消息ID的时间戳记录
     auto& messageTimestamps = requestRecords[messageId];
 
-    // 默认限流规则
     uint8_t maxAllowedRequests = defaultMaxRequests;
     uint64_t timeWindowDuration = defaultTimeWindow;
 
-    // 检查是否有针对该消息ID的特殊配置
+    // Override from per-message config if present
     if (const auto [configEntry, fetchSuccess] = MessageLimiterTableManager::Instance().GetTableWithoutErrorLogging(messageId);
         configEntry != nullptr) {
-        maxAllowedRequests = configEntry->maxrequests();   // 覆盖最大请求数
-        timeWindowDuration = configEntry->timewindow(); // 覆盖时间窗口
+        maxAllowedRequests = configEntry->maxrequests();
+        timeWindowDuration = configEntry->timewindow();
     }
 
-    // 初始化时间戳存储
     if (messageTimestamps.empty()) {
         messageTimestamps.resize(maxAllowedRequests);
     }
 
-    // 清理过期的时间戳（超出时间窗口的时间戳）
+    // Evict expired timestamps
     while (!messageTimestamps.empty() && currentTime - messageTimestamps.front() > timeWindowDuration) {
         messageTimestamps.pop_front();
     }
 
-    // 判断是否允许发送消息
     if (messageTimestamps.size() < maxAllowedRequests) {
-        messageTimestamps.push_back(currentTime); // 记录当前时间戳
-        return kSuccess; // 允许请求
+        messageTimestamps.push_back(currentTime);
+        return kSuccess;
     }
     else {
-        return kRateLimitExceeded; // 超出限制，拒绝请求,超出限流
+        return kRateLimitExceeded; // Rate limited
     }
 }

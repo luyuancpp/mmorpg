@@ -55,7 +55,7 @@ void SendMessageToClientNode(uint32_t messageId, const google::protobuf::Message
 		return;
 	}
 
-	SendMessageToNodeInternal(nodePtr->get(), messageId, message); // 使用 get() 提取裸指针
+	SendMessageToNodeInternal(nodePtr->get(), messageId, message);
 }
 
 void CallRemoteMethodOnSession(uint32_t messageId, const google::protobuf::Message& message,
@@ -120,7 +120,7 @@ void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& messa
 
 	for (auto&& [_, node] : registry.view<RpcClientPtr>().each())
 	{
-		// 尽可能将 request reuse（如果 rpc 客户端的 SendRequest 对 request 做了拷贝/异步处理，则可能需要复制）
+		// Reuse request where possible; SendRequest may copy internally for async handling
 		node->SendRequest(messageId, request);
 	}
 }
@@ -180,11 +180,11 @@ void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
-	request.mutable_message_content()->mutable_serialized_message()->swap(serialized); // 直接赋值（一次拷贝到目标 protobuf 字符串里）
+	request.mutable_message_content()->mutable_serialized_message()->swap(serialized);
 
 	request.mutable_header()->set_session_id(sessionPB->gate_session_id());
 
-	// 发送（rpcClient 内部可能会再次复制/包装，但我们避免了临时分配）
+	// rpcClient may copy/wrap internally; we avoided extra temporary allocations
 	(*rpcClient)->SendRequest(wrappedMessageId, request);
 }
 

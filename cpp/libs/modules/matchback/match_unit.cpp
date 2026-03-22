@@ -427,7 +427,7 @@ namespace GameMMR
             }
         }
 
-        //个数够了怎么加都行
+        //profession count is satisfied, any addition is fine
         if (fullProfession)
         {
             return OR_OK;
@@ -438,7 +438,7 @@ namespace GameMMR
             return OR_OK;
         }
 
-        //需求里面的职业直接通过
+        //pass if player's profession is in the required set
         for (auto && it : vNeedPrefessions)
         {
             if (it.first == professionId)
