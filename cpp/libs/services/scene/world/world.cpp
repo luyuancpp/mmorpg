@@ -18,6 +18,9 @@
 
 using namespace std::chrono;
 
+constexpr int kMaxSimulationIterationsPerFrame = 5;
+constexpr double kMillisecondsToSeconds = 1000.0;
+
 uint64_t GetTimeInMilliseconds()
 {
     return duration_cast<std::chrono::milliseconds>(steady_clock::now().time_since_epoch()).count();
@@ -40,7 +43,7 @@ void World::Update()
 {
     //https://github.com/recastnavigation/recastnavigation.git
     const auto currentTime = GetTimeInMilliseconds();
-    const double deltaTime = static_cast<double>((currentTime - tlsFrameTimeManager.frameTime.previous_time())) / 1000.0;
+    const double deltaTime = static_cast<double>((currentTime - tlsFrameTimeManager.frameTime.previous_time())) / kMillisecondsToSeconds;
     tlsFrameTimeManager.frameTime.set_previous_time(currentTime);
 
     double accumulatedTime = rcClamp(tlsFrameTimeManager.frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
@@ -50,7 +53,7 @@ void World::Update()
     while (accumulatedTime > fixedDeltaTime)
     {
         accumulatedTime -= fixedDeltaTime;
-        if (simulationIterations < 5)
+        if (simulationIterations < kMaxSimulationIterationsPerFrame)
         {
             AoiSystem::Update(fixedDeltaTime);
             MovementSystem::Update(fixedDeltaTime);

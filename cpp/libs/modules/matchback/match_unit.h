@@ -235,7 +235,7 @@ namespace GameMMR
         Team::team_id_type m_nTeamId{ Team::EmptyTeamId };
         TeamMemberInfo m_oTeamMemberInfo;
         MatchLimit m_oMatchLimit;
-        const MatchElement * m_pMatchElement{ NULL };
+        const MatchElement * m_pMatchElement{ nullptr };
         int32_t m_nMatchType{ 0 };
         MatchTargetInfo m_oMatchTarget;
         TeamTarget m_oTeamTarget;

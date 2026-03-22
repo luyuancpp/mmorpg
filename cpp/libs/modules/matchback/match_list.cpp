@@ -22,23 +22,23 @@ namespace GameMMR
     {
         m_pTeamList->emp()->subscribe<TeamEventES>(*this);
         m_pMatchElement = MatchTable::Instance().GetElement(m_nType);
-        if (NULL != m_pMatchElement && m_pMatchElement->per_team_member_size > 0)
+        if (nullptr != m_pMatchElement && m_pMatchElement->per_team_member_size > 0)
         {
             m_nkPerTeamMemberMaxSize = (std::size_t)m_pMatchElement->per_team_member_size;
         }
 
-        if (NULL != m_pMatchElement && m_pMatchElement->per_camp_player_size > 0)
+        if (nullptr != m_pMatchElement && m_pMatchElement->per_camp_player_size > 0)
         {
             m_nkPerCampPlayerSize = (std::size_t)m_pMatchElement->per_camp_player_size;
         }
 
 
-        if (NULL != m_pMatchElement && m_pMatchElement->per_scene_camp_size > 0)
+        if (nullptr != m_pMatchElement && m_pMatchElement->per_scene_camp_size > 0)
         {
             m_nkMaxSceneCampSize = (std::size_t)m_pMatchElement->per_scene_camp_size;
         }
 
-        if (NULL != m_pMatchElement && m_pMatchElement->profession_size > 0)
+        if (nullptr != m_pMatchElement && m_pMatchElement->profession_size > 0)
         {
             m_nkMaxProfessionSize = (std::size_t)m_pMatchElement->profession_size;
         }
@@ -91,7 +91,7 @@ namespace GameMMR
 
     bool MatchMaking::IsRank()const
     {
-        if (NULL == m_pMatchElement)
+        if (nullptr == m_pMatchElement)
         {
             return false;
         }
@@ -430,7 +430,7 @@ namespace GameMMR
 
     bool MatchMaking::UpdateMatchQueue(int32_t eloValue)
     {
-        if (NULL == m_pMatchElement)
+        if (nullptr == m_pMatchElement)
         {
             return false;
         }
@@ -623,7 +623,7 @@ namespace GameMMR
     {
         if (m_vScenes.empty())
         {
-            return NULL;
+            return nullptr;
         }
         MatchMaking::scene_type v = m_vScenes.begin()->second;
 		RemoveScene(m_vScenes.begin()->first);
@@ -751,14 +751,14 @@ namespace GameMMR
         palyers_type::iterator it = m_vPlayers.find(playerid);
         if (it == m_vPlayers.end())
         {
-            return NULL;
+            return nullptr;
         }
 
         scenee_list_type::iterator ri = m_vScenes.find(it->second.m_nSceneId);
 
         if (ri == m_vScenes.end())
         {
-            return NULL;
+            return nullptr;
 
         }
         return ri->second;
@@ -770,7 +770,7 @@ namespace GameMMR
 
         if (ri == m_vScenes.end())
         {
-            return NULL;
+            return nullptr;
 
         }
         return ri->second;
@@ -778,7 +778,7 @@ namespace GameMMR
 
     int32_t MatchMaking::CheckCanMatchMemberSize(match_unit_type & mp)
     {
-        if (NULL == m_pMatchElement)
+        if (nullptr == m_pMatchElement)
         {
             return OR_MATCH_UNIT_TABLE_ERROR;
         }
@@ -881,7 +881,7 @@ namespace GameMMR
         TeamList::team_id_type teamId = param.team_id_;
         GUID_t  m = param.guid_;
         int32_t nCancelAllTeam = 0;
-        if (NULL != m_pMatchElement)
+        if (nullptr != m_pMatchElement)
         {
             nCancelAllTeam = m_pMatchElement->member_leave_cancel_team;
         }
@@ -1017,7 +1017,7 @@ namespace GameMMR
         {
             return OR_NULL_PTR;
         }
-        if (NULL == m_pMatchElement)
+        if (nullptr == m_pMatchElement)
         {
             return OR_MATCH_CUSTOM_SCENE_TABLE_ERROR_ERRO;
         }
@@ -1111,7 +1111,7 @@ namespace GameMMR
         pr->SetEnterDungeonCallback(m_oEnterDungeonCallBack);
         pr->SetSendMsgCallback(m_oSendCallBack);
         m_vScenes.emplace(pr->GetSceneId(), pr);
-        if (BaseModule::GetThreadLocalStorageLoop() == NULL)
+        if (BaseModule::GetThreadLocalStorageLoop() == nullptr)
         {
             return;
         }
