@@ -35,6 +35,8 @@ mmorpg/
 | Proto contracts | `proto/` | Authoritative source; regenerate consumers after edits |
 | Checked-in generated contracts | `generated/proto/` | Review only; do not hand-edit |
 | Local/dev infra | `deploy/docker-compose.yml` | Kafka, Redis, MySQL, Nacos, etcd |
+| Local Go service launcher | `tools/scripts/go_services.ps1` | start/stop/status/list all Go-zero services |
+| Go service Docker images | `tools/scripts/go_svc_image.ps1` | build/push per-service Docker images |
 | K8s release flow | `deploy/k8s/README.md` | Runtime image + zone lifecycle |
 | Shared dev scripts | `tools/scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
 | Robot/load tooling | `tools/robot_client/main.go` | One-client-one-goroutine rule |
@@ -98,11 +100,22 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run
 # K8s
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -ZoneName yesterday -ZoneId 101 -OpsProfile managed-cloud -NodeImage <image> -WaitReady
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-up -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml -OpsProfile managed-cloud -NodeImage <image> -WaitReady
+
+# Go services (local dev)
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-start
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-stop
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-status
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-list
+
+# Go service Docker images
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build-images -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-push-images -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1
 ```
 
 ## NOTES
 - `.github/workflows/cr.yml` runs an OpenAI-backed code-review action and requires `OPENAI_API_KEY`.
 - `go/build.bat` regenerates Go-side rpc/proto outputs for db/login/data-service-related flows.
 - `deploy/docker-compose.yml` is for local/dev-style infra; `deploy/k8s/` is a separate production-style path.
+- K8s infra manifests include etcd, redis, kafka, and mysql (per-zone namespace).
 - `k8s-zone-down` deletes the entire namespace; treat it as destructive teardown.
 - For cross-language changes: edit `proto/` first, regenerate, then rebuild the consuming C++/Go/Java services.

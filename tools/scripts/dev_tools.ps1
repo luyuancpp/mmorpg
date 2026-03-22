@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -36,6 +36,9 @@ param(
     [string]$GateServiceType = "NodePort",
     [int]$GateServicePort = 18000,
     [switch]$SkipInfra,
+    [switch]$SkipGoSvc,
+    [string]$GoSvcRegistry = "ghcr.io/luyuancpp",
+    [string]$GoSvcTag = "latest",
     [bool]$BuildRelease = $true,
     [bool]$BuildDebug = $true,
     # iwyu-run
@@ -286,6 +289,15 @@ function Invoke-K8sDeploy {
         $args.SkipInfra = $true
     }
 
+    if ($SkipGoSvc) {
+        $args.SkipGoSvc = $true
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($GoSvcRegistry)) {
+        $args.GoSvcRegistry = $GoSvcRegistry
+        $args.GoSvcTag = $GoSvcTag
+    }
+
     if ($DryRun) {
         $args.DryRun = $true
     }
@@ -388,6 +400,10 @@ Go micro-service commands (local dev):
     -Command go-svc-status
     -Command go-svc-list
 
+Go micro-service Docker image commands:
+    -Command go-svc-build-images [-GoSvcRegistry <registry> -GoSvcTag <tag>]
+    -Command go-svc-push-images  [-GoSvcRegistry <registry> -GoSvcTag <tag>]
+
 Other common commands:
     -Command tree
     -Command naming-audit
@@ -432,5 +448,7 @@ switch ($Command) {
     "go-svc-stop"   { & (Join-Path $ScriptDir "go_services.ps1") -Command stop   -Services $GoServices }
     "go-svc-status" { & (Join-Path $ScriptDir "go_services.ps1") -Command status }
     "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
+    "go-svc-build-images" { & (Join-Path $ScriptDir "go_svc_image.ps1") -Command build-all -Registry $GoSvcRegistry -Tag $GoSvcTag -DryRun:$DryRun }
+    "go-svc-push-images"  { & (Join-Path $ScriptDir "go_svc_image.ps1") -Command push-all  -Registry $GoSvcRegistry -Tag $GoSvcTag -DryRun:$DryRun }
     default { throw "Unsupported command: $Command" }
 }
