@@ -334,7 +334,7 @@ void EtcdService::ActivateSnowFlakeAfterGuard() {
 	const auto& info = gNode->GetNodeInfo();
 	std::string guardKey = EtcdManager::MakeSnowFlakeGuardKey(info);
 
-	auto& redis = tlsReids.GetZoneRedis();
+	auto& redis = tlsRedis.GetZoneRedis();
 	if (!redis || !redis->connected()) {
 		LOG_WARN << "Redis not connected, activating SnowFlake without guard for node_id=" << info.node_id();
 		tlsSnowflakeManager.OnNodeStart(info.node_id());

@@ -47,8 +47,8 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	// 1. Distributed lock with retry
 	accountLocker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
 
-	ok, err := accountLocker.AcquireLogin(l.ctx, in.Account)
-	if err != nil || !ok {
+	lockAcquired, err := accountLocker.AcquireLogin(l.ctx, in.Account)
+	if err != nil || !lockAcquired {
 		logx.Errorf("Login lock acquire failed for account=%s, err=%v", in.Account, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
@@ -61,8 +61,8 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	}(accountLocker, l.ctx, in.Account)
 
 	// 2. Get Session
-	sessionDetails, ok := ctxkeys.GetSessionDetails(l.ctx)
-	if !ok || sessionDetails.SessionId <= 0 {
+	sessionDetails, sessionFound := ctxkeys.GetSessionDetails(l.ctx)
+	if !sessionFound || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
@@ -72,23 +72,23 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	logx.Infof("Start processing login for account=%s with sessionId=%s", in.Account, sessionId)
 
 	// 3. FSM load + execute + save; return immediately on error
-	f := data.InitPlayerFSM()
+	playerFSM := data.InitPlayerFSM()
 
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
+	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, playerFSM, sessionId, ""); err != nil {
 		logx.Errorf("FSM state load failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMLoadFailed)}
 		return resp, nil
 	}
 
 	// Execute FSM event
-	if err := f.Event(l.ctx, data.EventProcessLogin); err != nil {
+	if err := playerFSM.Event(l.ctx, data.EventProcessLogin); err != nil {
 		logx.Errorf("FSM transition error for sessionId=%s, account=%s, event=process_login, error: %v", sessionId, in.Account, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMEventFailed)}
 		return resp, nil
 	}
 
 	// Save FSM state
-	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, f, sessionId, ""); err != nil {
+	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, playerFSM, sessionId, ""); err != nil {
 		logx.Errorf("FSM save failed for sessionId=%s, account=%s, error: %v", sessionId, in.Account, err)
 		// Non-blocking, but log the error
 		//todo Have the client re-login
@@ -138,7 +138,7 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		GateId:    0,
 		DeviceId:  "",
 		LoginTime: time.Now().Unix(),
-		Fsm:       f.Current(),
+		Fsm:       playerFSM.Current(),
 	}
 	if err := loginsessionstore.SaveLoginSession(l.ctx, l.svcCtx.RedisClient, sessionInfo, expire); err != nil {
 		logx.Errorf("Failed to save login session for account=%s: %v", in.Account, err)

@@ -11,12 +11,13 @@ public:
 
 	HiredisPtr& GetZoneRedis()
 	{
-		return zoneRedis;
+		return zoneRedis_;
 	}
 
-	HiredisPtr zoneRedis;
+private:
+	HiredisPtr zoneRedis_;
 };
 
-extern thread_local RedisManager tlsReids;
+extern thread_local RedisManager tlsRedis;
 
 

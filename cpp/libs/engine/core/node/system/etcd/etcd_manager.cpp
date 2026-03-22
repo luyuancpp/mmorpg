@@ -91,7 +91,7 @@ std::string EtcdManager::MakeSnowFlakeGuardKey(const NodeInfo& info) {
 }
 
 void EtcdManager::WriteSnowFlakeGuard() {
-	auto& redis = tlsReids.GetZoneRedis();
+	auto& redis = tlsRedis.GetZoneRedis();
 	if (!redis || !redis->connected()) {
 		return;
 	}

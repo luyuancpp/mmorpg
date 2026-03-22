@@ -1,11 +1,11 @@
 ﻿#pragma once
-#pragma once
+
 #include <functional>
 #include <entt/src/entt/entity/entity.hpp>
 
 struct AttributeCalculatorConfig {
     uint32_t attributeIndex{0};
-    std::function<void(entt::entity)> updateFunction;;
+    std::function<void(entt::entity)> updateFunction;
 };
 
 class ActorAttributeCalculatorSystem {

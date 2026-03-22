@@ -31,12 +31,7 @@ std::size_t MissionsComponent::CanGetRewardSize() const
 
 void MissionsComponent::AbandonMission(const uint32_t missionId)
 {
-    if (!MissionBitMap.contains(missionId))
-    {
-        return;
-    }
-
-    completedMissions.set(MissionBitMap.at(missionId), false);
+    SetBit(MissionBitMap, completedMissions, missionId, false);
 }
 
 uint32_t MissionsComponent::IsMissionUnaccepted(const uint32_t missionId) const

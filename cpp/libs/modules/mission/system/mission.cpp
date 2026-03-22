@@ -62,11 +62,12 @@ uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptE
 	RETURN_ON_ERROR(missionComp.IsMissionUncompleted(acceptEvent.mission_id()));
 
 	// Ensure mission configuration is valid
-	RETURN_IF_TRUE(!MissionConfig::GetSingleton().HasKey(acceptEvent.mission_id()), kInvalidTableId);
+	const auto& config = MissionConfig::GetSingleton();
+	RETURN_IF_TRUE(!config.HasKey(acceptEvent.mission_id()), kInvalidTableId);
 
 	// Retrieve mission sub-type and type
-	auto missionSubType = MissionConfig::GetSingleton().GetMissionSubType(acceptEvent.mission_id());
-	auto missionType = MissionConfig::GetSingleton().GetMissionType(acceptEvent.mission_id());
+	auto missionSubType = config.GetMissionSubType(acceptEvent.mission_id());
+	auto missionType = config.GetMissionType(acceptEvent.mission_id());
 
 	// If mission type should not repeat, check type filter
 	if (missionComp.IsMissionTypeNotRepeated()) {
@@ -91,8 +92,9 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 	}
 
 	// Retrieve mission sub-type and type
-	auto missionSubType = MissionConfig::GetSingleton().GetMissionSubType(acceptEvent.mission_id());
-	auto missionType = MissionConfig::GetSingleton().GetMissionType(acceptEvent.mission_id());
+	const auto& config = MissionConfig::GetSingleton();
+	auto missionSubType = config.GetMissionSubType(acceptEvent.mission_id());
+	auto missionType = config.GetMissionType(acceptEvent.mission_id());
 
 	// Add mission type filter if type should not repeat
 	if (missionComp.IsMissionTypeNotRepeated()) {
@@ -105,7 +107,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 	missionPb.set_id(acceptEvent.mission_id());
 
 	// Initialize mission progress based on conditions
-	for (const auto& conditionId : MissionConfig::GetSingleton().GetConditionIds(acceptEvent.mission_id())) {
+	for (const auto& conditionId : config.GetConditionIds(acceptEvent.mission_id())) {
 		FetchConditionTableOrContinue(conditionId);
 		
 		missionPb.add_progress(0);
@@ -160,10 +162,7 @@ void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t oper
 
 	// Mark all missions as complete
 	for (const auto& missionId : missionComp.GetMissionsComp().missions() | std::views::keys) {
-		if (!MissionBitMap.contains(missionId)){
-			continue;
-		}
-		missionComp.GetCompleteMissions().set(MissionBitMap.at(missionId), true);
+		SetBit(MissionBitMap, missionComp.GetCompleteMissions(), missionId);
 	}
 
 	// Clear all missions
@@ -180,7 +179,8 @@ bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
 // Check if all conditions of a mission are fulfilled
 bool MissionSystem::AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent& missionComp) {
 	// Retrieve mission conditions from configuration
-	const auto& conditions = MissionConfig::GetSingleton().GetConditionIds(missionId);
+	const auto& config = MissionConfig::GetSingleton();
+	const auto& conditions = config.GetConditionIds(missionId);
 
 	// Ensure progress matches condition requirements
 	for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i) {
@@ -246,7 +246,8 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 // Remove mission classification
 void MissionSystem::RemoveMissionClassification(MissionsComponent& missionComp, uint32_t missionId) {
 	// Retrieve conditions from mission configuration
-	const auto& configConditions = MissionConfig::GetSingleton().GetConditionIds(missionId);
+	const auto& config = MissionConfig::GetSingleton();
+	const auto& configConditions = config.GetConditionIds(missionId);
 
 	// Remove mission classification based on condition type
 	for (int32_t i = 0; i < configConditions.size(); ++i) {
@@ -264,9 +265,10 @@ void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint3
 	RemoveMissionClassification(missionComp, missionId);
 
 	// Remove mission type filter if applicable
-	auto missionSubType = MissionConfig::GetSingleton().GetMissionSubType(missionId);
+	const auto& config = MissionConfig::GetSingleton();
+	auto missionSubType = config.GetMissionSubType(missionId);
 	if (missionSubType > 0 && missionComp.IsMissionTypeNotRepeated()) {
-		auto missionTypeSubTypePair = std::make_pair(MissionConfig::GetSingleton().GetMissionType(missionId), missionSubType);
+		auto missionTypeSubTypePair = std::make_pair(config.GetMissionType(missionId), missionSubType);
 		missionComp.GetTypeFilter().erase(missionTypeSubTypePair);
 	}
 }
@@ -284,7 +286,8 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 	bool missionUpdated = false;
 
 	// Retrieve mission conditions from configuration
-	const auto& missionConditions = MissionConfig::GetSingleton().GetConditionIds(mission.id());
+	const auto& config = MissionConfig::GetSingleton();
+	const auto& missionConditions = config.GetConditionIds(mission.id());
 
 	// Iterate through mission conditions and update progress
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
@@ -401,32 +404,34 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 		missionConditionEvent.set_amount(1);
 
 		// Process mission completion rewards and events
+		const auto& config = MissionConfig::GetSingleton();
 		for (const auto& missionId : completedMissionsThisTime) {
 			// Mark mission as complete
 
-			if (!MissionBitMap.contains(missionId)){
-				continue;
-			}
-			
-			missionComp.GetCompleteMissions().set(MissionBitMap.at(missionId), true);
+			SetBit(MissionBitMap, missionComp.GetCompleteMissions(), missionId);
 
-			// Check if mission has rewards and should be automatically rewarded
-			if (MissionConfig::GetSingleton().GetRewardId(missionId) > 0 && MissionConfig::GetSingleton().AutoReward(missionId)) {
-				// Enqueue mission award event
+			// Determine reward action from config
+			switch (GetRewardAction(config, missionId))
+			{
+			case RewardAction::kAutoGrant:
+			{
 				OnMissionAwardEvent missionAwardEvent;
 				missionAwardEvent.set_entity(entt::to_integral(playerEntity));
 				missionAwardEvent.set_mission_id(missionId);
 				dispatcher.enqueue(missionAwardEvent);
+				break;
 			}
-			else if (MissionConfig::GetSingleton().GetRewardId(missionId) > 0) {
-				// Mark mission as rewardable
+			case RewardAction::kClaimable:
 				missionReward.mutable_can_reward_mission_id()->insert({ missionId, false });
+				break;
+			default:
+				break;
 			}
 
 			// Create mission acceptance event for next missions
 			AcceptMissionEvent acceptMissionEvent;
 			acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
-			const auto& nextMissions = MissionConfig::GetSingleton().GetNextmissionTableIds(missionId);
+			const auto& nextMissions = config.GetNextmissionTableIds(missionId);
 
 			// Enqueue acceptance event for each next mission
 			for (int32_t i = 0; i < nextMissions.size(); ++i) {

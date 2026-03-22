@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include "proto/common/base/message.pb.h"
 #include "engine/core/type_define/type_define.h"
@@ -14,7 +13,7 @@ public:
 	MessageContext & operator=(const MessageContext &) = delete;
 
 	RoutingNodeInfo& GetRoutingNodeInfo() { return route_data_; }
-	std::string& RouteMsgBody() { return route_msg_body_; }
+	std::string& GetRouteMsgBody() { return route_msg_body_; }
 	void SetNextRouteNodeType(const uint32_t node_type) { next_route_node_type_ = node_type; }
 	uint32_t GetNextRouteNodeType() const { return next_route_node_type_; }
 	void SetNextRouteNodeId(const uint32_t next_node_id) { next_route_node_id_ = next_node_id; }
@@ -28,7 +27,6 @@ private:
 	uint32_t next_route_node_type_{ UINT32_MAX };
 	uint32_t next_route_node_id_{ UINT32_MAX };
 	uint64_t current_session_id_{ kInvalidSessionId };
-	std::string prev_node_replied_;
 };
 
 

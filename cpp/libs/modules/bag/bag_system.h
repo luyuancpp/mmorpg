@@ -44,7 +44,7 @@ public:
     ~Bag();
 
     std::size_t size() const { return capacity_; }
-    [[nodiscard]] Guid PlayerGuid() const { return playerGuid; }
+    [[nodiscard]] Guid PlayerGuid() const { return player_guid_; }
     std::size_t ItemGridSize() const { return items_.size(); }
     std::size_t PosSize() const { return pos_.size(); }
     const PosMap& pos() const { return pos_; }
@@ -62,8 +62,8 @@ public:
     uint32_t RemoveItemByPos(const RemoveItemByPosParam& param);
 
     bool IsFull() const { return items_.size() >= size(); }
-    bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }
-    bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }
+    bool HasSufficientSpace(std::size_t s) const { ValidateCapacity(); return size() - items_.size() >= s; }
+    bool IsSpaceInsufficient(std::size_t s) const { ValidateCapacity(); return size() - items_.size() < s; }
 
     uint32_t AddItem(const InitItemParam& itemParam);
     uint32_t RemoveItem(Guid guid);
@@ -83,8 +83,8 @@ private:
     uint32_t OnNewGrid(Guid guid);
     static bool CanStack(const ItemPBComponent& item1, const ItemPBComponent& item2);
 
-    std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
-    void sizeassert() const { assert(size() >= items_.size()); }
+    std::size_t empty_grid_size() const { ValidateCapacity(); return size() - items_.size(); }
+    void ValidateCapacity() const { assert(size() >= items_.size()); }
 
 	entt::entity entity;
 	ItemsMap items_{};
@@ -92,5 +92,5 @@ private:
 	uint32_t type_{};
     std::size_t capacity_{ kDefaultCapacity };
 	entt::registry itemRegistry;
-	Guid playerGuid{ kInvalidGuid };
+	Guid player_guid_{ kInvalidGuid };
 };

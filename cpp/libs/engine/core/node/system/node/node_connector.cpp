@@ -102,7 +102,7 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo& nodeInfo) {
 		return;
 	}
 
-	InetAddress remoteEndpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
+	muduo::net::InetAddress remoteEndpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
 	auto& client = targetRegistry.emplace<RpcClientPtr>(
 		createdId,
 		std::make_shared<RpcClientPtr::element_type>(gNode->GetLoop(), remoteEndpoint)
