@@ -18,8 +18,9 @@ Main entry point for tool commands on Windows.
 
 Supported commands include:
 
-- `pbgen-build`
-- `pbgen-run`
+- `help`
+- `proto-gen-build` (alias: `pbgen-build`)
+- `proto-gen-run` (alias: `pbgen-run`)
 - `tree`
 - `naming-audit`
 - `naming-apply`
@@ -89,11 +90,14 @@ VS Code tasks are available in [/.vscode/tasks.json](../../.vscode/tasks.json):
 #### Commands
 
 ```powershell
-# Build pbgen
-pwsh -File dev_tools.ps1 -Command pbgen-build
+# Show command help
+pwsh -File dev_tools.ps1 -Command help
 
-# Run pbgen with default config
-pwsh -File dev_tools.ps1 -Command pbgen-run
+# Build proto-gen
+pwsh -File dev_tools.ps1 -Command proto-gen-build
+
+# Run proto-gen with default config
+pwsh -File dev_tools.ps1 -Command proto-gen-run
 
 # Build vendored gRPC via the canonical third-party script
 pwsh -File dev_tools.ps1 -Command third-party-grpc-build
@@ -113,8 +117,8 @@ pwsh -File dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene,cpp/nodes/g
 # Build vendored gRPC from VS Code Tasks
 # Run Task -> third_party: grpc build
 
-# Run pbgen with custom config
-pwsh -File dev_tools.ps1 -Command pbgen-run -ConfigPath <path-to-config>
+# Run proto-gen with custom config
+pwsh -File dev_tools.ps1 -Command proto-gen-run -ConfigPath <path-to-config>
 
 # Generate project tree report
 pwsh -File dev_tools.ps1 -Command tree
@@ -220,7 +224,7 @@ Stages Linux node binaries, `zoneinfo`, and generated tables into `deploy/k8s/ru
 
 ```powershell
 # Generate all proto code
-pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-run
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run
 
 # Generate project tree
 pwsh -File tools/scripts/dev_tools.ps1 -Command tree
@@ -229,11 +233,11 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command tree
 ### From tools/scripts Directory
 
 ```powershell
-# Build pbgen
-pwsh -File dev_tools.ps1 -Command pbgen-build
+# Build proto-gen
+pwsh -File dev_tools.ps1 -Command proto-gen-build
 
-# Run pbgen
-pwsh -File dev_tools.ps1 -Command pbgen-run -ConfigPath ../proto_generator/pbgen/etc/proto_gen.yaml
+# Run proto-gen
+pwsh -File dev_tools.ps1 -Command proto-gen-run -ConfigPath ../proto_generator/pbgen/etc/proto_gen.yaml
 ```
 
 ## Notes

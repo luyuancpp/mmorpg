@@ -6,11 +6,11 @@
 ## STRUCTURE
 ```text
 tools/
-├── proto_generator/      # Canonical pbgen source project
+├── proto_generator/      # Canonical proto-gen source project
 ├── data_table_exporter/  # Table export scripts/templates
 ├── robot_client/         # Runnable robot/load client
 ├── scene_manager/        # Tool-side generated scene manager artifacts
-├── proto/                # Legacy pbgen/tool bundle kept for compatibility
+├── proto/                # Legacy proto-gen/pbgen tool bundle kept for compatibility
 ├── generated/            # Temporary/ignored generation workspace
 ├── docs/                 # Tool snapshots and archived logs
 └── scripts/              # Preferred script entrypoints
@@ -19,9 +19,9 @@ tools/
 ## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
-| Main script entrypoint | `scripts/dev_tools.ps1` | pbgen, k8s, tree, naming audit/apply |
-| pbgen source | `proto_generator/pbgen/` | Canonical generator project |
-| Compatibility pbgen bundle | `proto/` | Retained for existing local toolchains |
+| Main script entrypoint | `scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
+| proto-gen source | `proto_generator/pbgen/` | Canonical generator project |
+| Compatibility proto-gen bundle | `proto/` | Retained for existing local toolchains |
 | Robot entrypoint | `robot_client/main.go` | Enforces one-client-one-goroutine |
 | Archived generator logs | `docs/pbgen/` | Historical runs only |
 
@@ -30,7 +30,7 @@ tools/
 - Put reports/dumps/snapshots under `docs/`.
 - Keep temp generation output under ignored paths like `generated/` and local binaries.
 - `tools/scripts/dev_tools.ps1` is the preferred shell entrypoint for routine commands.
-- `tools/proto_generator/pbgen` is canonical; `tools/proto/pbgen` exists for compatibility.
+- `tools/proto_generator/pbgen` is the canonical proto-gen project; `tools/proto/pbgen` exists for compatibility.
 - Robot client logic assumes one client binds to exactly one goroutine.
 
 ## ANTI-PATTERNS
@@ -41,9 +41,9 @@ tools/
 
 ## COMMANDS
 ```bash
-pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-build
-pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-run
-pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-run -ConfigPath tools/proto_generator/pbgen/etc/proto_gen.yaml
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/pbgen/etc/proto_gen.yaml
 pwsh -File tools/scripts/dev_tools.ps1 -Command tree
 pwsh -File tools/scripts/dev_tools.ps1 -Command naming-audit
 pwsh -File tools/scripts/dev_tools.ps1 -Command naming-apply -MaxChanges 100

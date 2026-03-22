@@ -310,7 +310,7 @@ service ScenePlayerService {
 
 ### 14.7 待实施
 
-- [ ] 定义 `MessagePriority` protobuf option 并集成到 pbgen 代码生成流程。
+- [ ] 定义 `MessagePriority` protobuf option 并集成到 proto-gen（历史名 pbgen）代码生成流程。
 - [ ] 实现 Scene 侧玩家消息队列（ECS Comp + 消费 System）。
 - [ ] Scene Kafka Consumer 增加 `scene-{scene_id}` topic 订阅。
 - [ ] 重要消息失败后的重试 / 落库补发逻辑。

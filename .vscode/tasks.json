@@ -2,14 +2,26 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "pbgen: build",
+			"label": "proto-gen: help",
 			"type": "shell",
 			"command": "pwsh",
 			"args": [
 				"-File",
 				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
 				"-Command",
-				"pbgen-build"
+				"help"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "proto-gen: build",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"proto-gen-build"
 			],
 			"group": "build",
 			"problemMatcher": [
@@ -17,16 +29,67 @@
 			]
 		},
 		{
-			"label": "pbgen: run",
+			"label": "proto-gen: run",
 			"type": "shell",
 			"command": "pwsh",
 			"args": [
 				"-File",
 				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
 				"-Command",
-				"pbgen-run",
+				"proto-gen-run",
 				"-ConfigPath",
 				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml"
+			],
+			"problemMatcher": [
+				"$go"
+			]
+		},
+		{
+			"label": "proto-gen: run (pprof)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"proto-gen-run",
+				"-ConfigPath",
+				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml",
+				"-EnablePprof"
+			],
+			"problemMatcher": [
+				"$go"
+			]
+		},
+		{
+			"label": "proto-gen: run (exe fast)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"proto-gen-run",
+				"-ConfigPath",
+				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml",
+				"-UseBinary"
+			],
+			"problemMatcher": [
+				"$go"
+			]
+		},
+		{
+			"label": "proto-gen: run (go run)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"proto-gen-run",
+				"-ConfigPath",
+				"${workspaceFolder}/tools/proto_generator/pbgen/etc/proto_gen.yaml",
+				"-UseGoRun"
 			],
 			"problemMatcher": [
 				"$go"

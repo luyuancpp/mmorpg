@@ -2,7 +2,7 @@
 
 This directory contains legacy local binaries/plugins used by older generation workflows.
 
-- Main maintained generator source is in `tools/proto_generator/pbgen`.
+- Main maintained proto-gen source is in `tools/proto_generator/pbgen`.
 - Keep this directory for backward compatibility with existing local scripts/toolchains.
 - Avoid adding new source code here.
 

@@ -41,8 +41,8 @@ proto/
 
 ## COMMANDS
 ```bash
-pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-build
-pwsh -File tools/scripts/dev_tools.ps1 -Command pbgen-run
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run
 cd go && build.bat
 ```
 

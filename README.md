@@ -47,6 +47,17 @@ Include 清理（跨平台）:
 - Linux/macOS 包装脚本: `tools/scripts/iwyu_run.sh`
 - 详细用法见 `tools/scripts/README.md`
 
+## Proto Generation
+
+Proto generation is driven by the repo tool entrypoint `tools/scripts/dev_tools.ps1`.
+
+- 查看命令帮助: `pwsh -File tools/scripts/dev_tools.ps1 -Command help`
+- 构建 proto-gen: `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`
+- 运行 proto-gen: `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`
+- VS Code 任务入口: `proto-gen: help`, `proto-gen: build`, `proto-gen: run`
+
+More details: `tools/README.md`, `tools/scripts/README.md`, `tools/proto_generator/README.md`
+
 ## 🧱 C++ Node Main Templates
 
 If you are adding a new C++ node entrypoint, use the templates under `cpp/nodes/_template/`:
