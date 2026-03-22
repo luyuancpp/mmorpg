@@ -75,6 +75,14 @@ tools/proto-generator/protogen/bin/
 tools/proto-generator/protogen/.idea/
 _copilot_session_transfer/
 
+# Visual Studio user-specific files
+game.slnLaunch.user
+*.slnLaunch.user
+
+# Build output directories
+test/
+vsout/
+
 # raw-pointer-member check cache markers
 .no_raw_ptr_check_ok
 
