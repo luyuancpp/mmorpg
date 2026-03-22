@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -51,7 +51,9 @@ param(
     [switch]$WaitReady,
     [int]$WaitTimeoutSeconds = 180,
     [string]$KubeContext = "",
-    [string]$KubeConfig = ""
+    [string]$KubeConfig = "",
+    # go-svc-* commands
+    [string[]]$GoServices = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -380,6 +382,12 @@ Useful proto-gen flags:
     -UseBinary     Force running proto-gen binary (proto-gen.exe, fallback: pbgen.exe)
     -UseGoRun      Force running go run ./cmd
 
+Go micro-service commands (local dev):
+    -Command go-svc-start [-GoServices login,db,...]
+    -Command go-svc-stop  [-GoServices login,...]
+    -Command go-svc-status
+    -Command go-svc-list
+
 Other common commands:
     -Command tree
     -Command naming-audit
@@ -420,5 +428,9 @@ switch ($Command) {
     "k8s-push-image" { Invoke-K8sImage -ImageCommand "push-image" }
     "k8s-release-zone" { Invoke-K8sImage -ImageCommand "release-zone" }
     "k8s-release-all" { Invoke-K8sImage -ImageCommand "release-all" }
+    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices }
+    "go-svc-stop"   { & (Join-Path $ScriptDir "go_services.ps1") -Command stop   -Services $GoServices }
+    "go-svc-status" { & (Join-Path $ScriptDir "go_services.ps1") -Command status }
+    "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
     default { throw "Unsupported command: $Command" }
 }

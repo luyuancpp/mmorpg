@@ -1,0 +1,21 @@
+#pragma once
+
+#include "{{ .ProtoInclude }}"
+
+class {{ .ClassName }}
+{
+public:
+    static void Register();
+
+    static void UnRegister();
+{{- if .EventMessages }}
+
+{{- end }}
+{{- range .EventMessages }}
+    static void {{ .Name }}Handler(const {{ .QualifiedName }}& event);
+{{- if .IsLast }}
+{{- else }}
+
+{{- end }}
+{{- end }}
+};

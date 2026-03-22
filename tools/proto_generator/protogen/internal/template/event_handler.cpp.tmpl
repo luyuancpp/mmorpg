@@ -1,0 +1,29 @@
+#include "{{ .HeaderFile }}"
+#include "thread_context/dispatcher_manager.h"
+
+{{ .GlobalUserCode }}
+void {{ .ClassName }}::Register()
+{
+{{- range .EventMessages }}
+    dispatcher.sink<{{ .QualifiedName }}>().connect<&{{ $.ClassName }}::{{ .Name }}Handler>();
+{{- end }}
+}
+
+void {{ .ClassName }}::UnRegister()
+{
+{{- range .EventMessages }}
+    dispatcher.sink<{{ .QualifiedName }}>().disconnect<&{{ $.ClassName }}::{{ .Name }}Handler>();
+{{- end }}
+}
+
+{{- range .EventMessages }}
+void {{ $.ClassName }}::{{ .Name }}Handler(const {{ .QualifiedName }}& event)
+{
+{{ index $.UserCodeBlocks .Signature }}
+}
+{{- if .IsLast }}
+{{- else }}
+
+{{- end }}
+{{- end }}
+

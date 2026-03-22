@@ -1,0 +1,54 @@
+# syntax=docker/dockerfile:1
+# ────────────────────────────────────────────────────────────────
+# Multi-stage Dockerfile for Go micro-services.
+#
+# Build context MUST be the go/ directory (to resolve local
+# replace directives like ../contracts, ../generated).
+#
+# Usage:
+#   docker build -f deploy/k8s/Dockerfile.go-svc \
+#     --build-arg SERVICE=login \
+#     --build-arg ENTRY=login.go \
+#     -t mmorpg-login:latest  go/
+# ────────────────────────────────────────────────────────────────
+
+# ── Build stage ──────────────────────────────────────────────────
+FROM golang:1.24-alpine AS builder
+
+ARG SERVICE
+ARG ENTRY
+
+RUN apk add --no-cache git
+
+WORKDIR /src
+
+# Copy shared local modules first (used by scene_manager's replace directives)
+COPY contracts/ /src/contracts/
+COPY generated/ /src/generated/
+
+# Copy the target service
+COPY ${SERVICE}/ /src/${SERVICE}/
+
+WORKDIR /src/${SERVICE}
+
+RUN go mod download \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+       go build -ldflags="-s -w" -o /app/service ${ENTRY}
+
+# ── Runtime stage ────────────────────────────────────────────────
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates tzdata
+
+WORKDIR /app
+
+COPY --from=builder /app/service /app/service
+
+# Each service keeps its etc/ config inside the image as a default.
+# K8s deployments override it via ConfigMap mount at /app/etc/.
+ARG SERVICE
+COPY ${SERVICE}/etc/ /app/etc/
+
+EXPOSE 8080
+
+ENTRYPOINT ["/app/service"]
