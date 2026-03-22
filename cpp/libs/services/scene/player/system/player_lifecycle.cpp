@@ -84,7 +84,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 
 // CONSIDER: handle reentry into a different scene node while load is still in progress
 void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
-	LOG_INFO << "EnterGs: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering Game Node";
+	LOG_INFO << "EnterScene: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering scene node";
 
 	// Centre decommissioned: no longer track centre_node_id or send CentreEnterGsSucceed.
 	// player_locator (Go service) owns session/location truth via Redis.
@@ -159,7 +159,7 @@ void PlayerLifecycleSystem::RemovePlayerSession(const Guid playerId)
 	auto playerIt = tlsPlayerList.find(playerId);
 	if (playerIt == tlsPlayerList.end())
 	{
-		LOG_ERROR << "RemovePlayerSession: PlayerNodeInfoPBComponent not found for player: " << playerId;
+		LOG_ERROR << "RemovePlayerSession: player entity not found in session map for player: " << playerId;
 		return;
 	}
 	RemovePlayerSession(playerIt->second);
@@ -170,7 +170,7 @@ void PlayerLifecycleSystem::RemovePlayerSession(entt::entity player)
 	auto* const playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
 	{
-		LOG_ERROR << "RemovePlayerSession: PlayerNodeInfoPBComponent not found for player: " << entt::to_integral(player);
+		LOG_ERROR << "RemovePlayerSession: PlayerSessionSnapshotPBComp not found for player: " << entt::to_integral(player);
 		return;
 	}
 
@@ -180,9 +180,9 @@ void PlayerLifecycleSystem::RemovePlayerSession(entt::entity player)
 	playerSessionSnapshotPB->set_gate_session_id(kInvalidSessionId);
 }
 
-void PlayerLifecycleSystem::RemovePlayerSessionSilently(Guid player_id)
+void PlayerLifecycleSystem::RemovePlayerSessionSilently(Guid playerId)
 {
-	auto playerIt = tlsPlayerList.find(player_id);
+	auto playerIt = tlsPlayerList.find(playerId);
 	if (playerIt == tlsPlayerList.end())
 	{
 		return;

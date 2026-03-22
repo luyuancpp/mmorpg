@@ -117,7 +117,7 @@ protected:
     std::unordered_map<std::string,int64_t> revision;
     bool hasSentRange{ false };
     bool hasSentWatch{ false };
-	boost::uuids::random_generator gen;
+	boost::uuids::random_generator uuidGenerator;
 	KafkaManager kafkaManager;
     EtcdManager etcdManager;
     NodeHandshakeManager nodeRegistrationManager;

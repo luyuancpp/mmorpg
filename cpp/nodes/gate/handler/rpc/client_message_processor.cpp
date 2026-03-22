@@ -23,7 +23,7 @@
 #include "thread_context/dispatcher_manager.h"
 #include <network/node_utils.h>
 
-static std::optional<entt::entity> PickRandomNode(uint32_t nodeType, uint32_t targetNodeType) {
+static std::optional<entt::entity> PickRandomNode(uint32_t nodeType) {
 	std::vector<entt::entity> candidates;
 	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	auto view = registry.view<NodeInfo>();
@@ -107,7 +107,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 	auto& session = sessionIt->second;
 
 	if (!session.HasNodeId(nodeType)) {
-		auto randomNode = PickRandomNode(nodeType, nodeType);
+		auto randomNode = PickRandomNode(nodeType);
 		if (!randomNode) {
 			LOG_ERROR << "[LoginNode] No available login node for session id: " << sessionId;
 			return std::nullopt;
@@ -270,11 +270,11 @@ void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr&
     auto& handlerMeta = gRpcMethodRegistry[request->message_id()];
 
 	// Player sent message without being logged in — invalid node binding
-    entt::entity tcpNodeId = entt::entity{ GetEffectiveNodeId(session, handlerMeta.targetNodeType) };
+    entt::entity targetNodeEntity = entt::entity{ GetEffectiveNodeId(session, handlerMeta.targetNodeType) };
 	auto& registry = tlsNodeContextManager.GetRegistry(handlerMeta.targetNodeType);
-	if (!registry.valid(tcpNodeId))
+	if (!registry.valid(targetNodeEntity))
 	{
-		LOG_ERROR << "[TCP Node Error] Invalid tcp node id: " << static_cast<uint32_t>(tcpNodeId)
+		LOG_ERROR << "[TCP Node Error] Invalid target node entity: " << static_cast<uint32_t>(targetNodeEntity)
 			<< ", message_id: " << request->message_id()
 			<< ", session_id: " << sessionId
 			<< ", node_type: " << handlerMeta.targetNodeType
@@ -284,7 +284,7 @@ void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr&
 		return;
 	}
 
-    auto& tcpNode = registry.get<RpcClientPtr>(tcpNodeId);
+    auto& tcpNode = registry.get<RpcClientPtr>(targetNodeEntity);
 	ProcessClientPlayerMessageRequest message;
     message.mutable_message_content()->set_serialized_message(request->body());
     message.set_session_id(sessionId);

@@ -24,12 +24,12 @@ void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
 	changeSceneQueue.dequeue();
 }
 
-void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState s) {
+void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState newState) {
 	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
 	if (changeSceneQueue.empty()) {
 		return;
 	}
-	changeSceneQueue.front()->set_state(s);
+	changeSceneQueue.front()->set_state(newState);
 }
 
 void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo) {
