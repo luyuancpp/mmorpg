@@ -5,7 +5,6 @@
 #include "player/system/player_scene.h"
 #include "scene/scene/comp/grid.h"
 #include "proto/common/event/scene_event.pb.h"
-#include "proto/common/base/node.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "network/node_utils.h"
 #include "network/node_message_utils.h"

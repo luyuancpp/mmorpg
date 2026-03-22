@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-stop", "dev-status")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -56,7 +56,11 @@ param(
     [string]$KubeContext = "",
     [string]$KubeConfig = "",
     # go-svc-* commands
-    [string[]]$GoServices = @()
+    [string[]]$GoServices = @(),
+    # cpp-node-* / dev-* commands
+    [string[]]$CppNodes = @(),
+    [int]$GateCount = 1,
+    [int]$SceneCount = 1
 )
 
 $ErrorActionPreference = "Stop"
@@ -404,6 +408,17 @@ Go micro-service Docker image commands:
     -Command go-svc-build-images [-GoSvcRegistry <registry> -GoSvcTag <tag>]
     -Command go-svc-push-images  [-GoSvcRegistry <registry> -GoSvcTag <tag>]
 
+C++ node commands (local dev):
+    -Command cpp-node-start [-CppNodes gate,scene] [-GateCount N] [-SceneCount N]
+    -Command cpp-node-stop  [-CppNodes gate,...]
+    -Command cpp-node-status
+    -Command cpp-node-list
+
+Unified dev commands (C++ nodes + Go services):
+    -Command dev-start  [-GateCount N] [-SceneCount N]
+    -Command dev-stop
+    -Command dev-status
+
 Other common commands:
     -Command tree
     -Command naming-audit
@@ -450,5 +465,27 @@ switch ($Command) {
     "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
     "go-svc-build-images" { & (Join-Path $ScriptDir "go_svc_image.ps1") -Command build-all -Registry $GoSvcRegistry -Tag $GoSvcTag -DryRun:$DryRun }
     "go-svc-push-images"  { & (Join-Path $ScriptDir "go_svc_image.ps1") -Command push-all  -Registry $GoSvcRegistry -Tag $GoSvcTag -DryRun:$DryRun }
+    "cpp-node-start"  { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start  -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount }
+    "cpp-node-stop"   { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command stop   -Nodes $CppNodes }
+    "cpp-node-status" { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command status }
+    "cpp-node-list"   { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command list   }
+    "dev-start" {
+        Write-Host "=== Starting C++ nodes ==="  -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount
+        Write-Host "`n=== Starting Go services ===" -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "go_services.ps1") -Command start -Services $GoServices
+    }
+    "dev-stop" {
+        Write-Host "=== Stopping Go services ===" -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "go_services.ps1") -Command stop -Services $GoServices
+        Write-Host "`n=== Stopping C++ nodes ==="  -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command stop -Nodes $CppNodes
+    }
+    "dev-status" {
+        Write-Host "=== C++ nodes ==="  -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command status
+        Write-Host "`n=== Go services ===" -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "go_services.ps1") -Command status
+    }
     default { throw "Unsupported command: $Command" }
 }

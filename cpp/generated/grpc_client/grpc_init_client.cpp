@@ -15,12 +15,12 @@ using grpc::ClientAsyncResponseReader;
 
 namespace NodeUtils
 {
-	eNodeType GetServiceTypeFromPrefix(const std::string& prefix);
+	common::base::eNodeType GetServiceTypeFromPrefix(const std::string& prefix);
 	entt::registry& GetRegistryForNodeType(uint32_t nodeType);
 	std::string GetRegistryName(const entt::registry& registry);
-	eNodeType GetRegistryType(const entt::registry& registry);
+	common::base::eNodeType GetRegistryType(const entt::registry& registry);
 	bool IsSameNode(const std::string& uuid1, const std::string& uuid2);
-	bool IsNodeConnected(uint32_t nodeType, const NodeInfo& info);
+	bool IsNodeConnected(uint32_t nodeType, const common::base::NodeInfo& info);
 };
 
 namespace chatpb {
@@ -99,19 +99,19 @@ void HandleCompletedQueueMessage(entt::registry& registry){
                 return;
             }
             GrpcTag* grpcTag(reinterpret_cast<GrpcTag*>(got_tag));
-            if (eNodeType::ChatNodeService == nodeType) {
+            if (common::base::eNodeType::ChatNodeService == nodeType) {
                 chatpb::HandleChatCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
-            else if (eNodeType::DataServiceNodeService == nodeType) {
+            else if (common::base::eNodeType::DataServiceNodeService == nodeType) {
                 data_service::HandleDataServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
-            else if (eNodeType::EtcdNodeService == nodeType) {
+            else if (common::base::eNodeType::EtcdNodeService == nodeType) {
                 etcdserverpb::HandleEtcdCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
-            else if (eNodeType::LoginNodeService == nodeType) {
+            else if (common::base::eNodeType::LoginNodeService == nodeType) {
                 loginpb::HandleLoginCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
-            else if (eNodeType::SceneManagerNodeService == nodeType) {
+            else if (common::base::eNodeType::SceneManagerNodeService == nodeType) {
                 scene_manager::HandleSceneManagerServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
         }
@@ -121,19 +121,19 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
     auto nodeType = NodeUtils::GetRegistryType(registry);
     registry.emplace<grpc::CompletionQueue>(nodeEntity);
-    if (eNodeType::ChatNodeService == nodeType) {
+    if (common::base::eNodeType::ChatNodeService == nodeType) {
         chatpb::InitChatGrpcNode(channel, registry, nodeEntity);
     }
-    else if (eNodeType::DataServiceNodeService == nodeType) {
+    else if (common::base::eNodeType::DataServiceNodeService == nodeType) {
         data_service::InitDataServiceGrpcNode(channel, registry, nodeEntity);
     }
-    else if (eNodeType::EtcdNodeService == nodeType) {
+    else if (common::base::eNodeType::EtcdNodeService == nodeType) {
         etcdserverpb::InitEtcdGrpcNode(channel, registry, nodeEntity);
     }
-    else if (eNodeType::LoginNodeService == nodeType) {
+    else if (common::base::eNodeType::LoginNodeService == nodeType) {
         loginpb::InitLoginGrpcNode(channel, registry, nodeEntity);
     }
-    else if (eNodeType::SceneManagerNodeService == nodeType) {
+    else if (common::base::eNodeType::SceneManagerNodeService == nodeType) {
         scene_manager::InitSceneManagerServiceGrpcNode(channel, registry, nodeEntity);
     }
 }

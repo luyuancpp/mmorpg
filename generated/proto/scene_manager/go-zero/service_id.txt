@@ -18,6 +18,7 @@
 24=SceneUpdateSessionDetail
 25=KVTxn
 26=ClientPlayerLoginEnterGame
+28=ClientPlayerChatPullChatHistory
 30=SceneScenePlayerEnterScene
 31=SceneSceneClientPlayerNotifySceneInfo
 32=GateBroadcastToPlayers
@@ -40,6 +41,7 @@
 57=SceneCentreSendToPlayerViaGameNode
 58=ClientPlayerLoginDisconnect
 59=KVRange
+61=ClientPlayerChatSendChat
 62=SceneNodeHandshake
 63=SceneSceneClientPlayerEnterScene
 64=SceneSceneClientPlayerNotifyActorListDestroy

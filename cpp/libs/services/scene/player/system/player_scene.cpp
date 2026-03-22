@@ -19,8 +19,7 @@
 #include "grpc_client/scene_manager/scene_manager_service_grpc_client.h"
 #include <modules/scene/comp/scene_comp.h>
 #include <proto/common/component/player_network_comp.pb.h>
-#include <proto/common/base/node.pb.h>
-#include <proto/common/base/common.pb.h>
+#include "node/system/node/node_util.h"
 #include <limits>
 
 // Callback wrapper for Hiredis

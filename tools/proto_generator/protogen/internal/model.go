@@ -1,16 +1,17 @@
 package internal
 
 import (
-	"github.com/iancoleman/strcase"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"path"
 	"path/filepath"
 	_config "protogen/internal/config"
 	"strings"
 	"sync"
+
+	"github.com/iancoleman/strcase"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type EmptyStruct struct{}
@@ -64,6 +65,11 @@ func (info *ProtoFileInfo) Package() string {
 	return *info.Fd.Package
 }
 
+// CppPackage returns the proto package name with dots converted to :: for use as C++ namespace.
+func (info *ProtoFileInfo) CppPackage() string {
+	return strings.ReplaceAll(info.Package(), ".", "::")
+}
+
 func (info *ProtoFileInfo) Service() string {
 	return info.ServiceDescriptorProto.GetName()
 }
@@ -82,7 +88,7 @@ func (info *ProtoFileInfo) GetServiceFullNameWithNoColon() string {
 	if len(info.Package()) <= 0 {
 		return info.Service()
 	}
-	return info.Package() + info.Service()
+	return info.CppPackage() + "::" + info.Service()
 }
 
 func (info *ProtoFileInfo) GeneratorGrpcFileName() string {
@@ -132,6 +138,10 @@ var ServiceIdMap = map[string]uint64{}
 var MaxMessageId = uint64(0)
 var MessageIdFileMaxId = uint64(0)
 var FileMaxMessageId = uint64(0)
+
+// NodeEnumCppQualifiedType holds the C++ fully qualified eNodeType name (e.g. "common::base::eNodeType").
+// Set during GenNodeUtil when the enum is discovered.
+var NodeEnumCppQualifiedType string
 
 var (
 	ActiveMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor)
@@ -189,7 +199,7 @@ func (info *MethodInfo) GetServiceFullNameWithColon() string {
 	if len(info.Package()) <= 0 {
 		return info.Service()
 	}
-	return info.Package() + "::" + info.Service()
+	return info.CppPackage() + "::" + info.Service()
 }
 
 func (info *MethodInfo) CppRequest() string {

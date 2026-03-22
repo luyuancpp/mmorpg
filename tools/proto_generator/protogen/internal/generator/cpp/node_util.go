@@ -30,9 +30,16 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 		}
 
 		nodeList := make([]string, 0, len(_config.Global.PathLists.ProtoDirectories))
+		nodeEnumCppQualified := _config.Global.Naming.NodeEnumName // fallback: bare name
 		for _, file := range internal.FdSet.File {
 			for _, enumDesc := range file.EnumType {
 				if enumDesc.GetName() == _config.Global.Naming.NodeEnumName {
+					// Build C++ qualified enum type from the proto package
+					pkg := file.GetPackage()
+					if pkg != "" {
+						cppPkg := strings.ReplaceAll(pkg, ".", "::")
+						nodeEnumCppQualified = cppPkg + "::" + _config.Global.Naming.NodeEnumName
+					}
 					for _, val := range enumDesc.Value {
 						nodeName := strings.ReplaceAll(strings.ToLower(val.GetName()), _config.Global.Naming.NodeServiceSuffix, "")
 						if !IsTcpNodeByEnum(nodeName) {
@@ -43,11 +50,14 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 				}
 			}
 		}
+		internal.NodeEnumCppQualifiedType = nodeEnumCppQualified
 
 		cppData := struct {
-			NodeList []string
+			NodeList             []string
+			NodeEnumCppQualified string
 		}{
-			NodeList: nodeList,
+			NodeList:             nodeList,
+			NodeEnumCppQualified: nodeEnumCppQualified,
 		}
 
 		if err := utils2.RenderTemplateToFile("internal/template/node_util.h.tmpl", _config.Global.Paths.GenUtilHeadFile, cppData); err != nil {

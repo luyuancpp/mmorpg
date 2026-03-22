@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strings"
 	"sync"
 	"text/template"
 
@@ -48,7 +49,7 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 		ServiceInfo:           grpcServices,
 		GrpcIncludeHeadName:   grpcServices[0].GrpcIncludeHeadName(),
 		GeneratorGrpcFileName: grpcServices[0].GeneratorGrpcFileName(),
-		Package:               grpcServices[0].Package(),
+		Package:               grpcServices[0].CppPackage(),
 		GrpcCompleteQueueName: grpcServices[0].FileBaseNameCamel() + _config.Global.Naming.CompleteQueue,
 		FileBaseNameCamel:     grpcServices[0].FileBaseNameCamel(),
 	}
@@ -180,10 +181,20 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 				return
 			}
 
+			// Build qualified NodeInfo type from the same package as eNodeType
+			nodeInfoCppType := "NodeInfo"
+			if idx := strings.LastIndex(internal.NodeEnumCppQualifiedType, "::"); idx >= 0 {
+				nodeInfoCppType = internal.NodeEnumCppQualifiedType[:idx] + "::NodeInfo"
+			}
+
 			cppData := struct {
-				ServiceInfo []*internal.RPCServiceInfo
+				ServiceInfo     []*internal.RPCServiceInfo
+				NodeEnumCppType string
+				NodeInfoCppType string
 			}{
-				ServiceInfo: serviceInfoList,
+				ServiceInfo:     serviceInfoList,
+				NodeEnumCppType: internal.NodeEnumCppQualifiedType,
+				NodeInfoCppType: nodeInfoCppType,
 			}
 
 			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", _config.Global.Paths.GrpcInitCppFile, cppData); err != nil {
