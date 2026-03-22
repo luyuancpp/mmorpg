@@ -72,7 +72,7 @@ mmorpg/
 - Repo keeps generated outputs checked in.
 - C++ runtime code is split between node-facing adapters (`cpp/nodes/*`) and deeper reusable scene services (`cpp/libs/services/scene/*`).
 - Go services are separate mini-roots, not a single monolith module.
-- `tools/proto/pbgen` is retained for compatibility, but `tools/proto_generator/pbgen` is the canonical source project for proto-gen (historical name: pbgen).
+- `tools/proto/protogen` is retained for compatibility, but `tools/proto_generator/protogen` is the canonical source project for proto-gen (historical name: pbgen).
 - Robot tooling explicitly enforces one client per goroutine.
 
 ## COMMANDS

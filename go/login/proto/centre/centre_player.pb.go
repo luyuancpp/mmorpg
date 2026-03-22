@@ -7,10 +7,10 @@
 package centre
 
 import (
-	_ "github.com/luyuancpp/protooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	base "login/proto/common/base"
+	_ "login/proto/db"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -86,7 +86,7 @@ const file_proto_centre_centre_player_proto_rawDesc = "" +
 	"\x13CentrePlayerUtility\x12*\n" +
 	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\x12.\n" +
 	"\n" +
-	"KickPlayer\x12\x18.CentreKickPlayerRequest\x1a\x06.Empty\x1a\x05\x80\xa8\xc3\x01\x01B\"\x98\xd4a\x04Z\x19login/proto/centre;centre\x80\x01\x01b\x06proto3"
+	"KickPlayer\x12\x18.CentreKickPlayerRequest\x1a\x06.Empty\x1a\x05\x80\xa8\xc3\x01\x01B\x1b\x98\xd4a\x04Z\x12login/proto/centre\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_centre_centre_player_proto_rawDescOnce sync.Once

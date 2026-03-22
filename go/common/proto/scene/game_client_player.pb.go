@@ -8,7 +8,7 @@ package scene
 
 import (
 	base "common/proto/common/base"
-	_ "github.com/luyuancpp/protooption"
+	_ "common/proto/db"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

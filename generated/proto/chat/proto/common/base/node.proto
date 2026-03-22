@@ -1,4 +1,7 @@
 syntax = "proto3";
+package common.base;
+
+option go_package = "chat/proto/common/base";
 
 enum eNodeType {
   UnknownNodeService     = 0;  // 未知节点服务

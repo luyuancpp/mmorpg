@@ -1,4 +1,6 @@
 syntax = "proto3";
+package common.base;
+
 option go_package = "login/proto/common/base";
 
 enum eNodeType {

@@ -20,17 +20,17 @@ tools/
 | Task | Location | Notes |
 |------|----------|-------|
 | Main script entrypoint | `scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
-| proto-gen source | `proto_generator/pbgen/` | Canonical generator project |
+| proto-gen source | `proto_generator/protogen/` | Canonical generator project |
 | Compatibility proto-gen bundle | `proto/` | Retained for existing local toolchains |
 | Robot entrypoint | `robot_client/main.go` | Enforces one-client-one-goroutine |
-| Archived generator logs | `docs/pbgen/` | Historical runs only |
+| Archived generator logs | `docs/protogen/` | Historical runs only |
 
 ## CONVENTIONS
 - Keep runnable source projects in dedicated subdirectories; do not scatter standalone scripts across `tools/` root.
 - Put reports/dumps/snapshots under `docs/`.
 - Keep temp generation output under ignored paths like `generated/` and local binaries.
 - `tools/scripts/dev_tools.ps1` is the preferred shell entrypoint for routine commands.
-- `tools/proto_generator/pbgen` is the canonical proto-gen project; `tools/proto/pbgen` exists for compatibility.
+- `tools/proto_generator/protogen` is the canonical proto-gen project; `tools/proto/protogen` exists for compatibility.
 - Robot client logic assumes one client binds to exactly one goroutine.
 
 ## ANTI-PATTERNS
@@ -43,7 +43,7 @@ tools/
 ```bash
 pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
 pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run
-pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/pbgen/etc/proto_gen.yaml
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.yaml
 pwsh -File tools/scripts/dev_tools.ps1 -Command tree
 pwsh -File tools/scripts/dev_tools.ps1 -Command naming-audit
 pwsh -File tools/scripts/dev_tools.ps1 -Command naming-apply -MaxChanges 100

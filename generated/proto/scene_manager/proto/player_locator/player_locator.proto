@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+option go_package = "scene_manager/proto/player_locator";
 package playerlocator;
 
 import "proto/common/base/empty.proto";

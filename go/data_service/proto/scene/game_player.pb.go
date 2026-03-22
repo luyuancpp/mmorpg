@@ -7,7 +7,7 @@
 package scene
 
 import (
-	_ "github.com/luyuancpp/protooption"
+	_ "data_service/proto/db"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"

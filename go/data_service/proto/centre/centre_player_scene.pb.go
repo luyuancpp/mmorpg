@@ -8,7 +8,7 @@ package centre
 
 import (
 	base "data_service/proto/common/base"
-	_ "github.com/luyuancpp/protooption"
+	_ "data_service/proto/db"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -193,7 +193,7 @@ const file_proto_centre_centre_player_scene_proto_rawDesc = "" +
 	"\n" +
 	"LeaveScene\x12\x18.CentreLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12l\n" +
 	"!LeaveSceneAsyncSavePlayerComplete\x12/.CentreLeaveSceneAsyncSavePlayerCompleteRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.Empty\x1a\x05\x80\xa8\xc3\x01\x01B)\x98\xd4a\x04Z data_service/proto/centre;centre\x80\x01\x01b\x06proto3"
+	"\fSceneInfoC2S\x12\x17.CentreSceneInfoRequest\x1a\x16.google.protobuf.Empty\x1a\x05\x80\xa8\xc3\x01\x01B\"\x98\xd4a\x04Z\x19data_service/proto/centre\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_centre_centre_player_scene_proto_rawDescOnce sync.Once

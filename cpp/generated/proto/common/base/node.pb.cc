@@ -24,6 +24,10 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
+namespace common {
+namespace base {
+}  // namespace base
+}  // namespace common
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
     file_level_enum_descriptors_proto_2fcommon_2fbase_2fnode_2eproto[3];
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -34,33 +38,33 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
     file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2fnode_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\034proto/common/base/node.proto*\313\004\n\teNode"
-    "Type\022\026\n\022UnknownNodeService\020\000\022\024\n\020SceneNod"
-    "eService\020\003\022\023\n\017GateNodeService\020\004\022\024\n\020Login"
-    "NodeService\020\005\022\024\n\020RedisNodeService\020\006\022\023\n\017E"
-    "tcdNodeService\020\007\022\023\n\017MailNodeService\020\010\022\023\n"
-    "\017ChatNodeService\020\t\022\023\n\017TeamNodeService\020\n\022"
-    "\027\n\023ActivityNodeService\020\013\022\024\n\020TradeNodeSer"
-    "vice\020\014\022\023\n\017RankNodeService\020\r\022\023\n\017TaskNodeS"
-    "ervice\020\016\022\024\n\020GuildNodeService\020\017\022\024\n\020MatchN"
-    "odeService\020\020\022\021\n\rAiNodeService\020\021\022\022\n\016LogNo"
-    "deService\020\022\022\026\n\022PaymentNodeService\020\023\022\027\n\023S"
-    "ecurityNodeService\020\024\022\032\n\026CrossServerNodeS"
-    "ervice\020\025\022\030\n\024AnalyticsNodeService\020\026\022\021\n\rGm"
-    "NodeService\020\027\022\034\n\030PlayerLocatorNodeServic"
-    "e\020\030\022\033\n\027SceneManagerNodeService\020\031\022\032\n\026Data"
-    "ServiceNodeService\020\032*g\n\016eSceneNodeType\022\022"
-    "\n\016kMainSceneNode\020\000\022\016\n\nkSceneNode\020\001\022\027\n\023kM"
-    "ainSceneCrossNode\020\002\022\030\n\024kSceneSceneCrossN"
-    "ode\020\003*K\n\021eNodeProtocolType\022\020\n\014PROTOCOL_T"
-    "CP\020\000\022\021\n\rPROTOCOL_GRPC\020\001\022\021\n\rPROTOCOL_HTTP"
-    "\020\002b\006proto3"
+    "\n\034proto/common/base/node.proto\022\013common.b"
+    "ase*\313\004\n\teNodeType\022\026\n\022UnknownNodeService\020"
+    "\000\022\024\n\020SceneNodeService\020\003\022\023\n\017GateNodeServi"
+    "ce\020\004\022\024\n\020LoginNodeService\020\005\022\024\n\020RedisNodeS"
+    "ervice\020\006\022\023\n\017EtcdNodeService\020\007\022\023\n\017MailNod"
+    "eService\020\010\022\023\n\017ChatNodeService\020\t\022\023\n\017TeamN"
+    "odeService\020\n\022\027\n\023ActivityNodeService\020\013\022\024\n"
+    "\020TradeNodeService\020\014\022\023\n\017RankNodeService\020\r"
+    "\022\023\n\017TaskNodeService\020\016\022\024\n\020GuildNodeServic"
+    "e\020\017\022\024\n\020MatchNodeService\020\020\022\021\n\rAiNodeServi"
+    "ce\020\021\022\022\n\016LogNodeService\020\022\022\026\n\022PaymentNodeS"
+    "ervice\020\023\022\027\n\023SecurityNodeService\020\024\022\032\n\026Cro"
+    "ssServerNodeService\020\025\022\030\n\024AnalyticsNodeSe"
+    "rvice\020\026\022\021\n\rGmNodeService\020\027\022\034\n\030PlayerLoca"
+    "torNodeService\020\030\022\033\n\027SceneManagerNodeServ"
+    "ice\020\031\022\032\n\026DataServiceNodeService\020\032*g\n\016eSc"
+    "eneNodeType\022\022\n\016kMainSceneNode\020\000\022\016\n\nkScen"
+    "eNode\020\001\022\027\n\023kMainSceneCrossNode\020\002\022\030\n\024kSce"
+    "neSceneCrossNode\020\003*K\n\021eNodeProtocolType\022"
+    "\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPROTOCOL_GRPC\020\001\022\021\n\r"
+    "PROTOCOL_HTTP\020\002B\rZ\013common/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto = {
     false,
     false,
-    810,
+    838,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fnode_2eproto,
     "proto/common/base/node.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto_once,
@@ -73,6 +77,8 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
     file_level_enum_descriptors_proto_2fcommon_2fbase_2fnode_2eproto,
     file_level_service_descriptors_proto_2fcommon_2fbase_2fnode_2eproto,
 };
+namespace common {
+namespace base {
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eNodeType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto);
   return file_level_enum_descriptors_proto_2fcommon_2fbase_2fnode_2eproto[0];
@@ -92,6 +98,8 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eNodeProtocolType_des
 PROTOBUF_CONSTINIT const uint32_t eNodeProtocolType_internal_data_[] = {
     196608u, 0u, };
 // @@protoc_insertion_point(namespace_scope)
+}  // namespace base
+}  // namespace common
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
