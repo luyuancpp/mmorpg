@@ -29,19 +29,17 @@ enum class NodeIdConflictReason
 
 class Node : muduo::noncopyable {
 public:
-    // 类型定义
     using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
     using ServiceList = std::vector<::google::protobuf::Service*>;
     using CanConnectNodeTypeList = std::set<uint32_t>;
 	using ClientList = std::vector<RpcClientPtr>;
 
-    using PartitionClassGuid = std::vector<int32_t>;
+    using PartitionClassIds = std::vector<int32_t>;
 
-    // 构造与析构
     explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
     virtual ~Node();
 
-    // 基本信息获取
+    // Basic information accessors
     int64_t GetLeaseId() const;
     muduo::net::EventLoop* GetLoop() { return eventLoop; }
     NodeId GetNodeId() const { return GetNodeInfo().node_id(); }
@@ -50,7 +48,7 @@ public:
 	KafkaManager& GetKafkaManager() { return kafkaManager; }
     virtual google::protobuf::Service* GetNodeReplyService() { return nullptr; }
     muduo::AsyncLogging& Log() { return logSystem; }
-    ClientList& GetZombieClientList() { return zombieClientList; }
+    ClientList& GetDisconnectedClientList() { return disconnectedClientList; }
     CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
 	NodeHandshakeManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
     ServiceDiscoveryManager& GetServiceDiscoveryManager() { return serviceDiscoveryManager; }
@@ -60,7 +58,7 @@ public:
 	EtcdManager& GetEtcdManager() { return etcdManager; }
 	grpc_channel_cache::GrpcChannelCache& GetGrpcChannelCache() { return grpcChannelCache; }
 
-    // 节点注册与服务处理
+    // Node registration and service handling
     void HandleServiceNodeStop(const std::string& key, const std::string& nodeJson);
 
     virtual void StartRpcServer();
@@ -75,11 +73,11 @@ public:
 	// After this returns, the process will terminate.
 	virtual void OnNodeIdConflictShutdown(NodeIdConflictReason reason);
 
-	// 工具与状态判断
+	// Utility and state queries
     bool IsCurrentNode(const NodeInfo& candidateNode) const;
 	bool IsServiceStarted() { return rpcServer != nullptr; }
 protected:
-    // 初始化相关
+    // Initialization
     void InitRpcServer();
     void Initialize();
     void InitLogSystem();
@@ -98,13 +96,13 @@ protected:
     static void AsyncOutput(const char* msg, int len);
     void StartNodeRegistrationHealthMonitor();
 
-    // 事件处理
+    // Event handling
     void OnServerConnected(const OnConnected2TcpServerEvent& connectedEvent);
 
     void Shutdown();
     void ShutdownInLoop();
 
-    // 成员变量
+    // Member variables
     muduo::net::EventLoop* eventLoop;
     muduo::AsyncLogging logSystem;
     RpcServerPtr rpcServer;
@@ -115,7 +113,7 @@ protected:
 	TimerTaskComp kafkaProducerTimer;
 	TimerTaskComp kafkaConsumerTimer;
     CanConnectNodeTypeList targetNodeTypeWhitelist;
-    ClientList zombieClientList;
+    ClientList disconnectedClientList;
     std::unordered_map<std::string,int64_t> revision;
     bool hasSentRange{ false };
     bool hasSentWatch{ false };

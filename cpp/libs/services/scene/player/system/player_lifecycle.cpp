@@ -62,7 +62,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 {
 	LOG_INFO << "HandlePlayerAsyncSaved: Saving complete for player: " << playerId;
 
-	//todo session 啥时候删除？
+	// TODO: When should session be deleted?
 
 	auto playerEntity = GetPlayer(playerId);
 	HandleCrossZoneTransfer(playerEntity);
@@ -71,11 +71,10 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 	{
 		LOG_INFO << "Player marked for unregistration: " << playerId;
 
-		//存储完毕之后才删除,有没有更好办法做到先删除session 再存储
+		// Must complete save before deleting session; consider better ordering
 		RemovePlayerSession(playerId);
 		LOG_INFO << "Player session removed";
-		//todo 会不会有问题
-		//存储完毕从gs删除玩家
+		// TODO: Verify no race condition on destroy-after-save ordering
 		DestroyPlayer(playerId);
 	}
 
@@ -83,16 +82,17 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 	// player_locator lease handles reconnect gating via Redis TTL.
 }
 
-//考虑: 没load 完再次进入别的gs
+// CONSIDER: handle reentry into a different scene node while load is still in progress
 void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
 	LOG_INFO << "EnterGs: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering Game Node";
 
 	// Centre decommissioned: no longer track centre_node_id or send CentreEnterGsSucceed.
 	// player_locator (Go service) owns session/location truth via Redis.
-	//todo Centre 重新启动以后
-	//todo gs更新了对应的gate之后 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，
-	//进入game_node a, 再进入game_node b 两个gs的消息到达客户端消息的顺序不一样,所以说game 还要通知game 还要收到gate 的处理完准备离开game的消息
-	//否则两个不同的gs可能离开场景的消息后于进入场景的消息到达客户端
+	// TODO: After Centre restarts
+	// TODO: After scene node updates its gate, send to client only when ready.
+	//   Message ordering concern: enter scene_node_a then enter scene_node_b —
+	//   leave-scene message from node_a may arrive after enter-scene from node_b.
+	//   Scene node should wait for gate's leave-ack before broadcasting enter events.
 }
 
 void PlayerLifecycleSystem::NotifyEnterSceneSucceed(entt::entity /*player*/, NodeId /*centreNodeId*/)

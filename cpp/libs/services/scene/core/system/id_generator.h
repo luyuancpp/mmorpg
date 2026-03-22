@@ -8,7 +8,6 @@ class ThreadLocalIdGeneratorManager {
 public:
     ThreadLocalIdGeneratorManager() = default;
 
-    // 禁止拷贝和移动，确保单例唯一性
     ThreadLocalIdGeneratorManager(const ThreadLocalIdGeneratorManager&) = delete;
     ThreadLocalIdGeneratorManager& operator=(const ThreadLocalIdGeneratorManager&) = delete;
 

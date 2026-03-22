@@ -66,7 +66,7 @@ bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEnti
 	const auto& viewerTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(viewer);
 	const auto& targetTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(targetEntity);
 
-	// 获取观察者和目标实体的位置
+	// Get observer and target entity positions
 	const dtReal viewerLocation[] = {
 		viewerTransform.location().x(),
 		viewerTransform.location().y(),
@@ -78,7 +78,7 @@ bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEnti
 		targetTransform.location().z()
 	};
 
-	// 计算实体间的距离，并检查是否在视野范围内
+	// Compute distance and check whether it's within view range
 	return dtVdist(viewerLocation, targetLocation) <= visionRadius;
 }
 
@@ -94,7 +94,7 @@ double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity
 	auto& transform1 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity1);
 	auto& transform2 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2);
 
-	// 获取两个实体的位置
+	// Get positions of both entities
 	const dtReal location1[] = {
 		transform1.location().x(),
 		transform1.location().y(),
@@ -106,7 +106,7 @@ double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity
 		transform2.location().z()
 	};
 
-	// 计算并返回两者之间的距离
+	// Compute and return the distance between entities
 	return dtVdist(location1, location2);
 }
 
@@ -147,25 +147,25 @@ void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uin
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
     auto& transform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity);
 
-    // 计算目标方向
+    // Compute direction towards target
     dtReal targetLocation[] = { pos.x(), pos.y(), pos.z() };
     dtReal location[] = { transform.location().x(), transform.location().y(), transform.location().z() };
     dtReal direction[3] = { 0, 0, 0 };
     dtVsub(direction, targetLocation, location);
 
-    // 归一化方向向量
+    // Normalize the direction vector
     dtVnormalize(direction);
 
-    // 检查方向向量的有效性
+    // Validate direction vector
     if (direction[0] == 0.0 && direction[1] == 0.0 && direction[2] == 0.0) {
-        return; // 如果方向向量为零，退出函数
+        return; // Zero-length direction; can't determine facing
     }
 
-    // 计算旋转的欧拉角
-    float yaw = atan2(direction[0], direction[2]); // 计算绕Y轴的旋转
-    float pitch = asin(direction[1]); // 计算绕X轴的旋转
+    // Compute rotation Euler angles (radians)
+    float yaw = atan2(direction[0], direction[2]);   // Rotation around Y axis
+    float pitch = asin(direction[1]);                 // Rotation around X axis
 
-    // 更新 rotation 为欧拉角（以弧度为单位）
+    // Update transform rotation
     transform.mutable_rotation()->set_x(pitch);
     transform.mutable_rotation()->set_y(yaw);
     transform.mutable_rotation()->set_z(0); // Z轴旋转保持为0

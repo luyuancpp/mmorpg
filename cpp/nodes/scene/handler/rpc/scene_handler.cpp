@@ -96,21 +96,21 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_DEBUG << "Handling EnterGs request for player: " << request->player_id();
 
-	// 1 清除玩家会话，处理连续顶号进入情况
+	// 1. Clear existing player session (handles rapid reconnect / account takeover)
 	PlayerLifecycleSystem::RemovePlayerSessionSilently(request->player_id());
 
 	auto playerIt = tlsPlayerList.find(request->player_id());
 
 	PlayerGameNodeEnteryInfoPBComponent enterInfo;
 
-	// 2 检查玩家是否已经在线，若在线则直接进入
+	// 2. If player is already online, enter scene directly
 	if (playerIt != tlsPlayerList.end())
 	{
 		PlayerLifecycleSystem::EnterScene(playerIt->second, enterInfo);
 		return;
 	}
 
-	// 3 玩家不在线，加入异步加载列表并尝试异步加载
+	// 3. Player not online — add to async load queue
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
 ///<<< END WRITING YOUR CODE
 }
@@ -205,7 +205,6 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-  // 新增：语义化的内部处理函数（处理客户端发来的玩家消息包）
 		if (!request) return;
 
 		const auto& msg = request->message_content();
@@ -248,7 +247,7 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 			return;
 		}
 
-		// 解析请求并做字段检查
+		// Parse request and validate field constraints
 		const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
 		if (!playerRequest->ParsePartialFromArray(msg.serialized_message().data(),
 			static_cast<int32_t>(msg.serialized_message().size())))
@@ -270,24 +269,24 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 			return;
 		}
 
-		// 调用具体的 player service 方法
+		// Dispatch to the concrete player service method
 		const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
 		serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-		// 填充同步响应（如果调用方需要）
+		// Populate synchronous response (if caller expects one)
 		if (response != nullptr && Empty::GetDescriptor() != playerResponse->GetDescriptor()) {
 			response->mutable_message_content()->set_message_id(msg.message_id());
 			response->mutable_message_content()->set_id(msg.id());
 			response->set_session_id(sessionId);
 
-			// 序列化响应
+			// Serialize response
 			const auto byte_size = playerResponse->ByteSizeLong();
 			response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
 			if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
 				static_cast<int32_t>(byte_size)))
 			{
 				LOG_ERROR << "ProcessClientPlayerMessage: Failed to serialize response for message ID: " << msg.message_id();
-				// 若需要，可在此填充 error message
+				// Optionally fill error message here
 			}
 		}
 
@@ -375,7 +374,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 
     std::string errorDetails;
 
-    // 检查字段大小
+    // Validate field sizes
     if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
         LOG_ERROR << errorDetails << " Failed to check request for message ID: "
             << request->message_content().message_id();
@@ -383,7 +382,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
         return;
     }
 
-    // 检查负数
+    // Validate no negative integers
     if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
         LOG_ERROR << errorDetails << " Failed to check request for message ID: "
             << request->message_content().message_id();
@@ -543,7 +542,7 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
     LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
 
     entt::entity sceneEntity{ request->scene_id() };
-    // 可选：检查 sceneEntity 是否有效（SceneCommon 内部通常会校验）
+    // Optional: validate scene entity (SceneCommon usually also checks internally)
     if (!tlsRegistryManager.actorRegistry.valid(sceneEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(sceneEntity)) {
         LOG_ERROR << "EnterScene: invalid scene entity " << request->scene_id();
         return;

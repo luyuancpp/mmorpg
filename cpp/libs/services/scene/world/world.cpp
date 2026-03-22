@@ -57,7 +57,7 @@ void World::Update()
             MovementAccelerationSystem::Update(fixedDeltaTime);
             BuffSystem::Update(fixedDeltaTime);
 
-            //属性计算必须放到最后
+            // Attribute calculation must run last (depends on state changes above)
             ActorAttributeCalculatorSystem::Update(fixedDeltaTime);
             ActorStateAttributeSyncSystem::Update(fixedDeltaTime);
 
