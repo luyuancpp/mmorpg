@@ -15,7 +15,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-// NodeEventType 表示节点事件类型
+// NodeEventType represents a node event type.
 type NodeEventType string
 
 const (
@@ -23,31 +23,31 @@ const (
 	NodeRemoved NodeEventType = "DELETE"
 )
 
-// NodeEvent 是节点事件的结构体
+// NodeEvent represents a node event.
 type NodeEvent struct {
 	Type NodeEventType
 	Info *login_proto.NodeInfo
 }
 
-// NodeWatcher 是节点监视器
+// NodeWatcher watches node events via etcd.
 type NodeWatcher struct {
 	client *clientv3.Client
 	prefix string
 }
 
-// NewNodeWatcher 创建一个新的 NodeWatcher 实例
+// NewNodeWatcher creates a new NodeWatcher instance.
 func NewNodeWatcher(client *clientv3.Client, prefix string) *NodeWatcher {
 	return &NodeWatcher{client: client, prefix: prefix}
 }
 
-// Watch 开启监听，返回一个 channel，通过它实时接收节点事件（上线/下线）
+// Watch starts watching and returns a channel that emits node events (online/offline) in real time.
 func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 	events := make(chan NodeEvent)
 
 	go func(prefix string) {
 		defer close(events)
 
-		// 直接用 etcd client 的 Watch 方法
+		// Use etcd client Watch directly
 		rch := nw.client.Watch(ctx, prefix, clientv3.WithPrefix(), clientv3.WithPrevKV())
 
 		for wresp := range rch {
@@ -56,7 +56,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 				var info login_proto.NodeInfo
 				var data []byte
 
-				// 根据事件类型，选择正确的 data（Value 或 PrevKv.Value）
+				// Select data based on event type (Value or PrevKv.Value)
 				switch ev.Type {
 				case clientv3.EventTypePut:
 					data = ev.Kv.Value
@@ -64,13 +64,13 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 					data = ev.PrevKv.Value
 				}
 
-				// 如果没有数据，跳过该事件
+				// Skip events with no data
 				if len(data) == 0 {
 					logx.Debugf("Empty data for key=%s, event=%s", key, ev.Type)
 					continue
 				}
 
-				// 使用 protojson.Unmarshal 直接反序列化数据
+				// Deserialize with protojson
 				if err := protojson.Unmarshal(data, &info); err != nil {
 					logx.Infof("Invalid protobuf JSON for key=%s: %v", key, err)
 					continue
@@ -78,7 +78,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 
 				logx.Infof("Event Type: %s, Key: %s, NodeInfo: %+v", ev.Type, key, info)
 
-				// 根据事件类型将数据发送到 events 通道
+				// Send event to channel
 				switch ev.Type {
 				case clientv3.EventTypePut:
 					events <- NodeEvent{Type: NodeAdded, Info: &info}
@@ -92,16 +92,14 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 	return events
 }
 
-// Range 获取指定前缀下所有的节点数据
+// Range retrieves all node data under the configured prefix.
 func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
-	// 使用命名空间客户端限定在前缀范围内
 	kv := namespace.NewKV(nw.client, nw.prefix)
 
-	// 设置带有超时的 context，避免长时间阻塞
+	// Timeout context to avoid blocking indefinitely
 	ctx, cancel := context.WithTimeout(context.Background(), config.AppConfig.Timeouts.ServiceDiscoveryTimeout)
 	defer cancel()
 
-	// 获取所有 key
 	resp, err := kv.Get(ctx, "", clientv3.WithPrefix())
 	if err != nil {
 		logx.Errorf("Failed to get keys with prefix %s: %v", nw.prefix, err)
@@ -111,7 +109,7 @@ func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
 	var nodes []login_proto.NodeInfo
 	var wg sync.WaitGroup
 
-	// 使用 channel 和 goroutine 并发解析每个节点
+	// Parse nodes concurrently
 	nodeChan := make(chan login_proto.NodeInfo, len(resp.Kvs))
 
 	for _, kv := range resp.Kvs {
@@ -120,26 +118,24 @@ func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
 			defer wg.Done()
 
 			var nodeInfo login_proto.NodeInfo
-			logx.Debugf("Parsing node data: %s", string(kv.Value)) // 简单输出，以避免过多日志
+			logx.Debugf("Parsing node data: %s", string(kv.Value))
 
-			// 解析 JSON 数据
 			if err := protojson.Unmarshal(kv.Value, &nodeInfo); err != nil {
 				logx.Errorf("Invalid NodeInfo JSON for key=%s: %v", string(kv.Key), err)
 				return
 			}
 
-			// 发送解析结果到 channel
 			nodeChan <- nodeInfo
 		}(kv)
 	}
 
-	// 等待所有 goroutine 完成解析
+	// Wait for all goroutines to finish
 	go func() {
 		wg.Wait()
 		close(nodeChan)
 	}()
 
-	// 收集所有解析成功的节点信息
+	// Collect parsed nodes
 	for nodeInfo := range nodeChan {
 		nodes = append(nodes, nodeInfo)
 	}
@@ -147,9 +143,8 @@ func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
 	return nodes, nil
 }
 
-// fetchAllNodes 获取所有节点的信息
+// FetchAllNodes retrieves all registered node info.
 func (nw *NodeWatcher) FetchAllNodes() ([]login_proto.NodeInfo, error) {
-	// 调用 Range 方法获取所有节点信息
 	nodes, err := nw.Range()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch nodes: %v", err)
@@ -157,19 +152,15 @@ func (nw *NodeWatcher) FetchAllNodes() ([]login_proto.NodeInfo, error) {
 	return nodes, nil
 }
 
-// startWatching 启动 Watch，监听节点变动事件
+// StartWatching starts the Watch loop and processes node events.
 func (nw *NodeWatcher) StartWatching() {
-	// 启动 Watch，实时处理节点事件
 	events := nw.Watch(context.Background())
 
-	// 处理事件
 	for event := range events {
 		switch event.Type {
 		case NodeAdded:
-			// 处理节点添加事件
 			log.Printf("Node Added: %+v", event.Info)
 		case NodeRemoved:
-			// 处理节点删除事件
 			log.Printf("Node Removed: %+v", event.Info)
 		}
 	}

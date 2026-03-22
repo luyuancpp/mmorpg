@@ -18,40 +18,36 @@ type Node struct {
 	Info         *login_proto.NodeInfo
 	reg          *etcd.NodeRegistry
 	Client       *clientv3.Client
-	cancelFunc   context.CancelFunc // 用于取消 KeepAlive goroutine
-	keepAliveCtx context.Context    // 控制 KeepAlive 的上下文
+	cancelFunc   context.CancelFunc // Cancels the KeepAlive goroutine
+	keepAliveCtx context.Context    // Controls the KeepAlive lifecycle
 }
 
-// GetRpcPrefix 根据 NodeType 返回对应的 RPC 路径
+// GetRpcPrefix returns the RPC path prefix for a given NodeType.
 func GetRpcPrefix(nodeType uint32) string {
-	// 获取对应的 NodeType 名称并拼接 ".rpc"
 	return fmt.Sprintf("%s.rpc", login_proto.ENodeType_name[int32(nodeType)])
 }
 
-// BuildRpcPrefix 生成不包含 node_id 的路径
+// BuildRpcPrefix generates the path without node_id.
 func BuildRpcPrefix(serviceName string, zoneId, nodeType uint32) string {
 	return fmt.Sprintf("%s.rpc/zone/%d/node_type/%d/", serviceName, zoneId, nodeType)
 }
 
-// BuildRpcPath 生成包含 node_id 的完整路径
+// BuildRpcPath generates the full path including node_id.
 func BuildRpcPath(serviceName string, zoneId, nodeType, nodeId uint32) string {
 	return fmt.Sprintf("%s/zone/%d/node_type/%d/node_id/%d", serviceName, zoneId, nodeType, nodeId)
 }
 
 func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
-	// 初始化 Etcd 客户端
 	client, err := etcd.NewClient()
 	if err != nil {
 		return nil
 	}
 
-	// 创建节点注册表
 	reg, err := etcd.NewNodeRegistry(client, ttl)
 	if err != nil {
 		return nil
 	}
 
-	// 创建节点信息
 	info := &login_proto.NodeInfo{
 		NodeId:   uint32(time.Now().UnixNano()),
 		NodeType: nodeType,
@@ -80,14 +76,12 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 	}
 }
 
-// 新增 Node 类型的 Close 方法
+// Close stops the KeepAlive goroutine, deletes the node key, and revokes the lease.
 func (n *Node) Close() error {
-	// 停止 KeepAlive goroutine
 	if n.cancelFunc != nil {
 		n.cancelFunc()
 	}
 
-	// 删除节点注册信息的 key
 	key := BuildRpcPath(GetRpcPrefix(n.Info.NodeType), n.Info.ZoneId, n.Info.NodeType, n.Info.NodeId)
 	_, err := n.Client.Delete(context.Background(), key)
 	if err != nil {
@@ -95,7 +89,7 @@ func (n *Node) Close() error {
 		return fmt.Errorf("failed to delete node key: %v", err)
 	}
 
-	// 取消租约
+	// Revoke the lease
 	err = n.reg.RevokeLease()
 	if err != nil {
 		logx.Error("Failed to revoke lease: %v", err)
@@ -105,13 +99,9 @@ func (n *Node) Close() error {
 	return nil
 }
 
-// KeepAlive 更新以支持取消上下文
+// KeepAlive starts a cancellable keep-alive loop.
 func (n *Node) KeepAlive() error {
-	// 创建一个可以取消的 context
 	n.keepAliveCtx, n.cancelFunc = context.WithCancel(context.Background())
-
-	// 调用 NodeRegistry 中的 KeepAlive
 	n.reg.KeepAlive(n.keepAliveCtx)
-
 	return nil
 }

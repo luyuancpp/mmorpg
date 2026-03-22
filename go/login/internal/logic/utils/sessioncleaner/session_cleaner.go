@@ -26,12 +26,12 @@ func CleanupSession(
 			logx.Errorf("[%s] Delete FSM state failed: account=%s, err=%v", logicTag, account, err)
 		}
 
-		// 删除设备集合
+		// Delete device set
 		deviceKey := constants.GenerateSessionKey(account)
 		_ = redisClient.SRem(ctx, deviceKey, sessionId).Err()
 	}
 
-	// 删除 RedisClient session
+	// Delete Redis session
 	if err := loginsessionstore.DeleteLoginSession(ctx, redisClient, sessionId); err != nil {
 		logx.Errorf("[%s] Delete session from RedisClient failed: sessionId=%d, err=%v", logicTag, sessionId, err)
 	}

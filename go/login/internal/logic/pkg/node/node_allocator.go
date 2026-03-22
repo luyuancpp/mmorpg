@@ -20,9 +20,9 @@ func NewNodeAllocator(client *clientv3.Client, prefix string) *NodeAllocator {
 	return &NodeAllocator{Client: client, Prefix: prefix}
 }
 
-// TryAllocateNodeID 尝试分配一个 node_id（复用已有空位），最大向上找空位
+// TryAllocateNodeID tries to allocate a node_id (reusing empty slots), searching upward for gaps.
 func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *login_proto.NodeInfo, leaseID clientv3.LeaseID) (uint32, error) {
-	// 获取现有节点
+	// Get existing nodes
 	resp, err := na.Client.Get(ctx, na.Prefix, clientv3.WithPrefix())
 	if err != nil {
 		return 0, err
@@ -47,7 +47,7 @@ func (na *NodeAllocator) TryAllocateNodeID(ctx context.Context, info *login_prot
 
 	searchRange := maxID + 10
 
-	// 向上查找可用 ID
+	// Search upward for an available ID
 	for id := uint32(0); id < searchRange; id++ {
 		if !usedIDs[id] {
 			ok, err := na.putIfAbsent(ctx, id, info, leaseID)
@@ -68,17 +68,16 @@ func (na *NodeAllocator) putIfAbsent(ctx context.Context, nodeID uint32, info *l
 
 	info.NodeId = nodeID
 
-	// 使用 protojson.Marshal 序列化
+	// Serialize with protojson
 	result, err := protojson.Marshal(info)
 	if err != nil {
 		logx.Errorf("Error marshaling: %v", err)
 		return false, err
 	}
 
-	// 将 []byte 转换为 string
 	resultStr := string(result)
 
-	// 使用转换后的字符串执行 Etcd 操作
+	// Use Etcd transaction for compare-and-swap
 	txn := na.Client.Txn(ctx)
 	txnResp, err := txn.If(
 		clientv3.Compare(clientv3.Version(key), "=", 0),

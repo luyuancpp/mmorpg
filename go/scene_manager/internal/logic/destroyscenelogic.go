@@ -25,7 +25,6 @@ func NewDestroySceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Dest
 	}
 }
 
-// 销毁场景
 func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) (*base.Empty, error) {
 	key := fmt.Sprintf("scene:%d:node", in.SceneId)
 

@@ -29,7 +29,7 @@ func NewEnterSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterS
 	}
 }
 
-// 请求某玩家进入场景，SceneManager 负责路由到具体 Scene 节点
+// EnterScene routes a player into a scene, managed by SceneManager.
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
 	// 1. Check if scene is on this node
 	key := fmt.Sprintf("scene:%d:node", in.SceneId)

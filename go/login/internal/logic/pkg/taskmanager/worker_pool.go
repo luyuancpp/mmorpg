@@ -9,7 +9,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// TaskExecutor 管理多个TaskManager，每个对应一个worker池
+// TaskExecutor manages multiple TaskManagers, each backed by a worker pool.
 type TaskExecutor struct {
 	pools        []*ants.Pool
 	taskManagers []*TaskManager
@@ -18,7 +18,7 @@ type TaskExecutor struct {
 	cancel       context.CancelFunc
 }
 
-// NewTaskExecutor 创建任务执行器
+// NewTaskExecutor creates a task executor.
 func NewTaskExecutor(workerCount int, redis redis.Cmdable) (*TaskExecutor, error) {
 	if workerCount <= 0 {
 		workerCount = 16
@@ -51,7 +51,7 @@ func NewTaskExecutor(workerCount int, redis redis.Cmdable) (*TaskExecutor, error
 	}, nil
 }
 
-// SubmitTask 提交任务到对应worker的TaskManager
+// SubmitTask submits a task to the corresponding worker's TaskManager.
 func (te *TaskExecutor) SubmitTask(taskKey string) error {
 	idx := te.hashKey(taskKey)
 	return te.pools[idx].Submit(func() {
@@ -61,13 +61,13 @@ func (te *TaskExecutor) SubmitTask(taskKey string) error {
 	})
 }
 
-// GetTaskManagerByKey 根据taskKey获取对应的TaskManager
+// GetTaskManagerByKey returns the TaskManager for a given taskKey.
 func (te *TaskExecutor) GetTaskManagerByKey(taskKey string) *TaskManager {
 	idx := te.hashKey(taskKey)
 	return te.taskManagers[idx]
 }
 
-// Release 释放资源
+// Release releases all worker pools.
 func (te *TaskExecutor) Release() {
 	for _, p := range te.pools {
 		p.Release()
@@ -75,7 +75,7 @@ func (te *TaskExecutor) Release() {
 	te.cancel()
 }
 
-// hashKey 计算key的哈希值，映射到worker索引
+// hashKey maps a key to a worker index via FNV hash.
 func (te *TaskExecutor) hashKey(key string) int {
 	h := fnv.New32a()
 	_, err := h.Write([]byte(key))

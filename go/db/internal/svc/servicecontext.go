@@ -17,8 +17,8 @@ func NewServiceContext() *ServiceContext {
 		Config: config.AppConfig,
 		RedisClient: redis.NewClient(&redis.Options{
 			Addr:     redisCfg.Hosts,
-			Password: redisCfg.Password, // 如果有密码
-			DB:       redisCfg.DB,       // 默认 0
+			Password: redisCfg.Password,
+			DB:       redisCfg.DB,
 		}),
 	}
 }

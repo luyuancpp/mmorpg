@@ -7,7 +7,7 @@ import (
 
 var loadSuccessCallback func()
 
-// LoadTables 加载所有配置表（同步）
+// LoadTables loads all config tables synchronously.
 func LoadTables(configDir string) {
     if err := ActorActionCombatStateTableManagerInstance.Load(configDir); err != nil {
         log.Fatalf("failed to load ActorActionCombatState table: %%v", err)
@@ -69,7 +69,7 @@ func LoadTables(configDir string) {
     }
 }
 
-// LoadTablesAsync 异步加载所有配置表（使用 goroutines + WaitGroup）
+// LoadTablesAsync loads all config tables concurrently.
 func LoadTablesAsync(configDir string) {
     var wg sync.WaitGroup
     wg.Add(18)
@@ -189,7 +189,7 @@ func LoadTablesAsync(configDir string) {
     }
 }
 
-// OnTablesLoadSuccess 注册加载完成后的回调
+// OnTablesLoadSuccess registers a callback invoked after all tables are loaded.
 func OnTablesLoadSuccess(cb func()) {
     loadSuccessCallback = cb
 }

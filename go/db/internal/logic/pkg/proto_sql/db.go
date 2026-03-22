@@ -5,6 +5,7 @@ import (
 	"db/internal/config"
 	_ "db/proto/common/database"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -34,18 +35,15 @@ func newMysqlConfig() *mysql.Config {
 	return myCnf
 }
 
-// 创建数据库的函数
 func CreateDatabase() error {
-	// 使用不包含数据库名的连接配置
 	mysqlConfig := newMysqlConfig()
-	mysqlConfig.DBName = "" // 确保不指定数据库名
+	mysqlConfig.DBName = ""
 
 	conn, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
 		return fmt.Errorf("error creating MySQL connector: %w", err)
 	}
 
-	// 创建一个与 MySQL 服务器的连接
 	tempDB := sql.OpenDB(conn)
 	defer func() {
 		if err := tempDB.Close(); err != nil {
@@ -53,22 +51,24 @@ func CreateDatabase() error {
 		}
 	}()
 
-	// 执行创建数据库的 SQL 语句
 	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.AppConfig.ServerConfig.Database.DBName))
 	if err != nil {
-		logx.Error("error creating database: %w", err)
+		logx.Errorf("error creating database: %v", err)
 		return err
 	}
 
 	return nil
 }
 
-func openDB() error {
-	// 创建数据库
-	if err := CreateDatabase(); err != nil {
-		return err
+func isUnknownDatabaseError(err error) bool {
+	var mysqlErr *mysql.MySQLError
+	if errors.As(err, &mysqlErr) {
+		return mysqlErr.Number == 1049
 	}
+	return false
+}
 
+func openDB() error {
 	mysqlConfig := newMysqlConfig()
 	conn, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
@@ -76,8 +76,32 @@ func openDB() error {
 		return err
 	}
 
+	databaseHandle := sql.OpenDB(conn)
+	if err := databaseHandle.Ping(); err != nil {
+		_ = databaseHandle.Close()
+		if !isUnknownDatabaseError(err) {
+			return err
+		}
+
+		if err := CreateDatabase(); err != nil {
+			return err
+		}
+
+		conn, err = mysql.NewConnector(mysqlConfig)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+
+		databaseHandle = sql.OpenDB(conn)
+		if err := databaseHandle.Ping(); err != nil {
+			_ = databaseHandle.Close()
+			return err
+		}
+	}
+
 	DB = &GameDB{
-		DB:       sql.OpenDB(conn),
+		DB:       databaseHandle,
 		SqlModel: proto2mysql.NewPbMysqlDB(),
 	}
 
@@ -98,50 +122,41 @@ func InitDB() {
 	CreateOrUpdateTable()
 }
 
-// 读取 JSON 文件并返回包含消息类型名称的切片
+// readJSONFile reads a JSON file and returns the message type names.
 func readJSONFile(filePath string) ([]string, error) {
-	// 读取文件内容
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	// 定义结构体用来解析 JSON 数据
 	var jsonData struct {
 		Messages []string `json:"messages"`
 	}
 
-	// 解析 JSON 内容
 	err = json.Unmarshal(data, &jsonData)
 	if err != nil {
 		return nil, err
 	}
 
-	// 返回消息类型名称切片
 	return jsonData.Messages, nil
 }
 
-// 根据消息类型名称动态创建 Protobuf 消息实例
 func getTablesFromJSON() ([]proto.Message, error) {
-	// 读取 JSON 文件
 	messageNames, err := readJSONFile(config.AppConfig.ServerConfig.JsonPath)
 	if err != nil {
-		return nil, fmt.Errorf("读取 JSON 文件出错: %v", err)
+		return nil, fmt.Errorf("read JSON file failed: %v", err)
 	}
 
 	var messages []proto.Message
 
-	// 遍历消息类型名称
 	for _, typeName := range messageNames {
-		// 动态查找 Protobuf 消息类型
 		msgType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typeName))
 		if err != nil {
 			logx.Error(err)
 			continue
 		}
 
-		// 使用 msgType.New() 创建新的 Protobuf 消息实例
-		msg := msgType.New().Interface() // 返回 proto.Message 类型
+		msg := msgType.New().Interface()
 		messages = append(messages, msg)
 	}
 
@@ -149,7 +164,7 @@ func getTablesFromJSON() ([]proto.Message, error) {
 }
 
 func CreateOrUpdateTable() {
-	tables, err := getTablesFromJSON() // 处理返回的错误
+	tables, err := getTablesFromJSON()
 	if err != nil {
 		log.Fatalf("error getting tables: %v", err)
 		return

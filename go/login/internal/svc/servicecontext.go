@@ -34,7 +34,7 @@ type ServiceContext struct {
 func NewServiceContext() *ServiceContext {
 	ctx := context.Background()
 
-	// 初始化 Redis 客户端配置
+	// Initialize Redis client
 	redisHost := config.AppConfig.Node.RedisClient.Host
 	redisPassword := config.AppConfig.Node.RedisClient.Password
 	redisDB := int(config.AppConfig.Node.RedisClient.DB)
@@ -57,8 +57,8 @@ func NewServiceContext() *ServiceContext {
 	}
 
 	monitor, err := kafka.NewExpandMonitor(
-		config.AppConfig.Kafka.BootstrapServers, // Kafka broker地址，配置文件中新增
-		config.AppConfig.Kafka.Topic,            // 消费者组ID，配置文件中新增
+		config.AppConfig.Kafka.BootstrapServers, // Kafka broker address
+		config.AppConfig.Kafka.Topic,            // Consumer group ID
 		redisClient,
 		kafkaClient,
 		1*time.Second,
@@ -69,17 +69,16 @@ func NewServiceContext() *ServiceContext {
 		panic(err)
 	}
 
-	// 初始化 TaskExecutor
+	// Initialize TaskExecutor
 	taskExecutor, err := taskmanager.NewTaskExecutor(100, redisClient)
 	if err != nil {
 		panic(fmt.Errorf("failed to init TaskExecutor: %w", err))
 	}
 
-	// 初始化 player_locator gRPC 客户端 (通过 etcd 发现)
+	// Initialize player_locator gRPC client (discovered via etcd)
 	plConn := zrpc.MustNewClient(config.AppConfig.PlayerLocatorRpc)
 	plClient := plpb.NewPlayerLocatorClient(plConn.Conn())
 
-	// 返回 ServiceContext 实例
 	return &ServiceContext{
 		RedisClient:         redisClient,
 		KafkaClient:         kafkaClient,

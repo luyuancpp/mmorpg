@@ -5,8 +5,9 @@ package locker
 import (
 	"context"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type AccountLocker struct {
@@ -14,7 +15,6 @@ type AccountLocker struct {
 	lockTTL     time.Duration
 }
 
-// 构造器
 func NewAccountLocker(redisClient *redis.Client, ttl time.Duration) *AccountLocker {
 	return &AccountLocker{
 		redisClient: redisClient,
@@ -22,24 +22,23 @@ func NewAccountLocker(redisClient *redis.Client, ttl time.Duration) *AccountLock
 	}
 }
 
-// 构造通用锁 key（例如 account_lock:login:my_account）
+// lockKey builds the lock key (e.g. account_lock:login:my_account).
 func (l *AccountLocker) lockKey(account string, lockType string) string {
 	return fmt.Sprintf("account_lock:%s:%s", lockType, account)
 }
 
-// 通用加锁方法
+// Acquire acquires a lock for the given account and lock type.
 func (l *AccountLocker) Acquire(ctx context.Context, account string, lockType string) (bool, error) {
 	key := l.lockKey(account, lockType)
 	return l.redisClient.SetNX(ctx, key, "1", l.lockTTL).Result()
 }
 
-// 通用释放方法
+// Release releases the lock for the given account and lock type.
 func (l *AccountLocker) Release(ctx context.Context, account string, lockType string) error {
 	key := l.lockKey(account, lockType)
 	return l.redisClient.Del(ctx, key).Err()
 }
 
-// 可选：封装简洁调用
 func (l *AccountLocker) AcquireLogin(ctx context.Context, account string) (bool, error) {
 	return l.Acquire(ctx, account, "login")
 }

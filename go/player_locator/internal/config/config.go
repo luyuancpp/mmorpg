@@ -8,11 +8,11 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	Redis    RedisConf    `json:"Redis"`
-	Kafka    KafkaConf    `json:"Kafka"`
-	Node     NodeConf     `json:"Node"`
-	Registry RegistryConf `json:"Registry"`
-	Lease    LeaseConf    `json:"Lease"`
+	RedisClient RedisConf    `json:"RedisClient"`
+	Kafka       KafkaConf    `json:"Kafka"`
+	Node        NodeConf     `json:"Node"`
+	Registry    RegistryConf `json:"Registry"`
+	Lease       LeaseConf    `json:"Lease"`
 }
 
 type RedisConf struct {

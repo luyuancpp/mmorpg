@@ -49,10 +49,10 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 
 func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_proto.EnterGameResponse, error) {
 	resp := &login_proto.EnterGameResponse{ErrorMessage: &login_proto_common.TipInfoMessage{}}
-	// 1. 创建带超时的上下文（支持主动取消，保留原有超时配置）
+	// 1. Create timeout context (supports cancellation, preserves existing timeout config)
 	ctx := l.ctx
 
-	// 1. 获取 Session（原始步骤1，不改动）
+	// 1. Get Session
 	sessionDetails, ok := ctxkeys.GetSessionDetails(ctx)
 	if !ok || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found or empty in context during login")
@@ -60,7 +60,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 2. 获取 LoginSessionInfo（原始步骤2，不改动）
+	// 2. Get LoginSessionInfo
 	session, err := loginsessionstore.GetLoginSession(ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
 	if err != nil {
 		logx.Errorf("GetLoginSession failed: %v", err)
@@ -68,7 +68,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 3. 加锁防止同角色并发登录（原始步骤3，不改动）
+	// 3. Lock to prevent concurrent login for the same player
 	playerLocker := locker.NewRedisLocker(l.svcCtx.RedisClient)
 	key := "player_locker:" + strconv.FormatUint(in.PlayerId, 10)
 	tryLocker, err := playerLocker.TryLock(ctx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
@@ -104,7 +104,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		}
 	}()
 
-	// 4. 加载账号信息并验证角色归属（原始步骤4，不改动）
+	// 4. Load account data and verify player ownership
 	accountKey := constants.GetAccountDataKey(session.Account)
 	dataBytes, err := l.svcCtx.RedisClient.Get(ctx, accountKey).Bytes()
 	if err != nil {
@@ -132,7 +132,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 5. FSM 状态管理（按 sessionId）（原始步骤5，不改动）
+	// 5. FSM state management (by sessionId)
 	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
 	f := data.InitPlayerFSM()
 	if err := fsmstore.LoadFSMState(ctx, l.svcCtx.RedisClient, f, sessionIdStr, ""); err != nil {
@@ -147,19 +147,16 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 6. 加载 Player 数据（改造核心：同步等待任务完成，保留原有逻辑）
+	// 6. Load Player data (core refactor: sync wait for task completion)
 
-	// 调用数据加载接口，传入带计数的回调
 	err = l.ensurePlayerDataInRedis(ctx, in.PlayerId, taskCallback)
 	if err != nil {
-		// 错误日志：包含操作描述、玩家ID和错误详情
 		logx.Errorf("failed to ensure player data in redis [PlayerId=%d, error=%v]", in.PlayerId, err)
 	} else {
-		// 成功日志（可选，根据需要开启，建议用Debug级别减少冗余）
 		logx.Debugf("succeeded in ensuring player data in redis [PlayerId=%d]", in.PlayerId)
 	}
 
-	// 7. 清理 Session 和 FSM（原始步骤7，不改动）
+	// 7. Clean up Session and FSM
 	cleanupLoginSessionState(ctx, l.svcCtx, sessionDetails.SessionId, "enterGame")
 
 	resp.PlayerId = in.PlayerId
@@ -247,13 +244,12 @@ func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSess
 	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID)
 }
 
-// 改造ensurePlayerDataInRedis：接收自定义回调函数，不改动原有数据加载逻辑
+// ensurePlayerDataInRedis loads player data using the task-based callback pattern.
 func (l *EnterGameLogic) ensurePlayerDataInRedis(
 	ctx context.Context,
 	playerId uint64,
 	taskCallback func(taskKey string, taskSuccess bool, err error),
 ) error {
-	// 仅处理指定的消息列表（原始列表不变）
 	messagesToLoad := []proto.Message{
 		&login_proto_database.PlayerAllData{
 			PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
@@ -262,7 +258,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(
 		&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
 	}
 
-	// 调用加载接口，传入外部传入的回调（带计数和主动取消逻辑）
+	// Invoke data load with the provided callback
 	return dataloader.LoadWithPlayerId(
 		ctx,
 		l.svcCtx.RedisClient,

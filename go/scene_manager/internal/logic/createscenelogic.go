@@ -24,7 +24,7 @@ func NewCreateSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 	}
 }
 
-// 在指定节点创建一个场景（由 Scene 节点实现具体创建）
+// CreateScene creates a scene on the target node; delegates actual creation to the Scene node.
 func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
 	// 1. Determine Target Node
 	targetNode := in.TargetNodeId

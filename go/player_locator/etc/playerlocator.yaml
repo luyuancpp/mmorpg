@@ -1,6 +1,6 @@
 # player_locator service config
 Name: playerlocator.rpc
-ListenOn: 127.0.0.1:50100
+ListenOn: 127.0.0.1:50200
 Timeout: 10000
 
 Etcd:
@@ -8,7 +8,7 @@ Etcd:
     - 127.0.0.1:2379
   Key: playerlocator.rpc
 
-Redis:
+RedisClient:
   Host: 127.0.0.1:6379
   Password: ""
   DB: 0

@@ -25,29 +25,29 @@ var configFile = flag.String("f", "etc/db.yaml", "the config file")
 func main() {
 	flag.Parse()
 
-	// 加载配置
+	// Load config
 	conf.MustLoad(*configFile, &config.AppConfig)
 	ctx := svc.NewServiceContext()
 
-	// 初始化Kafka消费者（替代Asynq Server）
+	// Initialize Kafka consumer
 	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
 		config.AppConfig,
-		ctx.RedisClient, // Redis客户端
+		ctx.RedisClient,
 	)
 	if err != nil {
-		panic(fmt.Sprintf("初始化Kafka消费者失败: %v", err))
+		panic(fmt.Sprintf("failed to init Kafka consumer: %v", err))
 	}
 	defer kafkaConsumer.Stop()
 
-	// 启动Kafka消费者（替代Asynq Start）
+	// Start Kafka consumer
 	if err := kafkaConsumer.Start(); err != nil {
-		panic(fmt.Sprintf("启动Kafka消费者失败: %v", err))
+		panic(fmt.Sprintf("failed to start Kafka consumer: %v", err))
 	}
 
-	// 初始化数据库（保持不变）
+	// Initialize database
 	proto_sql.InitDB()
 
-	// 启动gRPC服务（保持不变）
+	// Start gRPC server
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
 		db_grpc.RegisterDbServer(grpcServer, server.NewDbServer(ctx))
 		if config.AppConfig.Mode == service.DevMode || config.AppConfig.Mode == service.TestMode {
@@ -56,10 +56,10 @@ func main() {
 	})
 	defer s.Stop()
 
-	// 等待退出信号（优雅关闭）
+	// Wait for shutdown signal
 	fmt.Printf("Starting rpc server at %s...\n", config.AppConfig.ListenOn)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	fmt.Println("开始优雅关闭服务...")
+	fmt.Println("Shutting down gracefully...")
 }
