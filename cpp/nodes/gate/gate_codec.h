@@ -1,11 +1,22 @@
 #pragma once
 
-#include "handler/rpc/gate_service_handler.h"
-#include "node/system/node/simple_node.h"
+#include "network/codec/codec.h"
+#include <cassert>
 
-// Returns the codec owned by the GateHandler, via the global node pointer.
-// Must only be called after gate startup completes.
+namespace detail {
+    inline ProtobufCodec* g_gate_codec = nullptr;
+}
+
+// Call once during gate startup to wire the codec reference.
+inline void InitGateCodec(ProtobufCodec& codec)
+{
+    detail::g_gate_codec = &codec;
+}
+
+// Returns the codec owned by GateRuntimeContext.
+// Must only be called after gate startup completes (after InitGateCodec).
 inline ProtobufCodec& GetGateCodec()
 {
-    return static_cast<SimpleNode<GateHandler>*>(gNode)->GetHandler().Codec();
+    assert(detail::g_gate_codec);
+    return *detail::g_gate_codec;
 }

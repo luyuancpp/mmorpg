@@ -23,6 +23,8 @@
     <ClCompile Include="centre\centre_player_scene.pb.cc" />
     <ClCompile Include="centre\centre_scene.pb.cc" />
     <ClCompile Include="centre\centre_service.pb.cc" />
+    <ClCompile Include="chat\chat.pb.cc" />
+    <ClCompile Include="chat\chat.grpc.pb.cc" />
     <ClCompile Include="common\base\common.pb.cc" />
     <ClCompile Include="common\base\config.pb.cc" />
     <ClCompile Include="common\base\empty.pb.cc" />
@@ -108,6 +110,8 @@
     <ClInclude Include="centre\centre_player_scene.pb.h" />
     <ClInclude Include="centre\centre_scene.pb.h" />
     <ClInclude Include="centre\centre_service.pb.h" />
+    <ClInclude Include="chat\chat.pb.h" />
+    <ClInclude Include="chat\chat.grpc.pb.h" />
     <ClInclude Include="common\base\common.pb.h" />
     <ClInclude Include="common\base\config.pb.h" />
     <ClInclude Include="common\base\empty.pb.h" />

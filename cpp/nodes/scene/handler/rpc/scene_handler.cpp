@@ -101,7 +101,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 
 	auto playerIt = tlsPlayerList.find(request->player_id());
 
-	PlayerGameNodeEntryInfoPBComponent enterInfo;
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
 
 	// 2. If player is already online, enter scene directly
 	if (playerIt != tlsPlayerList.end())

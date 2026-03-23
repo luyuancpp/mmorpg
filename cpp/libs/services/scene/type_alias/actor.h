@@ -2,6 +2,7 @@
 #include <unordered_map>
 
 #include "engine/core/type_define/type_define.h"
+#include "engine/thread_context/registry_manager.h"
 #include "engine/thread_context/entity_manager.h"
 #include "proto/scene/player_scene.pb.h"
 

@@ -9,6 +9,7 @@
 #include "handler/rpc/client_message_processor.h"
 #include "handler/event/event_handler.h"
 #include "handler/event/gate_kafka_command_router.h"
+#include "gate_codec.h"
 #include "grpc_client/grpc_init_client.h"
 #include "node/system/grpc_channel_cache.h"
 #include "session/system/session.h"
@@ -64,7 +65,7 @@ int main(int argc, char* argv[])
             LogGrpcThreadConfig();
         },
         [](SimpleNode<GateHandler>& node, GateRuntimeContext& context) {
-            node.GetHandler().SetCodec(&context.codec);
+            InitGateCodec(context.codec);
             // gRPC response -> client TCP bridge
             SetIfEmptyHandler([&context](const ClientContext& ctx, const ::google::protobuf::Message& reply) {
                 auto sd = GetSessionDetailsByClientContext(ctx);

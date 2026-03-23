@@ -11,14 +11,14 @@ import "proto/common/component/actor_comp.proto";
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_SCENE;
 
-message ReleaseSkillSkillRequest {
+message ReleaseSkillRequest {
   uint32 skill_table_id = 1;
   uint64 target_id = 2;
   Vector3 position = 3;  
   Rotation rotation = 4;
 }
 
-message ReleaseSkillSkillResponse {
+message ReleaseSkillResponse {
   TipInfoMessage error_message = 1;  
 }
 
@@ -54,7 +54,7 @@ service SceneSkillClientPlayer {
   option (OptionIsPlayerService) = true;
   option (OptionIsClientProtocolService) = true;
   
-  rpc ReleaseSkill (ReleaseSkillSkillRequest) returns (ReleaseSkillSkillResponse);
+  rpc ReleaseSkill (ReleaseSkillRequest) returns (ReleaseSkillResponse);
   rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
   rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
   rpc GetSkillList (GetSkillListRequest) returns (GetSkillListResponse);

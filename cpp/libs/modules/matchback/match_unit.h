@@ -1,5 +1,4 @@
-#ifndef __MATCH_PALYER_H_
-#define __MATCH_PALYER_H_
+#pragma once
 
 
 #include <unordered_map>
@@ -246,6 +245,4 @@ namespace GameMMR
         int32_t begin_time_{0};
     };
 }//namespace GameMMR
-
-#endif // __MATCH_PALYER_H_
 

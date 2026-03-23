@@ -1,13 +1,9 @@
 #pragma once
 #include "proto/gate/gate_service.pb.h"
 
-class ProtobufCodec;
-
 class GateHandler : public ::Gate
 {
 public:
-	void SetCodec(ProtobufCodec* codec) { codec_ = codec; }
-	ProtobufCodec& Codec() const { return *codec_; }
 
 	void PlayerEnterGameNode(::google::protobuf::RpcController* controller,  const ::RegisterGameNodeSessionRequest* request, ::RegisterGameNodeSessionResponse* response, ::google::protobuf::Closure* done) override;
 
@@ -22,7 +18,4 @@ public:
 	void NodeHandshake(::google::protobuf::RpcController* controller,  const ::NodeHandshakeRequest* request, ::NodeHandshakeResponse* response, ::google::protobuf::Closure* done) override;
 
 	void BindSessionToGate(::google::protobuf::RpcController* controller,  const ::BindSessionToGateRequest* request, ::BindSessionToGateResponse* response, ::google::protobuf::Closure* done) override;
-
-private:
-	ProtobufCodec* codec_ = nullptr;
 };

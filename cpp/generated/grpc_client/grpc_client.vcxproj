@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="chat\chat_grpc_client.cpp" />
     <ClCompile Include="data_service\data_service_grpc_client.cpp" />
     <ClCompile Include="etcd\etcd_grpc_client.cpp" />
     <ClCompile Include="grpc_init_client.cpp" />
@@ -26,6 +27,7 @@
     <ClCompile Include="scene_manager\scene_manager_service_grpc_client.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="chat\chat_grpc_client.h" />
     <ClInclude Include="data_service\data_service_grpc_client.h" />
     <ClInclude Include="etcd\etcd_grpc_client.h" />
     <ClInclude Include="grpc_init_client.h" />

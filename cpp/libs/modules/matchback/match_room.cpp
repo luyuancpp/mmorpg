@@ -1,5 +1,4 @@
 #ifndef __MATCH_ROOM_H_
-#define __MATCH_ROOM_H_
 
 #include "TeamList.h"
 #include "MatchUnit.h"

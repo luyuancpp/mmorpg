@@ -6,7 +6,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator.h"
-#include "scene/combat_state/constants/combat_state.h"
+#include "combat_state/constants/combat_state.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include "proto/common/event/actor_combat_state_event.pb.h"
 
