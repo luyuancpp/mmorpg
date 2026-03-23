@@ -29,7 +29,7 @@
 
 struct PlayerSceneEnterContext
 {
-	PlayerGameNodeEntryInfoPBComponent enterInfo;
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
 	uint64_t sceneId{ 0 };
 };
 
@@ -47,9 +47,9 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 			PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(context.sceneId));
 		}
 	}
-	else if (extra.type() == typeid(PlayerGameNodeEntryInfoPBComponent))
+	else if (extra.type() == typeid(PlayerGameNodeEnteryInfoPBComponent))
 	{
-		const auto& enterInfo = std::any_cast<PlayerGameNodeEntryInfoPBComponent>(extra);
+		const auto& enterInfo = std::any_cast<PlayerGameNodeEnteryInfoPBComponent>(extra);
 		InitPlayerFromAllData(message, enterInfo);
 	}
 	else
@@ -83,7 +83,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 }
 
 // CONSIDER: handle reentry into a different scene node while load is still in progress
-void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoPBComponent& enterInfo){
+void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
 	LOG_INFO << "EnterScene: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering scene node";
 
 	// Centre decommissioned: no longer track centre_node_id or send CentreEnterGsSucceed.
@@ -266,14 +266,14 @@ void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& 
 		return;
 	}
 
-	PlayerGameNodeEntryInfoPBComponent enterInfo;
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
 	// Centre decommissioned: centre_node_id no longer piggybacked in migration.
 
 	auto player = InitPlayerFromAllData(playerAllDataMessage, enterInfo);
 	SavePlayerToRedis(player);
 }
 
-entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEntryInfoPBComponent& enterInfo)
+entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEnteryInfoPBComponent& enterInfo)
 {
 	auto playerId = playerAllData.player_database_data().player_id();
 

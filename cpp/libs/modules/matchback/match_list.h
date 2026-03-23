@@ -1,5 +1,4 @@
-#ifndef __MatchMaking_h
-#define __MatchMaking_h
+#pragma once
 
 
 #include <unordered_set>
@@ -231,7 +230,4 @@ private:
 
 }//namespace GameMMR
 
-
-
-#endif // __MatchMaking_h
 

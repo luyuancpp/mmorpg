@@ -11,7 +11,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "type_define/type_define.h"
+#include "core/type_define/type_define.h"
 
 // ID structure based on Snowflake algorithm
 // Reference:

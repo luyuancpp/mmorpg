@@ -4,6 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
+#include "gate_codec.h"
 #include "node/system/node/node.h"
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
@@ -57,7 +58,7 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 		}
 		return;
 	}
-	Codec().send(sessionIt->second.conn, request->message_content());
+	GetGateCodec().send(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
 }
@@ -108,7 +109,7 @@ void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controll
 		outbound.set_id(routedClientRequest.id());
 		outbound.set_message_id(routedClientRequest.message_id());
 		outbound.set_serialized_message(routedClientRequest.body());
-		Codec().send(targetSessionIt->second.conn, outbound);
+		GetGateCodec().send(targetSessionIt->second.conn, outbound);
 		return;
 	}
 
@@ -163,7 +164,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 
 			continue;
 		}
-		Codec().send(sessionIt->second.conn, request->message_content());
+		GetGateCodec().send(sessionIt->second.conn, request->message_content());
 		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE

@@ -25,7 +25,7 @@ message EnterSceneS2CRequest
 {
 }
 
-message EnterScenerS2CResponse
+message EnterSceneS2CResponse
 {
   TipInfoMessage error_message = 1;
 }
@@ -36,5 +36,5 @@ service SceneScenePlayer
 
   rpc EnterScene (GsEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveScene (GsLeaveSceneRequest) returns (google.protobuf.Empty);
-  rpc EnterSceneS2C (EnterSceneS2CRequest) returns (EnterScenerS2CResponse);
+  rpc EnterSceneS2C (EnterSceneS2CRequest) returns (EnterSceneS2CResponse);
 }

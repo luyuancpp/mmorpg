@@ -1,5 +1,4 @@
-#ifndef __MATCH_MAKING_MANAGER_H
-#define  __MATCH_MAKING_MANAGER_H
+#pragma once
 
 
 #include "TeamList.h"
@@ -162,6 +161,3 @@ namespace GameMMR
 		mirror_match_callback_type m_oMirrorMatchCallBack;	//mirror match ready callback
     };
 }//namespace GameMMR
-
-
-#endif // __MATCH_MAKING_MANAGER_H
