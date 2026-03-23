@@ -211,27 +211,27 @@ func (*UnregisterPlayer) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_comp_proto_rawDescGZIP(), []int{4}
 }
 
-type PlayerUint64PBComponent struct {
+type PlayerUint64Comp struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	RegistrationTimestamp uint64                 `protobuf:"varint,1,opt,name=registration_timestamp,json=registrationTimestamp,proto3" json:"registration_timestamp,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
 
-func (x *PlayerUint64PBComponent) Reset() {
-	*x = PlayerUint64PBComponent{}
+func (x *PlayerUint64Comp) Reset() {
+	*x = PlayerUint64Comp{}
 	mi := &file_proto_common_component_player_comp_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerUint64PBComponent) String() string {
+func (x *PlayerUint64Comp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerUint64PBComponent) ProtoMessage() {}
+func (*PlayerUint64Comp) ProtoMessage() {}
 
-func (x *PlayerUint64PBComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerUint64Comp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_player_comp_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -243,39 +243,39 @@ func (x *PlayerUint64PBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerUint64PBComponent.ProtoReflect.Descriptor instead.
-func (*PlayerUint64PBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerUint64Comp.ProtoReflect.Descriptor instead.
+func (*PlayerUint64Comp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_comp_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *PlayerUint64PBComponent) GetRegistrationTimestamp() uint64 {
+func (x *PlayerUint64Comp) GetRegistrationTimestamp() uint64 {
 	if x != nil {
 		return x.RegistrationTimestamp
 	}
 	return 0
 }
 
-type PlayerUint32PbComponent struct {
+type PlayerUint32Comp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Class         uint32                 `protobuf:"varint,1,opt,name=class,proto3" json:"class,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PlayerUint32PbComponent) Reset() {
-	*x = PlayerUint32PbComponent{}
+func (x *PlayerUint32Comp) Reset() {
+	*x = PlayerUint32Comp{}
 	mi := &file_proto_common_component_player_comp_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerUint32PbComponent) String() string {
+func (x *PlayerUint32Comp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerUint32PbComponent) ProtoMessage() {}
+func (*PlayerUint32Comp) ProtoMessage() {}
 
-func (x *PlayerUint32PbComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerUint32Comp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_player_comp_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -287,12 +287,12 @@ func (x *PlayerUint32PbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerUint32PbComponent.ProtoReflect.Descriptor instead.
-func (*PlayerUint32PbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerUint32Comp.ProtoReflect.Descriptor instead.
+func (*PlayerUint32Comp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_comp_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *PlayerUint32PbComponent) GetClass() uint32 {
+func (x *PlayerUint32Comp) GetClass() uint32 {
 	if x != nil {
 		return x.Class
 	}
@@ -310,10 +310,10 @@ const file_proto_common_component_player_comp_proto_rawDesc = "" +
 	"\x06Player\"#\n" +
 	"\aAccount\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\"\x12\n" +
-	"\x10UnregisterPlayer\"P\n" +
-	"\x17PlayerUint64PBComponent\x125\n" +
-	"\x16registration_timestamp\x18\x01 \x01(\x04R\x15registrationTimestamp\"/\n" +
-	"\x17PlayerUint32PbComponent\x12\x14\n" +
+	"\x10UnregisterPlayer\"I\n" +
+	"\x10PlayerUint64Comp\x125\n" +
+	"\x16registration_timestamp\x18\x01 \x01(\x04R\x15registrationTimestamp\"(\n" +
+	"\x10PlayerUint32Comp\x12\x14\n" +
 	"\x05class\x18\x01 \x01(\rR\x05classB&Z$scene_manager/proto/common/componentb\x06proto3"
 
 var (
@@ -330,13 +330,13 @@ func file_proto_common_component_player_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_player_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_common_component_player_comp_proto_goTypes = []any{
-	(*NormalLogin)(nil),             // 0: NormalLogin
-	(*CoverLogin)(nil),              // 1: CoverLogin
-	(*Player)(nil),                  // 2: Player
-	(*Account)(nil),                 // 3: Account
-	(*UnregisterPlayer)(nil),        // 4: UnregisterPlayer
-	(*PlayerUint64PBComponent)(nil), // 5: PlayerUint64PBComponent
-	(*PlayerUint32PbComponent)(nil), // 6: PlayerUint32PbComponent
+	(*NormalLogin)(nil),      // 0: NormalLogin
+	(*CoverLogin)(nil),       // 1: CoverLogin
+	(*Player)(nil),           // 2: Player
+	(*Account)(nil),          // 3: Account
+	(*UnregisterPlayer)(nil), // 4: UnregisterPlayer
+	(*PlayerUint64Comp)(nil), // 5: PlayerUint64Comp
+	(*PlayerUint32Comp)(nil), // 6: PlayerUint32Comp
 }
 var file_proto_common_component_player_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

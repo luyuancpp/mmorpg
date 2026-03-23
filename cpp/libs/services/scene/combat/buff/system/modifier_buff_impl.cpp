@@ -10,7 +10,7 @@
 
 #include <thread_context/registry_manager.h>
 
-bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
+bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {
         return false;
     }
@@ -25,10 +25,10 @@ bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffComp& buff, co
 }
 
 void ModifierBuffImplSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,
-    const SkillContextPtrComp& abilityContext, BuffComp& buffComp) {
+    const SkillContextPtrComp& abilityContext, BuffEntry& buffComp) {
 }
 
-bool ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
+bool ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {
         return false;
     }
@@ -42,7 +42,7 @@ bool ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffComp& b
     return  false;
 }
 
-bool ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
+bool ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
 
     if (buffTable == nullptr) {
         return false;
@@ -52,16 +52,16 @@ bool ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffComp& buff, 
     return false;
 }
 
-static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
     if (buffTable == nullptr) {
         return false;
     }
 
     //todo compute max_health on demand
-    auto& baseAttributesPbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(parent);
-    const auto& derivedAttributesPbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<DerivedAttributesPbComponent>(parent);
-    const auto& levelComponent = tlsRegistryManager.actorRegistry.get_or_emplace<LevelPbComponent>(parent);
+    auto& baseAttributesPbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesComp>(parent);
+    const auto& derivedAttributesPbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<DerivedAttributesComp>(parent);
+    const auto& levelComponent = tlsRegistryManager.actorRegistry.get_or_emplace<LevelComp>(parent);
 
     const auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();
 
@@ -80,7 +80,7 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp&
     return  true;
 }
 
-bool ModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+bool ModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
 
     switch (buffTable->bufftype())

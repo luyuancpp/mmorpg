@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type EndpointPBComponent struct {
+type EndpointComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Ip            string                 `protobuf:"bytes,1,opt,name=ip,proto3" json:"ip,omitempty"`
 	Port          uint32                 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
@@ -29,20 +29,20 @@ type EndpointPBComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EndpointPBComponent) Reset() {
-	*x = EndpointPBComponent{}
+func (x *EndpointComp) Reset() {
+	*x = EndpointComp{}
 	mi := &file_proto_common_base_common_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EndpointPBComponent) String() string {
+func (x *EndpointComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EndpointPBComponent) ProtoMessage() {}
+func (*EndpointComp) ProtoMessage() {}
 
-func (x *EndpointPBComponent) ProtoReflect() protoreflect.Message {
+func (x *EndpointComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_base_common_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,19 +54,19 @@ func (x *EndpointPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EndpointPBComponent.ProtoReflect.Descriptor instead.
-func (*EndpointPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use EndpointComp.ProtoReflect.Descriptor instead.
+func (*EndpointComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_base_common_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EndpointPBComponent) GetIp() string {
+func (x *EndpointComp) GetIp() string {
 	if x != nil {
 		return x.Ip
 	}
 	return ""
 }
 
-func (x *EndpointPBComponent) GetPort() uint32 {
+func (x *EndpointComp) GetPort() uint32 {
 	if x != nil {
 		return x.Port
 	}
@@ -79,7 +79,7 @@ type NodeInfo struct {
 	NodeType      uint32                 `protobuf:"varint,2,opt,name=node_type,json=nodeType,proto3" json:"node_type,omitempty"`
 	LaunchTime    uint64                 `protobuf:"varint,3,opt,name=launch_time,json=launchTime,proto3" json:"launch_time,omitempty"`
 	SceneNodeType uint32                 `protobuf:"varint,4,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"`
-	Endpoint      *EndpointPBComponent   `protobuf:"bytes,5,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	Endpoint      *EndpointComp          `protobuf:"bytes,5,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
 	ZoneId        uint32                 `protobuf:"varint,6,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
 	ProtocolType  uint32                 `protobuf:"varint,7,opt,name=protocol_type,json=protocolType,proto3" json:"protocol_type,omitempty"` // 节点通信协议类型
 	NodeUuid      string                 `protobuf:"bytes,8,opt,name=node_uuid,json=nodeUuid,proto3" json:"node_uuid,omitempty"`
@@ -145,7 +145,7 @@ func (x *NodeInfo) GetSceneNodeType() uint32 {
 	return 0
 }
 
-func (x *NodeInfo) GetEndpoint() *EndpointPBComponent {
+func (x *NodeInfo) GetEndpoint() *EndpointComp {
 	if x != nil {
 		return x.Endpoint
 	}
@@ -173,27 +173,27 @@ func (x *NodeInfo) GetNodeUuid() string {
 	return ""
 }
 
-type NodeInfoListPBComponent struct {
+type NodeInfoListComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeList      []*NodeInfo            `protobuf:"bytes,1,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NodeInfoListPBComponent) Reset() {
-	*x = NodeInfoListPBComponent{}
+func (x *NodeInfoListComp) Reset() {
+	*x = NodeInfoListComp{}
 	mi := &file_proto_common_base_common_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NodeInfoListPBComponent) String() string {
+func (x *NodeInfoListComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NodeInfoListPBComponent) ProtoMessage() {}
+func (*NodeInfoListComp) ProtoMessage() {}
 
-func (x *NodeInfoListPBComponent) ProtoReflect() protoreflect.Message {
+func (x *NodeInfoListComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_base_common_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -205,12 +205,12 @@ func (x *NodeInfoListPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NodeInfoListPBComponent.ProtoReflect.Descriptor instead.
-func (*NodeInfoListPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeInfoListComp.ProtoReflect.Descriptor instead.
+func (*NodeInfoListComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_base_common_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *NodeInfoListPBComponent) GetNodeList() []*NodeInfo {
+func (x *NodeInfoListComp) GetNodeList() []*NodeInfo {
 	if x != nil {
 		return x.NodeList
 	}
@@ -269,7 +269,7 @@ func (x *NetworkAddress) GetPort() uint32 {
 	return 0
 }
 
-type SceneInfoPBComponent struct {
+type SceneInfoComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SceneConfid   uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`                                                   //场景id
 	Guid          uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"`                                                                                    //场景唯一id
@@ -280,20 +280,20 @@ type SceneInfoPBComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SceneInfoPBComponent) Reset() {
-	*x = SceneInfoPBComponent{}
+func (x *SceneInfoComp) Reset() {
+	*x = SceneInfoComp{}
 	mi := &file_proto_common_base_common_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SceneInfoPBComponent) String() string {
+func (x *SceneInfoComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SceneInfoPBComponent) ProtoMessage() {}
+func (*SceneInfoComp) ProtoMessage() {}
 
-func (x *SceneInfoPBComponent) ProtoReflect() protoreflect.Message {
+func (x *SceneInfoComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_base_common_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -305,40 +305,40 @@ func (x *SceneInfoPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SceneInfoPBComponent.ProtoReflect.Descriptor instead.
-func (*SceneInfoPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use SceneInfoComp.ProtoReflect.Descriptor instead.
+func (*SceneInfoComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_base_common_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *SceneInfoPBComponent) GetSceneConfid() uint32 {
+func (x *SceneInfoComp) GetSceneConfid() uint32 {
 	if x != nil {
 		return x.SceneConfid
 	}
 	return 0
 }
 
-func (x *SceneInfoPBComponent) GetGuid() uint32 {
+func (x *SceneInfoComp) GetGuid() uint32 {
 	if x != nil {
 		return x.Guid
 	}
 	return 0
 }
 
-func (x *SceneInfoPBComponent) GetMirrorConfid() uint32 {
+func (x *SceneInfoComp) GetMirrorConfid() uint32 {
 	if x != nil {
 		return x.MirrorConfid
 	}
 	return 0
 }
 
-func (x *SceneInfoPBComponent) GetDungenConfid() uint32 {
+func (x *SceneInfoComp) GetDungenConfid() uint32 {
 	if x != nil {
 		return x.DungenConfid
 	}
 	return 0
 }
 
-func (x *SceneInfoPBComponent) GetCreators() map[uint64]bool {
+func (x *SceneInfoComp) GetCreators() map[uint64]bool {
 	if x != nil {
 		return x.Creators
 	}
@@ -349,31 +349,31 @@ var File_proto_common_base_common_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_common_proto_rawDesc = "" +
 	"\n" +
-	"\x1eproto/common/base/common.proto\"9\n" +
-	"\x13EndpointPBComponent\x12\x0e\n" +
+	"\x1eproto/common/base/common.proto\"2\n" +
+	"\fEndpointComp\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x12\n" +
-	"\x04port\x18\x02 \x01(\rR\x04port\"\x96\x02\n" +
+	"\x04port\x18\x02 \x01(\rR\x04port\"\x8f\x02\n" +
 	"\bNodeInfo\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12\x1b\n" +
 	"\tnode_type\x18\x02 \x01(\rR\bnodeType\x12\x1f\n" +
 	"\vlaunch_time\x18\x03 \x01(\x04R\n" +
 	"launchTime\x12&\n" +
-	"\x0fscene_node_type\x18\x04 \x01(\rR\rsceneNodeType\x120\n" +
-	"\bendpoint\x18\x05 \x01(\v2\x14.EndpointPBComponentR\bendpoint\x12\x17\n" +
+	"\x0fscene_node_type\x18\x04 \x01(\rR\rsceneNodeType\x12)\n" +
+	"\bendpoint\x18\x05 \x01(\v2\r.EndpointCompR\bendpoint\x12\x17\n" +
 	"\azone_id\x18\x06 \x01(\rR\x06zoneId\x12#\n" +
 	"\rprotocol_type\x18\a \x01(\rR\fprotocolType\x12\x1b\n" +
-	"\tnode_uuid\x18\b \x01(\tR\bnodeUuid\"A\n" +
-	"\x17NodeInfoListPBComponent\x12&\n" +
+	"\tnode_uuid\x18\b \x01(\tR\bnodeUuid\":\n" +
+	"\x10NodeInfoListComp\x12&\n" +
 	"\tnode_list\x18\x01 \x03(\v2\t.NodeInfoR\bnodeList\"4\n" +
 	"\x0eNetworkAddress\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x12\n" +
-	"\x04port\x18\x02 \x01(\rR\x04port\"\x95\x02\n" +
-	"\x14SceneInfoPBComponent\x12!\n" +
+	"\x04port\x18\x02 \x01(\rR\x04port\"\x87\x02\n" +
+	"\rSceneInfoComp\x12!\n" +
 	"\fscene_confid\x18\x01 \x01(\rR\vsceneConfid\x12\x12\n" +
 	"\x04guid\x18\x02 \x01(\rR\x04guid\x12#\n" +
 	"\rmirror_confid\x18\x03 \x01(\rR\fmirrorConfid\x12#\n" +
-	"\rdungen_confid\x18\x04 \x01(\rR\fdungenConfid\x12?\n" +
-	"\bcreators\x18\x05 \x03(\v2#.SceneInfoPBComponent.CreatorsEntryR\bcreators\x1a;\n" +
+	"\rdungen_confid\x18\x04 \x01(\rR\fdungenConfid\x128\n" +
+	"\bcreators\x18\x05 \x03(\v2\x1c.SceneInfoComp.CreatorsEntryR\bcreators\x1a;\n" +
 	"\rCreatorsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B Z\x1edata_service/proto/common/baseb\x06proto3"
@@ -392,17 +392,17 @@ func file_proto_common_base_common_proto_rawDescGZIP() []byte {
 
 var file_proto_common_base_common_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_common_base_common_proto_goTypes = []any{
-	(*EndpointPBComponent)(nil),     // 0: EndpointPBComponent
-	(*NodeInfo)(nil),                // 1: NodeInfo
-	(*NodeInfoListPBComponent)(nil), // 2: NodeInfoListPBComponent
-	(*NetworkAddress)(nil),          // 3: NetworkAddress
-	(*SceneInfoPBComponent)(nil),    // 4: SceneInfoPBComponent
-	nil,                             // 5: SceneInfoPBComponent.CreatorsEntry
+	(*EndpointComp)(nil),     // 0: EndpointComp
+	(*NodeInfo)(nil),         // 1: NodeInfo
+	(*NodeInfoListComp)(nil), // 2: NodeInfoListComp
+	(*NetworkAddress)(nil),   // 3: NetworkAddress
+	(*SceneInfoComp)(nil),    // 4: SceneInfoComp
+	nil,                      // 5: SceneInfoComp.CreatorsEntry
 }
 var file_proto_common_base_common_proto_depIdxs = []int32{
-	0, // 0: NodeInfo.endpoint:type_name -> EndpointPBComponent
-	1, // 1: NodeInfoListPBComponent.node_list:type_name -> NodeInfo
-	5, // 2: SceneInfoPBComponent.creators:type_name -> SceneInfoPBComponent.CreatorsEntry
+	0, // 0: NodeInfo.endpoint:type_name -> EndpointComp
+	1, // 1: NodeInfoListComp.node_list:type_name -> NodeInfo
+	5, // 2: SceneInfoComp.creators:type_name -> SceneInfoComp.CreatorsEntry
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

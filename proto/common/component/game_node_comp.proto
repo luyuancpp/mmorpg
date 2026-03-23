@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 
-message GameNodePlayerInfoPBComponent
+message GameNodePlayerInfoComp
 {
   uint32 player_size = 1;
 }

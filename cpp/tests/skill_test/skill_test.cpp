@@ -44,7 +44,7 @@ protected:
 };
 
 TEST_F(SkillUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
-    ::ReleaseSkillSkillRequest request;
+    ::ReleaseSkillRequest request;
     request.set_skill_table_id(1);
     request.set_target_id(-1); // Invalid target ID
 
@@ -58,7 +58,7 @@ TEST_F(SkillUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
 TEST_F(SkillUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     entt::entity target = tlsRegistryManager.actorRegistry.create(); // Create a valid target in the registry
  
-    ::ReleaseSkillSkillRequest request;
+    ::ReleaseSkillRequest request;
     request.set_skill_table_id(10);
     request.set_target_id(entt::to_integral(target)); // Valid target ID
 
@@ -154,7 +154,7 @@ TEST_F(SkillUtilTest, HandleChannelTimeTimer_ImmediateSkill_ReturnsOk) {
 
 TEST_F(SkillUtilTest, BroadcastSkillUsedMessage_CreatesMessage) {
     entt::entity caster = tlsRegistryManager.actorRegistry.create();
-    ::ReleaseSkillSkillRequest request;
+    ::ReleaseSkillRequest request;
     request.set_skill_table_id(1);
     request.set_target_id(2);
     request.mutable_position()->set_x(10); // Mock position

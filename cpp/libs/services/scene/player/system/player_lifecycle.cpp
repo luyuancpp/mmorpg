@@ -29,7 +29,7 @@
 
 struct PlayerSceneEnterContext
 {
-	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	PlayerGameNodeEntryInfoComp enterInfo;
 	uint64_t sceneId{ 0 };
 };
 
@@ -47,9 +47,9 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 			PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(context.sceneId));
 		}
 	}
-	else if (extra.type() == typeid(PlayerGameNodeEnteryInfoPBComponent))
+	else if (extra.type() == typeid(PlayerGameNodeEntryInfoComp))
 	{
-		const auto& enterInfo = std::any_cast<PlayerGameNodeEnteryInfoPBComponent>(extra);
+		const auto& enterInfo = std::any_cast<PlayerGameNodeEntryInfoComp>(extra);
 		InitPlayerFromAllData(message, enterInfo);
 	}
 	else
@@ -83,7 +83,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 }
 
 // CONSIDER: handle reentry into a different scene node while load is still in progress
-void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo){
+void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp& enterInfo){
 	LOG_INFO << "EnterScene: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering scene node";
 
 	// Centre decommissioned: no longer track centre_node_id or send CentreEnterGsSucceed.
@@ -114,7 +114,7 @@ void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsT
 	}
 
 	const auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
-	auto& enterState = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(player);
+	auto& enterState = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(player);
 	enterState.set_enter_gs_type(enterGsType);
 
 	auto* sceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player);
@@ -167,10 +167,10 @@ void PlayerLifecycleSystem::RemovePlayerSession(const Guid playerId)
 
 void PlayerLifecycleSystem::RemovePlayerSession(entt::entity player)
 {
-	auto* const playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+	auto* const playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
 	{
-		LOG_ERROR << "RemovePlayerSession: PlayerSessionSnapshotPBComp not found for player: " << entt::to_integral(player);
+		LOG_ERROR << "RemovePlayerSession: PlayerSessionSnapshotComp not found for player: " << entt::to_integral(player);
 		return;
 	}
 
@@ -224,7 +224,7 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 
 void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 {
-	auto changeInfo = tlsRegistryManager.actorRegistry.try_get<ChangeSceneInfoPBComponent>(playerEntity);
+	auto changeInfo = tlsRegistryManager.actorRegistry.try_get<ChangeSceneInfoComp>(playerEntity);
 	if (!changeInfo)
 	{
 		return;
@@ -256,7 +256,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 
 	PlayerTipSystem::SendToPlayer(playerEntity, kSceneTransferInProgress, {});
 
-	tlsRegistryManager.actorRegistry.remove<ChangeSceneInfoPBComponent>(playerEntity);
+	tlsRegistryManager.actorRegistry.remove<ChangeSceneInfoComp>(playerEntity);
 }
 
 void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) {
@@ -266,14 +266,14 @@ void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& 
 		return;
 	}
 
-	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	PlayerGameNodeEntryInfoComp enterInfo;
 	// Centre decommissioned: centre_node_id no longer piggybacked in migration.
 
 	auto player = InitPlayerFromAllData(playerAllDataMessage, enterInfo);
 	SavePlayerToRedis(player);
 }
 
-entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEnteryInfoPBComponent& enterInfo)
+entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEntryInfoComp& enterInfo)
 {
 	auto playerId = playerAllData.player_database_data().player_id();
 
@@ -296,8 +296,8 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& p
 	// First-time registration: initialize defaults
 	if (playerAllData.player_database_data().uint64_pb_component().registration_timestamp() <= 0)
 	{
-		tlsRegistryManager.actorRegistry.get_or_emplace<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
-		tlsRegistryManager.actorRegistry.get_or_emplace<LevelPbComponent>(player).set_level(1);
+		tlsRegistryManager.actorRegistry.get_or_emplace<PlayerUint64Comp>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
+		tlsRegistryManager.actorRegistry.get_or_emplace<LevelComp>(player).set_level(1);
 
 		RegisterPlayerEvent registerPlayer;
 		registerPlayer.set_actor_entity(entt::to_integral(player));

@@ -3,7 +3,7 @@ option go_package = "common/proto/common/component";
 
 
 
-message MissionPBComponent
+message MissionComp
 {
 	enum eMissionStatus
 	{
@@ -19,7 +19,7 @@ message MissionPBComponent
 	bytes data = 4; // 各种类型buff的各种数据
 }
 
-message MissionListPBComponent
+message MissionListComp
 {
 	enum eMissionScope
 	{
@@ -28,13 +28,13 @@ message MissionListPBComponent
 		kPlayerDailyActivity = 2;//每日活动
 		kPlayerMissionSize = 3;//最大值
 	}
-	map<uint32, MissionPBComponent> missions = 1;
+	map<uint32, MissionComp> missions = 1;
 	bytes complete_missions = 2;
 	map<uint32, uint64> mission_begin_time = 3;
 	uint32 type = 4;
 }
 
-message RewardListPBComponent
+message RewardListComp
 {
 	map<uint32, bool> can_reward_mission_id = 1;
 }

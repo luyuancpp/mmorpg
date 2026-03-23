@@ -3,7 +3,7 @@ option go_package = "common/proto/common/component";
 
 
 
-message GameNodePlayerInfoPBComponent
+message GameNodePlayerInfoComp
 {
   uint32 player_size = 1;
 }

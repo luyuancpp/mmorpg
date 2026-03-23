@@ -3,7 +3,7 @@ option go_package = "common/component";
 
 
 
-message PlayerGameNodeEnteryInfoPBComponent
+message PlayerGameNodeEntryInfoComp
 {
   uint32 centre_node_id = 1;
 }

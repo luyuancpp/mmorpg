@@ -25,25 +25,43 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 template <typename>
-PROTOBUF_CONSTEXPR RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR RewardListComp_CanRewardMissionIdEntry_DoNotUse::RewardListComp_CanRewardMissionIdEntry_DoNotUse(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::MapEntry(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_class_data_.base()){}
+    : RewardListComp_CanRewardMissionIdEntry_DoNotUse::MapEntry(RewardListComp_CanRewardMissionIdEntry_DoNotUse_class_data_.base()){}
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::MapEntry() {
+    : RewardListComp_CanRewardMissionIdEntry_DoNotUse::MapEntry() {
 }
 #endif  // PROTOBUF_CUSTOM_VTABLE
-struct RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal() {}
+struct RewardListComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RewardListComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RewardListComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse _instance;
+    RewardListComp_CanRewardMissionIdEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal _RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardListComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal _RewardListComp_CanRewardMissionIdEntry_DoNotUse_default_instance_;
+template <typename>
+PROTOBUF_CONSTEXPR MissionListComp_MissionBeginTimeEntry_DoNotUse::MissionListComp_MissionBeginTimeEntry_DoNotUse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : MissionListComp_MissionBeginTimeEntry_DoNotUse::MapEntry(MissionListComp_MissionBeginTimeEntry_DoNotUse_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : MissionListComp_MissionBeginTimeEntry_DoNotUse::MapEntry() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct MissionListComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionListComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionListComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal() {}
+  union {
+    MissionListComp_MissionBeginTimeEntry_DoNotUse _instance;
+  };
+};
 
-inline constexpr MissionPBComponent::Impl_::Impl_(
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal _MissionListComp_MissionBeginTimeEntry_DoNotUse_default_instance_;
+
+inline constexpr MissionComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         progress_{},
@@ -55,87 +73,69 @@ inline constexpr MissionPBComponent::Impl_::Impl_(
         status_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR MissionPBComponent::MissionPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR MissionComp::MissionComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(MissionPBComponent_class_data_.base()),
+    : ::google::protobuf::Message(MissionComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct MissionPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionPBComponentDefaultTypeInternal() {}
+struct MissionCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionCompDefaultTypeInternal() {}
   union {
-    MissionPBComponent _instance;
+    MissionComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionPBComponentDefaultTypeInternal _MissionPBComponent_default_instance_;
-template <typename>
-PROTOBUF_CONSTEXPR MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MapEntry(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_class_data_.base()){}
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MapEntry() {
-}
-#endif  // PROTOBUF_CUSTOM_VTABLE
-struct MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal() {}
-  union {
-    MissionListPBComponent_MissionBeginTimeEntry_DoNotUse _instance;
-  };
-};
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionCompDefaultTypeInternal _MissionComp_default_instance_;
 
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_default_instance_;
-
-inline constexpr RewardListPBComponent::Impl_::Impl_(
+inline constexpr RewardListComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : can_reward_mission_id_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR RewardListPBComponent::RewardListPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR RewardListComp::RewardListComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(RewardListPBComponent_class_data_.base()),
+    : ::google::protobuf::Message(RewardListComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct RewardListPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RewardListPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RewardListPBComponentDefaultTypeInternal() {}
+struct RewardListCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RewardListCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RewardListCompDefaultTypeInternal() {}
   union {
-    RewardListPBComponent _instance;
+    RewardListComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardListPBComponentDefaultTypeInternal _RewardListPBComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardListCompDefaultTypeInternal _RewardListComp_default_instance_;
 template <typename>
-PROTOBUF_CONSTEXPR MissionListPBComponent_MissionsEntry_DoNotUse::MissionListPBComponent_MissionsEntry_DoNotUse(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR MissionListComp_MissionsEntry_DoNotUse::MissionListComp_MissionsEntry_DoNotUse(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : MissionListPBComponent_MissionsEntry_DoNotUse::MapEntry(MissionListPBComponent_MissionsEntry_DoNotUse_class_data_.base()){}
+    : MissionListComp_MissionsEntry_DoNotUse::MapEntry(MissionListComp_MissionsEntry_DoNotUse_class_data_.base()){}
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : MissionListPBComponent_MissionsEntry_DoNotUse::MapEntry() {
+    : MissionListComp_MissionsEntry_DoNotUse::MapEntry() {
 }
 #endif  // PROTOBUF_CUSTOM_VTABLE
-struct MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal() {}
+struct MissionListComp_MissionsEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionListComp_MissionsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionListComp_MissionsEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    MissionListPBComponent_MissionsEntry_DoNotUse _instance;
+    MissionListComp_MissionsEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_MissionsEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListComp_MissionsEntry_DoNotUseDefaultTypeInternal _MissionListComp_MissionsEntry_DoNotUse_default_instance_;
 
-inline constexpr MissionListPBComponent::Impl_::Impl_(
+inline constexpr MissionListComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         missions_{},
@@ -146,24 +146,24 @@ inline constexpr MissionListPBComponent::Impl_::Impl_(
         type_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR MissionListPBComponent::MissionListPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR MissionListComp::MissionListComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(MissionListPBComponent_class_data_.base()),
+    : ::google::protobuf::Message(MissionListComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct MissionListPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionListPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionListPBComponentDefaultTypeInternal() {}
+struct MissionListCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionListCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionListCompDefaultTypeInternal() {}
   union {
-    MissionListPBComponent _instance;
+    MissionListComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComponentDefaultTypeInternal _MissionListPBComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListCompDefaultTypeInternal _MissionListComp_default_instance_;
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -172,99 +172,98 @@ const ::uint32_t
     TableStruct_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MissionComp, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.id_),
-        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.status_),
-        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.progress_),
-        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::MissionComp, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::MissionComp, _impl_.status_),
+        PROTOBUF_FIELD_OFFSET(::MissionComp, _impl_.progress_),
+        PROTOBUF_FIELD_OFFSET(::MissionComp, _impl_.data_),
         1,
         2,
         ~0u,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp_MissionsEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp_MissionsEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp_MissionsEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_.missions_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_.complete_missions_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_.mission_begin_time_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_.type_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp, _impl_.missions_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp, _impl_.complete_missions_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp, _impl_.mission_begin_time_),
+        PROTOBUF_FIELD_OFFSET(::MissionListComp, _impl_.type_),
         ~0u,
         0,
         ~0u,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent, _impl_.can_reward_mission_id_),
+        PROTOBUF_FIELD_OFFSET(::RewardListComp, _impl_.can_reward_mission_id_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::MissionPBComponent)},
-        {11, sizeof(::MissionListPBComponent_MissionsEntry_DoNotUse)},
-        {18, sizeof(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse)},
-        {25, sizeof(::MissionListPBComponent)},
-        {36, sizeof(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse)},
-        {43, sizeof(::RewardListPBComponent)},
+        {0, sizeof(::MissionComp)},
+        {11, sizeof(::MissionListComp_MissionsEntry_DoNotUse)},
+        {18, sizeof(::MissionListComp_MissionBeginTimeEntry_DoNotUse)},
+        {25, sizeof(::MissionListComp)},
+        {36, sizeof(::RewardListComp_CanRewardMissionIdEntry_DoNotUse)},
+        {43, sizeof(::RewardListComp)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_MissionPBComponent_default_instance_._instance,
-    &::_MissionListPBComponent_MissionsEntry_DoNotUse_default_instance_._instance,
-    &::_MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_default_instance_._instance,
-    &::_MissionListPBComponent_default_instance_._instance,
-    &::_RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_default_instance_._instance,
-    &::_RewardListPBComponent_default_instance_._instance,
+    &::_MissionComp_default_instance_._instance,
+    &::_MissionListComp_MissionsEntry_DoNotUse_default_instance_._instance,
+    &::_MissionListComp_MissionBeginTimeEntry_DoNotUse_default_instance_._instance,
+    &::_MissionListComp_default_instance_._instance,
+    &::_RewardListComp_CanRewardMissionIdEntry_DoNotUse_default_instance_._instance,
+    &::_RewardListComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n)proto/common/component/mission_comp.pr"
-    "oto\"\331\001\n\022MissionPBComponent\022\n\n\002id\030\001 \001(\r\022\016"
-    "\n\006status\030\002 \001(\r\022\020\n\010progress\030\003 \003(\r\022\014\n\004data"
-    "\030\004 \001(\014\"\206\001\n\016eMissionStatus\022\024\n\020E_MISSION_N"
-    "ORMAL\020\000\022\031\n\025E_MISSION_ACHIEVEMENT\020\001\022\026\n\022E_"
-    "MISSION_COMPLETE\020\002\022\026\n\022E_MISSION_TIME_OUT"
-    "\020\003\022\023\n\017E_MISSION_FAILD\020\004\"\262\003\n\026MissionListP"
-    "BComponent\0227\n\010missions\030\001 \003(\0132%.MissionLi"
-    "stPBComponent.MissionsEntry\022\031\n\021complete_"
-    "missions\030\002 \001(\014\022I\n\022mission_begin_time\030\003 \003"
-    "(\0132-.MissionListPBComponent.MissionBegin"
-    "TimeEntry\022\014\n\004type\030\004 \001(\r\032D\n\rMissionsEntry"
-    "\022\013\n\003key\030\001 \001(\r\022\"\n\005value\030\002 \001(\0132\023.MissionPB"
-    "Component:\0028\001\0327\n\025MissionBeginTimeEntry\022\013"
-    "\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\004:\0028\001\"l\n\reMissi"
-    "onScope\022\022\n\016kPlayerMission\020\000\022\025\n\021kPlayerAc"
-    "hievment\020\001\022\030\n\024kPlayerDailyActivity\020\002\022\026\n\022"
-    "kPlayerMissionSize\020\003\"\241\001\n\025RewardListPBCom"
-    "ponent\022M\n\025can_reward_mission_id\030\001 \003(\0132.."
-    "RewardListPBComponent.CanRewardMissionId"
-    "Entry\0329\n\027CanRewardMissionIdEntry\022\013\n\003key\030"
-    "\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001b\006proto3"
+    "oto\"\322\001\n\013MissionComp\022\n\n\002id\030\001 \001(\r\022\016\n\006statu"
+    "s\030\002 \001(\r\022\020\n\010progress\030\003 \003(\r\022\014\n\004data\030\004 \001(\014\""
+    "\206\001\n\016eMissionStatus\022\024\n\020E_MISSION_NORMAL\020\000"
+    "\022\031\n\025E_MISSION_ACHIEVEMENT\020\001\022\026\n\022E_MISSION"
+    "_COMPLETE\020\002\022\026\n\022E_MISSION_TIME_OUT\020\003\022\023\n\017E"
+    "_MISSION_FAILD\020\004\"\226\003\n\017MissionListComp\0220\n\010"
+    "missions\030\001 \003(\0132\036.MissionListComp.Mission"
+    "sEntry\022\031\n\021complete_missions\030\002 \001(\014\022B\n\022mis"
+    "sion_begin_time\030\003 \003(\0132&.MissionListComp."
+    "MissionBeginTimeEntry\022\014\n\004type\030\004 \001(\r\032=\n\rM"
+    "issionsEntry\022\013\n\003key\030\001 \001(\r\022\033\n\005value\030\002 \001(\013"
+    "2\014.MissionComp:\0028\001\0327\n\025MissionBeginTimeEn"
+    "try\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\004:\0028\001\"l\n\re"
+    "MissionScope\022\022\n\016kPlayerMission\020\000\022\025\n\021kPla"
+    "yerAchievment\020\001\022\030\n\024kPlayerDailyActivity\020"
+    "\002\022\026\n\022kPlayerMissionSize\020\003\"\223\001\n\016RewardList"
+    "Comp\022F\n\025can_reward_mission_id\030\001 \003(\0132\'.Re"
+    "wardListComp.CanRewardMissionIdEntry\0329\n\027"
+    "CanRewardMissionIdEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005"
+    "value\030\002 \001(\010:\0028\001b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto = {
     false,
     false,
-    872,
+    823,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
     "proto/common/component/mission_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto_once,
@@ -277,56 +276,56 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
     file_level_service_descriptors_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
 };
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionPBComponent_eMissionStatus_descriptor() {
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionComp_eMissionStatus_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto);
   return file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto[0];
 }
-PROTOBUF_CONSTINIT const uint32_t MissionPBComponent_eMissionStatus_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t MissionComp_eMissionStatus_internal_data_[] = {
     327680u, 0u, };
-const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionListPBComponent_eMissionScope_descriptor() {
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MissionListComp_eMissionScope_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto);
   return file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto[1];
 }
-PROTOBUF_CONSTINIT const uint32_t MissionListPBComponent_eMissionScope_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t MissionListComp_eMissionScope_internal_data_[] = {
     262144u, 0u, };
 // ===================================================================
 
-class MissionPBComponent::_Internal {
+class MissionComp::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<MissionPBComponent>()._impl_._has_bits_);
+      decltype(::std::declval<MissionComp>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(MissionComp, _impl_._has_bits_);
 };
 
-MissionPBComponent::MissionPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+MissionComp::MissionComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MissionPBComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, MissionComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:MissionPBComponent)
+  // @@protoc_insertion_point(arena_constructor:MissionComp)
 }
-PROTOBUF_NDEBUG_INLINE MissionPBComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MissionComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::MissionPBComponent& from_msg)
+    const ::MissionComp& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         progress_{visibility, arena, from.progress_},
         _progress_cached_byte_size_{0},
         data_(arena, from.data_) {}
 
-MissionPBComponent::MissionPBComponent(
+MissionComp::MissionComp(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const MissionPBComponent& from)
+    const MissionComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MissionPBComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, MissionComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  MissionPBComponent* const _this = this;
+  MissionComp* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -339,9 +338,9 @@ MissionPBComponent::MissionPBComponent(
                offsetof(Impl_, id_) +
                sizeof(Impl_::status_));
 
-  // @@protoc_insertion_point(copy_constructor:MissionPBComponent)
+  // @@protoc_insertion_point(copy_constructor:MissionComp)
 }
-PROTOBUF_NDEBUG_INLINE MissionPBComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MissionComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
@@ -349,7 +348,7 @@ PROTOBUF_NDEBUG_INLINE MissionPBComponent::Impl_::Impl_(
         _progress_cached_byte_size_{0},
         data_(arena) {}
 
-inline void MissionPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void MissionComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
@@ -358,77 +357,77 @@ inline void MissionPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena
                offsetof(Impl_, id_) +
                sizeof(Impl_::status_));
 }
-MissionPBComponent::~MissionPBComponent() {
-  // @@protoc_insertion_point(destructor:MissionPBComponent)
+MissionComp::~MissionComp() {
+  // @@protoc_insertion_point(destructor:MissionComp)
   SharedDtor(*this);
 }
-inline void MissionPBComponent::SharedDtor(MessageLite& self) {
-  MissionPBComponent& this_ = static_cast<MissionPBComponent&>(self);
+inline void MissionComp::SharedDtor(MessageLite& self) {
+  MissionComp& this_ = static_cast<MissionComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.data_.Destroy();
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL MissionPBComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL MissionComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MissionPBComponent(arena);
+  return ::new (mem) MissionComp(arena);
 }
-constexpr auto MissionPBComponent::InternalNewImpl_() {
+constexpr auto MissionComp::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.progress_) +
-          decltype(MissionPBComponent::_impl_.progress_)::
+      PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.progress_) +
+          decltype(MissionComp::_impl_.progress_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::CopyInit(
-        sizeof(MissionPBComponent), alignof(MissionPBComponent), *arena_bits);
+        sizeof(MissionComp), alignof(MissionComp), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&MissionPBComponent::PlacementNew_,
-                                 sizeof(MissionPBComponent),
-                                 alignof(MissionPBComponent));
+    return ::google::protobuf::internal::MessageCreator(&MissionComp::PlacementNew_,
+                                 sizeof(MissionComp),
+                                 alignof(MissionComp));
   }
 }
-constexpr auto MissionPBComponent::InternalGenerateClassData_() {
+constexpr auto MissionComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_MissionPBComponent_default_instance_._instance,
+          &_MissionComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &MissionPBComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MissionPBComponent>(),
+          &MissionComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MissionComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MissionPBComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<MissionPBComponent>(), &MissionPBComponent::ByteSizeLong,
-              &MissionPBComponent::_InternalSerialize,
+          &MissionComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MissionComp>(), &MissionComp::ByteSizeLong,
+              &MissionComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(MissionComp, _impl_._cached_size_),
           false,
       },
-      &MissionPBComponent::kDescriptorMethods,
+      &MissionComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MissionPBComponent_class_data_ =
-        MissionPBComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull MissionComp_class_data_ =
+        MissionComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MissionPBComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MissionPBComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MissionPBComponent_class_data_.tc_table);
-  return MissionPBComponent_class_data_.base();
+MissionComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MissionComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MissionComp_class_data_.tc_table);
+  return MissionComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 4, 0, 0, 2>
-MissionPBComponent::_table_ = {
+MissionComp::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(MissionComp, _impl_._has_bits_),
     0, // no _extensions_
     4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -437,47 +436,47 @@ MissionPBComponent::_table_ = {
     4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    MissionPBComponent_class_data_.base(),
+    MissionComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MissionPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MissionComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // bytes data = 4;
     {::_pbi::TcParser::FastBS1,
-     {34, 0, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.data_)}},
+     {34, 0, 0, PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.data_)}},
     // uint32 id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionPBComponent, _impl_.id_), 1>(),
-     {8, 1, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionComp, _impl_.id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.id_)}},
     // uint32 status = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionPBComponent, _impl_.status_), 2>(),
-     {16, 2, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.status_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionComp, _impl_.status_), 2>(),
+     {16, 2, 0, PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.status_)}},
     // repeated uint32 progress = 3;
     {::_pbi::TcParser::FastV32P1,
-     {26, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.progress_)}},
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.progress_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 id = 1;
-    {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 status = 2;
-    {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.status_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.status_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // repeated uint32 progress = 3;
-    {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.progress_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.progress_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
     // bytes data = 4;
-    {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.data_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.data_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void MissionPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:MissionPBComponent)
+PROTOBUF_NOINLINE void MissionComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:MissionComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -498,17 +497,17 @@ PROTOBUF_NOINLINE void MissionPBComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL MissionPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MissionComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const MissionPBComponent& this_ = static_cast<const MissionPBComponent&>(base);
+  const MissionComp& this_ = static_cast<const MissionComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL MissionPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MissionComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const MissionPBComponent& this_ = *this;
+  const MissionComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:MissionPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:MissionComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -552,18 +551,18 @@ PROTOBUF_NOINLINE void MissionPBComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:MissionPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:MissionComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t MissionPBComponent::ByteSizeLong(const MessageLite& base) {
-  const MissionPBComponent& this_ = static_cast<const MissionPBComponent&>(base);
+::size_t MissionComp::ByteSizeLong(const MessageLite& base) {
+  const MissionComp& this_ = static_cast<const MissionComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t MissionPBComponent::ByteSizeLong() const {
-  const MissionPBComponent& this_ = *this;
+::size_t MissionComp::ByteSizeLong() const {
+  const MissionComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:MissionPBComponent)
+  // @@protoc_insertion_point(message_byte_size_start:MissionComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -608,10 +607,10 @@ PROTOBUF_NOINLINE void MissionPBComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void MissionPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<MissionPBComponent*>(&to_msg);
-  auto& from = static_cast<const MissionPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:MissionPBComponent)
+void MissionComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MissionComp*>(&to_msg);
+  auto& from = static_cast<const MissionComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:MissionComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -643,15 +642,15 @@ void MissionPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MissionPBComponent::CopyFrom(const MissionPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:MissionPBComponent)
+void MissionComp::CopyFrom(const MissionComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:MissionComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void MissionPBComponent::InternalSwap(MissionPBComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void MissionComp::InternalSwap(MissionComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -660,75 +659,75 @@ void MissionPBComponent::InternalSwap(MissionPBComponent* PROTOBUF_RESTRICT PROT
   _impl_.progress_.InternalSwap(&other->_impl_.progress_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.data_, &other->_impl_.data_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.status_)
-      + sizeof(MissionPBComponent::_impl_.status_)
-      - PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.id_)>(
+      PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.status_)
+      + sizeof(MissionComp::_impl_.status_)
+      - PROTOBUF_FIELD_OFFSET(MissionComp, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));
 }
 
-::google::protobuf::Metadata MissionPBComponent::GetMetadata() const {
+::google::protobuf::Metadata MissionComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-MissionListPBComponent_MissionsEntry_DoNotUse::MissionListPBComponent_MissionsEntry_DoNotUse()
-    : SuperType(MissionListPBComponent_MissionsEntry_DoNotUse_class_data_.base()) {}
-MissionListPBComponent_MissionsEntry_DoNotUse::MissionListPBComponent_MissionsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-    : SuperType(arena, MissionListPBComponent_MissionsEntry_DoNotUse_class_data_.base()) {}
+MissionListComp_MissionsEntry_DoNotUse::MissionListComp_MissionsEntry_DoNotUse()
+    : SuperType(MissionListComp_MissionsEntry_DoNotUse_class_data_.base()) {}
+MissionListComp_MissionsEntry_DoNotUse::MissionListComp_MissionsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+    : SuperType(arena, MissionListComp_MissionsEntry_DoNotUse_class_data_.base()) {}
 #else   // PROTOBUF_CUSTOM_VTABLE
-MissionListPBComponent_MissionsEntry_DoNotUse::MissionListPBComponent_MissionsEntry_DoNotUse() : SuperType() {}
-MissionListPBComponent_MissionsEntry_DoNotUse::MissionListPBComponent_MissionsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
+MissionListComp_MissionsEntry_DoNotUse::MissionListComp_MissionsEntry_DoNotUse() : SuperType() {}
+MissionListComp_MissionsEntry_DoNotUse::MissionListComp_MissionsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
 #endif  // PROTOBUF_CUSTOM_VTABLE
-inline void* PROTOBUF_NONNULL MissionListPBComponent_MissionsEntry_DoNotUse::PlacementNew_(
+inline void* PROTOBUF_NONNULL MissionListComp_MissionsEntry_DoNotUse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MissionListPBComponent_MissionsEntry_DoNotUse(arena);
+  return ::new (mem) MissionListComp_MissionsEntry_DoNotUse(arena);
 }
-constexpr auto MissionListPBComponent_MissionsEntry_DoNotUse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(MissionListPBComponent_MissionsEntry_DoNotUse),
-                                            alignof(MissionListPBComponent_MissionsEntry_DoNotUse));
+constexpr auto MissionListComp_MissionsEntry_DoNotUse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(MissionListComp_MissionsEntry_DoNotUse),
+                                            alignof(MissionListComp_MissionsEntry_DoNotUse));
 }
-constexpr auto MissionListPBComponent_MissionsEntry_DoNotUse::InternalGenerateClassData_() {
+constexpr auto MissionListComp_MissionsEntry_DoNotUse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_MissionListPBComponent_MissionsEntry_DoNotUse_default_instance_._instance,
+          &_MissionListComp_MissionsEntry_DoNotUse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &MissionListPBComponent_MissionsEntry_DoNotUse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MissionListPBComponent_MissionsEntry_DoNotUse>(),
+          &MissionListComp_MissionsEntry_DoNotUse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MissionListComp_MissionsEntry_DoNotUse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MissionListPBComponent_MissionsEntry_DoNotUse::SharedDtor,
-          static_cast<void (::google::protobuf::MessageLite::*)()>(&MissionListPBComponent_MissionsEntry_DoNotUse::ClearImpl),
+          &MissionListComp_MissionsEntry_DoNotUse::SharedDtor,
+          static_cast<void (::google::protobuf::MessageLite::*)()>(&MissionListComp_MissionsEntry_DoNotUse::ClearImpl),
               ::google::protobuf::Message::ByteSizeLongImpl, ::google::protobuf::Message::_InternalSerializeImpl
               ,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionsEntry_DoNotUse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(MissionListComp_MissionsEntry_DoNotUse, _impl_._cached_size_),
           false,
       },
-      &MissionListPBComponent_MissionsEntry_DoNotUse::kDescriptorMethods,
+      &MissionListComp_MissionsEntry_DoNotUse::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MissionListPBComponent_MissionsEntry_DoNotUse_class_data_ =
-        MissionListPBComponent_MissionsEntry_DoNotUse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull MissionListComp_MissionsEntry_DoNotUse_class_data_ =
+        MissionListComp_MissionsEntry_DoNotUse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MissionListPBComponent_MissionsEntry_DoNotUse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MissionListPBComponent_MissionsEntry_DoNotUse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MissionListPBComponent_MissionsEntry_DoNotUse_class_data_.tc_table);
-  return MissionListPBComponent_MissionsEntry_DoNotUse_class_data_.base();
+MissionListComp_MissionsEntry_DoNotUse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MissionListComp_MissionsEntry_DoNotUse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MissionListComp_MissionsEntry_DoNotUse_class_data_.tc_table);
+  return MissionListComp_MissionsEntry_DoNotUse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 1, 0, 2>
-MissionListPBComponent_MissionsEntry_DoNotUse::_table_ = {
+MissionListComp_MissionsEntry_DoNotUse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionsEntry_DoNotUse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(MissionListComp_MissionsEntry_DoNotUse, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -737,31 +736,31 @@ MissionListPBComponent_MissionsEntry_DoNotUse::_table_ = {
     2,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    MissionListPBComponent_MissionsEntry_DoNotUse_class_data_.base(),
+    MissionListComp_MissionsEntry_DoNotUse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MissionListPBComponent_MissionsEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MissionListComp_MissionsEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .MissionPBComponent value = 2;
+    // .MissionComp value = 2;
     {::_pbi::TcParser::FastMtS1,
-     {18, 0, 0, PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionsEntry_DoNotUse, _impl_.value_)}},
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(MissionListComp_MissionsEntry_DoNotUse, _impl_.value_)}},
     // uint32 key = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionListPBComponent_MissionsEntry_DoNotUse, _impl_.key_), 1>(),
-     {8, 1, 0, PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionsEntry_DoNotUse, _impl_.key_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionListComp_MissionsEntry_DoNotUse, _impl_.key_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(MissionListComp_MissionsEntry_DoNotUse, _impl_.key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 key = 1;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionsEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionListComp_MissionsEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // .MissionPBComponent value = 2;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionsEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 0, 0,
+    // .MissionComp value = 2;
+    {PROTOBUF_FIELD_OFFSET(MissionListComp_MissionsEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::MissionPBComponent>()},
+      {::_pbi::TcParser::GetTable<::MissionComp>()},
   }},
   {{
   }},
@@ -769,62 +768,62 @@ MissionListPBComponent_MissionsEntry_DoNotUse::_table_ = {
 // ===================================================================
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse()
-    : SuperType(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_class_data_.base()) {}
-MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-    : SuperType(arena, MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_class_data_.base()) {}
+MissionListComp_MissionBeginTimeEntry_DoNotUse::MissionListComp_MissionBeginTimeEntry_DoNotUse()
+    : SuperType(MissionListComp_MissionBeginTimeEntry_DoNotUse_class_data_.base()) {}
+MissionListComp_MissionBeginTimeEntry_DoNotUse::MissionListComp_MissionBeginTimeEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+    : SuperType(arena, MissionListComp_MissionBeginTimeEntry_DoNotUse_class_data_.base()) {}
 #else   // PROTOBUF_CUSTOM_VTABLE
-MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse() : SuperType() {}
-MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
+MissionListComp_MissionBeginTimeEntry_DoNotUse::MissionListComp_MissionBeginTimeEntry_DoNotUse() : SuperType() {}
+MissionListComp_MissionBeginTimeEntry_DoNotUse::MissionListComp_MissionBeginTimeEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
 #endif  // PROTOBUF_CUSTOM_VTABLE
-inline void* PROTOBUF_NONNULL MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::PlacementNew_(
+inline void* PROTOBUF_NONNULL MissionListComp_MissionBeginTimeEntry_DoNotUse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MissionListPBComponent_MissionBeginTimeEntry_DoNotUse(arena);
+  return ::new (mem) MissionListComp_MissionBeginTimeEntry_DoNotUse(arena);
 }
-constexpr auto MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse),
-                                            alignof(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse));
+constexpr auto MissionListComp_MissionBeginTimeEntry_DoNotUse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(MissionListComp_MissionBeginTimeEntry_DoNotUse),
+                                            alignof(MissionListComp_MissionBeginTimeEntry_DoNotUse));
 }
-constexpr auto MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::InternalGenerateClassData_() {
+constexpr auto MissionListComp_MissionBeginTimeEntry_DoNotUse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_default_instance_._instance,
+          &_MissionListComp_MissionBeginTimeEntry_DoNotUse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MissionListPBComponent_MissionBeginTimeEntry_DoNotUse>(),
+          &MissionListComp_MissionBeginTimeEntry_DoNotUse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MissionListComp_MissionBeginTimeEntry_DoNotUse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::SharedDtor,
-          static_cast<void (::google::protobuf::MessageLite::*)()>(&MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::ClearImpl),
+          &MissionListComp_MissionBeginTimeEntry_DoNotUse::SharedDtor,
+          static_cast<void (::google::protobuf::MessageLite::*)()>(&MissionListComp_MissionBeginTimeEntry_DoNotUse::ClearImpl),
               ::google::protobuf::Message::ByteSizeLongImpl, ::google::protobuf::Message::_InternalSerializeImpl
               ,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_._cached_size_),
           false,
       },
-      &MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::kDescriptorMethods,
+      &MissionListComp_MissionBeginTimeEntry_DoNotUse::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_class_data_ =
-        MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull MissionListComp_MissionBeginTimeEntry_DoNotUse_class_data_ =
+        MissionListComp_MissionBeginTimeEntry_DoNotUse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_class_data_.tc_table);
-  return MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_class_data_.base();
+MissionListComp_MissionBeginTimeEntry_DoNotUse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MissionListComp_MissionBeginTimeEntry_DoNotUse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MissionListComp_MissionBeginTimeEntry_DoNotUse_class_data_.tc_table);
+  return MissionListComp_MissionBeginTimeEntry_DoNotUse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
-MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::_table_ = {
+MissionListComp_MissionBeginTimeEntry_DoNotUse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -833,27 +832,27 @@ MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_class_data_.base(),
+    MissionListComp_MissionBeginTimeEntry_DoNotUse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MissionListComp_MissionBeginTimeEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 value = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_.value_), 0>(),
-     {16, 0, 0, PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_.value_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_.value_), 0>(),
+     {16, 0, 0, PROTOBUF_FIELD_OFFSET(MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_.value_)}},
     // uint32 key = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_.key_), 1>(),
-     {8, 1, 0, PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_.key_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_.key_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_.key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 key = 1;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 value = 2;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionListComp_MissionBeginTimeEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -862,51 +861,51 @@ MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::_table_ = {
 };
 // ===================================================================
 
-class MissionListPBComponent::_Internal {
+class MissionListComp::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<MissionListPBComponent>()._impl_._has_bits_);
+      decltype(::std::declval<MissionListComp>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_._has_bits_);
 };
 
-MissionListPBComponent::MissionListPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+MissionListComp::MissionListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MissionListPBComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, MissionListComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:MissionListPBComponent)
+  // @@protoc_insertion_point(arena_constructor:MissionListComp)
 }
-PROTOBUF_NDEBUG_INLINE MissionListPBComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MissionListComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::MissionListPBComponent& from_msg)
+    const ::MissionListComp& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         missions_{visibility, arena, from.missions_},
         mission_begin_time_{visibility, arena, from.mission_begin_time_},
         complete_missions_(arena, from.complete_missions_) {}
 
-MissionListPBComponent::MissionListPBComponent(
+MissionListComp::MissionListComp(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const MissionListPBComponent& from)
+    const MissionListComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MissionListPBComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, MissionListComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  MissionListPBComponent* const _this = this;
+  MissionListComp* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   _impl_.type_ = from._impl_.type_;
 
-  // @@protoc_insertion_point(copy_constructor:MissionListPBComponent)
+  // @@protoc_insertion_point(copy_constructor:MissionListComp)
 }
-PROTOBUF_NDEBUG_INLINE MissionListPBComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE MissionListComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
@@ -914,93 +913,93 @@ PROTOBUF_NDEBUG_INLINE MissionListPBComponent::Impl_::Impl_(
         mission_begin_time_{visibility, arena},
         complete_missions_(arena) {}
 
-inline void MissionListPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void MissionListComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.type_ = {};
 }
-MissionListPBComponent::~MissionListPBComponent() {
-  // @@protoc_insertion_point(destructor:MissionListPBComponent)
+MissionListComp::~MissionListComp() {
+  // @@protoc_insertion_point(destructor:MissionListComp)
   SharedDtor(*this);
 }
-inline void MissionListPBComponent::SharedDtor(MessageLite& self) {
-  MissionListPBComponent& this_ = static_cast<MissionListPBComponent&>(self);
+inline void MissionListComp::SharedDtor(MessageLite& self) {
+  MissionListComp& this_ = static_cast<MissionListComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.complete_missions_.Destroy();
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL MissionListPBComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL MissionListComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MissionListPBComponent(arena);
+  return ::new (mem) MissionListComp(arena);
 }
-constexpr auto MissionListPBComponent::InternalNewImpl_() {
+constexpr auto MissionListComp::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.missions_) +
-          decltype(MissionListPBComponent::_impl_.missions_)::
+      PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.missions_) +
+          decltype(MissionListComp::_impl_.missions_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.missions_) +
-          decltype(MissionListPBComponent::_impl_.missions_)::
+      PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.missions_) +
+          decltype(MissionListComp::_impl_.missions_)::
               InternalGetArenaOffsetAlt(
                   ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.mission_begin_time_) +
-          decltype(MissionListPBComponent::_impl_.mission_begin_time_)::
+      PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.mission_begin_time_) +
+          decltype(MissionListComp::_impl_.mission_begin_time_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.mission_begin_time_) +
-          decltype(MissionListPBComponent::_impl_.mission_begin_time_)::
+      PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.mission_begin_time_) +
+          decltype(MissionListComp::_impl_.mission_begin_time_)::
               InternalGetArenaOffsetAlt(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::CopyInit(
-        sizeof(MissionListPBComponent), alignof(MissionListPBComponent), *arena_bits);
+        sizeof(MissionListComp), alignof(MissionListComp), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&MissionListPBComponent::PlacementNew_,
-                                 sizeof(MissionListPBComponent),
-                                 alignof(MissionListPBComponent));
+    return ::google::protobuf::internal::MessageCreator(&MissionListComp::PlacementNew_,
+                                 sizeof(MissionListComp),
+                                 alignof(MissionListComp));
   }
 }
-constexpr auto MissionListPBComponent::InternalGenerateClassData_() {
+constexpr auto MissionListComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_MissionListPBComponent_default_instance_._instance,
+          &_MissionListComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &MissionListPBComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MissionListPBComponent>(),
+          &MissionListComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MissionListComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MissionListPBComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<MissionListPBComponent>(), &MissionListPBComponent::ByteSizeLong,
-              &MissionListPBComponent::_InternalSerialize,
+          &MissionListComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MissionListComp>(), &MissionListComp::ByteSizeLong,
+              &MissionListComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_._cached_size_),
           false,
       },
-      &MissionListPBComponent::kDescriptorMethods,
+      &MissionListComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MissionListPBComponent_class_data_ =
-        MissionListPBComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull MissionListComp_class_data_ =
+        MissionListComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MissionListPBComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MissionListPBComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MissionListPBComponent_class_data_.tc_table);
-  return MissionListPBComponent_class_data_.base();
+MissionListComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MissionListComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MissionListComp_class_data_.tc_table);
+  return MissionListComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 4, 3, 0, 2>
-MissionListPBComponent::_table_ = {
+MissionListComp::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_._has_bits_),
     0, // no _extensions_
     4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -1009,42 +1008,42 @@ MissionListPBComponent::_table_ = {
     4,  // num_field_entries
     3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    MissionListPBComponent_class_data_.base(),
+    MissionListComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MissionListPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MissionListComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 type = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionListPBComponent, _impl_.type_), 1>(),
-     {32, 1, 0, PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionListComp, _impl_.type_), 1>(),
+     {32, 1, 0, PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.type_)}},
     {::_pbi::TcParser::MiniParse, {}},
     // bytes complete_missions = 2;
     {::_pbi::TcParser::FastBS1,
-     {18, 0, 0, PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.complete_missions_)}},
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.complete_missions_)}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
-    // map<uint32, .MissionPBComponent> missions = 1;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.missions_), -1, 0,
+    // map<uint32, .MissionComp> missions = 1;
+    {PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.missions_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
     // bytes complete_missions = 2;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.complete_missions_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.complete_missions_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
     // map<uint32, uint64> mission_begin_time = 3;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.mission_begin_time_), -1, 2,
+    {PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.mission_begin_time_), -1, 2,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
     // uint32 type = 4;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.type_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionListComp, _impl_.type_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   {{
       {::_pbi::TcParser::GetMapAuxInfo(0, 0, 0,
                                        13, 11,
                                        0)},
-      {::_pbi::TcParser::GetTable<::MissionPBComponent>()},
+      {::_pbi::TcParser::GetTable<::MissionComp>()},
       {::_pbi::TcParser::GetMapAuxInfo(0, 0, 0,
                                        13, 4,
                                        0)},
@@ -1052,8 +1051,8 @@ MissionListPBComponent::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void MissionListPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:MissionListPBComponent)
+PROTOBUF_NOINLINE void MissionListComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:MissionListComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1071,24 +1070,24 @@ PROTOBUF_NOINLINE void MissionListPBComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL MissionListPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MissionListComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const MissionListPBComponent& this_ = static_cast<const MissionListPBComponent&>(base);
+  const MissionListComp& this_ = static_cast<const MissionListComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL MissionListPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL MissionListComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const MissionListPBComponent& this_ = *this;
+  const MissionListComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:MissionListPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:MissionListComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // map<uint32, .MissionPBComponent> missions = 1;
+  // map<uint32, .MissionComp> missions = 1;
   if (!this_._internal_missions().empty()) {
-    using MapType = ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>;
-    using WireHelper = _pbi::MapEntryFuncs<::uint32_t, ::MissionPBComponent,
+    using MapType = ::google::protobuf::Map<::uint32_t, ::MissionComp>;
+    using WireHelper = _pbi::MapEntryFuncs<::uint32_t, ::MissionComp,
                                    _pbi::WireFormatLite::TYPE_UINT32,
                                    _pbi::WireFormatLite::TYPE_MESSAGE>;
     const auto& field = this_._internal_missions();
@@ -1149,18 +1148,18 @@ PROTOBUF_NOINLINE void MissionListPBComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:MissionListPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:MissionListComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t MissionListPBComponent::ByteSizeLong(const MessageLite& base) {
-  const MissionListPBComponent& this_ = static_cast<const MissionListPBComponent&>(base);
+::size_t MissionListComp::ByteSizeLong(const MessageLite& base) {
+  const MissionListComp& this_ = static_cast<const MissionListComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t MissionListPBComponent::ByteSizeLong() const {
-  const MissionListPBComponent& this_ = *this;
+::size_t MissionListComp::ByteSizeLong() const {
+  const MissionListComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:MissionListPBComponent)
+  // @@protoc_insertion_point(message_byte_size_start:MissionListComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1169,12 +1168,12 @@ PROTOBUF_NOINLINE void MissionListPBComponent::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
    {
-    // map<uint32, .MissionPBComponent> missions = 1;
+    // map<uint32, .MissionComp> missions = 1;
     {
       total_size +=
           1 * ::google::protobuf::internal::FromIntSize(this_._internal_missions_size());
       for (const auto& entry : this_._internal_missions()) {
-        total_size += _pbi::MapEntryFuncs<::uint32_t, ::MissionPBComponent,
+        total_size += _pbi::MapEntryFuncs<::uint32_t, ::MissionComp,
                                        _pbi::WireFormatLite::TYPE_UINT32,
                                        _pbi::WireFormatLite::TYPE_MESSAGE>::ByteSizeLong(entry.first, entry.second);
       }
@@ -1211,10 +1210,10 @@ PROTOBUF_NOINLINE void MissionListPBComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void MissionListPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<MissionListPBComponent*>(&to_msg);
-  auto& from = static_cast<const MissionListPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:MissionListPBComponent)
+void MissionListComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MissionListComp*>(&to_msg);
+  auto& from = static_cast<const MissionListComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:MissionListComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1242,15 +1241,15 @@ void MissionListPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MissionListPBComponent::CopyFrom(const MissionListPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:MissionListPBComponent)
+void MissionListComp::CopyFrom(const MissionListComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:MissionListComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void MissionListPBComponent::InternalSwap(MissionListPBComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void MissionListComp::InternalSwap(MissionListComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -1262,68 +1261,68 @@ void MissionListPBComponent::InternalSwap(MissionListPBComponent* PROTOBUF_RESTR
   swap(_impl_.type_, other->_impl_.type_);
 }
 
-::google::protobuf::Metadata MissionListPBComponent::GetMetadata() const {
+::google::protobuf::Metadata MissionListComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse()
-    : SuperType(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_class_data_.base()) {}
-RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-    : SuperType(arena, RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_class_data_.base()) {}
+RewardListComp_CanRewardMissionIdEntry_DoNotUse::RewardListComp_CanRewardMissionIdEntry_DoNotUse()
+    : SuperType(RewardListComp_CanRewardMissionIdEntry_DoNotUse_class_data_.base()) {}
+RewardListComp_CanRewardMissionIdEntry_DoNotUse::RewardListComp_CanRewardMissionIdEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+    : SuperType(arena, RewardListComp_CanRewardMissionIdEntry_DoNotUse_class_data_.base()) {}
 #else   // PROTOBUF_CUSTOM_VTABLE
-RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse() : SuperType() {}
-RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
+RewardListComp_CanRewardMissionIdEntry_DoNotUse::RewardListComp_CanRewardMissionIdEntry_DoNotUse() : SuperType() {}
+RewardListComp_CanRewardMissionIdEntry_DoNotUse::RewardListComp_CanRewardMissionIdEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
 #endif  // PROTOBUF_CUSTOM_VTABLE
-inline void* PROTOBUF_NONNULL RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::PlacementNew_(
+inline void* PROTOBUF_NONNULL RewardListComp_CanRewardMissionIdEntry_DoNotUse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse(arena);
+  return ::new (mem) RewardListComp_CanRewardMissionIdEntry_DoNotUse(arena);
 }
-constexpr auto RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse),
-                                            alignof(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse));
+constexpr auto RewardListComp_CanRewardMissionIdEntry_DoNotUse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RewardListComp_CanRewardMissionIdEntry_DoNotUse),
+                                            alignof(RewardListComp_CanRewardMissionIdEntry_DoNotUse));
 }
-constexpr auto RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::InternalGenerateClassData_() {
+constexpr auto RewardListComp_CanRewardMissionIdEntry_DoNotUse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_default_instance_._instance,
+          &_RewardListComp_CanRewardMissionIdEntry_DoNotUse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse>(),
+          &RewardListComp_CanRewardMissionIdEntry_DoNotUse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RewardListComp_CanRewardMissionIdEntry_DoNotUse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::SharedDtor,
-          static_cast<void (::google::protobuf::MessageLite::*)()>(&RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::ClearImpl),
+          &RewardListComp_CanRewardMissionIdEntry_DoNotUse::SharedDtor,
+          static_cast<void (::google::protobuf::MessageLite::*)()>(&RewardListComp_CanRewardMissionIdEntry_DoNotUse::ClearImpl),
               ::google::protobuf::Message::ByteSizeLongImpl, ::google::protobuf::Message::_InternalSerializeImpl
               ,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_._cached_size_),
           false,
       },
-      &RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::kDescriptorMethods,
+      &RewardListComp_CanRewardMissionIdEntry_DoNotUse::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_class_data_ =
-        RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull RewardListComp_CanRewardMissionIdEntry_DoNotUse_class_data_ =
+        RewardListComp_CanRewardMissionIdEntry_DoNotUse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_class_data_.tc_table);
-  return RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_class_data_.base();
+RewardListComp_CanRewardMissionIdEntry_DoNotUse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RewardListComp_CanRewardMissionIdEntry_DoNotUse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RewardListComp_CanRewardMissionIdEntry_DoNotUse_class_data_.tc_table);
+  return RewardListComp_CanRewardMissionIdEntry_DoNotUse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
-RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::_table_ = {
+RewardListComp_CanRewardMissionIdEntry_DoNotUse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -1332,27 +1331,27 @@ RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_class_data_.base(),
+    RewardListComp_CanRewardMissionIdEntry_DoNotUse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::RewardListComp_CanRewardMissionIdEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // bool value = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_.value_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_.value_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_.value_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_.value_)}},
     // uint32 key = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_.key_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_.key_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_.key_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_.key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 key = 1;
-    {PROTOBUF_FIELD_OFFSET(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // bool value = 2;
-    {PROTOBUF_FIELD_OFFSET(RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(RewardListComp_CanRewardMissionIdEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   // no aux_entries
@@ -1361,123 +1360,123 @@ RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::_table_ = {
 };
 // ===================================================================
 
-class RewardListPBComponent::_Internal {
+class RewardListComp::_Internal {
  public:
 };
 
-RewardListPBComponent::RewardListPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+RewardListComp::RewardListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RewardListPBComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, RewardListComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:RewardListPBComponent)
+  // @@protoc_insertion_point(arena_constructor:RewardListComp)
 }
-PROTOBUF_NDEBUG_INLINE RewardListPBComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE RewardListComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::RewardListPBComponent& from_msg)
+    const ::RewardListComp& from_msg)
       : can_reward_mission_id_{visibility, arena, from.can_reward_mission_id_},
         _cached_size_{0} {}
 
-RewardListPBComponent::RewardListPBComponent(
+RewardListComp::RewardListComp(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const RewardListPBComponent& from)
+    const RewardListComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RewardListPBComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, RewardListComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  RewardListPBComponent* const _this = this;
+  RewardListComp* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:RewardListPBComponent)
+  // @@protoc_insertion_point(copy_constructor:RewardListComp)
 }
-PROTOBUF_NDEBUG_INLINE RewardListPBComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE RewardListComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : can_reward_mission_id_{visibility, arena},
         _cached_size_{0} {}
 
-inline void RewardListPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void RewardListComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-RewardListPBComponent::~RewardListPBComponent() {
-  // @@protoc_insertion_point(destructor:RewardListPBComponent)
+RewardListComp::~RewardListComp() {
+  // @@protoc_insertion_point(destructor:RewardListComp)
   SharedDtor(*this);
 }
-inline void RewardListPBComponent::SharedDtor(MessageLite& self) {
-  RewardListPBComponent& this_ = static_cast<RewardListPBComponent&>(self);
+inline void RewardListComp::SharedDtor(MessageLite& self) {
+  RewardListComp& this_ = static_cast<RewardListComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL RewardListPBComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL RewardListComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) RewardListPBComponent(arena);
+  return ::new (mem) RewardListComp(arena);
 }
-constexpr auto RewardListPBComponent::InternalNewImpl_() {
+constexpr auto RewardListComp::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(RewardListPBComponent, _impl_.can_reward_mission_id_) +
-          decltype(RewardListPBComponent::_impl_.can_reward_mission_id_)::
+      PROTOBUF_FIELD_OFFSET(RewardListComp, _impl_.can_reward_mission_id_) +
+          decltype(RewardListComp::_impl_.can_reward_mission_id_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(RewardListPBComponent, _impl_.can_reward_mission_id_) +
-          decltype(RewardListPBComponent::_impl_.can_reward_mission_id_)::
+      PROTOBUF_FIELD_OFFSET(RewardListComp, _impl_.can_reward_mission_id_) +
+          decltype(RewardListComp::_impl_.can_reward_mission_id_)::
               InternalGetArenaOffsetAlt(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::CopyInit(
-        sizeof(RewardListPBComponent), alignof(RewardListPBComponent), *arena_bits);
+        sizeof(RewardListComp), alignof(RewardListComp), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&RewardListPBComponent::PlacementNew_,
-                                 sizeof(RewardListPBComponent),
-                                 alignof(RewardListPBComponent));
+    return ::google::protobuf::internal::MessageCreator(&RewardListComp::PlacementNew_,
+                                 sizeof(RewardListComp),
+                                 alignof(RewardListComp));
   }
 }
-constexpr auto RewardListPBComponent::InternalGenerateClassData_() {
+constexpr auto RewardListComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_RewardListPBComponent_default_instance_._instance,
+          &_RewardListComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &RewardListPBComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<RewardListPBComponent>(),
+          &RewardListComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RewardListComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &RewardListPBComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<RewardListPBComponent>(), &RewardListPBComponent::ByteSizeLong,
-              &RewardListPBComponent::_InternalSerialize,
+          &RewardListComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RewardListComp>(), &RewardListComp::ByteSizeLong,
+              &RewardListComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(RewardListPBComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(RewardListComp, _impl_._cached_size_),
           false,
       },
-      &RewardListPBComponent::kDescriptorMethods,
+      &RewardListComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull RewardListPBComponent_class_data_ =
-        RewardListPBComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull RewardListComp_class_data_ =
+        RewardListComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-RewardListPBComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&RewardListPBComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(RewardListPBComponent_class_data_.tc_table);
-  return RewardListPBComponent_class_data_.base();
+RewardListComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RewardListComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RewardListComp_class_data_.tc_table);
+  return RewardListComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-RewardListPBComponent::_table_ = {
+RewardListComp::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -1488,11 +1487,11 @@ RewardListPBComponent::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    RewardListPBComponent_class_data_.base(),
+    RewardListComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::RewardListPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::RewardListComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -1500,7 +1499,7 @@ RewardListPBComponent::_table_ = {
     65535, 65535
   }}, {{
     // map<uint32, bool> can_reward_mission_id = 1;
-    {PROTOBUF_FIELD_OFFSET(RewardListPBComponent, _impl_.can_reward_mission_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(RewardListComp, _impl_.can_reward_mission_id_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }},
   {{
@@ -1511,8 +1510,8 @@ RewardListPBComponent::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void RewardListPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:RewardListPBComponent)
+PROTOBUF_NOINLINE void RewardListComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:RewardListComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1523,17 +1522,17 @@ PROTOBUF_NOINLINE void RewardListPBComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL RewardListPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL RewardListComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const RewardListPBComponent& this_ = static_cast<const RewardListPBComponent&>(base);
+  const RewardListComp& this_ = static_cast<const RewardListComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL RewardListPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL RewardListComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const RewardListPBComponent& this_ = *this;
+  const RewardListComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:RewardListPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:RewardListComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1563,18 +1562,18 @@ PROTOBUF_NOINLINE void RewardListPBComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:RewardListPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:RewardListComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t RewardListPBComponent::ByteSizeLong(const MessageLite& base) {
-  const RewardListPBComponent& this_ = static_cast<const RewardListPBComponent&>(base);
+::size_t RewardListComp::ByteSizeLong(const MessageLite& base) {
+  const RewardListComp& this_ = static_cast<const RewardListComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t RewardListPBComponent::ByteSizeLong() const {
-  const RewardListPBComponent& this_ = *this;
+::size_t RewardListComp::ByteSizeLong() const {
+  const RewardListComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:RewardListPBComponent)
+  // @@protoc_insertion_point(message_byte_size_start:RewardListComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1598,10 +1597,10 @@ PROTOBUF_NOINLINE void RewardListPBComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void RewardListPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<RewardListPBComponent*>(&to_msg);
-  auto& from = static_cast<const RewardListPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:RewardListPBComponent)
+void RewardListComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RewardListComp*>(&to_msg);
+  auto& from = static_cast<const RewardListComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:RewardListComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1610,21 +1609,21 @@ void RewardListPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void RewardListPBComponent::CopyFrom(const RewardListPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:RewardListPBComponent)
+void RewardListComp::CopyFrom(const RewardListComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:RewardListComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void RewardListPBComponent::InternalSwap(RewardListPBComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void RewardListComp::InternalSwap(RewardListComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.can_reward_mission_id_.InternalSwap(&other->_impl_.can_reward_mission_id_);
 }
 
-::google::protobuf::Metadata RewardListPBComponent::GetMetadata() const {
+::google::protobuf::Metadata RewardListComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

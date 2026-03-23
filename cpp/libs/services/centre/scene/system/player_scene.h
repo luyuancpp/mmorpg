@@ -1,12 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "engine/core/type_define/type_define.h"
 
-class PlayerSceneContextPBComponent;
-class SceneInfoPBComponent;
-class ChangeSceneInfoPBComponent;
+class PlayerSceneContextComp;
+class SceneInfoComp;
+class ChangeSceneInfoComp;
 
 class PlayerSceneSystem
 {
@@ -16,14 +16,14 @@ public:
     static void ProcessPlayerEnterSceneNode(entt::entity player, NodeId node_id);
     static void AttemptEnterNextScene(entt::entity player);
     static uint32_t GetDefaultSceneConfigurationId();
-    static entt::entity FindSceneForPlayerLogin(const PlayerSceneContextPBComponent& sceneContext);
+    static entt::entity FindSceneForPlayerLogin(const PlayerSceneContextComp& sceneContext);
     static void ProcessEnterGameNode(entt::entity playerEntity, entt::entity sceneEntity);
     static void PushInitialChangeSceneInfo(entt::entity playerEntity, entt::entity sceneEntity);
     static bool VerifyChangeSceneRequest(entt::entity playerEntity);
     static entt::entity ResolveTargetScene(entt::entity playerEntity);
     static bool ValidateSceneSwitch(entt::entity playerEntity, entt::entity toScene);
     static void ProcessSceneChange(entt::entity playerEntity, entt::entity toScene);
-    static void HandleEnterScene(entt::entity playerEntity, const SceneInfoPBComponent& sceneInfo);
+    static void HandleEnterScene(entt::entity playerEntity, const SceneInfoComp& sceneInfo);
 };
 
 

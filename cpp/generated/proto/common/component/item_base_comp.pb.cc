@@ -25,7 +25,7 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr ItemPBComponent::Impl_::Impl_(
+inline constexpr ItemComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         item_id_{::uint64_t{0u}},
@@ -33,24 +33,24 @@ inline constexpr ItemPBComponent::Impl_::Impl_(
         size_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR ItemPBComponent::ItemPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ItemComp::ItemComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(ItemPBComponent_class_data_.base()),
+    : ::google::protobuf::Message(ItemComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct ItemPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ItemPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ItemPBComponentDefaultTypeInternal() {}
+struct ItemCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ItemCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ItemCompDefaultTypeInternal() {}
   union {
-    ItemPBComponent _instance;
+    ItemComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ItemPBComponentDefaultTypeInternal _ItemPBComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ItemCompDefaultTypeInternal _ItemComp_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -59,11 +59,11 @@ const ::uint32_t
     TableStruct_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ItemPBComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ItemComp, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::ItemPBComponent, _impl_.item_id_),
-        PROTOBUF_FIELD_OFFSET(::ItemPBComponent, _impl_.config_id_),
-        PROTOBUF_FIELD_OFFSET(::ItemPBComponent, _impl_.size_),
+        PROTOBUF_FIELD_OFFSET(::ItemComp, _impl_.item_id_),
+        PROTOBUF_FIELD_OFFSET(::ItemComp, _impl_.config_id_),
+        PROTOBUF_FIELD_OFFSET(::ItemComp, _impl_.size_),
         0,
         1,
         2,
@@ -71,23 +71,22 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::ItemPBComponent)},
+        {0, sizeof(::ItemComp)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_ItemPBComponent_default_instance_._instance,
+    &::_ItemComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n+proto/common/component/item_base_comp."
-    "proto\"C\n\017ItemPBComponent\022\017\n\007item_id\030\001 \001("
-    "\004\022\021\n\tconfig_id\030\002 \001(\r\022\014\n\004size\030\003 \001(\rb\006prot"
-    "o3"
+    "proto\"<\n\010ItemComp\022\017\n\007item_id\030\001 \001(\004\022\021\n\tco"
+    "nfig_id\030\002 \001(\r\022\014\n\004size\030\003 \001(\rb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto = {
     false,
     false,
-    122,
+    115,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto,
     "proto/common/component/item_base_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once,
@@ -102,27 +101,27 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
 };
 // ===================================================================
 
-class ItemPBComponent::_Internal {
+class ItemComp::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<ItemPBComponent>()._impl_._has_bits_);
+      decltype(::std::declval<ItemComp>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(ItemComp, _impl_._has_bits_);
 };
 
-ItemPBComponent::ItemPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ItemComp::ItemComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ItemPBComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ItemComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ItemPBComponent)
+  // @@protoc_insertion_point(arena_constructor:ItemComp)
 }
-ItemPBComponent::ItemPBComponent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ItemPBComponent& from)
+ItemComp::ItemComp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ItemComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ItemPBComponent_class_data_.base()),
+    : ::google::protobuf::Message(arena, ItemComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -130,12 +129,12 @@ ItemPBComponent::ItemPBComponent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE ItemPBComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ItemComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void ItemPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ItemComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, item_id_),
@@ -144,64 +143,64 @@ inline void ItemPBComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
                offsetof(Impl_, item_id_) +
                sizeof(Impl_::size_));
 }
-ItemPBComponent::~ItemPBComponent() {
-  // @@protoc_insertion_point(destructor:ItemPBComponent)
+ItemComp::~ItemComp() {
+  // @@protoc_insertion_point(destructor:ItemComp)
   SharedDtor(*this);
 }
-inline void ItemPBComponent::SharedDtor(MessageLite& self) {
-  ItemPBComponent& this_ = static_cast<ItemPBComponent&>(self);
+inline void ItemComp::SharedDtor(MessageLite& self) {
+  ItemComp& this_ = static_cast<ItemComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL ItemPBComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL ItemComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ItemPBComponent(arena);
+  return ::new (mem) ItemComp(arena);
 }
-constexpr auto ItemPBComponent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ItemPBComponent),
-                                            alignof(ItemPBComponent));
+constexpr auto ItemComp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ItemComp),
+                                            alignof(ItemComp));
 }
-constexpr auto ItemPBComponent::InternalGenerateClassData_() {
+constexpr auto ItemComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ItemPBComponent_default_instance_._instance,
+          &_ItemComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ItemPBComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ItemPBComponent>(),
+          &ItemComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ItemComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ItemPBComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<ItemPBComponent>(), &ItemPBComponent::ByteSizeLong,
-              &ItemPBComponent::_InternalSerialize,
+          &ItemComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ItemComp>(), &ItemComp::ByteSizeLong,
+              &ItemComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ItemComp, _impl_._cached_size_),
           false,
       },
-      &ItemPBComponent::kDescriptorMethods,
+      &ItemComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ItemPBComponent_class_data_ =
-        ItemPBComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ItemComp_class_data_ =
+        ItemComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ItemPBComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ItemPBComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ItemPBComponent_class_data_.tc_table);
-  return ItemPBComponent_class_data_.base();
+ItemComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ItemComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ItemComp_class_data_.tc_table);
+  return ItemComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
-ItemPBComponent::_table_ = {
+ItemComp::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ItemComp, _impl_._has_bits_),
     0, // no _extensions_
     3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -210,42 +209,42 @@ ItemPBComponent::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    ItemPBComponent_class_data_.base(),
+    ItemComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ItemPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ItemComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 item_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ItemPBComponent, _impl_.item_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.item_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ItemComp, _impl_.item_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ItemComp, _impl_.item_id_)}},
     // uint32 config_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemPBComponent, _impl_.config_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.config_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemComp, _impl_.config_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ItemComp, _impl_.config_id_)}},
     // uint32 size = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemPBComponent, _impl_.size_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.size_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemComp, _impl_.size_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(ItemComp, _impl_.size_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 item_id = 1;
-    {PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.item_id_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ItemComp, _impl_.item_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 config_id = 2;
-    {PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.config_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(ItemComp, _impl_.config_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 size = 3;
-    {PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.size_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(ItemComp, _impl_.size_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void ItemPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:ItemPBComponent)
+PROTOBUF_NOINLINE void ItemComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:ItemComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -262,17 +261,17 @@ PROTOBUF_NOINLINE void ItemPBComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ItemPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ItemComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ItemPBComponent& this_ = static_cast<const ItemPBComponent&>(base);
+  const ItemComp& this_ = static_cast<const ItemComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ItemPBComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ItemComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ItemPBComponent& this_ = *this;
+  const ItemComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:ItemPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:ItemComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -308,18 +307,18 @@ PROTOBUF_NOINLINE void ItemPBComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ItemPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:ItemComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ItemPBComponent::ByteSizeLong(const MessageLite& base) {
-  const ItemPBComponent& this_ = static_cast<const ItemPBComponent&>(base);
+::size_t ItemComp::ByteSizeLong(const MessageLite& base) {
+  const ItemComp& this_ = static_cast<const ItemComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ItemPBComponent::ByteSizeLong() const {
-  const ItemPBComponent& this_ = *this;
+::size_t ItemComp::ByteSizeLong() const {
+  const ItemComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:ItemPBComponent)
+  // @@protoc_insertion_point(message_byte_size_start:ItemComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -355,10 +354,10 @@ PROTOBUF_NOINLINE void ItemPBComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void ItemPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ItemPBComponent*>(&to_msg);
-  auto& from = static_cast<const ItemPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:ItemPBComponent)
+void ItemComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ItemComp*>(&to_msg);
+  auto& from = static_cast<const ItemComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ItemComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -385,27 +384,27 @@ void ItemPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ItemPBComponent::CopyFrom(const ItemPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ItemPBComponent)
+void ItemComp::CopyFrom(const ItemComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ItemComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void ItemPBComponent::InternalSwap(ItemPBComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ItemComp::InternalSwap(ItemComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.size_)
-      + sizeof(ItemPBComponent::_impl_.size_)
-      - PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.item_id_)>(
+      PROTOBUF_FIELD_OFFSET(ItemComp, _impl_.size_)
+      + sizeof(ItemComp::_impl_.size_)
+      - PROTOBUF_FIELD_OFFSET(ItemComp, _impl_.item_id_)>(
           reinterpret_cast<char*>(&_impl_.item_id_),
           reinterpret_cast<char*>(&other->_impl_.item_id_));
 }
 
-::google::protobuf::Metadata ItemPBComponent::GetMetadata() const {
+::google::protobuf::Metadata ItemComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

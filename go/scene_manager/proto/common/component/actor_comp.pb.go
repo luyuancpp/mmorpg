@@ -428,7 +428,7 @@ func (x *ViewRadius) GetRadius() float64 {
 }
 
 // 玩家基础属性组件，仅存储与战斗相关的基础属性
-type BaseAttributesPbComponent struct {
+type BaseAttributesComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Strength      uint64                 `protobuf:"varint,1,opt,name=strength,proto3" json:"strength,omitempty"`     // 力量，影响物理攻击
 	Stamina       uint64                 `protobuf:"varint,2,opt,name=stamina,proto3" json:"stamina,omitempty"`       // 耐力，影响生命值等
@@ -441,20 +441,20 @@ type BaseAttributesPbComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BaseAttributesPbComponent) Reset() {
-	*x = BaseAttributesPbComponent{}
+func (x *BaseAttributesComp) Reset() {
+	*x = BaseAttributesComp{}
 	mi := &file_proto_common_component_actor_comp_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BaseAttributesPbComponent) String() string {
+func (x *BaseAttributesComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BaseAttributesPbComponent) ProtoMessage() {}
+func (*BaseAttributesComp) ProtoMessage() {}
 
-func (x *BaseAttributesPbComponent) ProtoReflect() protoreflect.Message {
+func (x *BaseAttributesComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_actor_comp_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -466,54 +466,54 @@ func (x *BaseAttributesPbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BaseAttributesPbComponent.ProtoReflect.Descriptor instead.
-func (*BaseAttributesPbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use BaseAttributesComp.ProtoReflect.Descriptor instead.
+func (*BaseAttributesComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_comp_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *BaseAttributesPbComponent) GetStrength() uint64 {
+func (x *BaseAttributesComp) GetStrength() uint64 {
 	if x != nil {
 		return x.Strength
 	}
 	return 0
 }
 
-func (x *BaseAttributesPbComponent) GetStamina() uint64 {
+func (x *BaseAttributesComp) GetStamina() uint64 {
 	if x != nil {
 		return x.Stamina
 	}
 	return 0
 }
 
-func (x *BaseAttributesPbComponent) GetHealth() uint64 {
+func (x *BaseAttributesComp) GetHealth() uint64 {
 	if x != nil {
 		return x.Health
 	}
 	return 0
 }
 
-func (x *BaseAttributesPbComponent) GetMana() uint64 {
+func (x *BaseAttributesComp) GetMana() uint64 {
 	if x != nil {
 		return x.Mana
 	}
 	return 0
 }
 
-func (x *BaseAttributesPbComponent) GetCritchance() uint64 {
+func (x *BaseAttributesComp) GetCritchance() uint64 {
 	if x != nil {
 		return x.Critchance
 	}
 	return 0
 }
 
-func (x *BaseAttributesPbComponent) GetArmor() uint64 {
+func (x *BaseAttributesComp) GetArmor() uint64 {
 	if x != nil {
 		return x.Armor
 	}
 	return 0
 }
 
-func (x *BaseAttributesPbComponent) GetResistance() uint64 {
+func (x *BaseAttributesComp) GetResistance() uint64 {
 	if x != nil {
 		return x.Resistance
 	}
@@ -521,27 +521,27 @@ func (x *BaseAttributesPbComponent) GetResistance() uint64 {
 }
 
 // 玩家等级组件，专注于管理等级及与等级相关的功能
-type LevelPbComponent struct {
+type LevelComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Level         uint32                 `protobuf:"varint,1,opt,name=level,proto3" json:"level,omitempty"` // 玩家等级
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LevelPbComponent) Reset() {
-	*x = LevelPbComponent{}
+func (x *LevelComp) Reset() {
+	*x = LevelComp{}
 	mi := &file_proto_common_component_actor_comp_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LevelPbComponent) String() string {
+func (x *LevelComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LevelPbComponent) ProtoMessage() {}
+func (*LevelComp) ProtoMessage() {}
 
-func (x *LevelPbComponent) ProtoReflect() protoreflect.Message {
+func (x *LevelComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_actor_comp_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -553,39 +553,39 @@ func (x *LevelPbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LevelPbComponent.ProtoReflect.Descriptor instead.
-func (*LevelPbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use LevelComp.ProtoReflect.Descriptor instead.
+func (*LevelComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_comp_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *LevelPbComponent) GetLevel() uint32 {
+func (x *LevelComp) GetLevel() uint32 {
 	if x != nil {
 		return x.Level
 	}
 	return 0
 }
 
-type ActorStatePbComponent struct {
+type ActorStateComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	StateList     map[uint32]bool        `protobuf:"bytes,1,rep,name=state_list,json=stateList,proto3" json:"state_list,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ActorStatePbComponent) Reset() {
-	*x = ActorStatePbComponent{}
+func (x *ActorStateComp) Reset() {
+	*x = ActorStateComp{}
 	mi := &file_proto_common_component_actor_comp_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ActorStatePbComponent) String() string {
+func (x *ActorStateComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ActorStatePbComponent) ProtoMessage() {}
+func (*ActorStateComp) ProtoMessage() {}
 
-func (x *ActorStatePbComponent) ProtoReflect() protoreflect.Message {
+func (x *ActorStateComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_actor_comp_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -597,12 +597,12 @@ func (x *ActorStatePbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ActorStatePbComponent.ProtoReflect.Descriptor instead.
-func (*ActorStatePbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use ActorStateComp.ProtoReflect.Descriptor instead.
+func (*ActorStateComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_comp_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *ActorStatePbComponent) GetStateList() map[uint32]bool {
+func (x *ActorStateComp) GetStateList() map[uint32]bool {
 	if x != nil {
 		return x.StateList
 	}
@@ -640,8 +640,8 @@ const file_proto_common_component_actor_comp_proto_rawDesc = "" +
 	"\x01z\x18\x03 \x01(\x01R\x01z\"$\n" +
 	"\n" +
 	"ViewRadius\x12\x16\n" +
-	"\x06radius\x18\x01 \x01(\x01R\x06radius\"\xd3\x01\n" +
-	"\x19BaseAttributesPbComponent\x12\x1a\n" +
+	"\x06radius\x18\x01 \x01(\x01R\x06radius\"\xcc\x01\n" +
+	"\x12BaseAttributesComp\x12\x1a\n" +
 	"\bstrength\x18\x01 \x01(\x04R\bstrength\x12\x18\n" +
 	"\astamina\x18\x02 \x01(\x04R\astamina\x12\x16\n" +
 	"\x06health\x18\x03 \x01(\x04R\x06health\x12\x12\n" +
@@ -652,12 +652,12 @@ const file_proto_common_component_actor_comp_proto_rawDesc = "" +
 	"\x05armor\x18\x06 \x01(\x04R\x05armor\x12\x1e\n" +
 	"\n" +
 	"resistance\x18\a \x01(\x04R\n" +
-	"resistance\"(\n" +
-	"\x10LevelPbComponent\x12\x14\n" +
-	"\x05level\x18\x01 \x01(\rR\x05level\"\x9b\x01\n" +
-	"\x15ActorStatePbComponent\x12D\n" +
+	"resistance\"!\n" +
+	"\tLevelComp\x12\x14\n" +
+	"\x05level\x18\x01 \x01(\rR\x05level\"\x8d\x01\n" +
+	"\x0eActorStateComp\x12=\n" +
 	"\n" +
-	"state_list\x18\x01 \x03(\v2%.ActorStatePbComponent.StateListEntryR\tstateList\x1a<\n" +
+	"state_list\x18\x01 \x03(\v2\x1e.ActorStateComp.StateListEntryR\tstateList\x1a<\n" +
 	"\x0eStateListEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B&Z$scene_manager/proto/common/componentb\x06proto3"
@@ -676,24 +676,24 @@ func file_proto_common_component_actor_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_proto_common_component_actor_comp_proto_goTypes = []any{
-	(*Location)(nil),                  // 0: Location
-	(*Rotation)(nil),                  // 1: Rotation
-	(*Scale)(nil),                     // 2: Scale
-	(*Transform)(nil),                 // 3: Transform
-	(*Velocity)(nil),                  // 4: Velocity
-	(*Acceleration)(nil),              // 5: Acceleration
-	(*ViewRadius)(nil),                // 6: ViewRadius
-	(*BaseAttributesPbComponent)(nil), // 7: BaseAttributesPbComponent
-	(*LevelPbComponent)(nil),          // 8: LevelPbComponent
-	(*ActorStatePbComponent)(nil),     // 9: ActorStatePbComponent
-	nil,                               // 10: ActorStatePbComponent.StateListEntry
-	(*Vector3)(nil),                   // 11: Vector3
+	(*Location)(nil),           // 0: Location
+	(*Rotation)(nil),           // 1: Rotation
+	(*Scale)(nil),              // 2: Scale
+	(*Transform)(nil),          // 3: Transform
+	(*Velocity)(nil),           // 4: Velocity
+	(*Acceleration)(nil),       // 5: Acceleration
+	(*ViewRadius)(nil),         // 6: ViewRadius
+	(*BaseAttributesComp)(nil), // 7: BaseAttributesComp
+	(*LevelComp)(nil),          // 8: LevelComp
+	(*ActorStateComp)(nil),     // 9: ActorStateComp
+	nil,                        // 10: ActorStateComp.StateListEntry
+	(*Vector3)(nil),            // 11: Vector3
 }
 var file_proto_common_component_actor_comp_proto_depIdxs = []int32{
 	11, // 0: Transform.location:type_name -> Vector3
 	1,  // 1: Transform.rotation:type_name -> Rotation
 	2,  // 2: Transform.scale:type_name -> Scale
-	10, // 3: ActorStatePbComponent.state_list:type_name -> ActorStatePbComponent.StateListEntry
+	10, // 3: ActorStateComp.state_list:type_name -> ActorStateComp.StateListEntry
 	4,  // [4:4] is the sub-list for method output_type
 	4,  // [4:4] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name

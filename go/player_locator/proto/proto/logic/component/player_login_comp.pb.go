@@ -76,27 +76,27 @@ func (EnterGsType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_logic_component_player_login_comp_proto_rawDescGZIP(), []int{0}
 }
 
-type PlayerEnterGameStatePbComp struct {
+type PlayerEnterGameStateComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EnterGsType   uint32                 `protobuf:"varint,1,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PlayerEnterGameStatePbComp) Reset() {
-	*x = PlayerEnterGameStatePbComp{}
+func (x *PlayerEnterGameStateComp) Reset() {
+	*x = PlayerEnterGameStateComp{}
 	mi := &file_proto_logic_component_player_login_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerEnterGameStatePbComp) String() string {
+func (x *PlayerEnterGameStateComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerEnterGameStatePbComp) ProtoMessage() {}
+func (*PlayerEnterGameStateComp) ProtoMessage() {}
 
-func (x *PlayerEnterGameStatePbComp) ProtoReflect() protoreflect.Message {
+func (x *PlayerEnterGameStateComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_logic_component_player_login_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -108,12 +108,12 @@ func (x *PlayerEnterGameStatePbComp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerEnterGameStatePbComp.ProtoReflect.Descriptor instead.
-func (*PlayerEnterGameStatePbComp) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerEnterGameStateComp.ProtoReflect.Descriptor instead.
+func (*PlayerEnterGameStateComp) Descriptor() ([]byte, []int) {
 	return file_proto_logic_component_player_login_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerEnterGameStatePbComp) GetEnterGsType() uint32 {
+func (x *PlayerEnterGameStateComp) GetEnterGsType() uint32 {
 	if x != nil {
 		return x.EnterGsType
 	}
@@ -177,7 +177,7 @@ var File_proto_logic_component_player_login_comp_proto protoreflect.FileDescript
 const file_proto_logic_component_player_login_comp_proto_rawDesc = "" +
 	"\n" +
 	"-proto/logic/component/player_login_comp.proto\"@\n" +
-	"\x1aPlayerEnterGameStatePbComp\x12\"\n" +
+	"\x1aPlayerEnterGameStateComp\x12\"\n" +
 	"\renter_gs_type\x18\x01 \x01(\rR\venterGsType\"n\n" +
 	"\x18PlayerDisconnectInfoComp\x12'\n" +
 	"\x0fdisconnected_at\x18\x01 \x01(\x04R\x0edisconnectedAt\x12)\n" +
@@ -206,7 +206,7 @@ var file_proto_logic_component_player_login_comp_proto_enumTypes = make([]protoi
 var file_proto_logic_component_player_login_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_logic_component_player_login_comp_proto_goTypes = []any{
 	(EnterGsType)(0),                   // 0: EnterGsType
-	(*PlayerEnterGameStatePbComp)(nil), // 1: PlayerEnterGameStatePbComp
+	(*PlayerEnterGameStateComp)(nil), // 1: PlayerEnterGameStateComp
 	(*PlayerDisconnectInfoComp)(nil),   // 2: PlayerDisconnectInfoComp
 }
 var file_proto_logic_component_player_login_comp_proto_depIdxs = []int32{

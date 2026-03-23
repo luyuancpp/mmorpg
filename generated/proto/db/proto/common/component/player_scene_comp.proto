@@ -3,15 +3,15 @@ option go_package = "db/proto/common/component";
 
 
 
-message PlayerSceneInfoPBComponent
+message PlayerSceneInfoComp
 {
   uint32 scene_confid = 1;
   uint32 guid = 2;
 }
 
-message PlayerSceneContextPBComponent
+message PlayerSceneContextComp
 {
-	PlayerSceneInfoPBComponent scene_info = 1;
-	PlayerSceneInfoPBComponent scene_info_last_time = 2;
+	PlayerSceneInfoComp scene_info = 1;
+	PlayerSceneInfoComp scene_info_last_time = 2;
 }
 

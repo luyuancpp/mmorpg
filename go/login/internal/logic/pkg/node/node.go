@@ -51,7 +51,7 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 	info := &login_proto.NodeInfo{
 		NodeId:   uint32(time.Now().UnixNano()),
 		NodeType: nodeType,
-		Endpoint: &login_proto.EndpointPBComponent{
+		Endpoint: &login_proto.EndpointComp{
 			Ip:   ip,
 			Port: port,
 		},

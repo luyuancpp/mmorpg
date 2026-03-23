@@ -324,7 +324,7 @@ void InitMessageInfo()
     gRpcMethodRegistry[SceneScenePlayerEnterSceneS2CMessageId] = RpcMethodMeta{
         "SceneScenePlayer", "EnterSceneS2C",
         std::make_unique<::EnterSceneS2CRequest>(),
-        std::make_unique<::EnterScenerS2CResponse>(),
+        std::make_unique<::EnterSceneS2CResponse>(),
         std::make_unique<SceneScenePlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneScene ---
@@ -379,8 +379,8 @@ void InitMessageInfo()
     // --- SceneSkillClientPlayer ---
     gRpcMethodRegistry[SceneSkillClientPlayerReleaseSkillMessageId] = RpcMethodMeta{
         "SceneSkillClientPlayer", "ReleaseSkill",
-        std::make_unique<::ReleaseSkillSkillRequest>(),
-        std::make_unique<::ReleaseSkillSkillResponse>(),
+        std::make_unique<::ReleaseSkillRequest>(),
+        std::make_unique<::ReleaseSkillResponse>(),
         std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSkillClientPlayerNotifySkillUsedMessageId] = RpcMethodMeta{
         "SceneSkillClientPlayer", "NotifySkillUsed",
@@ -596,8 +596,8 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		dispatcher.enqueue(event);
 		return true;
 	}
-	case BuffTestEvetEventId: {
-		BuffTestEvet event;
+	case BuffTestEventEventId: {
+		BuffTestEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}

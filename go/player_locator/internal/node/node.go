@@ -50,7 +50,7 @@ func NewNode(nodeType uint32, ip string, port uint32) (*Node, error) {
 
 	info := &proto_common.NodeInfo{
 		NodeType: nodeType,
-		Endpoint: &proto_common.EndpointPBComponent{
+		Endpoint: &proto_common.EndpointComp{
 			Ip:   ip,
 			Port: port,
 		},

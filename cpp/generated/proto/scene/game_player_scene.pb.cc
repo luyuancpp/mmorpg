@@ -94,30 +94,30 @@ struct GsLeaveSceneRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GsLeaveSceneRequestDefaultTypeInternal _GsLeaveSceneRequest_default_instance_;
 
-inline constexpr EnterScenerS2CResponse::Impl_::Impl_(
+inline constexpr EnterSceneS2CResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         error_message_{nullptr} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR EnterScenerS2CResponse::EnterScenerS2CResponse(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR EnterSceneS2CResponse::EnterSceneS2CResponse(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(EnterScenerS2CResponse_class_data_.base()),
+    : ::google::protobuf::Message(EnterSceneS2CResponse_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct EnterScenerS2CResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR EnterScenerS2CResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~EnterScenerS2CResponseDefaultTypeInternal() {}
+struct EnterSceneS2CResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR EnterSceneS2CResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~EnterSceneS2CResponseDefaultTypeInternal() {}
   union {
-    EnterScenerS2CResponse _instance;
+    EnterSceneS2CResponse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterScenerS2CResponseDefaultTypeInternal _EnterScenerS2CResponse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterSceneS2CResponseDefaultTypeInternal _EnterSceneS2CResponse_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fscene_2fgame_5fplayer_5fscene_2eproto = nullptr;
 static const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL
@@ -139,9 +139,9 @@ const ::uint32_t
         0,
         0x000, // bitmap
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::EnterScenerS2CResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::EnterSceneS2CResponse, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::EnterScenerS2CResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::EnterSceneS2CResponse, _impl_.error_message_),
         0,
 };
 
@@ -150,13 +150,13 @@ static const ::_pbi::MigrationSchema
         {0, sizeof(::GsEnterSceneRequest)},
         {7, sizeof(::GsLeaveSceneRequest)},
         {12, sizeof(::EnterSceneS2CRequest)},
-        {13, sizeof(::EnterScenerS2CResponse)},
+        {13, sizeof(::EnterSceneS2CResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_GsEnterSceneRequest_default_instance_._instance,
     &::_GsLeaveSceneRequest_default_instance_._instance,
     &::_EnterSceneS2CRequest_default_instance_._instance,
-    &::_EnterScenerS2CResponse_default_instance_._instance,
+    &::_EnterSceneS2CResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_5fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -165,17 +165,17 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_5fscene_2epro
     "/base/tip.proto\032\033google/protobuf/empty.p"
     "roto\032\'proto/common/component/scene_comp."
     "proto\";\n\023GsEnterSceneRequest\022\022\n\nsession_"
-    "id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"M\n\023GsLeaveSce"
-    "neRequest\0226\n\021change_scene_info\030\002 \001(\0132\033.C"
-    "hangeSceneInfoPBComponent\"\026\n\024EnterSceneS"
-    "2CRequest\"@\n\026EnterScenerS2CResponse\022&\n\re"
-    "rror_message\030\001 \001(\0132\017.TipInfoMessage2\322\001\n\020"
-    "SceneScenePlayer\022:\n\nEnterScene\022\024.GsEnter"
-    "SceneRequest\032\026.google.protobuf.Empty\022:\n\n"
-    "LeaveScene\022\024.GsLeaveSceneRequest\032\026.googl"
-    "e.protobuf.Empty\022\?\n\rEnterSceneS2C\022\025.Ente"
-    "rSceneS2CRequest\032\027.EnterScenerS2CRespons"
-    "e\032\005\200\250\303\001\001B\007\200\001\001\230\324a\003b\006proto3"
+    "id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"F\n\023GsLeaveSce"
+    "neRequest\022/\n\021change_scene_info\030\002 \001(\0132\024.C"
+    "hangeSceneInfoComp\"\026\n\024EnterSceneS2CReque"
+    "st\"\?\n\025EnterSceneS2CResponse\022&\n\rerror_mes"
+    "sage\030\001 \001(\0132\017.TipInfoMessage2\321\001\n\020SceneSce"
+    "nePlayer\022:\n\nEnterScene\022\024.GsEnterSceneReq"
+    "uest\032\026.google.protobuf.Empty\022:\n\nLeaveSce"
+    "ne\022\024.GsLeaveSceneRequest\032\026.google.protob"
+    "uf.Empty\022>\n\rEnterSceneS2C\022\025.EnterSceneS2"
+    "CRequest\032\026.EnterSceneS2CResponse\032\005\200\250\303\001\001B"
+    "\007\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto_deps[4] = {
@@ -188,7 +188,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto = {
     false,
     false,
-    625,
+    616,
     descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_5fscene_2eproto,
     "proto/scene/game_player_scene.proto",
     &descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto_once,
@@ -615,18 +615,18 @@ GsLeaveSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::GsLeaveSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .ChangeSceneInfoPBComponent change_scene_info = 2;
+    // .ChangeSceneInfoComp change_scene_info = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(GsLeaveSceneRequest, _impl_.change_scene_info_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .ChangeSceneInfoPBComponent change_scene_info = 2;
+    // .ChangeSceneInfoComp change_scene_info = 2;
     {PROTOBUF_FIELD_OFFSET(GsLeaveSceneRequest, _impl_.change_scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::ChangeSceneInfoPBComponent>()},
+      {::_pbi::TcParser::GetTable<::ChangeSceneInfoComp>()},
   }},
   {{
   }},
@@ -663,7 +663,7 @@ PROTOBUF_NOINLINE void GsLeaveSceneRequest::Clear() {
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // .ChangeSceneInfoPBComponent change_scene_info = 2;
+  // .ChangeSceneInfoComp change_scene_info = 2;
   if ((cached_has_bits & 0x00000001u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *this_._impl_.change_scene_info_, this_._impl_.change_scene_info_->GetCachedSize(), target,
@@ -694,7 +694,7 @@ PROTOBUF_NOINLINE void GsLeaveSceneRequest::Clear() {
   (void)cached_has_bits;
 
    {
-    // .ChangeSceneInfoPBComponent change_scene_info = 2;
+    // .ChangeSceneInfoComp change_scene_info = 2;
     cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       total_size += 1 +
@@ -856,44 +856,44 @@ EnterSceneS2CRequest::_table_ = {
 }
 // ===================================================================
 
-class EnterScenerS2CResponse::_Internal {
+class EnterSceneS2CResponse::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<EnterScenerS2CResponse>()._impl_._has_bits_);
+      decltype(::std::declval<EnterSceneS2CResponse>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(EnterScenerS2CResponse, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(EnterSceneS2CResponse, _impl_._has_bits_);
 };
 
-void EnterScenerS2CResponse::clear_error_message() {
+void EnterSceneS2CResponse::clear_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-EnterScenerS2CResponse::EnterScenerS2CResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+EnterSceneS2CResponse::EnterSceneS2CResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, EnterScenerS2CResponse_class_data_.base()) {
+    : ::google::protobuf::Message(arena, EnterSceneS2CResponse_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:EnterScenerS2CResponse)
+  // @@protoc_insertion_point(arena_constructor:EnterSceneS2CResponse)
 }
-PROTOBUF_NDEBUG_INLINE EnterScenerS2CResponse::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE EnterSceneS2CResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::EnterScenerS2CResponse& from_msg)
+    const ::EnterSceneS2CResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
-EnterScenerS2CResponse::EnterScenerS2CResponse(
+EnterSceneS2CResponse::EnterSceneS2CResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const EnterScenerS2CResponse& from)
+    const EnterSceneS2CResponse& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, EnterScenerS2CResponse_class_data_.base()) {
+    : ::google::protobuf::Message(arena, EnterSceneS2CResponse_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  EnterScenerS2CResponse* const _this = this;
+  EnterSceneS2CResponse* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -903,76 +903,76 @@ EnterScenerS2CResponse::EnterScenerS2CResponse(
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
 
-  // @@protoc_insertion_point(copy_constructor:EnterScenerS2CResponse)
+  // @@protoc_insertion_point(copy_constructor:EnterSceneS2CResponse)
 }
-PROTOBUF_NDEBUG_INLINE EnterScenerS2CResponse::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE EnterSceneS2CResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void EnterScenerS2CResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void EnterSceneS2CResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.error_message_ = {};
 }
-EnterScenerS2CResponse::~EnterScenerS2CResponse() {
-  // @@protoc_insertion_point(destructor:EnterScenerS2CResponse)
+EnterSceneS2CResponse::~EnterSceneS2CResponse() {
+  // @@protoc_insertion_point(destructor:EnterSceneS2CResponse)
   SharedDtor(*this);
 }
-inline void EnterScenerS2CResponse::SharedDtor(MessageLite& self) {
-  EnterScenerS2CResponse& this_ = static_cast<EnterScenerS2CResponse&>(self);
+inline void EnterSceneS2CResponse::SharedDtor(MessageLite& self) {
+  EnterSceneS2CResponse& this_ = static_cast<EnterSceneS2CResponse&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   delete this_._impl_.error_message_;
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL EnterScenerS2CResponse::PlacementNew_(
+inline void* PROTOBUF_NONNULL EnterSceneS2CResponse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) EnterScenerS2CResponse(arena);
+  return ::new (mem) EnterSceneS2CResponse(arena);
 }
-constexpr auto EnterScenerS2CResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(EnterScenerS2CResponse),
-                                            alignof(EnterScenerS2CResponse));
+constexpr auto EnterSceneS2CResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(EnterSceneS2CResponse),
+                                            alignof(EnterSceneS2CResponse));
 }
-constexpr auto EnterScenerS2CResponse::InternalGenerateClassData_() {
+constexpr auto EnterSceneS2CResponse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_EnterScenerS2CResponse_default_instance_._instance,
+          &_EnterSceneS2CResponse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &EnterScenerS2CResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<EnterScenerS2CResponse>(),
+          &EnterSceneS2CResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<EnterSceneS2CResponse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &EnterScenerS2CResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<EnterScenerS2CResponse>(), &EnterScenerS2CResponse::ByteSizeLong,
-              &EnterScenerS2CResponse::_InternalSerialize,
+          &EnterSceneS2CResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<EnterSceneS2CResponse>(), &EnterSceneS2CResponse::ByteSizeLong,
+              &EnterSceneS2CResponse::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(EnterScenerS2CResponse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(EnterSceneS2CResponse, _impl_._cached_size_),
           false,
       },
-      &EnterScenerS2CResponse::kDescriptorMethods,
+      &EnterSceneS2CResponse::kDescriptorMethods,
       &descriptor_table_proto_2fscene_2fgame_5fplayer_5fscene_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull EnterScenerS2CResponse_class_data_ =
-        EnterScenerS2CResponse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull EnterSceneS2CResponse_class_data_ =
+        EnterSceneS2CResponse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-EnterScenerS2CResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&EnterScenerS2CResponse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(EnterScenerS2CResponse_class_data_.tc_table);
-  return EnterScenerS2CResponse_class_data_.base();
+EnterSceneS2CResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&EnterSceneS2CResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(EnterSceneS2CResponse_class_data_.tc_table);
+  return EnterSceneS2CResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-EnterScenerS2CResponse::_table_ = {
+EnterSceneS2CResponse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(EnterScenerS2CResponse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(EnterSceneS2CResponse, _impl_._has_bits_),
     0, // no _extensions_
     1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -981,21 +981,21 @@ EnterScenerS2CResponse::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    EnterScenerS2CResponse_class_data_.base(),
+    EnterSceneS2CResponse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::EnterScenerS2CResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::EnterSceneS2CResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .TipInfoMessage error_message = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(EnterScenerS2CResponse, _impl_.error_message_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(EnterSceneS2CResponse, _impl_.error_message_)}},
   }}, {{
     65535, 65535
   }}, {{
     // .TipInfoMessage error_message = 1;
-    {PROTOBUF_FIELD_OFFSET(EnterScenerS2CResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterSceneS2CResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
@@ -1004,8 +1004,8 @@ EnterScenerS2CResponse::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void EnterScenerS2CResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:EnterScenerS2CResponse)
+PROTOBUF_NOINLINE void EnterSceneS2CResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:EnterSceneS2CResponse)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1021,17 +1021,17 @@ PROTOBUF_NOINLINE void EnterScenerS2CResponse::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL EnterScenerS2CResponse::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL EnterSceneS2CResponse::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const EnterScenerS2CResponse& this_ = static_cast<const EnterScenerS2CResponse&>(base);
+  const EnterSceneS2CResponse& this_ = static_cast<const EnterSceneS2CResponse&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL EnterScenerS2CResponse::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL EnterSceneS2CResponse::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const EnterScenerS2CResponse& this_ = *this;
+  const EnterSceneS2CResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:EnterScenerS2CResponse)
+  // @@protoc_insertion_point(serialize_to_array_start:EnterSceneS2CResponse)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1048,18 +1048,18 @@ PROTOBUF_NOINLINE void EnterScenerS2CResponse::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:EnterScenerS2CResponse)
+  // @@protoc_insertion_point(serialize_to_array_end:EnterSceneS2CResponse)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t EnterScenerS2CResponse::ByteSizeLong(const MessageLite& base) {
-  const EnterScenerS2CResponse& this_ = static_cast<const EnterScenerS2CResponse&>(base);
+::size_t EnterSceneS2CResponse::ByteSizeLong(const MessageLite& base) {
+  const EnterSceneS2CResponse& this_ = static_cast<const EnterSceneS2CResponse&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t EnterScenerS2CResponse::ByteSizeLong() const {
-  const EnterScenerS2CResponse& this_ = *this;
+::size_t EnterSceneS2CResponse::ByteSizeLong() const {
+  const EnterSceneS2CResponse& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:EnterScenerS2CResponse)
+  // @@protoc_insertion_point(message_byte_size_start:EnterSceneS2CResponse)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1078,11 +1078,11 @@ PROTOBUF_NOINLINE void EnterScenerS2CResponse::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void EnterScenerS2CResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<EnterScenerS2CResponse*>(&to_msg);
-  auto& from = static_cast<const EnterScenerS2CResponse&>(from_msg);
+void EnterSceneS2CResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<EnterSceneS2CResponse*>(&to_msg);
+  auto& from = static_cast<const EnterSceneS2CResponse&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:EnterScenerS2CResponse)
+  // @@protoc_insertion_point(class_specific_merge_from_start:EnterSceneS2CResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1100,22 +1100,22 @@ void EnterScenerS2CResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void EnterScenerS2CResponse::CopyFrom(const EnterScenerS2CResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:EnterScenerS2CResponse)
+void EnterSceneS2CResponse::CopyFrom(const EnterSceneS2CResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:EnterSceneS2CResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void EnterScenerS2CResponse::InternalSwap(EnterScenerS2CResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void EnterSceneS2CResponse::InternalSwap(EnterSceneS2CResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   swap(_impl_.error_message_, other->_impl_.error_message_);
 }
 
-::google::protobuf::Metadata EnterScenerS2CResponse::GetMetadata() const {
+::google::protobuf::Metadata EnterSceneS2CResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -1145,7 +1145,7 @@ void SceneScenePlayer::LeaveScene(::google::protobuf::RpcController* PROTOBUF_NU
 }
 void SceneScenePlayer::EnterSceneS2C(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                          const ::EnterSceneS2CRequest* PROTOBUF_NONNULL,
-                         ::EnterScenerS2CResponse* PROTOBUF_NONNULL,
+                         ::EnterSceneS2CResponse* PROTOBUF_NONNULL,
                          ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   controller->SetFailed("Method EnterSceneS2C() not implemented.");
   done->Run();
@@ -1168,7 +1168,7 @@ void SceneScenePlayer::CallMethod(
       break;
     case 2:
       this->EnterSceneS2C(controller, ::google::protobuf::DownCastMessage<::EnterSceneS2CRequest>(request),
-                   ::google::protobuf::DownCastMessage<::EnterScenerS2CResponse>(response), done);
+                   ::google::protobuf::DownCastMessage<::EnterSceneS2CResponse>(response), done);
       break;
 
     default:
@@ -1204,7 +1204,7 @@ const ::google::protobuf::Message& SceneScenePlayer::GetResponsePrototype(
     case 1:
       return ::google::protobuf::Empty::default_instance();
     case 2:
-      return ::EnterScenerS2CResponse::default_instance();
+      return ::EnterSceneS2CResponse::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -1242,7 +1242,7 @@ void SceneScenePlayer_Stub::LeaveScene(
 }
 void SceneScenePlayer_Stub::EnterSceneS2C(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::EnterSceneS2CRequest* PROTOBUF_NONNULL request, ::EnterScenerS2CResponse* PROTOBUF_NONNULL response,
+    const ::EnterSceneS2CRequest* PROTOBUF_NONNULL request, ::EnterSceneS2CResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);

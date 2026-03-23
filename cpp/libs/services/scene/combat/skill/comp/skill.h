@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "time/comp/timer_task_comp.h"
 #include "proto/common/component/skill_comp.pb.h"
 
@@ -26,7 +26,7 @@ struct ChannelIntervalTimerComp
     TimerTaskComp timer;
 };
 
-using SkillContextPtrComp = std::shared_ptr<SkillContextPBComponent>;
+using SkillContextPtrComp = std::shared_ptr<SkillContextComp>;
 
 // Skill context container
 using  SkillContextCompMap = std::unordered_map<uint64_t, SkillContextPtrComp>;

@@ -14,8 +14,8 @@ class SkillExecutedEvent;
 // BuffTag, BuffImmuneTag,
 // Context (contextual data at buff creation time).
 
-class DamageEventPbComponent;
-struct BuffComp;
+class DamageEventComp;
+struct BuffEntry;
 
 class BuffSystem
 {
@@ -30,7 +30,7 @@ public:
 
     static void RemoveBuff(entt::entity parent, const UInt64Set& removeBuffIdList);
 
-    static void RemoveSubBuff(BuffComp& buffComp, UInt64Set& buffsToRemove);
+    static void RemoveSubBuff(BuffEntry& buffComp, UInt64Set& buffsToRemove);
 
     static void MarkBuffForRemoval(entt::entity parent, uint64_t buffId);
 
@@ -48,13 +48,13 @@ public:
     static uint32_t OnBuffAwake(entt::entity parent, uint32_t buffTableId);
 
     // Called when buff takes effect (added to buff container). Designer-configurable.
-    static void OnBuffStart(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
+    static void OnBuffStart(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable);
 
     // Called when a same-type/same-caster buff exists: refresh stacks, level, duration.
-    static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp);
+    static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffEntry& buffComp);
 
     // Called before buff removal (still in buff container). Designer-configurable.
-    static void OnBuffRemove(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
+    static void OnBuffRemove(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable);
 
     // Called after buff removal (already removed from container). Designer-configurable.
     static void OnBuffDestroy(entt::entity parent, const uint64_t buffId, const BuffTable* buffTable);
@@ -69,16 +69,16 @@ public:
     static void OnSkillExecuted(SkillExecutedEvent& event);
 
     // Triggered when dealing damage to target
-    static void OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent);
+    static void OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent);
 
     // Triggered after dealing damage to target
-    static void OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent);
+    static void OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent);
 
     // Triggered before taking damage
-    static void OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent);
+    static void OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent);
 
     // Triggered after taking damage
-    static void OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent);
+    static void OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent);
 
     // Triggered before self dies
     static void OnBeforeDead(entt::entity parent);
@@ -94,7 +94,7 @@ public:
     static bool AddSubBuffs(
         entt::entity parent,
         const BuffTable* buffTable,
-        BuffComp& buffComp
+        BuffEntry& buffComp
     );
 
     static void AddTargetSubBuffs(
@@ -106,7 +106,7 @@ public:
     static void AddSubBuffsWithoutCheck(
         entt::entity parent,
         const BuffTable* buffTable,
-        BuffComp& buffComp
+        BuffEntry& buffComp
     );
 };
 

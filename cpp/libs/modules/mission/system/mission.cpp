@@ -41,7 +41,7 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	}
 
 	// Retrieve mission reward component for the player
-	auto& missionRewardComp = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(param.playerEntity);
+	auto& missionRewardComp = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(param.playerEntity);
 
 	// Check if the mission ID is valid for reward
 	auto rewardMissionIdMap = missionRewardComp.mutable_can_reward_mission_id();
@@ -102,7 +102,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 	}
 
 	// Create mission protobuf component
-	MissionPBComponent missionPb;
+	MissionComp missionPb;
 	missionPb.set_id(acceptEvent.mission_id());
 
 	// Initialize mission progress based on conditions
@@ -140,7 +140,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComp& 
 	}
 
 	// Remove mission ID from reward list if applicable
-	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(param.playerEntity);
+	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(param.playerEntity);
 	missionReward.mutable_can_reward_mission_id()->erase(param.missionId);
 
 	// Remove mission from missions component
@@ -176,7 +176,7 @@ bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
 
 
 // Check if all conditions of a mission are fulfilled
-bool MissionSystem::AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComp& missionComp, const IMissionConfig& config) {
+bool MissionSystem::AreAllConditionsFulfilled(const MissionComp& mission, uint32_t missionId, MissionsComp& missionComp, const IMissionConfig& config) {
 	// Retrieve mission conditions from configuration
 	const auto& conditions = config.GetConditionIds(missionId);
 
@@ -232,7 +232,7 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 			continue;
 		}
 
-		mission.set_status(MissionPBComponent::E_MISSION_COMPLETE);
+		mission.set_status(MissionComp::E_MISSION_COMPLETE);
 		completedMissionsThisTime.emplace(missionId);
 		comp.GetMissionsComp().mutable_missions()->erase(missionIter);
 	}
@@ -270,7 +270,7 @@ void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint3
 }
 
 // Update mission progress based on event
-bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, const IMissionConfig& config) {
+bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionComp& mission, const IMissionConfig& config) {
 	// Ignore if no conditions are provided
 	if (conditionEvent.condtion_ids().empty()) {
 		return false;
@@ -303,7 +303,7 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 }
 
 // Update mission progress if conditions match the event
-bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTable* conditionTable) {
+bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionComp& mission, int index, const ConditionTable* conditionTable) {
 	// Retrieve old progress value
 	const auto oldProgress = mission.progress(index);
 
@@ -358,7 +358,7 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 
 
 // Update mission status based on progress
-void MissionSystem::UpdateMissionStatus(MissionPBComponent& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
+void MissionSystem::UpdateMissionStatus(MissionComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
 	// Iterate through mission conditions and update progress
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
 		FetchConditionTableOrContinue(missionConditions.at(i));
@@ -384,7 +384,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 	// Retrieve mission component for the player
 	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
 
-	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(playerEntity);
+	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(playerEntity);
 
 	// Process each completed mission
 	for (const auto& missionId : completedMissionsThisTime) {

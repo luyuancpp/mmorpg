@@ -25,7 +25,7 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr BuffTestEvet::Impl_::Impl_(
+inline constexpr BuffTestEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         period_{::uint64_t{0u}},
@@ -33,24 +33,24 @@ inline constexpr BuffTestEvet::Impl_::Impl_(
         period_done_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR BuffTestEvet::BuffTestEvet(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR BuffTestEvent::BuffTestEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(BuffTestEvet_class_data_.base()),
+    : ::google::protobuf::Message(BuffTestEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct BuffTestEvetDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR BuffTestEvetDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~BuffTestEvetDefaultTypeInternal() {}
+struct BuffTestEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BuffTestEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BuffTestEventDefaultTypeInternal() {}
   union {
-    BuffTestEvet _instance;
+    BuffTestEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffTestEvetDefaultTypeInternal _BuffTestEvet_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffTestEventDefaultTypeInternal _BuffTestEvent_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -59,11 +59,11 @@ const ::uint32_t
     TableStruct_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::BuffTestEvet, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::BuffTestEvent, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::BuffTestEvet, _impl_.period_),
-        PROTOBUF_FIELD_OFFSET(::BuffTestEvet, _impl_.periodic_timer_),
-        PROTOBUF_FIELD_OFFSET(::BuffTestEvet, _impl_.period_done_),
+        PROTOBUF_FIELD_OFFSET(::BuffTestEvent, _impl_.period_),
+        PROTOBUF_FIELD_OFFSET(::BuffTestEvent, _impl_.periodic_timer_),
+        PROTOBUF_FIELD_OFFSET(::BuffTestEvent, _impl_.period_done_),
         0,
         1,
         2,
@@ -71,23 +71,23 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::BuffTestEvet)},
+        {0, sizeof(::BuffTestEvent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_BuffTestEvet_default_instance_._instance,
+    &::_BuffTestEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n#proto/common/event/buff_event.proto\"K\n"
-    "\014BuffTestEvet\022\016\n\006period\030\001 \001(\004\022\026\n\016periodi"
-    "c_timer\030\002 \001(\004\022\023\n\013period_done\030\003 \001(\rb\006prot"
-    "o3"
+    "\n#proto/common/event/buff_event.proto\"L\n"
+    "\rBuffTestEvent\022\016\n\006period\030\001 \001(\004\022\026\n\016period"
+    "ic_timer\030\002 \001(\004\022\023\n\013period_done\030\003 \001(\rb\006pro"
+    "to3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto = {
     false,
     false,
-    122,
+    123,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto,
     "proto/common/event/buff_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto_once,
@@ -102,27 +102,27 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
 };
 // ===================================================================
 
-class BuffTestEvet::_Internal {
+class BuffTestEvent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<BuffTestEvet>()._impl_._has_bits_);
+      decltype(::std::declval<BuffTestEvent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_._has_bits_);
 };
 
-BuffTestEvet::BuffTestEvet(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+BuffTestEvent::BuffTestEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BuffTestEvet_class_data_.base()) {
+    : ::google::protobuf::Message(arena, BuffTestEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:BuffTestEvet)
+  // @@protoc_insertion_point(arena_constructor:BuffTestEvent)
 }
-BuffTestEvet::BuffTestEvet(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BuffTestEvet& from)
+BuffTestEvent::BuffTestEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BuffTestEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BuffTestEvet_class_data_.base()),
+    : ::google::protobuf::Message(arena, BuffTestEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -130,12 +130,12 @@ BuffTestEvet::BuffTestEvet(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE BuffTestEvet::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE BuffTestEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void BuffTestEvet::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void BuffTestEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, period_),
@@ -144,64 +144,64 @@ inline void BuffTestEvet::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
                offsetof(Impl_, period_) +
                sizeof(Impl_::period_done_));
 }
-BuffTestEvet::~BuffTestEvet() {
-  // @@protoc_insertion_point(destructor:BuffTestEvet)
+BuffTestEvent::~BuffTestEvent() {
+  // @@protoc_insertion_point(destructor:BuffTestEvent)
   SharedDtor(*this);
 }
-inline void BuffTestEvet::SharedDtor(MessageLite& self) {
-  BuffTestEvet& this_ = static_cast<BuffTestEvet&>(self);
+inline void BuffTestEvent::SharedDtor(MessageLite& self) {
+  BuffTestEvent& this_ = static_cast<BuffTestEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL BuffTestEvet::PlacementNew_(
+inline void* PROTOBUF_NONNULL BuffTestEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) BuffTestEvet(arena);
+  return ::new (mem) BuffTestEvent(arena);
 }
-constexpr auto BuffTestEvet::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(BuffTestEvet),
-                                            alignof(BuffTestEvet));
+constexpr auto BuffTestEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(BuffTestEvent),
+                                            alignof(BuffTestEvent));
 }
-constexpr auto BuffTestEvet::InternalGenerateClassData_() {
+constexpr auto BuffTestEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_BuffTestEvet_default_instance_._instance,
+          &_BuffTestEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &BuffTestEvet::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<BuffTestEvet>(),
+          &BuffTestEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BuffTestEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &BuffTestEvet::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<BuffTestEvet>(), &BuffTestEvet::ByteSizeLong,
-              &BuffTestEvet::_InternalSerialize,
+          &BuffTestEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BuffTestEvent>(), &BuffTestEvent::ByteSizeLong,
+              &BuffTestEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_._cached_size_),
           false,
       },
-      &BuffTestEvet::kDescriptorMethods,
+      &BuffTestEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull BuffTestEvet_class_data_ =
-        BuffTestEvet::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull BuffTestEvent_class_data_ =
+        BuffTestEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-BuffTestEvet::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&BuffTestEvet_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(BuffTestEvet_class_data_.tc_table);
-  return BuffTestEvet_class_data_.base();
+BuffTestEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BuffTestEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BuffTestEvent_class_data_.tc_table);
+  return BuffTestEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
-BuffTestEvet::_table_ = {
+BuffTestEvent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_._has_bits_),
     0, // no _extensions_
     3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -210,42 +210,42 @@ BuffTestEvet::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    BuffTestEvet_class_data_.base(),
+    BuffTestEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::BuffTestEvet>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::BuffTestEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 period = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BuffTestEvet, _impl_.period_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_.period_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BuffTestEvent, _impl_.period_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_.period_)}},
     // uint64 periodic_timer = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BuffTestEvet, _impl_.periodic_timer_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_.periodic_timer_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BuffTestEvent, _impl_.periodic_timer_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_.periodic_timer_)}},
     // uint32 period_done = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTestEvet, _impl_.period_done_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_.period_done_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTestEvent, _impl_.period_done_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_.period_done_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 period = 1;
-    {PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_.period_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_.period_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 periodic_timer = 2;
-    {PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_.periodic_timer_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_.periodic_timer_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 period_done = 3;
-    {PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_.period_done_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_.period_done_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void BuffTestEvet::Clear() {
-// @@protoc_insertion_point(message_clear_start:BuffTestEvet)
+PROTOBUF_NOINLINE void BuffTestEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:BuffTestEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -262,17 +262,17 @@ PROTOBUF_NOINLINE void BuffTestEvet::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL BuffTestEvet::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL BuffTestEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const BuffTestEvet& this_ = static_cast<const BuffTestEvet&>(base);
+  const BuffTestEvent& this_ = static_cast<const BuffTestEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL BuffTestEvet::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL BuffTestEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const BuffTestEvet& this_ = *this;
+  const BuffTestEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:BuffTestEvet)
+  // @@protoc_insertion_point(serialize_to_array_start:BuffTestEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -308,18 +308,18 @@ PROTOBUF_NOINLINE void BuffTestEvet::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:BuffTestEvet)
+  // @@protoc_insertion_point(serialize_to_array_end:BuffTestEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t BuffTestEvet::ByteSizeLong(const MessageLite& base) {
-  const BuffTestEvet& this_ = static_cast<const BuffTestEvet&>(base);
+::size_t BuffTestEvent::ByteSizeLong(const MessageLite& base) {
+  const BuffTestEvent& this_ = static_cast<const BuffTestEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t BuffTestEvet::ByteSizeLong() const {
-  const BuffTestEvet& this_ = *this;
+::size_t BuffTestEvent::ByteSizeLong() const {
+  const BuffTestEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:BuffTestEvet)
+  // @@protoc_insertion_point(message_byte_size_start:BuffTestEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -355,10 +355,10 @@ PROTOBUF_NOINLINE void BuffTestEvet::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void BuffTestEvet::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<BuffTestEvet*>(&to_msg);
-  auto& from = static_cast<const BuffTestEvet&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:BuffTestEvet)
+void BuffTestEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BuffTestEvent*>(&to_msg);
+  auto& from = static_cast<const BuffTestEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:BuffTestEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -385,27 +385,27 @@ void BuffTestEvet::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::go
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void BuffTestEvet::CopyFrom(const BuffTestEvet& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:BuffTestEvet)
+void BuffTestEvent::CopyFrom(const BuffTestEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:BuffTestEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void BuffTestEvet::InternalSwap(BuffTestEvet* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void BuffTestEvent::InternalSwap(BuffTestEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_.period_done_)
-      + sizeof(BuffTestEvet::_impl_.period_done_)
-      - PROTOBUF_FIELD_OFFSET(BuffTestEvet, _impl_.period_)>(
+      PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_.period_done_)
+      + sizeof(BuffTestEvent::_impl_.period_done_)
+      - PROTOBUF_FIELD_OFFSET(BuffTestEvent, _impl_.period_)>(
           reinterpret_cast<char*>(&_impl_.period_),
           reinterpret_cast<char*>(&other->_impl_.period_));
 }
 
-::google::protobuf::Metadata BuffTestEvet::GetMetadata() const {
+::google::protobuf::Metadata BuffTestEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -101,7 +101,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 
 	auto playerIt = tlsPlayerList.find(request->player_id());
 
-	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	PlayerGameNodeEntryInfoComp enterInfo;
 
 	// 2. If player is already online, enter scene directly
 	if (playerIt != tlsPlayerList.end())
@@ -520,7 +520,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	SessionMap().emplace(request->session_id(), request->player_id());
 
-	tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotPBComp>(player).set_gate_session_id(request->session_id());
+	tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
 
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
 ///<<< END WRITING YOUR CODE

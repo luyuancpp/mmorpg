@@ -52,10 +52,10 @@ struct TableStruct_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto;
 }  // extern "C"
-class BuffTestEvet;
-struct BuffTestEvetDefaultTypeInternal;
-extern BuffTestEvetDefaultTypeInternal _BuffTestEvet_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull BuffTestEvet_class_data_;
+class BuffTestEvent;
+struct BuffTestEventDefaultTypeInternal;
+extern BuffTestEventDefaultTypeInternal _BuffTestEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull BuffTestEvent_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -67,30 +67,30 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class BuffTestEvet final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BuffTestEvet) */ {
+class BuffTestEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BuffTestEvent) */ {
  public:
-  inline BuffTestEvet() : BuffTestEvet(nullptr) {}
-  ~BuffTestEvet() PROTOBUF_FINAL;
+  inline BuffTestEvent() : BuffTestEvent(nullptr) {}
+  ~BuffTestEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(BuffTestEvet* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(BuffTestEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(BuffTestEvet));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(BuffTestEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BuffTestEvet(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR BuffTestEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline BuffTestEvet(const BuffTestEvet& from) : BuffTestEvet(nullptr, from) {}
-  inline BuffTestEvet(BuffTestEvet&& from) noexcept
-      : BuffTestEvet(nullptr, ::std::move(from)) {}
-  inline BuffTestEvet& operator=(const BuffTestEvet& from) {
+  inline BuffTestEvent(const BuffTestEvent& from) : BuffTestEvent(nullptr, from) {}
+  inline BuffTestEvent(BuffTestEvent&& from) noexcept
+      : BuffTestEvent(nullptr, ::std::move(from)) {}
+  inline BuffTestEvent& operator=(const BuffTestEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BuffTestEvet& operator=(BuffTestEvet&& from) noexcept {
+  inline BuffTestEvent& operator=(BuffTestEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -118,13 +118,13 @@ class BuffTestEvet final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BuffTestEvet& default_instance() {
-    return *reinterpret_cast<const BuffTestEvet*>(
-        &_BuffTestEvet_default_instance_);
+  static const BuffTestEvent& default_instance() {
+    return *reinterpret_cast<const BuffTestEvent*>(
+        &_BuffTestEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(BuffTestEvet& a, BuffTestEvet& b) { a.Swap(&b); }
-  inline void Swap(BuffTestEvet* PROTOBUF_NONNULL other) {
+  friend void swap(BuffTestEvent& a, BuffTestEvent& b) { a.Swap(&b); }
+  inline void Swap(BuffTestEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -132,7 +132,7 @@ class BuffTestEvet final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BuffTestEvet* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(BuffTestEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -140,13 +140,13 @@ class BuffTestEvet final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BuffTestEvet* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<BuffTestEvet>(arena);
+  BuffTestEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<BuffTestEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BuffTestEvet& from);
+  void CopyFrom(const BuffTestEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BuffTestEvet& from) { BuffTestEvet::MergeImpl(*this, from); }
+  void MergeFrom(const BuffTestEvent& from) { BuffTestEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -182,18 +182,18 @@ class BuffTestEvet final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(BuffTestEvet* PROTOBUF_NONNULL other);
+  void InternalSwap(BuffTestEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "BuffTestEvet"; }
+  static ::absl::string_view FullMessageName() { return "BuffTestEvent"; }
 
  protected:
-  explicit BuffTestEvet(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  BuffTestEvet(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BuffTestEvet& from);
-  BuffTestEvet(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BuffTestEvet&& from) noexcept
-      : BuffTestEvet(arena) {
+  explicit BuffTestEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  BuffTestEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BuffTestEvent& from);
+  BuffTestEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BuffTestEvent&& from) noexcept
+      : BuffTestEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -244,7 +244,7 @@ class BuffTestEvet final : public ::google::protobuf::Message
   void _internal_set_period_done(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:BuffTestEvet)
+  // @@protoc_insertion_point(class_scope:BuffTestEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -267,7 +267,7 @@ class BuffTestEvet final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const BuffTestEvet& from_msg);
+        const BuffTestEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t period_;
@@ -279,7 +279,7 @@ class BuffTestEvet final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull BuffTestEvet_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull BuffTestEvent_class_data_;
 
 // ===================================================================
 
@@ -295,76 +295,76 @@ extern const ::google::protobuf::internal::ClassDataFull BuffTestEvet_class_data
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// BuffTestEvet
+// BuffTestEvent
 
 // uint64 period = 1;
-inline void BuffTestEvet::clear_period() {
+inline void BuffTestEvent::clear_period() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.period_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t BuffTestEvet::period() const {
-  // @@protoc_insertion_point(field_get:BuffTestEvet.period)
+inline ::uint64_t BuffTestEvent::period() const {
+  // @@protoc_insertion_point(field_get:BuffTestEvent.period)
   return _internal_period();
 }
-inline void BuffTestEvet::set_period(::uint64_t value) {
+inline void BuffTestEvent::set_period(::uint64_t value) {
   _internal_set_period(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:BuffTestEvet.period)
+  // @@protoc_insertion_point(field_set:BuffTestEvent.period)
 }
-inline ::uint64_t BuffTestEvet::_internal_period() const {
+inline ::uint64_t BuffTestEvent::_internal_period() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.period_;
 }
-inline void BuffTestEvet::_internal_set_period(::uint64_t value) {
+inline void BuffTestEvent::_internal_set_period(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.period_ = value;
 }
 
 // uint64 periodic_timer = 2;
-inline void BuffTestEvet::clear_periodic_timer() {
+inline void BuffTestEvent::clear_periodic_timer() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.periodic_timer_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t BuffTestEvet::periodic_timer() const {
-  // @@protoc_insertion_point(field_get:BuffTestEvet.periodic_timer)
+inline ::uint64_t BuffTestEvent::periodic_timer() const {
+  // @@protoc_insertion_point(field_get:BuffTestEvent.periodic_timer)
   return _internal_periodic_timer();
 }
-inline void BuffTestEvet::set_periodic_timer(::uint64_t value) {
+inline void BuffTestEvent::set_periodic_timer(::uint64_t value) {
   _internal_set_periodic_timer(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:BuffTestEvet.periodic_timer)
+  // @@protoc_insertion_point(field_set:BuffTestEvent.periodic_timer)
 }
-inline ::uint64_t BuffTestEvet::_internal_periodic_timer() const {
+inline ::uint64_t BuffTestEvent::_internal_periodic_timer() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.periodic_timer_;
 }
-inline void BuffTestEvet::_internal_set_periodic_timer(::uint64_t value) {
+inline void BuffTestEvent::_internal_set_periodic_timer(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.periodic_timer_ = value;
 }
 
 // uint32 period_done = 3;
-inline void BuffTestEvet::clear_period_done() {
+inline void BuffTestEvent::clear_period_done() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.period_done_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint32_t BuffTestEvet::period_done() const {
-  // @@protoc_insertion_point(field_get:BuffTestEvet.period_done)
+inline ::uint32_t BuffTestEvent::period_done() const {
+  // @@protoc_insertion_point(field_get:BuffTestEvent.period_done)
   return _internal_period_done();
 }
-inline void BuffTestEvet::set_period_done(::uint32_t value) {
+inline void BuffTestEvent::set_period_done(::uint32_t value) {
   _internal_set_period_done(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:BuffTestEvet.period_done)
+  // @@protoc_insertion_point(field_set:BuffTestEvent.period_done)
 }
-inline ::uint32_t BuffTestEvet::_internal_period_done() const {
+inline ::uint32_t BuffTestEvent::_internal_period_done() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.period_done_;
 }
-inline void BuffTestEvet::_internal_set_period_done(::uint32_t value) {
+inline void BuffTestEvent::_internal_set_period_done(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.period_done_ = value;
 }

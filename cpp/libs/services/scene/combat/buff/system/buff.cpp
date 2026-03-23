@@ -48,7 +48,7 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTablePara
 BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     switch (buffTable->bufftype()) {
     case kBuffTypeNoDamageOrSkillHitInLastSeconds:
-        return std::make_shared<BuffNoDamageOrSkillHitInLastSecondsPbComp>();
+        return std::make_shared<BuffNoDamageOrSkillHitInLastSecondsComp>();
     default:
         return nullptr;
     }
@@ -74,7 +74,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 
     auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
 
-    BuffComp newBuff;
+    BuffEntry newBuff;
     if (nullptr != abilityContext)
     {
         newBuff.buffPb.set_caster(abilityContext->caster());
@@ -135,7 +135,7 @@ void BuffSystem::RemoveBuff(const entt::entity parent, const UInt64Set& removeBu
     }
 }
 
-void BuffSystem::RemoveSubBuff(BuffComp& buffComp, UInt64Set& buffsToRemove)
+void BuffSystem::RemoveSubBuff(BuffEntry& buffComp, UInt64Set& buffsToRemove)
 {
     for (auto& [subBuffId, _] : buffComp.buffPb.sub_buff_list_id())
     {
@@ -240,7 +240,7 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     return kSuccess;
 }
 
-void BuffSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)
+void BuffSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
 {
     if (BuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
@@ -252,9 +252,9 @@ void BuffSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTabl
     }
 }
 
-void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp) {}
+void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffEntry& buffComp) {}
 
-void BuffSystem::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+void BuffSystem::OnBuffRemove(const entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
     if (ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
         return;
@@ -300,7 +300,7 @@ void BuffSystem::OnSkillExecuted(SkillExecutedEvent& event)
     // Implement event handling logic
 }
 
-void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
+void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
     BuffImplSystem::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
     //class Buff {
@@ -320,7 +320,7 @@ void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt:
 }
 
 
-void BuffSystem::OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
+void BuffSystem::OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
     // Check and apply DOT effects
     //for (auto& buff : tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target)) {
@@ -331,7 +331,7 @@ void BuffSystem::OnAfterGiveDamage(const entt::entity casterEntity, const entt::
     //}
 }
 
-void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
+void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
     //auto& buffs = tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target);
     //for (auto& [buffId, buff] : buffs) {
@@ -342,7 +342,7 @@ void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt:
     //}
 }
 
-void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
+void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
     BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::to_entity(damageEvent.attacker_id()), casterEntity);
 
@@ -379,7 +379,7 @@ void BuffSystem::OnSkillHit(const entt::entity casterEntity, const entt::entity 
 
 bool BuffSystem::AddSubBuffs(entt::entity parent,
     const BuffTable* buffTable,
-    BuffComp& buffComp)
+    BuffEntry& buffComp)
 {
     if (nullptr == buffTable)
     {
@@ -423,7 +423,7 @@ void BuffSystem::AddTargetSubBuffs(const entt::entity targetEntity,
 
 void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
     const BuffTable* buffTable,
-    BuffComp& buffComp)
+    BuffEntry& buffComp)
 {
     for (const auto& subBuff : buffTable->subbuff()) {
         auto [result, newBuffId] = BuffSystem::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
@@ -437,11 +437,11 @@ void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
     }
 }
 
-bool CanApplyMoreTicks(const BuffPeriodicBuffPbComponent& periodicBuff, const BuffTable* buffTable) {
+bool CanApplyMoreTicks(const BuffPeriodicBuffComp& periodicBuff, const BuffTable* buffTable) {
     return (buffTable->intervalcount() <= 0) || (periodicBuff.ticks_done() + 1 <= buffTable->intervalcount());
 }
 
-void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffComp& buffComp, double delta) {
+void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffEntry& buffComp, double delta) {
     FetchBuffTableOrReturnVoid(buffComp.buffPb.buff_table_id());
 
     if (buffTable->interval() <= 0) {

@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type BuffTestEvet struct {
+type BuffTestEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Period        uint64                 `protobuf:"varint,1,opt,name=period,proto3" json:"period,omitempty"`
 	PeriodicTimer uint64                 `protobuf:"varint,2,opt,name=periodic_timer,json=periodicTimer,proto3" json:"periodic_timer,omitempty"`
@@ -30,20 +30,20 @@ type BuffTestEvet struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BuffTestEvet) Reset() {
-	*x = BuffTestEvet{}
+func (x *BuffTestEvent) Reset() {
+	*x = BuffTestEvent{}
 	mi := &file_proto_common_event_buff_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BuffTestEvet) String() string {
+func (x *BuffTestEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BuffTestEvet) ProtoMessage() {}
+func (*BuffTestEvent) ProtoMessage() {}
 
-func (x *BuffTestEvet) ProtoReflect() protoreflect.Message {
+func (x *BuffTestEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_buff_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,26 +55,26 @@ func (x *BuffTestEvet) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BuffTestEvet.ProtoReflect.Descriptor instead.
-func (*BuffTestEvet) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuffTestEvent.ProtoReflect.Descriptor instead.
+func (*BuffTestEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_buff_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *BuffTestEvet) GetPeriod() uint64 {
+func (x *BuffTestEvent) GetPeriod() uint64 {
 	if x != nil {
 		return x.Period
 	}
 	return 0
 }
 
-func (x *BuffTestEvet) GetPeriodicTimer() uint64 {
+func (x *BuffTestEvent) GetPeriodicTimer() uint64 {
 	if x != nil {
 		return x.PeriodicTimer
 	}
 	return 0
 }
 
-func (x *BuffTestEvet) GetPeriodDone() uint32 {
+func (x *BuffTestEvent) GetPeriodDone() uint32 {
 	if x != nil {
 		return x.PeriodDone
 	}
@@ -85,8 +85,8 @@ var File_proto_common_event_buff_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_buff_event_proto_rawDesc = "" +
 	"\n" +
-	"#proto/common/event/buff_event.proto\"n\n" +
-	"\fBuffTestEvet\x12\x16\n" +
+	"#proto/common/event/buff_event.proto\"o\n" +
+	"\rBuffTestEvent\x12\x16\n" +
 	"\x06period\x18\x01 \x01(\x04R\x06period\x12%\n" +
 	"\x0eperiodic_timer\x18\x02 \x01(\x04R\rperiodicTimer\x12\x1f\n" +
 	"\vperiod_done\x18\x03 \x01(\rR\n" +
@@ -106,7 +106,7 @@ func file_proto_common_event_buff_event_proto_rawDescGZIP() []byte {
 
 var file_proto_common_event_buff_event_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_common_event_buff_event_proto_goTypes = []any{
-	(*BuffTestEvet)(nil), // 0: BuffTestEvet
+	(*BuffTestEvent)(nil), // 0: BuffTestEvent
 }
 var file_proto_common_event_buff_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

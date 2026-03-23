@@ -3,18 +3,18 @@ option go_package = "login/proto/common/component";
 
 
 
-message BuffContextPBComponent
+message BuffContextComp
 {
   float damage_value = 1;
 }
 
-message BuffPeriodicBuffPbComponent
+message BuffPeriodicBuffComp
 {
   double periodic_timer = 1;
   uint32 ticks_done = 2;
 }
 
-message BuffPbComponent
+message BuffComp
 {
   uint64 buff_id = 1;
   uint32 buff_table_id = 2;
@@ -25,12 +25,12 @@ message BuffPbComponent
   bool triggerdamage = 7;
   uint64 processed_caster = 8; // 根据表处理后的施法者
   bytes data = 9; // 各种类型buff的各种数据
-  BuffPeriodicBuffPbComponent  periodic = 10;
+  BuffPeriodicBuffComp  periodic = 10;
   map<uint64, bool> sub_buff_list_id = 11;
   bool has_added_sub_buff = 12;
 }
 
-message DamageEventPbComponent
+message DamageEventComp
 {
   uint64 skill_id = 1;
   uint64 attacker_id = 2;
@@ -39,7 +39,7 @@ message DamageEventPbComponent
   uint32 damage_type = 5;
 }
 
-message BuffNoDamageOrSkillHitInLastSecondsPbComp
+message BuffNoDamageOrSkillHitInLastSecondsComp
 {
   uint64 last_time = 1;
 }

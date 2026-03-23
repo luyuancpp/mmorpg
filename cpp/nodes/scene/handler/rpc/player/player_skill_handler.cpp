@@ -10,8 +10,8 @@
 
 ///<<< END WRITING YOUR CODE
 
-void SceneSkillClientPlayerHandler::ReleaseSkill(entt::entity player,const ::ReleaseSkillSkillRequest* request,
-	::ReleaseSkillSkillResponse* response)
+void SceneSkillClientPlayerHandler::ReleaseSkill(entt::entity player,const ::ReleaseSkillRequest* request,
+	::ReleaseSkillResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	CHECK_PLAYER_REQUEST(request, SkillSystem::ReleaseSkill);
@@ -39,7 +39,7 @@ void SceneSkillClientPlayerHandler::GetSkillList(entt::entity player,const ::Get
 	::GetSkillListResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->mutable_skill_list()->CopyFrom(tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSkillListPBComponent>(player));
+	response->mutable_skill_list()->CopyFrom(tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSkillListComp>(player));
 ///<<< END WRITING YOUR CODE
 
 }

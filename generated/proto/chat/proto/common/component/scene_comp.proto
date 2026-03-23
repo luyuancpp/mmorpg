@@ -3,7 +3,7 @@ option go_package = "chat/proto/common/component";
 
 
 
-message ChangeSceneInfoPBComponent
+message ChangeSceneInfoComp
 {
 
   enum eChangeGsType

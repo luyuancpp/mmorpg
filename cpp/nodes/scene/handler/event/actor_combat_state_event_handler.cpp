@@ -2,7 +2,7 @@
 #include "thread_context/dispatcher_manager.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "scene/combat_state/system/combat_state.h"
+#include "combat_state/system/combat_state.h"
 ///<<< END WRITING YOUR CODE
 void ActorCombatStateEventHandler::Register()
 {

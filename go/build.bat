@@ -7,8 +7,8 @@ goctl rpc protoc ../../generated/proto/login/proto/login/login.proto --proto_pat
 cd ..
 
 cd scene_manager
-protoc ../../generated/proto/scene_manager/proto/scene_manager/scene_manager_service.proto --proto_path=../../generated/proto/scene_manager/proto --proto_path=../../third_party/grpc/third_party/protobuf/src/ --go_out=../ --go-grpc_out=../ --go_opt=module=scene_manager --go-grpc_opt=module=scene_manager
+protoc ../../generated/proto/scene_manager/proto/scene_manager/scene_manager_service.proto --proto_path=../../generated/proto/scene_manager --proto_path=../../third_party/grpc/third_party/protobuf/src/ --go_out=../ --go-grpc_out=../ --go_opt=module=scene_manager --go-grpc_opt=module=scene_manager
 cd ..
 
-protoc --go_out=paths=source_relative:./data_service/data_service --go-grpc_out=paths=source_relative:./data_service/data_service --proto_path=../proto/data_service --proto_path=../third_party/grpc/third_party/protobuf/src ../proto/data_service/data_service.proto
+protoc --go_out=paths=source_relative:./data_service/data_service --go-grpc_out=paths=source_relative:./data_service/data_service --proto_path=../generated/proto/data_service/proto/data_service --proto_path=../third_party/grpc/third_party/protobuf/src ../generated/proto/data_service/proto/data_service/data_service.proto
 pause

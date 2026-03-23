@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type CombatStateFlagsPbComponent struct {
+type CombatStateFlagsComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	StateFlags    map[uint32]bool        `protobuf:"bytes,1,rep,name=state_flags,json=stateFlags,proto3" json:"state_flags,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 单独的属性同步映射
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CombatStateFlagsPbComponent) Reset() {
-	*x = CombatStateFlagsPbComponent{}
+func (x *CombatStateFlagsComp) Reset() {
+	*x = CombatStateFlagsComp{}
 	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CombatStateFlagsPbComponent) String() string {
+func (x *CombatStateFlagsComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CombatStateFlagsPbComponent) ProtoMessage() {}
+func (*CombatStateFlagsComp) ProtoMessage() {}
 
-func (x *CombatStateFlagsPbComponent) ProtoReflect() protoreflect.Message {
+func (x *CombatStateFlagsComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,12 +53,12 @@ func (x *CombatStateFlagsPbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CombatStateFlagsPbComponent.ProtoReflect.Descriptor instead.
-func (*CombatStateFlagsPbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use CombatStateFlagsComp.ProtoReflect.Descriptor instead.
+func (*CombatStateFlagsComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CombatStateFlagsPbComponent) GetStateFlags() map[uint32]bool {
+func (x *CombatStateFlagsComp) GetStateFlags() map[uint32]bool {
 	if x != nil {
 		return x.StateFlags
 	}
@@ -66,7 +66,7 @@ func (x *CombatStateFlagsPbComponent) GetStateFlags() map[uint32]bool {
 }
 
 // 计算属性，服务器端计算
-type CalculatedAttributesPbComponent struct {
+type CalculatedAttributesComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AttackPower   uint64                 `protobuf:"varint,1,opt,name=attack_power,json=attackPower,proto3" json:"attack_power,omitempty"`    // 攻击力
 	DefensePower  uint64                 `protobuf:"varint,2,opt,name=defense_power,json=defensePower,proto3" json:"defense_power,omitempty"` // 防御力
@@ -75,20 +75,20 @@ type CalculatedAttributesPbComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CalculatedAttributesPbComponent) Reset() {
-	*x = CalculatedAttributesPbComponent{}
+func (x *CalculatedAttributesComp) Reset() {
+	*x = CalculatedAttributesComp{}
 	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CalculatedAttributesPbComponent) String() string {
+func (x *CalculatedAttributesComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CalculatedAttributesPbComponent) ProtoMessage() {}
+func (*CalculatedAttributesComp) ProtoMessage() {}
 
-func (x *CalculatedAttributesPbComponent) ProtoReflect() protoreflect.Message {
+func (x *CalculatedAttributesComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -100,26 +100,26 @@ func (x *CalculatedAttributesPbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CalculatedAttributesPbComponent.ProtoReflect.Descriptor instead.
-func (*CalculatedAttributesPbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use CalculatedAttributesComp.ProtoReflect.Descriptor instead.
+func (*CalculatedAttributesComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CalculatedAttributesPbComponent) GetAttackPower() uint64 {
+func (x *CalculatedAttributesComp) GetAttackPower() uint64 {
 	if x != nil {
 		return x.AttackPower
 	}
 	return 0
 }
 
-func (x *CalculatedAttributesPbComponent) GetDefensePower() uint64 {
+func (x *CalculatedAttributesComp) GetDefensePower() uint64 {
 	if x != nil {
 		return x.DefensePower
 	}
 	return 0
 }
 
-func (x *CalculatedAttributesPbComponent) GetIsDead() bool {
+func (x *CalculatedAttributesComp) GetIsDead() bool {
 	if x != nil {
 		return x.IsDead
 	}
@@ -127,27 +127,27 @@ func (x *CalculatedAttributesPbComponent) GetIsDead() bool {
 }
 
 // 衍生属性，服务器端计算
-type DerivedAttributesPbComponent struct {
+type DerivedAttributesComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MaxHealth     uint64                 `protobuf:"varint,1,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"` // 最大生命值
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DerivedAttributesPbComponent) Reset() {
-	*x = DerivedAttributesPbComponent{}
+func (x *DerivedAttributesComp) Reset() {
+	*x = DerivedAttributesComp{}
 	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DerivedAttributesPbComponent) String() string {
+func (x *DerivedAttributesComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DerivedAttributesPbComponent) ProtoMessage() {}
+func (*DerivedAttributesComp) ProtoMessage() {}
 
-func (x *DerivedAttributesPbComponent) ProtoReflect() protoreflect.Message {
+func (x *DerivedAttributesComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -159,12 +159,12 @@ func (x *DerivedAttributesPbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DerivedAttributesPbComponent.ProtoReflect.Descriptor instead.
-func (*DerivedAttributesPbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use DerivedAttributesComp.ProtoReflect.Descriptor instead.
+func (*DerivedAttributesComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *DerivedAttributesPbComponent) GetMaxHealth() uint64 {
+func (x *DerivedAttributesComp) GetMaxHealth() uint64 {
 	if x != nil {
 		return x.MaxHealth
 	}
@@ -175,18 +175,18 @@ var File_proto_common_component_actor_attribute_state_comp_proto protoreflect.Fi
 
 const file_proto_common_component_actor_attribute_state_comp_proto_rawDesc = "" +
 	"\n" +
-	"7proto/common/component/actor_attribute_state_comp.proto\"\xab\x01\n" +
-	"\x1bCombatStateFlagsPbComponent\x12M\n" +
-	"\vstate_flags\x18\x01 \x03(\v2,.CombatStateFlagsPbComponent.StateFlagsEntryR\n" +
+	"7proto/common/component/actor_attribute_state_comp.proto\"\x9d\x01\n" +
+	"\x14CombatStateFlagsComp\x12F\n" +
+	"\vstate_flags\x18\x01 \x03(\v2%.CombatStateFlagsComp.StateFlagsEntryR\n" +
 	"stateFlags\x1a=\n" +
 	"\x0fStateFlagsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"\x81\x01\n" +
-	"\x1fCalculatedAttributesPbComponent\x12!\n" +
+	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"z\n" +
+	"\x18CalculatedAttributesComp\x12!\n" +
 	"\fattack_power\x18\x01 \x01(\x04R\vattackPower\x12#\n" +
 	"\rdefense_power\x18\x02 \x01(\x04R\fdefensePower\x12\x16\n" +
-	"\x06isDead\x18\x03 \x01(\bR\x06isDead\"=\n" +
-	"\x1cDerivedAttributesPbComponent\x12\x1d\n" +
+	"\x06isDead\x18\x03 \x01(\bR\x06isDead\"6\n" +
+	"\x15DerivedAttributesComp\x12\x1d\n" +
 	"\n" +
 	"max_health\x18\x01 \x01(\x04R\tmaxHealthB\x1eZ\x1crobot/proto/common/componentb\x06proto3"
 
@@ -204,13 +204,13 @@ func file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP() 
 
 var file_proto_common_component_actor_attribute_state_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_common_component_actor_attribute_state_comp_proto_goTypes = []any{
-	(*CombatStateFlagsPbComponent)(nil),     // 0: CombatStateFlagsPbComponent
-	(*CalculatedAttributesPbComponent)(nil), // 1: CalculatedAttributesPbComponent
-	(*DerivedAttributesPbComponent)(nil),    // 2: DerivedAttributesPbComponent
-	nil,                                     // 3: CombatStateFlagsPbComponent.StateFlagsEntry
+	(*CombatStateFlagsComp)(nil),     // 0: CombatStateFlagsComp
+	(*CalculatedAttributesComp)(nil), // 1: CalculatedAttributesComp
+	(*DerivedAttributesComp)(nil),    // 2: DerivedAttributesComp
+	nil,                              // 3: CombatStateFlagsComp.StateFlagsEntry
 }
 var file_proto_common_component_actor_attribute_state_comp_proto_depIdxs = []int32{
-	3, // 0: CombatStateFlagsPbComponent.state_flags:type_name -> CombatStateFlagsPbComponent.StateFlagsEntry
+	3, // 0: CombatStateFlagsComp.state_flags:type_name -> CombatStateFlagsComp.StateFlagsEntry
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

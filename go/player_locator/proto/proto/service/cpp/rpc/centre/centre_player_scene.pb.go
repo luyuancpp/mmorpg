@@ -26,7 +26,7 @@ const (
 
 type CentreEnterSceneRequest struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     *common.SceneInfoComp `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,7 +61,7 @@ func (*CentreEnterSceneRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CentreEnterSceneRequest) GetSceneInfo() *common.RoomInfoPBComponent {
+func (x *CentreEnterSceneRequest) GetSceneInfo() *common.SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -183,7 +183,7 @@ const file_proto_service_cpp_rpc_centre_centre_player_scene_proto_rawDesc = "" +
 	"6proto/service/cpp/rpc/centre/centre_player_scene.proto\x1a+proto/service/go/grpc/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19proto/common/common.proto\"N\n" +
 	"\x17CentreEnterSceneRequest\x123\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"\x19\n" +
+	"scene_info\x18\x01 \x01(\v2\x14.SceneInfoCompR\tsceneInfo\"\x19\n" +
 	"\x17CentreLeaveSceneRequest\"0\n" +
 	".CentreLeaveSceneAsyncSavePlayerCompleteRequest\"\x18\n" +
 	"\x16CentreSceneInfoRequest2\xc9\x02\n" +
@@ -213,11 +213,11 @@ var file_proto_service_cpp_rpc_centre_centre_player_scene_proto_goTypes = []any{
 	(*CentreLeaveSceneRequest)(nil),                        // 1: CentreLeaveSceneRequest
 	(*CentreLeaveSceneAsyncSavePlayerCompleteRequest)(nil), // 2: CentreLeaveSceneAsyncSavePlayerCompleteRequest
 	(*CentreSceneInfoRequest)(nil),                         // 3: CentreSceneInfoRequest
-	(*common.RoomInfoPBComponent)(nil),                     // 4: RoomInfoPBComponent
+	(*common.SceneInfoComp)(nil),                     // 4: SceneInfoComp
 	(*emptypb.Empty)(nil),                                  // 5: google.protobuf.Empty
 }
 var file_proto_service_cpp_rpc_centre_centre_player_scene_proto_depIdxs = []int32{
-	4, // 0: CentreEnterSceneRequest.scene_info:type_name -> RoomInfoPBComponent
+	4, // 0: CentreEnterSceneRequest.scene_info:type_name -> SceneInfoComp
 	0, // 1: CentrePlayerScene.EnterScene:input_type -> CentreEnterSceneRequest
 	1, // 2: CentrePlayerScene.LeaveScene:input_type -> CentreLeaveSceneRequest
 	2, // 3: CentrePlayerScene.LeaveSceneAsyncSavePlayerComplete:input_type -> CentreLeaveSceneAsyncSavePlayerCompleteRequest

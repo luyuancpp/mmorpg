@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PlayerGameNodeEnteryInfoPBComponent struct {
+type PlayerGameNodeEntryInfoComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CentreNodeId  uint32                 `protobuf:"varint,1,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PlayerGameNodeEnteryInfoPBComponent) Reset() {
-	*x = PlayerGameNodeEnteryInfoPBComponent{}
+func (x *PlayerGameNodeEntryInfoComp) Reset() {
+	*x = PlayerGameNodeEntryInfoComp{}
 	mi := &file_proto_common_component_player_async_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerGameNodeEnteryInfoPBComponent) String() string {
+func (x *PlayerGameNodeEntryInfoComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerGameNodeEnteryInfoPBComponent) ProtoMessage() {}
+func (*PlayerGameNodeEntryInfoComp) ProtoMessage() {}
 
-func (x *PlayerGameNodeEnteryInfoPBComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerGameNodeEntryInfoComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_player_async_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,12 +53,12 @@ func (x *PlayerGameNodeEnteryInfoPBComponent) ProtoReflect() protoreflect.Messag
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerGameNodeEnteryInfoPBComponent.ProtoReflect.Descriptor instead.
-func (*PlayerGameNodeEnteryInfoPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerGameNodeEntryInfoComp.ProtoReflect.Descriptor instead.
+func (*PlayerGameNodeEntryInfoComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_async_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerGameNodeEnteryInfoPBComponent) GetCentreNodeId() uint32 {
+func (x *PlayerGameNodeEntryInfoComp) GetCentreNodeId() uint32 {
 	if x != nil {
 		return x.CentreNodeId
 	}
@@ -69,8 +69,8 @@ var File_proto_common_component_player_async_comp_proto protoreflect.FileDescrip
 
 const file_proto_common_component_player_async_comp_proto_rawDesc = "" +
 	"\n" +
-	".proto/common/component/player_async_comp.proto\"K\n" +
-	"#PlayerGameNodeEnteryInfoPBComponent\x12$\n" +
+	".proto/common/component/player_async_comp.proto\"C\n" +
+	"\x1bPlayerGameNodeEntryInfoComp\x12$\n" +
 	"\x0ecentre_node_id\x18\x01 \x01(\rR\fcentreNodeIdB\"Z contracts/proto/common/componentb\x06proto3"
 
 var (
@@ -87,7 +87,7 @@ func file_proto_common_component_player_async_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_player_async_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_common_component_player_async_comp_proto_goTypes = []any{
-	(*PlayerGameNodeEnteryInfoPBComponent)(nil), // 0: PlayerGameNodeEnteryInfoPBComponent
+	(*PlayerGameNodeEntryInfoComp)(nil), // 0: PlayerGameNodeEntryInfoComp
 }
 var file_proto_common_component_player_async_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

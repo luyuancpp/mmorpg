@@ -81,7 +81,7 @@ message player_centre_database
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
-  PlayerSceneContextPBComponent scene_info = 2;
+  PlayerSceneContextComp scene_info = 2;
 }
 
 //玩家数据库表1,重要数据放这里，不重要数据放另外一个表，(重要:比如金钱，跟收入有关)，登录马上加载
@@ -93,11 +93,11 @@ message player_database
   option (OptionIsPlayerDatabase) = true;
   uint64 player_id = 1;
   Transform transform = 2;
-  PlayerUint64PBComponent uint64_pb_component = 3;
-  PlayerSkillListPBComponent skill_list = 4;
-  PlayerUint32PbComponent uint32_pb_component = 5;
-  BaseAttributesPbComponent derived_attributes_component = 6;
-  LevelPbComponent level_component = 7;
+  PlayerUint64Comp uint64_pb_component = 3;
+  PlayerSkillListComp skill_list = 4;
+  PlayerUint32Comp uint32_pb_component = 5;
+  BaseAttributesComp derived_attributes_component = 6;
+  LevelComp level_component = 7;
 }
 
 message player_database_1

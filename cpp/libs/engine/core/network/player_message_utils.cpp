@@ -27,7 +27,7 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_WARN << "Player node info not found for player entity " << entt::to_integral(playerEntity);
@@ -100,7 +100,7 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& mess
 			continue;
 		}
 
-		const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+		const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 		if (!playerSessionSnapshotPB)
 		{
 			LOG_ERROR << "Player node info not found for player entity: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
@@ -178,7 +178,7 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 
 	auto& rpcHandlerMeta = gRpcMethodRegistry[messageId];
 
-	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player node info not found for player entity";
@@ -249,7 +249,7 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player session info not found -> " << entt::to_integral(playerEntity);
@@ -312,10 +312,10 @@ void CallMethodOnPlayerNode(
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+	const auto* playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (!playerSessionSnapshotPB)
 	{
-		LOG_ERROR << "PlayerSessionSnapshotPBComp not found for player -> " << entt::to_integral(player);
+		LOG_ERROR << "PlayerSessionSnapshotComp not found for player -> " << entt::to_integral(player);
 		return;
 	}
 

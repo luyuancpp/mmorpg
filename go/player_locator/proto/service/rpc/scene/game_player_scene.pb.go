@@ -79,7 +79,7 @@ func (x *GsEnterSceneRequest) GetSceneId() uint64 {
 
 type GsLeaveSceneRequest struct {
 	state           protoimpl.MessageState               `protogen:"open.v1"`
-	ChangeSceneInfo *component.ChangeRoomInfoPBComponent `protobuf:"bytes,2,opt,name=change_scene_info,json=changeSceneInfo,proto3" json:"change_scene_info,omitempty"`
+	ChangeSceneInfo *component.ChangeSceneInfoComp `protobuf:"bytes,2,opt,name=change_scene_info,json=changeSceneInfo,proto3" json:"change_scene_info,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -114,7 +114,7 @@ func (*GsLeaveSceneRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_rpc_scene_game_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GsLeaveSceneRequest) GetChangeSceneInfo() *component.ChangeRoomInfoPBComponent {
+func (x *GsLeaveSceneRequest) GetChangeSceneInfo() *component.ChangeSceneInfoComp {
 	if x != nil {
 		return x.ChangeSceneInfo
 	}
@@ -211,7 +211,7 @@ const file_proto_service_rpc_scene_game_player_scene_proto_rawDesc = "" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"]\n" +
 	"\x13GsLeaveSceneRequest\x12F\n" +
-	"\x11change_scene_info\x18\x02 \x01(\v2\x1a.ChangeRoomInfoPBComponentR\x0fchangeSceneInfo\"\x16\n" +
+	"\x11change_scene_info\x18\x02 \x01(\v2\x1a.ChangeSceneInfoCompR\x0fchangeSceneInfo\"\x16\n" +
 	"\x14EnterSceneS2CRequest\"N\n" +
 	"\x16EnterScenerS2CResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2\xd2\x01\n" +
@@ -240,12 +240,12 @@ var file_proto_service_rpc_scene_game_player_scene_proto_goTypes = []any{
 	(*GsLeaveSceneRequest)(nil),                 // 1: GsLeaveSceneRequest
 	(*EnterSceneS2CRequest)(nil),                // 2: EnterSceneS2CRequest
 	(*EnterScenerS2CResponse)(nil),              // 3: EnterScenerS2CResponse
-	(*component.ChangeRoomInfoPBComponent)(nil), // 4: ChangeRoomInfoPBComponent
+	(*component.ChangeSceneInfoComp)(nil), // 4: ChangeSceneInfoComp
 	(*common.TipInfoMessage)(nil),               // 5: TipInfoMessage
 	(*emptypb.Empty)(nil),                       // 6: google.protobuf.Empty
 }
 var file_proto_service_rpc_scene_game_player_scene_proto_depIdxs = []int32{
-	4, // 0: GsLeaveSceneRequest.change_scene_info:type_name -> ChangeRoomInfoPBComponent
+	4, // 0: GsLeaveSceneRequest.change_scene_info:type_name -> ChangeSceneInfoComp
 	5, // 1: EnterScenerS2CResponse.error_message:type_name -> TipInfoMessage
 	0, // 2: SceneScenePlayer.EnterScene:input_type -> GsEnterSceneRequest
 	1, // 3: SceneScenePlayer.LeaveScene:input_type -> GsLeaveSceneRequest

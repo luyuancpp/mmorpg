@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 
-message ChangeSceneInfoPBComponent
+message ChangeSceneInfoComp
 {
 
   enum eChangeGsType

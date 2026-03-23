@@ -2,10 +2,12 @@
 #include "muduo/net/TcpConnection.h"
 #include "proto/gate/gate_service.pb.h"
 
-void OnGatePlayerEnterGameNodeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, muduo::Timestamp timestamp);
-void OnGateSendMessageToPlayerReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp);
-void OnGateRouteNodeMessageReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::RouteMessageResponse>& replied, muduo::Timestamp timestamp);
-void OnGateRoutePlayerMessageReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::RoutePlayerMessageResponse>& replied, muduo::Timestamp timestamp);
-void OnGateBroadcastToPlayersReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp);
-void OnGateNodeHandshakeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, muduo::Timestamp timestamp);
-void OnGateBindSessionToGateReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, muduo::Timestamp timestamp);
+using namespace muduo;
+using namespace muduo::net;
+void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp);
+void OnGateSendMessageToPlayerReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp);
+void OnGateRouteNodeMessageReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RouteMessageResponse>& replied, Timestamp timestamp);
+void OnGateRoutePlayerMessageReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RoutePlayerMessageResponse>& replied, Timestamp timestamp);
+void OnGateBroadcastToPlayersReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp);
+void OnGateNodeHandshakeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, Timestamp timestamp);
+void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, Timestamp timestamp);

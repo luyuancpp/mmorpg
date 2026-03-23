@@ -207,9 +207,9 @@ func handleSceneSceneClientPlayerNotifyActorListDestroy(player *gameobject.Playe
 	SceneSceneClientPlayerNotifyActorListDestroyHandler(player, message)
 }
 func handleSceneSkillClientPlayerReleaseSkill(player *gameobject.Player, body []byte) {
-	message := &scene.ReleaseSkillSkillResponse{}
+	message := &scene.ReleaseSkillResponse{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal scene.ReleaseSkillSkillResponse", zap.Error(err))
+		zap.L().Error("Failed to unmarshal scene.ReleaseSkillResponse", zap.Error(err))
 		return
 	}
 	SceneSkillClientPlayerReleaseSkillHandler(player, message)

@@ -17,7 +17,7 @@
 class BuffImplSystem {
 public:
     // Periodic tick logic (per-frame or timer-triggered)
-    static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
+    static bool OnIntervalThink(const entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable) {
         if (!buffTable) return false;
 
         switch (buffTable->bufftype()) {
@@ -29,7 +29,7 @@ public:
     }
 
     // On buff start
-    static bool OnBuffStart(const entt::entity parent, const BuffComp& buffComp, const BuffTable* buffTable) {
+    static bool OnBuffStart(const entt::entity parent, const BuffEntry& buffComp, const BuffTable* buffTable) {
         if (!buffTable) return false;
 
         switch (buffTable->bufftype()) {
@@ -56,7 +56,7 @@ public:
     static void OnBeforeGiveDamage(
         const entt::entity casterEntity,
         const entt::entity targetEntity,
-        DamageEventPbComponent& damageEvent) {
+        DamageEventComp& damageEvent) {
         HandleBuffEffectsOnDamage(casterEntity, targetEntity, damageEvent);
     }
 
@@ -76,7 +76,7 @@ public:
             FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
             if (buffTable->bufftype() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
-                if (const auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr)) {
+                if (const auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsComp>(buffComp.dataPbPtr)) {
                     dataPtr->set_last_time(TimeSystem::NowMilliseconds());
                 }
 
@@ -87,7 +87,7 @@ public:
 private:
 
     // Silence buff start handler
-    static bool HandleBuffStartSilence(const entt::entity parent, const BuffComp& buffComp) {
+    static bool HandleBuffStartSilence(const entt::entity parent, const BuffEntry& buffComp) {
         CombatStateAddedPbEvent event;
         event.set_actor_entity(entt::to_integral(parent));
         event.set_source_buff_id(buffComp.buffPb.buff_id());
@@ -111,12 +111,12 @@ private:
     // No-damage-or-skill-hit duration check
     static bool HandleIntervalNoDamageOrSkillHit(
         const entt::entity parent,
-        BuffComp& buffComp,
+        BuffEntry& buffComp,
         const BuffTable* buffTable
     ) {
         if (!buffTable || buffTable->nodamageorskillhitinlastseconds() <= 0) return false;
 
-        auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
+        auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsComp>(buffComp.dataPbPtr);
         if (!dataPtr) return false;
 
         auto elapsedTime = TimeSystem::NowMilliseconds() - dataPtr->last_time();
@@ -132,7 +132,7 @@ private:
     static void HandleBuffEffectsOnDamage(
         const entt::entity casterEntity,
         const entt::entity targetEntity,
-        DamageEventPbComponent& damageEvent
+        DamageEventComp& damageEvent
     ) {
         UInt64Set buffsToRemoveCaster;
         
@@ -155,9 +155,9 @@ private:
 
     // Next basic attack buff handler
     static void ApplyNextBasicAttackBuff(
-        BuffComp& buffComp,
+        BuffEntry& buffComp,
 		const BuffTable* buffTable,
-        DamageEventPbComponent& damageEvent,
+        DamageEventComp& damageEvent,
         UInt64Set& buffsToRemoveCaster,
         const entt::entity casterEntity,
         const entt::entity targetEntity

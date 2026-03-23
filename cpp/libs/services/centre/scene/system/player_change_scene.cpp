@@ -12,27 +12,27 @@
 #include <modules/scene/system/scene_common.h>
 
 
-uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoPBComponent& changeInfo) {
-	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const ChangeSceneInfoComp& changeInfo) {
+	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueueComp>(player);
 	changeSceneQueue.enqueue(changeInfo);
 	changeSceneQueue.front()->set_change_time(TimeSystem::NowSecondsUTC());
 	return kSuccess;
 }
 
 void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
-	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueueComp>(player);
 	changeSceneQueue.dequeue();
 }
 
-void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoPBComponent::eChangeSceneState newState) {
-	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+void PlayerChangeSceneUtil::SetCurrentChangeSceneState(entt::entity player, ChangeSceneInfoComp::eChangeSceneState newState) {
+	auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueueComp>(player);
 	if (changeSceneQueue.empty()) {
 		return;
 	}
 	changeSceneQueue.front()->set_state(newState);
 }
 
-void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent& changeInfo, const SceneInfoPBComponent& sceneInfo) {
+void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoComp& changeInfo, const SceneInfoComp& sceneInfo) {
 	changeInfo.set_scene_confid(sceneInfo.scene_confid());
 	changeInfo.set_dungen_confid(sceneInfo.dungen_confid());
 	changeInfo.set_guid(sceneInfo.guid());
@@ -61,12 +61,12 @@ void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(ChangeSceneInfoPBComponent
 
 // Callback from target scene node or gate to centre
 void PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(entt::entity player) {
-	auto& queue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& queue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueueComp>(player);
 	if (queue.empty()) return;
 
 	auto& task = *queue.front();
-	if (task.state() == ChangeSceneInfoPBComponent::eEnterSucceed) {
-		task.set_state(ChangeSceneInfoPBComponent::eGateEnterSucceed);
+	if (task.state() == ChangeSceneInfoComp::eEnterSucceed) {
+		task.set_state(ChangeSceneInfoComp::eGateEnterSucceed);
 		LOG_INFO << "[SceneChange] Player " << entt::to_integral(player) << " fully entered target scene";
 	}
 }
@@ -79,14 +79,14 @@ void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
 }
 
 void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
-	auto& queue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	auto& queue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueueComp>(player);
 	if (queue.empty()) return;
 
 	auto& task = *queue.front();
 
 	switch (task.state()) {
-	case ChangeSceneInfoPBComponent::ePendingLeave:
-		if (task.change_gs_type() == ChangeSceneInfoPBComponent::eSameGs) {
+	case ChangeSceneInfoComp::ePendingLeave:
+		if (task.change_gs_type() == ChangeSceneInfoComp::eSameGs) {
 			auto destScene = entt::entity{ task.guid() };
 			if (destScene == entt::null) {
 				queue.dequeue();
@@ -100,19 +100,19 @@ void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 		}
 		else {
 			SceneCommon::LeaveScene({ player });
-			task.set_state(ChangeSceneInfoPBComponent::eLeaving);
+			task.set_state(ChangeSceneInfoComp::eLeaving);
 		}
 		break;
-	case ChangeSceneInfoPBComponent::eLeaving:
+	case ChangeSceneInfoComp::eLeaving:
 		// Waiting for leave-complete callback before transitioning to eWaitingEnter.
 		// TODO: No timeout handling yet — could get stuck in eLeaving (no callback)
 		// or eWaitingEnter (target GS never confirms ready).
 		break;
-	case ChangeSceneInfoPBComponent::eWaitingEnter:
+	case ChangeSceneInfoComp::eWaitingEnter:
 		// Waiting for centre or target node RPC to confirm transition
 		break;
 
-	case ChangeSceneInfoPBComponent::eEnterSucceed: {
+	case ChangeSceneInfoComp::eEnterSucceed: {
 		auto destScene = entt::entity{ task.guid() };
 		if (destScene == entt::null) {
 			SceneSystem::EnterDefaultScene({ player });
@@ -123,7 +123,7 @@ void PlayerChangeSceneUtil::ProgressSceneChangeState(entt::entity player) {
 		break;
 	}
 
-	case ChangeSceneInfoPBComponent::eGateEnterSucceed:
+	case ChangeSceneInfoComp::eGateEnterSucceed:
 		queue.dequeue();
 		OnEnterSceneOk(player);
 		break;

@@ -56,14 +56,14 @@ struct TableStruct_proto_2fcommon_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto 
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto;
 }  // extern "C"
-class PlayerSessionSnapshotPBComp;
-struct PlayerSessionSnapshotPBCompDefaultTypeInternal;
-extern PlayerSessionSnapshotPBCompDefaultTypeInternal _PlayerSessionSnapshotPBComp_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotPBComp_class_data_;
-class PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse;
-struct PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUseDefaultTypeInternal;
-extern PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUseDefaultTypeInternal _PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse_class_data_;
+class PlayerSessionSnapshotComp;
+struct PlayerSessionSnapshotCompDefaultTypeInternal;
+extern PlayerSessionSnapshotCompDefaultTypeInternal _PlayerSessionSnapshotComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotComp_class_data_;
+class PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse;
+struct PlayerSessionSnapshotComp_NodeIdEntry_DoNotUseDefaultTypeInternal;
+extern PlayerSessionSnapshotComp_NodeIdEntry_DoNotUseDefaultTypeInternal _PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -75,7 +75,7 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse final
+class PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<::uint32_t, ::uint32_t,
                              ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                              ::google::protobuf::internal::WireFormatLite::TYPE_UINT32> {
@@ -84,12 +84,12 @@ class PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse final
       ::google::protobuf::internal::MapEntry<::uint32_t, ::uint32_t,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>;
-  PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse();
+  PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
-  explicit PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  explicit PROTOBUF_CONSTEXPR PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
+  explicit PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr const void* PROTOBUF_NONNULL internal_default_instance() {
-    return &_PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse_default_instance_;
+    return &_PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse_default_instance_;
   }
 
 
@@ -111,33 +111,33 @@ class PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse final
       ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr auto InternalNewImpl_();
 };
-extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
-class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerSessionSnapshotPBComp) */ {
+class PlayerSessionSnapshotComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerSessionSnapshotComp) */ {
  public:
-  inline PlayerSessionSnapshotPBComp() : PlayerSessionSnapshotPBComp(nullptr) {}
-  ~PlayerSessionSnapshotPBComp() PROTOBUF_FINAL;
+  inline PlayerSessionSnapshotComp() : PlayerSessionSnapshotComp(nullptr) {}
+  ~PlayerSessionSnapshotComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(PlayerSessionSnapshotPBComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(PlayerSessionSnapshotComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerSessionSnapshotPBComp));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerSessionSnapshotComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerSessionSnapshotPBComp(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR PlayerSessionSnapshotComp(::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerSessionSnapshotPBComp(const PlayerSessionSnapshotPBComp& from) : PlayerSessionSnapshotPBComp(nullptr, from) {}
-  inline PlayerSessionSnapshotPBComp(PlayerSessionSnapshotPBComp&& from) noexcept
-      : PlayerSessionSnapshotPBComp(nullptr, ::std::move(from)) {}
-  inline PlayerSessionSnapshotPBComp& operator=(const PlayerSessionSnapshotPBComp& from) {
+  inline PlayerSessionSnapshotComp(const PlayerSessionSnapshotComp& from) : PlayerSessionSnapshotComp(nullptr, from) {}
+  inline PlayerSessionSnapshotComp(PlayerSessionSnapshotComp&& from) noexcept
+      : PlayerSessionSnapshotComp(nullptr, ::std::move(from)) {}
+  inline PlayerSessionSnapshotComp& operator=(const PlayerSessionSnapshotComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerSessionSnapshotPBComp& operator=(PlayerSessionSnapshotPBComp&& from) noexcept {
+  inline PlayerSessionSnapshotComp& operator=(PlayerSessionSnapshotComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -165,13 +165,13 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerSessionSnapshotPBComp& default_instance() {
-    return *reinterpret_cast<const PlayerSessionSnapshotPBComp*>(
-        &_PlayerSessionSnapshotPBComp_default_instance_);
+  static const PlayerSessionSnapshotComp& default_instance() {
+    return *reinterpret_cast<const PlayerSessionSnapshotComp*>(
+        &_PlayerSessionSnapshotComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(PlayerSessionSnapshotPBComp& a, PlayerSessionSnapshotPBComp& b) { a.Swap(&b); }
-  inline void Swap(PlayerSessionSnapshotPBComp* PROTOBUF_NONNULL other) {
+  friend void swap(PlayerSessionSnapshotComp& a, PlayerSessionSnapshotComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerSessionSnapshotComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -179,7 +179,7 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerSessionSnapshotPBComp* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(PlayerSessionSnapshotComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -187,13 +187,13 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerSessionSnapshotPBComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerSessionSnapshotPBComp>(arena);
+  PlayerSessionSnapshotComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerSessionSnapshotComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerSessionSnapshotPBComp& from);
+  void CopyFrom(const PlayerSessionSnapshotComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerSessionSnapshotPBComp& from) { PlayerSessionSnapshotPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerSessionSnapshotComp& from) { PlayerSessionSnapshotComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -229,18 +229,18 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(PlayerSessionSnapshotPBComp* PROTOBUF_NONNULL other);
+  void InternalSwap(PlayerSessionSnapshotComp* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "PlayerSessionSnapshotPBComp"; }
+  static ::absl::string_view FullMessageName() { return "PlayerSessionSnapshotComp"; }
 
  protected:
-  explicit PlayerSessionSnapshotPBComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  PlayerSessionSnapshotPBComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerSessionSnapshotPBComp& from);
-  PlayerSessionSnapshotPBComp(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerSessionSnapshotPBComp&& from) noexcept
-      : PlayerSessionSnapshotPBComp(arena) {
+  explicit PlayerSessionSnapshotComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PlayerSessionSnapshotComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerSessionSnapshotComp& from);
+  PlayerSessionSnapshotComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerSessionSnapshotComp&& from) noexcept
+      : PlayerSessionSnapshotComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -366,12 +366,12 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
   void _internal_set_token_expiry_ms(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerSessionSnapshotPBComp)
+  // @@protoc_insertion_point(class_scope:PlayerSessionSnapshotComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<3, 8,
-                                   1, 78,
+                                   1, 76,
                                    2>
       _table_;
 
@@ -389,10 +389,10 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const PlayerSessionSnapshotPBComp& from_msg);
+        const PlayerSessionSnapshotComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::MapField<PlayerSessionSnapshotPBComp_NodeIdEntry_DoNotUse, ::uint32_t, ::uint32_t,
+    ::google::protobuf::internal::MapField<PlayerSessionSnapshotComp_NodeIdEntry_DoNotUse, ::uint32_t, ::uint32_t,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>
         node_id_;
@@ -409,7 +409,7 @@ class PlayerSessionSnapshotPBComp final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotPBComp_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotComp_class_data_;
 
 // ===================================================================
 
@@ -427,126 +427,126 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerSessionSnapshotPB
 
 // -------------------------------------------------------------------
 
-// PlayerSessionSnapshotPBComp
+// PlayerSessionSnapshotComp
 
 // uint64 player_id = 1;
-inline void PlayerSessionSnapshotPBComp::clear_player_id() {
+inline void PlayerSessionSnapshotComp::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint64_t PlayerSessionSnapshotPBComp::player_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.player_id)
+inline ::uint64_t PlayerSessionSnapshotComp::player_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotComp.player_id)
   return _internal_player_id();
 }
-inline void PlayerSessionSnapshotPBComp::set_player_id(::uint64_t value) {
+inline void PlayerSessionSnapshotComp::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
   _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.player_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotComp.player_id)
 }
-inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_player_id() const {
+inline ::uint64_t PlayerSessionSnapshotComp::_internal_player_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.player_id_;
 }
-inline void PlayerSessionSnapshotPBComp::_internal_set_player_id(::uint64_t value) {
+inline void PlayerSessionSnapshotComp::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
 }
 
 // uint64 gate_session_id = 2;
-inline void PlayerSessionSnapshotPBComp::clear_gate_session_id() {
+inline void PlayerSessionSnapshotComp::clear_gate_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_session_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint64_t PlayerSessionSnapshotPBComp::gate_session_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.gate_session_id)
+inline ::uint64_t PlayerSessionSnapshotComp::gate_session_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotComp.gate_session_id)
   return _internal_gate_session_id();
 }
-inline void PlayerSessionSnapshotPBComp::set_gate_session_id(::uint64_t value) {
+inline void PlayerSessionSnapshotComp::set_gate_session_id(::uint64_t value) {
   _internal_set_gate_session_id(value);
   _impl_._has_bits_[0] |= 0x00000010u;
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.gate_session_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotComp.gate_session_id)
 }
-inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_gate_session_id() const {
+inline ::uint64_t PlayerSessionSnapshotComp::_internal_gate_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.gate_session_id_;
 }
-inline void PlayerSessionSnapshotPBComp::_internal_set_gate_session_id(::uint64_t value) {
+inline void PlayerSessionSnapshotComp::_internal_set_gate_session_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_session_id_ = value;
 }
 
 // map<uint32, uint32> node_id = 3;
-inline int PlayerSessionSnapshotPBComp::_internal_node_id_size() const {
+inline int PlayerSessionSnapshotComp::_internal_node_id_size() const {
   return _internal_node_id().size();
 }
-inline int PlayerSessionSnapshotPBComp::node_id_size() const {
+inline int PlayerSessionSnapshotComp::node_id_size() const {
   return _internal_node_id_size();
 }
-inline void PlayerSessionSnapshotPBComp::clear_node_id() {
+inline void PlayerSessionSnapshotComp::clear_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.node_id_.Clear();
 }
-inline const ::google::protobuf::Map<::uint32_t, ::uint32_t>& PlayerSessionSnapshotPBComp::_internal_node_id() const {
+inline const ::google::protobuf::Map<::uint32_t, ::uint32_t>& PlayerSessionSnapshotComp::_internal_node_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.node_id_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint32_t, ::uint32_t>& PlayerSessionSnapshotPBComp::node_id() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:PlayerSessionSnapshotPBComp.node_id)
+inline const ::google::protobuf::Map<::uint32_t, ::uint32_t>& PlayerSessionSnapshotComp::node_id() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:PlayerSessionSnapshotComp.node_id)
   return _internal_node_id();
 }
-inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::_internal_mutable_node_id() {
+inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL PlayerSessionSnapshotComp::_internal_mutable_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _impl_.node_id_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::mutable_node_id()
+inline ::google::protobuf::Map<::uint32_t, ::uint32_t>* PROTOBUF_NONNULL PlayerSessionSnapshotComp::mutable_node_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:PlayerSessionSnapshotPBComp.node_id)
+  // @@protoc_insertion_point(field_mutable_map:PlayerSessionSnapshotComp.node_id)
   return _internal_mutable_node_id();
 }
 
 // string login_token = 4;
-inline void PlayerSessionSnapshotPBComp::clear_login_token() {
+inline void PlayerSessionSnapshotComp::clear_login_token() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.login_token_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::std::string& PlayerSessionSnapshotPBComp::login_token() const
+inline const ::std::string& PlayerSessionSnapshotComp::login_token() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.login_token)
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotComp.login_token)
   return _internal_login_token();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void PlayerSessionSnapshotPBComp::set_login_token(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void PlayerSessionSnapshotComp::set_login_token(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.login_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.login_token)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotComp.login_token)
 }
-inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::mutable_login_token()
+inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotComp::mutable_login_token()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_login_token();
-  // @@protoc_insertion_point(field_mutable:PlayerSessionSnapshotPBComp.login_token)
+  // @@protoc_insertion_point(field_mutable:PlayerSessionSnapshotComp.login_token)
   return _s;
 }
-inline const ::std::string& PlayerSessionSnapshotPBComp::_internal_login_token() const {
+inline const ::std::string& PlayerSessionSnapshotComp::_internal_login_token() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.login_token_.Get();
 }
-inline void PlayerSessionSnapshotPBComp::_internal_set_login_token(const ::std::string& value) {
+inline void PlayerSessionSnapshotComp::_internal_set_login_token(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.login_token_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::_internal_mutable_login_token() {
+inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotComp::_internal_mutable_login_token() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   return _impl_.login_token_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotPBComp::release_login_token() {
+inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotComp::release_login_token() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:PlayerSessionSnapshotPBComp.login_token)
+  // @@protoc_insertion_point(field_release:PlayerSessionSnapshotComp.login_token)
   if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
     return nullptr;
   }
@@ -557,7 +557,7 @@ inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotPBComp::release_log
   }
   return released;
 }
-inline void PlayerSessionSnapshotPBComp::set_allocated_login_token(::std::string* PROTOBUF_NULLABLE value) {
+inline void PlayerSessionSnapshotComp::set_allocated_login_token(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
@@ -568,98 +568,98 @@ inline void PlayerSessionSnapshotPBComp::set_allocated_login_token(::std::string
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.login_token_.IsDefault()) {
     _impl_.login_token_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotPBComp.login_token)
+  // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotComp.login_token)
 }
 
 // uint64 session_version = 5;
-inline void PlayerSessionSnapshotPBComp::clear_session_version() {
+inline void PlayerSessionSnapshotComp::clear_session_version() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_version_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000020u;
 }
-inline ::uint64_t PlayerSessionSnapshotPBComp::session_version() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.session_version)
+inline ::uint64_t PlayerSessionSnapshotComp::session_version() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotComp.session_version)
   return _internal_session_version();
 }
-inline void PlayerSessionSnapshotPBComp::set_session_version(::uint64_t value) {
+inline void PlayerSessionSnapshotComp::set_session_version(::uint64_t value) {
   _internal_set_session_version(value);
   _impl_._has_bits_[0] |= 0x00000020u;
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.session_version)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotComp.session_version)
 }
-inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_session_version() const {
+inline ::uint64_t PlayerSessionSnapshotComp::_internal_session_version() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_version_;
 }
-inline void PlayerSessionSnapshotPBComp::_internal_set_session_version(::uint64_t value) {
+inline void PlayerSessionSnapshotComp::_internal_set_session_version(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_version_ = value;
 }
 
 // uint64 token_expiry_ms = 6;
-inline void PlayerSessionSnapshotPBComp::clear_token_expiry_ms() {
+inline void PlayerSessionSnapshotComp::clear_token_expiry_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.token_expiry_ms_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000040u;
 }
-inline ::uint64_t PlayerSessionSnapshotPBComp::token_expiry_ms() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.token_expiry_ms)
+inline ::uint64_t PlayerSessionSnapshotComp::token_expiry_ms() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotComp.token_expiry_ms)
   return _internal_token_expiry_ms();
 }
-inline void PlayerSessionSnapshotPBComp::set_token_expiry_ms(::uint64_t value) {
+inline void PlayerSessionSnapshotComp::set_token_expiry_ms(::uint64_t value) {
   _internal_set_token_expiry_ms(value);
   _impl_._has_bits_[0] |= 0x00000040u;
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.token_expiry_ms)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotComp.token_expiry_ms)
 }
-inline ::uint64_t PlayerSessionSnapshotPBComp::_internal_token_expiry_ms() const {
+inline ::uint64_t PlayerSessionSnapshotComp::_internal_token_expiry_ms() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.token_expiry_ms_;
 }
-inline void PlayerSessionSnapshotPBComp::_internal_set_token_expiry_ms(::uint64_t value) {
+inline void PlayerSessionSnapshotComp::_internal_set_token_expiry_ms(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.token_expiry_ms_ = value;
 }
 
 // string token_id = 7;
-inline void PlayerSessionSnapshotPBComp::clear_token_id() {
+inline void PlayerSessionSnapshotComp::clear_token_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.token_id_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline const ::std::string& PlayerSessionSnapshotPBComp::token_id() const
+inline const ::std::string& PlayerSessionSnapshotComp::token_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.token_id)
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotComp.token_id)
   return _internal_token_id();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void PlayerSessionSnapshotPBComp::set_token_id(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void PlayerSessionSnapshotComp::set_token_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
   _impl_.token_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.token_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotComp.token_id)
 }
-inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::mutable_token_id()
+inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotComp::mutable_token_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_token_id();
-  // @@protoc_insertion_point(field_mutable:PlayerSessionSnapshotPBComp.token_id)
+  // @@protoc_insertion_point(field_mutable:PlayerSessionSnapshotComp.token_id)
   return _s;
 }
-inline const ::std::string& PlayerSessionSnapshotPBComp::_internal_token_id() const {
+inline const ::std::string& PlayerSessionSnapshotComp::_internal_token_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.token_id_.Get();
 }
-inline void PlayerSessionSnapshotPBComp::_internal_set_token_id(const ::std::string& value) {
+inline void PlayerSessionSnapshotComp::_internal_set_token_id(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
   _impl_.token_id_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::_internal_mutable_token_id() {
+inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotComp::_internal_mutable_token_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
   return _impl_.token_id_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotPBComp::release_token_id() {
+inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotComp::release_token_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:PlayerSessionSnapshotPBComp.token_id)
+  // @@protoc_insertion_point(field_release:PlayerSessionSnapshotComp.token_id)
   if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
     return nullptr;
   }
@@ -670,7 +670,7 @@ inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotPBComp::release_tok
   }
   return released;
 }
-inline void PlayerSessionSnapshotPBComp::set_allocated_token_id(::std::string* PROTOBUF_NULLABLE value) {
+inline void PlayerSessionSnapshotComp::set_allocated_token_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
@@ -681,50 +681,50 @@ inline void PlayerSessionSnapshotPBComp::set_allocated_token_id(::std::string* P
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.token_id_.IsDefault()) {
     _impl_.token_id_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotPBComp.token_id)
+  // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotComp.token_id)
 }
 
 // string last_request_id = 8;
-inline void PlayerSessionSnapshotPBComp::clear_last_request_id() {
+inline void PlayerSessionSnapshotComp::clear_last_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.last_request_id_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline const ::std::string& PlayerSessionSnapshotPBComp::last_request_id() const
+inline const ::std::string& PlayerSessionSnapshotComp::last_request_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotPBComp.last_request_id)
+  // @@protoc_insertion_point(field_get:PlayerSessionSnapshotComp.last_request_id)
   return _internal_last_request_id();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void PlayerSessionSnapshotPBComp::set_last_request_id(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void PlayerSessionSnapshotComp::set_last_request_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
   _impl_.last_request_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotPBComp.last_request_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionSnapshotComp.last_request_id)
 }
-inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::mutable_last_request_id()
+inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotComp::mutable_last_request_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_last_request_id();
-  // @@protoc_insertion_point(field_mutable:PlayerSessionSnapshotPBComp.last_request_id)
+  // @@protoc_insertion_point(field_mutable:PlayerSessionSnapshotComp.last_request_id)
   return _s;
 }
-inline const ::std::string& PlayerSessionSnapshotPBComp::_internal_last_request_id() const {
+inline const ::std::string& PlayerSessionSnapshotComp::_internal_last_request_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.last_request_id_.Get();
 }
-inline void PlayerSessionSnapshotPBComp::_internal_set_last_request_id(const ::std::string& value) {
+inline void PlayerSessionSnapshotComp::_internal_set_last_request_id(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
   _impl_.last_request_id_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotPBComp::_internal_mutable_last_request_id() {
+inline ::std::string* PROTOBUF_NONNULL PlayerSessionSnapshotComp::_internal_mutable_last_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
   return _impl_.last_request_id_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotPBComp::release_last_request_id() {
+inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotComp::release_last_request_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:PlayerSessionSnapshotPBComp.last_request_id)
+  // @@protoc_insertion_point(field_release:PlayerSessionSnapshotComp.last_request_id)
   if ((_impl_._has_bits_[0] & 0x00000004u) == 0) {
     return nullptr;
   }
@@ -735,7 +735,7 @@ inline ::std::string* PROTOBUF_NULLABLE PlayerSessionSnapshotPBComp::release_las
   }
   return released;
 }
-inline void PlayerSessionSnapshotPBComp::set_allocated_last_request_id(::std::string* PROTOBUF_NULLABLE value) {
+inline void PlayerSessionSnapshotComp::set_allocated_last_request_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000004u;
@@ -746,7 +746,7 @@ inline void PlayerSessionSnapshotPBComp::set_allocated_last_request_id(::std::st
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.last_request_id_.IsDefault()) {
     _impl_.last_request_id_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotPBComp.last_request_id)
+  // @@protoc_insertion_point(field_set_allocated:PlayerSessionSnapshotComp.last_request_id)
 }
 
 #ifdef __GNUC__

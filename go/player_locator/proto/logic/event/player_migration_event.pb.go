@@ -32,7 +32,7 @@ type PlayerMigrationPbEvent struct {
 	ToZone               uint32                               `protobuf:"varint,6,opt,name=to_zone,json=toZone,proto3" json:"to_zone,omitempty"`
 	Timestamp            int64                                `protobuf:"varint,7,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // 事件生成时间
 	CentreNodeId         uint32                               `protobuf:"varint,8,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`
-	SceneInfo            *component.ChangeRoomInfoPBComponent `protobuf:"bytes,9,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo            *component.ChangeSceneInfoComp `protobuf:"bytes,9,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -123,7 +123,7 @@ func (x *PlayerMigrationPbEvent) GetCentreNodeId() uint32 {
 	return 0
 }
 
-func (x *PlayerMigrationPbEvent) GetSceneInfo() *component.ChangeRoomInfoPBComponent {
+func (x *PlayerMigrationPbEvent) GetSceneInfo() *component.ChangeSceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -145,7 +145,7 @@ const file_proto_logic_event_player_migration_event_proto_rawDesc = "" +
 	"\ttimestamp\x18\a \x01(\x03R\ttimestamp\x12$\n" +
 	"\x0ecentre_node_id\x18\b \x01(\rR\fcentreNodeId\x129\n" +
 	"\n" +
-	"scene_info\x18\t \x01(\v2\x1a.ChangeRoomInfoPBComponentR\tsceneInfoB(Z&player_locator/proto/logic/event;eventb\x06proto3"
+	"scene_info\x18\t \x01(\v2\x1a.ChangeSceneInfoCompR\tsceneInfoB(Z&player_locator/proto/logic/event;eventb\x06proto3"
 
 var (
 	file_proto_logic_event_player_migration_event_proto_rawDescOnce sync.Once
@@ -162,10 +162,10 @@ func file_proto_logic_event_player_migration_event_proto_rawDescGZIP() []byte {
 var file_proto_logic_event_player_migration_event_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_logic_event_player_migration_event_proto_goTypes = []any{
 	(*PlayerMigrationPbEvent)(nil),              // 0: PlayerMigrationPbEvent
-	(*component.ChangeRoomInfoPBComponent)(nil), // 1: ChangeRoomInfoPBComponent
+	(*component.ChangeSceneInfoComp)(nil), // 1: ChangeSceneInfoComp
 }
 var file_proto_logic_event_player_migration_event_proto_depIdxs = []int32{
-	1, // 0: PlayerMigrationPbEvent.scene_info:type_name -> ChangeRoomInfoPBComponent
+	1, // 0: PlayerMigrationPbEvent.scene_info:type_name -> ChangeSceneInfoComp
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

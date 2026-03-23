@@ -56,10 +56,10 @@ struct TableStruct_proto_2fcommon_2fbase_2fcommon_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto;
 }  // extern "C"
-class EndpointPBComponent;
-struct EndpointPBComponentDefaultTypeInternal;
-extern EndpointPBComponentDefaultTypeInternal _EndpointPBComponent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull EndpointPBComponent_class_data_;
+class EndpointComp;
+struct EndpointCompDefaultTypeInternal;
+extern EndpointCompDefaultTypeInternal _EndpointComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull EndpointComp_class_data_;
 class NetworkAddress;
 struct NetworkAddressDefaultTypeInternal;
 extern NetworkAddressDefaultTypeInternal _NetworkAddress_default_instance_;
@@ -68,18 +68,18 @@ class NodeInfo;
 struct NodeInfoDefaultTypeInternal;
 extern NodeInfoDefaultTypeInternal _NodeInfo_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull NodeInfo_class_data_;
-class NodeInfoListPBComponent;
-struct NodeInfoListPBComponentDefaultTypeInternal;
-extern NodeInfoListPBComponentDefaultTypeInternal _NodeInfoListPBComponent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull NodeInfoListPBComponent_class_data_;
-class SceneInfoPBComponent;
-struct SceneInfoPBComponentDefaultTypeInternal;
-extern SceneInfoPBComponentDefaultTypeInternal _SceneInfoPBComponent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull SceneInfoPBComponent_class_data_;
-class SceneInfoPBComponent_CreatorsEntry_DoNotUse;
-struct SceneInfoPBComponent_CreatorsEntry_DoNotUseDefaultTypeInternal;
-extern SceneInfoPBComponent_CreatorsEntry_DoNotUseDefaultTypeInternal _SceneInfoPBComponent_CreatorsEntry_DoNotUse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull SceneInfoPBComponent_CreatorsEntry_DoNotUse_class_data_;
+class NodeInfoListComp;
+struct NodeInfoListCompDefaultTypeInternal;
+extern NodeInfoListCompDefaultTypeInternal _NodeInfoListComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull NodeInfoListComp_class_data_;
+class SceneInfoComp;
+struct SceneInfoCompDefaultTypeInternal;
+extern SceneInfoCompDefaultTypeInternal _SceneInfoComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SceneInfoComp_class_data_;
+class SceneInfoComp_CreatorsEntry_DoNotUse;
+struct SceneInfoComp_CreatorsEntry_DoNotUseDefaultTypeInternal;
+extern SceneInfoComp_CreatorsEntry_DoNotUseDefaultTypeInternal _SceneInfoComp_CreatorsEntry_DoNotUse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SceneInfoComp_CreatorsEntry_DoNotUse_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -91,7 +91,7 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class SceneInfoPBComponent_CreatorsEntry_DoNotUse final
+class SceneInfoComp_CreatorsEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<::uint64_t, bool,
                              ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
                              ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
@@ -100,12 +100,12 @@ class SceneInfoPBComponent_CreatorsEntry_DoNotUse final
       ::google::protobuf::internal::MapEntry<::uint64_t, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
-  SceneInfoPBComponent_CreatorsEntry_DoNotUse();
+  SceneInfoComp_CreatorsEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SceneInfoPBComponent_CreatorsEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
-  explicit SceneInfoPBComponent_CreatorsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  explicit PROTOBUF_CONSTEXPR SceneInfoComp_CreatorsEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
+  explicit SceneInfoComp_CreatorsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr const void* PROTOBUF_NONNULL internal_default_instance() {
-    return &_SceneInfoPBComponent_CreatorsEntry_DoNotUse_default_instance_;
+    return &_SceneInfoComp_CreatorsEntry_DoNotUse_default_instance_;
   }
 
 
@@ -127,7 +127,7 @@ class SceneInfoPBComponent_CreatorsEntry_DoNotUse final
       ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr auto InternalNewImpl_();
 };
-extern const ::google::protobuf::internal::ClassDataFull SceneInfoPBComponent_CreatorsEntry_DoNotUse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull SceneInfoComp_CreatorsEntry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
 class NetworkAddress final : public ::google::protobuf::Message
@@ -338,30 +338,30 @@ class NetworkAddress final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull NetworkAddress_class_data_;
 // -------------------------------------------------------------------
 
-class EndpointPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:EndpointPBComponent) */ {
+class EndpointComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:EndpointComp) */ {
  public:
-  inline EndpointPBComponent() : EndpointPBComponent(nullptr) {}
-  ~EndpointPBComponent() PROTOBUF_FINAL;
+  inline EndpointComp() : EndpointComp(nullptr) {}
+  ~EndpointComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(EndpointPBComponent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(EndpointComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(EndpointPBComponent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(EndpointComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR EndpointPBComponent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR EndpointComp(::google::protobuf::internal::ConstantInitialized);
 
-  inline EndpointPBComponent(const EndpointPBComponent& from) : EndpointPBComponent(nullptr, from) {}
-  inline EndpointPBComponent(EndpointPBComponent&& from) noexcept
-      : EndpointPBComponent(nullptr, ::std::move(from)) {}
-  inline EndpointPBComponent& operator=(const EndpointPBComponent& from) {
+  inline EndpointComp(const EndpointComp& from) : EndpointComp(nullptr, from) {}
+  inline EndpointComp(EndpointComp&& from) noexcept
+      : EndpointComp(nullptr, ::std::move(from)) {}
+  inline EndpointComp& operator=(const EndpointComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline EndpointPBComponent& operator=(EndpointPBComponent&& from) noexcept {
+  inline EndpointComp& operator=(EndpointComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -389,13 +389,13 @@ class EndpointPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const EndpointPBComponent& default_instance() {
-    return *reinterpret_cast<const EndpointPBComponent*>(
-        &_EndpointPBComponent_default_instance_);
+  static const EndpointComp& default_instance() {
+    return *reinterpret_cast<const EndpointComp*>(
+        &_EndpointComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(EndpointPBComponent& a, EndpointPBComponent& b) { a.Swap(&b); }
-  inline void Swap(EndpointPBComponent* PROTOBUF_NONNULL other) {
+  friend void swap(EndpointComp& a, EndpointComp& b) { a.Swap(&b); }
+  inline void Swap(EndpointComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -403,7 +403,7 @@ class EndpointPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(EndpointPBComponent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(EndpointComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -411,13 +411,13 @@ class EndpointPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  EndpointPBComponent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<EndpointPBComponent>(arena);
+  EndpointComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<EndpointComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const EndpointPBComponent& from);
+  void CopyFrom(const EndpointComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const EndpointPBComponent& from) { EndpointPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const EndpointComp& from) { EndpointComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -453,18 +453,18 @@ class EndpointPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(EndpointPBComponent* PROTOBUF_NONNULL other);
+  void InternalSwap(EndpointComp* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "EndpointPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "EndpointComp"; }
 
  protected:
-  explicit EndpointPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  EndpointPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EndpointPBComponent& from);
-  EndpointPBComponent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EndpointPBComponent&& from) noexcept
-      : EndpointPBComponent(arena) {
+  explicit EndpointComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  EndpointComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EndpointComp& from);
+  EndpointComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EndpointComp&& from) noexcept
+      : EndpointComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -509,12 +509,12 @@ class EndpointPBComponent final : public ::google::protobuf::Message
   void _internal_set_port(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:EndpointPBComponent)
+  // @@protoc_insertion_point(class_scope:EndpointComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 30,
+                                   0, 23,
                                    2>
       _table_;
 
@@ -532,7 +532,7 @@ class EndpointPBComponent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const EndpointPBComponent& from_msg);
+        const EndpointComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr ip_;
@@ -543,33 +543,33 @@ class EndpointPBComponent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fbase_2fcommon_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull EndpointPBComponent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull EndpointComp_class_data_;
 // -------------------------------------------------------------------
 
-class SceneInfoPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:SceneInfoPBComponent) */ {
+class SceneInfoComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SceneInfoComp) */ {
  public:
-  inline SceneInfoPBComponent() : SceneInfoPBComponent(nullptr) {}
-  ~SceneInfoPBComponent() PROTOBUF_FINAL;
+  inline SceneInfoComp() : SceneInfoComp(nullptr) {}
+  ~SceneInfoComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(SceneInfoPBComponent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(SceneInfoComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(SceneInfoPBComponent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SceneInfoComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SceneInfoPBComponent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR SceneInfoComp(::google::protobuf::internal::ConstantInitialized);
 
-  inline SceneInfoPBComponent(const SceneInfoPBComponent& from) : SceneInfoPBComponent(nullptr, from) {}
-  inline SceneInfoPBComponent(SceneInfoPBComponent&& from) noexcept
-      : SceneInfoPBComponent(nullptr, ::std::move(from)) {}
-  inline SceneInfoPBComponent& operator=(const SceneInfoPBComponent& from) {
+  inline SceneInfoComp(const SceneInfoComp& from) : SceneInfoComp(nullptr, from) {}
+  inline SceneInfoComp(SceneInfoComp&& from) noexcept
+      : SceneInfoComp(nullptr, ::std::move(from)) {}
+  inline SceneInfoComp& operator=(const SceneInfoComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline SceneInfoPBComponent& operator=(SceneInfoPBComponent&& from) noexcept {
+  inline SceneInfoComp& operator=(SceneInfoComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -597,13 +597,13 @@ class SceneInfoPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const SceneInfoPBComponent& default_instance() {
-    return *reinterpret_cast<const SceneInfoPBComponent*>(
-        &_SceneInfoPBComponent_default_instance_);
+  static const SceneInfoComp& default_instance() {
+    return *reinterpret_cast<const SceneInfoComp*>(
+        &_SceneInfoComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 5;
-  friend void swap(SceneInfoPBComponent& a, SceneInfoPBComponent& b) { a.Swap(&b); }
-  inline void Swap(SceneInfoPBComponent* PROTOBUF_NONNULL other) {
+  friend void swap(SceneInfoComp& a, SceneInfoComp& b) { a.Swap(&b); }
+  inline void Swap(SceneInfoComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -611,7 +611,7 @@ class SceneInfoPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(SceneInfoPBComponent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(SceneInfoComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -619,13 +619,13 @@ class SceneInfoPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  SceneInfoPBComponent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<SceneInfoPBComponent>(arena);
+  SceneInfoComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SceneInfoComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SceneInfoPBComponent& from);
+  void CopyFrom(const SceneInfoComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SceneInfoPBComponent& from) { SceneInfoPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const SceneInfoComp& from) { SceneInfoComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -661,18 +661,18 @@ class SceneInfoPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(SceneInfoPBComponent* PROTOBUF_NONNULL other);
+  void InternalSwap(SceneInfoComp* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "SceneInfoPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "SceneInfoComp"; }
 
  protected:
-  explicit SceneInfoPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  SceneInfoPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SceneInfoPBComponent& from);
-  SceneInfoPBComponent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SceneInfoPBComponent&& from) noexcept
-      : SceneInfoPBComponent(arena) {
+  explicit SceneInfoComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SceneInfoComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SceneInfoComp& from);
+  SceneInfoComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SceneInfoComp&& from) noexcept
+      : SceneInfoComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -750,7 +750,7 @@ class SceneInfoPBComponent final : public ::google::protobuf::Message
   void _internal_set_dungen_confid(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:SceneInfoPBComponent)
+  // @@protoc_insertion_point(class_scope:SceneInfoComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -773,10 +773,10 @@ class SceneInfoPBComponent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const SceneInfoPBComponent& from_msg);
+        const SceneInfoComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::MapField<SceneInfoPBComponent_CreatorsEntry_DoNotUse, ::uint64_t, bool,
+    ::google::protobuf::internal::MapField<SceneInfoComp_CreatorsEntry_DoNotUse, ::uint64_t, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         creators_;
@@ -790,7 +790,7 @@ class SceneInfoPBComponent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fbase_2fcommon_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull SceneInfoPBComponent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull SceneInfoComp_class_data_;
 // -------------------------------------------------------------------
 
 class NodeInfo final : public ::google::protobuf::Message
@@ -960,19 +960,19 @@ class NodeInfo final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_node_uuid();
 
   public:
-  // .EndpointPBComponent endpoint = 5;
+  // .EndpointComp endpoint = 5;
   bool has_endpoint() const;
   void clear_endpoint() ;
-  const ::EndpointPBComponent& endpoint() const;
-  [[nodiscard]] ::EndpointPBComponent* PROTOBUF_NULLABLE release_endpoint();
-  ::EndpointPBComponent* PROTOBUF_NONNULL mutable_endpoint();
-  void set_allocated_endpoint(::EndpointPBComponent* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_endpoint(::EndpointPBComponent* PROTOBUF_NULLABLE value);
-  ::EndpointPBComponent* PROTOBUF_NULLABLE unsafe_arena_release_endpoint();
+  const ::EndpointComp& endpoint() const;
+  [[nodiscard]] ::EndpointComp* PROTOBUF_NULLABLE release_endpoint();
+  ::EndpointComp* PROTOBUF_NONNULL mutable_endpoint();
+  void set_allocated_endpoint(::EndpointComp* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_endpoint(::EndpointComp* PROTOBUF_NULLABLE value);
+  ::EndpointComp* PROTOBUF_NULLABLE unsafe_arena_release_endpoint();
 
   private:
-  const ::EndpointPBComponent& _internal_endpoint() const;
-  ::EndpointPBComponent* PROTOBUF_NONNULL _internal_mutable_endpoint();
+  const ::EndpointComp& _internal_endpoint() const;
+  ::EndpointComp* PROTOBUF_NONNULL _internal_mutable_endpoint();
 
   public:
   // uint32 node_id = 1;
@@ -1062,7 +1062,7 @@ class NodeInfo final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr node_uuid_;
-    ::EndpointPBComponent* PROTOBUF_NULLABLE endpoint_;
+    ::EndpointComp* PROTOBUF_NULLABLE endpoint_;
     ::uint32_t node_id_;
     ::uint32_t node_type_;
     ::uint64_t launch_time_;
@@ -1078,30 +1078,30 @@ class NodeInfo final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull NodeInfo_class_data_;
 // -------------------------------------------------------------------
 
-class NodeInfoListPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:NodeInfoListPBComponent) */ {
+class NodeInfoListComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:NodeInfoListComp) */ {
  public:
-  inline NodeInfoListPBComponent() : NodeInfoListPBComponent(nullptr) {}
-  ~NodeInfoListPBComponent() PROTOBUF_FINAL;
+  inline NodeInfoListComp() : NodeInfoListComp(nullptr) {}
+  ~NodeInfoListComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(NodeInfoListPBComponent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(NodeInfoListComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(NodeInfoListPBComponent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(NodeInfoListComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR NodeInfoListPBComponent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR NodeInfoListComp(::google::protobuf::internal::ConstantInitialized);
 
-  inline NodeInfoListPBComponent(const NodeInfoListPBComponent& from) : NodeInfoListPBComponent(nullptr, from) {}
-  inline NodeInfoListPBComponent(NodeInfoListPBComponent&& from) noexcept
-      : NodeInfoListPBComponent(nullptr, ::std::move(from)) {}
-  inline NodeInfoListPBComponent& operator=(const NodeInfoListPBComponent& from) {
+  inline NodeInfoListComp(const NodeInfoListComp& from) : NodeInfoListComp(nullptr, from) {}
+  inline NodeInfoListComp(NodeInfoListComp&& from) noexcept
+      : NodeInfoListComp(nullptr, ::std::move(from)) {}
+  inline NodeInfoListComp& operator=(const NodeInfoListComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline NodeInfoListPBComponent& operator=(NodeInfoListPBComponent&& from) noexcept {
+  inline NodeInfoListComp& operator=(NodeInfoListComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -1129,13 +1129,13 @@ class NodeInfoListPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const NodeInfoListPBComponent& default_instance() {
-    return *reinterpret_cast<const NodeInfoListPBComponent*>(
-        &_NodeInfoListPBComponent_default_instance_);
+  static const NodeInfoListComp& default_instance() {
+    return *reinterpret_cast<const NodeInfoListComp*>(
+        &_NodeInfoListComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(NodeInfoListPBComponent& a, NodeInfoListPBComponent& b) { a.Swap(&b); }
-  inline void Swap(NodeInfoListPBComponent* PROTOBUF_NONNULL other) {
+  friend void swap(NodeInfoListComp& a, NodeInfoListComp& b) { a.Swap(&b); }
+  inline void Swap(NodeInfoListComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -1143,7 +1143,7 @@ class NodeInfoListPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(NodeInfoListPBComponent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(NodeInfoListComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1151,13 +1151,13 @@ class NodeInfoListPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  NodeInfoListPBComponent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<NodeInfoListPBComponent>(arena);
+  NodeInfoListComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<NodeInfoListComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const NodeInfoListPBComponent& from);
+  void CopyFrom(const NodeInfoListComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const NodeInfoListPBComponent& from) { NodeInfoListPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const NodeInfoListComp& from) { NodeInfoListComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -1193,18 +1193,18 @@ class NodeInfoListPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(NodeInfoListPBComponent* PROTOBUF_NONNULL other);
+  void InternalSwap(NodeInfoListComp* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "NodeInfoListPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "NodeInfoListComp"; }
 
  protected:
-  explicit NodeInfoListPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  NodeInfoListPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const NodeInfoListPBComponent& from);
-  NodeInfoListPBComponent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, NodeInfoListPBComponent&& from) noexcept
-      : NodeInfoListPBComponent(arena) {
+  explicit NodeInfoListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  NodeInfoListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const NodeInfoListComp& from);
+  NodeInfoListComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, NodeInfoListComp&& from) noexcept
+      : NodeInfoListComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -1240,7 +1240,7 @@ class NodeInfoListPBComponent final : public ::google::protobuf::Message
   const ::NodeInfo& node_list(int index) const;
   ::NodeInfo* PROTOBUF_NONNULL add_node_list();
   const ::google::protobuf::RepeatedPtrField<::NodeInfo>& node_list() const;
-  // @@protoc_insertion_point(class_scope:NodeInfoListPBComponent)
+  // @@protoc_insertion_point(class_scope:NodeInfoListComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1263,7 +1263,7 @@ class NodeInfoListPBComponent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const NodeInfoListPBComponent& from_msg);
+        const NodeInfoListComp& from_msg);
     ::google::protobuf::RepeatedPtrField< ::NodeInfo > node_list_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1272,7 +1272,7 @@ class NodeInfoListPBComponent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fbase_2fcommon_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull NodeInfoListPBComponent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull NodeInfoListComp_class_data_;
 
 // ===================================================================
 
@@ -1288,49 +1288,49 @@ extern const ::google::protobuf::internal::ClassDataFull NodeInfoListPBComponent
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// EndpointPBComponent
+// EndpointComp
 
 // string ip = 1;
-inline void EndpointPBComponent::clear_ip() {
+inline void EndpointComp::clear_ip() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.ip_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::std::string& EndpointPBComponent::ip() const
+inline const ::std::string& EndpointComp::ip() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:EndpointPBComponent.ip)
+  // @@protoc_insertion_point(field_get:EndpointComp.ip)
   return _internal_ip();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void EndpointPBComponent::set_ip(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void EndpointComp::set_ip(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.ip_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:EndpointPBComponent.ip)
+  // @@protoc_insertion_point(field_set:EndpointComp.ip)
 }
-inline ::std::string* PROTOBUF_NONNULL EndpointPBComponent::mutable_ip()
+inline ::std::string* PROTOBUF_NONNULL EndpointComp::mutable_ip()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_ip();
-  // @@protoc_insertion_point(field_mutable:EndpointPBComponent.ip)
+  // @@protoc_insertion_point(field_mutable:EndpointComp.ip)
   return _s;
 }
-inline const ::std::string& EndpointPBComponent::_internal_ip() const {
+inline const ::std::string& EndpointComp::_internal_ip() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.ip_.Get();
 }
-inline void EndpointPBComponent::_internal_set_ip(const ::std::string& value) {
+inline void EndpointComp::_internal_set_ip(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.ip_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL EndpointPBComponent::_internal_mutable_ip() {
+inline ::std::string* PROTOBUF_NONNULL EndpointComp::_internal_mutable_ip() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   return _impl_.ip_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE EndpointPBComponent::release_ip() {
+inline ::std::string* PROTOBUF_NULLABLE EndpointComp::release_ip() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:EndpointPBComponent.ip)
+  // @@protoc_insertion_point(field_release:EndpointComp.ip)
   if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
     return nullptr;
   }
@@ -1341,7 +1341,7 @@ inline ::std::string* PROTOBUF_NULLABLE EndpointPBComponent::release_ip() {
   }
   return released;
 }
-inline void EndpointPBComponent::set_allocated_ip(::std::string* PROTOBUF_NULLABLE value) {
+inline void EndpointComp::set_allocated_ip(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
@@ -1352,29 +1352,29 @@ inline void EndpointPBComponent::set_allocated_ip(::std::string* PROTOBUF_NULLAB
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.ip_.IsDefault()) {
     _impl_.ip_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:EndpointPBComponent.ip)
+  // @@protoc_insertion_point(field_set_allocated:EndpointComp.ip)
 }
 
 // uint32 port = 2;
-inline void EndpointPBComponent::clear_port() {
+inline void EndpointComp::clear_port() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.port_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t EndpointPBComponent::port() const {
-  // @@protoc_insertion_point(field_get:EndpointPBComponent.port)
+inline ::uint32_t EndpointComp::port() const {
+  // @@protoc_insertion_point(field_get:EndpointComp.port)
   return _internal_port();
 }
-inline void EndpointPBComponent::set_port(::uint32_t value) {
+inline void EndpointComp::set_port(::uint32_t value) {
   _internal_set_port(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:EndpointPBComponent.port)
+  // @@protoc_insertion_point(field_set:EndpointComp.port)
 }
-inline ::uint32_t EndpointPBComponent::_internal_port() const {
+inline ::uint32_t EndpointComp::_internal_port() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.port_;
 }
-inline void EndpointPBComponent::_internal_set_port(::uint32_t value) {
+inline void EndpointComp::_internal_set_port(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.port_ = value;
 }
@@ -1479,7 +1479,7 @@ inline void NodeInfo::_internal_set_scene_node_type(::uint32_t value) {
   _impl_.scene_node_type_ = value;
 }
 
-// .EndpointPBComponent endpoint = 5;
+// .EndpointComp endpoint = 5;
 inline bool NodeInfo::has_endpoint() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.endpoint_ != nullptr);
@@ -1490,22 +1490,22 @@ inline void NodeInfo::clear_endpoint() {
   if (_impl_.endpoint_ != nullptr) _impl_.endpoint_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline const ::EndpointPBComponent& NodeInfo::_internal_endpoint() const {
+inline const ::EndpointComp& NodeInfo::_internal_endpoint() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::EndpointPBComponent* p = _impl_.endpoint_;
-  return p != nullptr ? *p : reinterpret_cast<const ::EndpointPBComponent&>(::_EndpointPBComponent_default_instance_);
+  const ::EndpointComp* p = _impl_.endpoint_;
+  return p != nullptr ? *p : reinterpret_cast<const ::EndpointComp&>(::_EndpointComp_default_instance_);
 }
-inline const ::EndpointPBComponent& NodeInfo::endpoint() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::EndpointComp& NodeInfo::endpoint() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:NodeInfo.endpoint)
   return _internal_endpoint();
 }
 inline void NodeInfo::unsafe_arena_set_allocated_endpoint(
-    ::EndpointPBComponent* PROTOBUF_NULLABLE value) {
+    ::EndpointComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.endpoint_);
   }
-  _impl_.endpoint_ = reinterpret_cast<::EndpointPBComponent*>(value);
+  _impl_.endpoint_ = reinterpret_cast<::EndpointComp*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
@@ -1513,11 +1513,11 @@ inline void NodeInfo::unsafe_arena_set_allocated_endpoint(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:NodeInfo.endpoint)
 }
-inline ::EndpointPBComponent* PROTOBUF_NULLABLE NodeInfo::release_endpoint() {
+inline ::EndpointComp* PROTOBUF_NULLABLE NodeInfo::release_endpoint() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::EndpointPBComponent* released = _impl_.endpoint_;
+  ::EndpointComp* released = _impl_.endpoint_;
   _impl_.endpoint_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1532,31 +1532,31 @@ inline ::EndpointPBComponent* PROTOBUF_NULLABLE NodeInfo::release_endpoint() {
   }
   return released;
 }
-inline ::EndpointPBComponent* PROTOBUF_NULLABLE NodeInfo::unsafe_arena_release_endpoint() {
+inline ::EndpointComp* PROTOBUF_NULLABLE NodeInfo::unsafe_arena_release_endpoint() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:NodeInfo.endpoint)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::EndpointPBComponent* temp = _impl_.endpoint_;
+  ::EndpointComp* temp = _impl_.endpoint_;
   _impl_.endpoint_ = nullptr;
   return temp;
 }
-inline ::EndpointPBComponent* PROTOBUF_NONNULL NodeInfo::_internal_mutable_endpoint() {
+inline ::EndpointComp* PROTOBUF_NONNULL NodeInfo::_internal_mutable_endpoint() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.endpoint_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::EndpointPBComponent>(GetArena());
-    _impl_.endpoint_ = reinterpret_cast<::EndpointPBComponent*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::EndpointComp>(GetArena());
+    _impl_.endpoint_ = reinterpret_cast<::EndpointComp*>(p);
   }
   return _impl_.endpoint_;
 }
-inline ::EndpointPBComponent* PROTOBUF_NONNULL NodeInfo::mutable_endpoint()
+inline ::EndpointComp* PROTOBUF_NONNULL NodeInfo::mutable_endpoint()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
-  ::EndpointPBComponent* _msg = _internal_mutable_endpoint();
+  ::EndpointComp* _msg = _internal_mutable_endpoint();
   // @@protoc_insertion_point(field_mutable:NodeInfo.endpoint)
   return _msg;
 }
-inline void NodeInfo::set_allocated_endpoint(::EndpointPBComponent* PROTOBUF_NULLABLE value) {
+inline void NodeInfo::set_allocated_endpoint(::EndpointComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -1573,7 +1573,7 @@ inline void NodeInfo::set_allocated_endpoint(::EndpointPBComponent* PROTOBUF_NUL
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
 
-  _impl_.endpoint_ = reinterpret_cast<::EndpointPBComponent*>(value);
+  _impl_.endpoint_ = reinterpret_cast<::EndpointComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:NodeInfo.endpoint)
 }
 
@@ -1692,54 +1692,54 @@ inline void NodeInfo::set_allocated_node_uuid(::std::string* PROTOBUF_NULLABLE v
 
 // -------------------------------------------------------------------
 
-// NodeInfoListPBComponent
+// NodeInfoListComp
 
 // repeated .NodeInfo node_list = 1;
-inline int NodeInfoListPBComponent::_internal_node_list_size() const {
+inline int NodeInfoListComp::_internal_node_list_size() const {
   return _internal_node_list().size();
 }
-inline int NodeInfoListPBComponent::node_list_size() const {
+inline int NodeInfoListComp::node_list_size() const {
   return _internal_node_list_size();
 }
-inline void NodeInfoListPBComponent::clear_node_list() {
+inline void NodeInfoListComp::clear_node_list() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.node_list_.Clear();
 }
-inline ::NodeInfo* PROTOBUF_NONNULL NodeInfoListPBComponent::mutable_node_list(int index)
+inline ::NodeInfo* PROTOBUF_NONNULL NodeInfoListComp::mutable_node_list(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:NodeInfoListPBComponent.node_list)
+  // @@protoc_insertion_point(field_mutable:NodeInfoListComp.node_list)
   return _internal_mutable_node_list()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* PROTOBUF_NONNULL NodeInfoListPBComponent::mutable_node_list()
+inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* PROTOBUF_NONNULL NodeInfoListComp::mutable_node_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:NodeInfoListPBComponent.node_list)
+  // @@protoc_insertion_point(field_mutable_list:NodeInfoListComp.node_list)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_node_list();
 }
-inline const ::NodeInfo& NodeInfoListPBComponent::node_list(int index) const
+inline const ::NodeInfo& NodeInfoListComp::node_list(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:NodeInfoListPBComponent.node_list)
+  // @@protoc_insertion_point(field_get:NodeInfoListComp.node_list)
   return _internal_node_list().Get(index);
 }
-inline ::NodeInfo* PROTOBUF_NONNULL NodeInfoListPBComponent::add_node_list()
+inline ::NodeInfo* PROTOBUF_NONNULL NodeInfoListComp::add_node_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::NodeInfo* _add = _internal_mutable_node_list()->Add();
-  // @@protoc_insertion_point(field_add:NodeInfoListPBComponent.node_list)
+  // @@protoc_insertion_point(field_add:NodeInfoListComp.node_list)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>& NodeInfoListPBComponent::node_list() const
+inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>& NodeInfoListComp::node_list() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:NodeInfoListPBComponent.node_list)
+  // @@protoc_insertion_point(field_list:NodeInfoListComp.node_list)
   return _internal_node_list();
 }
 inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>&
-NodeInfoListPBComponent::_internal_node_list() const {
+NodeInfoListComp::_internal_node_list() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.node_list_;
 }
 inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* PROTOBUF_NONNULL
-NodeInfoListPBComponent::_internal_mutable_node_list() {
+NodeInfoListComp::_internal_mutable_node_list() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.node_list_;
 }
@@ -1841,130 +1841,130 @@ inline void NetworkAddress::_internal_set_port(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// SceneInfoPBComponent
+// SceneInfoComp
 
 // uint32 scene_confid = 1;
-inline void SceneInfoPBComponent::clear_scene_confid() {
+inline void SceneInfoComp::clear_scene_confid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_confid_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint32_t SceneInfoPBComponent::scene_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoPBComponent.scene_confid)
+inline ::uint32_t SceneInfoComp::scene_confid() const {
+  // @@protoc_insertion_point(field_get:SceneInfoComp.scene_confid)
   return _internal_scene_confid();
 }
-inline void SceneInfoPBComponent::set_scene_confid(::uint32_t value) {
+inline void SceneInfoComp::set_scene_confid(::uint32_t value) {
   _internal_set_scene_confid(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:SceneInfoPBComponent.scene_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoComp.scene_confid)
 }
-inline ::uint32_t SceneInfoPBComponent::_internal_scene_confid() const {
+inline ::uint32_t SceneInfoComp::_internal_scene_confid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.scene_confid_;
 }
-inline void SceneInfoPBComponent::_internal_set_scene_confid(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_scene_confid(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_confid_ = value;
 }
 
 // uint32 guid = 2;
-inline void SceneInfoPBComponent::clear_guid() {
+inline void SceneInfoComp::clear_guid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.guid_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t SceneInfoPBComponent::guid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoPBComponent.guid)
+inline ::uint32_t SceneInfoComp::guid() const {
+  // @@protoc_insertion_point(field_get:SceneInfoComp.guid)
   return _internal_guid();
 }
-inline void SceneInfoPBComponent::set_guid(::uint32_t value) {
+inline void SceneInfoComp::set_guid(::uint32_t value) {
   _internal_set_guid(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:SceneInfoPBComponent.guid)
+  // @@protoc_insertion_point(field_set:SceneInfoComp.guid)
 }
-inline ::uint32_t SceneInfoPBComponent::_internal_guid() const {
+inline ::uint32_t SceneInfoComp::_internal_guid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.guid_;
 }
-inline void SceneInfoPBComponent::_internal_set_guid(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_guid(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.guid_ = value;
 }
 
 // uint32 mirror_confid = 3;
-inline void SceneInfoPBComponent::clear_mirror_confid() {
+inline void SceneInfoComp::clear_mirror_confid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mirror_confid_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint32_t SceneInfoPBComponent::mirror_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoPBComponent.mirror_confid)
+inline ::uint32_t SceneInfoComp::mirror_confid() const {
+  // @@protoc_insertion_point(field_get:SceneInfoComp.mirror_confid)
   return _internal_mirror_confid();
 }
-inline void SceneInfoPBComponent::set_mirror_confid(::uint32_t value) {
+inline void SceneInfoComp::set_mirror_confid(::uint32_t value) {
   _internal_set_mirror_confid(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:SceneInfoPBComponent.mirror_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoComp.mirror_confid)
 }
-inline ::uint32_t SceneInfoPBComponent::_internal_mirror_confid() const {
+inline ::uint32_t SceneInfoComp::_internal_mirror_confid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.mirror_confid_;
 }
-inline void SceneInfoPBComponent::_internal_set_mirror_confid(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_mirror_confid(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mirror_confid_ = value;
 }
 
 // uint32 dungen_confid = 4;
-inline void SceneInfoPBComponent::clear_dungen_confid() {
+inline void SceneInfoComp::clear_dungen_confid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.dungen_confid_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint32_t SceneInfoPBComponent::dungen_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoPBComponent.dungen_confid)
+inline ::uint32_t SceneInfoComp::dungen_confid() const {
+  // @@protoc_insertion_point(field_get:SceneInfoComp.dungen_confid)
   return _internal_dungen_confid();
 }
-inline void SceneInfoPBComponent::set_dungen_confid(::uint32_t value) {
+inline void SceneInfoComp::set_dungen_confid(::uint32_t value) {
   _internal_set_dungen_confid(value);
   _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:SceneInfoPBComponent.dungen_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoComp.dungen_confid)
 }
-inline ::uint32_t SceneInfoPBComponent::_internal_dungen_confid() const {
+inline ::uint32_t SceneInfoComp::_internal_dungen_confid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.dungen_confid_;
 }
-inline void SceneInfoPBComponent::_internal_set_dungen_confid(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_dungen_confid(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.dungen_confid_ = value;
 }
 
 // map<uint64, bool> creators = 5;
-inline int SceneInfoPBComponent::_internal_creators_size() const {
+inline int SceneInfoComp::_internal_creators_size() const {
   return _internal_creators().size();
 }
-inline int SceneInfoPBComponent::creators_size() const {
+inline int SceneInfoComp::creators_size() const {
   return _internal_creators_size();
 }
-inline void SceneInfoPBComponent::clear_creators() {
+inline void SceneInfoComp::clear_creators() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.creators_.Clear();
 }
-inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoPBComponent::_internal_creators() const {
+inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoComp::_internal_creators() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.creators_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoPBComponent::creators() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:SceneInfoPBComponent.creators)
+inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoComp::creators() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:SceneInfoComp.creators)
   return _internal_creators();
 }
-inline ::google::protobuf::Map<::uint64_t, bool>* PROTOBUF_NONNULL SceneInfoPBComponent::_internal_mutable_creators() {
+inline ::google::protobuf::Map<::uint64_t, bool>* PROTOBUF_NONNULL SceneInfoComp::_internal_mutable_creators() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _impl_.creators_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint64_t, bool>* PROTOBUF_NONNULL SceneInfoPBComponent::mutable_creators()
+inline ::google::protobuf::Map<::uint64_t, bool>* PROTOBUF_NONNULL SceneInfoComp::mutable_creators()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:SceneInfoPBComponent.creators)
+  // @@protoc_insertion_point(field_mutable_map:SceneInfoComp.creators)
   return _internal_mutable_creators();
 }
 

@@ -59,10 +59,10 @@ class PlayerDisconnectInfoComp;
 struct PlayerDisconnectInfoCompDefaultTypeInternal;
 extern PlayerDisconnectInfoCompDefaultTypeInternal _PlayerDisconnectInfoComp_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull PlayerDisconnectInfoComp_class_data_;
-class PlayerEnterGameStatePbComp;
-struct PlayerEnterGameStatePbCompDefaultTypeInternal;
-extern PlayerEnterGameStatePbCompDefaultTypeInternal _PlayerEnterGameStatePbComp_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull PlayerEnterGameStatePbComp_class_data_;
+class PlayerEnterGameStateComp;
+struct PlayerEnterGameStateCompDefaultTypeInternal;
+extern PlayerEnterGameStateCompDefaultTypeInternal _PlayerEnterGameStateComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerEnterGameStateComp_class_data_;
 namespace google {
 namespace protobuf {
 template <>
@@ -116,30 +116,30 @@ inline bool EnterGsType_Parse(
 
 // -------------------------------------------------------------------
 
-class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerEnterGameStatePbComp) */ {
+class PlayerEnterGameStateComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerEnterGameStateComp) */ {
  public:
-  inline PlayerEnterGameStatePbComp() : PlayerEnterGameStatePbComp(nullptr) {}
-  ~PlayerEnterGameStatePbComp() PROTOBUF_FINAL;
+  inline PlayerEnterGameStateComp() : PlayerEnterGameStateComp(nullptr) {}
+  ~PlayerEnterGameStateComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(PlayerEnterGameStatePbComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(PlayerEnterGameStateComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerEnterGameStatePbComp));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerEnterGameStateComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerEnterGameStatePbComp(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR PlayerEnterGameStateComp(::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerEnterGameStatePbComp(const PlayerEnterGameStatePbComp& from) : PlayerEnterGameStatePbComp(nullptr, from) {}
-  inline PlayerEnterGameStatePbComp(PlayerEnterGameStatePbComp&& from) noexcept
-      : PlayerEnterGameStatePbComp(nullptr, ::std::move(from)) {}
-  inline PlayerEnterGameStatePbComp& operator=(const PlayerEnterGameStatePbComp& from) {
+  inline PlayerEnterGameStateComp(const PlayerEnterGameStateComp& from) : PlayerEnterGameStateComp(nullptr, from) {}
+  inline PlayerEnterGameStateComp(PlayerEnterGameStateComp&& from) noexcept
+      : PlayerEnterGameStateComp(nullptr, ::std::move(from)) {}
+  inline PlayerEnterGameStateComp& operator=(const PlayerEnterGameStateComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerEnterGameStatePbComp& operator=(PlayerEnterGameStatePbComp&& from) noexcept {
+  inline PlayerEnterGameStateComp& operator=(PlayerEnterGameStateComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -167,13 +167,13 @@ class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerEnterGameStatePbComp& default_instance() {
-    return *reinterpret_cast<const PlayerEnterGameStatePbComp*>(
-        &_PlayerEnterGameStatePbComp_default_instance_);
+  static const PlayerEnterGameStateComp& default_instance() {
+    return *reinterpret_cast<const PlayerEnterGameStateComp*>(
+        &_PlayerEnterGameStateComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(PlayerEnterGameStatePbComp& a, PlayerEnterGameStatePbComp& b) { a.Swap(&b); }
-  inline void Swap(PlayerEnterGameStatePbComp* PROTOBUF_NONNULL other) {
+  friend void swap(PlayerEnterGameStateComp& a, PlayerEnterGameStateComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerEnterGameStateComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -181,7 +181,7 @@ class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerEnterGameStatePbComp* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(PlayerEnterGameStateComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -189,13 +189,13 @@ class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerEnterGameStatePbComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerEnterGameStatePbComp>(arena);
+  PlayerEnterGameStateComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerEnterGameStateComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerEnterGameStatePbComp& from);
+  void CopyFrom(const PlayerEnterGameStateComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerEnterGameStatePbComp& from) { PlayerEnterGameStatePbComp::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerEnterGameStateComp& from) { PlayerEnterGameStateComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -231,18 +231,18 @@ class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(PlayerEnterGameStatePbComp* PROTOBUF_NONNULL other);
+  void InternalSwap(PlayerEnterGameStateComp* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "PlayerEnterGameStatePbComp"; }
+  static ::absl::string_view FullMessageName() { return "PlayerEnterGameStateComp"; }
 
  protected:
-  explicit PlayerEnterGameStatePbComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  PlayerEnterGameStatePbComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerEnterGameStatePbComp& from);
-  PlayerEnterGameStatePbComp(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerEnterGameStatePbComp&& from) noexcept
-      : PlayerEnterGameStatePbComp(arena) {
+  explicit PlayerEnterGameStateComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PlayerEnterGameStateComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerEnterGameStateComp& from);
+  PlayerEnterGameStateComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerEnterGameStateComp&& from) noexcept
+      : PlayerEnterGameStateComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -271,7 +271,7 @@ class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
   void _internal_set_enter_gs_type(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerEnterGameStatePbComp)
+  // @@protoc_insertion_point(class_scope:PlayerEnterGameStateComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -294,7 +294,7 @@ class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const PlayerEnterGameStatePbComp& from_msg);
+        const PlayerEnterGameStateComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t enter_gs_type_;
@@ -304,7 +304,7 @@ class PlayerEnterGameStatePbComp final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fcomponent_2fplayer_5flogin_5fcomp_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull PlayerEnterGameStatePbComp_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerEnterGameStateComp_class_data_;
 // -------------------------------------------------------------------
 
 class PlayerDisconnectInfoComp final : public ::google::protobuf::Message
@@ -523,28 +523,28 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerDisconnectInfoCom
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// PlayerEnterGameStatePbComp
+// PlayerEnterGameStateComp
 
 // uint32 enter_gs_type = 1;
-inline void PlayerEnterGameStatePbComp::clear_enter_gs_type() {
+inline void PlayerEnterGameStateComp::clear_enter_gs_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint32_t PlayerEnterGameStatePbComp::enter_gs_type() const {
-  // @@protoc_insertion_point(field_get:PlayerEnterGameStatePbComp.enter_gs_type)
+inline ::uint32_t PlayerEnterGameStateComp::enter_gs_type() const {
+  // @@protoc_insertion_point(field_get:PlayerEnterGameStateComp.enter_gs_type)
   return _internal_enter_gs_type();
 }
-inline void PlayerEnterGameStatePbComp::set_enter_gs_type(::uint32_t value) {
+inline void PlayerEnterGameStateComp::set_enter_gs_type(::uint32_t value) {
   _internal_set_enter_gs_type(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:PlayerEnterGameStatePbComp.enter_gs_type)
+  // @@protoc_insertion_point(field_set:PlayerEnterGameStateComp.enter_gs_type)
 }
-inline ::uint32_t PlayerEnterGameStatePbComp::_internal_enter_gs_type() const {
+inline ::uint32_t PlayerEnterGameStateComp::_internal_enter_gs_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.enter_gs_type_;
 }
-inline void PlayerEnterGameStatePbComp::_internal_set_enter_gs_type(::uint32_t value) {
+inline void PlayerEnterGameStateComp::_internal_set_enter_gs_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = value;
 }

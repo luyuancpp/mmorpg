@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ItemPBComponent struct {
+type ItemComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
 	ConfigId      uint32                 `protobuf:"varint,2,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
@@ -30,20 +30,20 @@ type ItemPBComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ItemPBComponent) Reset() {
-	*x = ItemPBComponent{}
+func (x *ItemComp) Reset() {
+	*x = ItemComp{}
 	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ItemPBComponent) String() string {
+func (x *ItemComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ItemPBComponent) ProtoMessage() {}
+func (*ItemComp) ProtoMessage() {}
 
-func (x *ItemPBComponent) ProtoReflect() protoreflect.Message {
+func (x *ItemComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,26 +55,26 @@ func (x *ItemPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ItemPBComponent.ProtoReflect.Descriptor instead.
-func (*ItemPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use ItemComp.ProtoReflect.Descriptor instead.
+func (*ItemComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_item_base_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ItemPBComponent) GetItemId() uint64 {
+func (x *ItemComp) GetItemId() uint64 {
 	if x != nil {
 		return x.ItemId
 	}
 	return 0
 }
 
-func (x *ItemPBComponent) GetConfigId() uint32 {
+func (x *ItemComp) GetConfigId() uint32 {
 	if x != nil {
 		return x.ConfigId
 	}
 	return 0
 }
 
-func (x *ItemPBComponent) GetSize() uint32 {
+func (x *ItemComp) GetSize() uint32 {
 	if x != nil {
 		return x.Size
 	}
@@ -85,8 +85,8 @@ var File_proto_common_component_item_base_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_item_base_comp_proto_rawDesc = "" +
 	"\n" +
-	"+proto/common/component/item_base_comp.proto\"[\n" +
-	"\x0fItemPBComponent\x12\x17\n" +
+	"+proto/common/component/item_base_comp.proto\"T\n" +
+	"\bItemComp\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\x12\x1b\n" +
 	"\tconfig_id\x18\x02 \x01(\rR\bconfigId\x12\x12\n" +
 	"\x04size\x18\x03 \x01(\rR\x04sizeB\x1bZ\x19db/proto/common/componentb\x06proto3"
@@ -105,7 +105,7 @@ func file_proto_common_component_item_base_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_item_base_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_common_component_item_base_comp_proto_goTypes = []any{
-	(*ItemPBComponent)(nil), // 0: ItemPBComponent
+	(*ItemComp)(nil), // 0: ItemComp
 }
 var file_proto_common_component_item_base_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

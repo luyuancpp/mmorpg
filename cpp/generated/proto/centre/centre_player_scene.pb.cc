@@ -139,7 +139,7 @@ const char descriptor_table_protodef_proto_2fcentre_2fcentre_5fplayer_5fscene_2e
     "\032\033proto/db/proto_option.proto\032\033google/pr"
     "otobuf/empty.proto\032\036proto/common/base/co"
     "mmon.proto\"D\n\027CentreEnterSceneRequest\022)\n"
-    "\nscene_info\030\001 \001(\0132\025.SceneInfoPBComponent"
+    "\nscene_info\030\001 \001(\0132\025.SceneInfoComp"
     "\"\031\n\027CentreLeaveSceneRequest\"0\n.CentreLea"
     "veSceneAsyncSavePlayerCompleteRequest\"\030\n"
     "\026CentreSceneInfoRequest2\311\002\n\021CentrePlayer"
@@ -310,18 +310,18 @@ CentreEnterSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::CentreEnterSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .SceneInfoPBComponent scene_info = 1;
+    // .SceneInfoComp scene_info = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(CentreEnterSceneRequest, _impl_.scene_info_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .SceneInfoPBComponent scene_info = 1;
+    // .SceneInfoComp scene_info = 1;
     {PROTOBUF_FIELD_OFFSET(CentreEnterSceneRequest, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+      {::_pbi::TcParser::GetTable<::SceneInfoComp>()},
   }},
   {{
   }},
@@ -358,7 +358,7 @@ PROTOBUF_NOINLINE void CentreEnterSceneRequest::Clear() {
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // .SceneInfoPBComponent scene_info = 1;
+  // .SceneInfoComp scene_info = 1;
   if ((cached_has_bits & 0x00000001u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *this_._impl_.scene_info_, this_._impl_.scene_info_->GetCachedSize(), target,
@@ -389,7 +389,7 @@ PROTOBUF_NOINLINE void CentreEnterSceneRequest::Clear() {
   (void)cached_has_bits;
 
    {
-    // .SceneInfoPBComponent scene_info = 1;
+    // .SceneInfoComp scene_info = 1;
     cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       total_size += 1 +

@@ -30,7 +30,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SceneSkillClientPlayerClient interface {
-	ReleaseSkill(ctx context.Context, in *ReleaseSkillSkillRequest, opts ...grpc.CallOption) (*ReleaseSkillSkillResponse, error)
+	ReleaseSkill(ctx context.Context, in *ReleaseSkillRequest, opts ...grpc.CallOption) (*ReleaseSkillResponse, error)
 	NotifySkillUsed(ctx context.Context, in *SkillUsedS2C, opts ...grpc.CallOption) (*base.Empty, error)
 	NotifySkillInterrupted(ctx context.Context, in *SkillInterruptedS2C, opts ...grpc.CallOption) (*base.Empty, error)
 	GetSkillList(ctx context.Context, in *GetSkillListRequest, opts ...grpc.CallOption) (*GetSkillListResponse, error)
@@ -44,9 +44,9 @@ func NewSceneSkillClientPlayerClient(cc grpc.ClientConnInterface) SceneSkillClie
 	return &sceneSkillClientPlayerClient{cc}
 }
 
-func (c *sceneSkillClientPlayerClient) ReleaseSkill(ctx context.Context, in *ReleaseSkillSkillRequest, opts ...grpc.CallOption) (*ReleaseSkillSkillResponse, error) {
+func (c *sceneSkillClientPlayerClient) ReleaseSkill(ctx context.Context, in *ReleaseSkillRequest, opts ...grpc.CallOption) (*ReleaseSkillResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReleaseSkillSkillResponse)
+	out := new(ReleaseSkillResponse)
 	err := c.cc.Invoke(ctx, SceneSkillClientPlayer_ReleaseSkill_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (c *sceneSkillClientPlayerClient) GetSkillList(ctx context.Context, in *Get
 // All implementations must embed UnimplementedSceneSkillClientPlayerServer
 // for forward compatibility.
 type SceneSkillClientPlayerServer interface {
-	ReleaseSkill(context.Context, *ReleaseSkillSkillRequest) (*ReleaseSkillSkillResponse, error)
+	ReleaseSkill(context.Context, *ReleaseSkillRequest) (*ReleaseSkillResponse, error)
 	NotifySkillUsed(context.Context, *SkillUsedS2C) (*base.Empty, error)
 	NotifySkillInterrupted(context.Context, *SkillInterruptedS2C) (*base.Empty, error)
 	GetSkillList(context.Context, *GetSkillListRequest) (*GetSkillListResponse, error)
@@ -102,7 +102,7 @@ type SceneSkillClientPlayerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSceneSkillClientPlayerServer struct{}
 
-func (UnimplementedSceneSkillClientPlayerServer) ReleaseSkill(context.Context, *ReleaseSkillSkillRequest) (*ReleaseSkillSkillResponse, error) {
+func (UnimplementedSceneSkillClientPlayerServer) ReleaseSkill(context.Context, *ReleaseSkillRequest) (*ReleaseSkillResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReleaseSkill not implemented")
 }
 func (UnimplementedSceneSkillClientPlayerServer) NotifySkillUsed(context.Context, *SkillUsedS2C) (*base.Empty, error) {
@@ -137,7 +137,7 @@ func RegisterSceneSkillClientPlayerServer(s grpc.ServiceRegistrar, srv SceneSkil
 }
 
 func _SceneSkillClientPlayer_ReleaseSkill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReleaseSkillSkillRequest)
+	in := new(ReleaseSkillRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func _SceneSkillClientPlayer_ReleaseSkill_Handler(srv interface{}, ctx context.C
 		FullMethod: SceneSkillClientPlayer_ReleaseSkill_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneSkillClientPlayerServer).ReleaseSkill(ctx, req.(*ReleaseSkillSkillRequest))
+		return srv.(SceneSkillClientPlayerServer).ReleaseSkill(ctx, req.(*ReleaseSkillRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

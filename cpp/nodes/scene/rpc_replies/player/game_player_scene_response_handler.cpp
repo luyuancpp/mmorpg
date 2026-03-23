@@ -21,7 +21,7 @@ void SceneScenePlayerReply::LeaveScene(entt::entity player,const ::GsLeaveSceneR
 }
 
 void SceneScenePlayerReply::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
-	::EnterScenerS2CResponse* response)
+	::EnterSceneS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

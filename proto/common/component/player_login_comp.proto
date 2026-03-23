@@ -11,7 +11,7 @@ enum EnterGsType
 	  LOGIN_DISCONNECTED = 4;// 标记离线并记录版本（便于延迟清理时再次校验
 }
 	
-message PlayerEnterGameStatePbComp
+message PlayerEnterGameStateComp
 {
 	uint32 enter_gs_type = 1;
 }

@@ -50,8 +50,8 @@ public:
     const PosMap& pos() const { return pos_; }
 
     std::size_t GetItemStackSize(uint32_t config_id) const;
-    ItemPBComponent* GetItemBaseByGuid(Guid guid);
-    ItemPBComponent* GetItemBaseByPos(uint32_t pos);
+    ItemComp* GetItemBaseByGuid(Guid guid);
+    ItemComp* GetItemBaseByPos(uint32_t pos);
     entt::entity GetItemByGuid(Guid guid);
     entt::entity GetItemByPos(uint32_t pos);
     uint32_t GetItemPos(Guid guid);
@@ -78,10 +78,10 @@ public:
 
 private:
     Guid GeneratorItemGuid();
-    bool IsInvalidItemGuid(const ItemPBComponent& item) const;
+    bool IsInvalidItemGuid(const ItemComp& item) const;
     void DestroyItem(Guid guid);
     uint32_t OnNewGrid(Guid guid);
-    static bool CanStack(const ItemPBComponent& item1, const ItemPBComponent& item2);
+    static bool CanStack(const ItemComp& item1, const ItemComp& item2);
 
     std::size_t empty_grid_size() const { ValidateCapacity(); return size() - items_.size(); }
     void ValidateCapacity() const { assert(size() >= items_.size()); }

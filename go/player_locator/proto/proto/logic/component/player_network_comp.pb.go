@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PlayerSessionSnapshotPBComp struct {
+type PlayerSessionSnapshotComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	GateSessionId uint64                 `protobuf:"varint,2,opt,name=gate_session_id,json=gateSessionId,proto3" json:"gate_session_id,omitempty"`
@@ -35,20 +35,20 @@ type PlayerSessionSnapshotPBComp struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *PlayerSessionSnapshotPBComp) Reset() {
-	*x = PlayerSessionSnapshotPBComp{}
+func (x *PlayerSessionSnapshotComp) Reset() {
+	*x = PlayerSessionSnapshotComp{}
 	mi := &file_proto_logic_component_player_network_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerSessionSnapshotPBComp) String() string {
+func (x *PlayerSessionSnapshotComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerSessionSnapshotPBComp) ProtoMessage() {}
+func (*PlayerSessionSnapshotComp) ProtoMessage() {}
 
-func (x *PlayerSessionSnapshotPBComp) ProtoReflect() protoreflect.Message {
+func (x *PlayerSessionSnapshotComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_logic_component_player_network_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -60,54 +60,54 @@ func (x *PlayerSessionSnapshotPBComp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerSessionSnapshotPBComp.ProtoReflect.Descriptor instead.
-func (*PlayerSessionSnapshotPBComp) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerSessionSnapshotComp.ProtoReflect.Descriptor instead.
+func (*PlayerSessionSnapshotComp) Descriptor() ([]byte, []int) {
 	return file_proto_logic_component_player_network_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerSessionSnapshotPBComp) GetPlayerId() uint64 {
+func (x *PlayerSessionSnapshotComp) GetPlayerId() uint64 {
 	if x != nil {
 		return x.PlayerId
 	}
 	return 0
 }
 
-func (x *PlayerSessionSnapshotPBComp) GetGateSessionId() uint64 {
+func (x *PlayerSessionSnapshotComp) GetGateSessionId() uint64 {
 	if x != nil {
 		return x.GateSessionId
 	}
 	return 0
 }
 
-func (x *PlayerSessionSnapshotPBComp) GetNodeId() map[uint32]uint32 {
+func (x *PlayerSessionSnapshotComp) GetNodeId() map[uint32]uint32 {
 	if x != nil {
 		return x.NodeId
 	}
 	return nil
 }
 
-func (x *PlayerSessionSnapshotPBComp) GetLoginToken() string {
+func (x *PlayerSessionSnapshotComp) GetLoginToken() string {
 	if x != nil {
 		return x.LoginToken
 	}
 	return ""
 }
 
-func (x *PlayerSessionSnapshotPBComp) GetSessionVersion() uint64 {
+func (x *PlayerSessionSnapshotComp) GetSessionVersion() uint64 {
 	if x != nil {
 		return x.SessionVersion
 	}
 	return 0
 }
 
-func (x *PlayerSessionSnapshotPBComp) GetTokenExpiryMs() uint64 {
+func (x *PlayerSessionSnapshotComp) GetTokenExpiryMs() uint64 {
 	if x != nil {
 		return x.TokenExpiryMs
 	}
 	return 0
 }
 
-func (x *PlayerSessionSnapshotPBComp) GetTokenId() string {
+func (x *PlayerSessionSnapshotComp) GetTokenId() string {
 	if x != nil {
 		return x.TokenId
 	}
@@ -119,10 +119,10 @@ var File_proto_logic_component_player_network_comp_proto protoreflect.FileDescri
 const file_proto_logic_component_player_network_comp_proto_rawDesc = "" +
 	"\n" +
 	"/proto/logic/component/player_network_comp.proto\"\xed\x02\n" +
-	"\x1bPlayerSessionSnapshotPBComp\x12\x1b\n" +
+	"\x1bPlayerSessionSnapshotComp\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0fgate_session_id\x18\x02 \x01(\x04R\rgateSessionId\x12A\n" +
-	"\anode_id\x18\x03 \x03(\v2(.PlayerSessionSnapshotPBComp.NodeIdEntryR\x06nodeId\x12\x1f\n" +
+	"\anode_id\x18\x03 \x03(\v2(.PlayerSessionSnapshotComp.NodeIdEntryR\x06nodeId\x12\x1f\n" +
 	"\vlogin_token\x18\x04 \x01(\tR\n" +
 	"loginToken\x12'\n" +
 	"\x0fsession_version\x18\x05 \x01(\x04R\x0esessionVersion\x12&\n" +
@@ -146,11 +146,11 @@ func file_proto_logic_component_player_network_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_logic_component_player_network_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_logic_component_player_network_comp_proto_goTypes = []any{
-	(*PlayerSessionSnapshotPBComp)(nil), // 0: PlayerSessionSnapshotPBComp
-	nil,                                 // 1: PlayerSessionSnapshotPBComp.NodeIdEntry
+	(*PlayerSessionSnapshotComp)(nil), // 0: PlayerSessionSnapshotComp
+	nil,                                 // 1: PlayerSessionSnapshotComp.NodeIdEntry
 }
 var file_proto_logic_component_player_network_comp_proto_depIdxs = []int32{
-	1, // 0: PlayerSessionSnapshotPBComp.node_id:type_name -> PlayerSessionSnapshotPBComp.NodeIdEntry
+	1, // 0: PlayerSessionSnapshotComp.node_id:type_name -> PlayerSessionSnapshotComp.NodeIdEntry
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

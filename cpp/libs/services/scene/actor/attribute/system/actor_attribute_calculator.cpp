@@ -46,7 +46,7 @@ void UpdateStatusEffects(entt::entity actorEntity) {
 }
 
 void ResetCombatStateFlags(entt::entity actorEntity) {
-    const auto& combatStates = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionPbComponent>(actorEntity);
+    const auto& combatStates = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(actorEntity);
     auto& syncData = tlsRegistryManager.actorRegistry.get_or_emplace<ActorBaseAttributesS2C>(actorEntity);
     auto* stateFlags = syncData.mutable_combat_state_flags()->mutable_state_flags();
 

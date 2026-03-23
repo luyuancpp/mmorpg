@@ -111,7 +111,7 @@ void BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
 	const auto player = entt::to_entity(event.entity());
 
-	const auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueuePBComponent>(player);
+	const auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueueComp>(player);
 
 	GsLeaveSceneRequest leaveSceneRequest;
 
@@ -126,7 +126,7 @@ void BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 	LOG_INFO << "Player is leaving scene "
 		<< tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player)
 		<< ", Scene GUID: "
-		<< tlsRegistryManager.sceneRegistry.get<SceneInfoPBComponent>(tlsRegistryManager.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity).guid();
+		<< tlsRegistryManager.sceneRegistry.get<SceneInfoComp>(tlsRegistryManager.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity).guid();
 }
 
 void AfterLeaveSceneHandler(const AfterLeaveScene& event)
@@ -178,7 +178,7 @@ void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::share
 	}
 
 	entt::entity playerEntity = it->second;
-	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB) {
 		LOG_INFO << "BindResp ignored: no snapshot, player=" << playerId;
 		return;
@@ -210,7 +210,7 @@ void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::share
 void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeoutMs) {
 	tlsRegistryManager.actorRegistry.get_or_emplace<DelayedCleanupTimer>(playerEntity).timer.RunAfter(static_cast<double>(timeoutMs) / 1000.0,
 		[playerEntity]() {
-			auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+			auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 			auto* disconnectInfo = tlsRegistryManager.actorRegistry.try_get<PlayerDisconnectInfoComp>(playerEntity);
 			if (!sessionPB || !disconnectInfo) return;
 			if (sessionPB->session_version() != disconnectInfo->snapshot_version()) {
@@ -332,7 +332,7 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
 		// Cancel pending delayed cleanup timer (reconnect cancels cleanup)
 		CancelDelayedCleanupTimer(playerEntity);
 
-		auto& sessionPB = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
+		auto& sessionPB = registry.get_or_emplace<PlayerSessionSnapshotComp>(playerEntity);
 
 		uint64_t oldSessionId = sessionPB.gate_session_id();
 		// Old token_id (backward-compat with login_token field)
@@ -414,7 +414,7 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
     void HandleFirstLogin(Guid playerGuid, uint64_t sessionId, const std::string& loginToken, uint64_t tokenExpiryMs = 0, const std::string& requestId = "")
     {
         // Player entity is created after AsyncLoad completes; build initial snapshot here
-        PlayerSessionSnapshotPBComp sessionPB;
+        PlayerSessionSnapshotComp sessionPB;
         sessionPB.set_gate_session_id(sessionId);
         sessionPB.set_token_id(Sha256Hex(loginToken));
         sessionPB.set_token_expiry_ms(tokenExpiryMs);
@@ -441,7 +441,7 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
 	void ApplyEnterGameDecision(entt::entity playerEntity, EnterGameDecision decision)
 	{
 		auto& registry = tlsRegistryManager.actorRegistry;
-		auto& enterComp = registry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity);
+		auto& enterComp = registry.get_or_emplace<PlayerEnterGameStateComp>(playerEntity);
 		switch (decision) {
 		case EnterGameDecision::FirstLogin:
 			enterComp.set_enter_gs_type(LOGIN_FIRST);
@@ -483,7 +483,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	if (playerIt == tlsPlayerList.end()) return;
 	auto playerEntity = playerIt->second;
 
-	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB) return;
 
 	// Ignore if session doesn't match snapshot (stale disconnect)
@@ -493,7 +493,7 @@ void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* con
 	}
 
 	// Mark offline and record version for delayed cleanup verification
-	auto& enterComp = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity);
+	auto& enterComp = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(playerEntity);
 	enterComp.set_enter_gs_type(LOGIN_DISCONNECTED);
 
 	auto& disconnectInfo = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerDisconnectInfoComp>(playerEntity);
@@ -562,7 +562,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
 	uint64_t incomingTokenExpiryMs = request->token_expiry_ms();
 
 	// Read old snapshot (read-only, decision based on old data)
-	auto* oldSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	auto* oldSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	const bool hasOldSession = (oldSessionPB != nullptr);
 	uint64_t oldSessionId = hasOldSession ? oldSessionPB->gate_session_id() : kInvalidSessionId;
 	auto& oldTokenId = hasOldSession ? oldSessionPB->token_id() : std::string{};
@@ -587,7 +587,7 @@ void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* contro
             if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
                 // update binding only, do not bump version
                 auto& registry = tlsRegistryManager.actorRegistry;
-                auto& sessionPBRef = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
+                auto& sessionPBRef = registry.get_or_emplace<PlayerSessionSnapshotComp>(playerEntity);
                 sessionPBRef.set_gate_session_id(sessionId);
                 GetPlayerCentreDataRedis()->UpdateExtraData(registry.get_or_emplace<Guid>(playerEntity), sessionPBRef);
 
@@ -819,7 +819,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	}
 
 	// Verify session snapshot is valid before proceeding
-	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (!sessionPB || sessionPB->gate_session_id() == kInvalidSessionId) {
 	    LOG_ERROR << "EnterGsSucceed: missing or invalid session snapshot for player " << playerId;
 	    return;
@@ -829,7 +829,7 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
 
 	PlayerLifecycleSystem::RequestGatePlayerEnterScene(player);
-	PlayerChangeSceneUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoPBComponent::eEnterSucceed);
+	PlayerChangeSceneUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoComp::eEnterSucceed);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
@@ -1046,7 +1046,7 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB) {
 		LOG_WARN << "RoutePlayerStringMsg: missing session snapshot, player_id=" << playerId;
 		return;

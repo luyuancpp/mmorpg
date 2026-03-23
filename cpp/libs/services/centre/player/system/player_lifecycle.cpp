@@ -34,7 +34,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_
 
     LOG_INFO << "Handling async load for player: " << playerId;
 
-    auto sessionPbComp = std::any_cast<PlayerSessionSnapshotPBComp>(extra);
+    auto sessionPbComp = std::any_cast<PlayerSessionSnapshotComp>(extra);
 
     // Session not found in SessionMap — already disconnected or invalid
     if (SessionMap().find(sessionPbComp.gate_session_id()) == SessionMap().end())
@@ -55,9 +55,9 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_
 
         tlsRegistryManager.actorRegistry.emplace<Player>(playerEntity);
         tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity, playerId);
-        tlsRegistryManager.actorRegistry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
-        tlsRegistryManager.actorRegistry.emplace<PlayerSessionSnapshotPBComp>(playerEntity, std::move(sessionPbComp));
-        tlsRegistryManager.actorRegistry.emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+        tlsRegistryManager.actorRegistry.emplace<PlayerSceneContextComp>(playerEntity, playerData.scene_info());
+        tlsRegistryManager.actorRegistry.emplace<PlayerSessionSnapshotComp>(playerEntity, std::move(sessionPbComp));
+        tlsRegistryManager.actorRegistry.emplace<PlayerEnterGameStateComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
         PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
         LOG_INFO << "Player login enter scene handled (created): " << playerId;
@@ -67,13 +67,13 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_
         playerEntity = it->second;
         auto& registry = tlsRegistryManager.actorRegistry;
 
-        registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity) = sessionPbComp;
+        registry.get_or_emplace<PlayerSessionSnapshotComp>(playerEntity) = sessionPbComp;
 
         if (!registry.try_get<Player>(playerEntity)) registry.emplace<Player>(playerEntity);
         if (!registry.try_get<Guid>(playerEntity)) registry.emplace<Guid>(playerEntity, playerId);
-        if (!registry.try_get<PlayerSceneContextPBComponent>(playerEntity)) registry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
+        if (!registry.try_get<PlayerSceneContextComp>(playerEntity)) registry.emplace<PlayerSceneContextComp>(playerEntity, playerData.scene_info());
 
-        registry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+        registry.get_or_emplace<PlayerEnterGameStateComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
         PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
         LOG_INFO << "Player login enter scene handled (updated): " << playerId;
@@ -88,7 +88,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_
 
 void PlayerLifecycleSystem::ProcessPlayerSessionState(entt::entity player)
 {
-	if (const auto* const enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStatePbComp>(player))
+	if (const auto* const enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStateComp>(player))
 	{
 		LOG_DEBUG << "EnterGameNodeInfoPBComponent found with type: " << enterGameFlag->enter_gs_type();
 
@@ -101,14 +101,14 @@ void PlayerLifecycleSystem::ProcessPlayerSessionState(entt::entity player)
 			PlayerLifecycleSystem::HandlePlayerReconnection(player);
 		}
 
-		tlsRegistryManager.actorRegistry.remove<PlayerEnterGameStatePbComp>(player);
+		tlsRegistryManager.actorRegistry.remove<PlayerEnterGameStateComp>(player);
 		LOG_DEBUG << "Removed EnterGameNodeInfoPBComponent from player";
 	}
 }
 
 void PlayerLifecycleSystem::HandlePlayerLogin(entt::entity playerEntity)
 {
-	const auto enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStatePbComp>(playerEntity);
+	const auto enterGameFlag = tlsRegistryManager.actorRegistry.try_get<PlayerEnterGameStateComp>(playerEntity);
 	if (!enterGameFlag)
 	{
 		LOG_WARN << "HandlePlayerLogin called but EnterGameNodeInfoPBComponent not found";
@@ -131,7 +131,7 @@ void PlayerLifecycleSystem::HandlePlayerReconnection(entt::entity player)
 
 void PlayerLifecycleSystem::RequestGatePlayerEnterScene(entt::entity playerEntity)
 {
-	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB)
 	{
 		LOG_WARN << "PlayerSessionSnapshotPB not found for player guid=  " << tlsRegistryManager.actorRegistry.try_get<Guid>(playerEntity);
@@ -173,7 +173,7 @@ void PlayerLifecycleSystem::RequestGatePlayerEnterScene(entt::entity playerEntit
 
 void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity playerEntity)
 {
-	const auto* const sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* const sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB)
 	{
 		LOG_ERROR << "Invalid player session in HandleGameNodePlayerRegisteredAtGateNode";

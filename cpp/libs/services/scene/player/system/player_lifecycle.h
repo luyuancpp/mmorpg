@@ -3,8 +3,8 @@
 #include "engine/core/type_define/type_define.h"
 #include "proto/common/database/player_cache.pb.h"
 
-class PlayerGameNodeEnteryInfoPBComponent;
-class ChangeSceneInfoPBComponent;
+class PlayerGameNodeEntryInfoComp;
+class ChangeSceneInfoComp;
 class PlayerMigrationPbEvent;
 
 class PlayerLifecycleSystem
@@ -13,7 +13,7 @@ public:
 	// What if the player disconnects during async load? Could cause data overwrite.
 	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message, const std::any& extra);
 	static void HandlePlayerAsyncSaved(Guid player_id, PlayerAllData& message);
-	static void EnterScene(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enter_info);
+	static void EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp& enter_info);
 	static void NotifyEnterSceneSucceed(entt::entity player, NodeId centre_node_id);
 	static void LeaveGs(entt::entity player);
 	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);
@@ -25,7 +25,7 @@ public:
 	static void HandleExitGameNode(entt::entity player);
 	static void HandleCrossZoneTransfer(entt::entity playerEntity);
 	static void HandlePlayerMigration(const PlayerMigrationPbEvent& msg);
-	static entt::entity InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEnteryInfoPBComponent& enterInfo);
+	static entt::entity InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEntryInfoComp& enterInfo);
 	static void SavePlayerToRedis(entt::entity player);
 
 };

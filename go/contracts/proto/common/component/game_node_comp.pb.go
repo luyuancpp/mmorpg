@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type GameNodePlayerInfoPBComponent struct {
+type GameNodePlayerInfoComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerSize    uint32                 `protobuf:"varint,1,opt,name=player_size,json=playerSize,proto3" json:"player_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GameNodePlayerInfoPBComponent) Reset() {
-	*x = GameNodePlayerInfoPBComponent{}
+func (x *GameNodePlayerInfoComp) Reset() {
+	*x = GameNodePlayerInfoComp{}
 	mi := &file_proto_common_component_game_node_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GameNodePlayerInfoPBComponent) String() string {
+func (x *GameNodePlayerInfoComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GameNodePlayerInfoPBComponent) ProtoMessage() {}
+func (*GameNodePlayerInfoComp) ProtoMessage() {}
 
-func (x *GameNodePlayerInfoPBComponent) ProtoReflect() protoreflect.Message {
+func (x *GameNodePlayerInfoComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_game_node_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,12 +53,12 @@ func (x *GameNodePlayerInfoPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GameNodePlayerInfoPBComponent.ProtoReflect.Descriptor instead.
-func (*GameNodePlayerInfoPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use GameNodePlayerInfoComp.ProtoReflect.Descriptor instead.
+func (*GameNodePlayerInfoComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_game_node_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GameNodePlayerInfoPBComponent) GetPlayerSize() uint32 {
+func (x *GameNodePlayerInfoComp) GetPlayerSize() uint32 {
 	if x != nil {
 		return x.PlayerSize
 	}
@@ -69,8 +69,8 @@ var File_proto_common_component_game_node_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_game_node_comp_proto_rawDesc = "" +
 	"\n" +
-	"+proto/common/component/game_node_comp.proto\"@\n" +
-	"\x1dGameNodePlayerInfoPBComponent\x12\x1f\n" +
+	"+proto/common/component/game_node_comp.proto\"9\n" +
+	"\x16GameNodePlayerInfoComp\x12\x1f\n" +
 	"\vplayer_size\x18\x01 \x01(\rR\n" +
 	"playerSizeB\"Z contracts/proto/common/componentb\x06proto3"
 
@@ -88,7 +88,7 @@ func file_proto_common_component_game_node_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_game_node_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_common_component_game_node_comp_proto_goTypes = []any{
-	(*GameNodePlayerInfoPBComponent)(nil), // 0: GameNodePlayerInfoPBComponent
+	(*GameNodePlayerInfoComp)(nil), // 0: GameNodePlayerInfoComp
 }
 var file_proto_common_component_game_node_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

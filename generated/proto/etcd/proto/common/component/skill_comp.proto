@@ -5,12 +5,12 @@ option go_package = "etcd/proto/common/component";
 import "proto/common/component/actor_comp.proto";
 
 
-message SkillPBComponent
+message SkillComp
 {
   uint64 skill_table_id = 1;
 }
 
-message SkillContextPBComponent {
+message SkillContextComp {
     uint64 caster = 1; // 施法者
     uint64 target = 2; // 目标（如果有）
     uint64 SkillId = 3; // 技能唯一id

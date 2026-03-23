@@ -25,50 +25,50 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr DerivedAttributesPbComponent::Impl_::Impl_(
+inline constexpr DerivedAttributesComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         max_health_{::uint64_t{0u}} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR DerivedAttributesPbComponent::DerivedAttributesPbComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR DerivedAttributesComp::DerivedAttributesComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(DerivedAttributesPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(DerivedAttributesComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct DerivedAttributesPbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR DerivedAttributesPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~DerivedAttributesPbComponentDefaultTypeInternal() {}
+struct DerivedAttributesCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR DerivedAttributesCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~DerivedAttributesCompDefaultTypeInternal() {}
   union {
-    DerivedAttributesPbComponent _instance;
+    DerivedAttributesComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DerivedAttributesPbComponentDefaultTypeInternal _DerivedAttributesPbComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DerivedAttributesCompDefaultTypeInternal _DerivedAttributesComp_default_instance_;
 template <typename>
-PROTOBUF_CONSTEXPR CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CombatStateFlagsComp_StateFlagsEntry_DoNotUse::CombatStateFlagsComp_StateFlagsEntry_DoNotUse(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::MapEntry(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_class_data_.base()){}
+    : CombatStateFlagsComp_StateFlagsEntry_DoNotUse::MapEntry(CombatStateFlagsComp_StateFlagsEntry_DoNotUse_class_data_.base()){}
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::MapEntry() {
+    : CombatStateFlagsComp_StateFlagsEntry_DoNotUse::MapEntry() {
 }
 #endif  // PROTOBUF_CUSTOM_VTABLE
-struct CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal() {}
+struct CombatStateFlagsComp_StateFlagsEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CombatStateFlagsComp_StateFlagsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CombatStateFlagsComp_StateFlagsEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse _instance;
+    CombatStateFlagsComp_StateFlagsEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal _CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateFlagsComp_StateFlagsEntry_DoNotUseDefaultTypeInternal _CombatStateFlagsComp_StateFlagsEntry_DoNotUse_default_instance_;
 
-inline constexpr CalculatedAttributesPbComponent::Impl_::Impl_(
+inline constexpr CalculatedAttributesComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         attack_power_{::uint64_t{0u}},
@@ -76,49 +76,49 @@ inline constexpr CalculatedAttributesPbComponent::Impl_::Impl_(
         isdead_{false} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CalculatedAttributesPbComponent::CalculatedAttributesPbComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CalculatedAttributesComp::CalculatedAttributesComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(CalculatedAttributesPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(CalculatedAttributesComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct CalculatedAttributesPbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CalculatedAttributesPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CalculatedAttributesPbComponentDefaultTypeInternal() {}
+struct CalculatedAttributesCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CalculatedAttributesCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CalculatedAttributesCompDefaultTypeInternal() {}
   union {
-    CalculatedAttributesPbComponent _instance;
+    CalculatedAttributesComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CalculatedAttributesPbComponentDefaultTypeInternal _CalculatedAttributesPbComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CalculatedAttributesCompDefaultTypeInternal _CalculatedAttributesComp_default_instance_;
 
-inline constexpr CombatStateFlagsPbComponent::Impl_::Impl_(
+inline constexpr CombatStateFlagsComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : state_flags_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CombatStateFlagsPbComponent::CombatStateFlagsPbComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CombatStateFlagsComp::CombatStateFlagsComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(CombatStateFlagsPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(CombatStateFlagsComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct CombatStateFlagsPbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CombatStateFlagsPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CombatStateFlagsPbComponentDefaultTypeInternal() {}
+struct CombatStateFlagsCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CombatStateFlagsCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CombatStateFlagsCompDefaultTypeInternal() {}
   union {
-    CombatStateFlagsPbComponent _instance;
+    CombatStateFlagsComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateFlagsPbComponentDefaultTypeInternal _CombatStateFlagsPbComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateFlagsCompDefaultTypeInternal _CombatStateFlagsComp_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -127,61 +127,60 @@ const ::uint32_t
     TableStruct_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent, _impl_.state_flags_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsComp, _impl_.state_flags_),
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPbComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesComp, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPbComponent, _impl_.attack_power_),
-        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPbComponent, _impl_.defense_power_),
-        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPbComponent, _impl_.isdead_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesComp, _impl_.attack_power_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesComp, _impl_.defense_power_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesComp, _impl_.isdead_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::DerivedAttributesPbComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::DerivedAttributesComp, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::DerivedAttributesPbComponent, _impl_.max_health_),
+        PROTOBUF_FIELD_OFFSET(::DerivedAttributesComp, _impl_.max_health_),
         0,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse)},
-        {7, sizeof(::CombatStateFlagsPbComponent)},
-        {9, sizeof(::CalculatedAttributesPbComponent)},
-        {18, sizeof(::DerivedAttributesPbComponent)},
+        {0, sizeof(::CombatStateFlagsComp_StateFlagsEntry_DoNotUse)},
+        {7, sizeof(::CombatStateFlagsComp)},
+        {9, sizeof(::CalculatedAttributesComp)},
+        {18, sizeof(::DerivedAttributesComp)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_default_instance_._instance,
-    &::_CombatStateFlagsPbComponent_default_instance_._instance,
-    &::_CalculatedAttributesPbComponent_default_instance_._instance,
-    &::_DerivedAttributesPbComponent_default_instance_._instance,
+    &::_CombatStateFlagsComp_StateFlagsEntry_DoNotUse_default_instance_._instance,
+    &::_CombatStateFlagsComp_default_instance_._instance,
+    &::_CalculatedAttributesComp_default_instance_._instance,
+    &::_DerivedAttributesComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n7proto/common/component/actor_attribute"
-    "_state_comp.proto\"\223\001\n\033CombatStateFlagsPb"
-    "Component\022A\n\013state_flags\030\001 \003(\0132,.CombatS"
-    "tateFlagsPbComponent.StateFlagsEntry\0321\n\017"
-    "StateFlagsEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 "
-    "\001(\010:\0028\001\"^\n\037CalculatedAttributesPbCompone"
-    "nt\022\024\n\014attack_power\030\001 \001(\004\022\025\n\rdefense_powe"
-    "r\030\002 \001(\004\022\016\n\006isDead\030\003 \001(\010\"2\n\034DerivedAttrib"
-    "utesPbComponent\022\022\n\nmax_health\030\001 \001(\004b\006pro"
-    "to3"
+    "_state_comp.proto\"\205\001\n\024CombatStateFlagsCo"
+    "mp\022:\n\013state_flags\030\001 \003(\0132%.CombatStateFla"
+    "gsComp.StateFlagsEntry\0321\n\017StateFlagsEntr"
+    "y\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001\"W\n\030Cal"
+    "culatedAttributesComp\022\024\n\014attack_power\030\001 "
+    "\001(\004\022\025\n\rdefense_power\030\002 \001(\004\022\016\n\006isDead\030\003 \001"
+    "(\010\"+\n\025DerivedAttributesComp\022\022\n\nmax_healt"
+    "h\030\001 \001(\004b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto = {
     false,
     false,
-    363,
+    335,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
     "proto/common/component/actor_attribute_state_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto_once,
@@ -197,62 +196,62 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
 // ===================================================================
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse()
-    : SuperType(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_class_data_.base()) {}
-CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-    : SuperType(arena, CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_class_data_.base()) {}
+CombatStateFlagsComp_StateFlagsEntry_DoNotUse::CombatStateFlagsComp_StateFlagsEntry_DoNotUse()
+    : SuperType(CombatStateFlagsComp_StateFlagsEntry_DoNotUse_class_data_.base()) {}
+CombatStateFlagsComp_StateFlagsEntry_DoNotUse::CombatStateFlagsComp_StateFlagsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+    : SuperType(arena, CombatStateFlagsComp_StateFlagsEntry_DoNotUse_class_data_.base()) {}
 #else   // PROTOBUF_CUSTOM_VTABLE
-CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse() : SuperType() {}
-CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
+CombatStateFlagsComp_StateFlagsEntry_DoNotUse::CombatStateFlagsComp_StateFlagsEntry_DoNotUse() : SuperType() {}
+CombatStateFlagsComp_StateFlagsEntry_DoNotUse::CombatStateFlagsComp_StateFlagsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
 #endif  // PROTOBUF_CUSTOM_VTABLE
-inline void* PROTOBUF_NONNULL CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::PlacementNew_(
+inline void* PROTOBUF_NONNULL CombatStateFlagsComp_StateFlagsEntry_DoNotUse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse(arena);
+  return ::new (mem) CombatStateFlagsComp_StateFlagsEntry_DoNotUse(arena);
 }
-constexpr auto CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse),
-                                            alignof(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse));
+constexpr auto CombatStateFlagsComp_StateFlagsEntry_DoNotUse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CombatStateFlagsComp_StateFlagsEntry_DoNotUse),
+                                            alignof(CombatStateFlagsComp_StateFlagsEntry_DoNotUse));
 }
-constexpr auto CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::InternalGenerateClassData_() {
+constexpr auto CombatStateFlagsComp_StateFlagsEntry_DoNotUse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_default_instance_._instance,
+          &_CombatStateFlagsComp_StateFlagsEntry_DoNotUse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse>(),
+          &CombatStateFlagsComp_StateFlagsEntry_DoNotUse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CombatStateFlagsComp_StateFlagsEntry_DoNotUse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::SharedDtor,
-          static_cast<void (::google::protobuf::MessageLite::*)()>(&CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::ClearImpl),
+          &CombatStateFlagsComp_StateFlagsEntry_DoNotUse::SharedDtor,
+          static_cast<void (::google::protobuf::MessageLite::*)()>(&CombatStateFlagsComp_StateFlagsEntry_DoNotUse::ClearImpl),
               ::google::protobuf::Message::ByteSizeLongImpl, ::google::protobuf::Message::_InternalSerializeImpl
               ,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_._cached_size_),
           false,
       },
-      &CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::kDescriptorMethods,
+      &CombatStateFlagsComp_StateFlagsEntry_DoNotUse::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_class_data_ =
-        CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull CombatStateFlagsComp_StateFlagsEntry_DoNotUse_class_data_ =
+        CombatStateFlagsComp_StateFlagsEntry_DoNotUse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_class_data_.tc_table);
-  return CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_class_data_.base();
+CombatStateFlagsComp_StateFlagsEntry_DoNotUse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CombatStateFlagsComp_StateFlagsEntry_DoNotUse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CombatStateFlagsComp_StateFlagsEntry_DoNotUse_class_data_.tc_table);
+  return CombatStateFlagsComp_StateFlagsEntry_DoNotUse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
-CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::_table_ = {
+CombatStateFlagsComp_StateFlagsEntry_DoNotUse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -261,27 +260,27 @@ CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_class_data_.base(),
+    CombatStateFlagsComp_StateFlagsEntry_DoNotUse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CombatStateFlagsComp_StateFlagsEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // bool value = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_.value_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_.value_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_.value_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_.value_)}},
     // uint32 key = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_.key_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_.key_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_.key_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_.key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 key = 1;
-    {PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // bool value = 2;
-    {PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp_StateFlagsEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   // no aux_entries
@@ -290,123 +289,123 @@ CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::_table_ = {
 };
 // ===================================================================
 
-class CombatStateFlagsPbComponent::_Internal {
+class CombatStateFlagsComp::_Internal {
  public:
 };
 
-CombatStateFlagsPbComponent::CombatStateFlagsPbComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+CombatStateFlagsComp::CombatStateFlagsComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CombatStateFlagsPbComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, CombatStateFlagsComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CombatStateFlagsPbComponent)
+  // @@protoc_insertion_point(arena_constructor:CombatStateFlagsComp)
 }
-PROTOBUF_NDEBUG_INLINE CombatStateFlagsPbComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE CombatStateFlagsComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::CombatStateFlagsPbComponent& from_msg)
+    const ::CombatStateFlagsComp& from_msg)
       : state_flags_{visibility, arena, from.state_flags_},
         _cached_size_{0} {}
 
-CombatStateFlagsPbComponent::CombatStateFlagsPbComponent(
+CombatStateFlagsComp::CombatStateFlagsComp(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const CombatStateFlagsPbComponent& from)
+    const CombatStateFlagsComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CombatStateFlagsPbComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, CombatStateFlagsComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  CombatStateFlagsPbComponent* const _this = this;
+  CombatStateFlagsComp* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:CombatStateFlagsPbComponent)
+  // @@protoc_insertion_point(copy_constructor:CombatStateFlagsComp)
 }
-PROTOBUF_NDEBUG_INLINE CombatStateFlagsPbComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE CombatStateFlagsComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : state_flags_{visibility, arena},
         _cached_size_{0} {}
 
-inline void CombatStateFlagsPbComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void CombatStateFlagsComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-CombatStateFlagsPbComponent::~CombatStateFlagsPbComponent() {
-  // @@protoc_insertion_point(destructor:CombatStateFlagsPbComponent)
+CombatStateFlagsComp::~CombatStateFlagsComp() {
+  // @@protoc_insertion_point(destructor:CombatStateFlagsComp)
   SharedDtor(*this);
 }
-inline void CombatStateFlagsPbComponent::SharedDtor(MessageLite& self) {
-  CombatStateFlagsPbComponent& this_ = static_cast<CombatStateFlagsPbComponent&>(self);
+inline void CombatStateFlagsComp::SharedDtor(MessageLite& self) {
+  CombatStateFlagsComp& this_ = static_cast<CombatStateFlagsComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL CombatStateFlagsPbComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL CombatStateFlagsComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) CombatStateFlagsPbComponent(arena);
+  return ::new (mem) CombatStateFlagsComp(arena);
 }
-constexpr auto CombatStateFlagsPbComponent::InternalNewImpl_() {
+constexpr auto CombatStateFlagsComp::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent, _impl_.state_flags_) +
-          decltype(CombatStateFlagsPbComponent::_impl_.state_flags_)::
+      PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp, _impl_.state_flags_) +
+          decltype(CombatStateFlagsComp::_impl_.state_flags_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent, _impl_.state_flags_) +
-          decltype(CombatStateFlagsPbComponent::_impl_.state_flags_)::
+      PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp, _impl_.state_flags_) +
+          decltype(CombatStateFlagsComp::_impl_.state_flags_)::
               InternalGetArenaOffsetAlt(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::CopyInit(
-        sizeof(CombatStateFlagsPbComponent), alignof(CombatStateFlagsPbComponent), *arena_bits);
+        sizeof(CombatStateFlagsComp), alignof(CombatStateFlagsComp), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&CombatStateFlagsPbComponent::PlacementNew_,
-                                 sizeof(CombatStateFlagsPbComponent),
-                                 alignof(CombatStateFlagsPbComponent));
+    return ::google::protobuf::internal::MessageCreator(&CombatStateFlagsComp::PlacementNew_,
+                                 sizeof(CombatStateFlagsComp),
+                                 alignof(CombatStateFlagsComp));
   }
 }
-constexpr auto CombatStateFlagsPbComponent::InternalGenerateClassData_() {
+constexpr auto CombatStateFlagsComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_CombatStateFlagsPbComponent_default_instance_._instance,
+          &_CombatStateFlagsComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &CombatStateFlagsPbComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<CombatStateFlagsPbComponent>(),
+          &CombatStateFlagsComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CombatStateFlagsComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &CombatStateFlagsPbComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<CombatStateFlagsPbComponent>(), &CombatStateFlagsPbComponent::ByteSizeLong,
-              &CombatStateFlagsPbComponent::_InternalSerialize,
+          &CombatStateFlagsComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CombatStateFlagsComp>(), &CombatStateFlagsComp::ByteSizeLong,
+              &CombatStateFlagsComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp, _impl_._cached_size_),
           false,
       },
-      &CombatStateFlagsPbComponent::kDescriptorMethods,
+      &CombatStateFlagsComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull CombatStateFlagsPbComponent_class_data_ =
-        CombatStateFlagsPbComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull CombatStateFlagsComp_class_data_ =
+        CombatStateFlagsComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-CombatStateFlagsPbComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&CombatStateFlagsPbComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(CombatStateFlagsPbComponent_class_data_.tc_table);
-  return CombatStateFlagsPbComponent_class_data_.base();
+CombatStateFlagsComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CombatStateFlagsComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CombatStateFlagsComp_class_data_.tc_table);
+  return CombatStateFlagsComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-CombatStateFlagsPbComponent::_table_ = {
+CombatStateFlagsComp::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -417,11 +416,11 @@ CombatStateFlagsPbComponent::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    CombatStateFlagsPbComponent_class_data_.base(),
+    CombatStateFlagsComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CombatStateFlagsPbComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CombatStateFlagsComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -429,7 +428,7 @@ CombatStateFlagsPbComponent::_table_ = {
     65535, 65535
   }}, {{
     // map<uint32, bool> state_flags = 1;
-    {PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent, _impl_.state_flags_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateFlagsComp, _impl_.state_flags_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }},
   {{
@@ -440,8 +439,8 @@ CombatStateFlagsPbComponent::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void CombatStateFlagsPbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:CombatStateFlagsPbComponent)
+PROTOBUF_NOINLINE void CombatStateFlagsComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:CombatStateFlagsComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -452,17 +451,17 @@ PROTOBUF_NOINLINE void CombatStateFlagsPbComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL CombatStateFlagsPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CombatStateFlagsComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const CombatStateFlagsPbComponent& this_ = static_cast<const CombatStateFlagsPbComponent&>(base);
+  const CombatStateFlagsComp& this_ = static_cast<const CombatStateFlagsComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL CombatStateFlagsPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CombatStateFlagsComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const CombatStateFlagsPbComponent& this_ = *this;
+  const CombatStateFlagsComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:CombatStateFlagsPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:CombatStateFlagsComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -492,18 +491,18 @@ PROTOBUF_NOINLINE void CombatStateFlagsPbComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:CombatStateFlagsPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:CombatStateFlagsComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t CombatStateFlagsPbComponent::ByteSizeLong(const MessageLite& base) {
-  const CombatStateFlagsPbComponent& this_ = static_cast<const CombatStateFlagsPbComponent&>(base);
+::size_t CombatStateFlagsComp::ByteSizeLong(const MessageLite& base) {
+  const CombatStateFlagsComp& this_ = static_cast<const CombatStateFlagsComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t CombatStateFlagsPbComponent::ByteSizeLong() const {
-  const CombatStateFlagsPbComponent& this_ = *this;
+::size_t CombatStateFlagsComp::ByteSizeLong() const {
+  const CombatStateFlagsComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:CombatStateFlagsPbComponent)
+  // @@protoc_insertion_point(message_byte_size_start:CombatStateFlagsComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -527,10 +526,10 @@ PROTOBUF_NOINLINE void CombatStateFlagsPbComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void CombatStateFlagsPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CombatStateFlagsPbComponent*>(&to_msg);
-  auto& from = static_cast<const CombatStateFlagsPbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateFlagsPbComponent)
+void CombatStateFlagsComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CombatStateFlagsComp*>(&to_msg);
+  auto& from = static_cast<const CombatStateFlagsComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateFlagsComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -539,46 +538,46 @@ void CombatStateFlagsPbComponent::MergeImpl(::google::protobuf::MessageLite& to_
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CombatStateFlagsPbComponent::CopyFrom(const CombatStateFlagsPbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateFlagsPbComponent)
+void CombatStateFlagsComp::CopyFrom(const CombatStateFlagsComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateFlagsComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void CombatStateFlagsPbComponent::InternalSwap(CombatStateFlagsPbComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void CombatStateFlagsComp::InternalSwap(CombatStateFlagsComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.state_flags_.InternalSwap(&other->_impl_.state_flags_);
 }
 
-::google::protobuf::Metadata CombatStateFlagsPbComponent::GetMetadata() const {
+::google::protobuf::Metadata CombatStateFlagsComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class CalculatedAttributesPbComponent::_Internal {
+class CalculatedAttributesComp::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<CalculatedAttributesPbComponent>()._impl_._has_bits_);
+      decltype(::std::declval<CalculatedAttributesComp>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_._has_bits_);
 };
 
-CalculatedAttributesPbComponent::CalculatedAttributesPbComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+CalculatedAttributesComp::CalculatedAttributesComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CalculatedAttributesPbComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, CalculatedAttributesComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CalculatedAttributesPbComponent)
+  // @@protoc_insertion_point(arena_constructor:CalculatedAttributesComp)
 }
-CalculatedAttributesPbComponent::CalculatedAttributesPbComponent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CalculatedAttributesPbComponent& from)
+CalculatedAttributesComp::CalculatedAttributesComp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CalculatedAttributesComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CalculatedAttributesPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(arena, CalculatedAttributesComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -586,12 +585,12 @@ CalculatedAttributesPbComponent::CalculatedAttributesPbComponent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE CalculatedAttributesPbComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE CalculatedAttributesComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void CalculatedAttributesPbComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void CalculatedAttributesComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, attack_power_),
@@ -600,64 +599,64 @@ inline void CalculatedAttributesPbComponent::SharedCtor(::_pb::Arena* PROTOBUF_N
                offsetof(Impl_, attack_power_) +
                sizeof(Impl_::isdead_));
 }
-CalculatedAttributesPbComponent::~CalculatedAttributesPbComponent() {
-  // @@protoc_insertion_point(destructor:CalculatedAttributesPbComponent)
+CalculatedAttributesComp::~CalculatedAttributesComp() {
+  // @@protoc_insertion_point(destructor:CalculatedAttributesComp)
   SharedDtor(*this);
 }
-inline void CalculatedAttributesPbComponent::SharedDtor(MessageLite& self) {
-  CalculatedAttributesPbComponent& this_ = static_cast<CalculatedAttributesPbComponent&>(self);
+inline void CalculatedAttributesComp::SharedDtor(MessageLite& self) {
+  CalculatedAttributesComp& this_ = static_cast<CalculatedAttributesComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL CalculatedAttributesPbComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL CalculatedAttributesComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) CalculatedAttributesPbComponent(arena);
+  return ::new (mem) CalculatedAttributesComp(arena);
 }
-constexpr auto CalculatedAttributesPbComponent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CalculatedAttributesPbComponent),
-                                            alignof(CalculatedAttributesPbComponent));
+constexpr auto CalculatedAttributesComp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CalculatedAttributesComp),
+                                            alignof(CalculatedAttributesComp));
 }
-constexpr auto CalculatedAttributesPbComponent::InternalGenerateClassData_() {
+constexpr auto CalculatedAttributesComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_CalculatedAttributesPbComponent_default_instance_._instance,
+          &_CalculatedAttributesComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &CalculatedAttributesPbComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<CalculatedAttributesPbComponent>(),
+          &CalculatedAttributesComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CalculatedAttributesComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &CalculatedAttributesPbComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<CalculatedAttributesPbComponent>(), &CalculatedAttributesPbComponent::ByteSizeLong,
-              &CalculatedAttributesPbComponent::_InternalSerialize,
+          &CalculatedAttributesComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CalculatedAttributesComp>(), &CalculatedAttributesComp::ByteSizeLong,
+              &CalculatedAttributesComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_._cached_size_),
           false,
       },
-      &CalculatedAttributesPbComponent::kDescriptorMethods,
+      &CalculatedAttributesComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull CalculatedAttributesPbComponent_class_data_ =
-        CalculatedAttributesPbComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull CalculatedAttributesComp_class_data_ =
+        CalculatedAttributesComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-CalculatedAttributesPbComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&CalculatedAttributesPbComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(CalculatedAttributesPbComponent_class_data_.tc_table);
-  return CalculatedAttributesPbComponent_class_data_.base();
+CalculatedAttributesComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CalculatedAttributesComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CalculatedAttributesComp_class_data_.tc_table);
+  return CalculatedAttributesComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
-CalculatedAttributesPbComponent::_table_ = {
+CalculatedAttributesComp::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_._has_bits_),
     0, // no _extensions_
     3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -666,42 +665,42 @@ CalculatedAttributesPbComponent::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    CalculatedAttributesPbComponent_class_data_.base(),
+    CalculatedAttributesComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CalculatedAttributesPbComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CalculatedAttributesComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 attack_power = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesPbComponent, _impl_.attack_power_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.attack_power_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesComp, _impl_.attack_power_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.attack_power_)}},
     // uint64 defense_power = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesPbComponent, _impl_.defense_power_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.defense_power_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesComp, _impl_.defense_power_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.defense_power_)}},
     // bool isDead = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CalculatedAttributesPbComponent, _impl_.isdead_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.isdead_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CalculatedAttributesComp, _impl_.isdead_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.isdead_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 attack_power = 1;
-    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.attack_power_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.attack_power_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 defense_power = 2;
-    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.defense_power_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.defense_power_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // bool isDead = 3;
-    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.isdead_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.isdead_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void CalculatedAttributesPbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:CalculatedAttributesPbComponent)
+PROTOBUF_NOINLINE void CalculatedAttributesComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:CalculatedAttributesComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -718,17 +717,17 @@ PROTOBUF_NOINLINE void CalculatedAttributesPbComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL CalculatedAttributesPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CalculatedAttributesComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const CalculatedAttributesPbComponent& this_ = static_cast<const CalculatedAttributesPbComponent&>(base);
+  const CalculatedAttributesComp& this_ = static_cast<const CalculatedAttributesComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL CalculatedAttributesPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CalculatedAttributesComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const CalculatedAttributesPbComponent& this_ = *this;
+  const CalculatedAttributesComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:CalculatedAttributesPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:CalculatedAttributesComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -764,18 +763,18 @@ PROTOBUF_NOINLINE void CalculatedAttributesPbComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:CalculatedAttributesPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:CalculatedAttributesComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t CalculatedAttributesPbComponent::ByteSizeLong(const MessageLite& base) {
-  const CalculatedAttributesPbComponent& this_ = static_cast<const CalculatedAttributesPbComponent&>(base);
+::size_t CalculatedAttributesComp::ByteSizeLong(const MessageLite& base) {
+  const CalculatedAttributesComp& this_ = static_cast<const CalculatedAttributesComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t CalculatedAttributesPbComponent::ByteSizeLong() const {
-  const CalculatedAttributesPbComponent& this_ = *this;
+::size_t CalculatedAttributesComp::ByteSizeLong() const {
+  const CalculatedAttributesComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:CalculatedAttributesPbComponent)
+  // @@protoc_insertion_point(message_byte_size_start:CalculatedAttributesComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -810,10 +809,10 @@ PROTOBUF_NOINLINE void CalculatedAttributesPbComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void CalculatedAttributesPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CalculatedAttributesPbComponent*>(&to_msg);
-  auto& from = static_cast<const CalculatedAttributesPbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CalculatedAttributesPbComponent)
+void CalculatedAttributesComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CalculatedAttributesComp*>(&to_msg);
+  auto& from = static_cast<const CalculatedAttributesComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CalculatedAttributesComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -840,52 +839,52 @@ void CalculatedAttributesPbComponent::MergeImpl(::google::protobuf::MessageLite&
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CalculatedAttributesPbComponent::CopyFrom(const CalculatedAttributesPbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CalculatedAttributesPbComponent)
+void CalculatedAttributesComp::CopyFrom(const CalculatedAttributesComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CalculatedAttributesComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void CalculatedAttributesPbComponent::InternalSwap(CalculatedAttributesPbComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void CalculatedAttributesComp::InternalSwap(CalculatedAttributesComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.isdead_)
-      + sizeof(CalculatedAttributesPbComponent::_impl_.isdead_)
-      - PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.attack_power_)>(
+      PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.isdead_)
+      + sizeof(CalculatedAttributesComp::_impl_.isdead_)
+      - PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.attack_power_)>(
           reinterpret_cast<char*>(&_impl_.attack_power_),
           reinterpret_cast<char*>(&other->_impl_.attack_power_));
 }
 
-::google::protobuf::Metadata CalculatedAttributesPbComponent::GetMetadata() const {
+::google::protobuf::Metadata CalculatedAttributesComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class DerivedAttributesPbComponent::_Internal {
+class DerivedAttributesComp::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<DerivedAttributesPbComponent>()._impl_._has_bits_);
+      decltype(::std::declval<DerivedAttributesComp>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(DerivedAttributesPbComponent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(DerivedAttributesComp, _impl_._has_bits_);
 };
 
-DerivedAttributesPbComponent::DerivedAttributesPbComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+DerivedAttributesComp::DerivedAttributesComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, DerivedAttributesPbComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, DerivedAttributesComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:DerivedAttributesPbComponent)
+  // @@protoc_insertion_point(arena_constructor:DerivedAttributesComp)
 }
-DerivedAttributesPbComponent::DerivedAttributesPbComponent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DerivedAttributesPbComponent& from)
+DerivedAttributesComp::DerivedAttributesComp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DerivedAttributesComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, DerivedAttributesPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(arena, DerivedAttributesComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -893,73 +892,73 @@ DerivedAttributesPbComponent::DerivedAttributesPbComponent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE DerivedAttributesPbComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE DerivedAttributesComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void DerivedAttributesPbComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void DerivedAttributesComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.max_health_ = {};
 }
-DerivedAttributesPbComponent::~DerivedAttributesPbComponent() {
-  // @@protoc_insertion_point(destructor:DerivedAttributesPbComponent)
+DerivedAttributesComp::~DerivedAttributesComp() {
+  // @@protoc_insertion_point(destructor:DerivedAttributesComp)
   SharedDtor(*this);
 }
-inline void DerivedAttributesPbComponent::SharedDtor(MessageLite& self) {
-  DerivedAttributesPbComponent& this_ = static_cast<DerivedAttributesPbComponent&>(self);
+inline void DerivedAttributesComp::SharedDtor(MessageLite& self) {
+  DerivedAttributesComp& this_ = static_cast<DerivedAttributesComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL DerivedAttributesPbComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL DerivedAttributesComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) DerivedAttributesPbComponent(arena);
+  return ::new (mem) DerivedAttributesComp(arena);
 }
-constexpr auto DerivedAttributesPbComponent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(DerivedAttributesPbComponent),
-                                            alignof(DerivedAttributesPbComponent));
+constexpr auto DerivedAttributesComp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(DerivedAttributesComp),
+                                            alignof(DerivedAttributesComp));
 }
-constexpr auto DerivedAttributesPbComponent::InternalGenerateClassData_() {
+constexpr auto DerivedAttributesComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_DerivedAttributesPbComponent_default_instance_._instance,
+          &_DerivedAttributesComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &DerivedAttributesPbComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<DerivedAttributesPbComponent>(),
+          &DerivedAttributesComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<DerivedAttributesComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &DerivedAttributesPbComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<DerivedAttributesPbComponent>(), &DerivedAttributesPbComponent::ByteSizeLong,
-              &DerivedAttributesPbComponent::_InternalSerialize,
+          &DerivedAttributesComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<DerivedAttributesComp>(), &DerivedAttributesComp::ByteSizeLong,
+              &DerivedAttributesComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(DerivedAttributesPbComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(DerivedAttributesComp, _impl_._cached_size_),
           false,
       },
-      &DerivedAttributesPbComponent::kDescriptorMethods,
+      &DerivedAttributesComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull DerivedAttributesPbComponent_class_data_ =
-        DerivedAttributesPbComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull DerivedAttributesComp_class_data_ =
+        DerivedAttributesComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-DerivedAttributesPbComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&DerivedAttributesPbComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(DerivedAttributesPbComponent_class_data_.tc_table);
-  return DerivedAttributesPbComponent_class_data_.base();
+DerivedAttributesComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&DerivedAttributesComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(DerivedAttributesComp_class_data_.tc_table);
+  return DerivedAttributesComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
-DerivedAttributesPbComponent::_table_ = {
+DerivedAttributesComp::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(DerivedAttributesPbComponent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(DerivedAttributesComp, _impl_._has_bits_),
     0, // no _extensions_
     1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -968,29 +967,29 @@ DerivedAttributesPbComponent::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    DerivedAttributesPbComponent_class_data_.base(),
+    DerivedAttributesComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::DerivedAttributesPbComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::DerivedAttributesComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 max_health = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DerivedAttributesPbComponent, _impl_.max_health_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(DerivedAttributesPbComponent, _impl_.max_health_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DerivedAttributesComp, _impl_.max_health_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(DerivedAttributesComp, _impl_.max_health_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 max_health = 1;
-    {PROTOBUF_FIELD_OFFSET(DerivedAttributesPbComponent, _impl_.max_health_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(DerivedAttributesComp, _impl_.max_health_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void DerivedAttributesPbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:DerivedAttributesPbComponent)
+PROTOBUF_NOINLINE void DerivedAttributesComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:DerivedAttributesComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1002,17 +1001,17 @@ PROTOBUF_NOINLINE void DerivedAttributesPbComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL DerivedAttributesPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL DerivedAttributesComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const DerivedAttributesPbComponent& this_ = static_cast<const DerivedAttributesPbComponent&>(base);
+  const DerivedAttributesComp& this_ = static_cast<const DerivedAttributesComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL DerivedAttributesPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL DerivedAttributesComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const DerivedAttributesPbComponent& this_ = *this;
+  const DerivedAttributesComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:DerivedAttributesPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:DerivedAttributesComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1030,18 +1029,18 @@ PROTOBUF_NOINLINE void DerivedAttributesPbComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:DerivedAttributesPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:DerivedAttributesComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t DerivedAttributesPbComponent::ByteSizeLong(const MessageLite& base) {
-  const DerivedAttributesPbComponent& this_ = static_cast<const DerivedAttributesPbComponent&>(base);
+::size_t DerivedAttributesComp::ByteSizeLong(const MessageLite& base) {
+  const DerivedAttributesComp& this_ = static_cast<const DerivedAttributesComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t DerivedAttributesPbComponent::ByteSizeLong() const {
-  const DerivedAttributesPbComponent& this_ = *this;
+::size_t DerivedAttributesComp::ByteSizeLong() const {
+  const DerivedAttributesComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:DerivedAttributesPbComponent)
+  // @@protoc_insertion_point(message_byte_size_start:DerivedAttributesComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1062,10 +1061,10 @@ PROTOBUF_NOINLINE void DerivedAttributesPbComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void DerivedAttributesPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<DerivedAttributesPbComponent*>(&to_msg);
-  auto& from = static_cast<const DerivedAttributesPbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:DerivedAttributesPbComponent)
+void DerivedAttributesComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<DerivedAttributesComp*>(&to_msg);
+  auto& from = static_cast<const DerivedAttributesComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:DerivedAttributesComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1080,22 +1079,22 @@ void DerivedAttributesPbComponent::MergeImpl(::google::protobuf::MessageLite& to
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void DerivedAttributesPbComponent::CopyFrom(const DerivedAttributesPbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:DerivedAttributesPbComponent)
+void DerivedAttributesComp::CopyFrom(const DerivedAttributesComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:DerivedAttributesComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void DerivedAttributesPbComponent::InternalSwap(DerivedAttributesPbComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void DerivedAttributesComp::InternalSwap(DerivedAttributesComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   swap(_impl_.max_health_, other->_impl_.max_health_);
 }
 
-::google::protobuf::Metadata DerivedAttributesPbComponent::GetMetadata() const {
+::google::protobuf::Metadata DerivedAttributesComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

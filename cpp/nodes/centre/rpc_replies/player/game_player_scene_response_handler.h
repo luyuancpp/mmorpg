@@ -17,7 +17,7 @@ public:
         ::google::protobuf::Empty* response);
     static void EnterSceneS2C(entt::entity player,
         const ::EnterSceneS2CRequest* request,
-        ::EnterScenerS2CResponse* response);
+        ::EnterSceneS2CResponse* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         entt::entity player,
@@ -39,7 +39,7 @@ public:
         case 2:
             EnterSceneS2C(player,
                 nullptr,
-                static_cast<::EnterScenerS2CResponse*>(response));
+                static_cast<::EnterSceneS2CResponse*>(response));
             break;
         default:
             break;

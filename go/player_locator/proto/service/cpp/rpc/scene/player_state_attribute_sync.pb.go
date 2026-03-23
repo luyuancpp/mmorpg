@@ -30,7 +30,7 @@ type ActorBaseAttributesS2C struct {
 	EntityId         uint64                                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
 	Transform        *component.Transform                   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`                // 速度信息
 	Velocity         *component.Velocity                    `protobuf:"bytes,3,opt,name=velocity,proto3" json:"velocity,omitempty"`
-	CombatStateFlags *component.CombatStateFlagsPbComponent `protobuf:"bytes,4,opt,name=combat_state_flags,json=combatStateFlags,proto3" json:"combat_state_flags,omitempty"` //战斗状态
+	CombatStateFlags *component.CombatStateFlagsComp `protobuf:"bytes,4,opt,name=combat_state_flags,json=combatStateFlags,proto3" json:"combat_state_flags,omitempty"` //战斗状态
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -86,7 +86,7 @@ func (x *ActorBaseAttributesS2C) GetVelocity() *component.Velocity {
 	return nil
 }
 
-func (x *ActorBaseAttributesS2C) GetCombatStateFlags() *component.CombatStateFlagsPbComponent {
+func (x *ActorBaseAttributesS2C) GetCombatStateFlags() *component.CombatStateFlagsComp {
 	if x != nil {
 		return x.CombatStateFlags
 	}
@@ -324,7 +324,7 @@ const file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_rawDesc
 	"\ttransform\x18\x02 \x01(\v2\n" +
 	".TransformR\ttransform\x12%\n" +
 	"\bvelocity\x18\x03 \x01(\v2\t.VelocityR\bvelocity\x12J\n" +
-	"\x12combat_state_flags\x18\x04 \x01(\v2\x1c.CombatStateFlagsPbComponentR\x10combatStateFlags:\x05\x80\xe6\xd5\x02\x01\">\n" +
+	"\x12combat_state_flags\x18\x04 \x01(\v2\x1c.CombatStateFlagsCompR\x10combatStateFlags:\x05\x80\xe6\xd5\x02\x01\">\n" +
 	"\x18AttributeDelta2FramesS2C\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\x04R\bentityId:\x05\x80\xe6\xd5\x02\x01\">\n" +
 	"\x18AttributeDelta5FramesS2C\x12\x1b\n" +
@@ -365,13 +365,13 @@ var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_goTypes =
 	(*AttributeDelta60FramesS2C)(nil),             // 5: AttributeDelta60FramesS2C
 	(*component.Transform)(nil),                   // 6: Transform
 	(*component.Velocity)(nil),                    // 7: Velocity
-	(*component.CombatStateFlagsPbComponent)(nil), // 8: CombatStateFlagsPbComponent
+	(*component.CombatStateFlagsComp)(nil), // 8: CombatStateFlagsComp
 	(*common.Empty)(nil),                          // 9: Empty
 }
 var file_proto_service_cpp_rpc_scene_player_state_attribute_sync_proto_depIdxs = []int32{
 	6, // 0: ActorBaseAttributesS2C.transform:type_name -> Transform
 	7, // 1: ActorBaseAttributesS2C.velocity:type_name -> Velocity
-	8, // 2: ActorBaseAttributesS2C.combat_state_flags:type_name -> CombatStateFlagsPbComponent
+	8, // 2: ActorBaseAttributesS2C.combat_state_flags:type_name -> CombatStateFlagsComp
 	0, // 3: ScenePlayerSync.SyncBaseAttribute:input_type -> ActorBaseAttributesS2C
 	1, // 4: ScenePlayerSync.SyncAttribute2Frames:input_type -> AttributeDelta2FramesS2C
 	2, // 5: ScenePlayerSync.SyncAttribute5Frames:input_type -> AttributeDelta5FramesS2C
