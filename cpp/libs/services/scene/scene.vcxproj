@@ -41,7 +41,6 @@
     <ClInclude Include="generated\attribute\attributedelta60framess2c_attribute_sync.h" />
     <ClInclude Include="kafka\system\kafka.h" />
     <ClInclude Include="mount\system\mount.h" />
-    <ClInclude Include="npc\system\npc.h" />
     <ClInclude Include="player\constants\player.h" />
     <ClInclude Include="player\system\player_data_loader.h" />
     <ClInclude Include="player\system\player_lifecycle.h" />
@@ -96,7 +95,6 @@
     <ClCompile Include="generated\attribute\attributedelta60framess2c_attribute_sync.cpp" />
     <ClCompile Include="kafka\system\kafka.cpp" />
     <ClCompile Include="mount\system\mount.cpp" />
-    <ClCompile Include="npc\system\npc.cpp" />
     <ClCompile Include="player\system\player_database_loader.cpp" />
     <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_scene.cpp" />

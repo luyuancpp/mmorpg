@@ -11,10 +11,7 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include <thread_context/registry_manager.h>
-#include <boost/dynamic_bitset.hpp>
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
-
-void ActorAttributeCalculatorSystem::Initialize() {}
 
 void UpdateVelocity(entt::entity entity) {
     auto& velocity = tlsRegistryManager.actorRegistry.get_or_emplace<Velocity>(entity);
@@ -42,9 +39,6 @@ void UpdateHealth(entt::entity actorEntity) {
 void UpdateEnergy(entt::entity actorEntity) {
 }
 
-void UpdateStatusEffects(entt::entity actorEntity) {
-}
-
 void ResetCombatStateFlags(entt::entity actorEntity) {
     const auto& combatStates = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(actorEntity);
     auto& syncData = tlsRegistryManager.actorRegistry.get_or_emplace<ActorBaseAttributesS2C>(actorEntity);
@@ -62,31 +56,11 @@ std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs
     {kHealth, UpdateHealth},
     {kEnergy, UpdateEnergy},
     {kCombatState, ResetCombatStateFlags}
-    //{kStatusEffects, UpdateStatusEffects}
 } };
 
 void ActorAttributeCalculatorSystem::MarkAttributeForUpdate(const entt::entity actorEntity, const uint32_t attributeBit) {
     auto& attributeBits = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDirtyFlagsComp>(actorEntity).attributeBits;
     attributeBits.set(attributeBit);
-}
-
-void ActorAttributeCalculatorSystem::ImmediateCalculateAttributes(const entt::entity actorEntity, const uint32_t attributeBit)
-{
-    if (attributeBit >= kAttributeConfigs.size()) {
-        return;
-    }
-
-    if (const auto& attributeBits = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDirtyFlagsComp>(actorEntity).attributeBits;
-        !attributeBits.test(attributeBit)) {
-        return;
-    }
-
-    const auto& updateFunction = kAttributeConfigs[attributeBit].updateFunction;
-    if (!updateFunction) {
-        return;
-    }
-
-    updateFunction(actorEntity);
 }
 
 void ActorAttributeCalculatorSystem::Update(double delta)

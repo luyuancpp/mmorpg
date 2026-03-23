@@ -12,18 +12,11 @@ class Vector3;
 class ViewSystem
 {
 public:
-    static void Initialize();
-
     // Check whether to send NPC-enter message (e.g., skip in multiplayer dungeons without NPC quests)
     static bool ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant);
 
     static void FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& createMessage);
 
-    static void HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver);
-    
-    static void BroadcastToNearbyEntities(entt::entity entity, const uint32_t message_id,
-    const google::protobuf::Message& message, bool excludingSel);
-    
     // Broadcast message to all players who can see this entity (including self)
     static void BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
     const google::protobuf::Message& message);
@@ -40,7 +33,5 @@ private:
     static bool BothAreNpcs(entt::entity observer, entt::entity entrant);
 
     static bool EntrantIsNpc(entt::entity entrant);
-
-    static bool ShouldRefreshView();
 };
 

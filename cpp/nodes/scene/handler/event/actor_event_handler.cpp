@@ -9,6 +9,7 @@
 #include "combat_state/system/combat_state.h"
 #include "combat/buff/system/buff.h"
 #include "combat/skill/system/skill.h"
+#include "core/utils/registry/game_registry.h"
 #include "mount/system/mount.h"
 #include "spatial/system/interest.h"
 ///<<< END WRITING YOUR CODE

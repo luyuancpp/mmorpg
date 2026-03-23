@@ -143,7 +143,7 @@ void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity player)
 
 }
 
-//todo validate
+// TODO: Validate session before removal
 void PlayerLifecycleSystem::RemovePlayerSession(const Guid playerId)
 {
 	auto playerIt = tlsPlayerList.find(playerId);
@@ -190,7 +190,7 @@ void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 
 void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 {
-	LOG_INFO << "HandleExitGameNode: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " is exiting the Game Node";
+	LOG_INFO << "HandleExitGameNode: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " is exiting the scene node";
 
 	if (!tlsRegistryManager.actorRegistry.valid(player))
 	{

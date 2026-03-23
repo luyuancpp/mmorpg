@@ -85,9 +85,6 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 	}
 }
 
-void ActorStateAttributeSyncSystem::Initialize() {
-}
-
 void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities) {
 	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 

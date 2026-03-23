@@ -7,7 +7,6 @@
 #include "spatial/system/aoi.h"
 #include "spatial/system/movement_acceleration.h"
 #include "spatial/system/movement.h"
-#include "spatial/system/view.h"
 #include "Recast/Recast.h"
 #include "frame/manager/frame_time.h"
 #include "proto/common/component/frame_comp.pb.h"
@@ -31,16 +30,10 @@ void World::InitializeSystemBeforeConnect()
     tlsFrameTimeManager.frameTime.set_target_fps(kTargetFPS);
     tlsFrameTimeManager.frameTime.set_delta_time(1.0 / tlsFrameTimeManager.frameTime.target_fps());
     tlsIdGeneratorManager.SetNodeId(GetNodeInfo().node_id());
-    ViewSystem::Initialize();
-}
-
-void World::ReadyForGame()
-{
 }
 
 void World::Update()
 {
-    //https://github.com/recastnavigation/recastnavigation.git
     const auto currentTime = GetTimeInMilliseconds();
     const double deltaTime = static_cast<double>((currentTime - tlsFrameTimeManager.frameTime.previous_time())) / kMillisecondsToSeconds;
     tlsFrameTimeManager.frameTime.set_previous_time(currentTime);

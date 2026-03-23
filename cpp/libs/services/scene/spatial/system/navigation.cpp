@@ -4,10 +4,7 @@
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
 #include "muduo/base/Logging.h"
 #include "table/code/mainscene_table.h"
-#include "DetourCrowd/DetourCrowd.h"
-#include "core/network/message_system.h"
 #include "spatial/system/recast.h"
-#include "proto/common/event/scene_event.pb.h"
 #include "spatial/constants/nav.h"
 #include "spatial/manager/scene_nav.h"
 
@@ -17,6 +14,6 @@ void NavigationSystem::LoadMainSceneNavBins() {
 		NavComp nav;
 		RecastSystem::LoadNavMesh(item.nav_bin_file().c_str(), &nav.navMesh);
 		nav.navQuery.init(&nav.navMesh, kMaxMeshQueryNodes);
-		SceneNavManager::Instance().AddNav(item.id(), NavComp{});
+		SceneNavManager::Instance().AddNav(item.id(), std::move(nav));
 	}
 }

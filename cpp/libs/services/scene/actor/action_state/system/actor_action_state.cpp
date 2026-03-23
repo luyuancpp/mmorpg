@@ -87,17 +87,6 @@ bool ActorActionStateSystem::HasState(const entt::entity actorEntity, const uint
     return actorStatePbComponent.state_list().contains(state);
 }
 
-uint32_t ActorActionStateSystem::GetStateTip(const uint32_t actorAction, const uint32_t actorState) {
-    FetchAndValidateActorActionStateTable(actorAction);
-
-    if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
-        return kInvalidParameter;
-    }
-
-    const auto& state = actorActionStateTable->state(static_cast<int32_t>(actorState));
-    return state.state_tip();
-}
-
 uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     if (actorState >= kActorStateActorStateMax){

@@ -14,11 +14,6 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
     entitiesToNotifyEntry.emplace(observer, entity);
 }
 
-void ViewSystem::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
-{
-    entitiesToNotifyExit.emplace(observer, leaver);
-}
-
 bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
 {
     return true;

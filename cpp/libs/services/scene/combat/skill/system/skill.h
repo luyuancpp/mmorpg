@@ -3,10 +3,7 @@
 #include <cstdint>
 #include <entt/src/entt/entity/entity.hpp>
 
-
-#include "proto/scene/player_skill.pb.h"
-//https://zhuanlan.zhihu.com/p/149704315
-
+class ReleaseSkillRequest;
 class SkillTable;
 
 class SkillSystem
@@ -19,7 +16,6 @@ public:
 
 	static bool IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType);
 
-	static void HandleSkillInitialize();
 	static void HandleGeneralSkillSpell(const entt::entity casterEntity, uint64_t skillId);
 	static void HandleSkillRecovery(const entt::entity casterEntity, uint64_t skillId);
 	static void HandleSkillFinish(const entt::entity casterEntity, uint64_t skillId);
@@ -27,12 +23,6 @@ public:
 	static void HandleChannelSkillSpell(entt::entity casterEntity, uint64_t skillId);
 	static void HandleChannelThink(entt::entity casterEntity, uint64_t skillId);
 	static void HandleChannelFinish(entt::entity casterEntity, uint64_t skillId);
-
-	static void HandleSkillToggleOn(entt::entity casterEntity, uint64_t skillId);
-	static void HandleSkillToggleOff(entt::entity casterEntity, uint64_t skillId);
-
-	static void HandleSkillActivate(entt::entity casterEntity, uint64_t skillId);
-	static void HandleSkillDeactivate(entt::entity casterEntity, uint64_t skillId);
 
     // Validate target
     static uint32_t ValidateTarget(const ::ReleaseSkillRequest* request);
@@ -57,8 +47,6 @@ public:
     static void SendSkillInterruptedMessage(entt::entity casterEntity, const uint32_t skillTableId) ;
 
 	static void TriggerSkillEffect(entt::entity casterEntity, uint64_t skillId);
-
-	static void RemoveEffect(entt::entity casterEntity, uint64_t skillId);
 
 	static void HandleSkillSpell(const entt::entity casterEntity, const uint64_t skillId);
 };
