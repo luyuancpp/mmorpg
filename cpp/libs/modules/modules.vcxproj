@@ -22,7 +22,6 @@
     <ClCompile Include="bag\bag_system.cpp" />
     <ClCompile Include="mission\comp\mission_comp.cpp" />
     <ClCompile Include="mission\system\mission.cpp" />
-    <ClCompile Include="reward\system\reward.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bag\bag_system.h" />

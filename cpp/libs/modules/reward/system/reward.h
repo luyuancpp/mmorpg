@@ -2,9 +2,6 @@
 
 #include <bitset>
 #include <cstdint>
-#include <string>
-
-#include "entt/src/entt/entity/entity.hpp"
 
 #include "modules/reward/comp/reward.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -25,14 +22,6 @@ public:
 
     template <std::size_t N>
     static bool HasUnclaimed(const std::bitset<N>& bits);
-
-    // Diagnostics (operate on RewardComp specifically)
-    static void ShowRewardStatus();
-    static void ShowEntityRewardStatus(const RewardBitset& claimedRewards);
-    static void CountRewardStatistics();
-    static std::string FormatRewardStatus(entt::entity entity, const RewardBitset& claimedRewards);
-    static void ShowUnclaimedRewards();
-    static uint32_t CountEntitiesWithUnclaimedRewards();
 };
 
 // --- Template implementations ---
