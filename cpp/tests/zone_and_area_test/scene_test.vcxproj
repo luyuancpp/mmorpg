@@ -14,19 +14,19 @@
     <ProjectGuid>{2C4B7BCB-4D3F-4679-9BB9-8FBFDDACBEB6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>scene_test</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -55,7 +55,7 @@
       <PrecompiledHeaderFile />
       <AdditionalIncludeDirectories>../../servers\ThirdPart\protobuf-master\src;../../servers\Common\;../googletest-master/googletest/include;../../servers\Common\Game;../../servers\Common\GameStruct;../../servers\ThirdPart\boost;../../servers\GameServer;../../servers\Common\CommonPlayer;../../servers\ThirdPart\windows_libevent\include;../../servers\netproto;../../servers/;./;../../servers\Common\Redis;../../servers\ThirdPart\hiredis-master;../../servers\Common\GenCode/PB;../../servers\Common/GenCode;../../servers\GameServer\Obj;../../servers/GameServer/;../../servers/NavMesh\Detour\Include;../../servers/NavMesh\DetourTileCache\Include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
