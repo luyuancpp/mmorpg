@@ -3,7 +3,6 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "node/system/node/node.h"
-#include "spatial/system/game_node_scene.h"
 ///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()
 {
@@ -31,6 +30,5 @@ void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    GameNodeSceneSystem::InitializeNodeScenes();
 ///<<< END WRITING YOUR CODE
 }

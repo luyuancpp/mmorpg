@@ -6,17 +6,20 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "login/generated/pb/table"
 )
+
+var SceneTableManagerInstance = NewSceneTableManager()
+
 
 type SceneTableManager struct {
     data []*pb.SceneTable
-    kvData map[int32]*pb.SceneTable
+    kvData map[uint32]*pb.SceneTable
 }
 
 func NewSceneTableManager() *SceneTableManager {
     return &SceneTableManager{
-        kvData: make(map[int32]*pb.SceneTable),
+        kvData: make(map[uint32]*pb.SceneTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *SceneTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *SceneTableManager) GetById(id int32) (*pb.Scene, bool) {
+func (m *SceneTableManager) GetById(id uint32) (*pb.SceneTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

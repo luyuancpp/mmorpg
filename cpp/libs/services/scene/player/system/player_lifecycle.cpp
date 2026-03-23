@@ -95,16 +95,6 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 	//   Scene node should wait for gate's leave-ack before broadcasting enter events.
 }
 
-void PlayerLifecycleSystem::NotifyEnterSceneSucceed(entt::entity /*player*/, NodeId /*centreNodeId*/)
-{
-	// Centre decommissioned: CentreEnterGsSucceed callback removed.
-	// Scene entry is now self-contained; player_locator owns location truth.
-}
-
-void PlayerLifecycleSystem::LeaveGs(entt::entity player)
-{
-}
-
 void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 {
 	if (!tlsRegistryManager.actorRegistry.valid(player))

@@ -225,6 +225,7 @@ type PlayerSession struct {
 	State          PlayerSessionState     `protobuf:"varint,10,opt,name=state,proto3,enum=playerlocator.PlayerSessionState" json:"state,omitempty"`
 	LastActiveTs   int64                  `protobuf:"varint,11,opt,name=last_active_ts,json=lastActiveTs,proto3" json:"last_active_ts,omitempty"` // 最后活跃时间 (unix ms)
 	RequestId      string                 `protobuf:"bytes,12,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`             // 最近一次登录 request_id (幂等)
+	Account        string                 `protobuf:"bytes,13,opt,name=account,proto3" json:"account,omitempty"`                                  // 账号名 (Login 用于 reconnect 决策)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -339,6 +340,13 @@ func (x *PlayerSession) GetLastActiveTs() int64 {
 func (x *PlayerSession) GetRequestId() string {
 	if x != nil {
 		return x.RequestId
+	}
+	return ""
+}
+
+func (x *PlayerSession) GetAccount() string {
+	if x != nil {
+		return x.Account
 	}
 	return ""
 }
@@ -554,6 +562,7 @@ type ReconnectRequest struct {
 	TokenId        string                 `protobuf:"bytes,5,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
 	TokenExpiryMs  uint64                 `protobuf:"varint,6,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
 	RequestId      string                 `protobuf:"bytes,7,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	Account        string                 `protobuf:"bytes,8,opt,name=account,proto3" json:"account,omitempty"` // 账号名 (Login 传入)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -633,6 +642,13 @@ func (x *ReconnectRequest) GetTokenExpiryMs() uint64 {
 func (x *ReconnectRequest) GetRequestId() string {
 	if x != nil {
 		return x.RequestId
+	}
+	return ""
+}
+
+func (x *ReconnectRequest) GetAccount() string {
+	if x != nil {
+		return x.Account
 	}
 	return ""
 }
@@ -796,7 +812,7 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\x05token\x18\x06 \x01(\tR\x05token\x12\x0e\n" +
 	"\x02ts\x18\a \x01(\x03R\x02ts\"\x1c\n" +
 	"\bPlayerId\x12\x10\n" +
-	"\x03uid\x18\x01 \x01(\x03R\x03uid\"\xb7\x03\n" +
+	"\x03uid\x18\x01 \x01(\x03R\x03uid\"\xd1\x03\n" +
 	"\rPlayerSession\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
@@ -812,7 +828,8 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	" \x01(\x0e2!.playerlocator.PlayerSessionStateR\x05state\x12$\n" +
 	"\x0elast_active_ts\x18\v \x01(\x03R\flastActiveTs\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\f \x01(\tR\trequestId\"K\n" +
+	"request_id\x18\f \x01(\tR\trequestId\x12\x18\n" +
+	"\aaccount\x18\r \x01(\tR\aaccount\"K\n" +
 	"\x11SetSessionRequest\x126\n" +
 	"\asession\x18\x01 \x01(\v2\x1c.playerlocator.PlayerSessionR\asession\"0\n" +
 	"\x11GetSessionRequest\x12\x1b\n" +
@@ -824,7 +841,7 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x02 \x01(\x04R\tsessionId\x12*\n" +
-	"\x11lease_ttl_seconds\x18\x03 \x01(\rR\x0fleaseTtlSeconds\"\xfa\x01\n" +
+	"\x11lease_ttl_seconds\x18\x03 \x01(\rR\x0fleaseTtlSeconds\"\x94\x02\n" +
 	"\x10ReconnectRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12$\n" +
 	"\x0enew_session_id\x18\x02 \x01(\x04R\fnewSessionId\x12\x17\n" +
@@ -833,7 +850,8 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\btoken_id\x18\x05 \x01(\tR\atokenId\x12&\n" +
 	"\x0ftoken_expiry_ms\x18\x06 \x01(\x04R\rtokenExpiryMs\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\a \x01(\tR\trequestId\"\x8a\x01\n" +
+	"request_id\x18\a \x01(\tR\trequestId\x12\x18\n" +
+	"\aaccount\x18\b \x01(\tR\aaccount\"\x8a\x01\n" +
 	"\x11ReconnectResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x126\n" +
 	"\asession\x18\x02 \x01(\v2\x1c.playerlocator.PlayerSessionR\asession\x12#\n" +
@@ -860,7 +878,7 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\n" +
 	"GetSession\x12 .playerlocator.GetSessionRequest\x1a!.playerlocator.GetSessionResponse\x12B\n" +
 	"\x10SetDisconnecting\x12&.playerlocator.SetDisconnectingRequest\x1a\x06.Empty\x12N\n" +
-	"\tReconnect\x12\x1f.playerlocator.ReconnectRequest\x1a .playerlocator.ReconnectResponseb\x06proto3"
+	"\tReconnect\x12\x1f.playerlocator.ReconnectRequest\x1a .playerlocator.ReconnectResponseB%Z#player_locator/proto/player_locatorb\x06proto3"
 
 var (
 	file_proto_player_locator_player_locator_proto_rawDescOnce sync.Once

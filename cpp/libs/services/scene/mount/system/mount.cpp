@@ -6,7 +6,7 @@
 #include "actor/action_state/system/actor_action_state.h"
 #include "macros/return_define.h"
 
-inline uint32_t MountSystem::MountActor(const entt::entity actorEntity)
+uint32_t MountSystem::MountActor(const entt::entity actorEntity)
 {
     RETURN_FALSE_ON_ERROR(ActorActionStateSystem::TryPerformAction(actorEntity, kActorActionMountActor, kActorStateMounted));
     

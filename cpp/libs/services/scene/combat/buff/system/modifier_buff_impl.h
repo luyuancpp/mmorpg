@@ -1,9 +1,9 @@
 #pragma once
-#include "table/code/buff_table.h"
 #include <entt/src/entt/entity/entity.hpp>
 
 #include "combat/skill/comp/skill.h"
 
+class BuffTable;
 struct BuffEntry;
 
 class ModifierBuffImplSystem {

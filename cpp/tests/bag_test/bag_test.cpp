@@ -208,7 +208,7 @@ TEST(BagTest, AdequateSizeAddItemCannotStackItemFull)
 {
     uint32_t config_id = 1;
     Bag bag;
-    U32U32UnorderedMap adequate_add{ {config_id, (uint32_t)kDefaultCapacity + 1 } };
+    ItemCountMap adequate_add{ {config_id, (uint32_t)kDefaultCapacity + 1 } };
     EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));
     adequate_add[config_id] = (uint32_t)kDefaultCapacity;
     EXPECT_EQ(kSuccess, bag.HasEnoughSpace(adequate_add));
@@ -221,7 +221,7 @@ TEST(BagTest, AdequateSizeAddItemmixtureFull)
     uint32_t stack_config_id = 10;//可以叠加的物品id
     //一个不可叠加，10个可以叠加
     Bag bag;
-    U32U32UnorderedMap adequate_add{ {cannot_stack_config_id, 1 },
+    ItemCountMap adequate_add{ {cannot_stack_config_id, 1 },
         {stack_config_id, GetItemTable(stack_config_id).first->max_statck_size() * (uint32_t)kDefaultCapacity} };
 
 
@@ -264,7 +264,7 @@ TEST(BagTest, AdequateItem)
     uint32_t config_id1 = 1;
     uint32_t config_id2 = 2;
     uint32_t config_id11 = 11;
-    U32U32UnorderedMap adequate_item{ {config_id10 , 1} };
+    ItemCountMap adequate_item{ {config_id10 , 1} };
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//空背包测试
     InitItemParam p;
     p.itemPBComp.set_config_id(config_id10);
@@ -339,7 +339,7 @@ TEST(BagTest, DelItem)
     item.itemPBComp.set_size(GetItemTable(item.itemPBComp.config_id()).first->max_statck_size());// 999 * 1
     EXPECT_EQ(kSuccess, bag.AddItem(item));
 
-    U32U32UnorderedMap try_del;
+    ItemCountMap try_del;
     try_del.emplace(test_config_id10, 1);
     EXPECT_EQ(kSuccess, bag.RemoveItems(try_del));
     EXPECT_EQ(GetItemTable(test_config_id10).first->max_statck_size() * 2 - 1, bag.GetItemStackSize(test_config_id10));

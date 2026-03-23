@@ -9,14 +9,17 @@ import (
     pb "db/generated/pb/table"
 )
 
+var SkillPermissionTableManagerInstance = NewSkillPermissionTableManager()
+
+
 type SkillPermissionTableManager struct {
     data []*pb.SkillPermissionTable
-    kvData map[int32]*pb.SkillPermissionTable
+    kvData map[uint32]*pb.SkillPermissionTable
 }
 
 func NewSkillPermissionTableManager() *SkillPermissionTableManager {
     return &SkillPermissionTableManager{
-        kvData: make(map[int32]*pb.SkillPermissionTable),
+        kvData: make(map[uint32]*pb.SkillPermissionTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *SkillPermissionTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *SkillPermissionTableManager) GetById(id int32) (*pb.SkillPermission, bool) {
+func (m *SkillPermissionTableManager) GetById(id uint32) (*pb.SkillPermissionTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

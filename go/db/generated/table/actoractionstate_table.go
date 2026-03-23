@@ -9,14 +9,17 @@ import (
     pb "db/generated/pb/table"
 )
 
+var ActorActionStateTableManagerInstance = NewActorActionStateTableManager()
+
+
 type ActorActionStateTableManager struct {
     data []*pb.ActorActionStateTable
-    kvData map[int32]*pb.ActorActionStateTable
+    kvData map[uint32]*pb.ActorActionStateTable
 }
 
 func NewActorActionStateTableManager() *ActorActionStateTableManager {
     return &ActorActionStateTableManager{
-        kvData: make(map[int32]*pb.ActorActionStateTable),
+        kvData: make(map[uint32]*pb.ActorActionStateTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *ActorActionStateTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *ActorActionStateTableManager) GetById(id int32) (*pb.ActorActionState, bool) {
+func (m *ActorActionStateTableManager) GetById(id uint32) (*pb.ActorActionStateTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

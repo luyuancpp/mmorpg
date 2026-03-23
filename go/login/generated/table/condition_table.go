@@ -6,17 +6,20 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "login/generated/pb/table"
 )
+
+var ConditionTableManagerInstance = NewConditionTableManager()
+
 
 type ConditionTableManager struct {
     data []*pb.ConditionTable
-    kvData map[int32]*pb.ConditionTable
+    kvData map[uint32]*pb.ConditionTable
 }
 
 func NewConditionTableManager() *ConditionTableManager {
     return &ConditionTableManager{
-        kvData: make(map[int32]*pb.ConditionTable),
+        kvData: make(map[uint32]*pb.ConditionTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *ConditionTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *ConditionTableManager) GetById(id int32) (*pb.Condition, bool) {
+func (m *ConditionTableManager) GetById(id uint32) (*pb.ConditionTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

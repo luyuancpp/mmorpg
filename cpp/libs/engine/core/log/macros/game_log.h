@@ -4,21 +4,23 @@
 
 #ifdef WIN32
 
-#define LOG_NONE         "\033[m"
-#define LOG_RED          "\033[0;32;31m"
-#define LOG_LIGHT_RED    "\033[1;31m"
-#define LOG_GREEN        "\033[0;32;32m"
-#define LOG_LIGHT_GREEN  "\033[1;32m"
-#define LOG_BLUE         "\033[0;32;34m"
-#define LOG_LIGHT_BLUE   "\033[1;34m"
-#define LOG_DARY_GRAY    "\033[1;30m"
-#define LOG_CYAN         "\033[0;36m"
-#define LOG_LIGHT_CYAN   "\033[1;36m"
-#define LOG_PURPLE       "\033[0;35m"
-#define LOG_LIGHT_PURPLE "\033[1;35m"
-#define LOG_BROWN        "\033[0;33m"
-#define LOG_YELLOW       "\033[1;33m"
-#define LOG_LIGHT_GRAY   "\033[0;37m"
-#define LOG_WHITE        "\033[1;37m"
+namespace log_color {
+    constexpr const char* kNone        = "\033[m";
+    constexpr const char* kRed         = "\033[0;32;31m";
+    constexpr const char* kLightRed    = "\033[1;31m";
+    constexpr const char* kGreen       = "\033[0;32;32m";
+    constexpr const char* kLightGreen  = "\033[1;32m";
+    constexpr const char* kBlue        = "\033[0;32;34m";
+    constexpr const char* kLightBlue   = "\033[1;34m";
+    constexpr const char* kDarkGray    = "\033[1;30m";
+    constexpr const char* kCyan        = "\033[0;36m";
+    constexpr const char* kLightCyan   = "\033[1;36m";
+    constexpr const char* kPurple      = "\033[0;35m";
+    constexpr const char* kLightPurple = "\033[1;35m";
+    constexpr const char* kBrown       = "\033[0;33m";
+    constexpr const char* kYellow      = "\033[1;33m";
+    constexpr const char* kLightGray   = "\033[0;37m";
+    constexpr const char* kWhite       = "\033[1;37m";
+}
 
 #endif

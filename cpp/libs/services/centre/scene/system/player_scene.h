@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entt/src/entt/entity/registry.hpp"
+#include "entt/src/entt/entity/entity.hpp"
 
 #include "engine/core/type_define/type_define.h"
 

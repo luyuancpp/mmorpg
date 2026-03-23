@@ -6,17 +6,19 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "player_locator/generated/pb/table"
 )
+var RewardTableManagerInstance = NewRewardTableManager()
+
 
 type RewardTableManager struct {
     data []*pb.RewardTable
-    kvData map[int32]*pb.RewardTable
+    kvData map[uint32]*pb.RewardTable
 }
 
 func NewRewardTableManager() *RewardTableManager {
     return &RewardTableManager{
-        kvData: make(map[int32]*pb.RewardTable),
+        kvData: make(map[uint32]*pb.RewardTable),
     }
 }
 
@@ -40,7 +42,7 @@ func (m *RewardTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *RewardTableManager) GetById(id int32) (*pb.Reward, bool) {
+func (m *RewardTableManager) GetById(id uint32) (*pb.RewardTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

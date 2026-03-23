@@ -9,14 +9,17 @@ import (
     pb "db/generated/pb/table"
 )
 
+var MissionTableManagerInstance = NewMissionTableManager()
+
+
 type MissionTableManager struct {
     data []*pb.MissionTable
-    kvData map[int32]*pb.MissionTable
+    kvData map[uint32]*pb.MissionTable
 }
 
 func NewMissionTableManager() *MissionTableManager {
     return &MissionTableManager{
-        kvData: make(map[int32]*pb.MissionTable),
+        kvData: make(map[uint32]*pb.MissionTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *MissionTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *MissionTableManager) GetById(id int32) (*pb.Mission, bool) {
+func (m *MissionTableManager) GetById(id uint32) (*pb.MissionTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

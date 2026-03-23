@@ -6,17 +6,19 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "player_locator/generated/pb/table"
 )
+var BuffTableManagerInstance = NewBuffTableManager()
+
 
 type BuffTableManager struct {
     data []*pb.BuffTable
-    kvData map[int32]*pb.BuffTable
+    kvData map[uint32]*pb.BuffTable
 }
 
 func NewBuffTableManager() *BuffTableManager {
     return &BuffTableManager{
-        kvData: make(map[int32]*pb.BuffTable),
+        kvData: make(map[uint32]*pb.BuffTable),
     }
 }
 
@@ -40,7 +42,7 @@ func (m *BuffTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *BuffTableManager) GetById(id int32) (*pb.Buff, bool) {
+func (m *BuffTableManager) GetById(id uint32) (*pb.BuffTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

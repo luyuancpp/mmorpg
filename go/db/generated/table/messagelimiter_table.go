@@ -9,14 +9,17 @@ import (
     pb "db/generated/pb/table"
 )
 
+var MessageLimiterTableManagerInstance = NewMessageLimiterTableManager()
+
+
 type MessageLimiterTableManager struct {
     data []*pb.MessageLimiterTable
-    kvData map[int32]*pb.MessageLimiterTable
+    kvData map[uint32]*pb.MessageLimiterTable
 }
 
 func NewMessageLimiterTableManager() *MessageLimiterTableManager {
     return &MessageLimiterTableManager{
-        kvData: make(map[int32]*pb.MessageLimiterTable),
+        kvData: make(map[uint32]*pb.MessageLimiterTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *MessageLimiterTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *MessageLimiterTableManager) GetById(id int32) (*pb.MessageLimiter, bool) {
+func (m *MessageLimiterTableManager) GetById(id uint32) (*pb.MessageLimiterTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

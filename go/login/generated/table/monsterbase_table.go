@@ -6,17 +6,20 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "login/generated/pb/table"
 )
+
+var MonsterBaseTableManagerInstance = NewMonsterBaseTableManager()
+
 
 type MonsterBaseTableManager struct {
     data []*pb.MonsterBaseTable
-    kvData map[int32]*pb.MonsterBaseTable
+    kvData map[uint32]*pb.MonsterBaseTable
 }
 
 func NewMonsterBaseTableManager() *MonsterBaseTableManager {
     return &MonsterBaseTableManager{
-        kvData: make(map[int32]*pb.MonsterBaseTable),
+        kvData: make(map[uint32]*pb.MonsterBaseTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *MonsterBaseTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *MonsterBaseTableManager) GetById(id int32) (*pb.MonsterBase, bool) {
+func (m *MonsterBaseTableManager) GetById(id uint32) (*pb.MonsterBaseTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

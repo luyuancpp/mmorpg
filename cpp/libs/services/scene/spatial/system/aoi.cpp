@@ -2,7 +2,6 @@
 
 #include "hexagons_grid.h"
 #include "core/network/message_system.h"
-#include "entity/system/entity.h"
 #include "spatial/comp/grid.h"
 #include "spatial/system/grid.h"
 #include "spatial/system/interest.h"

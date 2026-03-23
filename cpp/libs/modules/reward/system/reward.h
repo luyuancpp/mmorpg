@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-#include "entt/src/entt/entity/registry.hpp"
+#include "entt/src/entt/entity/entity.hpp"
 
 #include "modules/reward/comp/reward.h"
 #include "table/proto/tip/common_error_tip.pb.h"

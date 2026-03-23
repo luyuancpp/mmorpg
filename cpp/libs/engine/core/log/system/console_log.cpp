@@ -16,27 +16,27 @@ void LogToConsole(const char* msg, int len)
     console_msg.assign(msg, len );
     if (std::string{ msg, kLoginInfoInex, 5 }.compare("TRACE") == 0)
     {
-        console_msg = LOG_LIGHT_GRAY + console_msg;
+        console_msg = log_color::kLightGray + console_msg;
     }
     else if (std::string{ msg, kLoginInfoInex, 5 }.compare("DEBUG") == 0)
     {
-        console_msg = LOG_WHITE + console_msg;
+        console_msg = log_color::kWhite + console_msg;
     }
     if (std::string{ msg, kLoginInfoInex, 4 }.compare("INFO") == 0)
     {
-        console_msg = LOG_GREEN + console_msg;
+        console_msg = log_color::kGreen + console_msg;
     }
     else if (std::string{ msg, kLoginInfoInex, 4 }.compare("WARN") == 0)
     {
-        console_msg = LOG_YELLOW + console_msg;
+        console_msg = log_color::kYellow + console_msg;
     }
     else if (std::string{ msg, kLoginInfoInex, 5 }.compare("ERROR") == 0)
     {
-        console_msg = LOG_RED + console_msg;
+        console_msg = log_color::kRed + console_msg;
     }
     else 
     {
-        console_msg = LOG_LIGHT_RED + console_msg;
+        console_msg = log_color::kLightRed + console_msg;
     }
     fwrite(console_msg.data(), 1, console_msg.length(), stdout);
 }

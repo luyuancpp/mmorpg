@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"shared/kafkautil"
+
 	"github.com/IBM/sarama"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -48,7 +50,7 @@ func NewKafkaAdmin(
 
 // ExpandPartitions expands to the target total partition count.
 func (a *KafkaAdmin) ExpandPartitions(ctx context.Context, targetTotalPartitions int32) error {
-	currentPartitionCount, err := GetCurrentPartitionCount(a.saramaClient, a.topic)
+	currentPartitionCount, err := kafkautil.GetCurrentPartitionCount(a.saramaClient, a.topic)
 	if err != nil {
 		return fmt.Errorf("get current partition count failed: %w", err)
 	}
@@ -69,18 +71,18 @@ func (a *KafkaAdmin) ExpandPartitions(ctx context.Context, targetTotalPartitions
 	}
 	logx.Infof("create partitions success: topic=%s, addCount=%d", a.topic, partitionCountToAdd)
 
-	if err := SetExpandStatus(ctx, a.redisClient, a.topic, ExpandStatusExpanding, targetTotalPartitions); err != nil {
+	if err := kafkautil.SetExpandStatus(ctx, a.redisClient, a.topic, kafkautil.ExpandStatusExpanding, targetTotalPartitions); err != nil {
 		return fmt.Errorf("set expanding status failed: err=%w", err)
 	}
 
-	newPartitions := GetNewPartitionIDs(currentPartitionCount, targetTotalPartitions)
+	newPartitions := kafkautil.GetNewPartitionIDs(currentPartitionCount, targetTotalPartitions)
 	a.producer.AddPartitions(newPartitions)
 
-	if err := WaitOldPartitionsConsumed(ctx, a.saramaClient, a.topic, currentPartitionCount); err != nil {
+	if err := kafkautil.WaitOldPartitionsConsumed(ctx, a.saramaClient, a.topic, currentPartitionCount); err != nil {
 		return fmt.Errorf("wait old partitions consumed failed: err=%w", err)
 	}
 
-	if err := SetExpandStatus(ctx, a.redisClient, a.topic, ExpandStatusCompleted, targetTotalPartitions); err != nil {
+	if err := kafkautil.SetExpandStatus(ctx, a.redisClient, a.topic, kafkautil.ExpandStatusCompleted, targetTotalPartitions); err != nil {
 		return fmt.Errorf("set completed status failed: err=%w", err)
 	}
 

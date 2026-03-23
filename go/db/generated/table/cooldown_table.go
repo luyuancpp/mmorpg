@@ -9,14 +9,17 @@ import (
     pb "db/generated/pb/table"
 )
 
+var CooldownTableManagerInstance = NewCooldownTableManager()
+
+
 type CooldownTableManager struct {
     data []*pb.CooldownTable
-    kvData map[int32]*pb.CooldownTable
+    kvData map[uint32]*pb.CooldownTable
 }
 
 func NewCooldownTableManager() *CooldownTableManager {
     return &CooldownTableManager{
-        kvData: make(map[int32]*pb.CooldownTable),
+        kvData: make(map[uint32]*pb.CooldownTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *CooldownTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *CooldownTableManager) GetById(id int32) (*pb.Cooldown, bool) {
+func (m *CooldownTableManager) GetById(id uint32) (*pb.CooldownTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

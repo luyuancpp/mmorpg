@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"shared/kafkautil"
+
 	"github.com/IBM/sarama"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -38,7 +40,7 @@ func NewExternalExpandMonitor(
 		return nil, fmt.Errorf("failed to create Kafka client: %w", err)
 	}
 
-	initialPartCount, err := GetCurrentPartitionCount(kafkaClient, topic)
+	initialPartCount, err := kafkautil.GetCurrentPartitionCount(kafkaClient, topic)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get initial partition count: %w", err)
 	}
@@ -91,7 +93,7 @@ func (m *ExternalExpandMonitor) checkPartitionChange() {
 		return
 	}
 
-	currentPartCount, err := GetCurrentPartitionCount(m.kafkaClient, m.topic)
+	currentPartCount, err := kafkautil.GetCurrentPartitionCount(m.kafkaClient, m.topic)
 	if err != nil {
 		logx.Errorf("external expand monitor: failed to get partition count | topic: %s | err: %v", m.topic, err)
 		return
@@ -112,29 +114,29 @@ func (m *ExternalExpandMonitor) checkPartitionChange() {
 	m.isExpanding = true
 	defer func() { m.isExpanding = false }()
 
-	if err := SetExpandStatus(m.ctx, m.redisClient, m.topic, ExpandStatusExpanding, currentPartCount); err != nil {
+	if err := kafkautil.SetExpandStatus(m.ctx, m.redisClient, m.topic, kafkautil.ExpandStatusExpanding, currentPartCount); err != nil {
 		logx.Errorf("external expand monitor: failed to set expanding status | topic: %s | err: %v", m.topic, err)
 		return
 	}
 
 	oldPartCount := m.lastPartCount
-	if err := WaitOldPartitionsConsumed(m.ctx, m.kafkaClient, m.topic, oldPartCount); err != nil {
+	if err := kafkautil.WaitOldPartitionsConsumed(m.ctx, m.kafkaClient, m.topic, oldPartCount); err != nil {
 		logx.Errorf("external expand monitor: failed to wait for old partitions | topic: %s | err: %v", m.topic, err)
-		setErr := SetExpandStatus(m.ctx, m.redisClient, m.topic, ExpandStatusNormal, currentPartCount)
+		setErr := kafkautil.SetExpandStatus(m.ctx, m.redisClient, m.topic, kafkautil.ExpandStatusNormal, currentPartCount)
 		if setErr != nil {
 			logx.Errorf("external expand monitor: failed to rollback expand status | topic: %s | err: %v", m.topic, setErr)
 		}
 		return
 	}
 
-	newPartIDs := GetNewPartitionIDs(oldPartCount, currentPartCount)
+	newPartIDs := kafkautil.GetNewPartitionIDs(oldPartCount, currentPartCount)
 	if err := m.producer.AddPartitions(newPartIDs); err != nil {
 		logx.Errorf("external expand monitor: failed to update producer partitions | topic: %s | newIDs: %v | err: %v",
 			m.topic, newPartIDs, err)
 		return
 	}
 
-	if err := SetExpandStatus(m.ctx, m.redisClient, m.topic, ExpandStatusCompleted, currentPartCount); err != nil {
+	if err := kafkautil.SetExpandStatus(m.ctx, m.redisClient, m.topic, kafkautil.ExpandStatusCompleted, currentPartCount); err != nil {
 		logx.Errorf("external expand monitor: failed to set completed status | topic: %s | err: %v", m.topic, err)
 		return
 	}

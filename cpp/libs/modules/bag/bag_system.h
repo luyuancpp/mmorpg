@@ -1,5 +1,6 @@
 #pragma once
 
+#include "entt/src/entt/entity/registry.hpp"
 #include "engine/core/type_define/type_define.h"
 
 #include "item_system.h"
@@ -56,9 +57,9 @@ public:
     entt::entity GetItemByPos(uint32_t pos);
     uint32_t GetItemPos(Guid guid);
 
-    uint32_t HasEnoughSpace(const U32U32UnorderedMap& itemsToAdd);
-    uint32_t HasSufficientItems(const U32U32UnorderedMap& requiredItems);
-    uint32_t RemoveItems(const U32U32UnorderedMap& itemsToRemove);
+    uint32_t HasEnoughSpace(const ItemCountMap& itemsToAdd);
+    uint32_t HasSufficientItems(const ItemCountMap& requiredItems);
+    uint32_t RemoveItems(const ItemCountMap& itemsToRemove);
     uint32_t RemoveItemByPos(const RemoveItemByPosParam& param);
 
     bool IsFull() const { return items_.size() >= size(); }
