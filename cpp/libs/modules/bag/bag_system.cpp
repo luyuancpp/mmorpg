@@ -530,16 +530,6 @@ std::size_t Bag::CalculateStackGridSize(std::size_t total_size, std::size_t max_
 	return (total_size + max_statck_size - 1) / max_statck_size;
 }
 
-void Bag::ToString()
-{
-	std::string contex;
-	for (auto& pos : pos_)
-	{
-		contex +=  GetItemBaseByGuid(pos.second)->ShortDebugString() + "\n";
-	}
-	LOG_INFO << contex << "\n\n--------------";
-}
-
 uint32_t Bag::OnNewGrid(Guid guid)
 {
 	const auto gridSize = size();

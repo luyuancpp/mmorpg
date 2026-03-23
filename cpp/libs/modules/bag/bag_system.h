@@ -71,7 +71,6 @@ public:
 
     void Neaten();
     void Unlock(std::size_t additionalSize);
-    void ToString();
 
     static Guid LastGeneratorItemGuid();
 

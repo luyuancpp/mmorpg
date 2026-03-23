@@ -20,5 +20,4 @@ public:
     static void GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSelf);
     static void GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites);
     static void UpdateLogGridSize(double delta);
-    static void ClearEmptyGrids();
 };

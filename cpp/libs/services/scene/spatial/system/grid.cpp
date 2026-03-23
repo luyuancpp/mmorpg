@@ -137,19 +137,3 @@ void GridSystem::UpdateLogGridSize(double deltaTime) {
         }
     }
 }
-
-void GridSystem::ClearEmptyGrids() {
-    std::vector<absl::uint128> destroyEntities;
-    for (auto&& [_, gridList] : tlsRegistryManager.actorRegistry.view<SceneGridListComp>().each()) {
-        destroyEntities.clear();
-        for (auto& it : gridList) {
-            if (it.second.entities.empty()) {
-                destroyEntities.emplace_back(it.first);
-            }
-        }
-
-        for (auto&& it : destroyEntities) {
-            gridList.erase(it);
-        }
-    }
-}
