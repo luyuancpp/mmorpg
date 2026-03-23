@@ -4,8 +4,6 @@
 #include "engine/core/type_define/type_define.h"
 #include "engine/core/node/constants/node_constants.h"
 
-#include "proto/common/base/common.pb.h"
-#include "engine/thread_context/registry_manager.h"
 #include "proto/common/component/game_node_comp.pb.h"
 
 using ScenePlayers = EntityUnorderedSet; // weak refs; decouples players from scenes
@@ -44,21 +42,6 @@ public:
 		static const EntityUnorderedSet emptySet;
 		auto it = scenesByConfigId.find(configId);
 		return it != scenesByConfigId.end() ? it->second : emptySet;
-	}
-
-	void AddScene(entt::entity sceneEntity) {
-		const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneInfoComp>(sceneEntity);
-		scenesByConfigId[sceneInfo.scene_confid()].emplace(sceneEntity);
-	}
-
-	void RemoveScene(entt::entity sceneEntity) {
-		const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneInfoComp>(sceneEntity);
-		auto it = scenesByConfigId.find(sceneInfo.scene_confid());
-		if (it != scenesByConfigId.end()) {
-			it->second.erase(sceneEntity);
-		}
-
-		DestroyEntity(tlsRegistryManager.sceneRegistry, sceneEntity);
 	}
 
 private:
