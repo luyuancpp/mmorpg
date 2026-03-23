@@ -2,11 +2,11 @@ syntax = "proto3";
 
 
 
-message PlayerSkillPBComponent {
+message PlayerSkillComp {
   uint64 id = 1; 
   uint32 skill_table_id = 2; 
 }
 
-message PlayerSkillListPBComponent {
-  repeated PlayerSkillPBComponent skill_list = 1;
+message PlayerSkillListComp {
+  repeated PlayerSkillComp skill_list = 1;
 }

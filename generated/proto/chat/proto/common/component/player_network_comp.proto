@@ -1,7 +1,7 @@
 syntax = "proto3";
 option go_package = "chat/proto/common/component";
 
-message PlayerSessionSnapshotPBComp {
+message PlayerSessionSnapshotComp {
     uint64 player_id = 1;
     uint64 gate_session_id = 2;
 	map<uint32, uint32> node_id = 3;

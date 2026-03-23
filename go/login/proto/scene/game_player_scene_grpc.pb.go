@@ -31,7 +31,7 @@ const (
 type SceneScenePlayerClient interface {
 	EnterScene(ctx context.Context, in *GsEnterSceneRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	LeaveScene(ctx context.Context, in *GsLeaveSceneRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	EnterSceneS2C(ctx context.Context, in *EnterSceneS2CRequest, opts ...grpc.CallOption) (*EnterScenerS2CResponse, error)
+	EnterSceneS2C(ctx context.Context, in *EnterSceneS2CRequest, opts ...grpc.CallOption) (*EnterSceneS2CResponse, error)
 }
 
 type sceneScenePlayerClient struct {
@@ -62,9 +62,9 @@ func (c *sceneScenePlayerClient) LeaveScene(ctx context.Context, in *GsLeaveScen
 	return out, nil
 }
 
-func (c *sceneScenePlayerClient) EnterSceneS2C(ctx context.Context, in *EnterSceneS2CRequest, opts ...grpc.CallOption) (*EnterScenerS2CResponse, error) {
+func (c *sceneScenePlayerClient) EnterSceneS2C(ctx context.Context, in *EnterSceneS2CRequest, opts ...grpc.CallOption) (*EnterSceneS2CResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EnterScenerS2CResponse)
+	out := new(EnterSceneS2CResponse)
 	err := c.cc.Invoke(ctx, SceneScenePlayer_EnterSceneS2C_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (c *sceneScenePlayerClient) EnterSceneS2C(ctx context.Context, in *EnterSce
 type SceneScenePlayerServer interface {
 	EnterScene(context.Context, *GsEnterSceneRequest) (*emptypb.Empty, error)
 	LeaveScene(context.Context, *GsLeaveSceneRequest) (*emptypb.Empty, error)
-	EnterSceneS2C(context.Context, *EnterSceneS2CRequest) (*EnterScenerS2CResponse, error)
+	EnterSceneS2C(context.Context, *EnterSceneS2CRequest) (*EnterSceneS2CResponse, error)
 	mustEmbedUnimplementedSceneScenePlayerServer()
 }
 
@@ -95,7 +95,7 @@ func (UnimplementedSceneScenePlayerServer) EnterScene(context.Context, *GsEnterS
 func (UnimplementedSceneScenePlayerServer) LeaveScene(context.Context, *GsLeaveSceneRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method LeaveScene not implemented")
 }
-func (UnimplementedSceneScenePlayerServer) EnterSceneS2C(context.Context, *EnterSceneS2CRequest) (*EnterScenerS2CResponse, error) {
+func (UnimplementedSceneScenePlayerServer) EnterSceneS2C(context.Context, *EnterSceneS2CRequest) (*EnterSceneS2CResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EnterSceneS2C not implemented")
 }
 func (UnimplementedSceneScenePlayerServer) mustEmbedUnimplementedSceneScenePlayerServer() {}

@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PlayerSkillPBComponent struct {
+type PlayerSkillComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	SkillTableId  uint32                 `protobuf:"varint,2,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
@@ -29,20 +29,20 @@ type PlayerSkillPBComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PlayerSkillPBComponent) Reset() {
-	*x = PlayerSkillPBComponent{}
+func (x *PlayerSkillComp) Reset() {
+	*x = PlayerSkillComp{}
 	mi := &file_proto_common_component_player_skill_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerSkillPBComponent) String() string {
+func (x *PlayerSkillComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerSkillPBComponent) ProtoMessage() {}
+func (*PlayerSkillComp) ProtoMessage() {}
 
-func (x *PlayerSkillPBComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerSkillComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_player_skill_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,46 +54,46 @@ func (x *PlayerSkillPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerSkillPBComponent.ProtoReflect.Descriptor instead.
-func (*PlayerSkillPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerSkillComp.ProtoReflect.Descriptor instead.
+func (*PlayerSkillComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_skill_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerSkillPBComponent) GetId() uint64 {
+func (x *PlayerSkillComp) GetId() uint64 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *PlayerSkillPBComponent) GetSkillTableId() uint32 {
+func (x *PlayerSkillComp) GetSkillTableId() uint32 {
 	if x != nil {
 		return x.SkillTableId
 	}
 	return 0
 }
 
-type PlayerSkillListPBComponent struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
-	SkillList     []*PlayerSkillPBComponent `protobuf:"bytes,1,rep,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
+type PlayerSkillListComp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SkillList     []*PlayerSkillComp     `protobuf:"bytes,1,rep,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PlayerSkillListPBComponent) Reset() {
-	*x = PlayerSkillListPBComponent{}
+func (x *PlayerSkillListComp) Reset() {
+	*x = PlayerSkillListComp{}
 	mi := &file_proto_common_component_player_skill_comp_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerSkillListPBComponent) String() string {
+func (x *PlayerSkillListComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerSkillListPBComponent) ProtoMessage() {}
+func (*PlayerSkillListComp) ProtoMessage() {}
 
-func (x *PlayerSkillListPBComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerSkillListComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_player_skill_comp_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -105,12 +105,12 @@ func (x *PlayerSkillListPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerSkillListPBComponent.ProtoReflect.Descriptor instead.
-func (*PlayerSkillListPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerSkillListComp.ProtoReflect.Descriptor instead.
+func (*PlayerSkillListComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_skill_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PlayerSkillListPBComponent) GetSkillList() []*PlayerSkillPBComponent {
+func (x *PlayerSkillListComp) GetSkillList() []*PlayerSkillComp {
 	if x != nil {
 		return x.SkillList
 	}
@@ -121,13 +121,13 @@ var File_proto_common_component_player_skill_comp_proto protoreflect.FileDescrip
 
 const file_proto_common_component_player_skill_comp_proto_rawDesc = "" +
 	"\n" +
-	".proto/common/component/player_skill_comp.proto\"N\n" +
-	"\x16PlayerSkillPBComponent\x12\x0e\n" +
+	".proto/common/component/player_skill_comp.proto\"G\n" +
+	"\x0fPlayerSkillComp\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12$\n" +
-	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\"T\n" +
-	"\x1aPlayerSkillListPBComponent\x126\n" +
+	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\"F\n" +
+	"\x13PlayerSkillListComp\x12/\n" +
 	"\n" +
-	"skill_list\x18\x01 \x03(\v2\x17.PlayerSkillPBComponentR\tskillListB&Z$scene_manager/proto/common/componentb\x06proto3"
+	"skill_list\x18\x01 \x03(\v2\x10.PlayerSkillCompR\tskillListB&Z$scene_manager/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_skill_comp_proto_rawDescOnce sync.Once
@@ -143,11 +143,11 @@ func file_proto_common_component_player_skill_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_player_skill_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_common_component_player_skill_comp_proto_goTypes = []any{
-	(*PlayerSkillPBComponent)(nil),     // 0: PlayerSkillPBComponent
-	(*PlayerSkillListPBComponent)(nil), // 1: PlayerSkillListPBComponent
+	(*PlayerSkillComp)(nil),     // 0: PlayerSkillComp
+	(*PlayerSkillListComp)(nil), // 1: PlayerSkillListComp
 }
 var file_proto_common_component_player_skill_comp_proto_depIdxs = []int32{
-	0, // 0: PlayerSkillListPBComponent.skill_list:type_name -> PlayerSkillPBComponent
+	0, // 0: PlayerSkillListComp.skill_list:type_name -> PlayerSkillComp
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

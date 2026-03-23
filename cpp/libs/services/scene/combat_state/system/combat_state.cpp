@@ -15,7 +15,7 @@
 // Add combat state
 void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) {
     const auto entityId = entt::to_entity(addEvent.actor_entity());
-    auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionPbComponent>(entityId);
+    auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
 
     if (addEvent.state_type() >= kActorMaxCombatStateType) {
         return;
@@ -24,7 +24,7 @@ void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) 
     auto stateIterator = combatStateCollection.mutable_states()->find(addEvent.state_type());
     if (stateIterator == combatStateCollection.mutable_states()->end()) {
         const auto [newStateIterator, wasInserted] = combatStateCollection.mutable_states()->emplace(
-            addEvent.state_type(), CombatStateDetailsPbComponent{});
+            addEvent.state_type(), CombatStateDetailsComp{});
         if (!wasInserted) {
             return; 
         }
@@ -39,7 +39,7 @@ void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) 
 // Remove combat state
 void CombatStateSystem::RemoveCombatState(const CombatStateRemovedPbEvent& removeEvent) {
     const auto entityId = entt::to_entity(removeEvent.actor_entity());
-    auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionPbComponent>(entityId);
+    auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
 
     if (removeEvent.state_type() >= kActorMaxCombatStateType) {
         return;
@@ -61,7 +61,7 @@ void CombatStateSystem::RemoveCombatState(const CombatStateRemovedPbEvent& remov
 
 uint32_t CombatStateSystem::ValidateSkillUsage(const entt::entity entityId, const uint32_t combatAction)
 {
-    const auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionPbComponent>(entityId);
+    const auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
 
     if (combatStateCollection.states().empty()) {
         return kSuccess;

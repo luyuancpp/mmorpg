@@ -26,7 +26,7 @@ const (
 type RegisterSceneRequest struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
 	SceneNodeId   uint32                        `protobuf:"varint,1,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
-	ScenesInfo    []*common.RoomInfoPBComponent `protobuf:"bytes,2,rep,name=scenes_info,json=scenesInfo,proto3" json:"scenes_info,omitempty"`
+	ScenesInfo    []*common.SceneInfoComp `protobuf:"bytes,2,rep,name=scenes_info,json=scenesInfo,proto3" json:"scenes_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,7 +68,7 @@ func (x *RegisterSceneRequest) GetSceneNodeId() uint32 {
 	return 0
 }
 
-func (x *RegisterSceneRequest) GetScenesInfo() []*common.RoomInfoPBComponent {
+func (x *RegisterSceneRequest) GetScenesInfo() []*common.SceneInfoComp {
 	if x != nil {
 		return x.ScenesInfo
 	}
@@ -178,7 +178,7 @@ const file_proto_service_cpp_rpc_centre_centre_scene_proto_rawDesc = "" +
 	"/proto/service/cpp/rpc/centre/centre_scene.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x18proto/common/empty.proto\x1a\x19proto/common/common.proto\"q\n" +
 	"\x14RegisterSceneRequest\x12\"\n" +
 	"\rscene_node_id\x18\x01 \x01(\rR\vsceneNodeId\x125\n" +
-	"\vscenes_info\x18\x02 \x03(\v2\x14.RoomInfoPBComponentR\n" +
+	"\vscenes_info\x18\x02 \x03(\v2\x14.SceneInfoCompR\n" +
 	"scenesInfo\"\x17\n" +
 	"\x15RegisterSceneResponse\"j\n" +
 	"\x16UnRegisterSceneRequest\x12\"\n" +
@@ -206,11 +206,11 @@ var file_proto_service_cpp_rpc_centre_centre_scene_proto_goTypes = []any{
 	(*RegisterSceneRequest)(nil),       // 0: RegisterSceneRequest
 	(*RegisterSceneResponse)(nil),      // 1: RegisterSceneResponse
 	(*UnRegisterSceneRequest)(nil),     // 2: UnRegisterSceneRequest
-	(*common.RoomInfoPBComponent)(nil), // 3: RoomInfoPBComponent
+	(*common.SceneInfoComp)(nil), // 3: SceneInfoComp
 	(*common.Empty)(nil),               // 4: Empty
 }
 var file_proto_service_cpp_rpc_centre_centre_scene_proto_depIdxs = []int32{
-	3, // 0: RegisterSceneRequest.scenes_info:type_name -> RoomInfoPBComponent
+	3, // 0: RegisterSceneRequest.scenes_info:type_name -> SceneInfoComp
 	0, // 1: CentreScene.RegisterScene:input_type -> RegisterSceneRequest
 	2, // 2: CentreScene.UnRegisterScene:input_type -> UnRegisterSceneRequest
 	1, // 3: CentreScene.RegisterScene:output_type -> RegisterSceneResponse

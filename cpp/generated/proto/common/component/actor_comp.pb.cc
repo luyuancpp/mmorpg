@@ -158,32 +158,32 @@ struct LocationDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LocationDefaultTypeInternal _Location_default_instance_;
 
-inline constexpr LevelPbComponent::Impl_::Impl_(
+inline constexpr LevelComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         level_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR LevelPbComponent::LevelPbComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR LevelComp::LevelComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(LevelPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(LevelComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct LevelPbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR LevelPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~LevelPbComponentDefaultTypeInternal() {}
+struct LevelCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LevelCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LevelCompDefaultTypeInternal() {}
   union {
-    LevelPbComponent _instance;
+    LevelComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LevelPbComponentDefaultTypeInternal _LevelPbComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LevelCompDefaultTypeInternal _LevelComp_default_instance_;
 
-inline constexpr BaseAttributesPbComponent::Impl_::Impl_(
+inline constexpr BaseAttributesComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         strength_{::uint64_t{0u}},
@@ -195,42 +195,42 @@ inline constexpr BaseAttributesPbComponent::Impl_::Impl_(
         resistance_{::uint64_t{0u}} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR BaseAttributesPbComponent::BaseAttributesPbComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR BaseAttributesComp::BaseAttributesComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(BaseAttributesPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(BaseAttributesComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct BaseAttributesPbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR BaseAttributesPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~BaseAttributesPbComponentDefaultTypeInternal() {}
+struct BaseAttributesCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BaseAttributesCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BaseAttributesCompDefaultTypeInternal() {}
   union {
-    BaseAttributesPbComponent _instance;
+    BaseAttributesComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BaseAttributesPbComponentDefaultTypeInternal _BaseAttributesPbComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BaseAttributesCompDefaultTypeInternal _BaseAttributesComp_default_instance_;
 template <typename>
-PROTOBUF_CONSTEXPR ActorStatePbComponent_StateListEntry_DoNotUse::ActorStatePbComponent_StateListEntry_DoNotUse(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ActorStateComp_StateListEntry_DoNotUse::ActorStateComp_StateListEntry_DoNotUse(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ActorStatePbComponent_StateListEntry_DoNotUse::MapEntry(ActorStatePbComponent_StateListEntry_DoNotUse_class_data_.base()){}
+    : ActorStateComp_StateListEntry_DoNotUse::MapEntry(ActorStateComp_StateListEntry_DoNotUse_class_data_.base()){}
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ActorStatePbComponent_StateListEntry_DoNotUse::MapEntry() {
+    : ActorStateComp_StateListEntry_DoNotUse::MapEntry() {
 }
 #endif  // PROTOBUF_CUSTOM_VTABLE
-struct ActorStatePbComponent_StateListEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ActorStatePbComponent_StateListEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ActorStatePbComponent_StateListEntry_DoNotUseDefaultTypeInternal() {}
+struct ActorStateComp_StateListEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ActorStateComp_StateListEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ActorStateComp_StateListEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    ActorStatePbComponent_StateListEntry_DoNotUse _instance;
+    ActorStateComp_StateListEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ActorStatePbComponent_StateListEntry_DoNotUseDefaultTypeInternal _ActorStatePbComponent_StateListEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ActorStateComp_StateListEntry_DoNotUseDefaultTypeInternal _ActorStateComp_StateListEntry_DoNotUse_default_instance_;
 
 inline constexpr Acceleration::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -286,30 +286,30 @@ struct TransformDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TransformDefaultTypeInternal _Transform_default_instance_;
 
-inline constexpr ActorStatePbComponent::Impl_::Impl_(
+inline constexpr ActorStateComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : state_list_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR ActorStatePbComponent::ActorStatePbComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ActorStateComp::ActorStateComp(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(ActorStatePbComponent_class_data_.base()),
+    : ::google::protobuf::Message(ActorStateComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct ActorStatePbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ActorStatePbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ActorStatePbComponentDefaultTypeInternal() {}
+struct ActorStateCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ActorStateCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ActorStateCompDefaultTypeInternal() {}
   union {
-    ActorStatePbComponent _instance;
+    ActorStateComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ActorStatePbComponentDefaultTypeInternal _ActorStatePbComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ActorStateCompDefaultTypeInternal _ActorStateComp_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -377,15 +377,15 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::ViewRadius, _impl_.radius_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::BaseAttributesPbComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesComp, _impl_._has_bits_),
         10, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::BaseAttributesPbComponent, _impl_.strength_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributesPbComponent, _impl_.stamina_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributesPbComponent, _impl_.health_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributesPbComponent, _impl_.mana_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributesPbComponent, _impl_.critchance_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributesPbComponent, _impl_.armor_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributesPbComponent, _impl_.resistance_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesComp, _impl_.strength_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesComp, _impl_.stamina_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesComp, _impl_.health_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesComp, _impl_.mana_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesComp, _impl_.critchance_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesComp, _impl_.armor_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesComp, _impl_.resistance_),
         0,
         1,
         2,
@@ -394,19 +394,19 @@ const ::uint32_t
         5,
         6,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::LevelPbComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::LevelComp, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::LevelPbComponent, _impl_.level_),
+        PROTOBUF_FIELD_OFFSET(::LevelComp, _impl_.level_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ActorStatePbComponent_StateListEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ActorStateComp_StateListEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::ActorStatePbComponent_StateListEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::ActorStatePbComponent_StateListEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::ActorStateComp_StateListEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::ActorStateComp_StateListEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x000, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ActorStatePbComponent, _impl_.state_list_),
+        PROTOBUF_FIELD_OFFSET(::ActorStateComp, _impl_.state_list_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -418,10 +418,10 @@ static const ::_pbi::MigrationSchema
         {36, sizeof(::Velocity)},
         {45, sizeof(::Acceleration)},
         {54, sizeof(::ViewRadius)},
-        {59, sizeof(::BaseAttributesPbComponent)},
-        {76, sizeof(::LevelPbComponent)},
-        {81, sizeof(::ActorStatePbComponent_StateListEntry_DoNotUse)},
-        {88, sizeof(::ActorStatePbComponent)},
+        {59, sizeof(::BaseAttributesComp)},
+        {76, sizeof(::LevelComp)},
+        {81, sizeof(::ActorStateComp_StateListEntry_DoNotUse)},
+        {88, sizeof(::ActorStateComp)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_Location_default_instance_._instance,
@@ -431,10 +431,10 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_Velocity_default_instance_._instance,
     &::_Acceleration_default_instance_._instance,
     &::_ViewRadius_default_instance_._instance,
-    &::_BaseAttributesPbComponent_default_instance_._instance,
-    &::_LevelPbComponent_default_instance_._instance,
-    &::_ActorStatePbComponent_StateListEntry_DoNotUse_default_instance_._instance,
-    &::_ActorStatePbComponent_default_instance_._instance,
+    &::_BaseAttributesComp_default_instance_._instance,
+    &::_LevelComp_default_instance_._instance,
+    &::_ActorStateComp_StateListEntry_DoNotUse_default_instance_._instance,
+    &::_ActorStateComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -448,15 +448,15 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fcomp_2
     "\n\005scale\030\003 \001(\0132\006.Scale\"+\n\010Velocity\022\t\n\001x\030\001"
     " \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Accelerati"
     "on\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"\034\n\nV"
-    "iewRadius\022\016\n\006radius\030\001 \001(\001\"\223\001\n\031BaseAttrib"
-    "utesPbComponent\022\020\n\010strength\030\001 \001(\004\022\017\n\007sta"
-    "mina\030\002 \001(\004\022\016\n\006health\030\003 \001(\004\022\014\n\004mana\030\004 \001(\004"
-    "\022\022\n\ncritchance\030\005 \001(\004\022\r\n\005armor\030\006 \001(\004\022\022\n\nr"
-    "esistance\030\007 \001(\004\"!\n\020LevelPbComponent\022\r\n\005l"
-    "evel\030\001 \001(\r\"\204\001\n\025ActorStatePbComponent\0229\n\n"
-    "state_list\030\001 \003(\0132%.ActorStatePbComponent"
-    ".StateListEntry\0320\n\016StateListEntry\022\013\n\003key"
-    "\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001b\006proto3"
+    "iewRadius\022\016\n\006radius\030\001 \001(\001\"\214\001\n\022BaseAttrib"
+    "utesComp\022\020\n\010strength\030\001 \001(\004\022\017\n\007stamina\030\002 "
+    "\001(\004\022\016\n\006health\030\003 \001(\004\022\014\n\004mana\030\004 \001(\004\022\022\n\ncri"
+    "tchance\030\005 \001(\004\022\r\n\005armor\030\006 \001(\004\022\022\n\nresistan"
+    "ce\030\007 \001(\004\"\032\n\tLevelComp\022\r\n\005level\030\001 \001(\r\"v\n\016"
+    "ActorStateComp\0222\n\nstate_list\030\001 \003(\0132\036.Act"
+    "orStateComp.StateListEntry\0320\n\016StateListE"
+    "ntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001b\006pr"
+    "oto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto_deps[1] = {
@@ -466,7 +466,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2factor_5fc
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    753,
+    724,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
     "proto/common/component/actor_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto_once,
@@ -2590,27 +2590,27 @@ void ViewRadius::InternalSwap(ViewRadius* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
 }
 // ===================================================================
 
-class BaseAttributesPbComponent::_Internal {
+class BaseAttributesComp::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<BaseAttributesPbComponent>()._impl_._has_bits_);
+      decltype(::std::declval<BaseAttributesComp>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_._has_bits_);
 };
 
-BaseAttributesPbComponent::BaseAttributesPbComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+BaseAttributesComp::BaseAttributesComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BaseAttributesPbComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, BaseAttributesComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:BaseAttributesPbComponent)
+  // @@protoc_insertion_point(arena_constructor:BaseAttributesComp)
 }
-BaseAttributesPbComponent::BaseAttributesPbComponent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BaseAttributesPbComponent& from)
+BaseAttributesComp::BaseAttributesComp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BaseAttributesComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BaseAttributesPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(arena, BaseAttributesComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -2618,12 +2618,12 @@ BaseAttributesPbComponent::BaseAttributesPbComponent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE BaseAttributesPbComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE BaseAttributesComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void BaseAttributesPbComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void BaseAttributesComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, strength_),
@@ -2632,64 +2632,64 @@ inline void BaseAttributesPbComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABL
                offsetof(Impl_, strength_) +
                sizeof(Impl_::resistance_));
 }
-BaseAttributesPbComponent::~BaseAttributesPbComponent() {
-  // @@protoc_insertion_point(destructor:BaseAttributesPbComponent)
+BaseAttributesComp::~BaseAttributesComp() {
+  // @@protoc_insertion_point(destructor:BaseAttributesComp)
   SharedDtor(*this);
 }
-inline void BaseAttributesPbComponent::SharedDtor(MessageLite& self) {
-  BaseAttributesPbComponent& this_ = static_cast<BaseAttributesPbComponent&>(self);
+inline void BaseAttributesComp::SharedDtor(MessageLite& self) {
+  BaseAttributesComp& this_ = static_cast<BaseAttributesComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL BaseAttributesPbComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL BaseAttributesComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) BaseAttributesPbComponent(arena);
+  return ::new (mem) BaseAttributesComp(arena);
 }
-constexpr auto BaseAttributesPbComponent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(BaseAttributesPbComponent),
-                                            alignof(BaseAttributesPbComponent));
+constexpr auto BaseAttributesComp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(BaseAttributesComp),
+                                            alignof(BaseAttributesComp));
 }
-constexpr auto BaseAttributesPbComponent::InternalGenerateClassData_() {
+constexpr auto BaseAttributesComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_BaseAttributesPbComponent_default_instance_._instance,
+          &_BaseAttributesComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &BaseAttributesPbComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<BaseAttributesPbComponent>(),
+          &BaseAttributesComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BaseAttributesComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &BaseAttributesPbComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<BaseAttributesPbComponent>(), &BaseAttributesPbComponent::ByteSizeLong,
-              &BaseAttributesPbComponent::_InternalSerialize,
+          &BaseAttributesComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BaseAttributesComp>(), &BaseAttributesComp::ByteSizeLong,
+              &BaseAttributesComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_._cached_size_),
           false,
       },
-      &BaseAttributesPbComponent::kDescriptorMethods,
+      &BaseAttributesComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull BaseAttributesPbComponent_class_data_ =
-        BaseAttributesPbComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull BaseAttributesComp_class_data_ =
+        BaseAttributesComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-BaseAttributesPbComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&BaseAttributesPbComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(BaseAttributesPbComponent_class_data_.tc_table);
-  return BaseAttributesPbComponent_class_data_.base();
+BaseAttributesComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BaseAttributesComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BaseAttributesComp_class_data_.tc_table);
+  return BaseAttributesComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<3, 7, 0, 0, 2>
-BaseAttributesPbComponent::_table_ = {
+BaseAttributesComp::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_._has_bits_),
     0, // no _extensions_
     7, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -2698,66 +2698,66 @@ BaseAttributesPbComponent::_table_ = {
     7,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    BaseAttributesPbComponent_class_data_.base(),
+    BaseAttributesComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::BaseAttributesPbComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::BaseAttributesComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 strength = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPbComponent, _impl_.strength_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.strength_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesComp, _impl_.strength_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.strength_)}},
     // uint64 stamina = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPbComponent, _impl_.stamina_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.stamina_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesComp, _impl_.stamina_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.stamina_)}},
     // uint64 health = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPbComponent, _impl_.health_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.health_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesComp, _impl_.health_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.health_)}},
     // uint64 mana = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPbComponent, _impl_.mana_), 3>(),
-     {32, 3, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.mana_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesComp, _impl_.mana_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.mana_)}},
     // uint64 critchance = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPbComponent, _impl_.critchance_), 4>(),
-     {40, 4, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.critchance_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesComp, _impl_.critchance_), 4>(),
+     {40, 4, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.critchance_)}},
     // uint64 armor = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPbComponent, _impl_.armor_), 5>(),
-     {48, 5, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.armor_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesComp, _impl_.armor_), 5>(),
+     {48, 5, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.armor_)}},
     // uint64 resistance = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPbComponent, _impl_.resistance_), 6>(),
-     {56, 6, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.resistance_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesComp, _impl_.resistance_), 6>(),
+     {56, 6, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.resistance_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 strength = 1;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.strength_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.strength_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 stamina = 2;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.stamina_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.stamina_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 health = 3;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.health_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.health_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 mana = 4;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.mana_), _Internal::kHasBitsOffset + 3, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.mana_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 critchance = 5;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.critchance_), _Internal::kHasBitsOffset + 4, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.critchance_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 armor = 6;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.armor_), _Internal::kHasBitsOffset + 5, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.armor_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 resistance = 7;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.resistance_), _Internal::kHasBitsOffset + 6, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.resistance_), _Internal::kHasBitsOffset + 6, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void BaseAttributesPbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:BaseAttributesPbComponent)
+PROTOBUF_NOINLINE void BaseAttributesComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:BaseAttributesComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -2774,17 +2774,17 @@ PROTOBUF_NOINLINE void BaseAttributesPbComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL BaseAttributesPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL BaseAttributesComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const BaseAttributesPbComponent& this_ = static_cast<const BaseAttributesPbComponent&>(base);
+  const BaseAttributesComp& this_ = static_cast<const BaseAttributesComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL BaseAttributesPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL BaseAttributesComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const BaseAttributesPbComponent& this_ = *this;
+  const BaseAttributesComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:BaseAttributesPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:BaseAttributesComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -2856,18 +2856,18 @@ PROTOBUF_NOINLINE void BaseAttributesPbComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:BaseAttributesPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:BaseAttributesComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t BaseAttributesPbComponent::ByteSizeLong(const MessageLite& base) {
-  const BaseAttributesPbComponent& this_ = static_cast<const BaseAttributesPbComponent&>(base);
+::size_t BaseAttributesComp::ByteSizeLong(const MessageLite& base) {
+  const BaseAttributesComp& this_ = static_cast<const BaseAttributesComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t BaseAttributesPbComponent::ByteSizeLong() const {
-  const BaseAttributesPbComponent& this_ = *this;
+::size_t BaseAttributesComp::ByteSizeLong() const {
+  const BaseAttributesComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:BaseAttributesPbComponent)
+  // @@protoc_insertion_point(message_byte_size_start:BaseAttributesComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -2931,10 +2931,10 @@ PROTOBUF_NOINLINE void BaseAttributesPbComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void BaseAttributesPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<BaseAttributesPbComponent*>(&to_msg);
-  auto& from = static_cast<const BaseAttributesPbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:BaseAttributesPbComponent)
+void BaseAttributesComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BaseAttributesComp*>(&to_msg);
+  auto& from = static_cast<const BaseAttributesComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:BaseAttributesComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2981,52 +2981,52 @@ void BaseAttributesPbComponent::MergeImpl(::google::protobuf::MessageLite& to_ms
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void BaseAttributesPbComponent::CopyFrom(const BaseAttributesPbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:BaseAttributesPbComponent)
+void BaseAttributesComp::CopyFrom(const BaseAttributesComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:BaseAttributesComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void BaseAttributesPbComponent::InternalSwap(BaseAttributesPbComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void BaseAttributesComp::InternalSwap(BaseAttributesComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.resistance_)
-      + sizeof(BaseAttributesPbComponent::_impl_.resistance_)
-      - PROTOBUF_FIELD_OFFSET(BaseAttributesPbComponent, _impl_.strength_)>(
+      PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.resistance_)
+      + sizeof(BaseAttributesComp::_impl_.resistance_)
+      - PROTOBUF_FIELD_OFFSET(BaseAttributesComp, _impl_.strength_)>(
           reinterpret_cast<char*>(&_impl_.strength_),
           reinterpret_cast<char*>(&other->_impl_.strength_));
 }
 
-::google::protobuf::Metadata BaseAttributesPbComponent::GetMetadata() const {
+::google::protobuf::Metadata BaseAttributesComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class LevelPbComponent::_Internal {
+class LevelComp::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<LevelPbComponent>()._impl_._has_bits_);
+      decltype(::std::declval<LevelComp>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(LevelPbComponent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(LevelComp, _impl_._has_bits_);
 };
 
-LevelPbComponent::LevelPbComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+LevelComp::LevelComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, LevelPbComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, LevelComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:LevelPbComponent)
+  // @@protoc_insertion_point(arena_constructor:LevelComp)
 }
-LevelPbComponent::LevelPbComponent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const LevelPbComponent& from)
+LevelComp::LevelComp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const LevelComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, LevelPbComponent_class_data_.base()),
+    : ::google::protobuf::Message(arena, LevelComp_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -3034,73 +3034,73 @@ LevelPbComponent::LevelPbComponent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE LevelPbComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE LevelComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void LevelPbComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void LevelComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.level_ = {};
 }
-LevelPbComponent::~LevelPbComponent() {
-  // @@protoc_insertion_point(destructor:LevelPbComponent)
+LevelComp::~LevelComp() {
+  // @@protoc_insertion_point(destructor:LevelComp)
   SharedDtor(*this);
 }
-inline void LevelPbComponent::SharedDtor(MessageLite& self) {
-  LevelPbComponent& this_ = static_cast<LevelPbComponent&>(self);
+inline void LevelComp::SharedDtor(MessageLite& self) {
+  LevelComp& this_ = static_cast<LevelComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL LevelPbComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL LevelComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) LevelPbComponent(arena);
+  return ::new (mem) LevelComp(arena);
 }
-constexpr auto LevelPbComponent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LevelPbComponent),
-                                            alignof(LevelPbComponent));
+constexpr auto LevelComp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LevelComp),
+                                            alignof(LevelComp));
 }
-constexpr auto LevelPbComponent::InternalGenerateClassData_() {
+constexpr auto LevelComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_LevelPbComponent_default_instance_._instance,
+          &_LevelComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &LevelPbComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<LevelPbComponent>(),
+          &LevelComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<LevelComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &LevelPbComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<LevelPbComponent>(), &LevelPbComponent::ByteSizeLong,
-              &LevelPbComponent::_InternalSerialize,
+          &LevelComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<LevelComp>(), &LevelComp::ByteSizeLong,
+              &LevelComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(LevelPbComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(LevelComp, _impl_._cached_size_),
           false,
       },
-      &LevelPbComponent::kDescriptorMethods,
+      &LevelComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull LevelPbComponent_class_data_ =
-        LevelPbComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull LevelComp_class_data_ =
+        LevelComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-LevelPbComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&LevelPbComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(LevelPbComponent_class_data_.tc_table);
-  return LevelPbComponent_class_data_.base();
+LevelComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&LevelComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(LevelComp_class_data_.tc_table);
+  return LevelComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
-LevelPbComponent::_table_ = {
+LevelComp::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(LevelPbComponent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(LevelComp, _impl_._has_bits_),
     0, // no _extensions_
     1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -3109,29 +3109,29 @@ LevelPbComponent::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    LevelPbComponent_class_data_.base(),
+    LevelComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::LevelPbComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::LevelComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 level = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LevelPbComponent, _impl_.level_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(LevelPbComponent, _impl_.level_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LevelComp, _impl_.level_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(LevelComp, _impl_.level_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 level = 1;
-    {PROTOBUF_FIELD_OFFSET(LevelPbComponent, _impl_.level_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(LevelComp, _impl_.level_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void LevelPbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:LevelPbComponent)
+PROTOBUF_NOINLINE void LevelComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:LevelComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -3143,17 +3143,17 @@ PROTOBUF_NOINLINE void LevelPbComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL LevelPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL LevelComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const LevelPbComponent& this_ = static_cast<const LevelPbComponent&>(base);
+  const LevelComp& this_ = static_cast<const LevelComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL LevelPbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL LevelComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const LevelPbComponent& this_ = *this;
+  const LevelComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:LevelPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:LevelComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -3171,18 +3171,18 @@ PROTOBUF_NOINLINE void LevelPbComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:LevelPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:LevelComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t LevelPbComponent::ByteSizeLong(const MessageLite& base) {
-  const LevelPbComponent& this_ = static_cast<const LevelPbComponent&>(base);
+::size_t LevelComp::ByteSizeLong(const MessageLite& base) {
+  const LevelComp& this_ = static_cast<const LevelComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t LevelPbComponent::ByteSizeLong() const {
-  const LevelPbComponent& this_ = *this;
+::size_t LevelComp::ByteSizeLong() const {
+  const LevelComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:LevelPbComponent)
+  // @@protoc_insertion_point(message_byte_size_start:LevelComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -3203,10 +3203,10 @@ PROTOBUF_NOINLINE void LevelPbComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void LevelPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<LevelPbComponent*>(&to_msg);
-  auto& from = static_cast<const LevelPbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:LevelPbComponent)
+void LevelComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LevelComp*>(&to_msg);
+  auto& from = static_cast<const LevelComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:LevelComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -3221,83 +3221,83 @@ void LevelPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void LevelPbComponent::CopyFrom(const LevelPbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:LevelPbComponent)
+void LevelComp::CopyFrom(const LevelComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:LevelComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void LevelPbComponent::InternalSwap(LevelPbComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void LevelComp::InternalSwap(LevelComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   swap(_impl_.level_, other->_impl_.level_);
 }
 
-::google::protobuf::Metadata LevelPbComponent::GetMetadata() const {
+::google::protobuf::Metadata LevelComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-ActorStatePbComponent_StateListEntry_DoNotUse::ActorStatePbComponent_StateListEntry_DoNotUse()
-    : SuperType(ActorStatePbComponent_StateListEntry_DoNotUse_class_data_.base()) {}
-ActorStatePbComponent_StateListEntry_DoNotUse::ActorStatePbComponent_StateListEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-    : SuperType(arena, ActorStatePbComponent_StateListEntry_DoNotUse_class_data_.base()) {}
+ActorStateComp_StateListEntry_DoNotUse::ActorStateComp_StateListEntry_DoNotUse()
+    : SuperType(ActorStateComp_StateListEntry_DoNotUse_class_data_.base()) {}
+ActorStateComp_StateListEntry_DoNotUse::ActorStateComp_StateListEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+    : SuperType(arena, ActorStateComp_StateListEntry_DoNotUse_class_data_.base()) {}
 #else   // PROTOBUF_CUSTOM_VTABLE
-ActorStatePbComponent_StateListEntry_DoNotUse::ActorStatePbComponent_StateListEntry_DoNotUse() : SuperType() {}
-ActorStatePbComponent_StateListEntry_DoNotUse::ActorStatePbComponent_StateListEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
+ActorStateComp_StateListEntry_DoNotUse::ActorStateComp_StateListEntry_DoNotUse() : SuperType() {}
+ActorStateComp_StateListEntry_DoNotUse::ActorStateComp_StateListEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
 #endif  // PROTOBUF_CUSTOM_VTABLE
-inline void* PROTOBUF_NONNULL ActorStatePbComponent_StateListEntry_DoNotUse::PlacementNew_(
+inline void* PROTOBUF_NONNULL ActorStateComp_StateListEntry_DoNotUse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ActorStatePbComponent_StateListEntry_DoNotUse(arena);
+  return ::new (mem) ActorStateComp_StateListEntry_DoNotUse(arena);
 }
-constexpr auto ActorStatePbComponent_StateListEntry_DoNotUse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ActorStatePbComponent_StateListEntry_DoNotUse),
-                                            alignof(ActorStatePbComponent_StateListEntry_DoNotUse));
+constexpr auto ActorStateComp_StateListEntry_DoNotUse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ActorStateComp_StateListEntry_DoNotUse),
+                                            alignof(ActorStateComp_StateListEntry_DoNotUse));
 }
-constexpr auto ActorStatePbComponent_StateListEntry_DoNotUse::InternalGenerateClassData_() {
+constexpr auto ActorStateComp_StateListEntry_DoNotUse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ActorStatePbComponent_StateListEntry_DoNotUse_default_instance_._instance,
+          &_ActorStateComp_StateListEntry_DoNotUse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ActorStatePbComponent_StateListEntry_DoNotUse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ActorStatePbComponent_StateListEntry_DoNotUse>(),
+          &ActorStateComp_StateListEntry_DoNotUse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ActorStateComp_StateListEntry_DoNotUse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ActorStatePbComponent_StateListEntry_DoNotUse::SharedDtor,
-          static_cast<void (::google::protobuf::MessageLite::*)()>(&ActorStatePbComponent_StateListEntry_DoNotUse::ClearImpl),
+          &ActorStateComp_StateListEntry_DoNotUse::SharedDtor,
+          static_cast<void (::google::protobuf::MessageLite::*)()>(&ActorStateComp_StateListEntry_DoNotUse::ClearImpl),
               ::google::protobuf::Message::ByteSizeLongImpl, ::google::protobuf::Message::_InternalSerializeImpl
               ,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ActorStatePbComponent_StateListEntry_DoNotUse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ActorStateComp_StateListEntry_DoNotUse, _impl_._cached_size_),
           false,
       },
-      &ActorStatePbComponent_StateListEntry_DoNotUse::kDescriptorMethods,
+      &ActorStateComp_StateListEntry_DoNotUse::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ActorStatePbComponent_StateListEntry_DoNotUse_class_data_ =
-        ActorStatePbComponent_StateListEntry_DoNotUse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ActorStateComp_StateListEntry_DoNotUse_class_data_ =
+        ActorStateComp_StateListEntry_DoNotUse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ActorStatePbComponent_StateListEntry_DoNotUse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ActorStatePbComponent_StateListEntry_DoNotUse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ActorStatePbComponent_StateListEntry_DoNotUse_class_data_.tc_table);
-  return ActorStatePbComponent_StateListEntry_DoNotUse_class_data_.base();
+ActorStateComp_StateListEntry_DoNotUse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ActorStateComp_StateListEntry_DoNotUse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ActorStateComp_StateListEntry_DoNotUse_class_data_.tc_table);
+  return ActorStateComp_StateListEntry_DoNotUse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
-ActorStatePbComponent_StateListEntry_DoNotUse::_table_ = {
+ActorStateComp_StateListEntry_DoNotUse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(ActorStatePbComponent_StateListEntry_DoNotUse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ActorStateComp_StateListEntry_DoNotUse, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -3306,27 +3306,27 @@ ActorStatePbComponent_StateListEntry_DoNotUse::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    ActorStatePbComponent_StateListEntry_DoNotUse_class_data_.base(),
+    ActorStateComp_StateListEntry_DoNotUse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ActorStatePbComponent_StateListEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ActorStateComp_StateListEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // bool value = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ActorStatePbComponent_StateListEntry_DoNotUse, _impl_.value_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ActorStatePbComponent_StateListEntry_DoNotUse, _impl_.value_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ActorStateComp_StateListEntry_DoNotUse, _impl_.value_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ActorStateComp_StateListEntry_DoNotUse, _impl_.value_)}},
     // uint32 key = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ActorStatePbComponent_StateListEntry_DoNotUse, _impl_.key_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ActorStatePbComponent_StateListEntry_DoNotUse, _impl_.key_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ActorStateComp_StateListEntry_DoNotUse, _impl_.key_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ActorStateComp_StateListEntry_DoNotUse, _impl_.key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 key = 1;
-    {PROTOBUF_FIELD_OFFSET(ActorStatePbComponent_StateListEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ActorStateComp_StateListEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // bool value = 2;
-    {PROTOBUF_FIELD_OFFSET(ActorStatePbComponent_StateListEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(ActorStateComp_StateListEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   // no aux_entries
@@ -3335,123 +3335,123 @@ ActorStatePbComponent_StateListEntry_DoNotUse::_table_ = {
 };
 // ===================================================================
 
-class ActorStatePbComponent::_Internal {
+class ActorStateComp::_Internal {
  public:
 };
 
-ActorStatePbComponent::ActorStatePbComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ActorStateComp::ActorStateComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ActorStatePbComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ActorStateComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ActorStatePbComponent)
+  // @@protoc_insertion_point(arena_constructor:ActorStateComp)
 }
-PROTOBUF_NDEBUG_INLINE ActorStatePbComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ActorStateComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::ActorStatePbComponent& from_msg)
+    const ::ActorStateComp& from_msg)
       : state_list_{visibility, arena, from.state_list_},
         _cached_size_{0} {}
 
-ActorStatePbComponent::ActorStatePbComponent(
+ActorStateComp::ActorStateComp(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const ActorStatePbComponent& from)
+    const ActorStateComp& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ActorStatePbComponent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ActorStateComp_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  ActorStatePbComponent* const _this = this;
+  ActorStateComp* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:ActorStatePbComponent)
+  // @@protoc_insertion_point(copy_constructor:ActorStateComp)
 }
-PROTOBUF_NDEBUG_INLINE ActorStatePbComponent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ActorStateComp::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : state_list_{visibility, arena},
         _cached_size_{0} {}
 
-inline void ActorStatePbComponent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ActorStateComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-ActorStatePbComponent::~ActorStatePbComponent() {
-  // @@protoc_insertion_point(destructor:ActorStatePbComponent)
+ActorStateComp::~ActorStateComp() {
+  // @@protoc_insertion_point(destructor:ActorStateComp)
   SharedDtor(*this);
 }
-inline void ActorStatePbComponent::SharedDtor(MessageLite& self) {
-  ActorStatePbComponent& this_ = static_cast<ActorStatePbComponent&>(self);
+inline void ActorStateComp::SharedDtor(MessageLite& self) {
+  ActorStateComp& this_ = static_cast<ActorStateComp&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL ActorStatePbComponent::PlacementNew_(
+inline void* PROTOBUF_NONNULL ActorStateComp::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ActorStatePbComponent(arena);
+  return ::new (mem) ActorStateComp(arena);
 }
-constexpr auto ActorStatePbComponent::InternalNewImpl_() {
+constexpr auto ActorStateComp::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(ActorStatePbComponent, _impl_.state_list_) +
-          decltype(ActorStatePbComponent::_impl_.state_list_)::
+      PROTOBUF_FIELD_OFFSET(ActorStateComp, _impl_.state_list_) +
+          decltype(ActorStateComp::_impl_.state_list_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(ActorStatePbComponent, _impl_.state_list_) +
-          decltype(ActorStatePbComponent::_impl_.state_list_)::
+      PROTOBUF_FIELD_OFFSET(ActorStateComp, _impl_.state_list_) +
+          decltype(ActorStateComp::_impl_.state_list_)::
               InternalGetArenaOffsetAlt(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::CopyInit(
-        sizeof(ActorStatePbComponent), alignof(ActorStatePbComponent), *arena_bits);
+        sizeof(ActorStateComp), alignof(ActorStateComp), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&ActorStatePbComponent::PlacementNew_,
-                                 sizeof(ActorStatePbComponent),
-                                 alignof(ActorStatePbComponent));
+    return ::google::protobuf::internal::MessageCreator(&ActorStateComp::PlacementNew_,
+                                 sizeof(ActorStateComp),
+                                 alignof(ActorStateComp));
   }
 }
-constexpr auto ActorStatePbComponent::InternalGenerateClassData_() {
+constexpr auto ActorStateComp::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ActorStatePbComponent_default_instance_._instance,
+          &_ActorStateComp_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ActorStatePbComponent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ActorStatePbComponent>(),
+          &ActorStateComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ActorStateComp>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ActorStatePbComponent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<ActorStatePbComponent>(), &ActorStatePbComponent::ByteSizeLong,
-              &ActorStatePbComponent::_InternalSerialize,
+          &ActorStateComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ActorStateComp>(), &ActorStateComp::ByteSizeLong,
+              &ActorStateComp::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ActorStatePbComponent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ActorStateComp, _impl_._cached_size_),
           false,
       },
-      &ActorStatePbComponent::kDescriptorMethods,
+      &ActorStateComp::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ActorStatePbComponent_class_data_ =
-        ActorStatePbComponent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ActorStateComp_class_data_ =
+        ActorStateComp::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ActorStatePbComponent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ActorStatePbComponent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ActorStatePbComponent_class_data_.tc_table);
-  return ActorStatePbComponent_class_data_.base();
+ActorStateComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ActorStateComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ActorStateComp_class_data_.tc_table);
+  return ActorStateComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-ActorStatePbComponent::_table_ = {
+ActorStateComp::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -3462,11 +3462,11 @@ ActorStatePbComponent::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    ActorStatePbComponent_class_data_.base(),
+    ActorStateComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ActorStatePbComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ActorStateComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -3474,7 +3474,7 @@ ActorStatePbComponent::_table_ = {
     65535, 65535
   }}, {{
     // map<uint32, bool> state_list = 1;
-    {PROTOBUF_FIELD_OFFSET(ActorStatePbComponent, _impl_.state_list_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ActorStateComp, _impl_.state_list_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }},
   {{
@@ -3485,8 +3485,8 @@ ActorStatePbComponent::_table_ = {
   {{
   }},
 };
-PROTOBUF_NOINLINE void ActorStatePbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:ActorStatePbComponent)
+PROTOBUF_NOINLINE void ActorStateComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:ActorStateComp)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -3497,17 +3497,17 @@ PROTOBUF_NOINLINE void ActorStatePbComponent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ActorStatePbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ActorStateComp::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ActorStatePbComponent& this_ = static_cast<const ActorStatePbComponent&>(base);
+  const ActorStateComp& this_ = static_cast<const ActorStateComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ActorStatePbComponent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ActorStateComp::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ActorStatePbComponent& this_ = *this;
+  const ActorStateComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:ActorStatePbComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:ActorStateComp)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -3537,18 +3537,18 @@ PROTOBUF_NOINLINE void ActorStatePbComponent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ActorStatePbComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:ActorStateComp)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ActorStatePbComponent::ByteSizeLong(const MessageLite& base) {
-  const ActorStatePbComponent& this_ = static_cast<const ActorStatePbComponent&>(base);
+::size_t ActorStateComp::ByteSizeLong(const MessageLite& base) {
+  const ActorStateComp& this_ = static_cast<const ActorStateComp&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ActorStatePbComponent::ByteSizeLong() const {
-  const ActorStatePbComponent& this_ = *this;
+::size_t ActorStateComp::ByteSizeLong() const {
+  const ActorStateComp& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:ActorStatePbComponent)
+  // @@protoc_insertion_point(message_byte_size_start:ActorStateComp)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -3572,10 +3572,10 @@ PROTOBUF_NOINLINE void ActorStatePbComponent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void ActorStatePbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ActorStatePbComponent*>(&to_msg);
-  auto& from = static_cast<const ActorStatePbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:ActorStatePbComponent)
+void ActorStateComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ActorStateComp*>(&to_msg);
+  auto& from = static_cast<const ActorStateComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ActorStateComp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -3584,21 +3584,21 @@ void ActorStatePbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ActorStatePbComponent::CopyFrom(const ActorStatePbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ActorStatePbComponent)
+void ActorStateComp::CopyFrom(const ActorStateComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ActorStateComp)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void ActorStatePbComponent::InternalSwap(ActorStatePbComponent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ActorStateComp::InternalSwap(ActorStateComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.state_list_.InternalSwap(&other->_impl_.state_list_);
 }
 
-::google::protobuf::Metadata ActorStatePbComponent::GetMetadata() const {
+::google::protobuf::Metadata ActorStateComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -78,8 +78,8 @@ func (x *GsEnterSceneRequest) GetSceneId() uint64 {
 }
 
 type GsLeaveSceneRequest struct {
-	state           protoimpl.MessageState                `protogen:"open.v1"`
-	ChangeSceneInfo *component.ChangeSceneInfoPBComponent `protobuf:"bytes,2,opt,name=change_scene_info,json=changeSceneInfo,proto3" json:"change_scene_info,omitempty"`
+	state           protoimpl.MessageState         `protogen:"open.v1"`
+	ChangeSceneInfo *component.ChangeSceneInfoComp `protobuf:"bytes,2,opt,name=change_scene_info,json=changeSceneInfo,proto3" json:"change_scene_info,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -114,7 +114,7 @@ func (*GsLeaveSceneRequest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_game_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GsLeaveSceneRequest) GetChangeSceneInfo() *component.ChangeSceneInfoPBComponent {
+func (x *GsLeaveSceneRequest) GetChangeSceneInfo() *component.ChangeSceneInfoComp {
 	if x != nil {
 		return x.ChangeSceneInfo
 	}
@@ -157,27 +157,27 @@ func (*EnterSceneS2CRequest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_game_player_scene_proto_rawDescGZIP(), []int{2}
 }
 
-type EnterScenerS2CResponse struct {
+type EnterSceneS2CResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EnterScenerS2CResponse) Reset() {
-	*x = EnterScenerS2CResponse{}
+func (x *EnterSceneS2CResponse) Reset() {
+	*x = EnterSceneS2CResponse{}
 	mi := &file_proto_scene_game_player_scene_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EnterScenerS2CResponse) String() string {
+func (x *EnterSceneS2CResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EnterScenerS2CResponse) ProtoMessage() {}
+func (*EnterSceneS2CResponse) ProtoMessage() {}
 
-func (x *EnterScenerS2CResponse) ProtoReflect() protoreflect.Message {
+func (x *EnterSceneS2CResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_scene_game_player_scene_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -189,12 +189,12 @@ func (x *EnterScenerS2CResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EnterScenerS2CResponse.ProtoReflect.Descriptor instead.
-func (*EnterScenerS2CResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use EnterSceneS2CResponse.ProtoReflect.Descriptor instead.
+func (*EnterSceneS2CResponse) Descriptor() ([]byte, []int) {
 	return file_proto_scene_game_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *EnterScenerS2CResponse) GetErrorMessage() *base.TipInfoMessage {
+func (x *EnterSceneS2CResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -209,18 +209,18 @@ const file_proto_scene_game_player_scene_proto_rawDesc = "" +
 	"\x13GsEnterSceneRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x19\n" +
-	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"^\n" +
-	"\x13GsLeaveSceneRequest\x12G\n" +
-	"\x11change_scene_info\x18\x02 \x01(\v2\x1b.ChangeSceneInfoPBComponentR\x0fchangeSceneInfo\"\x16\n" +
-	"\x14EnterSceneS2CRequest\"N\n" +
-	"\x16EnterScenerS2CResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2\xd2\x01\n" +
+	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"W\n" +
+	"\x13GsLeaveSceneRequest\x12@\n" +
+	"\x11change_scene_info\x18\x02 \x01(\v2\x14.ChangeSceneInfoCompR\x0fchangeSceneInfo\"\x16\n" +
+	"\x14EnterSceneS2CRequest\"M\n" +
+	"\x15EnterSceneS2CResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2\xd1\x01\n" +
 	"\x10SceneScenePlayer\x12:\n" +
 	"\n" +
 	"EnterScene\x12\x14.GsEnterSceneRequest\x1a\x16.google.protobuf.Empty\x12:\n" +
 	"\n" +
-	"LeaveScene\x12\x14.GsLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
-	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x17.EnterScenerS2CResponse\x1a\x05\x80\xa8\xc3\x01\x01B\x1a\x98\xd4a\x03Z\x11robot/proto/scene\x80\x01\x01b\x06proto3"
+	"LeaveScene\x12\x14.GsLeaveSceneRequest\x1a\x16.google.protobuf.Empty\x12>\n" +
+	"\rEnterSceneS2C\x12\x15.EnterSceneS2CRequest\x1a\x16.EnterSceneS2CResponse\x1a\x05\x80\xa8\xc3\x01\x01B\x1a\x98\xd4a\x03Z\x11robot/proto/scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_game_player_scene_proto_rawDescOnce sync.Once
@@ -236,23 +236,23 @@ func file_proto_scene_game_player_scene_proto_rawDescGZIP() []byte {
 
 var file_proto_scene_game_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_scene_game_player_scene_proto_goTypes = []any{
-	(*GsEnterSceneRequest)(nil),                  // 0: GsEnterSceneRequest
-	(*GsLeaveSceneRequest)(nil),                  // 1: GsLeaveSceneRequest
-	(*EnterSceneS2CRequest)(nil),                 // 2: EnterSceneS2CRequest
-	(*EnterScenerS2CResponse)(nil),               // 3: EnterScenerS2CResponse
-	(*component.ChangeSceneInfoPBComponent)(nil), // 4: ChangeSceneInfoPBComponent
-	(*base.TipInfoMessage)(nil),                  // 5: TipInfoMessage
-	(*emptypb.Empty)(nil),                        // 6: google.protobuf.Empty
+	(*GsEnterSceneRequest)(nil),           // 0: GsEnterSceneRequest
+	(*GsLeaveSceneRequest)(nil),           // 1: GsLeaveSceneRequest
+	(*EnterSceneS2CRequest)(nil),          // 2: EnterSceneS2CRequest
+	(*EnterSceneS2CResponse)(nil),         // 3: EnterSceneS2CResponse
+	(*component.ChangeSceneInfoComp)(nil), // 4: ChangeSceneInfoComp
+	(*base.TipInfoMessage)(nil),           // 5: TipInfoMessage
+	(*emptypb.Empty)(nil),                 // 6: google.protobuf.Empty
 }
 var file_proto_scene_game_player_scene_proto_depIdxs = []int32{
-	4, // 0: GsLeaveSceneRequest.change_scene_info:type_name -> ChangeSceneInfoPBComponent
-	5, // 1: EnterScenerS2CResponse.error_message:type_name -> TipInfoMessage
+	4, // 0: GsLeaveSceneRequest.change_scene_info:type_name -> ChangeSceneInfoComp
+	5, // 1: EnterSceneS2CResponse.error_message:type_name -> TipInfoMessage
 	0, // 2: SceneScenePlayer.EnterScene:input_type -> GsEnterSceneRequest
 	1, // 3: SceneScenePlayer.LeaveScene:input_type -> GsLeaveSceneRequest
 	2, // 4: SceneScenePlayer.EnterSceneS2C:input_type -> EnterSceneS2CRequest
 	6, // 5: SceneScenePlayer.EnterScene:output_type -> google.protobuf.Empty
 	6, // 6: SceneScenePlayer.LeaveScene:output_type -> google.protobuf.Empty
-	3, // 7: SceneScenePlayer.EnterSceneS2C:output_type -> EnterScenerS2CResponse
+	3, // 7: SceneScenePlayer.EnterSceneS2C:output_type -> EnterSceneS2CResponse
 	5, // [5:8] is the sub-list for method output_type
 	2, // [2:5] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

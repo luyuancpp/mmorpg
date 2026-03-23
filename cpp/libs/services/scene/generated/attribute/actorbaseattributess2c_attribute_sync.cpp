@@ -94,7 +94,7 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
         {
             // 同步 combat_state_flags 属性（字段编号：4）
             // 通用处理：消息类型字段通过CopyFrom同步
-            auto& fieldComponent = actorRegistry.get_or_emplace<CombatStateFlagsPbComponent>(entity);
+            auto& fieldComponent = actorRegistry.get_or_emplace<CombatStateFlagsComp>(entity);
             if (syncMsg.mutable_combat_state_flags() != nullptr) {
                 syncMsg.mutable_combat_state_flags()->CopyFrom(fieldComponent);
                 // 同步完成后清除脏标记

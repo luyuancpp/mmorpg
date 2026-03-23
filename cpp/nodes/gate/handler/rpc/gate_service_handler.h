@@ -18,4 +18,5 @@ public:
 	void NodeHandshake(::google::protobuf::RpcController* controller,  const ::NodeHandshakeRequest* request, ::NodeHandshakeResponse* response, ::google::protobuf::Closure* done) override;
 
 	void BindSessionToGate(::google::protobuf::RpcController* controller,  const ::BindSessionToGateRequest* request, ::BindSessionToGateResponse* response, ::google::protobuf::Closure* done) override;
+
 };

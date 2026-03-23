@@ -367,29 +367,29 @@ const char descriptor_table_protodef_proto_2fscene_2fscene_2eproto[] ABSL_ATTRIB
     "equest\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030"
     "\002 \001(\004\"A\n\032Centre2GsEnterSceneRequest\022\021\n\tp"
     "layer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"\'\n\022Crea"
-    "teSceneRequest\022\021\n\tconfig_id\030\001 \001(\r\"@\n\023Cre"
-    "ateSceneResponse\022)\n\nscene_info\030\001 \001(\0132\025.S"
-    "ceneInfoPBComponent2\213\006\n\005Scene\022:\n\023PlayerE"
-    "nterGameNode\022\033.PlayerEnterGameNodeReques"
-    "t\032\006.Empty\022J\n\023SendMessageToPlayer\022\030.NodeR"
-    "outeMessageRequest\032\031.NodeRouteMessageRes"
-    "ponse\022e\n\032ProcessClientPlayerMessage\022\".Pr"
-    "ocessClientPlayerMessageRequest\032#.Proces"
-    "sClientPlayerMessageResponse\022A\n\035CentreSe"
-    "ndToPlayerViaGameNode\022\030.NodeRouteMessage"
-    "Request\032\006.Empty\022J\n\023InvokePlayerService\022\030"
-    ".NodeRouteMessageRequest\032\031.NodeRouteMess"
-    "ageResponse\022A\n\022RouteNodeStringMsg\022\024.Rout"
-    "eMessageRequest\032\025.RouteMessageResponse\022V"
-    "\n\024RoutePlayerStringMsg\022\032.RoutePlayerMess"
-    "ageRequest\032\033.RoutePlayerMessageResponse\""
-    "\005\200\231\310\001\001\022<\n\023UpdateSessionDetail\022\035.Register"
-    "PlayerSessionRequest\032\006.Empty\0221\n\nEnterSce"
-    "ne\022\033.Centre2GsEnterSceneRequest\032\006.Empty\022"
-    "8\n\013CreateScene\022\023.CreateSceneRequest\032\024.Cr"
-    "eateSceneResponse\022>\n\rNodeHandshake\022\025.Nod"
-    "eHandshakeRequest\032\026.NodeHandshakeRespons"
-    "eB\007\200\001\001\230\324a\003b\006proto3"
+    "teSceneRequest\022\021\n\tconfig_id\030\001 \001(\r\"9\n\023Cre"
+    "ateSceneResponse\022\"\n\nscene_info\030\001 \001(\0132\016.S"
+    "ceneInfoComp2\213\006\n\005Scene\022:\n\023PlayerEnterGam"
+    "eNode\022\033.PlayerEnterGameNodeRequest\032\006.Emp"
+    "ty\022J\n\023SendMessageToPlayer\022\030.NodeRouteMes"
+    "sageRequest\032\031.NodeRouteMessageResponse\022e"
+    "\n\032ProcessClientPlayerMessage\022\".ProcessCl"
+    "ientPlayerMessageRequest\032#.ProcessClient"
+    "PlayerMessageResponse\022A\n\035CentreSendToPla"
+    "yerViaGameNode\022\030.NodeRouteMessageRequest"
+    "\032\006.Empty\022J\n\023InvokePlayerService\022\030.NodeRo"
+    "uteMessageRequest\032\031.NodeRouteMessageResp"
+    "onse\022A\n\022RouteNodeStringMsg\022\024.RouteMessag"
+    "eRequest\032\025.RouteMessageResponse\022V\n\024Route"
+    "PlayerStringMsg\022\032.RoutePlayerMessageRequ"
+    "est\032\033.RoutePlayerMessageResponse\"\005\200\231\310\001\001\022"
+    "<\n\023UpdateSessionDetail\022\035.RegisterPlayerS"
+    "essionRequest\032\006.Empty\0221\n\nEnterScene\022\033.Ce"
+    "ntre2GsEnterSceneRequest\032\006.Empty\0228\n\013Crea"
+    "teScene\022\023.CreateSceneRequest\032\024.CreateSce"
+    "neResponse\022>\n\rNodeHandshake\022\025.NodeHandsh"
+    "akeRequest\032\026.NodeHandshakeResponseB\007\200\001\001\230"
+    "\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fscene_2eproto_deps[4] = {
@@ -402,7 +402,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fscene_2eproto = {
     false,
     false,
-    1618,
+    1611,
     descriptor_table_protodef_proto_2fscene_2fscene_2eproto,
     "proto/scene/scene.proto",
     &descriptor_table_proto_2fscene_2fscene_2eproto_once,
@@ -2805,18 +2805,18 @@ CreateSceneResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::CreateSceneResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .SceneInfoPBComponent scene_info = 1;
+    // .SceneInfoComp scene_info = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.scene_info_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .SceneInfoPBComponent scene_info = 1;
+    // .SceneInfoComp scene_info = 1;
     {PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+      {::_pbi::TcParser::GetTable<::SceneInfoComp>()},
   }},
   {{
   }},
@@ -2853,7 +2853,7 @@ PROTOBUF_NOINLINE void CreateSceneResponse::Clear() {
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // .SceneInfoPBComponent scene_info = 1;
+  // .SceneInfoComp scene_info = 1;
   if ((cached_has_bits & 0x00000001u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *this_._impl_.scene_info_, this_._impl_.scene_info_->GetCachedSize(), target,
@@ -2884,7 +2884,7 @@ PROTOBUF_NOINLINE void CreateSceneResponse::Clear() {
   (void)cached_has_bits;
 
    {
-    // .SceneInfoPBComponent scene_info = 1;
+    // .SceneInfoComp scene_info = 1;
     cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       total_size += 1 +

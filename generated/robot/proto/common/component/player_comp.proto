@@ -26,12 +26,12 @@ message UnregisterPlayer
 {
 }
 
-message PlayerUint64PBComponent
+message PlayerUint64Comp
 {
 	uint64 registration_timestamp  = 1;
 }
 
-message PlayerUint32PbComponent
+message PlayerUint32Comp
 {
 	uint32 class  = 1;
 }

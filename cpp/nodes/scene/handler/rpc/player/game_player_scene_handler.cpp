@@ -46,7 +46,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 }
 
 void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
-	::EnterScenerS2CResponse* response)
+	::EnterSceneS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
@@ -59,7 +59,7 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 	}
 
 	::EnterSceneS2C message;
-	message.mutable_scene_info()->CopyFrom(tlsRegistryManager.actorRegistry.get_or_emplace<SceneInfoPBComponent>(sceneEntity->sceneEntity));
+	message.mutable_scene_info()->CopyFrom(tlsRegistryManager.actorRegistry.get_or_emplace<SceneInfoComp>(sceneEntity->sceneEntity));
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 

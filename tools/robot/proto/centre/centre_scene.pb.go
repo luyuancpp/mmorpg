@@ -24,9 +24,9 @@ const (
 )
 
 type RegisterSceneRequest struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	SceneNodeId   uint32                       `protobuf:"varint,1,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
-	ScenesInfo    []*base.SceneInfoPBComponent `protobuf:"bytes,2,rep,name=scenes_info,json=scenesInfo,proto3" json:"scenes_info,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SceneNodeId   uint32                 `protobuf:"varint,1,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
+	ScenesInfo    []*base.SceneInfoComp  `protobuf:"bytes,2,rep,name=scenes_info,json=scenesInfo,proto3" json:"scenes_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,7 +68,7 @@ func (x *RegisterSceneRequest) GetSceneNodeId() uint32 {
 	return 0
 }
 
-func (x *RegisterSceneRequest) GetScenesInfo() []*base.SceneInfoPBComponent {
+func (x *RegisterSceneRequest) GetScenesInfo() []*base.SceneInfoComp {
 	if x != nil {
 		return x.ScenesInfo
 	}
@@ -175,10 +175,10 @@ var File_proto_centre_centre_scene_proto protoreflect.FileDescriptor
 
 const file_proto_centre_centre_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x1fproto/centre/centre_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\"r\n" +
+	"\x1fproto/centre/centre_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\"k\n" +
 	"\x14RegisterSceneRequest\x12\"\n" +
-	"\rscene_node_id\x18\x01 \x01(\rR\vsceneNodeId\x126\n" +
-	"\vscenes_info\x18\x02 \x03(\v2\x15.SceneInfoPBComponentR\n" +
+	"\rscene_node_id\x18\x01 \x01(\rR\vsceneNodeId\x12/\n" +
+	"\vscenes_info\x18\x02 \x03(\v2\x0e.SceneInfoCompR\n" +
 	"scenesInfo\"\x17\n" +
 	"\x15RegisterSceneResponse\"j\n" +
 	"\x16UnRegisterSceneRequest\x12\"\n" +
@@ -203,14 +203,14 @@ func file_proto_centre_centre_scene_proto_rawDescGZIP() []byte {
 
 var file_proto_centre_centre_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_centre_centre_scene_proto_goTypes = []any{
-	(*RegisterSceneRequest)(nil),      // 0: RegisterSceneRequest
-	(*RegisterSceneResponse)(nil),     // 1: RegisterSceneResponse
-	(*UnRegisterSceneRequest)(nil),    // 2: UnRegisterSceneRequest
-	(*base.SceneInfoPBComponent)(nil), // 3: SceneInfoPBComponent
-	(*base.Empty)(nil),                // 4: Empty
+	(*RegisterSceneRequest)(nil),   // 0: RegisterSceneRequest
+	(*RegisterSceneResponse)(nil),  // 1: RegisterSceneResponse
+	(*UnRegisterSceneRequest)(nil), // 2: UnRegisterSceneRequest
+	(*base.SceneInfoComp)(nil),     // 3: SceneInfoComp
+	(*base.Empty)(nil),             // 4: Empty
 }
 var file_proto_centre_centre_scene_proto_depIdxs = []int32{
-	3, // 0: RegisterSceneRequest.scenes_info:type_name -> SceneInfoPBComponent
+	3, // 0: RegisterSceneRequest.scenes_info:type_name -> SceneInfoComp
 	0, // 1: CentreScene.RegisterScene:input_type -> RegisterSceneRequest
 	2, // 2: CentreScene.UnRegisterScene:input_type -> UnRegisterSceneRequest
 	1, // 3: CentreScene.RegisterScene:output_type -> RegisterSceneResponse

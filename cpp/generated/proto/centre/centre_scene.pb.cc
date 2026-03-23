@@ -313,7 +313,7 @@ RegisterSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::RegisterSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // repeated .SceneInfoPBComponent scenes_info = 2;
+    // repeated .SceneInfoComp scenes_info = 2;
     {::_pbi::TcParser::FastMtR1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterSceneRequest, _impl_.scenes_info_)}},
     // uint32 scene_node_id = 1;
@@ -325,12 +325,12 @@ RegisterSceneRequest::_table_ = {
     // uint32 scene_node_id = 1;
     {PROTOBUF_FIELD_OFFSET(RegisterSceneRequest, _impl_.scene_node_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // repeated .SceneInfoPBComponent scenes_info = 2;
+    // repeated .SceneInfoComp scenes_info = 2;
     {PROTOBUF_FIELD_OFFSET(RegisterSceneRequest, _impl_.scenes_info_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
+      {::_pbi::TcParser::GetTable<::SceneInfoComp>()},
   }},
   {{
   }},
@@ -372,7 +372,7 @@ PROTOBUF_NOINLINE void RegisterSceneRequest::Clear() {
     }
   }
 
-  // repeated .SceneInfoPBComponent scenes_info = 2;
+  // repeated .SceneInfoComp scenes_info = 2;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this_._internal_scenes_info_size());
        i < n; i++) {
@@ -408,7 +408,7 @@ PROTOBUF_NOINLINE void RegisterSceneRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
    {
-    // repeated .SceneInfoPBComponent scenes_info = 2;
+    // repeated .SceneInfoComp scenes_info = 2;
     {
       total_size += 1UL * this_._internal_scenes_info_size();
       for (const auto& msg : this_._internal_scenes_info()) {

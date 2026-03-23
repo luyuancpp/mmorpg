@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type SkillPBComponent struct {
+type SkillComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SkillTableId  uint64                 `protobuf:"varint,1,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SkillPBComponent) Reset() {
-	*x = SkillPBComponent{}
+func (x *SkillComp) Reset() {
+	*x = SkillComp{}
 	mi := &file_proto_common_component_skill_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SkillPBComponent) String() string {
+func (x *SkillComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SkillPBComponent) ProtoMessage() {}
+func (*SkillComp) ProtoMessage() {}
 
-func (x *SkillPBComponent) ProtoReflect() protoreflect.Message {
+func (x *SkillComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_skill_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,19 +53,19 @@ func (x *SkillPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SkillPBComponent.ProtoReflect.Descriptor instead.
-func (*SkillPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use SkillComp.ProtoReflect.Descriptor instead.
+func (*SkillComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_skill_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SkillPBComponent) GetSkillTableId() uint64 {
+func (x *SkillComp) GetSkillTableId() uint64 {
 	if x != nil {
 		return x.SkillTableId
 	}
 	return 0
 }
 
-type SkillContextPBComponent struct {
+type SkillContextComp struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Caster         uint64                 `protobuf:"varint,1,opt,name=caster,proto3" json:"caster,omitempty"`                                                                                           // 施法者
 	Target         uint64                 `protobuf:"varint,2,opt,name=target,proto3" json:"target,omitempty"`                                                                                           // 目标（如果有）
@@ -79,20 +79,20 @@ type SkillContextPBComponent struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *SkillContextPBComponent) Reset() {
-	*x = SkillContextPBComponent{}
+func (x *SkillContextComp) Reset() {
+	*x = SkillContextComp{}
 	mi := &file_proto_common_component_skill_comp_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SkillContextPBComponent) String() string {
+func (x *SkillContextComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SkillContextPBComponent) ProtoMessage() {}
+func (*SkillContextComp) ProtoMessage() {}
 
-func (x *SkillContextPBComponent) ProtoReflect() protoreflect.Message {
+func (x *SkillContextComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_skill_comp_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -104,61 +104,61 @@ func (x *SkillContextPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SkillContextPBComponent.ProtoReflect.Descriptor instead.
-func (*SkillContextPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use SkillContextComp.ProtoReflect.Descriptor instead.
+func (*SkillContextComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_skill_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SkillContextPBComponent) GetCaster() uint64 {
+func (x *SkillContextComp) GetCaster() uint64 {
 	if x != nil {
 		return x.Caster
 	}
 	return 0
 }
 
-func (x *SkillContextPBComponent) GetTarget() uint64 {
+func (x *SkillContextComp) GetTarget() uint64 {
 	if x != nil {
 		return x.Target
 	}
 	return 0
 }
 
-func (x *SkillContextPBComponent) GetSkillId() uint64 {
+func (x *SkillContextComp) GetSkillId() uint64 {
 	if x != nil {
 		return x.SkillId
 	}
 	return 0
 }
 
-func (x *SkillContextPBComponent) GetSkillTableId() uint32 {
+func (x *SkillContextComp) GetSkillTableId() uint32 {
 	if x != nil {
 		return x.SkillTableId
 	}
 	return 0
 }
 
-func (x *SkillContextPBComponent) GetCastPosition() *Transform {
+func (x *SkillContextComp) GetCastPosition() *Transform {
 	if x != nil {
 		return x.CastPosition
 	}
 	return nil
 }
 
-func (x *SkillContextPBComponent) GetCastTime() uint64 {
+func (x *SkillContextComp) GetCastTime() uint64 {
 	if x != nil {
 		return x.CastTime
 	}
 	return 0
 }
 
-func (x *SkillContextPBComponent) GetState() string {
+func (x *SkillContextComp) GetState() string {
 	if x != nil {
 		return x.State
 	}
 	return ""
 }
 
-func (x *SkillContextPBComponent) GetAdditionalData() map[string]uint32 {
+func (x *SkillContextComp) GetAdditionalData() map[string]uint32 {
 	if x != nil {
 		return x.AdditionalData
 	}
@@ -169,10 +169,10 @@ var File_proto_common_component_skill_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_skill_comp_proto_rawDesc = "" +
 	"\n" +
-	"'proto/common/component/skill_comp.proto\x1a'proto/common/component/actor_comp.proto\"8\n" +
-	"\x10SkillPBComponent\x12$\n" +
-	"\x0eskill_table_id\x18\x01 \x01(\x04R\fskillTableId\"\x82\x03\n" +
-	"\x17SkillContextPBComponent\x12\x16\n" +
+	"'proto/common/component/skill_comp.proto\x1a'proto/common/component/actor_comp.proto\"1\n" +
+	"\tSkillComp\x12$\n" +
+	"\x0eskill_table_id\x18\x01 \x01(\x04R\fskillTableId\"\xf4\x02\n" +
+	"\x10SkillContextComp\x12\x16\n" +
 	"\x06caster\x18\x01 \x01(\x04R\x06caster\x12\x16\n" +
 	"\x06target\x18\x02 \x01(\x04R\x06target\x12\x18\n" +
 	"\aSkillId\x18\x03 \x01(\x04R\aSkillId\x12\"\n" +
@@ -180,8 +180,8 @@ const file_proto_common_component_skill_comp_proto_rawDesc = "" +
 	"\fcastPosition\x18\x05 \x01(\v2\n" +
 	".TransformR\fcastPosition\x12\x1a\n" +
 	"\bcastTime\x18\x06 \x01(\x04R\bcastTime\x12\x14\n" +
-	"\x05state\x18\a \x01(\tR\x05state\x12T\n" +
-	"\x0eadditionalData\x18\b \x03(\v2,.SkillContextPBComponent.AdditionalDataEntryR\x0eadditionalData\x1aA\n" +
+	"\x05state\x18\a \x01(\tR\x05state\x12M\n" +
+	"\x0eadditionalData\x18\b \x03(\v2%.SkillContextComp.AdditionalDataEntryR\x0eadditionalData\x1aA\n" +
 	"\x13AdditionalDataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01B\x1bZ\x19db/proto/common/componentb\x06proto3"
@@ -200,14 +200,14 @@ func file_proto_common_component_skill_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_skill_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_common_component_skill_comp_proto_goTypes = []any{
-	(*SkillPBComponent)(nil),        // 0: SkillPBComponent
-	(*SkillContextPBComponent)(nil), // 1: SkillContextPBComponent
-	nil,                             // 2: SkillContextPBComponent.AdditionalDataEntry
-	(*Transform)(nil),               // 3: Transform
+	(*SkillComp)(nil),        // 0: SkillComp
+	(*SkillContextComp)(nil), // 1: SkillContextComp
+	nil,                      // 2: SkillContextComp.AdditionalDataEntry
+	(*Transform)(nil),        // 3: Transform
 }
 var file_proto_common_component_skill_comp_proto_depIdxs = []int32{
-	3, // 0: SkillContextPBComponent.castPosition:type_name -> Transform
-	2, // 1: SkillContextPBComponent.additionalData:type_name -> SkillContextPBComponent.AdditionalDataEntry
+	3, // 0: SkillContextComp.castPosition:type_name -> Transform
+	2, // 1: SkillContextComp.additionalData:type_name -> SkillContextComp.AdditionalDataEntry
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

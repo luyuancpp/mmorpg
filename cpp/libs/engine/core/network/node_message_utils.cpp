@@ -142,7 +142,7 @@ void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 		return;
 	}
 
-	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB) {
 		LOG_ERROR << "Player session info not found for entity";
 		return;
@@ -210,7 +210,7 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 		return;
 	}
 
-	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB) {
 		LOG_ERROR << "Player session info not found for entity";
 		return;

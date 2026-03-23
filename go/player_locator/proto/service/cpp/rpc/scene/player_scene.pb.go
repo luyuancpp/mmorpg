@@ -26,7 +26,7 @@ const (
 
 type EnterSceneC2SRequest struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     *common.SceneInfoComp `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,7 +61,7 @@ func (*EnterSceneC2SRequest) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EnterSceneC2SRequest) GetSceneInfo() *common.RoomInfoPBComponent {
+func (x *EnterSceneC2SRequest) GetSceneInfo() *common.SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -114,7 +114,7 @@ func (x *EnterSceneC2SResponse) GetErrorMessage() *common.TipInfoMessage {
 
 type EnterSceneS2C struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     *common.SceneInfoComp `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -149,7 +149,7 @@ func (*EnterSceneS2C) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *EnterSceneS2C) GetSceneInfo() *common.RoomInfoPBComponent {
+func (x *EnterSceneS2C) GetSceneInfo() *common.SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -158,7 +158,7 @@ func (x *EnterSceneS2C) GetSceneInfo() *common.RoomInfoPBComponent {
 
 type SceneInfoS2C struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	SceneInfo     []*common.RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     []*common.SceneInfoComp `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -193,7 +193,7 @@ func (*SceneInfoS2C) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SceneInfoS2C) GetSceneInfo() []*common.RoomInfoPBComponent {
+func (x *SceneInfoS2C) GetSceneInfo() []*common.SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -238,7 +238,7 @@ func (*SceneInfoRequest) Descriptor() ([]byte, []int) {
 
 type SceneInfoResponse struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	SceneInfo     []*common.RoomInfoPBComponent `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     []*common.SceneInfoComp `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -273,7 +273,7 @@ func (*SceneInfoResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_player_scene_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *SceneInfoResponse) GetSceneInfo() []*common.RoomInfoPBComponent {
+func (x *SceneInfoResponse) GetSceneInfo() []*common.SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -495,19 +495,19 @@ const file_proto_service_cpp_rpc_scene_player_scene_proto_rawDesc = "" +
 	".proto/service/cpp/rpc/scene/player_scene.proto\x1a(proto/service/grpc/db/proto_option.proto\x1a\x16proto/common/tip.proto\x1a\x19proto/common/common.proto\x1a\x18proto/common/empty.proto\x1a&proto/logic/component/actor_comp.proto\"K\n" +
 	"\x14EnterSceneC2SRequest\x123\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"M\n" +
+	"scene_info\x18\x01 \x01(\v2\x14.SceneInfoCompR\tsceneInfo\"M\n" +
 	"\x15EnterSceneC2SResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"D\n" +
 	"\rEnterSceneS2C\x123\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"C\n" +
+	"scene_info\x18\x01 \x01(\v2\x14.SceneInfoCompR\tsceneInfo\"C\n" +
 	"\fSceneInfoS2C\x123\n" +
 	"\n" +
-	"scene_info\x18\x01 \x03(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"\x12\n" +
+	"scene_info\x18\x01 \x03(\v2\x14.SceneInfoCompR\tsceneInfo\"\x12\n" +
 	"\x10SceneInfoRequest\"H\n" +
 	"\x11SceneInfoResponse\x123\n" +
 	"\n" +
-	"scene_info\x18\x01 \x03(\v2\x14.RoomInfoPBComponentR\tsceneInfo\"\xa4\x01\n" +
+	"scene_info\x18\x01 \x03(\v2\x14.SceneInfoCompR\tsceneInfo\"\xa4\x01\n" +
 	"\x0eActorCreateS2C\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -559,17 +559,17 @@ var file_proto_service_cpp_rpc_scene_player_scene_proto_goTypes = []any{
 	(*ActorDestroyS2C)(nil),            // 7: ActorDestroyS2C
 	(*ActorListCreateS2C)(nil),         // 8: ActorListCreateS2C
 	(*ActorListDestroyS2C)(nil),        // 9: ActorListDestroyS2C
-	(*common.RoomInfoPBComponent)(nil), // 10: RoomInfoPBComponent
+	(*common.SceneInfoComp)(nil), // 10: SceneInfoComp
 	(*common.TipInfoMessage)(nil),      // 11: TipInfoMessage
 	(*component.Transform)(nil),        // 12: Transform
 	(*common.Empty)(nil),               // 13: Empty
 }
 var file_proto_service_cpp_rpc_scene_player_scene_proto_depIdxs = []int32{
-	10, // 0: EnterSceneC2SRequest.scene_info:type_name -> RoomInfoPBComponent
+	10, // 0: EnterSceneC2SRequest.scene_info:type_name -> SceneInfoComp
 	11, // 1: EnterSceneC2SResponse.error_message:type_name -> TipInfoMessage
-	10, // 2: EnterSceneS2C.scene_info:type_name -> RoomInfoPBComponent
-	10, // 3: SceneInfoS2C.scene_info:type_name -> RoomInfoPBComponent
-	10, // 4: SceneInfoResponse.scene_info:type_name -> RoomInfoPBComponent
+	10, // 2: EnterSceneS2C.scene_info:type_name -> SceneInfoComp
+	10, // 3: SceneInfoS2C.scene_info:type_name -> SceneInfoComp
+	10, // 4: SceneInfoResponse.scene_info:type_name -> SceneInfoComp
 	12, // 5: ActorCreateS2C.transform:type_name -> Transform
 	6,  // 6: ActorListCreateS2C.actor_list:type_name -> ActorCreateS2C
 	0,  // 7: SceneSceneClientPlayer.EnterScene:input_type -> EnterSceneC2SRequest

@@ -3,7 +3,7 @@ option go_package = "chat/proto/common/base";
 
 
 
-message EndpointPBComponent
+message EndpointComp
 {
   string ip = 1;
   uint32 port = 2;
@@ -14,13 +14,13 @@ message NodeInfo {
   uint32 node_type = 2;
   uint64 launch_time = 3;
   uint32 scene_node_type = 4;
-  EndpointPBComponent endpoint = 5;
+  EndpointComp endpoint = 5;
   uint32 zone_id = 6;
   uint32 protocol_type = 7; // 节点通信协议类型
   string node_uuid = 8;
 }
 
-message NodeInfoListPBComponent
+message NodeInfoListComp
 {
   repeated NodeInfo node_list = 1;
 }
@@ -31,7 +31,7 @@ message NetworkAddress
   uint32 port = 2;
 }
 
-message SceneInfoPBComponent
+message SceneInfoComp
 {
   uint32 scene_confid = 1;//场景id
   uint32 guid = 2;//场景唯一id

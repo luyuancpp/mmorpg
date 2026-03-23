@@ -3,7 +3,7 @@ option go_package = "etcd/proto/common/component";
 
 
 
-message ChangeSceneInfoPBComponent
+message ChangeSceneInfoComp
 {
 
   enum eChangeGsType

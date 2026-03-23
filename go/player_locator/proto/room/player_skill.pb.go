@@ -329,7 +329,7 @@ func (*GetSkillListRequest) Descriptor() ([]byte, []int) {
 type GetSkillListResponse struct {
 	state         protoimpl.MessageState                `protogen:"open.v1"`
 	ErrorMessage  *common.TipInfoMessage                `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	SkillList     *component.PlayerSkillListPBComponent `protobuf:"bytes,2,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
+	SkillList     *component.PlayerSkillListComp `protobuf:"bytes,2,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -371,7 +371,7 @@ func (x *GetSkillListResponse) GetErrorMessage() *common.TipInfoMessage {
 	return nil
 }
 
-func (x *GetSkillListResponse) GetSkillList() *component.PlayerSkillListPBComponent {
+func (x *GetSkillListResponse) GetSkillList() *component.PlayerSkillListComp {
 	if x != nil {
 		return x.SkillList
 	}
@@ -408,7 +408,7 @@ const file_proto_room_player_skill_proto_rawDesc = "" +
 	"\x14GetSkillListResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12:\n" +
 	"\n" +
-	"skill_list\x18\x02 \x01(\v2\x1b.PlayerSkillListPBComponentR\tskillList2\x8a\x02\n" +
+	"skill_list\x18\x02 \x01(\v2\x1b.PlayerSkillListCompR\tskillList2\x8a\x02\n" +
 	"\x16SceneSkillClientPlayer\x12E\n" +
 	"\fReleaseSkill\x12\x19.ReleaseSkillSkillRequest\x1a\x1a.ReleaseSkillSkillResponse\x12(\n" +
 	"\x0fNotifySkillUsed\x12\r.SkillUsedS2C\x1a\x06.Empty\x126\n" +
@@ -439,7 +439,7 @@ var file_proto_room_player_skill_proto_goTypes = []any{
 	(*component.Vector3)(nil),                    // 6: Vector3
 	(*component.Rotation)(nil),                   // 7: Rotation
 	(*common.TipInfoMessage)(nil),                // 8: TipInfoMessage
-	(*component.PlayerSkillListPBComponent)(nil), // 9: PlayerSkillListPBComponent
+	(*component.PlayerSkillListComp)(nil), // 9: PlayerSkillListComp
 	(*common.Empty)(nil),                         // 10: Empty
 }
 var file_proto_room_player_skill_proto_depIdxs = []int32{
@@ -448,7 +448,7 @@ var file_proto_room_player_skill_proto_depIdxs = []int32{
 	8,  // 2: ReleaseSkillSkillResponse.error_message:type_name -> TipInfoMessage
 	6,  // 3: SkillUsedS2C.position:type_name -> Vector3
 	8,  // 4: GetSkillListResponse.error_message:type_name -> TipInfoMessage
-	9,  // 5: GetSkillListResponse.skill_list:type_name -> PlayerSkillListPBComponent
+	9,  // 5: GetSkillListResponse.skill_list:type_name -> PlayerSkillListComp
 	0,  // 6: SceneSkillClientPlayer.ReleaseSkill:input_type -> ReleaseSkillSkillRequest
 	3,  // 7: SceneSkillClientPlayer.NotifySkillUsed:input_type -> SkillUsedS2C
 	2,  // 8: SceneSkillClientPlayer.NotifySkillInterrupted:input_type -> SkillInterruptedS2C

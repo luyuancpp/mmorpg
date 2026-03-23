@@ -8,5 +8,5 @@ public:
     static void Register();
 
     static void UnRegister();
-    static void BuffTestEvetHandler(const BuffTestEvet& event);
+    static void BuffTestEventHandler(const BuffTestEvent& event);
 };

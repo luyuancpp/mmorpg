@@ -52,14 +52,14 @@ struct TableStruct_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto;
 }  // extern "C"
-class PlayerSkillListPBComponent;
-struct PlayerSkillListPBComponentDefaultTypeInternal;
-extern PlayerSkillListPBComponentDefaultTypeInternal _PlayerSkillListPBComponent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull PlayerSkillListPBComponent_class_data_;
-class PlayerSkillPBComponent;
-struct PlayerSkillPBComponentDefaultTypeInternal;
-extern PlayerSkillPBComponentDefaultTypeInternal _PlayerSkillPBComponent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull PlayerSkillPBComponent_class_data_;
+class PlayerSkillComp;
+struct PlayerSkillCompDefaultTypeInternal;
+extern PlayerSkillCompDefaultTypeInternal _PlayerSkillComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerSkillComp_class_data_;
+class PlayerSkillListComp;
+struct PlayerSkillListCompDefaultTypeInternal;
+extern PlayerSkillListCompDefaultTypeInternal _PlayerSkillListComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerSkillListComp_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -71,30 +71,30 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class PlayerSkillPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerSkillPBComponent) */ {
+class PlayerSkillComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerSkillComp) */ {
  public:
-  inline PlayerSkillPBComponent() : PlayerSkillPBComponent(nullptr) {}
-  ~PlayerSkillPBComponent() PROTOBUF_FINAL;
+  inline PlayerSkillComp() : PlayerSkillComp(nullptr) {}
+  ~PlayerSkillComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(PlayerSkillPBComponent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(PlayerSkillComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerSkillPBComponent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerSkillComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerSkillPBComponent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR PlayerSkillComp(::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerSkillPBComponent(const PlayerSkillPBComponent& from) : PlayerSkillPBComponent(nullptr, from) {}
-  inline PlayerSkillPBComponent(PlayerSkillPBComponent&& from) noexcept
-      : PlayerSkillPBComponent(nullptr, ::std::move(from)) {}
-  inline PlayerSkillPBComponent& operator=(const PlayerSkillPBComponent& from) {
+  inline PlayerSkillComp(const PlayerSkillComp& from) : PlayerSkillComp(nullptr, from) {}
+  inline PlayerSkillComp(PlayerSkillComp&& from) noexcept
+      : PlayerSkillComp(nullptr, ::std::move(from)) {}
+  inline PlayerSkillComp& operator=(const PlayerSkillComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerSkillPBComponent& operator=(PlayerSkillPBComponent&& from) noexcept {
+  inline PlayerSkillComp& operator=(PlayerSkillComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -122,13 +122,13 @@ class PlayerSkillPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerSkillPBComponent& default_instance() {
-    return *reinterpret_cast<const PlayerSkillPBComponent*>(
-        &_PlayerSkillPBComponent_default_instance_);
+  static const PlayerSkillComp& default_instance() {
+    return *reinterpret_cast<const PlayerSkillComp*>(
+        &_PlayerSkillComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(PlayerSkillPBComponent& a, PlayerSkillPBComponent& b) { a.Swap(&b); }
-  inline void Swap(PlayerSkillPBComponent* PROTOBUF_NONNULL other) {
+  friend void swap(PlayerSkillComp& a, PlayerSkillComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerSkillComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -136,7 +136,7 @@ class PlayerSkillPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerSkillPBComponent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(PlayerSkillComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -144,13 +144,13 @@ class PlayerSkillPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerSkillPBComponent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerSkillPBComponent>(arena);
+  PlayerSkillComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerSkillComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerSkillPBComponent& from);
+  void CopyFrom(const PlayerSkillComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerSkillPBComponent& from) { PlayerSkillPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerSkillComp& from) { PlayerSkillComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -186,18 +186,18 @@ class PlayerSkillPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(PlayerSkillPBComponent* PROTOBUF_NONNULL other);
+  void InternalSwap(PlayerSkillComp* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "PlayerSkillPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "PlayerSkillComp"; }
 
  protected:
-  explicit PlayerSkillPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  PlayerSkillPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerSkillPBComponent& from);
-  PlayerSkillPBComponent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerSkillPBComponent&& from) noexcept
-      : PlayerSkillPBComponent(arena) {
+  explicit PlayerSkillComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PlayerSkillComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerSkillComp& from);
+  PlayerSkillComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerSkillComp&& from) noexcept
+      : PlayerSkillComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -237,7 +237,7 @@ class PlayerSkillPBComponent final : public ::google::protobuf::Message
   void _internal_set_skill_table_id(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerSkillPBComponent)
+  // @@protoc_insertion_point(class_scope:PlayerSkillComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -260,7 +260,7 @@ class PlayerSkillPBComponent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const PlayerSkillPBComponent& from_msg);
+        const PlayerSkillComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t id_;
@@ -271,33 +271,33 @@ class PlayerSkillPBComponent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull PlayerSkillPBComponent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerSkillComp_class_data_;
 // -------------------------------------------------------------------
 
-class PlayerSkillListPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerSkillListPBComponent) */ {
+class PlayerSkillListComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerSkillListComp) */ {
  public:
-  inline PlayerSkillListPBComponent() : PlayerSkillListPBComponent(nullptr) {}
-  ~PlayerSkillListPBComponent() PROTOBUF_FINAL;
+  inline PlayerSkillListComp() : PlayerSkillListComp(nullptr) {}
+  ~PlayerSkillListComp() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(PlayerSkillListPBComponent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(PlayerSkillListComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerSkillListPBComponent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerSkillListComp));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerSkillListPBComponent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR PlayerSkillListComp(::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerSkillListPBComponent(const PlayerSkillListPBComponent& from) : PlayerSkillListPBComponent(nullptr, from) {}
-  inline PlayerSkillListPBComponent(PlayerSkillListPBComponent&& from) noexcept
-      : PlayerSkillListPBComponent(nullptr, ::std::move(from)) {}
-  inline PlayerSkillListPBComponent& operator=(const PlayerSkillListPBComponent& from) {
+  inline PlayerSkillListComp(const PlayerSkillListComp& from) : PlayerSkillListComp(nullptr, from) {}
+  inline PlayerSkillListComp(PlayerSkillListComp&& from) noexcept
+      : PlayerSkillListComp(nullptr, ::std::move(from)) {}
+  inline PlayerSkillListComp& operator=(const PlayerSkillListComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerSkillListPBComponent& operator=(PlayerSkillListPBComponent&& from) noexcept {
+  inline PlayerSkillListComp& operator=(PlayerSkillListComp&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -325,13 +325,13 @@ class PlayerSkillListPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerSkillListPBComponent& default_instance() {
-    return *reinterpret_cast<const PlayerSkillListPBComponent*>(
-        &_PlayerSkillListPBComponent_default_instance_);
+  static const PlayerSkillListComp& default_instance() {
+    return *reinterpret_cast<const PlayerSkillListComp*>(
+        &_PlayerSkillListComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(PlayerSkillListPBComponent& a, PlayerSkillListPBComponent& b) { a.Swap(&b); }
-  inline void Swap(PlayerSkillListPBComponent* PROTOBUF_NONNULL other) {
+  friend void swap(PlayerSkillListComp& a, PlayerSkillListComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerSkillListComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -339,7 +339,7 @@ class PlayerSkillListPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerSkillListPBComponent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(PlayerSkillListComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -347,13 +347,13 @@ class PlayerSkillListPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerSkillListPBComponent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerSkillListPBComponent>(arena);
+  PlayerSkillListComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerSkillListComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerSkillListPBComponent& from);
+  void CopyFrom(const PlayerSkillListComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerSkillListPBComponent& from) { PlayerSkillListPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerSkillListComp& from) { PlayerSkillListComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -389,18 +389,18 @@ class PlayerSkillListPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(PlayerSkillListPBComponent* PROTOBUF_NONNULL other);
+  void InternalSwap(PlayerSkillListComp* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "PlayerSkillListPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "PlayerSkillListComp"; }
 
  protected:
-  explicit PlayerSkillListPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  PlayerSkillListPBComponent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerSkillListPBComponent& from);
-  PlayerSkillListPBComponent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerSkillListPBComponent&& from) noexcept
-      : PlayerSkillListPBComponent(arena) {
+  explicit PlayerSkillListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PlayerSkillListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerSkillListComp& from);
+  PlayerSkillListComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerSkillListComp&& from) noexcept
+      : PlayerSkillListComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -419,24 +419,24 @@ class PlayerSkillListPBComponent final : public ::google::protobuf::Message
   enum : int {
     kSkillListFieldNumber = 1,
   };
-  // repeated .PlayerSkillPBComponent skill_list = 1;
+  // repeated .PlayerSkillComp skill_list = 1;
   int skill_list_size() const;
   private:
   int _internal_skill_list_size() const;
 
   public:
   void clear_skill_list() ;
-  ::PlayerSkillPBComponent* PROTOBUF_NONNULL mutable_skill_list(int index);
-  ::google::protobuf::RepeatedPtrField<::PlayerSkillPBComponent>* PROTOBUF_NONNULL mutable_skill_list();
+  ::PlayerSkillComp* PROTOBUF_NONNULL mutable_skill_list(int index);
+  ::google::protobuf::RepeatedPtrField<::PlayerSkillComp>* PROTOBUF_NONNULL mutable_skill_list();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::PlayerSkillPBComponent>& _internal_skill_list() const;
-  ::google::protobuf::RepeatedPtrField<::PlayerSkillPBComponent>* PROTOBUF_NONNULL _internal_mutable_skill_list();
+  const ::google::protobuf::RepeatedPtrField<::PlayerSkillComp>& _internal_skill_list() const;
+  ::google::protobuf::RepeatedPtrField<::PlayerSkillComp>* PROTOBUF_NONNULL _internal_mutable_skill_list();
   public:
-  const ::PlayerSkillPBComponent& skill_list(int index) const;
-  ::PlayerSkillPBComponent* PROTOBUF_NONNULL add_skill_list();
-  const ::google::protobuf::RepeatedPtrField<::PlayerSkillPBComponent>& skill_list() const;
-  // @@protoc_insertion_point(class_scope:PlayerSkillListPBComponent)
+  const ::PlayerSkillComp& skill_list(int index) const;
+  ::PlayerSkillComp* PROTOBUF_NONNULL add_skill_list();
+  const ::google::protobuf::RepeatedPtrField<::PlayerSkillComp>& skill_list() const;
+  // @@protoc_insertion_point(class_scope:PlayerSkillListComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -459,8 +459,8 @@ class PlayerSkillListPBComponent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const PlayerSkillListPBComponent& from_msg);
-    ::google::protobuf::RepeatedPtrField< ::PlayerSkillPBComponent > skill_list_;
+        const PlayerSkillListComp& from_msg);
+    ::google::protobuf::RepeatedPtrField< ::PlayerSkillComp > skill_list_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -468,7 +468,7 @@ class PlayerSkillListPBComponent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull PlayerSkillListPBComponent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerSkillListComp_class_data_;
 
 // ===================================================================
 
@@ -484,106 +484,106 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerSkillListPBCompon
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// PlayerSkillPBComponent
+// PlayerSkillComp
 
 // uint64 id = 1;
-inline void PlayerSkillPBComponent::clear_id() {
+inline void PlayerSkillComp::clear_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t PlayerSkillPBComponent::id() const {
-  // @@protoc_insertion_point(field_get:PlayerSkillPBComponent.id)
+inline ::uint64_t PlayerSkillComp::id() const {
+  // @@protoc_insertion_point(field_get:PlayerSkillComp.id)
   return _internal_id();
 }
-inline void PlayerSkillPBComponent::set_id(::uint64_t value) {
+inline void PlayerSkillComp::set_id(::uint64_t value) {
   _internal_set_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:PlayerSkillPBComponent.id)
+  // @@protoc_insertion_point(field_set:PlayerSkillComp.id)
 }
-inline ::uint64_t PlayerSkillPBComponent::_internal_id() const {
+inline ::uint64_t PlayerSkillComp::_internal_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.id_;
 }
-inline void PlayerSkillPBComponent::_internal_set_id(::uint64_t value) {
+inline void PlayerSkillComp::_internal_set_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.id_ = value;
 }
 
 // uint32 skill_table_id = 2;
-inline void PlayerSkillPBComponent::clear_skill_table_id() {
+inline void PlayerSkillComp::clear_skill_table_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.skill_table_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t PlayerSkillPBComponent::skill_table_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSkillPBComponent.skill_table_id)
+inline ::uint32_t PlayerSkillComp::skill_table_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSkillComp.skill_table_id)
   return _internal_skill_table_id();
 }
-inline void PlayerSkillPBComponent::set_skill_table_id(::uint32_t value) {
+inline void PlayerSkillComp::set_skill_table_id(::uint32_t value) {
   _internal_set_skill_table_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:PlayerSkillPBComponent.skill_table_id)
+  // @@protoc_insertion_point(field_set:PlayerSkillComp.skill_table_id)
 }
-inline ::uint32_t PlayerSkillPBComponent::_internal_skill_table_id() const {
+inline ::uint32_t PlayerSkillComp::_internal_skill_table_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.skill_table_id_;
 }
-inline void PlayerSkillPBComponent::_internal_set_skill_table_id(::uint32_t value) {
+inline void PlayerSkillComp::_internal_set_skill_table_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.skill_table_id_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// PlayerSkillListPBComponent
+// PlayerSkillListComp
 
-// repeated .PlayerSkillPBComponent skill_list = 1;
-inline int PlayerSkillListPBComponent::_internal_skill_list_size() const {
+// repeated .PlayerSkillComp skill_list = 1;
+inline int PlayerSkillListComp::_internal_skill_list_size() const {
   return _internal_skill_list().size();
 }
-inline int PlayerSkillListPBComponent::skill_list_size() const {
+inline int PlayerSkillListComp::skill_list_size() const {
   return _internal_skill_list_size();
 }
-inline void PlayerSkillListPBComponent::clear_skill_list() {
+inline void PlayerSkillListComp::clear_skill_list() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.skill_list_.Clear();
 }
-inline ::PlayerSkillPBComponent* PROTOBUF_NONNULL PlayerSkillListPBComponent::mutable_skill_list(int index)
+inline ::PlayerSkillComp* PROTOBUF_NONNULL PlayerSkillListComp::mutable_skill_list(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:PlayerSkillListPBComponent.skill_list)
+  // @@protoc_insertion_point(field_mutable:PlayerSkillListComp.skill_list)
   return _internal_mutable_skill_list()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::PlayerSkillPBComponent>* PROTOBUF_NONNULL PlayerSkillListPBComponent::mutable_skill_list()
+inline ::google::protobuf::RepeatedPtrField<::PlayerSkillComp>* PROTOBUF_NONNULL PlayerSkillListComp::mutable_skill_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:PlayerSkillListPBComponent.skill_list)
+  // @@protoc_insertion_point(field_mutable_list:PlayerSkillListComp.skill_list)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_skill_list();
 }
-inline const ::PlayerSkillPBComponent& PlayerSkillListPBComponent::skill_list(int index) const
+inline const ::PlayerSkillComp& PlayerSkillListComp::skill_list(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerSkillListPBComponent.skill_list)
+  // @@protoc_insertion_point(field_get:PlayerSkillListComp.skill_list)
   return _internal_skill_list().Get(index);
 }
-inline ::PlayerSkillPBComponent* PROTOBUF_NONNULL PlayerSkillListPBComponent::add_skill_list()
+inline ::PlayerSkillComp* PROTOBUF_NONNULL PlayerSkillListComp::add_skill_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::PlayerSkillPBComponent* _add = _internal_mutable_skill_list()->Add();
-  // @@protoc_insertion_point(field_add:PlayerSkillListPBComponent.skill_list)
+  ::PlayerSkillComp* _add = _internal_mutable_skill_list()->Add();
+  // @@protoc_insertion_point(field_add:PlayerSkillListComp.skill_list)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::PlayerSkillPBComponent>& PlayerSkillListPBComponent::skill_list() const
+inline const ::google::protobuf::RepeatedPtrField<::PlayerSkillComp>& PlayerSkillListComp::skill_list() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:PlayerSkillListPBComponent.skill_list)
+  // @@protoc_insertion_point(field_list:PlayerSkillListComp.skill_list)
   return _internal_skill_list();
 }
-inline const ::google::protobuf::RepeatedPtrField<::PlayerSkillPBComponent>&
-PlayerSkillListPBComponent::_internal_skill_list() const {
+inline const ::google::protobuf::RepeatedPtrField<::PlayerSkillComp>&
+PlayerSkillListComp::_internal_skill_list() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.skill_list_;
 }
-inline ::google::protobuf::RepeatedPtrField<::PlayerSkillPBComponent>* PROTOBUF_NONNULL
-PlayerSkillListPBComponent::_internal_mutable_skill_list() {
+inline ::google::protobuf::RepeatedPtrField<::PlayerSkillComp>* PROTOBUF_NONNULL
+PlayerSkillListComp::_internal_mutable_skill_list() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.skill_list_;
 }

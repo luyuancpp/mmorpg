@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PlayerSceneInfoPBComponent struct {
+type PlayerSceneInfoComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SceneConfid   uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`
 	Guid          uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"`
@@ -29,20 +29,20 @@ type PlayerSceneInfoPBComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PlayerSceneInfoPBComponent) Reset() {
-	*x = PlayerSceneInfoPBComponent{}
+func (x *PlayerSceneInfoComp) Reset() {
+	*x = PlayerSceneInfoComp{}
 	mi := &file_proto_common_component_player_scene_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerSceneInfoPBComponent) String() string {
+func (x *PlayerSceneInfoComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerSceneInfoPBComponent) ProtoMessage() {}
+func (*PlayerSceneInfoComp) ProtoMessage() {}
 
-func (x *PlayerSceneInfoPBComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerSceneInfoComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_player_scene_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,47 +54,47 @@ func (x *PlayerSceneInfoPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerSceneInfoPBComponent.ProtoReflect.Descriptor instead.
-func (*PlayerSceneInfoPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerSceneInfoComp.ProtoReflect.Descriptor instead.
+func (*PlayerSceneInfoComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_scene_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerSceneInfoPBComponent) GetSceneConfid() uint32 {
+func (x *PlayerSceneInfoComp) GetSceneConfid() uint32 {
 	if x != nil {
 		return x.SceneConfid
 	}
 	return 0
 }
 
-func (x *PlayerSceneInfoPBComponent) GetGuid() uint32 {
+func (x *PlayerSceneInfoComp) GetGuid() uint32 {
 	if x != nil {
 		return x.Guid
 	}
 	return 0
 }
 
-type PlayerSceneContextPBComponent struct {
-	state             protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo         *PlayerSceneInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
-	SceneInfoLastTime *PlayerSceneInfoPBComponent `protobuf:"bytes,2,opt,name=scene_info_last_time,json=sceneInfoLastTime,proto3" json:"scene_info_last_time,omitempty"`
+type PlayerSceneContextComp struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	SceneInfo         *PlayerSceneInfoComp   `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfoLastTime *PlayerSceneInfoComp   `protobuf:"bytes,2,opt,name=scene_info_last_time,json=sceneInfoLastTime,proto3" json:"scene_info_last_time,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
 
-func (x *PlayerSceneContextPBComponent) Reset() {
-	*x = PlayerSceneContextPBComponent{}
+func (x *PlayerSceneContextComp) Reset() {
+	*x = PlayerSceneContextComp{}
 	mi := &file_proto_common_component_player_scene_comp_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerSceneContextPBComponent) String() string {
+func (x *PlayerSceneContextComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerSceneContextPBComponent) ProtoMessage() {}
+func (*PlayerSceneContextComp) ProtoMessage() {}
 
-func (x *PlayerSceneContextPBComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerSceneContextComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_player_scene_comp_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -106,19 +106,19 @@ func (x *PlayerSceneContextPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerSceneContextPBComponent.ProtoReflect.Descriptor instead.
-func (*PlayerSceneContextPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerSceneContextComp.ProtoReflect.Descriptor instead.
+func (*PlayerSceneContextComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_scene_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PlayerSceneContextPBComponent) GetSceneInfo() *PlayerSceneInfoPBComponent {
+func (x *PlayerSceneContextComp) GetSceneInfo() *PlayerSceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
 	return nil
 }
 
-func (x *PlayerSceneContextPBComponent) GetSceneInfoLastTime() *PlayerSceneInfoPBComponent {
+func (x *PlayerSceneContextComp) GetSceneInfoLastTime() *PlayerSceneInfoComp {
 	if x != nil {
 		return x.SceneInfoLastTime
 	}
@@ -129,14 +129,14 @@ var File_proto_common_component_player_scene_comp_proto protoreflect.FileDescrip
 
 const file_proto_common_component_player_scene_comp_proto_rawDesc = "" +
 	"\n" +
-	".proto/common/component/player_scene_comp.proto\"S\n" +
-	"\x1aPlayerSceneInfoPBComponent\x12!\n" +
+	".proto/common/component/player_scene_comp.proto\"L\n" +
+	"\x13PlayerSceneInfoComp\x12!\n" +
 	"\fscene_confid\x18\x01 \x01(\rR\vsceneConfid\x12\x12\n" +
-	"\x04guid\x18\x02 \x01(\rR\x04guid\"\xa9\x01\n" +
-	"\x1dPlayerSceneContextPBComponent\x12:\n" +
+	"\x04guid\x18\x02 \x01(\rR\x04guid\"\x94\x01\n" +
+	"\x16PlayerSceneContextComp\x123\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x1b.PlayerSceneInfoPBComponentR\tsceneInfo\x12L\n" +
-	"\x14scene_info_last_time\x18\x02 \x01(\v2\x1b.PlayerSceneInfoPBComponentR\x11sceneInfoLastTimeB\x1eZ\x1crobot/proto/common/componentb\x06proto3"
+	"scene_info\x18\x01 \x01(\v2\x14.PlayerSceneInfoCompR\tsceneInfo\x12E\n" +
+	"\x14scene_info_last_time\x18\x02 \x01(\v2\x14.PlayerSceneInfoCompR\x11sceneInfoLastTimeB\x1eZ\x1crobot/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_scene_comp_proto_rawDescOnce sync.Once
@@ -152,12 +152,12 @@ func file_proto_common_component_player_scene_comp_proto_rawDescGZIP() []byte {
 
 var file_proto_common_component_player_scene_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_common_component_player_scene_comp_proto_goTypes = []any{
-	(*PlayerSceneInfoPBComponent)(nil),    // 0: PlayerSceneInfoPBComponent
-	(*PlayerSceneContextPBComponent)(nil), // 1: PlayerSceneContextPBComponent
+	(*PlayerSceneInfoComp)(nil),    // 0: PlayerSceneInfoComp
+	(*PlayerSceneContextComp)(nil), // 1: PlayerSceneContextComp
 }
 var file_proto_common_component_player_scene_comp_proto_depIdxs = []int32{
-	0, // 0: PlayerSceneContextPBComponent.scene_info:type_name -> PlayerSceneInfoPBComponent
-	0, // 1: PlayerSceneContextPBComponent.scene_info_last_time:type_name -> PlayerSceneInfoPBComponent
+	0, // 0: PlayerSceneContextComp.scene_info:type_name -> PlayerSceneInfoComp
+	0, // 1: PlayerSceneContextComp.scene_info_last_time:type_name -> PlayerSceneInfoComp
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

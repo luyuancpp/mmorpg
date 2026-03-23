@@ -23,14 +23,14 @@ public:
     MissionsComp();
 
     [[nodiscard]] const auto& GetEventMissionsClassifyForUnitTest() const { return eventMissionsClassify; }
-    [[nodiscard]] const MissionListPBComponent& getMissionsComp() const { return missionsComp; }
+    [[nodiscard]] const MissionListComp& getMissionsComp() const { return missionsComp; }
     [[nodiscard]] std::size_t MissionSize() const { return missionsComp.missions().size(); }
     [[nodiscard]] std::size_t CompleteSize() const { return completedMissions.count(); }
     [[nodiscard]] std::size_t TypeSetSize() const { return typeFilter.size(); }
     [[nodiscard]] std::size_t CanGetRewardSize() const;
     MissionsBits& GetCompleteMissions() { return completedMissions; }
 
-    [[nodiscard]] MissionListPBComponent& GetMissionsComp()
+    [[nodiscard]] MissionListComp& GetMissionsComp()
     {
         return missionsComp;
     }
@@ -76,14 +76,14 @@ public:
 
 
 private:
-    MissionListPBComponent missionsComp;
+    MissionListComp missionsComp;
     EventMissionClassifyMap eventMissionsClassify; // key: classify mission by event type, value: mission list
     UInt32PairSet typeFilter;
     bool missionTypeNotRepeated{ true }; //mission type must be unique
     MissionsBits completedMissions;
 };
 
-using PlayerMissionList = std::array<MissionsComp, MissionListPBComponent::kPlayerMissionSize>;
+using PlayerMissionList = std::array<MissionsComp, MissionListComp::kPlayerMissionSize>;
 
 
 struct MissionsContainerComp {

@@ -47,7 +47,7 @@ void SkillSystem::StartCooldown(entt::entity caster, const SkillTable* skillTabl
 	(*coolDownList)[skillTable->cooldown_id()] = comp;
 }
 
-void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* request) {
+void LookAtTargetPosition(entt::entity caster, const ReleaseSkillRequest* request) {
 	if (request->has_position()) {
 		ViewSystem::LookAtPosition(caster, request->position());
 	} else if (request->target_id() > 0) {
@@ -57,8 +57,8 @@ void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* r
 	}
 }
 
-std::shared_ptr<SkillContextPBComponent> CreateSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request) {
-	auto context = std::make_shared<SkillContextPBComponent>();
+std::shared_ptr<SkillContextComp> CreateSkillContext(entt::entity caster, const ReleaseSkillRequest* request) {
+	auto context = std::make_shared<SkillContextComp>();
 	context->set_caster(entt::to_integral(caster));
 	context->set_skilltableid(request->skill_table_id());
 	context->set_target(request->target_id());
@@ -67,7 +67,7 @@ std::shared_ptr<SkillContextPBComponent> CreateSkillContext(entt::entity caster,
 	return context;
 }
 
-void AddSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request, std::shared_ptr<SkillContextPBComponent> context) {
+void AddSkillContext(entt::entity caster, const ReleaseSkillRequest* request, std::shared_ptr<SkillContextComp> context) {
 	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(caster);
 	casterSkillContextMap.emplace(context->skillid(), context);
 
@@ -99,7 +99,7 @@ void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t 
 	BuffSystem::OnSkillHit(casterEntity, targetEntity);
 }
 
-uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const ReleaseSkillSkillRequest* request) {
+uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const ReleaseSkillRequest* request) {
 	FetchAndValidateSkillTable(request->skill_table_id());
 
 	RETURN_ON_ERROR(CheckSkillPrerequisites(casterEntity, request));
@@ -142,7 +142,7 @@ uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 
 uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
 
-	auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionPbComponent>(casterEntity);
+	auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(casterEntity);
 
 	for (auto& [currentState, buffList] : combatStateCollection.states())
 	{
@@ -172,7 +172,7 @@ uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTa
 	return kSuccess;
 }
 
-uint32_t SkillSystem::CheckSkillPrerequisites(const entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request) {
+uint32_t SkillSystem::CheckSkillPrerequisites(const entt::entity casterEntity, const ::ReleaseSkillRequest* request) {
 	FetchAndValidateSkillTable(request->skill_table_id());
 
 	RETURN_ON_ERROR(ValidateTarget(request));
@@ -309,7 +309,7 @@ void SkillSystem::HandleSkillDeactivate(const entt::entity casterEntity, const u
 	RemoveEffect(casterEntity, skillId);
 }
 
-uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
+uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 	FetchAndValidateSkillTable(request->skill_table_id());
 
 	// Validate target ID
@@ -435,7 +435,7 @@ uint32_t SkillSystem::CheckChannel(const entt::entity casterEntity, const SkillT
 	return kSuccess;
 }
 
-void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request) {
+void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, const ::ReleaseSkillRequest* request) {
 	SkillUsedS2C skillUsedS2C;
 	skillUsedS2C.set_entity(entt::to_integral(casterEntity));
 	skillUsedS2C.add_target_entity(request->target_id());
@@ -511,17 +511,17 @@ void SkillSystem::RemoveEffect(entt::entity casterEntity, const uint64_t skillId
 }
 
 bool IsTargetDead(entt::entity targetEntity) {
-    auto& targetBaseAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(targetEntity);
+    auto& targetBaseAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesComp>(targetEntity);
     return targetBaseAttributes.health() <= 0;
 }
 
 
 double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity target, double baseDamage) {
-    auto& casterAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(casterEntity);
+    auto& casterAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesComp>(casterEntity);
     double critChance = casterAttributes.critchance();
     double strength = casterAttributes.strength();
 
-    auto& targetAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(target);
+    auto& targetAttributes = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesComp>(target);
     double armor = targetAttributes.armor();
     double resistance = targetAttributes.resistance();
 
@@ -538,7 +538,7 @@ double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity 
 }
 
 
-void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponent& damageEvent) {
+void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& damageEvent) {
     auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
     auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
 
@@ -561,7 +561,7 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
         return;
     }
 
-    auto& levelComponent = tlsRegistryManager.actorRegistry.get_or_emplace<LevelPbComponent>(casterEntity);
+    auto& levelComponent = tlsRegistryManager.actorRegistry.get_or_emplace<LevelComp>(casterEntity);
     SkillTableManager::Instance().SetDamageParam({ static_cast<double>(levelComponent.level()) });
 
     damageEvent.set_attacker_id(entt::to_integral(casterEntity));
@@ -572,12 +572,12 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
 }
 
 
-void TriggerBeforeDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
+void TriggerBeforeDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent) {
     BuffSystem::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
     BuffSystem::OnBeforeTakeDamage(casterEntity, targetEntity, damageEvent);
 }
 
-void ApplyDamage(BaseAttributesPbComponent& baseAttributesPBComponent, const DamageEventPbComponent& damageEvent) {
+void ApplyDamage(BaseAttributesComp& baseAttributesPBComponent, const DamageEventComp& damageEvent) {
     const auto damage = static_cast<uint64_t>(std::ceil(damageEvent.damage()));
 
     if (baseAttributesPBComponent.health() > damage) {
@@ -596,12 +596,12 @@ void TriggerBeKillEvent(const entt::entity casterEntity, const entt::entity targ
 	dispatcher.trigger(beKillEvent);
 }
 
-void TriggerAfterDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
+void TriggerAfterDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent) {
 	BuffSystem::OnAfterGiveDamage(casterEntity, targetEntity, damageEvent);
 	BuffSystem::OnAfterTakeDamage(casterEntity, targetEntity, damageEvent);
 }
 
-void HandleTargetDeath(const entt::entity casterEntity, const entt::entity target, const DamageEventPbComponent& damageEvent) {
+void HandleTargetDeath(const entt::entity casterEntity, const entt::entity target, const DamageEventComp& damageEvent) {
     BuffSystem::OnBeforeDead(target); 
     BuffSystem::OnAfterDead(target);
 
@@ -613,8 +613,8 @@ void HandleTargetDeath(const entt::entity casterEntity, const entt::entity targe
     TriggerBeKillEvent(casterEntity, target);
 }
 
-void DealDamage(DamageEventPbComponent& damageEvent, const entt::entity caster, const entt::entity target) {
-	auto& baseAttributesPBComponent = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesPbComponent>(target);
+void DealDamage(DamageEventComp& damageEvent, const entt::entity caster, const entt::entity target) {
+	auto& baseAttributesPBComponent = tlsRegistryManager.actorRegistry.get_or_emplace<BaseAttributesComp>(target);
 
 	if (IsTargetDead(target)) {
 		return;
@@ -648,7 +648,7 @@ void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64
 		return;
 	}
     
-	DamageEventPbComponent damageEvent;
+	DamageEventComp damageEvent;
 	damageEvent.set_skill_id(skillId);
 	damageEvent.set_target(skillContext->target());
 	CalculateSkillDamage(casterEntity, damageEvent);

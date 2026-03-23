@@ -7,13 +7,13 @@
 
 using BuffMessagePtr = std::shared_ptr<google::protobuf::Message>;
 
-struct BuffComp
+struct BuffEntry
 {
-    BuffPbComponent buffPb;
+    BuffComp buffPb;
     SkillContextPtrComp skillContext;
     TimerTaskComp expireTimerTaskComp;
     BuffMessagePtr dataPbPtr;
 };
 
-using BuffListComp = std::map<uint64_t, BuffComp>;
+using BuffListComp = std::map<uint64_t, BuffEntry>;
 using BuffPendingRemoveBuffs = std::unordered_set<uint64_t>;

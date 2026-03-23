@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 option go_package = "db/proto/player_locator";
+
 package playerlocator;
 
 import "proto/common/base/empty.proto";

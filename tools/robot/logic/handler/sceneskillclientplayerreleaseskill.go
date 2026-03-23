@@ -5,5 +5,5 @@ import (
 	"robot/logic/gameobject"
 )
 
-func SceneSkillClientPlayerReleaseSkillHandler(player *gameobject.Player, response *game.scene.ReleaseSkillSkillResponse) {
+func SceneSkillClientPlayerReleaseSkillHandler(player *gameobject.Player, response *game.scene.ReleaseSkillResponse) {
 }

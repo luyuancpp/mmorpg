@@ -429,23 +429,22 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabas
     "tSimplePlayerList:\036\212\222\364\001\ruser_accounts\222\222\364"
     "\001\007account\"R\n\026account_share_database\022\017\n\007a"
     "ccount\030\001 \001(\t:\'\212\222\364\001\026account_share_databas"
-    "e\222\222\364\001\007account\"\230\001\n\026player_centre_database"
-    "\022\021\n\tplayer_id\030\001 \001(\004\0222\n\nscene_info\030\002 \001(\0132"
-    "\036.PlayerSceneContextPBComponent:7\212\222\364\001\026pl"
-    "ayer_centre_database\222\222\364\001\tplayer_id\262\222\364\001\tp"
-    "layer_id\"\207\003\n\017player_database\022\021\n\tplayer_i"
-    "d\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Transform\0225"
-    "\n\023uint64_pb_component\030\003 \001(\0132\030.PlayerUint"
-    "64PBComponent\022/\n\nskill_list\030\004 \001(\0132\033.Play"
-    "erSkillListPBComponent\0225\n\023uint32_pb_comp"
-    "onent\030\005 \001(\0132\030.PlayerUint32PbComponent\022@\n"
-    "\034derived_attributes_component\030\006 \001(\0132\032.Ba"
-    "seAttributesPbComponent\022*\n\017level_compone"
-    "nt\030\007 \001(\0132\021.LevelPbComponent:5\212\222\364\001\017player"
-    "_database\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364"
-    "\001\001\"_\n\021player_database_1\022\021\n\tplayer_id\030\001 \001"
-    "(\004:7\212\222\364\001\021player_database_1\222\222\364\001\tplayer_id"
-    "\262\222\364\001\tplayer_id\350\222\364\001\001b\006proto3"
+    "e\222\222\364\001\007account\"\221\001\n\026player_centre_database"
+    "\022\021\n\tplayer_id\030\001 \001(\004\022+\n\nscene_info\030\002 \001(\0132"
+    "\027.PlayerSceneContextComp:7\212\222\364\001\026player_ce"
+    "ntre_database\222\222\364\001\tplayer_id\262\222\364\001\tplayer_i"
+    "d\"\344\002\n\017player_database\022\021\n\tplayer_id\030\001 \001(\004"
+    "\022\035\n\ttransform\030\002 \001(\0132\n.Transform\022.\n\023uint6"
+    "4_pb_component\030\003 \001(\0132\021.PlayerUint64Comp\022"
+    "(\n\nskill_list\030\004 \001(\0132\024.PlayerSkillListCom"
+    "p\022.\n\023uint32_pb_component\030\005 \001(\0132\021.PlayerU"
+    "int32Comp\0229\n\034derived_attributes_componen"
+    "t\030\006 \001(\0132\023.BaseAttributesComp\022#\n\017level_co"
+    "mponent\030\007 \001(\0132\n.LevelComp:5\212\222\364\001\017player_d"
+    "atabase\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001\001"
+    "\"_\n\021player_database_1\022\021\n\tplayer_id\030\001 \001(\004"
+    ":7\212\222\364\001\021player_database_1\222\222\364\001\tplayer_id\262\222"
+    "\364\001\tplayer_id\350\222\364\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[6] = {
@@ -460,7 +459,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fda
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    1667,
+    1625,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/common/database/mysql_database_table.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once,
@@ -2701,7 +2700,7 @@ player_centre_database::_table_ = {
     ::_pbi::TcParser::GetTable<::player_centre_database>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .PlayerSceneContextPBComponent scene_info = 2;
+    // .PlayerSceneContextComp scene_info = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(player_centre_database, _impl_.scene_info_)}},
     // uint64 player_id = 1;
@@ -2713,12 +2712,12 @@ player_centre_database::_table_ = {
     // uint64 player_id = 1;
     {PROTOBUF_FIELD_OFFSET(player_centre_database, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // .PlayerSceneContextPBComponent scene_info = 2;
+    // .PlayerSceneContextComp scene_info = 2;
     {PROTOBUF_FIELD_OFFSET(player_centre_database, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::PlayerSceneContextPBComponent>()},
+      {::_pbi::TcParser::GetTable<::PlayerSceneContextComp>()},
   }},
   {{
   }},
@@ -2765,7 +2764,7 @@ PROTOBUF_NOINLINE void player_centre_database::Clear() {
   }
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // .PlayerSceneContextPBComponent scene_info = 2;
+  // .PlayerSceneContextComp scene_info = 2;
   if ((cached_has_bits & 0x00000001u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *this_._impl_.scene_info_, this_._impl_.scene_info_->GetCachedSize(), target,
@@ -2798,7 +2797,7 @@ PROTOBUF_NOINLINE void player_centre_database::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
-    // .PlayerSceneContextPBComponent scene_info = 2;
+    // .PlayerSceneContextComp scene_info = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.scene_info_);
@@ -3059,19 +3058,19 @@ player_database::_table_ = {
     // .Transform transform = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_)}},
-    // .PlayerUint64PBComponent uint64_pb_component = 3;
+    // .PlayerUint64Comp uint64_pb_component = 3;
     {::_pbi::TcParser::FastMtS1,
      {26, 1, 1, PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint64_pb_component_)}},
-    // .PlayerSkillListPBComponent skill_list = 4;
+    // .PlayerSkillListComp skill_list = 4;
     {::_pbi::TcParser::FastMtS1,
      {34, 2, 2, PROTOBUF_FIELD_OFFSET(player_database, _impl_.skill_list_)}},
-    // .PlayerUint32PbComponent uint32_pb_component = 5;
+    // .PlayerUint32Comp uint32_pb_component = 5;
     {::_pbi::TcParser::FastMtS1,
      {42, 3, 3, PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint32_pb_component_)}},
-    // .BaseAttributesPbComponent derived_attributes_component = 6;
+    // .BaseAttributesComp derived_attributes_component = 6;
     {::_pbi::TcParser::FastMtS1,
      {50, 4, 4, PROTOBUF_FIELD_OFFSET(player_database, _impl_.derived_attributes_component_)}},
-    // .LevelPbComponent level_component = 7;
+    // .LevelComp level_component = 7;
     {::_pbi::TcParser::FastMtS1,
      {58, 5, 5, PROTOBUF_FIELD_OFFSET(player_database, _impl_.level_component_)}},
   }}, {{
@@ -3083,29 +3082,29 @@ player_database::_table_ = {
     // .Transform transform = 2;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .PlayerUint64PBComponent uint64_pb_component = 3;
+    // .PlayerUint64Comp uint64_pb_component = 3;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint64_pb_component_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .PlayerSkillListPBComponent skill_list = 4;
+    // .PlayerSkillListComp skill_list = 4;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.skill_list_), _Internal::kHasBitsOffset + 2, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .PlayerUint32PbComponent uint32_pb_component = 5;
+    // .PlayerUint32Comp uint32_pb_component = 5;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint32_pb_component_), _Internal::kHasBitsOffset + 3, 3,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .BaseAttributesPbComponent derived_attributes_component = 6;
+    // .BaseAttributesComp derived_attributes_component = 6;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.derived_attributes_component_), _Internal::kHasBitsOffset + 4, 4,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .LevelPbComponent level_component = 7;
+    // .LevelComp level_component = 7;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.level_component_), _Internal::kHasBitsOffset + 5, 5,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::Transform>()},
-      {::_pbi::TcParser::GetTable<::PlayerUint64PBComponent>()},
-      {::_pbi::TcParser::GetTable<::PlayerSkillListPBComponent>()},
-      {::_pbi::TcParser::GetTable<::PlayerUint32PbComponent>()},
-      {::_pbi::TcParser::GetTable<::BaseAttributesPbComponent>()},
-      {::_pbi::TcParser::GetTable<::LevelPbComponent>()},
+      {::_pbi::TcParser::GetTable<::PlayerUint64Comp>()},
+      {::_pbi::TcParser::GetTable<::PlayerSkillListComp>()},
+      {::_pbi::TcParser::GetTable<::PlayerUint32Comp>()},
+      {::_pbi::TcParser::GetTable<::BaseAttributesComp>()},
+      {::_pbi::TcParser::GetTable<::LevelComp>()},
   }},
   {{
   }},
@@ -3181,35 +3180,35 @@ PROTOBUF_NOINLINE void player_database::Clear() {
         stream);
   }
 
-  // .PlayerUint64PBComponent uint64_pb_component = 3;
+  // .PlayerUint64Comp uint64_pb_component = 3;
   if ((cached_has_bits & 0x00000002u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         3, *this_._impl_.uint64_pb_component_, this_._impl_.uint64_pb_component_->GetCachedSize(), target,
         stream);
   }
 
-  // .PlayerSkillListPBComponent skill_list = 4;
+  // .PlayerSkillListComp skill_list = 4;
   if ((cached_has_bits & 0x00000004u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         4, *this_._impl_.skill_list_, this_._impl_.skill_list_->GetCachedSize(), target,
         stream);
   }
 
-  // .PlayerUint32PbComponent uint32_pb_component = 5;
+  // .PlayerUint32Comp uint32_pb_component = 5;
   if ((cached_has_bits & 0x00000008u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         5, *this_._impl_.uint32_pb_component_, this_._impl_.uint32_pb_component_->GetCachedSize(), target,
         stream);
   }
 
-  // .BaseAttributesPbComponent derived_attributes_component = 6;
+  // .BaseAttributesComp derived_attributes_component = 6;
   if ((cached_has_bits & 0x00000010u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         6, *this_._impl_.derived_attributes_component_, this_._impl_.derived_attributes_component_->GetCachedSize(), target,
         stream);
   }
 
-  // .LevelPbComponent level_component = 7;
+  // .LevelComp level_component = 7;
   if ((cached_has_bits & 0x00000020u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         7, *this_._impl_.level_component_, this_._impl_.level_component_->GetCachedSize(), target,
@@ -3247,27 +3246,27 @@ PROTOBUF_NOINLINE void player_database::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.transform_);
     }
-    // .PlayerUint64PBComponent uint64_pb_component = 3;
+    // .PlayerUint64Comp uint64_pb_component = 3;
     if ((cached_has_bits & 0x00000002u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.uint64_pb_component_);
     }
-    // .PlayerSkillListPBComponent skill_list = 4;
+    // .PlayerSkillListComp skill_list = 4;
     if ((cached_has_bits & 0x00000004u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.skill_list_);
     }
-    // .PlayerUint32PbComponent uint32_pb_component = 5;
+    // .PlayerUint32Comp uint32_pb_component = 5;
     if ((cached_has_bits & 0x00000008u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.uint32_pb_component_);
     }
-    // .BaseAttributesPbComponent derived_attributes_component = 6;
+    // .BaseAttributesComp derived_attributes_component = 6;
     if ((cached_has_bits & 0x00000010u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.derived_attributes_component_);
     }
-    // .LevelPbComponent level_component = 7;
+    // .LevelComp level_component = 7;
     if ((cached_has_bits & 0x00000020u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.level_component_);

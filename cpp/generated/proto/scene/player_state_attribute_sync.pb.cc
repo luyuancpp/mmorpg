@@ -246,28 +246,28 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_
     "oto/common/component/actor_comp.proto\032\035p"
     "roto/common/base/empty.proto\0327proto/comm"
     "on/component/actor_attribute_state_comp."
-    "proto\"\250\001\n\026ActorBaseAttributesS2C\022\021\n\tenti"
+    "proto\"\241\001\n\026ActorBaseAttributesS2C\022\021\n\tenti"
     "ty_id\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Transfo"
-    "rm\022\033\n\010velocity\030\003 \001(\0132\t.Velocity\0228\n\022comba"
-    "t_state_flags\030\004 \001(\0132\034.CombatStateFlagsPb"
-    "Component:\005\200\346\325\002\001\"4\n\030AttributeDelta2Frame"
-    "sS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002\001\"4\n\030Attrib"
-    "uteDelta5FramesS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200"
-    "\346\325\002\001\"5\n\031AttributeDelta10FramesS2C\022\021\n\tent"
-    "ity_id\030\001 \001(\004:\005\200\346\325\002\001\"5\n\031AttributeDelta30F"
-    "ramesS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002\001\"5\n\031At"
-    "tributeDelta60FramesS2C\022\021\n\tentity_id\030\001 \001"
-    "(\004:\005\200\346\325\002\0012\373\002\n\017ScenePlayerSync\0224\n\021SyncBas"
-    "eAttribute\022\027.ActorBaseAttributesS2C\032\006.Em"
-    "pty\0229\n\024SyncAttribute2Frames\022\031.AttributeD"
-    "elta2FramesS2C\032\006.Empty\0229\n\024SyncAttribute5"
-    "Frames\022\031.AttributeDelta5FramesS2C\032\006.Empt"
-    "y\022;\n\025SyncAttribute10Frames\022\032.AttributeDe"
-    "lta10FramesS2C\032\006.Empty\022;\n\025SyncAttribute3"
-    "0Frames\022\032.AttributeDelta30FramesS2C\032\006.Em"
-    "pty\022;\n\025SyncAttribute60Frames\022\032.Attribute"
-    "Delta60FramesS2C\032\006.Empty\032\005\200\250\303\001\001B\007\200\001\001\230\324a\003"
-    "b\006proto3"
+    "rm\022\033\n\010velocity\030\003 \001(\0132\t.Velocity\0221\n\022comba"
+    "t_state_flags\030\004 \001(\0132\025.CombatStateFlagsCo"
+    "mp:\005\200\346\325\002\001\"4\n\030AttributeDelta2FramesS2C\022\021\n"
+    "\tentity_id\030\001 \001(\004:\005\200\346\325\002\001\"4\n\030AttributeDelt"
+    "a5FramesS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002\001\"5\n"
+    "\031AttributeDelta10FramesS2C\022\021\n\tentity_id\030"
+    "\001 \001(\004:\005\200\346\325\002\001\"5\n\031AttributeDelta30FramesS2"
+    "C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325\002\001\"5\n\031Attribute"
+    "Delta60FramesS2C\022\021\n\tentity_id\030\001 \001(\004:\005\200\346\325"
+    "\002\0012\373\002\n\017ScenePlayerSync\0224\n\021SyncBaseAttrib"
+    "ute\022\027.ActorBaseAttributesS2C\032\006.Empty\0229\n\024"
+    "SyncAttribute2Frames\022\031.AttributeDelta2Fr"
+    "amesS2C\032\006.Empty\0229\n\024SyncAttribute5Frames\022"
+    "\031.AttributeDelta5FramesS2C\032\006.Empty\022;\n\025Sy"
+    "ncAttribute10Frames\022\032.AttributeDelta10Fr"
+    "amesS2C\032\006.Empty\022;\n\025SyncAttribute30Frames"
+    "\022\032.AttributeDelta30FramesS2C\032\006.Empty\022;\n\025"
+    "SyncAttribute60Frames\022\032.AttributeDelta60"
+    "FramesS2C\032\006.Empty\032\005\200\250\303\001\001B\007\200\001\001\230\324a\003b\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[4] = {
@@ -280,7 +280,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fstate_5fattri
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto = {
     false,
     false,
-    1048,
+    1041,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto,
     "proto/scene/player_state_attribute_sync.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
@@ -451,7 +451,7 @@ ActorBaseAttributesS2C::_table_ = {
     ::_pbi::TcParser::GetTable<::ActorBaseAttributesS2C>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .CombatStateFlagsPbComponent combat_state_flags = 4;
+    // .CombatStateFlagsComp combat_state_flags = 4;
     {::_pbi::TcParser::FastMtS1,
      {34, 2, 2, PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.combat_state_flags_)}},
     // uint64 entity_id = 1;
@@ -475,14 +475,14 @@ ActorBaseAttributesS2C::_table_ = {
     // .Velocity velocity = 3;
     {PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.velocity_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .CombatStateFlagsPbComponent combat_state_flags = 4;
+    // .CombatStateFlagsComp combat_state_flags = 4;
     {PROTOBUF_FIELD_OFFSET(ActorBaseAttributesS2C, _impl_.combat_state_flags_), _Internal::kHasBitsOffset + 2, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::Transform>()},
       {::_pbi::TcParser::GetTable<::Velocity>()},
-      {::_pbi::TcParser::GetTable<::CombatStateFlagsPbComponent>()},
+      {::_pbi::TcParser::GetTable<::CombatStateFlagsComp>()},
   }},
   {{
   }},
@@ -553,7 +553,7 @@ PROTOBUF_NOINLINE void ActorBaseAttributesS2C::Clear() {
         stream);
   }
 
-  // .CombatStateFlagsPbComponent combat_state_flags = 4;
+  // .CombatStateFlagsComp combat_state_flags = 4;
   if ((cached_has_bits & 0x00000004u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         4, *this_._impl_.combat_state_flags_, this_._impl_.combat_state_flags_->GetCachedSize(), target,
@@ -596,7 +596,7 @@ PROTOBUF_NOINLINE void ActorBaseAttributesS2C::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.velocity_);
     }
-    // .CombatStateFlagsPbComponent combat_state_flags = 4;
+    // .CombatStateFlagsComp combat_state_flags = 4;
     if ((cached_has_bits & 0x00000004u) != 0) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.combat_state_flags_);

@@ -3,14 +3,14 @@
 
 void BuffEventHandler::Register()
 {
-    dispatcher.sink<BuffTestEvet>().connect<&BuffEventHandler::BuffTestEvetHandler>();
+    dispatcher.sink<BuffTestEvent>().connect<&BuffEventHandler::BuffTestEventHandler>();
 }
 
 void BuffEventHandler::UnRegister()
 {
-    dispatcher.sink<BuffTestEvet>().disconnect<&BuffEventHandler::BuffTestEvetHandler>();
+    dispatcher.sink<BuffTestEvent>().disconnect<&BuffEventHandler::BuffTestEventHandler>();
 }
-void BuffEventHandler::BuffTestEvetHandler(const BuffTestEvet& event)
+void BuffEventHandler::BuffTestEventHandler(const BuffTestEvent& event)
 {
 
 }

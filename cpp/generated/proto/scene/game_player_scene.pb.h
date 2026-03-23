@@ -62,10 +62,10 @@ class EnterSceneS2CRequest;
 struct EnterSceneS2CRequestDefaultTypeInternal;
 extern EnterSceneS2CRequestDefaultTypeInternal _EnterSceneS2CRequest_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull EnterSceneS2CRequest_class_data_;
-class EnterScenerS2CResponse;
-struct EnterScenerS2CResponseDefaultTypeInternal;
-extern EnterScenerS2CResponseDefaultTypeInternal _EnterScenerS2CResponse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull EnterScenerS2CResponse_class_data_;
+class EnterSceneS2CResponse;
+struct EnterSceneS2CResponseDefaultTypeInternal;
+extern EnterSceneS2CResponseDefaultTypeInternal _EnterSceneS2CResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull EnterSceneS2CResponse_class_data_;
 class GsEnterSceneRequest;
 struct GsEnterSceneRequestDefaultTypeInternal;
 extern GsEnterSceneRequestDefaultTypeInternal _GsEnterSceneRequest_default_instance_;
@@ -579,19 +579,19 @@ class GsLeaveSceneRequest final : public ::google::protobuf::Message
   enum : int {
     kChangeSceneInfoFieldNumber = 2,
   };
-  // .ChangeSceneInfoPBComponent change_scene_info = 2;
+  // .ChangeSceneInfoComp change_scene_info = 2;
   bool has_change_scene_info() const;
   void clear_change_scene_info() ;
-  const ::ChangeSceneInfoPBComponent& change_scene_info() const;
-  [[nodiscard]] ::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE release_change_scene_info();
-  ::ChangeSceneInfoPBComponent* PROTOBUF_NONNULL mutable_change_scene_info();
-  void set_allocated_change_scene_info(::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_change_scene_info(::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE value);
-  ::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE unsafe_arena_release_change_scene_info();
+  const ::ChangeSceneInfoComp& change_scene_info() const;
+  [[nodiscard]] ::ChangeSceneInfoComp* PROTOBUF_NULLABLE release_change_scene_info();
+  ::ChangeSceneInfoComp* PROTOBUF_NONNULL mutable_change_scene_info();
+  void set_allocated_change_scene_info(::ChangeSceneInfoComp* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_change_scene_info(::ChangeSceneInfoComp* PROTOBUF_NULLABLE value);
+  ::ChangeSceneInfoComp* PROTOBUF_NULLABLE unsafe_arena_release_change_scene_info();
 
   private:
-  const ::ChangeSceneInfoPBComponent& _internal_change_scene_info() const;
-  ::ChangeSceneInfoPBComponent* PROTOBUF_NONNULL _internal_mutable_change_scene_info();
+  const ::ChangeSceneInfoComp& _internal_change_scene_info() const;
+  ::ChangeSceneInfoComp* PROTOBUF_NONNULL _internal_mutable_change_scene_info();
 
   public:
   // @@protoc_insertion_point(class_scope:GsLeaveSceneRequest)
@@ -620,7 +620,7 @@ class GsLeaveSceneRequest final : public ::google::protobuf::Message
         const GsLeaveSceneRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE change_scene_info_;
+    ::ChangeSceneInfoComp* PROTOBUF_NULLABLE change_scene_info_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -630,30 +630,30 @@ class GsLeaveSceneRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull GsLeaveSceneRequest_class_data_;
 // -------------------------------------------------------------------
 
-class EnterScenerS2CResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:EnterScenerS2CResponse) */ {
+class EnterSceneS2CResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:EnterSceneS2CResponse) */ {
  public:
-  inline EnterScenerS2CResponse() : EnterScenerS2CResponse(nullptr) {}
-  ~EnterScenerS2CResponse() PROTOBUF_FINAL;
+  inline EnterSceneS2CResponse() : EnterSceneS2CResponse(nullptr) {}
+  ~EnterSceneS2CResponse() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(EnterScenerS2CResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(EnterSceneS2CResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterScenerS2CResponse));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterSceneS2CResponse));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR EnterScenerS2CResponse(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR EnterSceneS2CResponse(::google::protobuf::internal::ConstantInitialized);
 
-  inline EnterScenerS2CResponse(const EnterScenerS2CResponse& from) : EnterScenerS2CResponse(nullptr, from) {}
-  inline EnterScenerS2CResponse(EnterScenerS2CResponse&& from) noexcept
-      : EnterScenerS2CResponse(nullptr, ::std::move(from)) {}
-  inline EnterScenerS2CResponse& operator=(const EnterScenerS2CResponse& from) {
+  inline EnterSceneS2CResponse(const EnterSceneS2CResponse& from) : EnterSceneS2CResponse(nullptr, from) {}
+  inline EnterSceneS2CResponse(EnterSceneS2CResponse&& from) noexcept
+      : EnterSceneS2CResponse(nullptr, ::std::move(from)) {}
+  inline EnterSceneS2CResponse& operator=(const EnterSceneS2CResponse& from) {
     CopyFrom(from);
     return *this;
   }
-  inline EnterScenerS2CResponse& operator=(EnterScenerS2CResponse&& from) noexcept {
+  inline EnterSceneS2CResponse& operator=(EnterSceneS2CResponse&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -681,13 +681,13 @@ class EnterScenerS2CResponse final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const EnterScenerS2CResponse& default_instance() {
-    return *reinterpret_cast<const EnterScenerS2CResponse*>(
-        &_EnterScenerS2CResponse_default_instance_);
+  static const EnterSceneS2CResponse& default_instance() {
+    return *reinterpret_cast<const EnterSceneS2CResponse*>(
+        &_EnterSceneS2CResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 3;
-  friend void swap(EnterScenerS2CResponse& a, EnterScenerS2CResponse& b) { a.Swap(&b); }
-  inline void Swap(EnterScenerS2CResponse* PROTOBUF_NONNULL other) {
+  friend void swap(EnterSceneS2CResponse& a, EnterSceneS2CResponse& b) { a.Swap(&b); }
+  inline void Swap(EnterSceneS2CResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -695,7 +695,7 @@ class EnterScenerS2CResponse final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(EnterScenerS2CResponse* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(EnterSceneS2CResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -703,13 +703,13 @@ class EnterScenerS2CResponse final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  EnterScenerS2CResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<EnterScenerS2CResponse>(arena);
+  EnterSceneS2CResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<EnterSceneS2CResponse>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const EnterScenerS2CResponse& from);
+  void CopyFrom(const EnterSceneS2CResponse& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const EnterScenerS2CResponse& from) { EnterScenerS2CResponse::MergeImpl(*this, from); }
+  void MergeFrom(const EnterSceneS2CResponse& from) { EnterSceneS2CResponse::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -745,18 +745,18 @@ class EnterScenerS2CResponse final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(EnterScenerS2CResponse* PROTOBUF_NONNULL other);
+  void InternalSwap(EnterSceneS2CResponse* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "EnterScenerS2CResponse"; }
+  static ::absl::string_view FullMessageName() { return "EnterSceneS2CResponse"; }
 
  protected:
-  explicit EnterScenerS2CResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  EnterScenerS2CResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterScenerS2CResponse& from);
-  EnterScenerS2CResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EnterScenerS2CResponse&& from) noexcept
-      : EnterScenerS2CResponse(arena) {
+  explicit EnterSceneS2CResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  EnterSceneS2CResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterSceneS2CResponse& from);
+  EnterSceneS2CResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EnterSceneS2CResponse&& from) noexcept
+      : EnterSceneS2CResponse(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -790,7 +790,7 @@ class EnterScenerS2CResponse final : public ::google::protobuf::Message
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
-  // @@protoc_insertion_point(class_scope:EnterScenerS2CResponse)
+  // @@protoc_insertion_point(class_scope:EnterSceneS2CResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -813,7 +813,7 @@ class EnterScenerS2CResponse final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const EnterScenerS2CResponse& from_msg);
+        const EnterSceneS2CResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
@@ -823,7 +823,7 @@ class EnterScenerS2CResponse final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fscene_2fgame_5fplayer_5fscene_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull EnterScenerS2CResponse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull EnterSceneS2CResponse_class_data_;
 
 // ===================================================================
 
@@ -854,7 +854,7 @@ class SceneScenePlayer : public ::google::protobuf::Service {
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void EnterSceneS2C(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::EnterSceneS2CRequest* PROTOBUF_NONNULL request,
-                        ::EnterScenerS2CResponse* PROTOBUF_NONNULL response,
+                        ::EnterSceneS2CResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
 
   // implements Service ----------------------------------------------
@@ -898,7 +898,7 @@ class SceneScenePlayer_Stub final : public SceneScenePlayer {
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void EnterSceneS2C(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::EnterSceneS2CRequest* PROTOBUF_NONNULL request,
-                        ::EnterScenerS2CResponse* PROTOBUF_NONNULL response,
+                        ::EnterSceneS2CResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
 
  private:
@@ -972,28 +972,28 @@ inline void GsEnterSceneRequest::_internal_set_scene_id(::uint64_t value) {
 
 // GsLeaveSceneRequest
 
-// .ChangeSceneInfoPBComponent change_scene_info = 2;
+// .ChangeSceneInfoComp change_scene_info = 2;
 inline bool GsLeaveSceneRequest::has_change_scene_info() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.change_scene_info_ != nullptr);
   return value;
 }
-inline const ::ChangeSceneInfoPBComponent& GsLeaveSceneRequest::_internal_change_scene_info() const {
+inline const ::ChangeSceneInfoComp& GsLeaveSceneRequest::_internal_change_scene_info() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::ChangeSceneInfoPBComponent* p = _impl_.change_scene_info_;
-  return p != nullptr ? *p : reinterpret_cast<const ::ChangeSceneInfoPBComponent&>(::_ChangeSceneInfoPBComponent_default_instance_);
+  const ::ChangeSceneInfoComp* p = _impl_.change_scene_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::ChangeSceneInfoComp&>(::_ChangeSceneInfoComp_default_instance_);
 }
-inline const ::ChangeSceneInfoPBComponent& GsLeaveSceneRequest::change_scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::ChangeSceneInfoComp& GsLeaveSceneRequest::change_scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:GsLeaveSceneRequest.change_scene_info)
   return _internal_change_scene_info();
 }
 inline void GsLeaveSceneRequest::unsafe_arena_set_allocated_change_scene_info(
-    ::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE value) {
+    ::ChangeSceneInfoComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.change_scene_info_);
   }
-  _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(value);
+  _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoComp*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -1001,11 +1001,11 @@ inline void GsLeaveSceneRequest::unsafe_arena_set_allocated_change_scene_info(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:GsLeaveSceneRequest.change_scene_info)
 }
-inline ::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE GsLeaveSceneRequest::release_change_scene_info() {
+inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE GsLeaveSceneRequest::release_change_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::ChangeSceneInfoPBComponent* released = _impl_.change_scene_info_;
+  ::ChangeSceneInfoComp* released = _impl_.change_scene_info_;
   _impl_.change_scene_info_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1020,31 +1020,31 @@ inline ::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE GsLeaveSceneRequest::rele
   }
   return released;
 }
-inline ::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE GsLeaveSceneRequest::unsafe_arena_release_change_scene_info() {
+inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE GsLeaveSceneRequest::unsafe_arena_release_change_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:GsLeaveSceneRequest.change_scene_info)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::ChangeSceneInfoPBComponent* temp = _impl_.change_scene_info_;
+  ::ChangeSceneInfoComp* temp = _impl_.change_scene_info_;
   _impl_.change_scene_info_ = nullptr;
   return temp;
 }
-inline ::ChangeSceneInfoPBComponent* PROTOBUF_NONNULL GsLeaveSceneRequest::_internal_mutable_change_scene_info() {
+inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL GsLeaveSceneRequest::_internal_mutable_change_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.change_scene_info_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::ChangeSceneInfoPBComponent>(GetArena());
-    _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::ChangeSceneInfoComp>(GetArena());
+    _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoComp*>(p);
   }
   return _impl_.change_scene_info_;
 }
-inline ::ChangeSceneInfoPBComponent* PROTOBUF_NONNULL GsLeaveSceneRequest::mutable_change_scene_info()
+inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL GsLeaveSceneRequest::mutable_change_scene_info()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::ChangeSceneInfoPBComponent* _msg = _internal_mutable_change_scene_info();
+  ::ChangeSceneInfoComp* _msg = _internal_mutable_change_scene_info();
   // @@protoc_insertion_point(field_mutable:GsLeaveSceneRequest.change_scene_info)
   return _msg;
 }
-inline void GsLeaveSceneRequest::set_allocated_change_scene_info(::ChangeSceneInfoPBComponent* PROTOBUF_NULLABLE value) {
+inline void GsLeaveSceneRequest::set_allocated_change_scene_info(::ChangeSceneInfoComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -1061,7 +1061,7 @@ inline void GsLeaveSceneRequest::set_allocated_change_scene_info(::ChangeSceneIn
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoPBComponent*>(value);
+  _impl_.change_scene_info_ = reinterpret_cast<::ChangeSceneInfoComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:GsLeaveSceneRequest.change_scene_info)
 }
 
@@ -1071,24 +1071,24 @@ inline void GsLeaveSceneRequest::set_allocated_change_scene_info(::ChangeSceneIn
 
 // -------------------------------------------------------------------
 
-// EnterScenerS2CResponse
+// EnterSceneS2CResponse
 
 // .TipInfoMessage error_message = 1;
-inline bool EnterScenerS2CResponse::has_error_message() const {
+inline bool EnterSceneS2CResponse::has_error_message() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
-inline const ::TipInfoMessage& EnterScenerS2CResponse::_internal_error_message() const {
+inline const ::TipInfoMessage& EnterSceneS2CResponse::_internal_error_message() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::TipInfoMessage* p = _impl_.error_message_;
   return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
 }
-inline const ::TipInfoMessage& EnterScenerS2CResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:EnterScenerS2CResponse.error_message)
+inline const ::TipInfoMessage& EnterSceneS2CResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:EnterSceneS2CResponse.error_message)
   return _internal_error_message();
 }
-inline void EnterScenerS2CResponse::unsafe_arena_set_allocated_error_message(
+inline void EnterSceneS2CResponse::unsafe_arena_set_allocated_error_message(
     ::TipInfoMessage* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -1100,9 +1100,9 @@ inline void EnterScenerS2CResponse::unsafe_arena_set_allocated_error_message(
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:EnterScenerS2CResponse.error_message)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:EnterSceneS2CResponse.error_message)
 }
-inline ::TipInfoMessage* PROTOBUF_NULLABLE EnterScenerS2CResponse::release_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NULLABLE EnterSceneS2CResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -1121,16 +1121,16 @@ inline ::TipInfoMessage* PROTOBUF_NULLABLE EnterScenerS2CResponse::release_error
   }
   return released;
 }
-inline ::TipInfoMessage* PROTOBUF_NULLABLE EnterScenerS2CResponse::unsafe_arena_release_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NULLABLE EnterSceneS2CResponse::unsafe_arena_release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:EnterScenerS2CResponse.error_message)
+  // @@protoc_insertion_point(field_release:EnterSceneS2CResponse.error_message)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
 }
-inline ::TipInfoMessage* PROTOBUF_NONNULL EnterScenerS2CResponse::_internal_mutable_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NONNULL EnterSceneS2CResponse::_internal_mutable_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.error_message_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
@@ -1138,14 +1138,14 @@ inline ::TipInfoMessage* PROTOBUF_NONNULL EnterScenerS2CResponse::_internal_muta
   }
   return _impl_.error_message_;
 }
-inline ::TipInfoMessage* PROTOBUF_NONNULL EnterScenerS2CResponse::mutable_error_message()
+inline ::TipInfoMessage* PROTOBUF_NONNULL EnterSceneS2CResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
-  // @@protoc_insertion_point(field_mutable:EnterScenerS2CResponse.error_message)
+  // @@protoc_insertion_point(field_mutable:EnterSceneS2CResponse.error_message)
   return _msg;
 }
-inline void EnterScenerS2CResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
+inline void EnterSceneS2CResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -1163,7 +1163,7 @@ inline void EnterScenerS2CResponse::set_allocated_error_message(::TipInfoMessage
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  // @@protoc_insertion_point(field_set_allocated:EnterScenerS2CResponse.error_message)
+  // @@protoc_insertion_point(field_set_allocated:EnterSceneS2CResponse.error_message)
 }
 
 #ifdef __GNUC__

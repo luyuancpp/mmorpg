@@ -1225,19 +1225,19 @@ class ActorBaseAttributesS2C final : public ::google::protobuf::Message
   ::Velocity* PROTOBUF_NONNULL _internal_mutable_velocity();
 
   public:
-  // .CombatStateFlagsPbComponent combat_state_flags = 4;
+  // .CombatStateFlagsComp combat_state_flags = 4;
   bool has_combat_state_flags() const;
   void clear_combat_state_flags() ;
-  const ::CombatStateFlagsPbComponent& combat_state_flags() const;
-  [[nodiscard]] ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE release_combat_state_flags();
-  ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL mutable_combat_state_flags();
-  void set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE value);
-  ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE unsafe_arena_release_combat_state_flags();
+  const ::CombatStateFlagsComp& combat_state_flags() const;
+  [[nodiscard]] ::CombatStateFlagsComp* PROTOBUF_NULLABLE release_combat_state_flags();
+  ::CombatStateFlagsComp* PROTOBUF_NONNULL mutable_combat_state_flags();
+  void set_allocated_combat_state_flags(::CombatStateFlagsComp* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_combat_state_flags(::CombatStateFlagsComp* PROTOBUF_NULLABLE value);
+  ::CombatStateFlagsComp* PROTOBUF_NULLABLE unsafe_arena_release_combat_state_flags();
 
   private:
-  const ::CombatStateFlagsPbComponent& _internal_combat_state_flags() const;
-  ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL _internal_mutable_combat_state_flags();
+  const ::CombatStateFlagsComp& _internal_combat_state_flags() const;
+  ::CombatStateFlagsComp* PROTOBUF_NONNULL _internal_mutable_combat_state_flags();
 
   public:
   // uint64 entity_id = 1;
@@ -1278,7 +1278,7 @@ class ActorBaseAttributesS2C final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::Transform* PROTOBUF_NULLABLE transform_;
     ::Velocity* PROTOBUF_NULLABLE velocity_;
-    ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE combat_state_flags_;
+    ::CombatStateFlagsComp* PROTOBUF_NULLABLE combat_state_flags_;
     ::uint64_t entity_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1617,28 +1617,28 @@ inline void ActorBaseAttributesS2C::set_allocated_velocity(::Velocity* PROTOBUF_
   // @@protoc_insertion_point(field_set_allocated:ActorBaseAttributesS2C.velocity)
 }
 
-// .CombatStateFlagsPbComponent combat_state_flags = 4;
+// .CombatStateFlagsComp combat_state_flags = 4;
 inline bool ActorBaseAttributesS2C::has_combat_state_flags() const {
   bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.combat_state_flags_ != nullptr);
   return value;
 }
-inline const ::CombatStateFlagsPbComponent& ActorBaseAttributesS2C::_internal_combat_state_flags() const {
+inline const ::CombatStateFlagsComp& ActorBaseAttributesS2C::_internal_combat_state_flags() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::CombatStateFlagsPbComponent* p = _impl_.combat_state_flags_;
-  return p != nullptr ? *p : reinterpret_cast<const ::CombatStateFlagsPbComponent&>(::_CombatStateFlagsPbComponent_default_instance_);
+  const ::CombatStateFlagsComp* p = _impl_.combat_state_flags_;
+  return p != nullptr ? *p : reinterpret_cast<const ::CombatStateFlagsComp&>(::_CombatStateFlagsComp_default_instance_);
 }
-inline const ::CombatStateFlagsPbComponent& ActorBaseAttributesS2C::combat_state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::CombatStateFlagsComp& ActorBaseAttributesS2C::combat_state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:ActorBaseAttributesS2C.combat_state_flags)
   return _internal_combat_state_flags();
 }
 inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_combat_state_flags(
-    ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE value) {
+    ::CombatStateFlagsComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.combat_state_flags_);
   }
-  _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsPbComponent*>(value);
+  _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsComp*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000004u;
   } else {
@@ -1646,11 +1646,11 @@ inline void ActorBaseAttributesS2C::unsafe_arena_set_allocated_combat_state_flag
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ActorBaseAttributesS2C.combat_state_flags)
 }
-inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_combat_state_flags() {
+inline ::CombatStateFlagsComp* PROTOBUF_NULLABLE ActorBaseAttributesS2C::release_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000004u;
-  ::CombatStateFlagsPbComponent* released = _impl_.combat_state_flags_;
+  ::CombatStateFlagsComp* released = _impl_.combat_state_flags_;
   _impl_.combat_state_flags_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1665,31 +1665,31 @@ inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE ActorBaseAttributesS2C::
   }
   return released;
 }
-inline ::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE ActorBaseAttributesS2C::unsafe_arena_release_combat_state_flags() {
+inline ::CombatStateFlagsComp* PROTOBUF_NULLABLE ActorBaseAttributesS2C::unsafe_arena_release_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:ActorBaseAttributesS2C.combat_state_flags)
 
   _impl_._has_bits_[0] &= ~0x00000004u;
-  ::CombatStateFlagsPbComponent* temp = _impl_.combat_state_flags_;
+  ::CombatStateFlagsComp* temp = _impl_.combat_state_flags_;
   _impl_.combat_state_flags_ = nullptr;
   return temp;
 }
-inline ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL ActorBaseAttributesS2C::_internal_mutable_combat_state_flags() {
+inline ::CombatStateFlagsComp* PROTOBUF_NONNULL ActorBaseAttributesS2C::_internal_mutable_combat_state_flags() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.combat_state_flags_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::CombatStateFlagsPbComponent>(GetArena());
-    _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsPbComponent*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::CombatStateFlagsComp>(GetArena());
+    _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsComp*>(p);
   }
   return _impl_.combat_state_flags_;
 }
-inline ::CombatStateFlagsPbComponent* PROTOBUF_NONNULL ActorBaseAttributesS2C::mutable_combat_state_flags()
+inline ::CombatStateFlagsComp* PROTOBUF_NONNULL ActorBaseAttributesS2C::mutable_combat_state_flags()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000004u;
-  ::CombatStateFlagsPbComponent* _msg = _internal_mutable_combat_state_flags();
+  ::CombatStateFlagsComp* _msg = _internal_mutable_combat_state_flags();
   // @@protoc_insertion_point(field_mutable:ActorBaseAttributesS2C.combat_state_flags)
   return _msg;
 }
-inline void ActorBaseAttributesS2C::set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* PROTOBUF_NULLABLE value) {
+inline void ActorBaseAttributesS2C::set_allocated_combat_state_flags(::CombatStateFlagsComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -1706,7 +1706,7 @@ inline void ActorBaseAttributesS2C::set_allocated_combat_state_flags(::CombatSta
     _impl_._has_bits_[0] &= ~0x00000004u;
   }
 
-  _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsPbComponent*>(value);
+  _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:ActorBaseAttributesS2C.combat_state_flags)
 }
 

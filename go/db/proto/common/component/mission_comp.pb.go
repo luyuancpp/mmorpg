@@ -21,26 +21,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type MissionPBComponentEMissionStatus int32
+type MissionCompEMissionStatus int32
 
 const (
-	MissionPBComponent_E_MISSION_NORMAL      MissionPBComponentEMissionStatus = 0
-	MissionPBComponent_E_MISSION_ACHIEVEMENT MissionPBComponentEMissionStatus = 1
-	MissionPBComponent_E_MISSION_COMPLETE    MissionPBComponentEMissionStatus = 2
-	MissionPBComponent_E_MISSION_TIME_OUT    MissionPBComponentEMissionStatus = 3
-	MissionPBComponent_E_MISSION_FAILD       MissionPBComponentEMissionStatus = 4
+	MissionComp_E_MISSION_NORMAL      MissionCompEMissionStatus = 0
+	MissionComp_E_MISSION_ACHIEVEMENT MissionCompEMissionStatus = 1
+	MissionComp_E_MISSION_COMPLETE    MissionCompEMissionStatus = 2
+	MissionComp_E_MISSION_TIME_OUT    MissionCompEMissionStatus = 3
+	MissionComp_E_MISSION_FAILD       MissionCompEMissionStatus = 4
 )
 
-// Enum value maps for MissionPBComponentEMissionStatus.
+// Enum value maps for MissionCompEMissionStatus.
 var (
-	MissionPBComponentEMissionStatus_name = map[int32]string{
+	MissionCompEMissionStatus_name = map[int32]string{
 		0: "E_MISSION_NORMAL",
 		1: "E_MISSION_ACHIEVEMENT",
 		2: "E_MISSION_COMPLETE",
 		3: "E_MISSION_TIME_OUT",
 		4: "E_MISSION_FAILD",
 	}
-	MissionPBComponentEMissionStatus_value = map[string]int32{
+	MissionCompEMissionStatus_value = map[string]int32{
 		"E_MISSION_NORMAL":      0,
 		"E_MISSION_ACHIEVEMENT": 1,
 		"E_MISSION_COMPLETE":    2,
@@ -49,51 +49,51 @@ var (
 	}
 )
 
-func (x MissionPBComponentEMissionStatus) Enum() *MissionPBComponentEMissionStatus {
-	p := new(MissionPBComponentEMissionStatus)
+func (x MissionCompEMissionStatus) Enum() *MissionCompEMissionStatus {
+	p := new(MissionCompEMissionStatus)
 	*p = x
 	return p
 }
 
-func (x MissionPBComponentEMissionStatus) String() string {
+func (x MissionCompEMissionStatus) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (MissionPBComponentEMissionStatus) Descriptor() protoreflect.EnumDescriptor {
+func (MissionCompEMissionStatus) Descriptor() protoreflect.EnumDescriptor {
 	return file_proto_common_component_mission_comp_proto_enumTypes[0].Descriptor()
 }
 
-func (MissionPBComponentEMissionStatus) Type() protoreflect.EnumType {
+func (MissionCompEMissionStatus) Type() protoreflect.EnumType {
 	return &file_proto_common_component_mission_comp_proto_enumTypes[0]
 }
 
-func (x MissionPBComponentEMissionStatus) Number() protoreflect.EnumNumber {
+func (x MissionCompEMissionStatus) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use MissionPBComponentEMissionStatus.Descriptor instead.
-func (MissionPBComponentEMissionStatus) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use MissionCompEMissionStatus.Descriptor instead.
+func (MissionCompEMissionStatus) EnumDescriptor() ([]byte, []int) {
 	return file_proto_common_component_mission_comp_proto_rawDescGZIP(), []int{0, 0}
 }
 
-type MissionListPBComponentEMissionScope int32
+type MissionListCompEMissionScope int32
 
 const (
-	MissionListPBComponent_kPlayerMission       MissionListPBComponentEMissionScope = 0 //普通任务
-	MissionListPBComponent_kPlayerAchievment    MissionListPBComponentEMissionScope = 1 //成就
-	MissionListPBComponent_kPlayerDailyActivity MissionListPBComponentEMissionScope = 2 //每日活动
-	MissionListPBComponent_kPlayerMissionSize   MissionListPBComponentEMissionScope = 3 //最大值
+	MissionListComp_kPlayerMission       MissionListCompEMissionScope = 0 //普通任务
+	MissionListComp_kPlayerAchievment    MissionListCompEMissionScope = 1 //成就
+	MissionListComp_kPlayerDailyActivity MissionListCompEMissionScope = 2 //每日活动
+	MissionListComp_kPlayerMissionSize   MissionListCompEMissionScope = 3 //最大值
 )
 
-// Enum value maps for MissionListPBComponentEMissionScope.
+// Enum value maps for MissionListCompEMissionScope.
 var (
-	MissionListPBComponentEMissionScope_name = map[int32]string{
+	MissionListCompEMissionScope_name = map[int32]string{
 		0: "kPlayerMission",
 		1: "kPlayerAchievment",
 		2: "kPlayerDailyActivity",
 		3: "kPlayerMissionSize",
 	}
-	MissionListPBComponentEMissionScope_value = map[string]int32{
+	MissionListCompEMissionScope_value = map[string]int32{
 		"kPlayerMission":       0,
 		"kPlayerAchievment":    1,
 		"kPlayerDailyActivity": 2,
@@ -101,34 +101,34 @@ var (
 	}
 )
 
-func (x MissionListPBComponentEMissionScope) Enum() *MissionListPBComponentEMissionScope {
-	p := new(MissionListPBComponentEMissionScope)
+func (x MissionListCompEMissionScope) Enum() *MissionListCompEMissionScope {
+	p := new(MissionListCompEMissionScope)
 	*p = x
 	return p
 }
 
-func (x MissionListPBComponentEMissionScope) String() string {
+func (x MissionListCompEMissionScope) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (MissionListPBComponentEMissionScope) Descriptor() protoreflect.EnumDescriptor {
+func (MissionListCompEMissionScope) Descriptor() protoreflect.EnumDescriptor {
 	return file_proto_common_component_mission_comp_proto_enumTypes[1].Descriptor()
 }
 
-func (MissionListPBComponentEMissionScope) Type() protoreflect.EnumType {
+func (MissionListCompEMissionScope) Type() protoreflect.EnumType {
 	return &file_proto_common_component_mission_comp_proto_enumTypes[1]
 }
 
-func (x MissionListPBComponentEMissionScope) Number() protoreflect.EnumNumber {
+func (x MissionListCompEMissionScope) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use MissionListPBComponentEMissionScope.Descriptor instead.
-func (MissionListPBComponentEMissionScope) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use MissionListCompEMissionScope.Descriptor instead.
+func (MissionListCompEMissionScope) EnumDescriptor() ([]byte, []int) {
 	return file_proto_common_component_mission_comp_proto_rawDescGZIP(), []int{1, 0}
 }
 
-type MissionPBComponent struct {
+type MissionComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Status        uint32                 `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"`
@@ -138,20 +138,20 @@ type MissionPBComponent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *MissionPBComponent) Reset() {
-	*x = MissionPBComponent{}
+func (x *MissionComp) Reset() {
+	*x = MissionComp{}
 	mi := &file_proto_common_component_mission_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MissionPBComponent) String() string {
+func (x *MissionComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MissionPBComponent) ProtoMessage() {}
+func (*MissionComp) ProtoMessage() {}
 
-func (x *MissionPBComponent) ProtoReflect() protoreflect.Message {
+func (x *MissionComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_mission_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -163,63 +163,63 @@ func (x *MissionPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MissionPBComponent.ProtoReflect.Descriptor instead.
-func (*MissionPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use MissionComp.ProtoReflect.Descriptor instead.
+func (*MissionComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_mission_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *MissionPBComponent) GetId() uint32 {
+func (x *MissionComp) GetId() uint32 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *MissionPBComponent) GetStatus() uint32 {
+func (x *MissionComp) GetStatus() uint32 {
 	if x != nil {
 		return x.Status
 	}
 	return 0
 }
 
-func (x *MissionPBComponent) GetProgress() []uint32 {
+func (x *MissionComp) GetProgress() []uint32 {
 	if x != nil {
 		return x.Progress
 	}
 	return nil
 }
 
-func (x *MissionPBComponent) GetData() []byte {
+func (x *MissionComp) GetData() []byte {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-type MissionListPBComponent struct {
-	state            protoimpl.MessageState         `protogen:"open.v1"`
-	Missions         map[uint32]*MissionPBComponent `protobuf:"bytes,1,rep,name=missions,proto3" json:"missions,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	CompleteMissions []byte                         `protobuf:"bytes,2,opt,name=complete_missions,json=completeMissions,proto3" json:"complete_missions,omitempty"`
-	MissionBeginTime map[uint32]uint64              `protobuf:"bytes,3,rep,name=mission_begin_time,json=missionBeginTime,proto3" json:"mission_begin_time,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	Type             uint32                         `protobuf:"varint,4,opt,name=type,proto3" json:"type,omitempty"`
+type MissionListComp struct {
+	state            protoimpl.MessageState  `protogen:"open.v1"`
+	Missions         map[uint32]*MissionComp `protobuf:"bytes,1,rep,name=missions,proto3" json:"missions,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	CompleteMissions []byte                  `protobuf:"bytes,2,opt,name=complete_missions,json=completeMissions,proto3" json:"complete_missions,omitempty"`
+	MissionBeginTime map[uint32]uint64       `protobuf:"bytes,3,rep,name=mission_begin_time,json=missionBeginTime,proto3" json:"mission_begin_time,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	Type             uint32                  `protobuf:"varint,4,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
 
-func (x *MissionListPBComponent) Reset() {
-	*x = MissionListPBComponent{}
+func (x *MissionListComp) Reset() {
+	*x = MissionListComp{}
 	mi := &file_proto_common_component_mission_comp_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MissionListPBComponent) String() string {
+func (x *MissionListComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MissionListPBComponent) ProtoMessage() {}
+func (*MissionListComp) ProtoMessage() {}
 
-func (x *MissionListPBComponent) ProtoReflect() protoreflect.Message {
+func (x *MissionListComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_mission_comp_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -231,60 +231,60 @@ func (x *MissionListPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MissionListPBComponent.ProtoReflect.Descriptor instead.
-func (*MissionListPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use MissionListComp.ProtoReflect.Descriptor instead.
+func (*MissionListComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_mission_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MissionListPBComponent) GetMissions() map[uint32]*MissionPBComponent {
+func (x *MissionListComp) GetMissions() map[uint32]*MissionComp {
 	if x != nil {
 		return x.Missions
 	}
 	return nil
 }
 
-func (x *MissionListPBComponent) GetCompleteMissions() []byte {
+func (x *MissionListComp) GetCompleteMissions() []byte {
 	if x != nil {
 		return x.CompleteMissions
 	}
 	return nil
 }
 
-func (x *MissionListPBComponent) GetMissionBeginTime() map[uint32]uint64 {
+func (x *MissionListComp) GetMissionBeginTime() map[uint32]uint64 {
 	if x != nil {
 		return x.MissionBeginTime
 	}
 	return nil
 }
 
-func (x *MissionListPBComponent) GetType() uint32 {
+func (x *MissionListComp) GetType() uint32 {
 	if x != nil {
 		return x.Type
 	}
 	return 0
 }
 
-type RewardListPBComponent struct {
+type RewardListComp struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	CanRewardMissionId map[uint32]bool        `protobuf:"bytes,1,rep,name=can_reward_mission_id,json=canRewardMissionId,proto3" json:"can_reward_mission_id,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
-func (x *RewardListPBComponent) Reset() {
-	*x = RewardListPBComponent{}
+func (x *RewardListComp) Reset() {
+	*x = RewardListComp{}
 	mi := &file_proto_common_component_mission_comp_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RewardListPBComponent) String() string {
+func (x *RewardListComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RewardListPBComponent) ProtoMessage() {}
+func (*RewardListComp) ProtoMessage() {}
 
-func (x *RewardListPBComponent) ProtoReflect() protoreflect.Message {
+func (x *RewardListComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_mission_comp_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -296,12 +296,12 @@ func (x *RewardListPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RewardListPBComponent.ProtoReflect.Descriptor instead.
-func (*RewardListPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use RewardListComp.ProtoReflect.Descriptor instead.
+func (*RewardListComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_mission_comp_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *RewardListPBComponent) GetCanRewardMissionId() map[uint32]bool {
+func (x *RewardListComp) GetCanRewardMissionId() map[uint32]bool {
 	if x != nil {
 		return x.CanRewardMissionId
 	}
@@ -312,8 +312,8 @@ var File_proto_common_component_mission_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_mission_comp_proto_rawDesc = "" +
 	"\n" +
-	")proto/common/component/mission_comp.proto\"\xf5\x01\n" +
-	"\x12MissionPBComponent\x12\x0e\n" +
+	")proto/common/component/mission_comp.proto\"\xee\x01\n" +
+	"\vMissionComp\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\rR\x06status\x12\x1a\n" +
 	"\bprogress\x18\x03 \x03(\rR\bprogress\x12\x12\n" +
@@ -323,15 +323,15 @@ const file_proto_common_component_mission_comp_proto_rawDesc = "" +
 	"\x15E_MISSION_ACHIEVEMENT\x10\x01\x12\x16\n" +
 	"\x12E_MISSION_COMPLETE\x10\x02\x12\x16\n" +
 	"\x12E_MISSION_TIME_OUT\x10\x03\x12\x13\n" +
-	"\x0fE_MISSION_FAILD\x10\x04\"\xfe\x03\n" +
-	"\x16MissionListPBComponent\x12A\n" +
-	"\bmissions\x18\x01 \x03(\v2%.MissionListPBComponent.MissionsEntryR\bmissions\x12+\n" +
-	"\x11complete_missions\x18\x02 \x01(\fR\x10completeMissions\x12[\n" +
-	"\x12mission_begin_time\x18\x03 \x03(\v2-.MissionListPBComponent.MissionBeginTimeEntryR\x10missionBeginTime\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\rR\x04type\x1aP\n" +
+	"\x0fE_MISSION_FAILD\x10\x04\"\xe2\x03\n" +
+	"\x0fMissionListComp\x12:\n" +
+	"\bmissions\x18\x01 \x03(\v2\x1e.MissionListComp.MissionsEntryR\bmissions\x12+\n" +
+	"\x11complete_missions\x18\x02 \x01(\fR\x10completeMissions\x12T\n" +
+	"\x12mission_begin_time\x18\x03 \x03(\v2&.MissionListComp.MissionBeginTimeEntryR\x10missionBeginTime\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\rR\x04type\x1aI\n" +
 	"\rMissionsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\rR\x03key\x12)\n" +
-	"\x05value\x18\x02 \x01(\v2\x13.MissionPBComponentR\x05value:\x028\x01\x1aC\n" +
+	"\x03key\x18\x01 \x01(\rR\x03key\x12\"\n" +
+	"\x05value\x18\x02 \x01(\v2\f.MissionCompR\x05value:\x028\x01\x1aC\n" +
 	"\x15MissionBeginTimeEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"l\n" +
@@ -339,9 +339,9 @@ const file_proto_common_component_mission_comp_proto_rawDesc = "" +
 	"\x0ekPlayerMission\x10\x00\x12\x15\n" +
 	"\x11kPlayerAchievment\x10\x01\x12\x18\n" +
 	"\x14kPlayerDailyActivity\x10\x02\x12\x16\n" +
-	"\x12kPlayerMissionSize\x10\x03\"\xc1\x01\n" +
-	"\x15RewardListPBComponent\x12a\n" +
-	"\x15can_reward_mission_id\x18\x01 \x03(\v2..RewardListPBComponent.CanRewardMissionIdEntryR\x12canRewardMissionId\x1aE\n" +
+	"\x12kPlayerMissionSize\x10\x03\"\xb3\x01\n" +
+	"\x0eRewardListComp\x12Z\n" +
+	"\x15can_reward_mission_id\x18\x01 \x03(\v2'.RewardListComp.CanRewardMissionIdEntryR\x12canRewardMissionId\x1aE\n" +
 	"\x17CanRewardMissionIdEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B\x1bZ\x19db/proto/common/componentb\x06proto3"
@@ -361,20 +361,20 @@ func file_proto_common_component_mission_comp_proto_rawDescGZIP() []byte {
 var file_proto_common_component_mission_comp_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_proto_common_component_mission_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_common_component_mission_comp_proto_goTypes = []any{
-	(MissionPBComponentEMissionStatus)(0),    // 0: MissionPBComponent.eMissionStatus
-	(MissionListPBComponentEMissionScope)(0), // 1: MissionListPBComponent.eMissionScope
-	(*MissionPBComponent)(nil),               // 2: MissionPBComponent
-	(*MissionListPBComponent)(nil),           // 3: MissionListPBComponent
-	(*RewardListPBComponent)(nil),            // 4: RewardListPBComponent
-	nil,                                      // 5: MissionListPBComponent.MissionsEntry
-	nil,                                      // 6: MissionListPBComponent.MissionBeginTimeEntry
-	nil,                                      // 7: RewardListPBComponent.CanRewardMissionIdEntry
+	(MissionCompEMissionStatus)(0),    // 0: MissionComp.eMissionStatus
+	(MissionListCompEMissionScope)(0), // 1: MissionListComp.eMissionScope
+	(*MissionComp)(nil),               // 2: MissionComp
+	(*MissionListComp)(nil),           // 3: MissionListComp
+	(*RewardListComp)(nil),            // 4: RewardListComp
+	nil,                               // 5: MissionListComp.MissionsEntry
+	nil,                               // 6: MissionListComp.MissionBeginTimeEntry
+	nil,                               // 7: RewardListComp.CanRewardMissionIdEntry
 }
 var file_proto_common_component_mission_comp_proto_depIdxs = []int32{
-	5, // 0: MissionListPBComponent.missions:type_name -> MissionListPBComponent.MissionsEntry
-	6, // 1: MissionListPBComponent.mission_begin_time:type_name -> MissionListPBComponent.MissionBeginTimeEntry
-	7, // 2: RewardListPBComponent.can_reward_mission_id:type_name -> RewardListPBComponent.CanRewardMissionIdEntry
-	2, // 3: MissionListPBComponent.MissionsEntry.value:type_name -> MissionPBComponent
+	5, // 0: MissionListComp.missions:type_name -> MissionListComp.MissionsEntry
+	6, // 1: MissionListComp.mission_begin_time:type_name -> MissionListComp.MissionBeginTimeEntry
+	7, // 2: RewardListComp.can_reward_mission_id:type_name -> RewardListComp.CanRewardMissionIdEntry
+	2, // 3: MissionListComp.MissionsEntry.value:type_name -> MissionComp
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name

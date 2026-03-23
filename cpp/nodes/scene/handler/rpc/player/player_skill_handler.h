@@ -12,8 +12,8 @@ public:
     using PlayerService::PlayerService;
 
     static void ReleaseSkill(entt::entity player,
-        const ::ReleaseSkillSkillRequest* request,
-        ::ReleaseSkillSkillResponse* response);
+        const ::ReleaseSkillRequest* request,
+        ::ReleaseSkillResponse* response);
     static void NotifySkillUsed(entt::entity player,
         const ::SkillUsedS2C* request,
         ::Empty* response);
@@ -34,9 +34,9 @@ public:
         case 0:
 			{
             ReleaseSkill(player,
-                static_cast<const ::ReleaseSkillSkillRequest*>(request),
-                static_cast<::ReleaseSkillSkillResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::ReleaseSkillSkillResponse*>(response));
+                static_cast<const ::ReleaseSkillRequest*>(request),
+                static_cast<::ReleaseSkillResponse*>(response));
+            TRANSFER_ERROR_MESSAGE(static_cast<::ReleaseSkillResponse*>(response));
 			}
             break;
         case 1:

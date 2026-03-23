@@ -64,27 +64,27 @@ func (ECombatState) EnumDescriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_combat_state_comp_proto_rawDescGZIP(), []int{0}
 }
 
-type CombatStateDetailsPbComponent struct {
+type CombatStateDetailsComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Sources       map[uint64]bool        `protobuf:"bytes,1,rep,name=sources,proto3" json:"sources,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CombatStateDetailsPbComponent) Reset() {
-	*x = CombatStateDetailsPbComponent{}
+func (x *CombatStateDetailsComp) Reset() {
+	*x = CombatStateDetailsComp{}
 	mi := &file_proto_common_component_actor_combat_state_comp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CombatStateDetailsPbComponent) String() string {
+func (x *CombatStateDetailsComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CombatStateDetailsPbComponent) ProtoMessage() {}
+func (*CombatStateDetailsComp) ProtoMessage() {}
 
-func (x *CombatStateDetailsPbComponent) ProtoReflect() protoreflect.Message {
+func (x *CombatStateDetailsComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_actor_combat_state_comp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -96,39 +96,39 @@ func (x *CombatStateDetailsPbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CombatStateDetailsPbComponent.ProtoReflect.Descriptor instead.
-func (*CombatStateDetailsPbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use CombatStateDetailsComp.ProtoReflect.Descriptor instead.
+func (*CombatStateDetailsComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_combat_state_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CombatStateDetailsPbComponent) GetSources() map[uint64]bool {
+func (x *CombatStateDetailsComp) GetSources() map[uint64]bool {
 	if x != nil {
 		return x.Sources
 	}
 	return nil
 }
 
-type CombatStateCollectionPbComponent struct {
-	state         protoimpl.MessageState                    `protogen:"open.v1"`
-	States        map[uint32]*CombatStateDetailsPbComponent `protobuf:"bytes,1,rep,name=states,proto3" json:"states,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+type CombatStateCollectionComp struct {
+	state         protoimpl.MessageState             `protogen:"open.v1"`
+	States        map[uint32]*CombatStateDetailsComp `protobuf:"bytes,1,rep,name=states,proto3" json:"states,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CombatStateCollectionPbComponent) Reset() {
-	*x = CombatStateCollectionPbComponent{}
+func (x *CombatStateCollectionComp) Reset() {
+	*x = CombatStateCollectionComp{}
 	mi := &file_proto_common_component_actor_combat_state_comp_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CombatStateCollectionPbComponent) String() string {
+func (x *CombatStateCollectionComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CombatStateCollectionPbComponent) ProtoMessage() {}
+func (*CombatStateCollectionComp) ProtoMessage() {}
 
-func (x *CombatStateCollectionPbComponent) ProtoReflect() protoreflect.Message {
+func (x *CombatStateCollectionComp) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_component_actor_combat_state_comp_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -140,12 +140,12 @@ func (x *CombatStateCollectionPbComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CombatStateCollectionPbComponent.ProtoReflect.Descriptor instead.
-func (*CombatStateCollectionPbComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use CombatStateCollectionComp.ProtoReflect.Descriptor instead.
+func (*CombatStateCollectionComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_combat_state_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CombatStateCollectionPbComponent) GetStates() map[uint32]*CombatStateDetailsPbComponent {
+func (x *CombatStateCollectionComp) GetStates() map[uint32]*CombatStateDetailsComp {
 	if x != nil {
 		return x.States
 	}
@@ -156,17 +156,17 @@ var File_proto_common_component_actor_combat_state_comp_proto protoreflect.FileD
 
 const file_proto_common_component_actor_combat_state_comp_proto_rawDesc = "" +
 	"\n" +
-	"4proto/common/component/actor_combat_state_comp.proto\"\xa2\x01\n" +
-	"\x1dCombatStateDetailsPbComponent\x12E\n" +
-	"\asources\x18\x01 \x03(\v2+.CombatStateDetailsPbComponent.SourcesEntryR\asources\x1a:\n" +
+	"4proto/common/component/actor_combat_state_comp.proto\"\x94\x01\n" +
+	"\x16CombatStateDetailsComp\x12>\n" +
+	"\asources\x18\x01 \x03(\v2$.CombatStateDetailsComp.SourcesEntryR\asources\x1a:\n" +
 	"\fSourcesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"\xc4\x01\n" +
-	" CombatStateCollectionPbComponent\x12E\n" +
-	"\x06states\x18\x01 \x03(\v2-.CombatStateCollectionPbComponent.StatesEntryR\x06states\x1aY\n" +
+	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"\xaf\x01\n" +
+	"\x19CombatStateCollectionComp\x12>\n" +
+	"\x06states\x18\x01 \x03(\v2&.CombatStateCollectionComp.StatesEntryR\x06states\x1aR\n" +
 	"\vStatesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\rR\x03key\x124\n" +
-	"\x05value\x18\x02 \x01(\v2\x1e.CombatStateDetailsPbComponentR\x05value:\x028\x01*\x1c\n" +
+	"\x03key\x18\x01 \x01(\rR\x03key\x12-\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.CombatStateDetailsCompR\x05value:\x028\x01*\x1c\n" +
 	"\feCombatState\x12\f\n" +
 	"\bkSilence\x10\x00B%Z#data_service/proto/common/componentb\x06proto3"
 
@@ -185,16 +185,16 @@ func file_proto_common_component_actor_combat_state_comp_proto_rawDescGZIP() []b
 var file_proto_common_component_actor_combat_state_comp_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_proto_common_component_actor_combat_state_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_common_component_actor_combat_state_comp_proto_goTypes = []any{
-	(ECombatState)(0),                        // 0: eCombatState
-	(*CombatStateDetailsPbComponent)(nil),    // 1: CombatStateDetailsPbComponent
-	(*CombatStateCollectionPbComponent)(nil), // 2: CombatStateCollectionPbComponent
-	nil,                                      // 3: CombatStateDetailsPbComponent.SourcesEntry
-	nil,                                      // 4: CombatStateCollectionPbComponent.StatesEntry
+	(ECombatState)(0),                 // 0: eCombatState
+	(*CombatStateDetailsComp)(nil),    // 1: CombatStateDetailsComp
+	(*CombatStateCollectionComp)(nil), // 2: CombatStateCollectionComp
+	nil,                               // 3: CombatStateDetailsComp.SourcesEntry
+	nil,                               // 4: CombatStateCollectionComp.StatesEntry
 }
 var file_proto_common_component_actor_combat_state_comp_proto_depIdxs = []int32{
-	3, // 0: CombatStateDetailsPbComponent.sources:type_name -> CombatStateDetailsPbComponent.SourcesEntry
-	4, // 1: CombatStateCollectionPbComponent.states:type_name -> CombatStateCollectionPbComponent.StatesEntry
-	1, // 2: CombatStateCollectionPbComponent.StatesEntry.value:type_name -> CombatStateDetailsPbComponent
+	3, // 0: CombatStateDetailsComp.sources:type_name -> CombatStateDetailsComp.SourcesEntry
+	4, // 1: CombatStateCollectionComp.states:type_name -> CombatStateCollectionComp.StatesEntry
+	1, // 2: CombatStateCollectionComp.StatesEntry.value:type_name -> CombatStateDetailsComp
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

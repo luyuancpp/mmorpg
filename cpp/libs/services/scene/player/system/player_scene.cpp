@@ -94,7 +94,7 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 	const auto sceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player);
 	if (!sceneEntity) return;
 
-	const auto sceneInfo = tlsRegistryManager.actorRegistry.try_get<SceneInfoPBComponent>(sceneEntity->sceneEntity);
+	const auto sceneInfo = tlsRegistryManager.actorRegistry.try_get<SceneInfoComp>(sceneEntity->sceneEntity);
 	if (!sceneInfo) return;
 
 	uint64_t currentSceneId = sceneInfo->guid(); // Assuming guid is scene_id (uint32 vs uint64 issue handled by cast)
@@ -102,10 +102,10 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 
 	if (leaderSceneId != 0 && leaderSceneId != currentSceneId)
 	{
-		const auto* playerSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+		const auto* playerSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 		if (!playerSessionPB)
 		{
-			LOG_ERROR << "PlayerSessionSnapshotPBComp missing for follower " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
+			LOG_ERROR << "PlayerSessionSnapshotComp missing for follower " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
 			return;
 		}
 
@@ -150,7 +150,7 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 
 void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene)
 {
-	const auto sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
+	const auto sceneInfo = tlsRegistryManager.sceneRegistry.try_get<SceneInfoComp>(scene);
 	if (sceneInfo == nullptr)
 	{
 		LOG_ERROR << "Failed to get scene info for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);

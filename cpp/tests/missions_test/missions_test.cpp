@@ -43,7 +43,7 @@ TEST(MissionsComp, AcceptMission)
 	std::size_t acceptedMissionCount = 0;
 
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	for (int32_t i = 0; i < missionConfigData.data_size(); ++i)
 	{
@@ -75,7 +75,7 @@ TEST(MissionsComp, RepeatedMissionId)
 		acceptMissionEvent.set_mission_id(missionId1);
 
 		auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-		auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+		auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 		// First accept should succeed
 		EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent, comp, MissionConfig::GetSingleton()));
@@ -101,7 +101,7 @@ TEST(MissionsComp, RepeatedMissionType)
 		acceptMissionEvent2.set_mission_id(2);
 
 		auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-		auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+		auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 		// First accept for mission_id = 3 should succeed
 		EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent1, comp, MissionConfig::GetSingleton()));
@@ -126,7 +126,7 @@ TEST(MissionsComp, TriggerMissionCondition)
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Accept mission with mission_id = 1
 	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent, comp, MissionConfig::GetSingleton()));
@@ -190,7 +190,7 @@ TEST(MissionsComp, ConditionTypeSize)
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent, comp, MissionConfig::GetSingleton()));
 
@@ -290,7 +290,7 @@ TEST(MissionsComp, CompleteAcceptMission)
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Set the accept mission event for mission ID 4
 	constexpr uint32_t missionId = 4;
@@ -298,7 +298,7 @@ TEST(MissionsComp, CompleteAcceptMission)
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent.set_mission_id(missionId);
 
-	auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Verify if accepting the mission is successful
 	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent, comp, MissionConfig::GetSingleton()));
@@ -329,7 +329,7 @@ TEST(MissionsComp, EventTriggerMutableMission)
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Accept mission events for mission IDs 1 and 2
 	constexpr uint32_t missionId1 = 1;
@@ -337,7 +337,7 @@ TEST(MissionsComp, EventTriggerMutableMission)
 	acceptMissionEvent1.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent1.set_mission_id(missionId1);
 
-	auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent1, comp, MissionConfig::GetSingleton()));
 
@@ -372,7 +372,7 @@ TEST(MissionsComp, OnCompleteMission)
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Accept mission ID 7
 	uint32_t missionId = 7;
@@ -423,7 +423,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Accept mission ID 7
 	uint32_t missionId = 7;
@@ -458,7 +458,7 @@ TEST(MissionsComp, MissionCondition)
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Accept three different missions
 	uint32_t missionId = 14;
@@ -511,7 +511,7 @@ TEST(MissionsComp, ConditionAmount)
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Accept mission
 	uint32_t missionId = 13;
@@ -547,9 +547,9 @@ TEST(MissionsComp, MissionRewardList)
 	// Create a player entity with mission and mission reward components
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
-	auto& reward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(playerEntity);
+	auto& reward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(playerEntity);
 
 	// Accept mission
 	uint32_t missionId = 12;
@@ -593,7 +593,7 @@ TEST(MissionsComp, AbandonMission)
 	// Create a player entity with mission and mission reward components
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
-	auto& missionsComponent = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
+	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
 	// Accept mission
 	uint32_t missionId = 12;
@@ -611,7 +611,7 @@ TEST(MissionsComp, AbandonMission)
 	EXPECT_EQ(1, typeMissions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
 
 	// Set mission as rewardable
-	tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
+	tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
 
 	// Prepare abandon mission parameters
 	AbandonParam abandonParam;

@@ -50,12 +50,12 @@ public:
 	}
 
 	void AddScene(entt::entity sceneEntity) {
-		const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneInfoPBComponent>(sceneEntity);
+		const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneInfoComp>(sceneEntity);
 		scenesByConfigId[sceneInfo.scene_confid()].emplace(sceneEntity);
 	}
 
 	void RemoveScene(entt::entity sceneEntity) {
-		const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneInfoPBComponent>(sceneEntity);
+		const auto& sceneInfo = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneInfoComp>(sceneEntity);
 		auto it = scenesByConfigId.find(sceneInfo.scene_confid());
 		if (it != scenesByConfigId.end()) {
 			it->second.erase(sceneEntity);
@@ -103,4 +103,4 @@ struct NodePressureComp {
 };
 
 
-using SceneNodePlayerStatsPtrPbComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
+using SceneNodePlayerStatsPtrComp = std::shared_ptr<GameNodePlayerInfoComp>;

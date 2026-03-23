@@ -433,7 +433,7 @@ func (x *CreateSceneRequest) GetConfigId() uint32 {
 
 type CreateSceneResponse struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneInfo     *common.RoomInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     *common.SceneInfoComp `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -468,7 +468,7 @@ func (*CreateSceneResponse) Descriptor() ([]byte, []int) {
 	return file_proto_service_cpp_rpc_scene_scene_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *CreateSceneResponse) GetSceneInfo() *common.RoomInfoPBComponent {
+func (x *CreateSceneResponse) GetSceneInfo() *common.SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -511,7 +511,7 @@ const file_proto_service_cpp_rpc_scene_scene_proto_rawDesc = "" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\"J\n" +
 	"\x13CreateSceneResponse\x123\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x14.RoomInfoPBComponentR\tsceneInfo2\x81\x06\n" +
+	"scene_info\x18\x01 \x01(\v2\x14.SceneInfoCompR\tsceneInfo2\x81\x06\n" +
 	"\x05Scene\x12:\n" +
 	"\x13PlayerEnterGameNode\x12\x1b.PlayerEnterGameNodeRequest\x1a\x06.Empty\x12J\n" +
 	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x19.NodeRouteMessageResponse\x12b\n" +
@@ -551,7 +551,7 @@ var file_proto_service_cpp_rpc_scene_scene_proto_goTypes = []any{
 	(*CreateSceneResponse)(nil),               // 8: CreateSceneResponse
 	(*common.MessageContent)(nil),             // 9: MessageContent
 	(*common.NetworkAddress)(nil),             // 10: NetworkAddress
-	(*common.RoomInfoPBComponent)(nil),        // 11: RoomInfoPBComponent
+	(*common.SceneInfoComp)(nil),        // 11: SceneInfoComp
 	(*common.NodeRouteMessageRequest)(nil),    // 12: NodeRouteMessageRequest
 	(*common.RouteMessageRequest)(nil),        // 13: RouteMessageRequest
 	(*common.RoutePlayerMessageRequest)(nil),  // 14: RoutePlayerMessageRequest
@@ -566,7 +566,7 @@ var file_proto_service_cpp_rpc_scene_scene_proto_depIdxs = []int32{
 	9,  // 0: ClientSendMessageToPlayerRequest.message_content:type_name -> MessageContent
 	9,  // 1: ClientSendMessageToPlayerResponse.message_content:type_name -> MessageContent
 	10, // 2: GameNodeConnectRequest.rpc_client:type_name -> NetworkAddress
-	11, // 3: CreateSceneResponse.scene_info:type_name -> RoomInfoPBComponent
+	11, // 3: CreateSceneResponse.scene_info:type_name -> SceneInfoComp
 	0,  // 4: Scene.PlayerEnterGameNode:input_type -> PlayerEnterGameNodeRequest
 	12, // 5: Scene.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
 	1,  // 6: Scene.ClientSendMessageToPlayer:input_type -> ClientSendMessageToPlayerRequest

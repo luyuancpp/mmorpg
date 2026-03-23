@@ -1,4 +1,4 @@
 #pragma once
 #include <cstdint>
 
-constexpr uint32_t BuffTestEvetEventId = 6;
+constexpr uint32_t BuffTestEventEventId = 6;

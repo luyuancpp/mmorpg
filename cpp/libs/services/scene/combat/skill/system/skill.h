@@ -14,8 +14,8 @@ class SkillSystem
 public:
 	static void StartCooldown(const entt::entity casterEntity, const SkillTable* skillTable);
 
-	static uint32_t ReleaseSkill(entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request);
-	static uint32_t CheckSkillPrerequisites(entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request);
+	static uint32_t ReleaseSkill(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
+	static uint32_t CheckSkillPrerequisites(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
 
 	static bool IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType);
 
@@ -35,7 +35,7 @@ public:
 	static void HandleSkillDeactivate(entt::entity casterEntity, uint64_t skillId);
 
     // Validate target
-    static uint32_t ValidateTarget(const ::ReleaseSkillSkillRequest* request);
+    static uint32_t ValidateTarget(const ::ReleaseSkillRequest* request);
 
     // Check cooldown
     static uint32_t CheckCooldown(entt::entity casterEntity, const SkillTable* skillTable);
@@ -48,7 +48,7 @@ public:
 	static uint32_t CheckChannel(const entt::entity casterEntity, const SkillTable* skillTable);
 
     // Broadcast skill-used message
-    static void BroadcastSkillUsedMessage(entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request);
+    static void BroadcastSkillUsedMessage(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
 	
     // Set up casting timer
     static void SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId);

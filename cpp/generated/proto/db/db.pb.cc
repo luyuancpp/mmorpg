@@ -109,7 +109,7 @@ const char descriptor_table_protodef_proto_2fdb_2fdb_2eproto[] ABSL_ATTRIBUTE_SE
     "$\n\013TestRequest\022\025\n\005empty\030\001 \001(\0132\006.Empty\"%\n"
     "\014TestResponse\022\025\n\005empty\030\001 \001(\0132\006.Empty2)\n\002"
     "db\022#\n\004Test\022\014.TestRequest\032\r.TestResponseB"
-    "\004\230\324a\005b\006proto3"
+    "\021Z\013db/proto/db\230\324a\005b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fdb_2fdb_2eproto_deps[2] = {
@@ -120,7 +120,7 @@ static ::absl::once_flag descriptor_table_proto_2fdb_2fdb_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fdb_2eproto = {
     false,
     false,
-    213,
+    226,
     descriptor_table_protodef_proto_2fdb_2fdb_2eproto,
     "proto/db/db.proto",
     &descriptor_table_proto_2fdb_2fdb_2eproto_once,

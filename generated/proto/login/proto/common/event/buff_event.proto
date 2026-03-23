@@ -5,7 +5,7 @@ option go_package = "login/proto/common/event";
 
 
 
-message BuffTestEvet
+message BuffTestEvent
 {
   uint64 period = 1;
   uint64 periodic_timer = 2;

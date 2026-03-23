@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <array>
 #include <unordered_map>
@@ -51,14 +51,14 @@ public:
 
 private:
 	static void DeleteMissionClassification(entt::entity player, uint32_t missionId, const IMissionConfig& config);
-	static bool UpdateMission(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission);
-	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, const IMissionConfig& config);
-	static void UpdateMissionStatus(MissionPBComponent& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions);
+	static bool UpdateMission(const MissionConditionEvent& conditionEvent, MissionComp& mission);
+	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionComp& mission, const IMissionConfig& config);
+	static void UpdateMissionStatus(MissionComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions);
 	static void OnMissionCompletion(entt::entity player, const UInt32Set& completedMissions, const IMissionConfig& config);
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp& missionComp, const IMissionConfig& config);
 	static void RemoveMissionClassification(MissionsComp& missionComp, uint32_t missionId, const IMissionConfig& config);
-	static bool AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComp& missionComp, const IMissionConfig& config);
-	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTable* conditionRow);
+	static bool AreAllConditionsFulfilled(const MissionComp& mission, uint32_t missionId, MissionsComp& missionComp, const IMissionConfig& config);
+	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionComp& mission, int index, const ConditionTable* conditionRow);
 };
 
 //todo auto-reward grants XP via event (so level-up can immediately trigger new missions

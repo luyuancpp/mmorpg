@@ -19,6 +19,6 @@ void NpcSystem::CreateNpc()
     initializeNpcComponents.set_actor_entity(entt::to_integral(npc));
     dispatcher.trigger(initializeNpcComponents);
 
-    tlsRegistryManager.actorRegistry.get_or_emplace<LevelPbComponent>(npc).set_level(1);
+    tlsRegistryManager.actorRegistry.get_or_emplace<LevelComp>(npc).set_level(1);
 }
 

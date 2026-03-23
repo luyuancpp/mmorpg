@@ -25,8 +25,8 @@ const (
 )
 
 type CentreEnterSceneRequest struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	SceneInfo     *base.SceneInfoPBComponent `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SceneInfo     *base.SceneInfoComp    `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,7 +61,7 @@ func (*CentreEnterSceneRequest) Descriptor() ([]byte, []int) {
 	return file_proto_centre_centre_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CentreEnterSceneRequest) GetSceneInfo() *base.SceneInfoPBComponent {
+func (x *CentreEnterSceneRequest) GetSceneInfo() *base.SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -180,10 +180,10 @@ var File_proto_centre_centre_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_centre_centre_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"&proto/centre/centre_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1eproto/common/base/common.proto\"O\n" +
-	"\x17CentreEnterSceneRequest\x124\n" +
+	"&proto/centre/centre_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1eproto/common/base/common.proto\"H\n" +
+	"\x17CentreEnterSceneRequest\x12-\n" +
 	"\n" +
-	"scene_info\x18\x01 \x01(\v2\x15.SceneInfoPBComponentR\tsceneInfo\"\x19\n" +
+	"scene_info\x18\x01 \x01(\v2\x0e.SceneInfoCompR\tsceneInfo\"\x19\n" +
 	"\x17CentreLeaveSceneRequest\"0\n" +
 	".CentreLeaveSceneAsyncSavePlayerCompleteRequest\"\x18\n" +
 	"\x16CentreSceneInfoRequest2\xc9\x02\n" +
@@ -213,11 +213,11 @@ var file_proto_centre_centre_player_scene_proto_goTypes = []any{
 	(*CentreLeaveSceneRequest)(nil),                        // 1: CentreLeaveSceneRequest
 	(*CentreLeaveSceneAsyncSavePlayerCompleteRequest)(nil), // 2: CentreLeaveSceneAsyncSavePlayerCompleteRequest
 	(*CentreSceneInfoRequest)(nil),                         // 3: CentreSceneInfoRequest
-	(*base.SceneInfoPBComponent)(nil),                      // 4: SceneInfoPBComponent
+	(*base.SceneInfoComp)(nil),                             // 4: SceneInfoComp
 	(*emptypb.Empty)(nil),                                  // 5: google.protobuf.Empty
 }
 var file_proto_centre_centre_player_scene_proto_depIdxs = []int32{
-	4, // 0: CentreEnterSceneRequest.scene_info:type_name -> SceneInfoPBComponent
+	4, // 0: CentreEnterSceneRequest.scene_info:type_name -> SceneInfoComp
 	0, // 1: CentrePlayerScene.EnterScene:input_type -> CentreEnterSceneRequest
 	1, // 2: CentrePlayerScene.LeaveScene:input_type -> CentreLeaveSceneRequest
 	2, // 3: CentrePlayerScene.LeaveSceneAsyncSavePlayerComplete:input_type -> CentreLeaveSceneAsyncSavePlayerCompleteRequest
