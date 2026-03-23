@@ -6,8 +6,6 @@
 class BuffTable;
 class SkillExecutedEvent;
 
-//https://zhuanlan.zhihu.com/p/150812545
-
 // Caster (buff applier), Parent (buff target),
 // Skill (which skill created this buff), BuffLayer (stacks),
 // BuffLevel, BuffDuration,

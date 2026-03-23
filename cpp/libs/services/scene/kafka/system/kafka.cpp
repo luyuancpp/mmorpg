@@ -6,7 +6,7 @@
 
 void KafkaSystem::KafkaMessageHandler(const std::string& topic, const std::string& message)
 {
-	if (topic == kPlayerMirgrateEventName)
+	if (topic == kPlayerMigrateEventName)
 	{
 		PlayerMigrationPbEvent serverEvent;
 		if (serverEvent.ParseFromString(message))

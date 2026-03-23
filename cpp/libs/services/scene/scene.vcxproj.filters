@@ -18,7 +18,6 @@
     <ClInclude Include="frame\manager\frame_time.h" />
     <ClInclude Include="kafka\system\kafka.h" />
     <ClInclude Include="mount\system\mount.h" />
-    <ClInclude Include="npc\system\npc.h" />
     <ClInclude Include="player\constants\player.h" />
     <ClInclude Include="player\system\player_lifecycle.h" />
     <ClInclude Include="player\system\player_scene.h" />
@@ -79,7 +78,6 @@
     <ClCompile Include="frame\manager\frame_time.cpp" />
     <ClCompile Include="kafka\system\kafka.cpp" />
     <ClCompile Include="mount\system\mount.cpp" />
-    <ClCompile Include="npc\system\npc.cpp" />
     <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_scene.cpp" />
     <ClCompile Include="player\system\player_skill.cpp" />

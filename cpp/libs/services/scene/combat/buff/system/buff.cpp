@@ -16,7 +16,7 @@
 #include <thread_context/registry_manager.h>
 
 
-//todo  Combat logic must run on frames, not timers. This ensures buff triggers and expirations
+// TODO: Combat logic must run on frames, not timers. This ensures buff triggers and expirations
 // happen within frame logic, avoiding issues where timer callbacks fire after entity
 // destruction or buff removal. Consider migrating all buff expiry and periodic triggers
 // to per-frame processing.
@@ -298,63 +298,25 @@ void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
 }
 void BuffSystem::OnSkillExecuted(SkillExecutedEvent& event)
 {
-    // Implement event handling logic
 }
 
 void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
     BuffImplSystem::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
-    //class Buff {
-    //public:
-    //	bool HasFlag(int flag) const;
-    //	bool HasChanceForDOT() const;
-    //	// DOT buff implementation
-    //	void AddDOTBuff(entt::entity target);
-    //};
-    // 
-    // Check and apply buff effects
-    //	for (auto& buff : tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target)) {
-    //		if (buff.second.HasFlag(DamageFlag_NotMiss)) {
-    //			event.damageFlags |= DamageFlag_NotMiss;
-    //		}
-    //	}
 }
 
 
 void BuffSystem::OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
-    // Check and apply DOT effects
-    //for (auto& buff : tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target)) {
-    //	if (buff.second.HasChanceForDOT()) {
-    //		// Add DOT buff
-    //		AddDOTBuff(event.target);
-    //	}
-    //}
 }
 
 void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
-    //auto& buffs = tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target);
-    //for (auto& [buffId, buff] : buffs) {
-    //	if (buff.HasShield()) {
-    //		// Shield buff reduces damage
-    //		event.damageAmount *= 0.5f; // Example: 50% damage reduction
-    //	}
-    //}
 }
 
 void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
     BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::to_entity(damageEvent.attacker_id()), casterEntity);
-
-    // Check and apply post-damage effects
-    //auto& buffs = tlsThreadLocalEntityContainer.registry.get<BuffListComp>(event.target);
-    //for (auto& [buffId, buff] : buffs) {
-    //	if (buff.HasPostDamageEffect()) {
-    //		// Apply post-damage effects
-    //		ApplyPostDamageEffects(event.target);
-    //	}
-    //}
 }
 
 void BuffSystem::OnBeforeDead(entt::entity parent)

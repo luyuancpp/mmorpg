@@ -1,3 +1,3 @@
 #pragma once
 #include <string>
-constexpr char kPlayerMirgrateEventName[] = "player_migrate";
+constexpr char kPlayerMigrateEventName[] = "player_migrate";

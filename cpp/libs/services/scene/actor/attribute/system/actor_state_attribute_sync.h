@@ -2,17 +2,13 @@
 
 //https://youxiputao.com/article/24673.html
 //https://dev.epicgames.com/documentation/zh-cn/unreal-engine/replication-graph-in-unreal-engine
-//https://zhuanlan.zhihu.com/p/34723199
 
 #include "engine/core/type_define/type_define.h"
-#include "core/utils/registry/game_registry.h"
 
 class ActorStateAttributeSyncSystem
 {
 public:
     static void Update(double delta);
-
-    static void Initialize();
 
     static void GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities);
 

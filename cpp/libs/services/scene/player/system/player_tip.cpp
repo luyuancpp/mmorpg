@@ -1,9 +1,7 @@
 #include "player_tip.h"
 
 #include "core/network/message_system.h"
-#include "muduo/base/Logging.h"
 #include "rpc/service_metadata/game_client_player_service_metadata.h"
-#include "thread_context/redis_manager.h"
 #include "network/player_message_utils.h"
 #include "thread_context/player_manager.h"
 

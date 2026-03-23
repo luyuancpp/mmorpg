@@ -2,7 +2,6 @@
 
 #include "table/code/buff_table.h"
 #include "combat/buff/system/buff.h"
-#include "table/proto/tip/common_error_tip.pb.h"
 #include "combat_state/constants/combat_state.h"
 #include "combat/buff/constants/buff.h"
 #include "proto/common/event/actor_combat_state_event.pb.h"

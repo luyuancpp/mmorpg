@@ -42,7 +42,6 @@ int main(int argc, char* argv[])
             OnTablesLoadSuccess([] { ConfigSystem::OnConfigLoadSuccessful(); });
 
             node.SetAfterStart([&context](SimpleNode<SceneHandler>&) {
-                World::ReadyForGame();
                 context.worldTimer.RunEvery(tlsFrameTimeManager.frameTime.delta_time(), World::Update);
             });
 

@@ -2,6 +2,7 @@
 
 #include <muduo/base/Logging.h>
 
+#include "proto/scene/player_skill.pb.h"
 #include "table/proto/tip/entity_error_tip.pb.h"
 #include "table/code/skillpermission_table.h"
 #include "table/code/skill_table.h"
@@ -120,10 +121,7 @@ uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const Releas
 }
 
 uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* skillTable) {
-	if (!tlsRegistryManager.actorRegistry.any_of<Player>(casterEntity))
-	{
-		return  kSuccess;
-	}
+	// TODO: Implement level requirement validation for non-NPC casters
 	return kSuccess;
 }
 
@@ -136,7 +134,7 @@ uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 		return kInvalidTableData;
 	}
 	
-	return  skillPermissionTable->skilltype(skillTypeIndex);
+	return skillPermissionTable->skilltype(skillTypeIndex);
 }
 
 
@@ -166,9 +164,7 @@ uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTabl
 }
 
 uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTable) {
-	for (auto& item : skillTable->requireditem()){
-		
-	}
+	// TODO: Validate item requirements before skill use
 	return kSuccess;
 }
 
@@ -197,10 +193,6 @@ bool SkillSystem::IsSkillOfType(const uint32_t skillTableId, const uint32_t skil
 	}
 
 	return false;
-}
-
-void SkillSystem::HandleSkillInitialize() {
-	// Implementation here
 }
 
 void SkillSystem::HandleGeneralSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
@@ -291,22 +283,6 @@ void SkillSystem::HandleChannelFinish(const entt::entity casterEntity, const uin
 
 	tlsRegistryManager.actorRegistry.remove<ChannelIntervalTimerComp>(casterEntity);
 	HandleSkillRecovery(casterEntity, skillId);
-}
-
-void SkillSystem::HandleSkillToggleOn(const entt::entity casterEntity, const uint64_t skillId) {
-	TriggerSkillEffect(casterEntity, skillId);
-}
-
-void SkillSystem::HandleSkillToggleOff(const entt::entity casterEntity, const uint64_t skillId) {
-	RemoveEffect(casterEntity, skillId);
-}
-
-void SkillSystem::HandleSkillActivate(const entt::entity casterEntity, const uint64_t skillId) {
-	TriggerSkillEffect(casterEntity, skillId);
-}
-
-void SkillSystem::HandleSkillDeactivate(const entt::entity casterEntity, const uint64_t skillId) {
-	RemoveEffect(casterEntity, skillId);
 }
 
 uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
@@ -492,21 +468,6 @@ void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint
 
 	for (const auto& effect : skillTable->effect()) {
 		BuffSystem::AddOrUpdateBuff(entt::to_entity(skillContext->target()), effect, skillContext);
-	}
-}
-
-void SkillSystem::RemoveEffect(entt::entity casterEntity, const uint64_t skillId) {
-	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
-	auto skillContentIt = casterSkillContextMap.find(skillId);
-
-	if (skillContentIt == casterSkillContextMap.end()) {
-		return;
-	}
-	
-	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
-
-	for (const auto& effect : skillTable->effect()) {
-		// TODO: Implement effect removal logic here
 	}
 }
 

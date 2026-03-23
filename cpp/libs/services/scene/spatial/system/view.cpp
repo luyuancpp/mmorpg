@@ -12,13 +12,6 @@
 #include "engine/core/type_define/type_define.h"
 #include "network/player_message_utils.h"
 #include <thread_context/registry_manager.h>
-#include <thread_context/entity_manager.h>
-
-void ViewSystem::Initialize()
-{
-	// Initialize actor creation and destruction messages in the global registry
-
-}
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
 {
@@ -30,8 +23,7 @@ bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity e
 		return true;
 	}
 
-	// Handle cases where sudden loss of visibility requires refreshing view
-	return ShouldRefreshView();
+	return true;
 }
 
 bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
@@ -42,12 +34,6 @@ bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
 bool ViewSystem::EntrantIsNpc(entt::entity entrant)
 {
 	return tlsRegistryManager.actorRegistry.any_of<Npc>(entrant);
-}
-
-bool ViewSystem::ShouldRefreshView()
-{
-	// TODO: Implement logic for when view needs refreshing
-	return true;
 }
 
 double ViewSystem::GetMaxViewRadius(entt::entity observer)
@@ -116,20 +102,6 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 
 	auto& entrantTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entrant);
 	createMessage.mutable_transform()->CopyFrom(entrantTransform);
-}
-
-void ViewSystem::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
-{
-	// Placeholder for handling player leave message
-	// Specific logic can be added based on requirements
-}
-
-void ViewSystem::BroadcastToNearbyEntities(entt::entity entity, const uint32_t message_id,
-const google::protobuf::Message& message, bool excludingSel)
-{
-	EntityUnorderedSet entites;
-	GridSystem::GetEntitiesInGridAndNeighbors(entity, entites, excludingSel);
-	BroadcastMessageToPlayers(message_id, message, entites);
 }
 
 void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
