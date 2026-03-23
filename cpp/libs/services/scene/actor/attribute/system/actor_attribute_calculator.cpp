@@ -7,7 +7,7 @@
 
 #include "table/code/buff_table.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
-#include "scene/combat/buff/comp/buff.h"
+#include "combat/buff/comp/buff.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include <thread_context/registry_manager.h>

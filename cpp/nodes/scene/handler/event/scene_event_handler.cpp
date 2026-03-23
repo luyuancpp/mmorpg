@@ -3,9 +3,9 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "scene/scene/system/aoi.h"
-#include "scene/scene/system/game_node_scene.h"
-#include "scene/scene/system/scene_crowd.h"
+#include "spatial/system/aoi.h"
+#include "spatial/system/game_node_scene.h"
+#include "spatial/system/scene_crowd.h"
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register()
 {

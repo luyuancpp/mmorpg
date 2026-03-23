@@ -6,8 +6,8 @@
 #include "core/utils/registry/game_registry.h"
 
 
-using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
+using CentrePlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
 
-inline PlayerDataRedis& GetGlobalPlayerRedis() {
-	return tlsRegistryManager.globalRegistry.get<PlayerDataRedis>(GlobalEntity());
+inline CentrePlayerDataRedis& GetGlobalPlayerRedis() {
+	return tlsRegistryManager.globalRegistry.get<CentrePlayerDataRedis>(GlobalEntity());
 }

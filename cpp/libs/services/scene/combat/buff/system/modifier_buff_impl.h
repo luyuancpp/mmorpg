@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 #include "table/code/buff_table.h"
 #include <entt/src/entt/entity/entity.hpp>
 
-#include "scene/combat/skill/comp/skill.h"
+#include "combat/skill/comp/skill.h"
 
 struct BuffComp;
 

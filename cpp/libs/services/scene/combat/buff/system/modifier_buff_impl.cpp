@@ -5,8 +5,8 @@
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator.h"
-#include "scene/combat/buff/comp/buff.h"
-#include "scene/combat/buff/constants/buff.h"
+#include "combat/buff/comp/buff.h"
+#include "combat/buff/constants/buff.h"
 
 #include <thread_context/registry_manager.h>
 

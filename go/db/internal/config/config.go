@@ -37,11 +37,11 @@ type RedisConfig struct {
 
 // KafkaConfig holds Kafka consumer settings.
 type KafkaConfig struct {
-	Brokers         string `json:"Brokers"`         // Broker addresses (comma-separated)
-	GroupID         string `json:"GroupID"`         // Consumer group ID
-	Topic           string `json:"Topic"`           // Topic name
-	PartitionCnt    int32  `json:"PartitionCnt"`    // Partition count
-	IsOfflineExpand bool   `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
+	Brokers         []string `json:"Brokers"`         // Broker addresses
+	GroupID         string   `json:"GroupID"`         // Consumer group ID
+	Topic           string   `json:"Topic"`           // Topic name
+	PartitionCnt    int32    `json:"PartitionCnt"`    // Partition count
+	IsOfflineExpand bool     `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
 }
 
 var AppConfig Config

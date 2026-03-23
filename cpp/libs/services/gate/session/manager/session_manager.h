@@ -4,7 +4,7 @@
 #include "core/utils/hash/consistent_hash_node.h"
 #include "network/network_utils.h"
 
-using SessionList = std::unordered_map<Guid, SessionInfo>;
+using GateSessionMap = std::unordered_map<Guid, SessionInfo>;
 
 class SessionManager
 {
@@ -14,10 +14,10 @@ public:
 	SessionManager(const SessionManager&) = delete;
 	SessionManager& operator=(const SessionManager&) = delete;
 
-	SessionList& sessions() { return sessionList; }
+	GateSessionMap& sessions() { return sessionList; }
 	SessionIdGenerator& session_id_gen() { return sessionIdGen; }
 private:
-	SessionList sessionList;
+	GateSessionMap sessionList;
 	SessionIdGenerator sessionIdGen;
 };
 

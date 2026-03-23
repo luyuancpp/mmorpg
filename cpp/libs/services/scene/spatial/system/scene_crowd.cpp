@@ -1,9 +1,9 @@
 #include "scene_crowd.h"
 
-#include "scene/scene/comp/dt_crowd.h"
+#include "spatial/comp/dt_crowd.h"
 
 #include "modules/scene/comp/scene_comp.h"
-#include "scene/scene/constants/dt_crowd.h"
+#include "spatial/constants/dt_crowd.h"
 
 #include "proto/common/event/scene_event.pb.h"
 #include <proto/common/component/actor_comp.pb.h>

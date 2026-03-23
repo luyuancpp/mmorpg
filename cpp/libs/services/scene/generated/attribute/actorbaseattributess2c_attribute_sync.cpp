@@ -6,7 +6,7 @@
 // 引擎核心依赖
 #include "engine/thread_context/registry_manager.h"
 // 场景相关依赖
-#include "scene/scene/comp/scene_node_scene.h"
+#include "spatial/comp/scene_node_scene.h"
 // 网络相关依赖
 #include "network/player_message_utils.h"
 

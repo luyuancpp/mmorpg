@@ -10,7 +10,7 @@
 #include "core/network/message_system.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
-#include "scene/scene/system/game_node_scene.h"
+#include "spatial/system/game_node_scene.h"
 #include "rpc/player_service_interface.h"
 #include "network/rpc_session.h"
 #include "network/network_constants.h"
@@ -101,7 +101,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 
 	auto playerIt = tlsPlayerList.find(request->player_id());
 
-	PlayerGameNodeEnteryInfoPBComponent enterInfo;
+	PlayerGameNodeEntryInfoPBComponent enterInfo;
 
 	// 2. If player is already online, enter scene directly
 	if (playerIt != tlsPlayerList.end())

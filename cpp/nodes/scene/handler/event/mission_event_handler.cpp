@@ -27,7 +27,7 @@ void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& ev
 {
 ///<<< BEGIN WRITING YOUR CODE
 	entt::entity entity = entt::to_entity(event.entity());
-    auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComponent>(entity);
+    auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(entity);
     auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
 	MissionSystem::AcceptMission(event, comp, MissionConfig::GetSingleton());
 ///<<< END WRITING YOUR CODE
@@ -36,7 +36,7 @@ void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEve
 {
 ///<<< BEGIN WRITING YOUR CODE
 	entt::entity entity = entt::to_entity(event.entity());
-	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComponent>(entity);
+	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(entity);
 	auto& comp = container.GetOrCreate(MissionListPBComponent::kPlayerMission);
     MissionSystem::HandleMissionConditionEvent(event, comp, MissionConfig::GetSingleton());
 ///<<< END WRITING YOUR CODE

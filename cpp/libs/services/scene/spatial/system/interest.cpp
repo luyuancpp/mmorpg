@@ -2,7 +2,7 @@
 
 #include <entt/src/entt/entity/entity.hpp>
 
-#include "scene/scene/comp/scene_node_scene.h"
+#include "spatial/comp/scene_node_scene.h"
 
 #include <thread_context/registry_manager.h>
 

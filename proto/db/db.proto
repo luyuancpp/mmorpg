@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "db/proto/db";
+
 import "proto/db/proto_option.proto";
 
 import "proto/common/base/empty.proto";

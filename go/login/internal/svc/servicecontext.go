@@ -57,8 +57,8 @@ func NewServiceContext() *ServiceContext {
 	}
 
 	monitor, err := kafka.NewExpandMonitor(
-		config.AppConfig.Kafka.BootstrapServers, // Kafka broker address
-		config.AppConfig.Kafka.Topic,            // Consumer group ID
+		config.AppConfig.Kafka.Brokers, // Kafka broker addresses
+		config.AppConfig.Kafka.Topic,   // Consumer group ID
 		redisClient,
 		kafkaClient,
 		1*time.Second,
