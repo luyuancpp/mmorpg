@@ -1,6 +1,6 @@
 #include "config.h"
 
-#include "scene/scene/system/navigation.h"
+#include "spatial/system/navigation.h"
 
 void ConfigSystem::OnConfigLoadSuccessful()
 {

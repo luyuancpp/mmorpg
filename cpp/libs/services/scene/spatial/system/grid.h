@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <absl/hash/hash.h>
 #include <absl/numeric/int128.h>
 
-#include "scene/scene/comp/grid.h"
+#include "spatial/comp/grid.h"
 
 class Transform;
 struct Hex;

@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <optional>
 
-#include "gate_globals.h"
 #include "node/system/node/node.h"
 #include "grpc_client/login/login_grpc_client.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -161,7 +160,7 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
     MessageContent message;
     message.set_serialized_message(tipMessage.SerializeAsString());
     message.set_message_id(SceneClientPlayerCommonSendTipToClientMessageId);
-    gGateCodec->send(conn, message);
+    protobufCodec.send(conn, message);
 
     LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }

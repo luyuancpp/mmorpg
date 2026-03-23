@@ -83,7 +83,7 @@
     <ClInclude Include="rpc_replies\scene_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="gate_globals.h">
+    <ClInclude Include="gate_codec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

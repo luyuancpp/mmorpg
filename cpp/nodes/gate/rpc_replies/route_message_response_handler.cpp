@@ -1,7 +1,7 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
 
-#include "gate_globals.h"
+#include "gate_codec.h"
 #include "network/codec/dispatcher.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include "thread_context/redis_manager.h"
@@ -48,7 +48,7 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 	MessageContent message;
 	message.set_serialized_message(replied->body());
 	message.set_message_id(route_data.message_id());;
-	gGateCodec->send(it->second.conn, message);
+	GetGateCodec().send(it->second.conn, message);
 	///<<< END WRITING YOUR CODE
 }
 

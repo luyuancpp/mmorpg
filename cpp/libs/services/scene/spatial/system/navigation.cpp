@@ -6,10 +6,10 @@
 #include "table/code/mainscene_table.h"
 #include "DetourCrowd/DetourCrowd.h"
 #include "core/network/message_system.h"
-#include "scene/scene/system/recast.h"
+#include "spatial/system/recast.h"
 #include "proto/common/event/scene_event.pb.h"
-#include "scene/scene/constants/nav.h"
-#include "scene/scene/manager/scene_nav.h"
+#include "spatial/constants/nav.h"
+#include "spatial/manager/scene_nav.h"
 
 void NavigationSystem::LoadMainSceneNavBins() {
 	auto& configAll = GetMainSceneAllTable();

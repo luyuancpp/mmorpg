@@ -20,19 +20,19 @@ type KafkaAdmin struct {
 
 // NewKafkaAdmin creates a KafkaAdmin.
 func NewKafkaAdmin(
-	bootstrapServers, topic string,
+	brokers []string, topic string,
 	redisClient redis.Cmdable,
 	producer *KeyOrderedKafkaProducer,
 ) (*KafkaAdmin, error) {
 	config := sarama.NewConfig()
 	config.Version = sarama.V3_5_0_0
 
-	adminClient, err := sarama.NewClusterAdmin([]string{bootstrapServers}, config)
+	adminClient, err := sarama.NewClusterAdmin(brokers, config)
 	if err != nil {
 		return nil, fmt.Errorf("create cluster admin failed: %w", err)
 	}
 
-	saramaClient, err := sarama.NewClient([]string{bootstrapServers}, config)
+	saramaClient, err := sarama.NewClient(brokers, config)
 	if err != nil {
 		return nil, fmt.Errorf("create sarama client failed: %w", err)
 	}

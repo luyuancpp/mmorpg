@@ -34,6 +34,17 @@ mmorpg/
 └── lib/          # Compiled library outputs (Windows .lib/.dll)
 ```
 
+### Dead-weight directories (safe to delete)
+| Directory | Contents | Why it's dead |
+|-----------|----------|---------------|
+| `cpp/libs/base/` | Only `.vcxproj.user` files | No source code; VS user settings only |
+| `cpp/libs/game/` | Only `.vcxproj.user` files | Abandoned stub; `.gitignore` marks it as such |
+| `cpp/libs/engine/core/utils/snow_flake/` | Dead SnowFlake v2 | Removed from vcxproj; zero includes; production uses `utils/id/snow_flake.h` |
+| `cpp/nodes/gate/gate_globals.h` | Dead global header | Replaced by `gate_codec.h`; all references removed |
+| `go/chat/`, `go/guild/`, `go/team/`, `go/mail/`, `go/instance/`, `go/etcd/` | Generated proto outputs only | No `.go` source, no `go.mod`, no consumers |
+| `go/common/` | 93 generated `.pb.go` files | No `go.mod`, no consumers; superseded by per-service proto trees |
+| `go/generated/` | 1 generated `.pb.go` file | Minimal; no consumer |
+
 ## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
@@ -67,6 +78,24 @@ mmorpg/
 - K8s exposure is environment-specific: managed cloud prefers `LoadBalancer`; bare metal prefers `NodePort` + external L4.
 - `tools/scripts/dev_tools.ps1` is the preferred shell entrypoint for proto-gen (pbgen), tree, naming, and k8s operations.
 
+### C++ naming standards
+- ECS components use `*Comp` suffix (e.g. `MissionsComp`, `SceneEntityComp`). Never `*Component`.
+- Type aliases live in `type_define/type_define.h` for shared types; service-specific aliases stay in their service's `type_alias/` dir.
+- Use inline getter functions instead of `#define` macros for global ECS accessors (e.g. `GetActorCreateMessage()` not `actorCreateMessage`).
+- SnowFlake: single production implementation at `utils/id/snow_flake.h` (kNodeBits=17, kStepBits=15, epoch=1773446400).
+- Disambiguate same-name types across services: prefix with service name (e.g. `CentrePlayerDataRedis` vs `PlayerDataRedis`, `GateSessionMap` vs `SessionList`).
+
+### Go Kafka config standard
+- All services use `Brokers []string` (not comma-separated `string`).
+- login and db use IBM/sarama (ordered, transactional).
+- scene_manager and player_locator use segmentio/kafka-go (simple fire-and-forget).
+- `expand_utils.go` is duplicated between login and db — extract to shared package when adding more consumers.
+
+### Proto source conventions
+- All source `.proto` files in `proto/` should include `option go_package = "{service}/proto/{subdir}";` for documentation clarity.
+- Proto-gen tool rewrites `go_package` in generated copies under `generated/proto/`; source values serve as documentation.
+- Proto message suffix should standardize on `PBComp` or `Comp` (current mix: `PBComponent`, `PbComponent`, `Comp`, `PBComp` — cleanup planned).
+
 ### C++ Node Main PR Checklist (Summary)
 - Start from `cpp/nodes/_template/main.simple.cpp.example` or `cpp/nodes/_template/main.with_context.cpp.example`.
 - Keep startup logic thin; do not move gameplay/business logic into `main.cpp`.
@@ -84,6 +113,10 @@ mmorpg/
 - Treating root `Dockerfile` as the production K8s runtime image.
 - Routine changes under `third_party/`.
 - Renaming large source trees without first using naming audit/apply workflow.
+- Using `#define` macros for global ECS singleton accessors (use inline functions instead).
+- Defining the same type alias name in different services without disambiguation prefix.
+- Using `string` for Kafka Brokers config (use `[]string` consistently across all Go services).
+- Keeping dead SnowFlake implementations or duplicate `Guid` typedefs in headers (consolidate to `type_define.h`).
 
 ## UNIQUE STYLES
 - Repo keeps generated outputs checked in.

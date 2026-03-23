@@ -11,10 +11,7 @@
 
 #include "muduo/base/Logging.h"
 
-#ifndef GUID_TYPE_DEFINED
-#define GUID_TYPE_DEFINED
-using Guid = uint64_t;
-#endif
+#include "type_define/type_define.h"
 
 // ID structure based on Snowflake algorithm
 // Reference:

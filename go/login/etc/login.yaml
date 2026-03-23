@@ -70,7 +70,8 @@ PlayerLocatorRpc:
 
 # Kafka配置
 Kafka:
-  Brokers: "127.0.0.1:9092"
+  Brokers:
+    - "127.0.0.1:9092"
   GroupID: "db_rpc_consumer_group"
   Topic: "db_task_topic"
   PartitionCnt: 5

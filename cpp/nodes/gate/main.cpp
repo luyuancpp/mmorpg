@@ -17,11 +17,8 @@
 #include <node_config_manager.h>
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "proto/contracts/kafka/gate_command.pb.h"
-#include "gate_globals.h"
 
 #include <utility>
-
-ProtobufCodec* gGateCodec = nullptr;
 
 namespace {
 
@@ -64,10 +61,10 @@ int main(int argc, char* argv[])
         GateNodeService,
         Node::CanConnectNodeTypeList{ SceneNodeService, LoginNodeService },
         [](EventLoop&, GateRuntimeContext& context) {
-            gGateCodec = &context.codec;
             LogGrpcThreadConfig();
         },
         [](SimpleNode<GateHandler>& node, GateRuntimeContext& context) {
+            node.GetHandler().SetCodec(&context.codec);
             // gRPC response -> client TCP bridge
             SetIfEmptyHandler([&context](const ClientContext& ctx, const ::google::protobuf::Message& reply) {
                 auto sd = GetSessionDetailsByClientContext(ctx);

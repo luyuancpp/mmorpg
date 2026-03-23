@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "node/system/node/node.h"
-#include "scene/scene/system/game_node_scene.h"
+#include "spatial/system/game_node_scene.h"
 ///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()
 {

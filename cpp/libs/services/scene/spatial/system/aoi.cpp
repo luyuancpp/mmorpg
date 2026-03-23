@@ -3,10 +3,10 @@
 #include "hexagons_grid.h"
 #include "core/network/message_system.h"
 #include "entity/system/entity.h"
-#include "scene/scene/comp/grid.h"
-#include "scene/scene/system/grid.h"
-#include "scene/scene/system/interest.h"
-#include "scene/scene/system/view.h"
+#include "spatial/comp/grid.h"
+#include "spatial/system/grid.h"
+#include "spatial/system/interest.h"
+#include "spatial/system/view.h"
 #include "muduo/base/Logging.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/event/scene_event.pb.h"
@@ -122,20 +122,20 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
                                               const EntityUnorderedSet& leavingEntities) {
     // Notify entities entering view
     if (!enteringEntities.empty()) {
-        actorListCreateMessage.Clear();
+        GetActorListCreateMessage().Clear();
         for (auto& otherEntity : enteringEntities) {
-            ViewSystem::FillActorCreateMessageInfo(entity, otherEntity, *actorListCreateMessage.add_actor_list());
+            ViewSystem::FillActorCreateMessageInfo(entity, otherEntity, *GetActorListCreateMessage().add_actor_list());
         }
-        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, actorListCreateMessage, entity);
+        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, GetActorListCreateMessage(), entity);
     }
 
     // Notify entities leaving view
     if (!leavingEntities.empty()) {
-        actorListDestroyMessage.Clear();
+        GetActorListDestroyMessage().Clear();
         for (auto& otherEntity : leavingEntities) {
-            actorListDestroyMessage.add_entity(entt::to_integral(otherEntity));
+            GetActorListDestroyMessage().add_entity(entt::to_integral(otherEntity));
         }
-        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListDestroyMessageId, actorListDestroyMessage, entity);
+        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListDestroyMessageId, GetActorListDestroyMessage(), entity);
     }
 }
 
@@ -183,8 +183,8 @@ void AoiSystem::RemoveEntityFromGrid(const Hex& hex, SceneGridListComp& gridList
 void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::entity entity, const GridSet& gridsToLeave) {
     if (gridsToLeave.empty()) return;
 
-    actorDestroyMessage.Clear();
-    actorDestroyMessage.set_entity(entt::to_integral(entity));
+    GetActorDestroyMessage().Clear();
+    GetActorDestroyMessage().set_entity(entt::to_integral(entity));
 
     EntityUnorderedSet observersToNotify;
     for (const auto& gridId : gridsToLeave) {
@@ -197,6 +197,6 @@ void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::en
         }
     }
 
-    BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, actorDestroyMessage, observersToNotify);
+    BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, GetActorDestroyMessage(), observersToNotify);
 }
 

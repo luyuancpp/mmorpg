@@ -70,7 +70,7 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 		return nil, err
 	}
 
-	client, err := sarama.NewClient([]string{cfg.BootstrapServers}, config)
+	client, err := sarama.NewClient(cfg.Brokers, config)
 	if err != nil {
 		logx.Errorf("failed to create Kafka client: %v", err)
 		return nil, fmt.Errorf("failed to create client: %w", err)

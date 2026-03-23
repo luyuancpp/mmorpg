@@ -22,12 +22,12 @@ type Config struct {
 
 // NodeConfig holds node-level settings including login duration limits.
 type NodeConfig struct {
-	ZoneId           uint32    `json:"ZoneId"`
-	SessionExpireMin uint32    `json:"SessionExpireMin"` // Session idle timeout in minutes
-	MaxLoginDevices  uint32    `json:"MaxLoginDevices"`
-	RedisClient      RedisConf `json:"RedisClient"`
-	LeaseTTL         int64     `json:"LeaseTTL"`         // Lease TTL in seconds
-	QueueShardCount  uint64    `json:"QueueShardCount"`
+	ZoneId           uint32        `json:"ZoneId"`
+	SessionExpireMin uint32        `json:"SessionExpireMin"` // Session idle timeout in minutes
+	MaxLoginDevices  uint32        `json:"MaxLoginDevices"`
+	RedisClient      RedisConf     `json:"RedisClient"`
+	LeaseTTL         int64         `json:"LeaseTTL"` // Lease TTL in seconds
+	QueueShardCount  uint64        `json:"QueueShardCount"`
 	MaxLoginDuration time.Duration `json:"MaxLoginDuration"` // Max online duration per login (e.g. 24h, force logout on expiry)
 	LogoutGraceTime  time.Duration `json:"LogoutGraceTime"`  // Grace period before forced logout (e.g. 5m, for player warning)
 }
@@ -45,7 +45,7 @@ type RedisConf struct {
 
 // KafkaConfig holds Kafka producer and consumer settings.
 type KafkaConfig struct {
-	BootstrapServers string                  `json:"Brokers"`
+	Brokers          []string                `json:"Brokers"`
 	GroupID          string                  `json:"GroupID"`
 	Topic            string                  `json:"Topic"`
 	PartitionCnt     int32                   `json:"PartitionCnt"`
@@ -58,14 +58,14 @@ type KafkaConfig struct {
 	ChannelBuffer    int                     `json:"ChannelBuffer"`
 	SyncInterval     time.Duration           `json:"SyncInterval"`
 	StatsInterval    time.Duration           `json:"StatsInterval"`
-	CompressionType  sarama.CompressionCodec `json:"CompressionType"`  // none/gzip/snappy
+	CompressionType  sarama.CompressionCodec `json:"CompressionType"` // none/gzip/snappy
 	Idempotent       bool                    `json:"Idempotent"`
-	MaxOpenRequests  int                     `json:"MaxOpenRequests"`  // Must be 1 when idempotent
+	MaxOpenRequests  int                     `json:"MaxOpenRequests"` // Must be 1 when idempotent
 }
 
 // SnowflakeConf holds snowflake ID generator settings.
 type SnowflakeConf struct {
-	Epoch    int64  `json:"Epoch"`    // Epoch timestamp in milliseconds
+	Epoch    int64  `json:"Epoch"` // Epoch timestamp in milliseconds
 	NodeBits uint32 `json:"NodeBits"`
 	StepBits uint32 `json:"StepBits"`
 }
@@ -99,7 +99,7 @@ type TimeoutConf struct {
 	EtcdDialTimeout          time.Duration `json:"EtcdDialTimeout"`
 	ServiceDiscoveryTimeout  time.Duration `json:"ServiceDiscoveryTimeout"`
 	TaskWaitTimeout          time.Duration `json:"TaskWaitTimeout"`
-	LoginTotalTimeout        time.Duration `json:"LoginTotalTimeout"`        // Total login timeout including Redis/DB
+	LoginTotalTimeout        time.Duration `json:"LoginTotalTimeout"` // Total login timeout including Redis/DB
 	RoleCacheExpire          time.Duration `json:"RoleCacheExpire"`
 	TaskManagerCleanInterval time.Duration `json:"TaskManagerCleanInterval"`
 	TaskBatchExpireTime      time.Duration `json:"TaskBatchExpireTime"`

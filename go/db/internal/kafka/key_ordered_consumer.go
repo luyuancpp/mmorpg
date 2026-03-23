@@ -146,7 +146,7 @@ func NewKeyOrderedKafkaConsumer(
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
 
 	consumerGroup, err := sarama.NewConsumerGroup(
-		[]string{cfg.ServerConfig.Kafka.Brokers},
+		cfg.ServerConfig.Kafka.Brokers,
 		cfg.ServerConfig.Kafka.GroupID,
 		config,
 	)

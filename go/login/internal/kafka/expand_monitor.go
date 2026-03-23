@@ -24,14 +24,14 @@ type ExpandMonitor struct {
 
 // NewExpandMonitor creates an ExpandMonitor.
 func NewExpandMonitor(
-	bootstrapServers, topic string,
+	brokers []string, topic string,
 	redisClient redis.Cmdable,
 	producer *KeyOrderedKafkaProducer,
 	checkInterval time.Duration,
 ) (*ExpandMonitor, error) {
 	config := sarama.NewConfig()
 	config.Version = sarama.V3_5_0_0
-	client, err := sarama.NewClient([]string{bootstrapServers}, config)
+	client, err := sarama.NewClient(brokers, config)
 	if err != nil {
 		return nil, fmt.Errorf("create sarama client failed: %w", err)
 	}

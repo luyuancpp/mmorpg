@@ -12,7 +12,7 @@
 #include "proto/common/component/mission_comp.pb.h"
 #include "proto/common/event/mission_event.pb.h"
 
-MissionsComponent::MissionsComponent()
+MissionsComp::MissionsComp()
 {
 	// Initialize event-related mission classification containers
 	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionTypeMax); ++i)
@@ -21,7 +21,7 @@ MissionsComponent::MissionsComponent()
 	}
 }
 
-std::size_t MissionsComponent::CanGetRewardSize() const
+std::size_t MissionsComp::CanGetRewardSize() const
 {
 	// Retrieve mission reward component
 	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(EventOwner());
@@ -29,12 +29,12 @@ std::size_t MissionsComponent::CanGetRewardSize() const
 }
 
 
-void MissionsComponent::AbandonMission(const uint32_t missionId)
+void MissionsComp::AbandonMission(const uint32_t missionId)
 {
     SetBit(MissionBitMap, completedMissions, missionId, false);
 }
 
-uint32_t MissionsComponent::IsMissionUnaccepted(const uint32_t missionId) const
+uint32_t MissionsComp::IsMissionUnaccepted(const uint32_t missionId) const
 {
 	// Check if the mission has been accepted
 	if (missionsComp.missions().find(missionId) != missionsComp.missions().end())
@@ -44,7 +44,7 @@ uint32_t MissionsComponent::IsMissionUnaccepted(const uint32_t missionId) const
 	return kSuccess; // Return kSuccess if mission is not accepted
 }
 
-uint32_t MissionsComponent::IsMissionUncompleted(const uint32_t missionId) const
+uint32_t MissionsComp::IsMissionUncompleted(const uint32_t missionId) const
 {
 	if (IsComplete(missionId))
 	{

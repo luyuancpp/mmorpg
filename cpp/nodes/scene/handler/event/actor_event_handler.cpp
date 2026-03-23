@@ -6,11 +6,11 @@
 #include "actor/action_state/system/actor_action_state.h"
 #include "actor/attribute/system/actor_attribute_calculator.h"
 #include "actor/attribute/system/actor_state_attribute_sync.h"
-#include "scene/combat_state/system/combat_state.h"
-#include "scene/combat/buff/system/buff.h"
-#include "scene/combat/skill/system/skill.h"
+#include "combat_state/system/combat_state.h"
+#include "combat/buff/system/buff.h"
+#include "combat/skill/system/skill.h"
 #include "mount/system/mount.h"
-#include "scene/scene/system/interest.h"
+#include "spatial/system/interest.h"
 ///<<< END WRITING YOUR CODE
 void ActorEventHandler::Register()
 {

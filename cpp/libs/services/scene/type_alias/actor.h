@@ -5,7 +5,18 @@
 #include "engine/thread_context/entity_manager.h"
 #include "proto/scene/player_scene.pb.h"
 
-#define actorCreateMessage tlsRegistryManager.globalRegistry.get<ActorCreateS2C>(GlobalEntity())
-#define actorDestroyMessage tlsRegistryManager.globalRegistry.get<ActorDestroyS2C>(GlobalEntity())
-#define actorListCreateMessage tlsRegistryManager.globalRegistry.get<ActorListCreateS2C>(GlobalEntity())
-#define actorListDestroyMessage tlsRegistryManager.globalRegistry.get<ActorListDestroyS2C>(GlobalEntity())
+inline ActorCreateS2C& GetActorCreateMessage() {
+	return tlsRegistryManager.globalRegistry.get<ActorCreateS2C>(GlobalEntity());
+}
+
+inline ActorDestroyS2C& GetActorDestroyMessage() {
+	return tlsRegistryManager.globalRegistry.get<ActorDestroyS2C>(GlobalEntity());
+}
+
+inline ActorListCreateS2C& GetActorListCreateMessage() {
+	return tlsRegistryManager.globalRegistry.get<ActorListCreateS2C>(GlobalEntity());
+}
+
+inline ActorListDestroyS2C& GetActorListDestroyMessage() {
+	return tlsRegistryManager.globalRegistry.get<ActorListDestroyS2C>(GlobalEntity());
+}

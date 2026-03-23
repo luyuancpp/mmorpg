@@ -15,12 +15,12 @@ class MissionConditionEvent;
 
 using MissionsBits = std::bitset<kMissionMaxBitIndex>;
 
-class MissionsComponent : public EventOwner
+class MissionsComp : public EventOwner
 {
 public:
     using EventMissionClassifyMap = std::unordered_map<uint32_t, UInt32Set>;
 
-    MissionsComponent();
+    MissionsComp();
 
     [[nodiscard]] const auto& GetEventMissionsClassifyForUnitTest() const { return eventMissionsClassify; }
     [[nodiscard]] const MissionListPBComponent& getMissionsComp() const { return missionsComp; }
@@ -83,23 +83,23 @@ private:
     MissionsBits completedMissions;
 };
 
-using PlayerMissionList = std::array<MissionsComponent, MissionListPBComponent::kPlayerMissionSize>;
+using PlayerMissionList = std::array<MissionsComp, MissionListPBComponent::kPlayerMissionSize>;
 
 
-struct MissionsContainerComponent {
-	std::unordered_map<uint32_t, MissionsComponent> map;
+struct MissionsContainerComp {
+	std::unordered_map<uint32_t, MissionsComp> map;
 
-	MissionsComponent& GetOrCreate(uint32_t scope) {
+	MissionsComp& GetOrCreate(uint32_t scope) {
 		auto it = map.find(scope);
 		if (it == map.end()) {
-			auto [newIt, _] = map.emplace(scope, MissionsComponent{});
+			auto [newIt, _] = map.emplace(scope, MissionsComp{});
 			return newIt->second;
 		}
 		return it->second;
 	}
 
 	// const read accessor
-	const MissionsComponent* Get(uint32_t scope) const {
+	const MissionsComp* Get(uint32_t scope) const {
 		auto it = map.find(scope);
 		return (it == map.end()) ? nullptr : &it->second;
 	}

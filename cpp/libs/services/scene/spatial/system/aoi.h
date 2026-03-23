@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "scene/scene/comp/grid.h"
+#include "spatial/comp/grid.h"
 
 class AfterEnterScene;
 class BeforeLeaveScene;

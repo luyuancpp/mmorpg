@@ -57,7 +57,7 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 }
 
 // Function to check conditions before accepting a mission
-uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp, const IMissionConfig& config) {
+uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp& missionComp, const IMissionConfig& config) {
 	// Check if mission is unaccepted and uncompleted
 	RETURN_ON_ERROR(missionComp.IsMissionUnaccepted(acceptEvent.mission_id()));
 	RETURN_ON_ERROR(missionComp.IsMissionUncompleted(acceptEvent.mission_id()));
@@ -79,7 +79,7 @@ uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptE
 }
 
 // Function to accept a mission
-uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComponent& missionComp, const IMissionConfig& config) {
+uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComp& missionComp, const IMissionConfig& config) {
 	// Convert entity ID to player entity
 	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
 
@@ -129,9 +129,9 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 }
 
 // Function to abandon a mission
-uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComponent& comp, const IMissionConfig& config) {
+uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComp& comp, const IMissionConfig& config) {
 	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(param.playerEntity);
+	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(param.playerEntity);
 
 	// Check if mission is uncompleted
 	if (kMissionAlreadyCompleted == missionComp.IsMissionUncompleted(param.missionId)) {
@@ -155,9 +155,9 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsCompon
 }
 
 // Function to complete all missions for a player
-void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation, MissionsComponent& comp) {
+void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation, MissionsComp& comp) {
 	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
+	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
 
 	// Mark all missions as complete
 	for (const auto& missionId : missionComp.GetMissionsComp().missions() | std::views::keys) {
@@ -176,7 +176,7 @@ bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
 
 
 // Check if all conditions of a mission are fulfilled
-bool MissionSystem::AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent& missionComp, const IMissionConfig& config) {
+bool MissionSystem::AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComp& missionComp, const IMissionConfig& config) {
 	// Retrieve mission conditions from configuration
 	const auto& conditions = config.GetConditionIds(missionId);
 
@@ -193,7 +193,7 @@ bool MissionSystem::AreAllConditionsFulfilled(const MissionPBComponent& mission,
 	return true;
 }
 // Process mission condition events
-void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComponent& comp, const IMissionConfig& config) {
+void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComp& comp, const IMissionConfig& config) {
 	// Ignore if no conditions are provided
 	if (conditionEvent.condtion_ids().empty()) {
 		LOG_ERROR << "HandleMissionConditionEvent: Empty condition IDs for entity = " << conditionEvent.entity();
@@ -242,7 +242,7 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 }
 
 // Remove mission classification
-void MissionSystem::RemoveMissionClassification(MissionsComponent& missionComp, uint32_t missionId, const IMissionConfig& config) {
+void MissionSystem::RemoveMissionClassification(MissionsComp& missionComp, uint32_t missionId, const IMissionConfig& config) {
 	// Retrieve conditions from mission configuration
 	const auto& configConditions = config.GetConditionIds(missionId);
 
@@ -256,7 +256,7 @@ void MissionSystem::RemoveMissionClassification(MissionsComponent& missionComp, 
 // Delete mission classification
 void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId, const IMissionConfig& config) {
 	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
+	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
 
 	// Remove mission classification
 	RemoveMissionClassification(missionComp, missionId, config);
@@ -277,7 +277,7 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 	}
 
 	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(entt::to_entity(conditionEvent.entity()));
+	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(entt::to_entity(conditionEvent.entity()));
 
 	bool missionUpdated = false;
 
@@ -382,7 +382,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 	}
 
 	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComponent>(playerEntity);
+	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
 
 	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListPBComponent>(playerEntity);
 
