@@ -172,8 +172,3 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	}
 }
 
-void PlayerSceneSystem::HandleBeforeLeaveScene(entt::entity player)
-{
-
-}
-

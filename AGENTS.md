@@ -19,7 +19,8 @@ mmorpg/
 │   ├── scene_manager/ # Scene allocation + load balancing
 │   ├── data_service/  # Data layer RPC
 │   ├── db/            # Kafka consumer + MySQL persistence
-│   └── player_locator/# Player location lookup
+│   ├── player_locator/# Player location lookup
+│   └── shared/        # Shared Go utilities (kafkautil, etc.)
 ├── java/         # Spring Boot / Sa-Token auth-side services
 ├── proto/        # Authoritative source contracts and service IDs
 ├── generated/    # Checked-in generated proto/table outputs
@@ -39,11 +40,6 @@ mmorpg/
 |-----------|----------|---------------|
 | `cpp/libs/base/` | Only `.vcxproj.user` files | No source code; VS user settings only |
 | `cpp/libs/game/` | Only `.vcxproj.user` files | Abandoned stub; `.gitignore` marks it as such |
-| `cpp/libs/engine/core/utils/snow_flake/` | Dead SnowFlake v2 | Removed from vcxproj; zero includes; production uses `utils/id/snow_flake.h` |
-| `cpp/nodes/gate/gate_globals.h` | Dead global header | Replaced by `gate_codec.h`; all references removed |
-| `go/chat/`, `go/guild/`, `go/team/`, `go/mail/`, `go/instance/`, `go/etcd/` | Generated proto outputs only | No `.go` source, no `go.mod`, no consumers |
-| `go/common/` | 93 generated `.pb.go` files | No `go.mod`, no consumers; superseded by per-service proto trees |
-| `go/generated/` | 1 generated `.pb.go` file | Minimal; no consumer |
 
 ## WHERE TO LOOK
 | Task | Location | Notes |
@@ -89,7 +85,7 @@ mmorpg/
 - All services use `Brokers []string` (not comma-separated `string`).
 - login and db use IBM/sarama (ordered, transactional).
 - scene_manager and player_locator use segmentio/kafka-go (simple fire-and-forget).
-- `expand_utils.go` is duplicated between login and db — extract to shared package when adding more consumers.
+- Shared Kafka utilities (expand status, partition helpers) live in `go/shared/kafkautil/`; login and db import via `replace shared => ../shared`.
 
 ### Proto source conventions
 - All source `.proto` files in `proto/` should include `option go_package = "{service}/proto/{subdir}";` for documentation clarity.

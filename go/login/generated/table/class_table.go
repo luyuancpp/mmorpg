@@ -6,17 +6,20 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "login/generated/pb/table"
 )
+
+var ClassTableManagerInstance = NewClassTableManager()
+
 
 type ClassTableManager struct {
     data []*pb.ClassTable
-    kvData map[int32]*pb.ClassTable
+    kvData map[uint32]*pb.ClassTable
 }
 
 func NewClassTableManager() *ClassTableManager {
     return &ClassTableManager{
-        kvData: make(map[int32]*pb.ClassTable),
+        kvData: make(map[uint32]*pb.ClassTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *ClassTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *ClassTableManager) GetById(id int32) (*pb.Class, bool) {
+func (m *ClassTableManager) GetById(id uint32) (*pb.ClassTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

@@ -6,17 +6,19 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "player_locator/generated/pb/table"
 )
+var SkillTableManagerInstance = NewSkillTableManager()
+
 
 type SkillTableManager struct {
     data []*pb.SkillTable
-    kvData map[int32]*pb.SkillTable
+    kvData map[uint32]*pb.SkillTable
 }
 
 func NewSkillTableManager() *SkillTableManager {
     return &SkillTableManager{
-        kvData: make(map[int32]*pb.SkillTable),
+        kvData: make(map[uint32]*pb.SkillTable),
     }
 }
 
@@ -40,7 +42,7 @@ func (m *SkillTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *SkillTableManager) GetById(id int32) (*pb.Skill, bool) {
+func (m *SkillTableManager) GetById(id uint32) (*pb.SkillTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

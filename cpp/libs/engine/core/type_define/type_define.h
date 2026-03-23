@@ -9,7 +9,7 @@
 #include <absl/hash/hash.h>
 #include <absl/numeric/int128.h>
 
-#include "entt/src/entt/entity/registry.hpp"
+#include "entt/src/entt/entity/entity.hpp"
 
 // --- Semantic ID types ---
 using Guid = uint64_t;
@@ -36,7 +36,7 @@ using EntityUnorderedMap = std::unordered_map<entt::entity, entt::entity>;
 using EntityVector = std::vector<entt::entity>;
 
 // --- Domain map aliases (use domain-specific names where possible) ---
-using U32U32UnorderedMap = std::unordered_map<uint32_t, uint32_t>;
+using ItemCountMap = std::unordered_map<uint32_t, uint32_t>;
 
 // --- 128-bit identity pairs ---
 using PlayerPairList = std::unordered_set<absl::uint128, absl::Hash<absl::uint128>>;

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"shared/kafkautil"
+
 	"github.com/IBM/sarama"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -36,7 +38,7 @@ func NewExpandMonitor(
 		return nil, fmt.Errorf("create sarama client failed: %w", err)
 	}
 
-	oldPartitionCount, err := GetCurrentPartitionCount(client, topic)
+	oldPartitionCount, err := kafkautil.GetCurrentPartitionCount(client, topic)
 	if err != nil {
 		return nil, fmt.Errorf("get initial partition count failed: %w", err)
 	}
@@ -81,7 +83,7 @@ func (m *ExpandMonitor) Start() {
 
 // checkAndHandleExpand checks for partition changes and handles expansion.
 func (m *ExpandMonitor) checkAndHandleExpand() {
-	currentPartitionCount, err := GetCurrentPartitionCount(m.client, m.topic)
+	currentPartitionCount, err := kafkautil.GetCurrentPartitionCount(m.client, m.topic)
 	if err != nil {
 		logx.Errorf("check partition count failed: topic=%s, err=%v", m.topic, err)
 		return
@@ -100,20 +102,20 @@ func (m *ExpandMonitor) checkAndHandleExpand() {
 	logx.Infof("detected partition expand: topic=%s, old=%d, current=%d",
 		m.topic, m.oldPartitionCount, currentPartitionCount)
 
-	if err := SetExpandStatus(m.ctx, m.redisClient, m.topic, ExpandStatusExpanding, currentPartitionCount); err != nil {
+	if err := kafkautil.SetExpandStatus(m.ctx, m.redisClient, m.topic, kafkautil.ExpandStatusExpanding, currentPartitionCount); err != nil {
 		logx.Errorf("set expanding status failed: topic=%s, err=%v", m.topic, err)
 		return
 	}
 
-	newPartitions := GetNewPartitionIDs(m.oldPartitionCount, currentPartitionCount)
+	newPartitions := kafkautil.GetNewPartitionIDs(m.oldPartitionCount, currentPartitionCount)
 	m.producer.AddPartitions(newPartitions)
 
-	if err := WaitOldPartitionsConsumed(m.ctx, m.client, m.topic, m.oldPartitionCount); err != nil {
+	if err := kafkautil.WaitOldPartitionsConsumed(m.ctx, m.client, m.topic, m.oldPartitionCount); err != nil {
 		logx.Errorf("wait old partitions consumed failed: topic=%s, err=%v", m.topic, err)
 		return
 	}
 
-	if err := SetExpandStatus(m.ctx, m.redisClient, m.topic, ExpandStatusCompleted, currentPartitionCount); err != nil {
+	if err := kafkautil.SetExpandStatus(m.ctx, m.redisClient, m.topic, kafkautil.ExpandStatusCompleted, currentPartitionCount); err != nil {
 		logx.Errorf("set completed status failed: topic=%s, err=%v", m.topic, err)
 		return
 	}

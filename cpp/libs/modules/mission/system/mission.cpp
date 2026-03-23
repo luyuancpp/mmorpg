@@ -412,7 +412,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 		// Enqueue acceptance events for next missions in the chain
 		AcceptMissionEvent acceptMissionEvent;
 		acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
-		const auto& nextMissions = config.GetNextmissionTableIds(missionId);
+		const auto& nextMissions = config.GetNextMissionTableIds(missionId);
 		for (int32_t i = 0; i < nextMissions.size(); ++i) {
 			acceptMissionEvent.set_mission_id(nextMissions.Get(i));
 			dispatcher.enqueue(acceptMissionEvent);

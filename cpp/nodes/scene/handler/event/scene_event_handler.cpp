@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "spatial/system/aoi.h"
-#include "spatial/system/game_node_scene.h"
 #include "spatial/system/scene_crowd.h"
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register()
@@ -31,7 +30,6 @@ void SceneEventHandler::UnRegister()
 void SceneEventHandler::OnSceneCreatedHandler(const OnSceneCreated& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-   	GameNodeSceneSystem::HandleSceneCreation(event);
 ///<<< END WRITING YOUR CODE
 }
 void SceneEventHandler::OnSceneDestroyedHandler(const OnSceneDestroyed& event)
@@ -47,14 +45,12 @@ void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& event)
 void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	//GameNodeSceneSystem::AfterEnterSceneHandler(message);
 	SceneCrowdSystem::AfterEnterSceneHandler(event);
 ///<<< END WRITING YOUR CODE
 }
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	//GameNodeSceneSystem::BeforeLeaveSceneHandler(message);
 	SceneCrowdSystem::BeforeLeaveSceneHandler(event);
 	AoiSystem::BeforeLeaveSceneHandler(event);
 ///<<< END WRITING YOUR CODE

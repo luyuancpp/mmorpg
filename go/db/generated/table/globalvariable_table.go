@@ -9,14 +9,17 @@ import (
     pb "db/generated/pb/table"
 )
 
+var GlobalVariableTableManagerInstance = NewGlobalVariableTableManager()
+
+
 type GlobalVariableTableManager struct {
     data []*pb.GlobalVariableTable
-    kvData map[int32]*pb.GlobalVariableTable
+    kvData map[uint32]*pb.GlobalVariableTable
 }
 
 func NewGlobalVariableTableManager() *GlobalVariableTableManager {
     return &GlobalVariableTableManager{
-        kvData: make(map[int32]*pb.GlobalVariableTable),
+        kvData: make(map[uint32]*pb.GlobalVariableTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *GlobalVariableTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *GlobalVariableTableManager) GetById(id int32) (*pb.GlobalVariable, bool) {
+func (m *GlobalVariableTableManager) GetById(id uint32) (*pb.GlobalVariableTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

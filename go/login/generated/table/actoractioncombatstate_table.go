@@ -6,17 +6,20 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
-    pb "game/generated/pb/table"
+    pb "login/generated/pb/table"
 )
+
+var ActorActionCombatStateTableManagerInstance = NewActorActionCombatStateTableManager()
+
 
 type ActorActionCombatStateTableManager struct {
     data []*pb.ActorActionCombatStateTable
-    kvData map[int32]*pb.ActorActionCombatStateTable
+    kvData map[uint32]*pb.ActorActionCombatStateTable
 }
 
 func NewActorActionCombatStateTableManager() *ActorActionCombatStateTableManager {
     return &ActorActionCombatStateTableManager{
-        kvData: make(map[int32]*pb.ActorActionCombatStateTable),
+        kvData: make(map[uint32]*pb.ActorActionCombatStateTable),
     }
 }
 
@@ -40,7 +43,7 @@ func (m *ActorActionCombatStateTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *ActorActionCombatStateTableManager) GetById(id int32) (*pb.ActorActionCombatState, bool) {
+func (m *ActorActionCombatStateTableManager) GetById(id uint32) (*pb.ActorActionCombatStateTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

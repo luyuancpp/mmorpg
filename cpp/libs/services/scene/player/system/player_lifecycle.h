@@ -14,8 +14,6 @@ public:
 	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message, const std::any& extra);
 	static void HandlePlayerAsyncSaved(Guid player_id, PlayerAllData& message);
 	static void EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp& enter_info);
-	static void NotifyEnterSceneSucceed(entt::entity player, NodeId centre_node_id);
-	static void LeaveGs(entt::entity player);
 	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);
 	static void HandleBindPlayerToGateOK(entt::entity player);
 	static void RemovePlayerSession(Guid player_id);

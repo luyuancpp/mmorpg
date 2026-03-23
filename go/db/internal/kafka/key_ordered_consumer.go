@@ -16,6 +16,8 @@ import (
 
 	"db/internal/locker"
 
+	"shared/kafkautil"
+
 	"github.com/IBM/sarama"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -402,22 +404,22 @@ func processDBTaskMessage(ctx context.Context, worker *worker, msg *sarama.Consu
 		return processTaskWithoutLock(ctx, worker.redisClient, &task)
 	}
 
-	expandStatus, err := GetExpandStatus(ctx, worker.redisClient, worker.topic)
+	expandStatus, err := kafkautil.GetExpandStatus(ctx, worker.redisClient, worker.topic)
 	if err != nil {
 		logx.Errorf("get expand status failed: key=%s, taskID=%s, err=%v", key, task.TaskId, err)
 		return tryLockAndProcess(ctx, worker, key, &task, msg.Offset)
 	}
 
 	currentTime := time.Now().UnixMilli()
-	if expandStatus.Status == ExpandStatusExpanding &&
+	if expandStatus.Status == kafkautil.ExpandStatusExpanding &&
 		(expandStatus.UpdateTime == 0 || currentTime-expandStatus.UpdateTime > expandStatusExpireDuration.Milliseconds()) {
 		logx.Errorf("expand status expired: topic=%s, key=%s, lastUpdate=%d",
 			worker.topic, key, expandStatus.UpdateTime)
-		expandStatus.Status = ExpandStatusNormal
-		_ = SetExpandStatus(ctx, worker.redisClient, worker.topic, ExpandStatusNormal, expandStatus.PartitionCount)
+		expandStatus.Status = kafkautil.ExpandStatusNormal
+		_ = kafkautil.SetExpandStatus(ctx, worker.redisClient, worker.topic, kafkautil.ExpandStatusNormal, expandStatus.PartitionCount)
 	}
 
-	if expandStatus.Status == ExpandStatusExpanding {
+	if expandStatus.Status == kafkautil.ExpandStatusExpanding {
 		logx.Debugf("expanding mode: try lock for task: taskID=%s, key=%s", task.TaskId, key)
 		return tryLockAndProcess(ctx, worker, key, &task, msg.Offset)
 	}

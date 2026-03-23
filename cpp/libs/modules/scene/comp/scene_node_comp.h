@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include <ranges>
-
 #include "engine/core/type_define/type_define.h"
 #include "engine/core/node/constants/node_constants.h"
 
@@ -10,7 +8,6 @@
 #include "engine/thread_context/registry_manager.h"
 #include "proto/common/component/game_node_comp.pb.h"
 
-using SceneList = std::unordered_map<uint32_t, EntityUnorderedSet>;
 using ScenePlayers = EntityUnorderedSet; // weak refs; decouples players from scenes
 
 struct MainSceneNode

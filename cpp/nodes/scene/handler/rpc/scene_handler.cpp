@@ -10,7 +10,6 @@
 #include "core/network/message_system.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
-#include "spatial/system/game_node_scene.h"
 #include "rpc/player_service_interface.h"
 #include "network/rpc_session.h"
 #include "network/network_constants.h"

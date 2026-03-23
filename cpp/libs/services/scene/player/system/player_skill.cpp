@@ -5,11 +5,6 @@
 
 #include <thread_context/registry_manager.h>
 
-void PlayerSkillSystem::InitializePlayerComponentsHandler(entt::entity player)
-{
-
-}
-
 void PlayerSkillSystem::RegisterPlayer(entt::entity player)
 {
 	for (const auto& tableClass : GetClassAllTable().data())

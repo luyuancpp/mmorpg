@@ -62,9 +62,9 @@ uint32_t Bag::GetItemPos(Guid guid) {
     return kInvalidU32Id;
 }
 
-uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& itemsToAdd) {
+uint32_t Bag::HasEnoughSpace(const ItemCountMap& itemsToAdd) {
     auto emptySize = empty_grid_size();
-    U32U32UnorderedMap pendingStackItems;
+    ItemCountMap pendingStackItems;
     bool hasStackableItem = false;
 
     for (const auto& [configId, count] : itemsToAdd) {
@@ -125,7 +125,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& itemsToAdd) {
     return kSuccess;
 }
 
-uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems) {
+uint32_t Bag::HasSufficientItems(const ItemCountMap& requiredItems) {
     auto itemsToCheck = requiredItems;
 
     for (const auto& [entity, item] : itemRegistry.view<ItemComp>().each()) {
@@ -145,7 +145,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems) {
 }
 
 
-uint32_t Bag::RemoveItems(const U32U32UnorderedMap& itemsToRemove) {
+uint32_t Bag::RemoveItems(const ItemCountMap& itemsToRemove) {
     RETURN_ON_ERROR(HasSufficientItems(itemsToRemove));
 
     auto itemsToErase = itemsToRemove;

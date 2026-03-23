@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bag\bag_system.cpp" />
-    <ClCompile Include="bag\item_system.cpp" />
     <ClCompile Include="mission\comp\mission_comp.cpp" />
     <ClCompile Include="mission\system\mission.cpp" />
     <ClCompile Include="reward\system\reward.cpp" />
@@ -33,7 +32,6 @@
     <ClInclude Include="mission\constants\mission.h" />
     <ClInclude Include="mission\system\mission.h" />
     <ClInclude Include="reward\comp\reward.h" />
-    <ClInclude Include="reward\constants\reward.h" />
     <ClInclude Include="reward\system\reward.h" />
     <ClInclude Include="reward\util\bit_index_util.h" />
     <ClInclude Include="scene\comp\scene_node_comp.h" />
