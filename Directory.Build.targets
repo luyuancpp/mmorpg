@@ -9,7 +9,7 @@
   </ItemDefinitionGroup>
 
   <Target Name="NoRawPointerMemberCheck" BeforeTargets="PreBuildEvent"
-          Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and $([System.String]::Copy('$(MSBuildProjectDirectory)').Contains('\\third_party\\')) != 'True'">
+          Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and $([System.String]::Copy('$(MSBuildProjectDirectory)').Contains('\third_party\')) != 'True'">
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)tools\scripts\check_no_raw_pointer_member.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -ProjectName &quot;$(ProjectName)&quot;" />
   </Target>
 </Project>

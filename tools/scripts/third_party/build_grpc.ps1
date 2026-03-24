@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Build gRPC (Release + Debug) using Ninja + MSVC cl.exe, then install to
-    grpc/install_vs2026/ (Release) and grpc/install_vs2026_dbg/ (Debug).
+    Build gRPC (Release + Debug) using Ninja or VS generator + MSVC cl.exe,
+    then install to grpc/install_vs2026/ (Release) and grpc/install_vs2026_dbg/ (Debug).
 
 .DESCRIPTION
     This script automates the full gRPC build for the MMORPG project.
     It locates grpc source at ./grpc (relative to this script), uses vswhere
     to locate the newest MSVC toolchain, then runs CMake with the Ninja
-    generator against both Release and Debug configurations.
+    generator (default) or Visual Studio generator (-UseVSGenerator).
 
     If cmake or ninja is missing or outdated, the script will auto-install /
     upgrade them via winget (requires Windows 10 1709+ or Windows 11).
@@ -20,12 +20,18 @@
 .PARAMETER SkipToolCheck
     Skip the cmake/ninja version check and auto-install step.
 .PARAMETER Jobs
-    Parallel build jobs passed to ninja (-j). Default: number of logical CPUs.
+    Parallel build jobs passed to the build system (-j). Default: number of logical CPUs.
 .PARAMETER Clean
     If set, removes existing build directories before building.
+.PARAMETER UseVSGenerator
+    Use Visual Studio generator instead of Ninja. Useful when CMake + Ninja
+    has compatibility issues (e.g. CMake 4.2.0 recompact bug).
 .EXAMPLE
-    # Build both Release and Debug (default)
+    # Build both Release and Debug (default, Ninja)
     .\build_grpc.ps1
+
+    # Build using Visual Studio generator (workaround for CMake 4.2.0 + Ninja bug)
+    .\build_grpc.ps1 -UseVSGenerator
 
     # Release only, 8 parallel jobs
     .\build_grpc.ps1 -BuildDebug:$false -Jobs 8
@@ -43,7 +49,8 @@ param(
     [int]   $Jobs          = 0,
     [string]$PreferredMsvcVersion = '14.51',
     [switch]$Clean,
-    [switch]$SkipToolCheck
+    [switch]$SkipToolCheck,
+    [switch]$UseVSGenerator
 )
 
 Set-StrictMode -Version Latest
@@ -131,7 +138,7 @@ function Ensure-Tool([string]$Name) {
 
 if (-not $SkipToolCheck) {
     Ensure-Tool 'cmake'
-    Ensure-Tool 'ninja'
+    if (-not $UseVSGenerator) { Ensure-Tool 'ninja' }
 }
 
 function Resolve-Tool([string]$Name) {
@@ -172,10 +179,15 @@ function Remove-DirectoryRobust([string]$Path) {
 }
 
 $CMake = Resolve-Tool 'cmake'
-$Ninja = Resolve-Tool 'ninja'
+if ($UseVSGenerator) {
+    $Ninja = $null
+    Write-Host "[info] Using Visual Studio generator (Ninja skipped)"
+} else {
+    $Ninja = Resolve-Tool 'ninja'
+    Write-Host "[info] ninja : $Ninja"
+}
 $Nasm  = Resolve-OptionalTool 'nasm'
 Write-Host "[info] cmake : $CMake"
-Write-Host "[info] ninja : $Ninja"
 if ($Nasm) {
     Write-Host "[info] nasm  : $Nasm"
 } else {
@@ -233,12 +245,11 @@ Write-Host "[info] VS    : $($msvc.VsPath)"
 Write-Host "[info] MSVC  : $($msvc.MsvcVer)"
 Write-Host "[info] cl.exe: $($msvc.ClExe)"
 
-$NinjaCMakePath = Convert-ToCMakePath $Ninja
 $GrpcExtraArgs = @()
 if ($Nasm) {
     $nasmCMakePath = Convert-ToCMakePath $Nasm
     $GrpcExtraArgs += "-DCMAKE_ASM_NASM_COMPILER=$nasmCMakePath"
-} else {
+} elseif (-not $UseVSGenerator) {
     # Ninja generator does not auto-disable BoringSSL ASM when NASM is missing.
     $GrpcExtraArgs += "-DOPENSSL_NO_ASM=ON"
 }
@@ -275,22 +286,35 @@ Write-Host "[info] Parallel jobs: $Jobs"
 
 # Use short name 'cl' since vcvars64 has put cl.exe on PATH.
 # This avoids CMake path-escaping issues with long paths containing spaces.
-$CommonArgs = @(
-    "-G", "Ninja",
-    "-DCMAKE_C_COMPILER=cl",
-    "-DCMAKE_CXX_COMPILER=cl",
-    "-DCMAKE_MAKE_PROGRAM=$NinjaCMakePath",
-    "-DCMAKE_CXX_FLAGS=/std:c++23",
-    "-DCMAKE_CXX_STANDARD=23",
-    "-DCMAKE_CXX_STANDARD_REQUIRED=ON",
-    "-DCMAKE_CXX_EXTENSIONS=OFF",
-    "-DgRPC_BUILD_TESTS=OFF",
-    "-DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=OFF",
-    "-Dprotobuf_BUILD_TESTS=OFF",
-    "-DABSL_BUILD_TESTING=OFF",
-    "-DABSL_BUILD_TEST_HELPERS=OFF",
-    "-DABSL_PROPAGATE_CXX_STD=OFF"
-)
+if ($UseVSGenerator) {
+    $NinjaCMakePath = $null
+    $CommonArgs = @(
+        "-G", "Visual Studio 18 2026",
+        "-A", "x64",
+        "-DCMAKE_CXX_FLAGS=/std:c++latest",
+        "-DgRPC_BUILD_TESTS=OFF",
+        "-DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=OFF",
+        "-Dprotobuf_BUILD_TESTS=OFF",
+        "-DABSL_BUILD_TESTING=OFF",
+        "-DABSL_BUILD_TEST_HELPERS=OFF",
+        "-DABSL_PROPAGATE_CXX_STD=OFF"
+    )
+} else {
+    $NinjaCMakePath = Convert-ToCMakePath $Ninja
+    $CommonArgs = @(
+        "-G", "Ninja",
+        "-DCMAKE_C_COMPILER=cl",
+        "-DCMAKE_CXX_COMPILER=cl",
+        "-DCMAKE_MAKE_PROGRAM=$NinjaCMakePath",
+        "-DCMAKE_CXX_FLAGS=/std:c++latest",
+        "-DgRPC_BUILD_TESTS=OFF",
+        "-DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=OFF",
+        "-Dprotobuf_BUILD_TESTS=OFF",
+        "-DABSL_BUILD_TESTING=OFF",
+        "-DABSL_BUILD_TEST_HELPERS=OFF",
+        "-DABSL_PROPAGATE_CXX_STD=OFF"
+    )
+}
 
 function Invoke-GrpcBuild {
     param(
@@ -314,12 +338,10 @@ function Invoke-GrpcBuild {
     }
 
     $cachePath = Join-Path $buildPath 'CMakeCache.txt'
-    $expectedCxxFlags = '/std:c++23'
-    $expectedCxxStandard = '23'
+    $expectedCxxFlags = '/std:c++latest'
     if (Test-Path $cachePath) {
         $cacheCompilerLine = Select-String -Path $cachePath -Pattern '^CMAKE_C_COMPILER:FILEPATH=' -SimpleMatch:$false | Select-Object -First 1
         $cacheCxxFlagsLine = Select-String -Path $cachePath -Pattern '^CMAKE_CXX_FLAGS:STRING=' -SimpleMatch:$false | Select-Object -First 1
-        $cacheCxxStandardLine = Select-String -Path $cachePath -Pattern '^CMAKE_CXX_STANDARD:UNINITIALIZED=|^CMAKE_CXX_STANDARD:STRING=' -SimpleMatch:$false | Select-Object -First 1
         if ($cacheCompilerLine) {
             $cachedCompiler = $cacheCompilerLine.Line.Split('=', 2)[1]
             $cachedName = [System.IO.Path]::GetFileNameWithoutExtension($cachedCompiler)
@@ -338,14 +360,6 @@ function Invoke-GrpcBuild {
             $cachedCxxFlags = $cacheCxxFlagsLine.Line.Split('=', 2)[1]
             if ($cachedCxxFlags -ne $expectedCxxFlags) {
                 Write-Host "[clean] Cached CMAKE_CXX_FLAGS is '$cachedCxxFlags' instead of '$expectedCxxFlags' - resetting $buildPath ..."
-                Remove-DirectoryRobust $buildPath
-            }
-        }
-
-        if ((Test-Path $buildPath) -and $cacheCxxStandardLine) {
-            $cachedCxxStandard = $cacheCxxStandardLine.Line.Split('=', 2)[1]
-            if ($cachedCxxStandard -ne $expectedCxxStandard) {
-                Write-Host "[clean] Cached CMAKE_CXX_STANDARD is '$cachedCxxStandard' instead of '$expectedCxxStandard' - resetting $buildPath ..."
                 Remove-DirectoryRobust $buildPath
             }
         }
@@ -392,15 +406,17 @@ function Invoke-GrpcBuild {
 
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
+$buildDirSuffix = if ($UseVSGenerator) { '_vs' } else { '_ninja' }
+
 if ($BuildRelease) {
     Invoke-GrpcBuild -BuildType 'Release' `
-                     -BuildDir  '.build_ninja_release' `
+                     -BuildDir  ".build${buildDirSuffix}_release" `
                      -InstallDir 'install_vs2026'
 }
 
 if ($BuildDebug) {
     Invoke-GrpcBuild -BuildType 'Debug' `
-                     -BuildDir  '.build_ninja_debug' `
+                     -BuildDir  ".build${buildDirSuffix}_debug" `
                      -InstallDir 'install_vs2026_dbg'
 }
 

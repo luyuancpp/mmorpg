@@ -60,7 +60,8 @@ param(
     # cpp-node-* / dev-* commands
     [string[]]$CppNodes = @(),
     [int]$GateCount = 1,
-    [int]$SceneCount = 1
+    [int]$SceneCount = 1,
+    [switch]$UseVSGenerator
 )
 
 $ErrorActionPreference = "Stop"
@@ -229,6 +230,9 @@ function Invoke-ThirdPartyGrpcBuild {
     }
     if ($SkipToolCheck) {
         $args.SkipToolCheck = $true
+    }
+    if ($UseVSGenerator) {
+        $args.UseVSGenerator = $true
     }
 
     & $scriptPath @args
