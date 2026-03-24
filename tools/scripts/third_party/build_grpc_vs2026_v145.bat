@@ -40,9 +40,7 @@ cd .build_vs2026
 :: Generate VS2026 project files
 echo [1/3] Generating VS2026 project files...
 "%CMAKE_EXE%" -G "Visual Studio 18 2026" -A x64 -T v145 ^
-      -DCMAKE_CXX_STANDARD=23 ^
-      -DCMAKE_CXX_STANDARD_REQUIRED=ON ^
-      -DCMAKE_CXX_EXTENSIONS=OFF ^
+    -DCMAKE_CXX_FLAGS=/std:c++latest ^
       -DGRPC_BUILD_TESTS=OFF ^
       -DGRPC_BUILD_EXAMPLES=OFF ^
       -DRE2_BUILD_TESTING=OFF ^
