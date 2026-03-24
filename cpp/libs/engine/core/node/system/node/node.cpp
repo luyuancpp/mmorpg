@@ -516,7 +516,7 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& connectedEvent) {
 void Node::StartNodeRegistrationHealthMonitor() {
 	serviceHealthMonitorTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().health_check_interval(),
 		[this, reRegistrationRequested = false]() mutable {
-		if (nullptr == rpcServer)
+		if (rpcServer == nullptr)
 		{
 			return;
 		}
@@ -540,7 +540,7 @@ void Node::StartNodeRegistrationHealthMonitor() {
 		for (const auto& registeredNode : registeredNodesForType) {
 			if (IsCurrentNode(registeredNode)) {
 				reRegistrationRequested = false;
-				return ;
+				return;
 			}
 		}
 

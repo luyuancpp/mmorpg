@@ -15,25 +15,12 @@
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
 {
-	if (BothAreNpcs(observer, entrant)) {
-		return false;
-	}
-
-	if (EntrantIsNpc(entrant)) {
-		return true;
-	}
-
-	return true;
+	return !BothAreNpcs(observer, entrant);
 }
 
 bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
 {
 	return tlsRegistryManager.actorRegistry.any_of<Npc>(observer) && tlsRegistryManager.actorRegistry.any_of<Npc>(entrant);
-}
-
-bool ViewSystem::EntrantIsNpc(entt::entity entrant)
-{
-	return tlsRegistryManager.actorRegistry.any_of<Npc>(entrant);
 }
 
 double ViewSystem::GetMaxViewRadius(entt::entity observer)
@@ -107,9 +94,9 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
 	const google::protobuf::Message& message)
 {
-	EntityUnorderedSet entites;
-	GridSystem::GetEntitiesInViewAndNearby(entity, entites);
-	BroadcastMessageToPlayers(message_id, message, entites);
+	EntityUnorderedSet entities;
+	GridSystem::GetEntitiesInViewAndNearby(entity, entities);
+	BroadcastMessageToPlayers(message_id, message, entities);
 }
 
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {

@@ -1,5 +1,5 @@
 #include "process_info.h"
-//////////////////////WIN32/////////////////////////////////
+// ===== WIN32 =====
 #ifdef __linux__
 #include <sys/socket.h>
 #include <netinet/in.h>

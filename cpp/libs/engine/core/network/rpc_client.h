@@ -28,7 +28,7 @@ public:
 
     const muduo::net::InetAddress& local_addr()const
     {
-        if (nullptr == client_.connection())
+        if (client_.connection() == nullptr)
         {
             static muduo::net::InetAddress s;
             return s;
@@ -39,7 +39,7 @@ public:
 
     const muduo::net::InetAddress& peer_addr()const
     {
-        if (nullptr == client_.connection())
+        if (client_.connection() == nullptr)
         {
             static muduo::net::InetAddress s;
             return s;
@@ -99,7 +99,7 @@ public:
     }
 
 	muduo::net::TcpConnectionPtr GetConnection() const {
-		if (nullptr == client_.connection())
+if (client_.connection() == nullptr)
 		{
 			static muduo::net::TcpConnectionPtr c;
 			return c;

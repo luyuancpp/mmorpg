@@ -63,31 +63,31 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 {
     if (!tlsRegistryManager.actorRegistry.valid(parent))
     {
-        return std::make_tuple(kThisEntityIsInvalid, UINT64_MAX);
+        return {kThisEntityIsInvalid, UINT64_MAX};
     }
 
     FetchBuffTableOrReturnCustom(buffTableId, (std::make_tuple(fetchResult, UINT64_MAX)));
 
     auto result = CanCreateBuff(parent, buffTableId);
     if (result != kSuccess) {
-        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
+        return {result, UINT64_MAX};
     }
 
     auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
 
     BuffEntry newBuff;
-    if (nullptr != abilityContext)
+    if (abilityContext != nullptr)
     {
         newBuff.buffPb.set_caster(abilityContext->caster());
     }
     newBuff.buffPb.set_processed_caster(buffTable->nocaster() ? entt::null : (abilityContext ? abilityContext->caster() : entt::null));
 
-    if (kSuccess == OnBuffAwake(parent, buffTableId)) {
-        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
+    if (OnBuffAwake(parent, buffTableId) == kSuccess) {
+        return {result, UINT64_MAX};
     }
 
     if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
-        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
+        return {result, UINT64_MAX};
     }
 
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
@@ -112,7 +112,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
         OnBuffExpire(parent, newBuffId);
     }
 
-    return std::make_tuple<uint32_t, uint64_t>(kSuccess, std::move(newBuffId));
+    return {kSuccess, newBuffId};
 }
 
 // Add or update buff (without abilityContext)
@@ -151,7 +151,7 @@ void BuffSystem::MarkBuffForRemoval(const entt::entity parent, uint64_t buffId) 
     pendingRemoveBuffs.emplace(buffId);
 }
 
-    // Remove pending buffs at end of frame
+// Remove pending buffs at end of frame
 void BuffSystem::RemovePendingBuffs(const entt::entity parent, BuffListComp& buffListComp) {
     auto& pendingRemoveBuffs = tlsRegistryManager.actorRegistry.get_or_emplace<BuffPendingRemoveBuffs>(parent);
 
@@ -344,7 +344,7 @@ bool BuffSystem::AddSubBuffs(entt::entity parent,
     const BuffTable* buffTable,
     BuffEntry& buffComp)
 {
-    if (nullptr == buffTable)
+    if (buffTable == nullptr)
     {
         return false;
     }
@@ -374,7 +374,7 @@ void BuffSystem::AddTargetSubBuffs(const entt::entity targetEntity,
     const BuffTable* buffTable,
     const SkillContextPtrComp& abilityContext)
 {
-    if (nullptr == buffTable)
+    if (buffTable == nullptr)
     {
         return;
     }

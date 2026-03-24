@@ -56,8 +56,8 @@ void BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::entity casterEntity, e
 
     defer(BuffSystem::RemoveBuff(targetEntity, buffsToRemoveTarget));
 
-    for (auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(targetEntity);
-        auto& buffComp : buffList | std::views::values) {
+    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(targetEntity);
+    for (auto& buffComp : buffList | std::views::values) {
         FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
         if (buffTable->bufftype() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
@@ -110,8 +110,8 @@ void BuffImplSystem::HandleBuffEffectsOnDamage(entt::entity casterEntity, entt::
 
     defer(BuffSystem::RemoveBuff(casterEntity, buffsToRemoveCaster));
 
-    for (auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(casterEntity);
-        auto& buffComp : buffList | std::views::values) {
+    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(casterEntity);
+    for (auto& buffComp : buffList | std::views::values) {
         FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
         switch (buffTable->bufftype()) {

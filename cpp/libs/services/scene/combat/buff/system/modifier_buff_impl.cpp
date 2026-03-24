@@ -43,9 +43,6 @@ bool ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffEntry& 
 }
 
 bool ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
-    if (buffTable == nullptr) {
-        return false;
-    }
     return false;
 }
 

@@ -37,7 +37,7 @@ void GridSystem::GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet) 
     GetNeighborGridIds(hex, gridSet);
 }
 
-void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSel)
+void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entities, bool excludingSelf)
 {
     if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
@@ -69,17 +69,17 @@ void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorde
 
         for (const auto& gridEntity : gridIt->second.entities)
         {
-            entites.emplace(gridEntity);
+            entities.emplace(gridEntity);
         }
     }
 
-    if (excludingSel)
+    if (excludingSelf)
     {
-        entites.erase(entity);
+        entities.erase(entity);
     }
 }
 
-void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites)
+void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entities)
 {
     if (!tlsRegistryManager.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
@@ -123,12 +123,12 @@ void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnordered
                 continue;
             }
             
-            entites.emplace(gridEntity);
+            entities.emplace(gridEntity);
         }
     }
 }
 
-void GridSystem::UpdateLogGridSize(double deltaTime) {
+void GridSystem::UpdateLogGridSize() {
     for (auto&& [sceneEntity, gridList] : tlsRegistryManager.sceneRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [gridId, entityList] : gridList) {
             if (entityList.entities.empty()) {

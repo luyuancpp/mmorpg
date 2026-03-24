@@ -110,7 +110,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         }
     }
 
-    GridSystem::UpdateLogGridSize(0.1);
+    GridSystem::UpdateLogGridSize();
 }
 
 // Test player movement across six neighboring hexes

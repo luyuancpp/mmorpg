@@ -53,7 +53,7 @@ void World::Update()
             BuffSystem::Update(fixedDeltaTime);
 
             // Attribute calculation must run last (depends on state changes above)
-            ActorAttributeCalculatorSystem::Update(fixedDeltaTime);
+            ActorAttributeCalculatorSystem::Update();
             ActorStateAttributeSyncSystem::Update(fixedDeltaTime);
 
             tlsFrameTimeManager.frameTime.set_current_frame(tlsFrameTimeManager.frameTime.current_frame() + 1);

@@ -14,7 +14,7 @@ void MessageSyncRedisClient::Connect(const std::string& redis_server_addr, int32
     timeval timeout = { sec, usec };
     context_.reset(redisConnectWithTimeout(redis_server_addr.c_str(), port, timeout));
 
-    if (nullptr == context_)
+    if (context_ == nullptr)
     {
         LOG_FATAL << "Connect Redis " << redis_server_addr << ":" << port;
     }
@@ -101,7 +101,7 @@ void MessageSyncRedisClient::Load(google::protobuf::Message& message, const std:
     redisReply* reply = static_cast<redisReply*>(redisCommand(context_.get(),
                                                               format.c_str()));
     defer(freeReplyObject(reply));
-    if (nullptr == reply)
+    if (reply == nullptr)
     {
         return;
     }

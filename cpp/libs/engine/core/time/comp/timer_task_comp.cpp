@@ -59,7 +59,7 @@ void TimerTaskComp::Cancel() {
     tlsEventLoop->cancel(timerId);
     timerId = TimerId();
     callback = TimerCallback();
-    assert(nullptr == timerId.GetTimer());
+    assert(timerId.GetTimer() == nullptr);
 }
 
 
