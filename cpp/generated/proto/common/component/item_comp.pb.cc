@@ -35,13 +35,13 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n&proto/common/component/item_comp.proto"
-    "b\006proto3"
+    "B\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto = {
     false,
     false,
-    48,
+    68,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto,
     "proto/common/component/item_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto_once,

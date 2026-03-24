@@ -398,3 +398,23 @@ domain_meta:
         proto: "go/generated/contracts/proto"
       cpp:
         proto: "cpp/generated/contracts/proto"
+
+  guild:
+    source: "{{proto_dir}}guild/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/guild/proto"
+        handler: "go/generated/guild/handler"
+        grpc:    "go/generated/guild/grpc"
+
+  friend:
+    source: "{{proto_dir}}friend/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/friend/proto"
+        handler: "go/generated/friend/handler"
+        grpc:    "go/generated/friend/grpc"

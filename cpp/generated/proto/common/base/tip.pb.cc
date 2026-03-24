@@ -76,14 +76,14 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\033proto/common/base/tip.proto\"0\n\016TipInfo"
-    "Message\022\n\n\002id\030\001 \001(\r\022\022\n\nparameters\030\002 \003(\tb"
-    "\006proto3"
+    "Message\022\n\n\002id\030\001 \001(\r\022\022\n\nparameters\030\002 \003(\tB"
+    "\rZ\013common/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto = {
     false,
     false,
-    87,
+    102,
     descriptor_table_protodef_proto_2fcommon_2fbase_2ftip_2eproto,
     "proto/common/base/tip.proto",
     &descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto_once,

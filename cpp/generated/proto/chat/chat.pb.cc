@@ -253,7 +253,7 @@ const char descriptor_table_protodef_proto_2fchat_2fchat_2eproto[] ABSL_ATTRIBUT
     "tpb.SendChatRequest\032\030.chatpb.SendChatRes"
     "ponse\022R\n\017PullChatHistory\022\036.chatpb.PullCh"
     "atHistoryRequest\032\037.chatpb.PullChatHistor"
-    "yResponse\032\005\210\250\303\001\001B\007\200\001\000\230\324a\016b\006proto3"
+    "yResponse\032\005\210\250\303\001\001B\rZ\004chat\200\001\000\230\324a\016b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fchat_2fchat_2eproto_deps[2] = {
@@ -264,7 +264,7 @@ static ::absl::once_flag descriptor_table_proto_2fchat_2fchat_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fchat_2fchat_2eproto = {
     false,
     false,
-    953,
+    959,
     descriptor_table_protodef_proto_2fchat_2fchat_2eproto,
     "proto/chat/chat.proto",
     &descriptor_table_proto_2fchat_2fchat_2eproto_once,

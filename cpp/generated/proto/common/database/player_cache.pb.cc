@@ -80,7 +80,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fplayer_5fcache_
     "_table.proto\"s\n\rPlayerAllData\022.\n\024player_"
     "database_data\030\002 \001(\0132\020.player_database\0222\n"
     "\026player_database_1_data\030\003 \001(\0132\022.player_d"
-    "atabase_1b\006proto3"
+    "atabase_1B\021Z\017common/databaseb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto_deps[1] = {
@@ -90,7 +90,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fc
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto = {
     false,
     false,
-    217,
+    236,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto,
     "proto/common/database/player_cache.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto_once,

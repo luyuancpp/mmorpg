@@ -36,14 +36,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fconstants_2fetcd_5fgrpc_2e
     protodesc_cold) = {
     "\n&proto/common/constants/etcd_grpc.proto"
     "*K\n\rGrpcOperation\022\010\n\004READ\020\000\022\010\n\004INIT\020\001\022\t\n"
-    "\005WRITE\020\002\022\017\n\013WRITES_DONE\020\003\022\n\n\006FINISH\020\004b\006p"
-    "roto3"
+    "\005WRITE\020\002\022\017\n\013WRITES_DONE\020\003\022\n\n\006FINISH\020\004B\022Z"
+    "\020common/constantsb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fconstants_2fetcd_5fgrpc_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fconstants_2fetcd_5fgrpc_2eproto = {
     false,
     false,
-    125,
+    145,
     descriptor_table_protodef_proto_2fcommon_2fconstants_2fetcd_5fgrpc_2eproto,
     "proto/common/constants/etcd_grpc.proto",
     &descriptor_table_proto_2fcommon_2fconstants_2fetcd_5fgrpc_2eproto_once,

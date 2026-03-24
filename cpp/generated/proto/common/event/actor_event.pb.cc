@@ -114,13 +114,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2factor_5fevent_2epr
     "\n\036InitializeActorComponentsEvent\022\024\n\014acto"
     "r_entity\030\001 \001(\004\"_\n\034InterruptCurrentStateP"
     "bEvent\022\024\n\014actor_entity\030\001 \001(\004\022\024\n\014actor_ac"
-    "tion\030\002 \001(\r\022\023\n\013actor_state\030\003 \001(\rb\006proto3"
+    "tion\030\002 \001(\r\022\023\n\013actor_state\030\003 \001(\rB\016Z\014commo"
+    "n/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2factor_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2factor_5fevent_2eproto = {
     false,
     false,
-    199,
+    215,
     descriptor_table_protodef_proto_2fcommon_2fevent_2factor_5fevent_2eproto,
     "proto/common/event/actor_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2factor_5fevent_2eproto_once,

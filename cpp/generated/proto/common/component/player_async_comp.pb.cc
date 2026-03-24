@@ -74,13 +74,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fasync
     protodesc_cold) = {
     "\n.proto/common/component/player_async_co"
     "mp.proto\"5\n\033PlayerGameNodeEntryInfoComp\022"
-    "\026\n\016centre_node_id\030\001 \001(\rb\006proto3"
+    "\026\n\016centre_node_id\030\001 \001(\rB\022Z\020common/compon"
+    "entb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fasync_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fasync_5fcomp_2eproto = {
     false,
     false,
-    111,
+    131,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fasync_5fcomp_2eproto,
     "proto/common/component/player_async_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fasync_5fcomp_2eproto_once,

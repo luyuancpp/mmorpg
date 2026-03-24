@@ -79,14 +79,14 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n!proto/common/component/comp.proto\"*\n\007V"
-    "ector3\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001b"
-    "\006proto3"
+    "ector3\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001B"
+    "\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fcomp_2eproto = {
     false,
     false,
-    87,
+    107,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fcomp_2eproto,
     "proto/common/component/comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fcomp_2eproto_once,

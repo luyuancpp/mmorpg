@@ -84,11 +84,25 @@ tools/proto-generator/protogen/.idea/
 
 # Legacy / dead directories
 test/
+scripts/
 cpp/libs/game/
 cpp/libs/base/common/
 cpp/libs/base/core/
 cpp/libs/base/infra/
 cpp/libs/base/modules/
+
+# Runtime artifacts (not for version control)
+bin/zoneinfo/
+bin/cpp_nodes.pid.json
+bin/start_server.*
+bin/stop_server.*
+
+# Proto-gen output duplicates (canonical location is go/)
+tools/contracts/
+tools/data_service/
+tools/scene_manager/
+tools/github.com/
+tools/bin/
 
 # Obsolete paths (kept for safety)
 tools/server/protogen/.idea/

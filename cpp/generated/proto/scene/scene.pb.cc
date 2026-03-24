@@ -388,8 +388,8 @@ const char descriptor_table_protodef_proto_2fscene_2fscene_2eproto[] ABSL_ATTRIB
     "ntre2GsEnterSceneRequest\032\006.Empty\0228\n\013Crea"
     "teScene\022\023.CreateSceneRequest\032\024.CreateSce"
     "neResponse\022>\n\rNodeHandshake\022\025.NodeHandsh"
-    "akeRequest\032\026.NodeHandshakeResponseB\007\200\001\001\230"
-    "\324a\003b\006proto3"
+    "akeRequest\032\026.NodeHandshakeResponseB\016Z\005sc"
+    "ene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fscene_2eproto_deps[4] = {
@@ -402,7 +402,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fscene_2eproto = {
     false,
     false,
-    1611,
+    1618,
     descriptor_table_protodef_proto_2fscene_2fscene_2eproto,
     "proto/scene/scene.proto",
     &descriptor_table_proto_2fscene_2fscene_2eproto_once,

@@ -1,1 +1,3 @@
-守望先锋实现的 ECS 框架有以下几个规则：system内无状态，component内无函数，system间禁止互相调用，system间有共享Utility函数使用，system中的遍历通过 “主component+它的兄弟姐妹component” 的方式实现，允许不少component是单例component。
+# ECS Design Rules (inspired by Overwatch)
+
+The ECS framework follows these rules: systems are stateless; components have no functions; systems must not call each other directly (shared utility functions are allowed); system iteration is done via "primary component + its sibling components"; singleton components are permitted.

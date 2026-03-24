@@ -74,13 +74,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fgame_5fnode_5f
     protodesc_cold) = {
     "\n+proto/common/component/game_node_comp."
     "proto\"-\n\026GameNodePlayerInfoComp\022\023\n\013playe"
-    "r_size\030\001 \001(\rb\006proto3"
+    "r_size\030\001 \001(\rB\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fgame_5fnode_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fgame_5fnode_5fcomp_2eproto = {
     false,
     false,
-    100,
+    120,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fgame_5fnode_5fcomp_2eproto,
     "proto/common/component/game_node_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fgame_5fnode_5fcomp_2eproto_once,

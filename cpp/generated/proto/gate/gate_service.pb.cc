@@ -174,7 +174,8 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "\022>\n\rNodeHandshake\022\025.NodeHandshakeRequest"
     "\032\026.NodeHandshakeResponse\022J\n\021BindSessionT"
     "oGate\022\031.BindSessionToGateRequest\032\032.BindS"
-    "essionToGateResponseB\007\200\001\001\230\324a\002b\006proto3"
+    "essionToGateResponseB\rZ\004gate\200\001\001\230\324a\002b\006pro"
+    "to3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] = {
@@ -186,7 +187,7 @@ static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    917,
+    923,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,

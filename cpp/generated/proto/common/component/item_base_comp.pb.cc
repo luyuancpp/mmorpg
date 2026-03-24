@@ -80,13 +80,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fitem_5fbase_5f
     protodesc_cold) = {
     "\n+proto/common/component/item_base_comp."
     "proto\"<\n\010ItemComp\022\017\n\007item_id\030\001 \001(\004\022\021\n\tco"
-    "nfig_id\030\002 \001(\r\022\014\n\004size\030\003 \001(\rb\006proto3"
+    "nfig_id\030\002 \001(\r\022\014\n\004size\030\003 \001(\rB\022Z\020common/co"
+    "mponentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto = {
     false,
     false,
-    115,
+    135,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto,
     "proto/common/component/item_base_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once,

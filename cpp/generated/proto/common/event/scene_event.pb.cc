@@ -271,13 +271,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fscene_5fevent_2epr
     "ene\022\016\n\006entity\030\001 \001(\004\"\"\n\020BeforeLeaveScene\022"
     "\016\n\006entity\030\001 \001(\004\"!\n\017AfterLeaveScene\022\016\n\006en"
     "tity\030\001 \001(\004\"\037\n\rS2CEnterScene\022\016\n\006entity\030\001 "
-    "\001(\004b\006proto3"
+    "\001(\004B\016Z\014common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fscene_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fscene_5fevent_2eproto = {
     false,
     false,
-    291,
+    307,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fscene_5fevent_2eproto,
     "proto/common/event/scene_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fscene_5fevent_2eproto_once,

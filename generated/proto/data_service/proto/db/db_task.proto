@@ -1,6 +1,6 @@
 syntax = "proto3";
-
 option go_package = "data_service/proto/db";
+
 package taskpb;
 
 

@@ -98,13 +98,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fgame_5frpc_2eproto[
     "eErrorCode\022\020\n\014RPC_NO_ERROR\020\000\022\017\n\013WRONG_PR"
     "OTO\020\001\022\016\n\nNO_SERVICE\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017"
     "INVALID_REQUEST\020\004\022\024\n\020INVALID_RESPONSE\020\005\022"
-    "\013\n\007TIMEOUT\020\006b\006proto3"
+    "\013\n\007TIMEOUT\020\006B\rZ\013common/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fgame_5frpc_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fgame_5frpc_2eproto = {
     false,
     false,
-    420,
+    435,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fgame_5frpc_2eproto,
     "proto/common/base/game_rpc.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fgame_5frpc_2eproto_once,

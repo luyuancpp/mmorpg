@@ -1,0 +1,19 @@
+syntax = "proto3";
+package storage;
+
+option go_package = "guild/proto/scene_manager";
+
+// Redis: scene:{id}:info
+message SceneInfo {
+  uint64 scene_id = 1;
+  uint64 scene_conf_id = 2;
+  string node_id = 3;
+  int64 create_time = 4;
+}
+
+// Redis: player:{id}:location
+message PlayerLocation {
+  uint64 scene_id = 1;
+  string node_id = 2;
+  uint64 update_time = 3;
+}

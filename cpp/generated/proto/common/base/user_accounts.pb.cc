@@ -104,13 +104,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fuser_5faccounts_2ep
     "\n%proto/common/base/user_accounts.proto\""
     "(\n\023AccountSimplePlayer\022\021\n\tplayer_id\030\001 \001("
     "\004\"@\n\027AccountSimplePlayerList\022%\n\007players\030"
-    "\001 \003(\0132\024.AccountSimplePlayerb\006proto3"
+    "\001 \003(\0132\024.AccountSimplePlayerB\rZ\013common/ba"
+    "seb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fuser_5faccounts_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fuser_5faccounts_2eproto = {
     false,
     false,
-    155,
+    170,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fuser_5faccounts_2eproto,
     "proto/common/base/user_accounts.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fuser_5faccounts_2eproto_once,
