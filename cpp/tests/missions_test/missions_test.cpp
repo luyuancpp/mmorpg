@@ -32,8 +32,6 @@ TEST(MissionsComp, AcceptMission)
 {
 	constexpr uint32_t testMissionId = 1;
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
-	missionsComponent.SetMissionTypeNotRepeated(false);
 
 	// Simulating accepting missions from a list
 	AcceptMissionEvent acceptMissionEvent;
@@ -44,6 +42,7 @@ TEST(MissionsComp, AcceptMission)
 
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
 	auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
+	comp.SetMissionTypeNotRepeated(false);
 
 	for (int32_t i = 0; i < missionConfigData.data_size(); ++i)
 	{
@@ -52,14 +51,14 @@ TEST(MissionsComp, AcceptMission)
 		++acceptedMissionCount;
 	}
 
-	EXPECT_EQ(acceptedMissionCount, missionsComponent.MissionSize());
-	EXPECT_EQ(0, missionsComponent.CompleteSize());
+	EXPECT_EQ(acceptedMissionCount, comp.MissionSize());
+	EXPECT_EQ(0, comp.CompleteSize());
 
 	// Complete all accepted missions
 
 	MissionSystem::CompleteAllMissions(playerEntity, 0, comp);
-	EXPECT_EQ(0, missionsComponent.MissionSize());
-	EXPECT_EQ(acceptedMissionCount, missionsComponent.CompleteSize());
+	EXPECT_EQ(0, comp.MissionSize());
+	EXPECT_EQ(acceptedMissionCount, comp.CompleteSize());
 }
 
 TEST(MissionsComp, RepeatedMissionId)
@@ -118,7 +117,6 @@ TEST(MissionsComp, TriggerMissionCondition)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
 
 	constexpr uint32_t mission_id = 1;
 	AcceptMissionEvent acceptMissionEvent;
@@ -132,10 +130,10 @@ TEST(MissionsComp, TriggerMissionCondition)
 	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent, comp, MissionConfig::GetSingleton()));
 
 	// Ensure there is 1 type of mission accepted
-	EXPECT_EQ(1, missionsComponent.TypeSetSize());
+	EXPECT_EQ(1, comp.TypeSetSize());
 
 	MissionConditionEvent conditionEvent;
-	conditionEvent.set_entity(missionsComponent);
+	conditionEvent.set_entity(entt::to_integral(playerEntity));
 	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	conditionEvent.add_condtion_ids(1); // Condition id 1
 	conditionEvent.set_amount(1);
@@ -144,35 +142,35 @@ TEST(MissionsComp, TriggerMissionCondition)
 	MissionSystem::HandleMissionConditionEvent(conditionEvent, comp, MissionConfig::GetSingleton());
 
 	// After handling condition 1, expect 1 mission in progress and 0 completed missions
-	EXPECT_EQ(1, missionsComponent.MissionSize());
-	EXPECT_EQ(0, missionsComponent.CompleteSize());
+	EXPECT_EQ(1, comp.MissionSize());
+	EXPECT_EQ(0, comp.CompleteSize());
 
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(2); // Condition id 2
 	MissionSystem::HandleMissionConditionEvent(conditionEvent, comp, MissionConfig::GetSingleton());
 
 	// After handling condition 2, expect 1 mission still in progress and 0 completed missions
-	EXPECT_EQ(1, missionsComponent.MissionSize());
-	EXPECT_EQ(0, missionsComponent.CompleteSize());
+	EXPECT_EQ(1, comp.MissionSize());
+	EXPECT_EQ(0, comp.CompleteSize());
 
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(3); // Condition id 3
 	MissionSystem::HandleMissionConditionEvent(conditionEvent, comp, MissionConfig::GetSingleton());
 
 	// After handling condition 3, expect 1 mission still in progress and 0 completed missions
-	EXPECT_EQ(1, missionsComponent.MissionSize());
-	EXPECT_EQ(0, missionsComponent.CompleteSize());
+	EXPECT_EQ(1, comp.MissionSize());
+	EXPECT_EQ(0, comp.CompleteSize());
 
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(4); // Condition id 4
 	MissionSystem::HandleMissionConditionEvent(conditionEvent, comp, MissionConfig::GetSingleton());
 
 	// After handling condition 4, expect 0 missions in progress and 1 completed mission
-	EXPECT_EQ(0, missionsComponent.MissionSize());
-	EXPECT_EQ(1, missionsComponent.CompleteSize());
+	EXPECT_EQ(0, comp.MissionSize());
+	EXPECT_EQ(1, comp.CompleteSize());
 
 	// Ensure there are no more mission types being tracked
-	EXPECT_EQ(0, missionsComponent.TypeSetSize());
+	EXPECT_EQ(0, comp.TypeSetSize());
 }
 
 TEST(MissionsComp, ConditionTypeSize)

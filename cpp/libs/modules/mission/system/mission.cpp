@@ -126,41 +126,35 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 
 // Function to abandon a mission
 uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComp& comp, const IMissionConfig& config) {
-	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(param.playerEntity);
-
 	// Check if mission is uncompleted
-	if (kMissionAlreadyCompleted == missionComp.IsMissionUncompleted(param.missionId)) {
+	if (kMissionAlreadyCompleted == comp.IsMissionUncompleted(param.missionId)) {
 		LOG_ERROR << "Mission is already completed for playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity) << ", missionId = " << param.missionId;
 		return kMissionAlreadyCompleted;
 	}
 
 	// Clear claimable reward bit if applicable
-	SetBit(MissionBitMap, missionComp.GetClaimableRewards(), param.missionId, false);
+	SetBit(MissionBitMap, comp.GetClaimableRewards(), param.missionId, false);
 
 	// Remove mission from missions component
-	missionComp.GetMissionsComp().mutable_missions()->erase(param.missionId);
-	missionComp.AbandonMission(param.missionId);
-	missionComp.GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
+	comp.GetMissionsComp().mutable_missions()->erase(param.missionId);
+	comp.AbandonMission(param.missionId);
+	comp.GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
 
 	// Delete mission classification
-	DeleteMissionClassification(param.playerEntity, param.missionId, config);
+	DeleteMissionClassification(comp, param.missionId, config);
 	LOG_INFO << "Mission abandoned for playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity) << ", missionId = " << param.missionId;
 	return kSuccess;
 }
 
 // Function to complete all missions for a player
 void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation, MissionsComp& comp) {
-	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
-
 	// Mark all missions as complete
-	for (const auto& missionId : missionComp.GetMissionsComp().missions() | std::views::keys) {
-		SetBit(MissionBitMap, missionComp.GetCompleteMissions(), missionId);
+	for (const auto& missionId : comp.GetMissionsComp().missions() | std::views::keys) {
+		SetBit(MissionBitMap, comp.GetCompleteMissions(), missionId);
 	}
 
 	// Clear all missions
-	missionComp.GetMissionsComp().mutable_missions()->clear();
+	comp.GetMissionsComp().mutable_missions()->clear();
 }
 
 // Function to check if a condition is completed
@@ -233,7 +227,7 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 	}
 
 	// Process completion events for completed missions
-	OnMissionCompletion(playerEntity, completedMissionsThisTime, config);
+	OnMissionCompletion(playerEntity, completedMissionsThisTime, comp, config);
 }
 
 // Remove mission classification
@@ -249,10 +243,7 @@ void MissionSystem::RemoveMissionClassification(MissionsComp& missionComp, uint3
 }
 
 // Delete mission classification
-void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId, const IMissionConfig& config) {
-	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
-
+void MissionSystem::DeleteMissionClassification(MissionsComp& missionComp, uint32_t missionId, const IMissionConfig& config) {
 	// Remove mission classification
 	RemoveMissionClassification(missionComp, missionId, config);
 
@@ -370,18 +361,15 @@ void MissionSystem::UpdateMissionStatus(MissionComp& mission, const google::prot
 }
 
 // Process completion events for completed missions
-void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t>& completedMissionsThisTime, const IMissionConfig& config) {
+void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t>& completedMissionsThisTime, MissionsComp& missionComp, const IMissionConfig& config) {
 	// Ignore if no missions are completed
 	if (completedMissionsThisTime.empty()) {
 		return;
 	}
 
-	// Retrieve mission component for the player
-	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
-
 	// Process each completed mission
 	for (const auto& missionId : completedMissionsThisTime) {
-		DeleteMissionClassification(playerEntity, missionId, config);
+		DeleteMissionClassification(missionComp, missionId, config);
 		SetBit(MissionBitMap, missionComp.GetCompleteMissions(), missionId);
 
 		// Determine reward action from config
