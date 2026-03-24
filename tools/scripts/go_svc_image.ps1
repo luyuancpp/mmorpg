@@ -40,10 +40,10 @@ $Dockerfile = Join-Path $RepoRoot "deploy\k8s\Dockerfile.go-svc"
 # Service catalogue: name → { Dir (in go/), Entry (.go file), ImageName }
 $Catalogue = [ordered]@{
     db              = @{ Dir = "db";              Entry = "db.go";                  ImageName = "mmorpg-db" }
-    "data-service"  = @{ Dir = "data_service";    Entry = "dataservice.go";         ImageName = "mmorpg-data-service" }
+    "data-service"  = @{ Dir = "data_service";    Entry = "data_service.go";         ImageName = "mmorpg-data-service" }
     login           = @{ Dir = "login";           Entry = "login.go";               ImageName = "mmorpg-login" }
     "player-locator"= @{ Dir = "player_locator";  Entry = "player_locator.go";      ImageName = "mmorpg-player-locator" }
-    "scene-manager" = @{ Dir = "scene_manager";   Entry = "scenemanagerservice.go"; ImageName = "mmorpg-scene-manager" }
+    "scene-manager" = @{ Dir = "scene_manager";   Entry = "scene_manager_service.go"; ImageName = "mmorpg-scene-manager" }
 }
 
 function Get-ImageFullName {

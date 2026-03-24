@@ -1,34 +1,38 @@
 #include "mission.h"
+
 #include <ranges>
-#include "engine/core/error_handling/error_handling.h"
-#include "engine/core/utils/bit_index/bit_index_util.h"
+#include <unordered_set>
+
 #include "muduo/base/Logging.h"
-#include "table/code/condition_table.h"
-#include "mission/constants/mission.h"
-#include "mission/comp/mission_comp.h"
-#include "engine/core/macros/return_define.h"
-#include "table/proto/tip/mission_error_tip.pb.h"
-#include "table/proto/tip/common_error_tip.pb.h"
-#include "proto/common/component/mission_comp.pb.h"
-#include "proto/common/event/mission_event.pb.h"
 #include <thread_context/dispatcher_manager.h>
 
-#include <functional>
-#include <unordered_map>
-#include <unordered_set>
+#include "engine/core/error_handling/error_handling.h"
+#include "engine/core/macros/return_define.h"
+#include "engine/core/utils/bit_index/bit_index_util.h"
+
+#include "mission/comp/mission_comp.h"
+#include "mission/constants/mission.h"
+
+#include "table/code/condition_table.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/mission_error_tip.pb.h"
+
+#include "proto/common/component/mission_comp.pb.h"
+#include "proto/common/event/mission_event.pb.h"
 
 namespace {
 
-	// Comparison functions for mission conditions
-	std::array<std::function<bool(uint32_t, uint32_t)>, 5> condition_comparison_functions = {
-		{
-			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value >= config_value; },
-			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value > config_value; },
-			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value <= config_value; },
-			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value < config_value; },
-			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value == config_value; }
-		}
-	};
+using ComparisonFn = bool(*)(uint32_t, uint32_t);
+
+constexpr ComparisonFn kComparisonFunctions[] = {
+	[](uint32_t actual, uint32_t config) { return actual >= config; },
+	[](uint32_t actual, uint32_t config) { return actual >  config; },
+	[](uint32_t actual, uint32_t config) { return actual <= config; },
+	[](uint32_t actual, uint32_t config) { return actual <  config; },
+	[](uint32_t actual, uint32_t config) { return actual == config; },
+};
+
+constexpr size_t kComparisonFunctionCount = std::size(kComparisonFunctions);
 
 } // anonymous namespace
 
@@ -68,7 +72,7 @@ uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptE
 	// If mission type should not repeat, check type filter
 	if (missionComp.IsMissionTypeNotRepeated()) {
 		auto missionTypeSubTypePair = std::make_pair(missionType, missionSubType);
-		RETURN_IF_TRUE(missionComp.GetTypeFilter().find(missionTypeSubTypePair) != missionComp.GetTypeFilter().end(), kMissionTypeAlreadyExists);
+		RETURN_IF_TRUE(missionComp.GetTypeFilter().count(missionTypeSubTypePair) > 0, kMissionTypeAlreadyExists);
 	}
 
 	return kSuccess;
@@ -94,7 +98,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 	// Add mission type filter if type should not repeat
 	if (missionComp.IsMissionTypeNotRepeated()) {
 		auto missionTypeSubTypePair = std::make_pair(missionType, missionSubType);
-		missionComp.GetTypeFilter().emplace(missionTypeSubTypePair);
+		missionComp.GetMutableTypeFilter().emplace(missionTypeSubTypePair);
 	}
 
 	// Create mission protobuf component
@@ -106,11 +110,11 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 		FetchConditionTableOrContinue(conditionId);
 		
 		missionPb.add_progress(0);
-		missionComp.GetEventMissionsClassify()[conditionTable->condition_type()].emplace(acceptEvent.mission_id());
+		missionComp.GetMutableEventMissionsClassify()[conditionTable->condition_type()].emplace(acceptEvent.mission_id());
 	}
 
 	// Insert mission into missions component
-	missionComp.GetMissionsComp().mutable_missions()->insert({ acceptEvent.mission_id(), std::move(missionPb) });
+	missionComp.GetMutableMissionList().mutable_missions()->insert({ acceptEvent.mission_id(), std::move(missionPb) });
 
 	// Dispatch event for mission acceptance
 	{
@@ -139,9 +143,9 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComp& 
 	SetBit(MissionBitMap, missionComp.GetClaimableRewards(), param.missionId, false);
 
 	// Remove mission from missions component
-	missionComp.GetMissionsComp().mutable_missions()->erase(param.missionId);
+	missionComp.GetMutableMissionList().mutable_missions()->erase(param.missionId);
 	missionComp.AbandonMission(param.missionId);
-	missionComp.GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
+	missionComp.GetMutableMissionList().mutable_mission_begin_time()->erase(param.missionId);
 
 	// Delete mission classification
 	DeleteMissionClassification(param.playerEntity, param.missionId, config);
@@ -155,18 +159,20 @@ void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t oper
 	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
 
 	// Mark all missions as complete
-	for (const auto& missionId : missionComp.GetMissionsComp().missions() | std::views::keys) {
-		SetBit(MissionBitMap, missionComp.GetCompleteMissions(), missionId);
+	for (const auto& missionId : missionComp.GetMissionList().missions() | std::views::keys) {
+		SetBit(MissionBitMap, missionComp.GetMutableCompletedMissions(), missionId);
 	}
 
 	// Clear all missions
-	missionComp.GetMissionsComp().mutable_missions()->clear();
+	missionComp.GetMutableMissionList().mutable_missions()->clear();
 }
 
 // Function to check if a condition is completed
 bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
 	FetchConditionTableOrReturnFalse(conditionId);
-	return condition_comparison_functions[static_cast<size_t>(conditionTable->comparison())](progressValue, conditionTable->amount());
+	const auto cmpIndex = static_cast<size_t>(conditionTable->comparison());
+	if (cmpIndex >= kComparisonFunctionCount) return false;
+	return kComparisonFunctions[cmpIndex](progressValue, conditionTable->amount());
 }
 
 
@@ -199,8 +205,8 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 	const entt::entity playerEntity = entt::to_entity(conditionEvent.entity());
 
 	// Find relevant missions based on condition type
-	auto classifyMissionsIt = comp.GetEventMissionsClassify().find(conditionEvent.condition_type());
-	if (classifyMissionsIt == comp.GetEventMissionsClassify().end()) {
+	auto classifyMissionsIt = comp.GetMutableEventMissionsClassify().find(conditionEvent.condition_type());
+	if (classifyMissionsIt == comp.GetMutableEventMissionsClassify().end()) {
 		LOG_ERROR << "HandleMissionConditionEvent: No missions found for condition type = " << conditionEvent.condition_type()
 			<< " for playerEntity = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
 		return;
@@ -211,8 +217,8 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 
 	// Iterate through classified missions
 	for (auto& missionId : classifyMissionsIt->second) {
-		auto missionIter = comp.GetMissionsComp().mutable_missions()->find(missionId);
-		if (missionIter == comp.GetMissionsComp().mutable_missions()->end()) {
+		auto missionIter = comp.GetMutableMissionList().mutable_missions()->find(missionId);
+		if (missionIter == comp.GetMutableMissionList().mutable_missions()->end()) {
 			continue;
 		}
 		auto& mission = missionIter->second;
@@ -229,7 +235,7 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 
 		mission.set_status(MissionComp::E_MISSION_COMPLETE);
 		completedMissionsThisTime.emplace(missionId);
-		comp.GetMissionsComp().mutable_missions()->erase(missionIter);
+		comp.GetMutableMissionList().mutable_missions()->erase(missionIter);
 	}
 
 	// Process completion events for completed missions
@@ -244,7 +250,7 @@ void MissionSystem::RemoveMissionClassification(MissionsComp& missionComp, uint3
 	// Remove mission classification based on condition type
 	for (int32_t i = 0; i < configConditions.size(); ++i) {
 		FetchConditionTableOrContinue(configConditions.Get(i));
-		missionComp.GetEventMissionsClassify()[conditionTable->condition_type()].erase(missionId);
+		missionComp.GetMutableEventMissionsClassify()[conditionTable->condition_type()].erase(missionId);
 	}
 }
 
@@ -260,7 +266,7 @@ void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint3
 	auto missionSubType = config.GetMissionSubType(missionId);
 	if (missionSubType > 0 && missionComp.IsMissionTypeNotRepeated()) {
 		auto missionTypeSubTypePair = std::make_pair(config.GetMissionType(missionId), missionSubType);
-		missionComp.GetTypeFilter().erase(missionTypeSubTypePair);
+		missionComp.GetMutableTypeFilter().erase(missionTypeSubTypePair);
 	}
 }
 
@@ -382,7 +388,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 	// Process each completed mission
 	for (const auto& missionId : completedMissionsThisTime) {
 		DeleteMissionClassification(playerEntity, missionId, config);
-		SetBit(MissionBitMap, missionComp.GetCompleteMissions(), missionId);
+		SetBit(MissionBitMap, missionComp.GetMutableCompletedMissions(), missionId);
 
 		// Determine reward action from config
 		switch (GetRewardAction(config, missionId))

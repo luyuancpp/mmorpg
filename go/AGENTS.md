@@ -28,8 +28,8 @@ go/
 | Task | Location | Notes |
 |------|----------|-------|
 | Login bootstrap | `login/login.go` | etcd registration + unary interceptor |
-| Scene manager bootstrap | `scene_manager/scenemanagerservice.go` | load reporter + zrpc server |
-| Data service bootstrap | `data_service/dataservice.go` | standard go-zero RPC server wiring |
+| Scene manager bootstrap | `scene_manager/scene_manager_service.go` | load reporter + zrpc server |
+| Data service bootstrap | `data_service/data_service.go` | standard go-zero RPC server wiring |
 | Config/runtime flags | `*/etc/` + entry file flags | Reflection only in dev/test |
 | Generated RPC stubs | `*/proto/` and `generated/` | Review only; regenerate instead of patching |
 

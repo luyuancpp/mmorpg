@@ -358,9 +358,9 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
     if (!ValidateClientMessage(session, request, conn)) return;
 
 	auto& messageInfo = gRpcMethodRegistry[request->message_id()];
-    if (messageInfo.protocol == PROTOCOL_TCP){
+    if (messageInfo.protocol == PROTOCOL_TCP) {
 		HandleTcpNodeMessage(session, request, sessionId, conn);
-    }else if (messageInfo.protocol == PROTOCOL_GRPC){
+    } else if (messageInfo.protocol == PROTOCOL_GRPC) {
     	HandleGrpcNodeMessage(sessionId, request, conn);
     }
 }

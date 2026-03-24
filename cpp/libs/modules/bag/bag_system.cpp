@@ -10,22 +10,21 @@
 #include "table/code/item_table.h"
 #include "core/utils/defer/defer.h"
 #include <thread_context/snow_flake_manager.h>
-#include "thread_context/redis_manager.h"
 
 Bag::Bag()
-    : entity(tlsRegistryManager.itemRegistry.create())
+    : entity_(tlsRegistryManager.itemRegistry.create())
 {
 }
 
 Bag::~Bag()
 {
-    DestroyEntity(tlsRegistryManager.itemRegistry, entity);
+    DestroyEntity(tlsRegistryManager.itemRegistry, entity_);
 }
 
 
 std::size_t Bag::GetItemStackSize(uint32_t config_id) const {
     std::size_t totalSize = 0;
-    for (const auto& [entity, item] : itemRegistry.view<ItemComp>().each()) {
+    for (const auto& [entity, item] : itemRegistry_.view<ItemComp>().each()) {
         if (item.config_id() == config_id) {
             totalSize += item.size();
         }
@@ -35,7 +34,7 @@ std::size_t Bag::GetItemStackSize(uint32_t config_id) const {
 
 ItemComp* Bag::GetItemBaseByGuid(Guid guid) {
     auto it = items_.find(guid);
-    return (it != items_.end()) ? itemRegistry.try_get<ItemComp>(it->second) : nullptr;
+    return (it != items_.end()) ? itemRegistry_.try_get<ItemComp>(it->second) : nullptr;
 }
 
 ItemComp* Bag::GetItemBaseByPos(uint32_t pos) {
@@ -92,7 +91,7 @@ uint32_t Bag::HasEnoughSpace(const ItemCountMap& itemsToAdd) {
         return kSuccess;
     }
 
-    for (const auto& [_, item] : itemRegistry.view<ItemComp>().each()) {
+    for (const auto& [_, item] : itemRegistry_.view<ItemComp>().each()) {
         for (auto& [stackConfigId, stackCount] : pendingStackItems) {
             if (item.config_id() != stackConfigId) {
                 continue;
@@ -128,7 +127,7 @@ uint32_t Bag::HasEnoughSpace(const ItemCountMap& itemsToAdd) {
 uint32_t Bag::HasSufficientItems(const ItemCountMap& requiredItems) {
     auto itemsToCheck = requiredItems;
 
-    for (const auto& [entity, item] : itemRegistry.view<ItemComp>().each()) {
+    for (const auto& [entity, item] : itemRegistry_.view<ItemComp>().each()) {
         auto configId = item.config_id();
         auto it = itemsToCheck.find(configId);
         if (it != itemsToCheck.end()) {
@@ -151,7 +150,7 @@ uint32_t Bag::RemoveItems(const ItemCountMap& itemsToRemove) {
     auto itemsToErase = itemsToRemove;
     EntityVector itemsToRemoveReal;
 
-    for (const auto& [e, item] : itemRegistry.view<ItemComp>().each()) {
+    for (const auto& [e, item] : itemRegistry_.view<ItemComp>().each()) {
         for (auto& tryDeleteItem : itemsToErase) {
             if (item.config_id() != tryDeleteItem.first) {
                 continue;
@@ -198,7 +197,7 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p) {
         return PrintStackAndReturnError(kBagDelItemFindItem);
     }
 
-    auto& item = itemRegistry.get_or_emplace<ItemComp>(item_it->second);
+    auto& item = itemRegistry_.get_or_emplace<ItemComp>(item_it->second);
     if (item.config_id() != p.item_config_id_) {
         return PrintStackAndReturnError(kBagDelItemConfig);
     }
@@ -215,7 +214,7 @@ void Bag::Neaten()
 {
 	std::vector<EntityVector> stackableItemGroups; // groups of identical stackable items
 
-	for (auto&& [e, item] : itemRegistry.view<ItemComp>().each())
+	for (auto&& [e, item] : itemRegistry_.view<ItemComp>().each())
 	{
 		FetchItemTableOrContinue(item.config_id());
 
@@ -231,7 +230,7 @@ void Bag::Neaten()
 		bool hasNotSameItem = true;
 		for (auto& sameVector : stackableItemGroups)
 		{
-			auto& itemOther = itemRegistry.get_or_emplace<ItemComp>(*sameVector.begin());
+			auto& itemOther = itemRegistry_.get_or_emplace<ItemComp>(*sameVector.begin());
 			if (!CanStack(item, itemOther))
 			{
 				continue;
@@ -257,14 +256,14 @@ void Bag::Neaten()
 			continue;
 		}
 
-		auto& firstItem = itemRegistry.get_or_emplace<ItemComp>(*itemList.begin());
+		auto& firstItem = itemRegistry_.get_or_emplace<ItemComp>(*itemList.begin());
 
 		FetchItemTableOrContinue(firstItem.config_id());
 	
 		uint32_t totalStackSize = 0;
 		for (auto& e : itemList)
 		{
-			totalStackSize += itemRegistry.get_or_emplace<ItemComp>(e).size();
+			totalStackSize += itemRegistry_.get_or_emplace<ItemComp>(e).size();
 		}
 
 		std::size_t index = 0;
@@ -272,7 +271,7 @@ void Bag::Neaten()
 		for (index = 0; index < itemList.size(); ++index)
 		{
 			auto currentItemEntity = itemList[index];
-			auto currentItem = itemRegistry.get_or_emplace<ItemComp>(currentItemEntity);
+			auto currentItem = itemRegistry_.get_or_emplace<ItemComp>(currentItemEntity);
 
 			if (totalStackSize <= itemTable->max_statck_size())
 			{
@@ -290,7 +289,7 @@ void Bag::Neaten()
 		for (; index < itemList.size(); ++index)
 		{
 			auto currentItemEntity = itemList[index];
-			auto currentItem = itemRegistry.get_or_emplace<ItemComp>(currentItemEntity);
+			auto currentItem = itemRegistry_.get_or_emplace<ItemComp>(currentItemEntity);
 
 			currentItem.set_size(0);
 
@@ -309,9 +308,150 @@ void Bag::Neaten()
 	//recalculate item positions
 	for (auto& [guid, e] : items_)
 	{
-		auto& item = itemRegistry.get_or_emplace<ItemComp>(e);
+		auto& item = itemRegistry_.get_or_emplace<ItemComp>(e);
 		OnNewGrid(item.item_id());
 	}
+}
+
+uint32_t Bag::AddNonStackableItem(ItemComp itemPBComp)
+{
+	if (IsSpaceInsufficient(itemPBComp.size()))
+	{
+		// TODO: overflow to temp bag or mail
+		return PrintStackAndReturnError(kBagAddItemBagFull);
+	}
+
+	if (itemPBComp.size() == 1)
+	{
+		auto newItem = itemRegistry_.create();
+		auto& newItemPBComp = itemRegistry_.emplace<ItemComp>(newItem, std::move(itemPBComp));
+
+		if (IsInvalidItemGuid(newItemPBComp))
+		{
+			newItemPBComp.set_item_id(GeneratorItemGuid());
+		}
+
+		auto it = items_.emplace(newItemPBComp.item_id(), newItem);
+		if (!it.second)
+		{
+			defer(DestroyEntity(itemRegistry_, newItem));
+			LOG_ERROR << "bag add item" << PlayerGuid();
+			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
+		}
+
+		OnNewGrid(newItemPBComp.item_id());
+	}
+	else
+	{
+		// TODO: equipment list with unique guids per piece
+		for (uint32_t i = 0; i < itemPBComp.size(); ++i)
+		{
+			auto newItem = itemRegistry_.create();
+			auto& newItemPBComp = itemRegistry_.emplace<ItemComp>(newItem, itemPBComp);
+
+			newItemPBComp.set_size(1);
+			newItemPBComp.set_item_id(GeneratorItemGuid());
+
+			auto it = items_.emplace(newItemPBComp.item_id(), newItem);
+			if (!it.second)
+			{
+				LOG_ERROR << "bag add item" << PlayerGuid();
+				return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
+			}
+
+			OnNewGrid(newItemPBComp.item_id());
+		}
+	}
+	return kSuccess;
+}
+
+uint32_t Bag::AddStackableItem(ItemComp itemPBComp, uint32_t maxStackSize)
+{
+	// Phase 1: find existing stacks with remaining capacity
+	EntityVector doStackItemList;
+	std::size_t checkNeedStackSize = itemPBComp.size();
+	for (auto&& [e, item] : itemRegistry_.view<ItemComp>().each())
+	{
+		if (!CanStack(item, itemPBComp))
+		{
+			continue;
+		}
+		assert(item.size() <= maxStackSize);
+		auto remainStackSize = maxStackSize - item.size();
+		if (remainStackSize <= 0)
+		{
+			continue;
+		}
+		doStackItemList.emplace_back(e);
+		if (checkNeedStackSize > remainStackSize)
+		{
+			checkNeedStackSize -= remainStackSize;
+		}
+		else
+		{
+			checkNeedStackSize = 0;
+			break;
+		}
+	}
+
+	// Phase 2: check if remaining items fit in empty grids
+	std::size_t needEmptyGridSize = 0;
+	if (checkNeedStackSize > 0)
+	{
+		needEmptyGridSize = CalculateStackGridSize(checkNeedStackSize, maxStackSize);
+		if (IsSpaceInsufficient(needEmptyGridSize))
+		{
+			return PrintStackAndReturnError(kBagAddItemBagFull);
+		}
+	}
+
+	// Phase 3: apply stacking to existing items
+	auto needStackSize = itemPBComp.size();
+	for (auto& e : doStackItemList)
+	{
+		auto& item = itemRegistry_.get_or_emplace<ItemComp>(e);
+		auto remainStackSize = maxStackSize - item.size();
+		if (remainStackSize >= needStackSize)
+		{
+			item.set_size(item.size() + needStackSize);
+			break;
+		}
+		item.set_size(item.size() + remainStackSize);
+		needStackSize -= remainStackSize;
+	}
+
+	if (needStackSize <= 0)
+	{
+		return kSuccess;
+	}
+
+	// Phase 4: place remainder into new grids
+	for (size_t i = 0; i < needEmptyGridSize; ++i)
+	{
+		auto newItem = itemRegistry_.create();
+		auto& newItemPBComp = itemRegistry_.emplace<ItemComp>(newItem, itemPBComp);
+		newItemPBComp.set_item_id(GeneratorItemGuid());
+
+		if (maxStackSize >= needStackSize)
+		{
+			newItemPBComp.set_size(needStackSize);
+		}
+		else
+		{
+			newItemPBComp.set_size(maxStackSize);
+			needStackSize -= maxStackSize;
+		}
+
+		auto it = items_.emplace(newItemPBComp.item_id(), newItem);
+		if (!it.second)
+		{
+			LOG_ERROR << "bag add item" << PlayerGuid();
+			return kBagDeleteItemAlreadyHasGuid;
+		}
+
+		OnNewGrid(newItemPBComp.item_id());
+	}
+	return kSuccess;
 }
 
 uint32_t Bag::AddItem(const InitItemParam& initItemParam)
@@ -330,152 +470,12 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		return PrintStackAndReturnError(kInvalidTableData);
 	}
 
-	if (itemTable->max_statck_size() == 1)//non-stackable, create new guid per item
+	if (itemTable->max_statck_size() == 1)
 	{
-		if (IsSpaceInsufficient(itemPBCompCopy.size()))
-		{
-            // todo temp bag or mail
-            return PrintStackAndReturnError(kBagAddItemBagFull);
-		}
-
-		if (itemPBCompCopy.size() == 1)//single item
-		{
-			auto newItem = itemRegistry.create();
-			auto& newItemPBComp = itemRegistry.emplace<ItemComp>(newItem, std::move(itemPBCompCopy));
-
-			if (IsInvalidItemGuid(newItemPBComp))
-			{
-				newItemPBComp.set_item_id(GeneratorItemGuid());
-			}
-
-			auto it = items_.emplace(newItemPBComp.item_id(), newItem);
-			if (!it.second)
-			{
-				defer(DestroyEntity(itemRegistry, newItem));
-				LOG_ERROR << "bag add item" << PlayerGuid();
-				return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-			}
-
-			OnNewGrid(newItemPBComp.item_id());
-		}
-		else
-		{
-			//todo equipment list with unique guids
-			for (uint32_t i = 0; i < itemPBCompCopy.size(); ++i)
-			{
-                auto newItem = itemRegistry.create();
-                auto& newItemPBComp = itemRegistry.emplace<ItemComp>(newItem, itemPBCompCopy);
-
-				newItemPBComp.set_size(1);
-				newItemPBComp.set_item_id(GeneratorItemGuid());
-
-				auto it = items_.emplace(newItemPBComp.item_id(), newItem);
-				if (!it.second)
-				{
-					LOG_ERROR << "bag add item" << PlayerGuid();
-					return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-				}
-
-				OnNewGrid(newItemPBComp.item_id());
-			}
-		}		
+		return AddNonStackableItem(std::move(itemPBCompCopy));
 	}
-	else if(itemTable->max_statck_size() > 1)//try stacking onto existing grids
-	{
-		EntityVector doStackItemList;//existing stackable item entities
 
-		std::size_t checkNeedStackSize = itemPBCompCopy.size();
-        for (auto&& [e, item] : itemRegistry.view<ItemComp>().each())
-		{
-			if (!CanStack(item, itemPBCompCopy))
-			{
-				continue;
-			}
-			assert(item.size() <= itemTable->max_statck_size());
-			auto remainStackSize = itemTable->max_statck_size() - item.size();	
-			if (remainStackSize <= 0)
-			{
-				continue;
-			}
-			//stackable, collect target entities
-			doStackItemList.emplace_back(e);
-
-			if (checkNeedStackSize > remainStackSize )
-			{
-				checkNeedStackSize -= remainStackSize;
-			}
-			else
-			{
-				checkNeedStackSize = 0;
-				break;
-			}
-		}
-
-		std::size_t needEmptyGridSize = 0;
-
-		//remaining items don't fit, check if enough empty grids
-		if (checkNeedStackSize > 0)
-		{
-			needEmptyGridSize = CalculateStackGridSize(checkNeedStackSize, itemTable->max_statck_size());
-			if (IsSpaceInsufficient(needEmptyGridSize))
-			{
-				return PrintStackAndReturnError(kBagAddItemBagFull);
-			}
-		}
-
-		//apply stacking to existing items
-		auto needStackSize = itemPBCompCopy.size();
-		for (auto& e : doStackItemList)
-		{
-			auto& item = itemRegistry.get_or_emplace<ItemComp>(e);
-			auto remain_stack_size = itemTable->max_statck_size() - item.size();
-			if (remain_stack_size >= needStackSize)
-			{
-				item.set_size(item.size() + needStackSize);
-				break;
-			}
-			else
-			{
-				item.set_size(item.size() + remain_stack_size);
-				needStackSize -= remain_stack_size;
-			}
-		}
-
-		if (needStackSize <= 0)//fully stacked
-		{
-			return kSuccess;
-		}
-
-		//place remainder into new grids
-		for (size_t i = 0; i < needEmptyGridSize; ++i)
-		{
-			InitItemParam p;
-            auto newItem = itemRegistry.create();
-            auto& newItemPBComp = itemRegistry.emplace<ItemComp>(newItem, itemPBCompCopy);
-
-            newItemPBComp.set_item_id(GeneratorItemGuid());
-
-			if (itemTable->max_statck_size() >= needStackSize)
-			{
-				newItemPBComp.set_size(needStackSize);
-			}
-			else
-			{
-				newItemPBComp.set_size(itemTable->max_statck_size());
-				needStackSize -= itemTable->max_statck_size();
-			}
-
-            auto it = items_.emplace(newItemPBComp.item_id(), newItem);
-            if (!it.second)
-            {
-                LOG_ERROR << "bag add item" << PlayerGuid();
-                return kBagDeleteItemAlreadyHasGuid;
-            }
-
-            OnNewGrid(newItemPBComp.item_id());
-		}
-	}
-	return kSuccess;
+	return AddStackableItem(std::move(itemPBCompCopy), itemTable->max_statck_size());
 }
 
 uint32_t Bag::RemoveItem(Guid del_guid)

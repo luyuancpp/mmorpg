@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var configFile = flag.String("f", "etc/scenemanagerservice.yaml", "the config file")
+var configFile = flag.String("f", "etc/scene_manager_service.yaml", "the config file")
 
 func main() {
 	flag.Parse()

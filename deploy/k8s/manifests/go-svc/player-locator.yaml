@@ -35,7 +35,7 @@ spec:
         - name: player-locator
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: IfNotPresent
-          args: ["-f", "/app/etc/playerlocator.yaml"]
+          args: ["-f", "/app/etc/player_locator.yaml"]
           ports:
             - containerPort: 50100
               name: grpc

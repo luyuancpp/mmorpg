@@ -82,10 +82,10 @@ function Invoke-CppNode {
 
 switch ($Command) {
     "go-db" { Invoke-GoService -Dir "db" -Entry "db.go" }
-    "go-data-service" { Invoke-GoService -Dir "data_service" -Entry "dataservice.go" }
+    "go-data-service" { Invoke-GoService -Dir "data_service" -Entry "data_service.go" }
     "go-player-locator" { Invoke-GoService -Dir "player_locator" -Entry "player_locator.go" }
     "go-login" { Invoke-GoService -Dir "login" -Entry "login.go" }
-    "go-scene-manager" { Invoke-GoService -Dir "scene_manager" -Entry "scenemanagerservice.go" }
+    "go-scene-manager" { Invoke-GoService -Dir "scene_manager" -Entry "scene_manager_service.go" }
     "cpp-gate" { Invoke-CppNode -Exe "gate.exe" }
     "cpp-scene" { Invoke-CppNode -Exe "scene.exe" }
     default { throw "Unsupported command: $Command" }
