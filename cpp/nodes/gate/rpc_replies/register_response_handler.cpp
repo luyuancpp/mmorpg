@@ -1,9 +1,8 @@
 
-void InitSceneSceneReply();
-void InitSceneReply();
-
 void InitReply()
 {
+    void InitSceneSceneReply();
     InitSceneSceneReply();
+    void InitSceneReply();
     InitSceneReply();
 }
