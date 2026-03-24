@@ -13,30 +13,30 @@ import (
 	"go.uber.org/zap"
 )
 
-// resolveGameProtoPath 解析游戏核心Proto文件路径
+// ResolveGameProtoPath resolves the path to the core game proto file.
 func ResolveGameProtoPath() (string, error) {
 	gameProtoPath := filepath.Join(_config.Global.Paths.GameRpcProtoPath, _config.Global.Naming.GameRpcProto)
 	if _, err := os.Stat(gameProtoPath); err != nil {
-		logger.Global.Error("游戏Proto文件不存在",
+		logger.Global.Error("Game proto file does not exist",
 			zap.String("path", gameProtoPath),
 			zap.Error(err),
 		)
-		return "", errors.Join(errors.New("游戏Proto文件不存在"), err)
+		return "", errors.Join(errors.New("game proto file does not exist"), err)
 	}
 	return gameProtoPath, nil
 }
 
 func BuildGeneratorGoZeroProtoPath(dir string) string {
-	// dir是绝对路径，直接拼接Proto子目录名
+	// dir is an absolute path; append the proto subdirectory name directly
 	return filepath.Join(dir, _config.Global.DirectoryNames.GoZeroProtoDirName)
 }
 
 func BuildGeneratorProtoPath(dir string) string {
-	// dir是绝对路径，直接拼接Proto子目录名
+	// dir is an absolute path; append the proto subdirectory name directly
 	return filepath.Join(dir, filepath.ToSlash(_config.Global.DirectoryNames.NormalGoProto))
 }
 
-// CopyProtoToGenDir 拷贝Proto文件到生成目录
+// CopyProtoToGenDir copies proto files to the generation output directories.
 func CopyProtoToGenDir(wg *sync.WaitGroup) {
 	wg.Add(1)
 
@@ -46,8 +46,8 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		dirBuilder func(string) string
 		desc       string
 	}{
-		{BuildGeneratorProtoPath, "普通生成目录"},
-		{BuildGeneratorGoZeroProtoPath, "GoZero生成目录"},
+		{BuildGeneratorProtoPath, "normal generation dir"},
+		{BuildGeneratorGoZeroProtoPath, "go-zero generation dir"},
 	}
 
 	go func() {
@@ -56,9 +56,9 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 			for _, dir := range goProtoDirs {
 				destDir := _config.Global.Paths.GeneratorProtoDir + item.dirBuilder(dir)
 				if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
-					logger.Global.Warn("Proto拷贝失败",
-						zap.String("拷贝类型", item.desc),
-						zap.String("目录", dir),
+				logger.Global.Warn("Failed to copy proto files",
+					zap.String("copy_type", item.desc),
+					zap.String("dir", dir),
 						zap.Error(err),
 					)
 				}
@@ -71,22 +71,22 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		defer wg.Done()
 		destDir := _config.Global.Paths.RobotGeneratedProto
 		if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
-			logger.Global.Warn("Robot Proto拷贝失败",
-				zap.String("目录", _config.Global.Paths.Robot),
+		logger.Global.Warn("Failed to copy robot proto files",
+			zap.String("dir", _config.Global.Paths.Robot),
 				zap.Error(err),
 			)
 		}
 	}()
 }
 
-// copyProtoToDir 拷贝单个目录的Proto文件
+// copyProtoToDir copies proto files from a single source directory to the destination.
 func copyProtoToDir(srcDir, destDir string) error {
 	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return errors.Join(errors.New("创建目录失败"), err)
+		return errors.Join(errors.New("failed to create directory"), err)
 	}
 
 	if err := utils2.CopyLocalDir(srcDir, destDir); err != nil {
-		return errors.Join(errors.New("拷贝失败"), err)
+		return errors.Join(errors.New("failed to copy files"), err)
 	}
 	return nil
 }

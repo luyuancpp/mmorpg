@@ -5,14 +5,14 @@ import (
 	"protogen/internal/utils"
 )
 
-// RepliedMethod 回复方法数据
+// RepliedMethod holds data for a replied RPC method.
 type RepliedMethod struct {
 	Method      string
 	CppRequest  string
 	CppResponse string
 }
 
-// GetPlayerMethodRepliedHeadStr 生成玩家回复方法头文件
+// GetPlayerMethodRepliedHeadStr generates the player replied method header file.
 func GetPlayerMethodRepliedHeadStr(methods RPCMethods) (string, error) {
 	const tmplStr = `
 #pragma once
@@ -47,7 +47,7 @@ public:
 	return utils.GlobalEngine.MustExecute("playerMethodRepliedHead", tmplStr, data)
 }
 
-// getPlayerMethodRepliedHandlerFunctions 生成玩家回复处理函数
+// getPlayerMethodRepliedHandlerFunctions generates player replied handler function declarations.
 func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 	const tmplStr = `
 {{- range .Methods }}
@@ -97,7 +97,7 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 	return utils.ExecuteTemplate("playerRepliedFunctions", tmplStr, data)
 }
 
-// RepliedHandlerMethod 回复处理器方法
+// RepliedHandlerMethod holds data for a service replied handler method.
 type RepliedHandlerMethod struct {
 	FuncName    string
 	CppResponse string
@@ -106,7 +106,7 @@ type RepliedHandlerMethod struct {
 	KeyName     string
 }
 
-// GetServiceRepliedHandlerHeadStr 生成服务回复处理器头文件
+// GetServiceRepliedHandlerHeadStr generates the service replied handler header file.
 func GetServiceRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
 	const tmplStr = `#pragma once
 #include "muduo/net/TcpConnection.h"
@@ -135,7 +135,7 @@ void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const muduo::net::TcpConnect
 	return utils.GlobalEngine.MustExecute("serviceRepliedHandlerHead", tmplStr, data)
 }
 
-// GetServiceRepliedHandlerCppStr 生成服务回复处理器CPP文件
+// GetServiceRepliedHandlerCppStr generates the service replied handler CPP file.
 func GetServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
 	const tmplStr = `
 {{ .CppRepliedHandlerInclude }}
@@ -213,7 +213,7 @@ void {{ .FuncName }}(const muduo::net::TcpConnectionPtr& conn, const std::shared
 	return utils.ExecuteTemplate("serviceRepliedHandlerCpp", tmplStr, data)
 }
 
-// GenerateMethodHandlerKeyNameWrapper 生成方法处理器键名
+// GenerateMethodHandlerKeyNameWrapper generates the method handler key name.
 func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
 	return "On" + info.KeyName() + _config.Global.Naming.RepliedHandlerFile
 }

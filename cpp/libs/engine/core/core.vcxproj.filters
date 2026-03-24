@@ -33,7 +33,7 @@
     <ClCompile Include="utils\random\random.cpp" />
     <ClCompile Include="utils\registry\game_registry.cpp" />
     <ClCompile Include="utils\stat\stat.cpp" />
-    <ClCompile Include="utils\proto\message_uitil.cpp" />
+    <ClCompile Include="utils\proto\message_util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="type_alias\player_session_type_alias.h" />
@@ -94,7 +94,7 @@
     <ClInclude Include="utils\registry\game_registry.h" />
     <ClInclude Include="utils\stat\stat.h" />
     <ClInclude Include="utils\hash\sha.h" />
-    <ClInclude Include="utils\proto\message_uitil.h" />
+    <ClInclude Include="utils\proto\message_util.h" />
     <ClInclude Include="node\system\grpc_channel_cache.h" />
     <ClInclude Include="node\system\node\node_kafka_command_handler.h" />
     <ClInclude Include="node\system\node\simple_node.h" />

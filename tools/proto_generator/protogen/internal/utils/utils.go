@@ -7,22 +7,23 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.uber.org/zap"
 	"protogen/logger"
+
+	"go.uber.org/zap"
 )
 
-// EnsureDir 确保目录存在，不存在则创建（权限默认0755）
+// EnsureDir ensures the directory exists, creating it with 0755 permissions if needed.
 func EnsureDir(dirPath string) error {
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
-		logger.Global.Fatal("创建目录失败",
-			zap.String("目录路径", dirPath),
+		logger.Global.Fatal("Failed to create directory",
+			zap.String("dir_path", dirPath),
 			zap.Error(err),
 		)
 	}
 	return nil
 }
 
-// CollectProtoFiles 收集指定目录下所有.proto文件（返回绝对路径）
+// CollectProtoFiles collects all .proto files under the given directory (returns absolute paths).
 func CollectProtoFiles(dirPath string) ([]string, error) {
 	var protoFiles []string
 
@@ -33,8 +34,8 @@ func CollectProtoFiles(dirPath string) ([]string, error) {
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".proto") {
 			absPath, err := filepath.Abs(path)
 			if err != nil {
-				logger.Global.Warn("Proto收集: 获取绝对路径失败，跳过",
-					zap.String("文件路径", path),
+				logger.Global.Warn("CollectProtoFiles: failed to get absolute path, skipping",
+					zap.String("file_path", path),
 					zap.Error(err),
 				)
 				return nil
@@ -50,42 +51,42 @@ func CollectProtoFiles(dirPath string) ([]string, error) {
 	return protoFiles, nil
 }
 
-// RunProtoc 执行protoc命令（默认使用系统PATH中的protoc）
+// RunProtoc runs protoc using the system PATH.
 func RunProtoc(args []string, actionDesc string) error {
 	cmd := exec.Command("protoc", args...)
 	return ExecuteProtocCmd(cmd, actionDesc)
 }
 
-// RunProtocWithPath 执行protoc命令（指定protoc路径）
+// RunProtocWithPath runs protoc with a specified path.
 func RunProtocWithPath(protocPath string, args []string, actionDesc string) error {
 	cmd := exec.Command(protocPath, args...)
 	return ExecuteProtocCmd(cmd, actionDesc)
 }
 
-// ExecuteProtocCmd 执行protoc命令并处理输出和错误
+// ExecuteProtocCmd executes a protoc command and handles output and errors.
 func ExecuteProtocCmd(cmd *exec.Cmd, actionDesc string) error {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	logger.Global.Info("protoc执行",
-		zap.String("动作描述", actionDesc),
-		zap.String("命令", cmd.String()),
+	logger.Global.Info("Running protoc",
+		zap.String("action", actionDesc),
+		zap.String("command", cmd.String()),
 	)
 
 	if err := cmd.Run(); err != nil {
-		logger.Global.Fatal("protoc执行失败",
-			zap.String("动作描述", actionDesc),
+		logger.Global.Fatal("protoc execution failed",
+			zap.String("action", actionDesc),
 			zap.Error(err),
-			zap.String("错误输出", stderr.String()),
-			zap.String("命令", cmd.String()),
+			zap.String("stderr", stderr.String()),
+			zap.String("command", cmd.String()),
 		)
 	}
 
 	if stdout.Len() > 0 {
-		logger.Global.Info("protoc执行成功",
-			zap.String("动作描述", actionDesc),
-			zap.String("标准输出", stdout.String()),
+		logger.Global.Info("protoc execution succeeded",
+			zap.String("action", actionDesc),
+			zap.String("stdout", stdout.String()),
 		)
 	}
 	return nil

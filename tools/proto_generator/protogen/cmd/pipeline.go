@@ -53,8 +53,8 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "internal.WriteGoMessageId", Run: internal.WriteGoMessageId},
 		{Name: "internal.WriteGoEventId", Run: internal.WriteGoEventId},
 		{Name: "goGen.LoadAllDescriptors", Run: goGen.LoadAllDescriptors},
-		{Name: "cppGenOption.BuildOption", Run: wrapNoWG(cppGenOption.BuildOption)},
-		{Name: "goGenOption.BuildOption", Run: wrapNoWG(goGenOption.BuildOption)},
+		{Name: "cppGenOption.BuildOption", Run: adaptSimpleTask(cppGenOption.BuildOption)},
+		{Name: "goGenOption.BuildOption", Run: adaptSimpleTask(goGenOption.BuildOption)},
 	})
 
 	runner.RunParallelGroup("FinalTasksAndOptionProcessing", []NamedTask{

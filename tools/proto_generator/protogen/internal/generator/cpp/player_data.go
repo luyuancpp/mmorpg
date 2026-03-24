@@ -78,8 +78,8 @@ void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllDat
 `
 
 type HeaderEntry struct {
-	HandlerName string // 如 "PlayerDatabase1"
-	MessageType string // 如 "player_database1"
+	HandlerName string // e.g. "PlayerDatabase1"
+	MessageType string // e.g. "player_database1"
 }
 
 type HeaderTemplateInput struct {
@@ -89,7 +89,7 @@ type HeaderTemplateInput struct {
 func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error {
 	tmpl, err := template.New("loader").Parse(playerHeaderTemplate)
 	if err != nil {
-		logger.Global.Fatal("生成玩家头文件失败: 解析模板失败",
+		logger.Global.Fatal("Failed to generate player header file: template parsing failed",
 			zap.String("template_name", "loader"),
 			zap.String("output_path", outputPath),
 			zap.Error(err),
@@ -99,7 +99,7 @@ func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error
 	data := HeaderTemplateInput{Entries: entries}
 	var rendered bytes.Buffer
 	if err := tmpl.Execute(&rendered, data); err != nil {
-		logger.Global.Fatal("生成玩家头文件失败: 执行模板失败",
+		logger.Global.Fatal("Failed to generate player header file: template execution failed",
 			zap.String("file_path", outputPath),
 			zap.Error(err),
 		)
@@ -130,7 +130,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 
 		err := os.MkdirAll(_config.Global.Paths.PlayerStorageTempDir, os.FileMode(0777))
 		if err != nil {
-			logger.Global.Error("生成玩家数据加载器失败: 创建临时目录失败",
+			logger.Global.Error("Failed to generate player data loader: directory creation failed",
 				zap.String("directory", _config.Global.Paths.PlayerStorageTempDir),
 				zap.Error(err),
 			)
@@ -174,7 +174,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 					headerEntries)
 
 				if err != nil {
-					logger.Global.Fatal("生成玩家数据反序列化代码失败",
+					logger.Global.Fatal("Failed to generate player data deserialization code",
 						zap.String("message_type", messageType),
 						zap.String("file_path", filePath),
 						zap.Error(err),
@@ -186,7 +186,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 
 		err = GenerateCppPlayerHeaderFile(_config.Global.Paths.PlayerDataLoaderFile, headerEntries)
 		if err != nil {
-			logger.Global.Fatal("生成玩家数据加载器头文件失败",
+			logger.Global.Fatal("Failed to generate player data loader header file",
 				zap.String("file_path", _config.Global.Paths.PlayerDataLoaderFile),
 				zap.Error(err),
 			)
@@ -220,7 +220,7 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
 	tmpl, err := template.New("handler").Parse(playerLoaderTemplate)
 	if err != nil {
-		logger.Global.Fatal("生成反序列化代码失败: 解析模板失败",
+		logger.Global.Fatal("Failed to generate deserialization code: template parsing failed",
 			zap.String("template_name", "handler"),
 			zap.String("file_name", fileName),
 			zap.Error(err),
@@ -236,7 +236,7 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 
 	var rendered bytes.Buffer
 	if err := tmpl.Execute(&rendered, data); err != nil {
-		logger.Global.Fatal("生成反序列化代码失败: 执行模板失败",
+		logger.Global.Fatal("Failed to generate deserialization code: template execution failed",
 			zap.String("file_name", fileName),
 			zap.String("message_type", messageType),
 			zap.Error(err),

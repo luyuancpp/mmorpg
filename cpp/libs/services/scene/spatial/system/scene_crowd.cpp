@@ -38,10 +38,10 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 	memset(&agentParams, 0, sizeof(agentParams));
 	agentParams.radius = kAgentRadius;
 	agentParams.height = kAgentHeight;
-	agentParams.maxAcceleration = 8.0f;
-	agentParams.maxSpeed = 3.5f;
-	agentParams.collisionQueryRange = agentParams.radius * 12.0f;
-	agentParams.pathOptimizationRange = agentParams.radius * 30.0f;
+	agentParams.maxAcceleration = kAgentMaxAcceleration;
+	agentParams.maxSpeed = kAgentMaxSpeed;
+	agentParams.collisionQueryRange = agentParams.radius * kCollisionQueryRangeMultiplier;
+	agentParams.pathOptimizationRange = agentParams.radius * kPathOptimizationRangeMultiplier;
 	agentParams.updateFlags = DT_CROWD_ANTICIPATE_TURNS |
 		DT_CROWD_OPTIMIZE_VIS |
 		DT_CROWD_OPTIMIZE_TOPO |

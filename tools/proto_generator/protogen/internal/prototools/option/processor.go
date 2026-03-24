@@ -26,9 +26,9 @@ type OptionCallback func(desc interface{}, opts interface{}, context *OptionCont
 
 // OptionContext carries parent scope info for each option element.
 type OptionContext struct {
-	File    *descriptorpb.FileDescriptorProto    // 所属文件（所有类型都有）
-	Service *descriptorpb.ServiceDescriptorProto // 所属Service（仅Method有）
-	Message *descriptorpb.DescriptorProto        // 所属Message（仅Field、嵌套Message有）
+	File    *descriptorpb.FileDescriptorProto    // owning file (present for all types)
+	Service *descriptorpb.ServiceDescriptorProto // owning service (present for methods only)
+	Message *descriptorpb.DescriptorProto        // owning message (present for fields and nested messages)
 }
 
 var (
@@ -54,11 +54,11 @@ func ProcessAllOptions(wg *sync.WaitGroup, fdSet *descriptorpb.FileDescriptorSet
 func processFile(f *descriptorpb.FileDescriptorProto, wg *sync.WaitGroup, context *OptionContext) {
 	if f.Options != nil {
 		dispatchOption(OptionTypeFile, f, f.Options, context, wg)
-		// dispatchExtensions 也需要同步改造，这里省略，逻辑同dispatchOption
+		// TODO: dispatchExtensions needs the same refactoring; omitted here, same logic as dispatchOption
 	}
 
 	for _, s := range f.Service {
-		// Service级上下文：继承File，新增Service
+		// Service-level context: inherits File, adds Service
 		serviceCtx := &OptionContext{
 			File:    context.File,
 			Service: s,
@@ -68,7 +68,7 @@ func processFile(f *descriptorpb.FileDescriptorProto, wg *sync.WaitGroup, contex
 		}
 
 		for _, m := range s.Method {
-			// Method级上下文：继承File和Service
+			// Method-level context: inherits File and Service
 			methodCtx := &OptionContext{
 				File:    serviceCtx.File,
 				Service: serviceCtx.Service,
@@ -80,7 +80,7 @@ func processFile(f *descriptorpb.FileDescriptorProto, wg *sync.WaitGroup, contex
 	}
 
 	for _, msg := range f.MessageType {
-		// Message级上下文：继承File
+		// Message-level context: inherits File
 		msgCtx := &OptionContext{
 			File:    context.File,
 			Message: msg,
@@ -95,7 +95,7 @@ func processMessage(msg *descriptorpb.DescriptorProto, wg *sync.WaitGroup, conte
 	}
 
 	for _, field := range msg.Field {
-		// Field级上下文：继承File和Message
+		// Field-level context: inherits File and Message
 		fieldCtx := &OptionContext{
 			File:    context.File,
 			Message: context.Message,
@@ -118,14 +118,14 @@ func dispatchOption(t OptionType, desc interface{}, opts interface{}, context *O
 	callbacks := getCallbacks(t)
 
 	if len(callbacks) == 0 {
-		logger.Global.Debug("无可用的Option回调",
+		logger.Global.Debug("No available option callbacks",
 			zap.Int("option_type", int(t)),
-			zap.String("file", context.File.GetName()), // 日志中增加文件信息
+			zap.String("file", context.File.GetName()),
 		)
 		return
 	}
 
-	logger.Global.Debug("开始分发Option回调",
+	logger.Global.Debug("Dispatching option callbacks",
 		zap.Int("option_type", int(t)),
 		zap.Int("callback_count", len(callbacks)),
 		zap.String("file", context.File.GetName()),
@@ -137,7 +137,7 @@ func dispatchOption(t OptionType, desc interface{}, opts interface{}, context *O
 			defer wg.Done()
 
 			if err := fn(desc, opts, context); err != nil {
-				logger.Global.Error("Option回调执行失败",
+				logger.Global.Error("Option callback execution failed",
 					zap.Int("option_type", int(t)),
 					zap.Error(err),
 					zap.String("desc_type", getTypeString(desc)),
@@ -147,7 +147,7 @@ func dispatchOption(t OptionType, desc interface{}, opts interface{}, context *O
 				return
 			}
 
-			logger.Global.Debug("Option回调执行成功",
+			logger.Global.Debug("Option callback executed successfully",
 				zap.Int("option_type", int(t)),
 				zap.String("desc_type", getTypeString(desc)),
 				zap.String("opts_type", getTypeString(opts)),

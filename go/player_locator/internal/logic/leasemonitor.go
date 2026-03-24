@@ -90,8 +90,12 @@ func handleLeaseExpiry(ctx context.Context, svcCtx *svc.ServiceContext, playerID
 	}
 
 	// Clean up both session and location keys
-	svcCtx.RedisClient.Del(ctx, key)
-	svcCtx.RedisClient.Del(ctx, locationKey(int64(playerID)))
+	if err := svcCtx.RedisClient.Del(ctx, key).Err(); err != nil {
+		logx.Errorf("LeaseMonitor: failed to delete session key for player %d: %v", playerID, err)
+	}
+	if err := svcCtx.RedisClient.Del(ctx, locationKey(int64(playerID))).Err(); err != nil {
+		logx.Errorf("LeaseMonitor: failed to delete location key for player %d: %v", playerID, err)
+	}
 
 	if session == nil {
 		logx.Infof("LeaseMonitor: session already gone for player %d, keys cleaned", playerID)
@@ -163,6 +167,10 @@ func sendLeaseExpiredToGate(ctx context.Context, svcCtx *svc.ServiceContext, ses
 }
 
 func parseGateID(gateID string) uint32 {
-	id, _ := strconv.ParseUint(gateID, 10, 32)
+	id, err := strconv.ParseUint(gateID, 10, 32)
+	if err != nil {
+		logx.Errorf("parseGateID: invalid gateID %q: %v", gateID, err)
+		return 0
+	}
 	return uint32(id)
 }

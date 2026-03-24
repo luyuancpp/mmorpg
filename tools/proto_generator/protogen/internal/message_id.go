@@ -32,7 +32,7 @@ func (cg *ConstantsGenerator) Generate() ([]string, error) {
 func (cg *ConstantsGenerator) GenerateWithSuffix(suffix string) ([]string, error) {
 	file, err := os.Open(cg.FileName)
 	if err != nil {
-		logger.Global.Fatal("打开常量生成源文件失败",
+		logger.Global.Fatal("Failed to open constants source file",
 			zap.String("file_name", cg.FileName),
 			zap.Error(err),
 		)
@@ -56,13 +56,13 @@ func (cg *ConstantsGenerator) GenerateWithSuffix(suffix string) ([]string, error
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.Global.Fatal("读取常量生成源文件失败",
+		logger.Global.Fatal("Failed to read constants source file",
 			zap.String("file_name", cg.FileName),
 			zap.Error(err),
 		)
 	}
 
-	logger.Global.Info("常量生成完成",
+	logger.Global.Info("Constants generated",
 		zap.String("file_name", cg.FileName),
 		zap.Int("const_count", len(consts)),
 	)
@@ -99,7 +99,7 @@ func NewConstantsWriter(constants []string, filePath string) *ConstantsWriter {
 func (cw *ConstantsWriter) Write() error {
 	dir := filepath.Dir(cw.FilePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		logger.Global.Fatal("创建常量文件目录失败",
+		logger.Global.Fatal("Failed to create constants directory",
 			zap.String("file_path", cw.FilePath),
 			zap.Error(err),
 		)
@@ -108,7 +108,7 @@ func (cw *ConstantsWriter) Write() error {
 
 	file, err := os.Create(cw.FilePath)
 	if err != nil {
-		logger.Global.Fatal("创建常量文件失败",
+		logger.Global.Fatal("Failed to create constants file",
 			zap.String("file_path", cw.FilePath),
 			zap.Error(err),
 		)
@@ -119,7 +119,7 @@ func (cw *ConstantsWriter) Write() error {
 
 	_, err = writer.WriteString("package game\n\n")
 	if err != nil {
-		logger.Global.Fatal("写入常量文件包名失败",
+		logger.Global.Fatal("Failed to write package name to constants file",
 			zap.String("file_path", cw.FilePath),
 			zap.Error(err),
 		)
@@ -128,7 +128,7 @@ func (cw *ConstantsWriter) Write() error {
 	for _, c := range cw.Constants {
 		_, err := writer.WriteString(c + "\n")
 		if err != nil {
-			logger.Global.Fatal("写入常量到文件失败",
+			logger.Global.Fatal("Failed to write constant to file",
 				zap.String("file_path", cw.FilePath),
 				zap.String("constant", c),
 				zap.Error(err),
@@ -138,13 +138,13 @@ func (cw *ConstantsWriter) Write() error {
 
 	err = writer.Flush()
 	if err != nil {
-		logger.Global.Fatal("刷写常量文件缓冲区失败",
+		logger.Global.Fatal("Failed to flush constants file buffer",
 			zap.String("file_path", cw.FilePath),
 			zap.Error(err),
 		)
 	}
 
-	logger.Global.Info("常量文件写入成功",
+	logger.Global.Info("Constants file written",
 		zap.String("file_path", cw.FilePath),
 		zap.Int("const_count", len(cw.Constants)),
 	)
@@ -161,7 +161,7 @@ func WriteToFiles(constants []string, filePaths []string) {
 			defer wg.Done()
 			writer := NewConstantsWriter(constants, path)
 			if err := writer.Write(); err != nil {
-				logger.Global.Warn("写入常量文件失败",
+				logger.Global.Warn("Failed to write constants file",
 					zap.String("file_path", path),
 					zap.Error(err),
 				)
@@ -186,14 +186,14 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 		defer wg.Done()
 		consts, err := generateConstants(_config.Global.Paths.ServiceIdFile, _config.Global.Naming.MessageId)
 		if err != nil {
-			logger.Global.Fatal("生成MessageId常量失败", zap.Error(err))
+			logger.Global.Fatal("Failed to generate MessageId constants", zap.Error(err))
 		}
 		filePaths := []string{
 			_config.Global.Paths.RobotMessageIdFile,
 		}
 		for domain, meta := range _config.Global.DomainMeta {
 			if !utils.IsGRPC(meta) {
-				logger.Global.Debug("目录无GRPC服务，跳过MessageId文件生成",
+				logger.Global.Debug("Domain has no GRPC service, skipping MessageId file generation",
 					zap.String("domain", domain),
 				)
 				continue
@@ -213,13 +213,13 @@ func WriteGoEventId(wg *sync.WaitGroup) {
 		defer wg.Done()
 		consts, err := generateConstants(_config.Global.Paths.EventIdFile, _config.Global.Naming.EventId)
 		if err != nil {
-			logger.Global.Fatal("生成EventId常量失败", zap.Error(err))
+			logger.Global.Fatal("Failed to generate EventId constants", zap.Error(err))
 		}
 
 		filePaths := make([]string, 0)
 		for domain, meta := range _config.Global.DomainMeta {
 			if !utils.IsGRPC(meta) {
-				logger.Global.Debug("目录无GRPC服务，跳过EventId文件生成",
+				logger.Global.Debug("Domain has no GRPC service, skipping EventId file generation",
 					zap.String("domain", domain),
 				)
 				continue
