@@ -41,13 +41,13 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 	const auto it = tlsSessionManager.sessions().find(replied->session_id());
 	if (it == tlsSessionManager.sessions().end())
 	{
-		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
+		LOG_ERROR << "conn id not found, session id: " << replied->session_id();
 		return;
 	}
 
 	MessageContent message;
 	message.set_serialized_message(replied->body());
-	message.set_message_id(route_data.message_id());;
+	message.set_message_id(route_data.message_id());
 	GetGateCodec().send(it->second.conn, message);
 	///<<< END WRITING YOUR CODE
 }

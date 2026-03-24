@@ -202,7 +202,8 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
 {
     FetchBuffTableOrReturnFalse(buffTableId);
 
-    for (auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parentEntity); auto & buffComp : buffList | std::views::values) {
+    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
+    for (auto& buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
             if (buffComp.buffPb.layer() < buffTable->maxlayer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
@@ -220,7 +221,8 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     FetchAndValidateCustomBuffTable(add, buffTableId);
 
     UInt64Vector dispelBuffIdList;
-    for (auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent); auto & [buffId, buffPbComp] : buffList) {
+    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
+    for (auto& [buffId, buffPbComp] : buffList) {
         FetchBuffTableOrContinue(buffTableId);
         for (const auto& removeTag : addBuffTable->dispeltag() | std::views::keys) {
             if (buffTable->tag().contains(removeTag)) {

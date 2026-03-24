@@ -18,8 +18,7 @@
 
 bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
 {
-	// Define which message IDs should log protocol errors for disconnected players
-	return true;// (message_id != 47 && message_id != 21 && message_id != 37);
+	return true;
 }
 
 ///<<< END WRITING YOUR CODE
@@ -59,7 +58,6 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 		return;
 	}
 	GetGateCodec().send(sessionIt->second.conn, request->message_content());
-	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
 }
 
@@ -165,7 +163,6 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 			continue;
 		}
 		GetGateCodec().send(sessionIt->second.conn, request->message_content());
-		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE
 }

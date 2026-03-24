@@ -1,6 +1,7 @@
 
+void InitGateReply();
+
 void InitReply()
 {
-    void InitGateReply();
     InitGateReply();
 }
