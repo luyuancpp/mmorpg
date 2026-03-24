@@ -24,11 +24,11 @@ const (
 type EnterGsType int32
 
 const (
-	EnterGsType_LOGIN_NONE         EnterGsType = 0 //正常进入，换场景进入
-	EnterGsType_LOGIN_FIRST        EnterGsType = 1 //第一次登录
-	EnterGsType_LOGIN_REPLACE      EnterGsType = 2 //顶号
-	EnterGsType_LOGIN_RECONNECT    EnterGsType = 3 //断线重连
-	EnterGsType_LOGIN_DISCONNECTED EnterGsType = 4 // 标记离线并记录版本（便于延迟清理时再次校验
+	EnterGsType_LOGIN_NONE         EnterGsType = 0 // Normal enter or scene change
+	EnterGsType_LOGIN_FIRST        EnterGsType = 1 // First login
+	EnterGsType_LOGIN_REPLACE      EnterGsType = 2 // Session takeover (kick existing)
+	EnterGsType_LOGIN_RECONNECT    EnterGsType = 3 // Reconnect
+	EnterGsType_LOGIN_DISCONNECTED EnterGsType = 4 // Mark offline and record version (for deferred cleanup check)
 )
 
 // Enum value maps for EnterGsType.

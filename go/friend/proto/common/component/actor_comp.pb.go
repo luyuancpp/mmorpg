@@ -382,7 +382,7 @@ func (x *Acceleration) GetZ() float64 {
 }
 
 // https://blog.codingnow.com/2008/11/aoi_server.html
-// 视野半径
+// View radius
 type ViewRadius struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Radius        float64                `protobuf:"fixed64,1,opt,name=radius,proto3" json:"radius,omitempty"`
@@ -427,16 +427,16 @@ func (x *ViewRadius) GetRadius() float64 {
 	return 0
 }
 
-// 玩家基础属性组件，仅存储与战斗相关的基础属性
+// Player base attributes comp, stores only combat-related base attributes
 type BaseAttributesComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Strength      uint64                 `protobuf:"varint,1,opt,name=strength,proto3" json:"strength,omitempty"`     // 力量，影响物理攻击
-	Stamina       uint64                 `protobuf:"varint,2,opt,name=stamina,proto3" json:"stamina,omitempty"`       // 耐力，影响生命值等
-	Health        uint64                 `protobuf:"varint,3,opt,name=health,proto3" json:"health,omitempty"`         // 当前生命值
-	Mana          uint64                 `protobuf:"varint,4,opt,name=mana,proto3" json:"mana,omitempty"`             // 当前法力值
-	Critchance    uint64                 `protobuf:"varint,5,opt,name=critchance,proto3" json:"critchance,omitempty"` // 暴击几率
-	Armor         uint64                 `protobuf:"varint,6,opt,name=armor,proto3" json:"armor,omitempty"`           // 护甲
-	Resistance    uint64                 `protobuf:"varint,7,opt,name=resistance,proto3" json:"resistance,omitempty"` // 抗性
+	Strength      uint64                 `protobuf:"varint,1,opt,name=strength,proto3" json:"strength,omitempty"`     // Strength, affects physical attack
+	Stamina       uint64                 `protobuf:"varint,2,opt,name=stamina,proto3" json:"stamina,omitempty"`       // Stamina, affects HP etc.
+	Health        uint64                 `protobuf:"varint,3,opt,name=health,proto3" json:"health,omitempty"`         // Current HP
+	Mana          uint64                 `protobuf:"varint,4,opt,name=mana,proto3" json:"mana,omitempty"`             // Current mana
+	Critchance    uint64                 `protobuf:"varint,5,opt,name=critchance,proto3" json:"critchance,omitempty"` // Crit chance
+	Armor         uint64                 `protobuf:"varint,6,opt,name=armor,proto3" json:"armor,omitempty"`           // Armor
+	Resistance    uint64                 `protobuf:"varint,7,opt,name=resistance,proto3" json:"resistance,omitempty"` // Resistance
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -520,10 +520,10 @@ func (x *BaseAttributesComp) GetResistance() uint64 {
 	return 0
 }
 
-// 玩家等级组件，专注于管理等级及与等级相关的功能
+// Player level comp, manages level and level-related features
 type LevelComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Level         uint32                 `protobuf:"varint,1,opt,name=level,proto3" json:"level,omitempty"` // 玩家等级
+	Level         uint32                 `protobuf:"varint,1,opt,name=level,proto3" json:"level,omitempty"` // Player level
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

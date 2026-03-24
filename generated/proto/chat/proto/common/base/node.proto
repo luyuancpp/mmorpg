@@ -4,43 +4,43 @@ package common.base;
 option go_package = "chat/proto/common/base";
 
 enum eNodeType {
-  UnknownNodeService     = 0;  // 未知节点服务
-    SceneNodeService       = 3;  // 场景服务器服务
-    GateNodeService        = 4;  // 网关节点服务
-    LoginNodeService       = 5;  // 登录服务器节点服务
-    RedisNodeService       = 6;  // Redis 节点服务
-    EtcdNodeService        = 7;  // etcd节点
-    MailNodeService        = 8;  // 邮件节点服务
-    ChatNodeService        = 9;  // 聊天节点服务
-    TeamNodeService        = 10; // 组队节点服务
-    ActivityNodeService    = 11; // 活动节点服务
-    TradeNodeService       = 12; // 玩家交易或拍卖行服务
-    RankNodeService        = 13; // 排行榜服务
-    TaskNodeService        = 14; // 任务系统服务
-    GuildNodeService       = 15; // 公会系统服务
-    MatchNodeService       = 16; // 匹配系统服务（如组队副本、PVP等）
-    AiNodeService          = 17; // AI/NPC 控制服务
-    LogNodeService         = 18; // 日志处理/收集服务
-    PaymentNodeService     = 19; // 支付或充值服务
-    SecurityNodeService    = 20; // 反作弊/安全验证服务
-    CrossServerNodeService = 21; // 跨服服务处理（如跨服战场）
-    AnalyticsNodeService   = 22; // 数据统计与分析服务
-    GmNodeService          = 23; // GM工具服务（客服/管理员指令）
-	PlayerLocatorNodeService		   = 24; // 跨服玩家定位服务
-	SceneManagerNodeService = 25; // 场景管理服务（Go-Zero）
-	DataServiceNodeService  = 26; // 跨服数据代理服务（Go-Zero）
-	FriendNodeService       = 27; // 好友系统服务（Go-Zero）
+  UnknownNodeService     = 0;  // Unknown node service
+    SceneNodeService       = 3;  // Scene node service
+    GateNodeService        = 4;  // Gate node service
+    LoginNodeService       = 5;  // Login node service
+    RedisNodeService       = 6;  // Redis node service
+    EtcdNodeService        = 7;  // etcd node
+    MailNodeService        = 8;  // Mail node service
+    ChatNodeService        = 9;  // Chat node service
+    TeamNodeService        = 10; // Team node service
+    ActivityNodeService    = 11; // Activity node service
+    TradeNodeService       = 12; // Trade/auction service
+    RankNodeService        = 13; // Ranking service
+    TaskNodeService        = 14; // Task/quest service
+    GuildNodeService       = 15; // Guild service
+    MatchNodeService       = 16; // Match service (e.g. dungeon, PVP)
+    AiNodeService          = 17; // AI/NPC control service
+    LogNodeService         = 18; // Log collection service
+    PaymentNodeService     = 19; // Payment/recharge service
+    SecurityNodeService    = 20; // Anti-cheat/security service
+    CrossServerNodeService = 21; // Cross-server service (e.g. cross-server battleground)
+    AnalyticsNodeService   = 22; // Analytics service
+    GmNodeService          = 23; // GM tool service (admin/CS commands)
+	PlayerLocatorNodeService		   = 24; // Cross-server player locator service
+	SceneManagerNodeService = 25; // Scene manager service (Go-Zero)
+	DataServiceNodeService  = 26; // Cross-server data proxy service (Go-Zero)
+	FriendNodeService       = 27; // Friend system service (Go-Zero)
 };
 
 enum eSceneNodeType
 {
-	kMainSceneNode = 0;//主世界场景
-	kSceneNode = 1;//副本场景
-	kMainSceneCrossNode = 2;//跨服主世界场景
-	kSceneSceneCrossNode = 3;//跨服副本场景
+	kMainSceneNode = 0;// Main world scene
+	kSceneNode = 1;// Instance scene
+	kMainSceneCrossNode = 2;// Cross-server main world scene
+	kSceneSceneCrossNode = 3;// Cross-server instance scene
 };
 
-// 定义节点协议类型的枚举
+// Node protocol type enum
 enum eNodeProtocolType {
   PROTOCOL_TCP = 0;
   PROTOCOL_GRPC = 1;

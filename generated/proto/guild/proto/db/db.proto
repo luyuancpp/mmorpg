@@ -13,7 +13,7 @@ service db {
 }
 
 message TestRequest {
-  // 可以嵌套导入的message，但外层必须是当前proto的message
+  // Can nest imported messages, but outer must be from current proto
   Empty empty = 1;
 }
 

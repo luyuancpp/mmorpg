@@ -288,7 +288,7 @@ func (x *SkillUsedS2C) GetTimeStamp() uint64 {
 	return 0
 }
 
-// 获取技能列表请求
+// Get skill list request
 type GetSkillListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -325,7 +325,7 @@ func (*GetSkillListRequest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{4}
 }
 
-// 获取技能列表响应
+// Get skill list response
 type GetSkillListResponse struct {
 	state         protoimpl.MessageState         `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage           `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`

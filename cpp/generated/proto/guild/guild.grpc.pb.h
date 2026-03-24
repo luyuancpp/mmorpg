@@ -28,7 +28,7 @@
 
 namespace guildpb {
 
-// ── 服务定义 ─────────────────────────────────────────────────
+// ── Service definition ─────────────────────────────────────────────────────
 //
 class GuildService final {
  public:
@@ -87,6 +87,28 @@ class GuildService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::SetAnnouncementResponse>> PrepareAsyncSetAnnouncement(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::SetAnnouncementResponse>>(PrepareAsyncSetAnnouncementRaw(context, request, cq));
     }
+    // Ranking
+    virtual ::grpc::Status UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::guildpb::UpdateGuildScoreResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::UpdateGuildScoreResponse>> AsyncUpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::UpdateGuildScoreResponse>>(AsyncUpdateGuildScoreRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::UpdateGuildScoreResponse>> PrepareAsyncUpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::UpdateGuildScoreResponse>>(PrepareAsyncUpdateGuildScoreRaw(context, request, cq));
+    }
+    virtual ::grpc::Status GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::guildpb::GetGuildRankResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankResponse>> AsyncGetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankResponse>>(AsyncGetGuildRankRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankResponse>> PrepareAsyncGetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankResponse>>(PrepareAsyncGetGuildRankRaw(context, request, cq));
+    }
+    virtual ::grpc::Status GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::guildpb::GetGuildRankByGuildResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankByGuildResponse>> AsyncGetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankByGuildResponse>>(AsyncGetGuildRankByGuildRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankByGuildResponse>> PrepareAsyncGetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankByGuildResponse>>(PrepareAsyncGetGuildRankByGuildRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -104,6 +126,13 @@ class GuildService final {
       virtual void DisbandGuild(::grpc::ClientContext* context, const ::guildpb::DisbandGuildRequest* request, ::guildpb::DisbandGuildResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void SetAnnouncement(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest* request, ::guildpb::SetAnnouncementResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void SetAnnouncement(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest* request, ::guildpb::SetAnnouncementResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // Ranking
+      virtual void UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -123,6 +152,12 @@ class GuildService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::DisbandGuildResponse>* PrepareAsyncDisbandGuildRaw(::grpc::ClientContext* context, const ::guildpb::DisbandGuildRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::SetAnnouncementResponse>* AsyncSetAnnouncementRaw(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::SetAnnouncementResponse>* PrepareAsyncSetAnnouncementRaw(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::UpdateGuildScoreResponse>* AsyncUpdateGuildScoreRaw(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::UpdateGuildScoreResponse>* PrepareAsyncUpdateGuildScoreRaw(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankResponse>* AsyncGetGuildRankRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankResponse>* PrepareAsyncGetGuildRankRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankByGuildResponse>* AsyncGetGuildRankByGuildRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::guildpb::GetGuildRankByGuildResponse>* PrepareAsyncGetGuildRankByGuildRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -176,6 +211,27 @@ class GuildService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::SetAnnouncementResponse>> PrepareAsyncSetAnnouncement(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::SetAnnouncementResponse>>(PrepareAsyncSetAnnouncementRaw(context, request, cq));
     }
+    ::grpc::Status UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::guildpb::UpdateGuildScoreResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::UpdateGuildScoreResponse>> AsyncUpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::UpdateGuildScoreResponse>>(AsyncUpdateGuildScoreRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::UpdateGuildScoreResponse>> PrepareAsyncUpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::UpdateGuildScoreResponse>>(PrepareAsyncUpdateGuildScoreRaw(context, request, cq));
+    }
+    ::grpc::Status GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::guildpb::GetGuildRankResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankResponse>> AsyncGetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankResponse>>(AsyncGetGuildRankRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankResponse>> PrepareAsyncGetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankResponse>>(PrepareAsyncGetGuildRankRaw(context, request, cq));
+    }
+    ::grpc::Status GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::guildpb::GetGuildRankByGuildResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankByGuildResponse>> AsyncGetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankByGuildResponse>>(AsyncGetGuildRankByGuildRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankByGuildResponse>> PrepareAsyncGetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankByGuildResponse>>(PrepareAsyncGetGuildRankByGuildRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -193,6 +249,12 @@ class GuildService final {
       void DisbandGuild(::grpc::ClientContext* context, const ::guildpb::DisbandGuildRequest* request, ::guildpb::DisbandGuildResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void SetAnnouncement(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest* request, ::guildpb::SetAnnouncementResponse* response, std::function<void(::grpc::Status)>) override;
       void SetAnnouncement(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest* request, ::guildpb::SetAnnouncementResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response, std::function<void(::grpc::Status)>) override;
+      void UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -218,6 +280,12 @@ class GuildService final {
     ::grpc::ClientAsyncResponseReader< ::guildpb::DisbandGuildResponse>* PrepareAsyncDisbandGuildRaw(::grpc::ClientContext* context, const ::guildpb::DisbandGuildRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::guildpb::SetAnnouncementResponse>* AsyncSetAnnouncementRaw(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::guildpb::SetAnnouncementResponse>* PrepareAsyncSetAnnouncementRaw(::grpc::ClientContext* context, const ::guildpb::SetAnnouncementRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::guildpb::UpdateGuildScoreResponse>* AsyncUpdateGuildScoreRaw(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::guildpb::UpdateGuildScoreResponse>* PrepareAsyncUpdateGuildScoreRaw(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankResponse>* AsyncGetGuildRankRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankResponse>* PrepareAsyncGetGuildRankRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankByGuildResponse>* AsyncGetGuildRankByGuildRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankByGuildResponse>* PrepareAsyncGetGuildRankByGuildRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_CreateGuild_;
     const ::grpc::internal::RpcMethod rpcmethod_GetGuild_;
     const ::grpc::internal::RpcMethod rpcmethod_GetPlayerGuild_;
@@ -225,6 +293,9 @@ class GuildService final {
     const ::grpc::internal::RpcMethod rpcmethod_LeaveGuild_;
     const ::grpc::internal::RpcMethod rpcmethod_DisbandGuild_;
     const ::grpc::internal::RpcMethod rpcmethod_SetAnnouncement_;
+    const ::grpc::internal::RpcMethod rpcmethod_UpdateGuildScore_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetGuildRank_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetGuildRankByGuild_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -239,6 +310,10 @@ class GuildService final {
     virtual ::grpc::Status LeaveGuild(::grpc::ServerContext* context, const ::guildpb::LeaveGuildRequest* request, ::guildpb::LeaveGuildResponse* response);
     virtual ::grpc::Status DisbandGuild(::grpc::ServerContext* context, const ::guildpb::DisbandGuildRequest* request, ::guildpb::DisbandGuildResponse* response);
     virtual ::grpc::Status SetAnnouncement(::grpc::ServerContext* context, const ::guildpb::SetAnnouncementRequest* request, ::guildpb::SetAnnouncementResponse* response);
+    // Ranking
+    virtual ::grpc::Status UpdateGuildScore(::grpc::ServerContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response);
+    virtual ::grpc::Status GetGuildRank(::grpc::ServerContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response);
+    virtual ::grpc::Status GetGuildRankByGuild(::grpc::ServerContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_CreateGuild : public BaseClass {
@@ -380,7 +455,67 @@ class GuildService final {
       ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_CreateGuild<WithAsyncMethod_GetGuild<WithAsyncMethod_GetPlayerGuild<WithAsyncMethod_JoinGuild<WithAsyncMethod_LeaveGuild<WithAsyncMethod_DisbandGuild<WithAsyncMethod_SetAnnouncement<Service > > > > > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_UpdateGuildScore : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_UpdateGuildScore() {
+      ::grpc::Service::MarkMethodAsync(7);
+    }
+    ~WithAsyncMethod_UpdateGuildScore() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UpdateGuildScore(::grpc::ServerContext* /*context*/, const ::guildpb::UpdateGuildScoreRequest* /*request*/, ::guildpb::UpdateGuildScoreResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestUpdateGuildScore(::grpc::ServerContext* context, ::guildpb::UpdateGuildScoreRequest* request, ::grpc::ServerAsyncResponseWriter< ::guildpb::UpdateGuildScoreResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_GetGuildRank : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetGuildRank() {
+      ::grpc::Service::MarkMethodAsync(8);
+    }
+    ~WithAsyncMethod_GetGuildRank() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRank(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankRequest* /*request*/, ::guildpb::GetGuildRankResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetGuildRank(::grpc::ServerContext* context, ::guildpb::GetGuildRankRequest* request, ::grpc::ServerAsyncResponseWriter< ::guildpb::GetGuildRankResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_GetGuildRankByGuild : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetGuildRankByGuild() {
+      ::grpc::Service::MarkMethodAsync(9);
+    }
+    ~WithAsyncMethod_GetGuildRankByGuild() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRankByGuild(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankByGuildRequest* /*request*/, ::guildpb::GetGuildRankByGuildResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetGuildRankByGuild(::grpc::ServerContext* context, ::guildpb::GetGuildRankByGuildRequest* request, ::grpc::ServerAsyncResponseWriter< ::guildpb::GetGuildRankByGuildResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_CreateGuild<WithAsyncMethod_GetGuild<WithAsyncMethod_GetPlayerGuild<WithAsyncMethod_JoinGuild<WithAsyncMethod_LeaveGuild<WithAsyncMethod_DisbandGuild<WithAsyncMethod_SetAnnouncement<WithAsyncMethod_UpdateGuildScore<WithAsyncMethod_GetGuildRank<WithAsyncMethod_GetGuildRankByGuild<Service > > > > > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_CreateGuild : public BaseClass {
    private:
@@ -570,7 +705,88 @@ class GuildService final {
     virtual ::grpc::ServerUnaryReactor* SetAnnouncement(
       ::grpc::CallbackServerContext* /*context*/, const ::guildpb::SetAnnouncementRequest* /*request*/, ::guildpb::SetAnnouncementResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_CreateGuild<WithCallbackMethod_GetGuild<WithCallbackMethod_GetPlayerGuild<WithCallbackMethod_JoinGuild<WithCallbackMethod_LeaveGuild<WithCallbackMethod_DisbandGuild<WithCallbackMethod_SetAnnouncement<Service > > > > > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_UpdateGuildScore : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_UpdateGuildScore() {
+      ::grpc::Service::MarkMethodCallback(7,
+          new ::grpc::internal::CallbackUnaryHandler< ::guildpb::UpdateGuildScoreRequest, ::guildpb::UpdateGuildScoreResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response) { return this->UpdateGuildScore(context, request, response); }));}
+    void SetMessageAllocatorFor_UpdateGuildScore(
+        ::grpc::MessageAllocator< ::guildpb::UpdateGuildScoreRequest, ::guildpb::UpdateGuildScoreResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::guildpb::UpdateGuildScoreRequest, ::guildpb::UpdateGuildScoreResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_UpdateGuildScore() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UpdateGuildScore(::grpc::ServerContext* /*context*/, const ::guildpb::UpdateGuildScoreRequest* /*request*/, ::guildpb::UpdateGuildScoreResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* UpdateGuildScore(
+      ::grpc::CallbackServerContext* /*context*/, const ::guildpb::UpdateGuildScoreRequest* /*request*/, ::guildpb::UpdateGuildScoreResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_GetGuildRank : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetGuildRank() {
+      ::grpc::Service::MarkMethodCallback(8,
+          new ::grpc::internal::CallbackUnaryHandler< ::guildpb::GetGuildRankRequest, ::guildpb::GetGuildRankResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response) { return this->GetGuildRank(context, request, response); }));}
+    void SetMessageAllocatorFor_GetGuildRank(
+        ::grpc::MessageAllocator< ::guildpb::GetGuildRankRequest, ::guildpb::GetGuildRankResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::guildpb::GetGuildRankRequest, ::guildpb::GetGuildRankResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetGuildRank() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRank(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankRequest* /*request*/, ::guildpb::GetGuildRankResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetGuildRank(
+      ::grpc::CallbackServerContext* /*context*/, const ::guildpb::GetGuildRankRequest* /*request*/, ::guildpb::GetGuildRankResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_GetGuildRankByGuild : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetGuildRankByGuild() {
+      ::grpc::Service::MarkMethodCallback(9,
+          new ::grpc::internal::CallbackUnaryHandler< ::guildpb::GetGuildRankByGuildRequest, ::guildpb::GetGuildRankByGuildResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response) { return this->GetGuildRankByGuild(context, request, response); }));}
+    void SetMessageAllocatorFor_GetGuildRankByGuild(
+        ::grpc::MessageAllocator< ::guildpb::GetGuildRankByGuildRequest, ::guildpb::GetGuildRankByGuildResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(9);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::guildpb::GetGuildRankByGuildRequest, ::guildpb::GetGuildRankByGuildResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetGuildRankByGuild() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRankByGuild(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankByGuildRequest* /*request*/, ::guildpb::GetGuildRankByGuildResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetGuildRankByGuild(
+      ::grpc::CallbackServerContext* /*context*/, const ::guildpb::GetGuildRankByGuildRequest* /*request*/, ::guildpb::GetGuildRankByGuildResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_CreateGuild<WithCallbackMethod_GetGuild<WithCallbackMethod_GetPlayerGuild<WithCallbackMethod_JoinGuild<WithCallbackMethod_LeaveGuild<WithCallbackMethod_DisbandGuild<WithCallbackMethod_SetAnnouncement<WithCallbackMethod_UpdateGuildScore<WithCallbackMethod_GetGuildRank<WithCallbackMethod_GetGuildRankByGuild<Service > > > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_CreateGuild : public BaseClass {
@@ -687,6 +903,57 @@ class GuildService final {
     }
     // disable synchronous version of this method
     ::grpc::Status SetAnnouncement(::grpc::ServerContext* /*context*/, const ::guildpb::SetAnnouncementRequest* /*request*/, ::guildpb::SetAnnouncementResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_UpdateGuildScore : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_UpdateGuildScore() {
+      ::grpc::Service::MarkMethodGeneric(7);
+    }
+    ~WithGenericMethod_UpdateGuildScore() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UpdateGuildScore(::grpc::ServerContext* /*context*/, const ::guildpb::UpdateGuildScoreRequest* /*request*/, ::guildpb::UpdateGuildScoreResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetGuildRank : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetGuildRank() {
+      ::grpc::Service::MarkMethodGeneric(8);
+    }
+    ~WithGenericMethod_GetGuildRank() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRank(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankRequest* /*request*/, ::guildpb::GetGuildRankResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetGuildRankByGuild : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetGuildRankByGuild() {
+      ::grpc::Service::MarkMethodGeneric(9);
+    }
+    ~WithGenericMethod_GetGuildRankByGuild() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRankByGuild(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankByGuildRequest* /*request*/, ::guildpb::GetGuildRankByGuildResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -829,6 +1096,66 @@ class GuildService final {
     }
     void RequestSetAnnouncement(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_UpdateGuildScore : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_UpdateGuildScore() {
+      ::grpc::Service::MarkMethodRaw(7);
+    }
+    ~WithRawMethod_UpdateGuildScore() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UpdateGuildScore(::grpc::ServerContext* /*context*/, const ::guildpb::UpdateGuildScoreRequest* /*request*/, ::guildpb::UpdateGuildScoreResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestUpdateGuildScore(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_GetGuildRank : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetGuildRank() {
+      ::grpc::Service::MarkMethodRaw(8);
+    }
+    ~WithRawMethod_GetGuildRank() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRank(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankRequest* /*request*/, ::guildpb::GetGuildRankResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetGuildRank(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_GetGuildRankByGuild : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetGuildRankByGuild() {
+      ::grpc::Service::MarkMethodRaw(9);
+    }
+    ~WithRawMethod_GetGuildRankByGuild() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRankByGuild(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankByGuildRequest* /*request*/, ::guildpb::GetGuildRankByGuildResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetGuildRankByGuild(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -983,6 +1310,72 @@ class GuildService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* SetAnnouncement(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_UpdateGuildScore : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_UpdateGuildScore() {
+      ::grpc::Service::MarkMethodRawCallback(7,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->UpdateGuildScore(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_UpdateGuildScore() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status UpdateGuildScore(::grpc::ServerContext* /*context*/, const ::guildpb::UpdateGuildScoreRequest* /*request*/, ::guildpb::UpdateGuildScoreResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* UpdateGuildScore(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetGuildRank : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetGuildRank() {
+      ::grpc::Service::MarkMethodRawCallback(8,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetGuildRank(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetGuildRank() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRank(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankRequest* /*request*/, ::guildpb::GetGuildRankResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetGuildRank(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetGuildRankByGuild : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetGuildRankByGuild() {
+      ::grpc::Service::MarkMethodRawCallback(9,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetGuildRankByGuild(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetGuildRankByGuild() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetGuildRankByGuild(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankByGuildRequest* /*request*/, ::guildpb::GetGuildRankByGuildResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetGuildRankByGuild(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -1174,9 +1567,90 @@ class GuildService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedSetAnnouncement(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::guildpb::SetAnnouncementRequest,::guildpb::SetAnnouncementResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_CreateGuild<WithStreamedUnaryMethod_GetGuild<WithStreamedUnaryMethod_GetPlayerGuild<WithStreamedUnaryMethod_JoinGuild<WithStreamedUnaryMethod_LeaveGuild<WithStreamedUnaryMethod_DisbandGuild<WithStreamedUnaryMethod_SetAnnouncement<Service > > > > > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_UpdateGuildScore : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_UpdateGuildScore() {
+      ::grpc::Service::MarkMethodStreamed(7,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::guildpb::UpdateGuildScoreRequest, ::guildpb::UpdateGuildScoreResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::guildpb::UpdateGuildScoreRequest, ::guildpb::UpdateGuildScoreResponse>* streamer) {
+                       return this->StreamedUpdateGuildScore(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_UpdateGuildScore() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status UpdateGuildScore(::grpc::ServerContext* /*context*/, const ::guildpb::UpdateGuildScoreRequest* /*request*/, ::guildpb::UpdateGuildScoreResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedUpdateGuildScore(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::guildpb::UpdateGuildScoreRequest,::guildpb::UpdateGuildScoreResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetGuildRank : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetGuildRank() {
+      ::grpc::Service::MarkMethodStreamed(8,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::guildpb::GetGuildRankRequest, ::guildpb::GetGuildRankResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::guildpb::GetGuildRankRequest, ::guildpb::GetGuildRankResponse>* streamer) {
+                       return this->StreamedGetGuildRank(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetGuildRank() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetGuildRank(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankRequest* /*request*/, ::guildpb::GetGuildRankResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetGuildRank(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::guildpb::GetGuildRankRequest,::guildpb::GetGuildRankResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetGuildRankByGuild : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetGuildRankByGuild() {
+      ::grpc::Service::MarkMethodStreamed(9,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::guildpb::GetGuildRankByGuildRequest, ::guildpb::GetGuildRankByGuildResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::guildpb::GetGuildRankByGuildRequest, ::guildpb::GetGuildRankByGuildResponse>* streamer) {
+                       return this->StreamedGetGuildRankByGuild(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetGuildRankByGuild() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetGuildRankByGuild(::grpc::ServerContext* /*context*/, const ::guildpb::GetGuildRankByGuildRequest* /*request*/, ::guildpb::GetGuildRankByGuildResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetGuildRankByGuild(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::guildpb::GetGuildRankByGuildRequest,::guildpb::GetGuildRankByGuildResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_CreateGuild<WithStreamedUnaryMethod_GetGuild<WithStreamedUnaryMethod_GetPlayerGuild<WithStreamedUnaryMethod_JoinGuild<WithStreamedUnaryMethod_LeaveGuild<WithStreamedUnaryMethod_DisbandGuild<WithStreamedUnaryMethod_SetAnnouncement<WithStreamedUnaryMethod_UpdateGuildScore<WithStreamedUnaryMethod_GetGuildRank<WithStreamedUnaryMethod_GetGuildRankByGuild<Service > > > > > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_CreateGuild<WithStreamedUnaryMethod_GetGuild<WithStreamedUnaryMethod_GetPlayerGuild<WithStreamedUnaryMethod_JoinGuild<WithStreamedUnaryMethod_LeaveGuild<WithStreamedUnaryMethod_DisbandGuild<WithStreamedUnaryMethod_SetAnnouncement<Service > > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_CreateGuild<WithStreamedUnaryMethod_GetGuild<WithStreamedUnaryMethod_GetPlayerGuild<WithStreamedUnaryMethod_JoinGuild<WithStreamedUnaryMethod_LeaveGuild<WithStreamedUnaryMethod_DisbandGuild<WithStreamedUnaryMethod_SetAnnouncement<WithStreamedUnaryMethod_UpdateGuildScore<WithStreamedUnaryMethod_GetGuildRank<WithStreamedUnaryMethod_GetGuildRankByGuild<Service > > > > > > > > > > StreamedService;
 };
 
 }  // namespace guildpb

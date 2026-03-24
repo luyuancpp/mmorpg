@@ -3,64 +3,64 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "actorbaseattributess2c_attribute_sync.h"
 
-// 引擎核心依赖
+// Engine core dependency
 #include "engine/thread_context/registry_manager.h"
-// 场景相关依赖
+// Scene-related dependency
 #include "spatial/comp/scene_node_scene_comp.h"
-// 网络相关依赖
+// Network dependency
 #include "network/player_message_utils.h"
 
 // ============================================================================
-// 模板核心函数：处理不同类型玩家列表的属性同步
-// 模板参数：PlayerContainer - 玩家列表容器类型（支持vector/unordered_set等）
-// 功能：通用属性同步逻辑，适配任意可迭代的玩家容器类型
+// Core template function: attribute sync for different player list types
+// Template param: PlayerContainer - player list container type (vector/unordered_set etc.)
+// Purpose: Generic attribute sync logic, adapts to any iterable player container
 // ============================================================================
 template <typename PlayerContainer>
 void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t message_id, const PlayerContainer& targetPlayers)
 {
-    // 1. 前置校验：空实体或空玩家列表直接返回
+    // 1. Pre-check: return early if entity is null or player list is empty
     if (entity == entt::null || targetPlayers.empty()) {
         return;
     }
 
-    // 获取线程局部的Actor注册表（核心数据容器）
+    // Get thread-local actor registry (core data container)
     auto& actorRegistry = tlsRegistryManager.actorRegistry;
 
-    // 2. 获取脏掩码组件
+    // 2. Get dirty mask component
     auto& dirtyMaskComp = actorRegistry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
 
-    // 3. 初始化Proto消息对象
+    // 3. Initialize proto message object
     ActorBaseAttributesS2C syncMsg;
     const auto* msgDescriptor = syncMsg.GetDescriptor();
-    // 防御性校验：消息描述符无效则返回（避免空指针）
+    // Defensive check: return if message descriptor is invalid (avoid null pointer)
     if (msgDescriptor == nullptr) {
         return;
     }
 
-    // 4. 遍历所有字段，仅同步脏字段
+    // 4. Iterate all fields, sync only dirty ones
     for (int fieldIdx = 0; fieldIdx < msgDescriptor->field_count(); ++fieldIdx)
     {
-        // 获取当前字段描述符，跳过无效字段
+        // Get current field descriptor, skip invalid fields
         const auto* fieldDesc = msgDescriptor->field(fieldIdx);
         if (fieldDesc == nullptr) {
             continue;
         }
 
-        // 获取字段编号（对应脏掩码的bit位索引）
+        // Get field number (corresponds to dirty mask bit index)
         const int fieldNumber = fieldDesc->number();
 
-        // 跳过未标记为脏的字段（非脏字段无需同步）
+        // Skip fields not marked dirty (no sync needed)
         if (!dirtyMaskComp.dirtyMask.test(fieldNumber)) {
             continue;
         }
 
-        // 5. 根据字段编号匹配并同步属性
+        // 5. Match and sync attributes by field number
         switch (fieldNumber)
         {
         case ActorBaseAttributesS2C::kEntityIdFieldNumber:
         {
-            // 同步 entity_id 属性（字段编号：1）
-            // 特殊处理：基础数值类型字段（uint64_t）直接赋值
+            // Sync entity_id attribute (field number: 1)
+            // Special case: primitive numeric field (uint64_t), assign directly
             auto& fieldValue = actorRegistry.get_or_emplace<uint64_t>(entity);
             syncMsg.set_entity_id(fieldValue);
             dirtyMaskComp.dirtyMask.reset(fieldNumber);
@@ -68,113 +68,113 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
         }
         case ActorBaseAttributesS2C::kTransformFieldNumber:
         {
-            // 同步 transform 属性（字段编号：2）
-            // 通用处理：消息类型字段通过CopyFrom同步
+            // Sync transform attribute (field number: 2)
+            // General case: message-type field, sync via CopyFrom
             auto& fieldComponent = actorRegistry.get_or_emplace<Transform>(entity);
             if (syncMsg.mutable_transform() != nullptr) {
                 syncMsg.mutable_transform()->CopyFrom(fieldComponent);
-                // 同步完成后清除脏标记
+                // Clear dirty flag after sync
                 dirtyMaskComp.dirtyMask.reset(fieldNumber);
             }
             break;
         }
         case ActorBaseAttributesS2C::kVelocityFieldNumber:
         {
-            // 同步 velocity 属性（字段编号：3）
-            // 通用处理：消息类型字段通过CopyFrom同步
+            // Sync velocity attribute (field number: 3)
+            // General case: message-type field, sync via CopyFrom
             auto& fieldComponent = actorRegistry.get_or_emplace<Velocity>(entity);
             if (syncMsg.mutable_velocity() != nullptr) {
                 syncMsg.mutable_velocity()->CopyFrom(fieldComponent);
-                // 同步完成后清除脏标记
+                // Clear dirty flag after sync
                 dirtyMaskComp.dirtyMask.reset(fieldNumber);
             }
             break;
         }
         case ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber:
         {
-            // 同步 combat_state_flags 属性（字段编号：4）
-            // 通用处理：消息类型字段通过CopyFrom同步
+            // Sync combat_state_flags attribute (field number: 4)
+            // General case: message-type field, sync via CopyFrom
             auto& fieldComponent = actorRegistry.get_or_emplace<CombatStateFlagsComp>(entity);
             if (syncMsg.mutable_combat_state_flags() != nullptr) {
                 syncMsg.mutable_combat_state_flags()->CopyFrom(fieldComponent);
-                // 同步完成后清除脏标记
+                // Clear dirty flag after sync
                 dirtyMaskComp.dirtyMask.reset(fieldNumber);
             }
             break;
         }
         default:
-            // 未知字段编号，跳过处理
+            // Unknown field number, skip
             break;
         }
     }
 
-    // 前置校验：消息无有效内容，无需广播
+    // Pre-check: no valid content in message, skip broadcast
     if (syncMsg.ByteSizeLong() == 0) {
         return;
     }
 
-    // 6. 广播消息到指定的玩家列表（模板适配任意可迭代容器）
+    // 6. Broadcast message to specified player list (template adapts to any iterable container)
     BroadcastMessageToPlayers(
         message_id,
         syncMsg,
         targetPlayers
     );
 
-    // 显式清理消息对象（RAII自动处理，此处仅为语义说明）
+    // Explicit message cleanup (RAII handles this automatically; here for clarity)
     syncMsg.Clear();
 }
 
 // ============================================================================
-// ActorBaseAttributesS2C Attribute Sync (重载版本：EntityUnorderedSet)
-// 功能：同步 ActorBaseAttributesS2C 消息对应的实体属性到指定的无序玩家集合
-// 参数：
-//   entity: entt 实体ID，标识需要同步属性的目标实体
-//   message_id: 网络广播使用的消息ID，用于客户端识别消息类型
-//   targetPlayers: 需要同步的玩家实体集合（无序）
-// 返回值：void
+// ActorBaseAttributesS2C Attribute Sync (overload: EntityUnorderedSet)
+// Purpose: Sync entity attributes for ActorBaseAttributesS2C to an unordered player set
+// Params:
+//   entity: entt entity ID identifying the target entity to sync
+//   message_id: broadcast message ID for client-side message type identification
+//   targetPlayers: unordered set of player entities to sync to
+// Returns: void
 // ============================================================================
 void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityUnorderedSet& targetPlayers)
 {
-    // 调用模板核心函数，传入无序集合
+    // Delegate to core template function with unordered set
     ActorBaseAttributesS2CSyncAttributesCore(entity, message_id, targetPlayers);
 }
 
 // ============================================================================
-// ActorBaseAttributesS2C Attribute Sync (重载版本：EntityVector)
-// 功能：同步 ActorBaseAttributesS2C 消息对应的实体属性到指定的有序玩家列表
-// 参数：
-//   entity: entt 实体ID，标识需要同步属性的目标实体
-//   message_id: 网络广播使用的消息ID，用于客户端识别消息类型
-//   targetPlayers: 需要同步的玩家实体列表（有序）
-// 返回值：void
+// ActorBaseAttributesS2C Attribute Sync (overload: EntityVector)
+// Purpose: Sync entity attributes for ActorBaseAttributesS2C to an ordered player list
+// Params:
+//   entity: entt entity ID identifying the target entity to sync
+//   message_id: broadcast message ID for client-side message type identification
+//   targetPlayers: ordered list of player entities to sync to
+// Returns: void
 // ============================================================================
 void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityVector& targetPlayers)
 {
-    // 调用模板核心函数，传入有序列表
+    // Delegate to core template function with ordered list
     ActorBaseAttributesS2CSyncAttributesCore(entity, message_id, targetPlayers);
 }
 
 // ============================================================================
 // SetActorBaseAttributesS2CAttrDirtyBit
-// 功能：设置 ActorBaseAttributesS2C 消息对应属性的脏位（自动扩容bitset）
-// 参数：
-//   entity: entt 实体ID，标识需要操作的目标实体
-//   bitIdx: 脏位索引，对应Proto消息中字段的编号
-// 返回值：void
+// Purpose: Set dirty bit for a ActorBaseAttributesS2C attribute (auto-resizes bitset)
+// Params:
+//   entity: entt entity ID identifying the target entity
+//   bitIdx: dirty bit index, corresponds to proto message field number
+// Returns: void
 // ============================================================================
 void SetActorBaseAttributesS2CAttrDirtyBit(entt::entity entity, std::size_t bitIdx)
 {
-    // 获取线程局部的Actor注册表
+    // Get thread-local actor registry
     auto& actorRegistry = tlsRegistryManager.actorRegistry;
 
-    // 获取/创建脏掩码组件
+    // Get or create dirty mask component
     auto& dirtyMaskComp = actorRegistry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
 
-    // 自动扩容bitset：确保脏位索引有效
+    // Auto-resize bitset: ensure dirty bit index is valid
     if (dirtyMaskComp.dirtyMask.size() <= bitIdx) {
         dirtyMaskComp.dirtyMask.resize(bitIdx + 1);
     }
 
-    // 标记该位为脏（需要同步）
+    // Mark this bit as dirty (needs sync)
     dirtyMaskComp.dirtyMask.set(bitIdx);
 }

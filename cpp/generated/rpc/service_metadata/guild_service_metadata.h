@@ -30,3 +30,15 @@ constexpr uint32_t GuildServiceDisbandGuildIndex = 5;
 constexpr uint32_t GuildServiceSetAnnouncementMessageId = 39;
 constexpr uint32_t GuildServiceSetAnnouncementIndex = 6;
 #define GuildServiceSetAnnouncementMethod  ::GuildService_Stub::descriptor()->method(6)
+
+constexpr uint32_t GuildServiceUpdateGuildScoreMessageId = 8;
+constexpr uint32_t GuildServiceUpdateGuildScoreIndex = 7;
+#define GuildServiceUpdateGuildScoreMethod  ::GuildService_Stub::descriptor()->method(7)
+
+constexpr uint32_t GuildServiceGetGuildRankMessageId = 27;
+constexpr uint32_t GuildServiceGetGuildRankIndex = 8;
+#define GuildServiceGetGuildRankMethod  ::GuildService_Stub::descriptor()->method(8)
+
+constexpr uint32_t GuildServiceGetGuildRankByGuildMessageId = 52;
+constexpr uint32_t GuildServiceGetGuildRankByGuildIndex = 9;
+#define GuildServiceGetGuildRankByGuildMethod  ::GuildService_Stub::descriptor()->method(9)

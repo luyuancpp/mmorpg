@@ -23,7 +23,7 @@ const (
 
 type CombatStateFlagsComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	StateFlags    map[uint32]bool        `protobuf:"bytes,1,rep,name=state_flags,json=stateFlags,proto3" json:"state_flags,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 单独的属性同步映射
+	StateFlags    map[uint32]bool        `protobuf:"bytes,1,rep,name=state_flags,json=stateFlags,proto3" json:"state_flags,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Per-attribute sync map
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -65,12 +65,12 @@ func (x *CombatStateFlagsComp) GetStateFlags() map[uint32]bool {
 	return nil
 }
 
-// 计算属性，服务器端计算
+// Calculated attributes, computed server-side
 type CalculatedAttributesComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AttackPower   uint64                 `protobuf:"varint,1,opt,name=attack_power,json=attackPower,proto3" json:"attack_power,omitempty"`    // 攻击力
-	DefensePower  uint64                 `protobuf:"varint,2,opt,name=defense_power,json=defensePower,proto3" json:"defense_power,omitempty"` // 防御力
-	IsDead        bool                   `protobuf:"varint,3,opt,name=isDead,proto3" json:"isDead,omitempty"`                                 // 独立的生死状态
+	AttackPower   uint64                 `protobuf:"varint,1,opt,name=attack_power,json=attackPower,proto3" json:"attack_power,omitempty"`    // Attack power
+	DefensePower  uint64                 `protobuf:"varint,2,opt,name=defense_power,json=defensePower,proto3" json:"defense_power,omitempty"` // Defense power
+	IsDead        bool                   `protobuf:"varint,3,opt,name=isDead,proto3" json:"isDead,omitempty"`                                 // Dead/alive state
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -126,10 +126,10 @@ func (x *CalculatedAttributesComp) GetIsDead() bool {
 	return false
 }
 
-// 衍生属性，服务器端计算
+// Derived attributes, computed server-side
 type DerivedAttributesComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaxHealth     uint64                 `protobuf:"varint,1,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"` // 最大生命值
+	MaxHealth     uint64                 `protobuf:"varint,1,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"` // Max HP
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

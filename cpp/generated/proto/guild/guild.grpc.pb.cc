@@ -30,6 +30,9 @@ static const char* GuildService_method_names[] = {
   "/guildpb.GuildService/LeaveGuild",
   "/guildpb.GuildService/DisbandGuild",
   "/guildpb.GuildService/SetAnnouncement",
+  "/guildpb.GuildService/UpdateGuildScore",
+  "/guildpb.GuildService/GetGuildRank",
+  "/guildpb.GuildService/GetGuildRankByGuild",
 };
 
 std::unique_ptr< GuildService::Stub> GuildService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -46,6 +49,9 @@ GuildService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& chann
   , rpcmethod_LeaveGuild_(GuildService_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_DisbandGuild_(GuildService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_SetAnnouncement_(GuildService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UpdateGuildScore_(GuildService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetGuildRank_(GuildService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetGuildRankByGuild_(GuildService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status GuildService::Stub::CreateGuild(::grpc::ClientContext* context, const ::guildpb::CreateGuildRequest& request, ::guildpb::CreateGuildResponse* response) {
@@ -209,6 +215,75 @@ void GuildService::Stub::async::SetAnnouncement(::grpc::ClientContext* context, 
   return result;
 }
 
+::grpc::Status GuildService::Stub::UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::guildpb::UpdateGuildScoreResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::guildpb::UpdateGuildScoreRequest, ::guildpb::UpdateGuildScoreResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UpdateGuildScore_, context, request, response);
+}
+
+void GuildService::Stub::async::UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::guildpb::UpdateGuildScoreRequest, ::guildpb::UpdateGuildScoreResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UpdateGuildScore_, context, request, response, std::move(f));
+}
+
+void GuildService::Stub::async::UpdateGuildScore(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UpdateGuildScore_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::guildpb::UpdateGuildScoreResponse>* GuildService::Stub::PrepareAsyncUpdateGuildScoreRaw(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::guildpb::UpdateGuildScoreResponse, ::guildpb::UpdateGuildScoreRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UpdateGuildScore_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::guildpb::UpdateGuildScoreResponse>* GuildService::Stub::AsyncUpdateGuildScoreRaw(::grpc::ClientContext* context, const ::guildpb::UpdateGuildScoreRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUpdateGuildScoreRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status GuildService::Stub::GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::guildpb::GetGuildRankResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::guildpb::GetGuildRankRequest, ::guildpb::GetGuildRankResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetGuildRank_, context, request, response);
+}
+
+void GuildService::Stub::async::GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::guildpb::GetGuildRankRequest, ::guildpb::GetGuildRankResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetGuildRank_, context, request, response, std::move(f));
+}
+
+void GuildService::Stub::async::GetGuildRank(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetGuildRank_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankResponse>* GuildService::Stub::PrepareAsyncGetGuildRankRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::guildpb::GetGuildRankResponse, ::guildpb::GetGuildRankRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetGuildRank_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankResponse>* GuildService::Stub::AsyncGetGuildRankRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetGuildRankRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status GuildService::Stub::GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::guildpb::GetGuildRankByGuildResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::guildpb::GetGuildRankByGuildRequest, ::guildpb::GetGuildRankByGuildResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetGuildRankByGuild_, context, request, response);
+}
+
+void GuildService::Stub::async::GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::guildpb::GetGuildRankByGuildRequest, ::guildpb::GetGuildRankByGuildResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetGuildRankByGuild_, context, request, response, std::move(f));
+}
+
+void GuildService::Stub::async::GetGuildRankByGuild(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetGuildRankByGuild_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankByGuildResponse>* GuildService::Stub::PrepareAsyncGetGuildRankByGuildRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::guildpb::GetGuildRankByGuildResponse, ::guildpb::GetGuildRankByGuildRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetGuildRankByGuild_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::guildpb::GetGuildRankByGuildResponse>* GuildService::Stub::AsyncGetGuildRankByGuildRaw(::grpc::ClientContext* context, const ::guildpb::GetGuildRankByGuildRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetGuildRankByGuildRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 GuildService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       GuildService_method_names[0],
@@ -280,6 +355,36 @@ GuildService::Service::Service() {
              ::guildpb::SetAnnouncementResponse* resp) {
                return service->SetAnnouncement(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      GuildService_method_names[7],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< GuildService::Service, ::guildpb::UpdateGuildScoreRequest, ::guildpb::UpdateGuildScoreResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](GuildService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::guildpb::UpdateGuildScoreRequest* req,
+             ::guildpb::UpdateGuildScoreResponse* resp) {
+               return service->UpdateGuildScore(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      GuildService_method_names[8],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< GuildService::Service, ::guildpb::GetGuildRankRequest, ::guildpb::GetGuildRankResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](GuildService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::guildpb::GetGuildRankRequest* req,
+             ::guildpb::GetGuildRankResponse* resp) {
+               return service->GetGuildRank(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      GuildService_method_names[9],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< GuildService::Service, ::guildpb::GetGuildRankByGuildRequest, ::guildpb::GetGuildRankByGuildResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](GuildService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::guildpb::GetGuildRankByGuildRequest* req,
+             ::guildpb::GetGuildRankByGuildResponse* resp) {
+               return service->GetGuildRankByGuild(ctx, req, resp);
+             }, this)));
 }
 
 GuildService::Service::~Service() {
@@ -328,6 +433,27 @@ GuildService::Service::~Service() {
 }
 
 ::grpc::Status GuildService::Service::SetAnnouncement(::grpc::ServerContext* context, const ::guildpb::SetAnnouncementRequest* request, ::guildpb::SetAnnouncementResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status GuildService::Service::UpdateGuildScore(::grpc::ServerContext* context, const ::guildpb::UpdateGuildScoreRequest* request, ::guildpb::UpdateGuildScoreResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status GuildService::Service::GetGuildRank(::grpc::ServerContext* context, const ::guildpb::GetGuildRankRequest* request, ::guildpb::GetGuildRankResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status GuildService::Service::GetGuildRankByGuild(::grpc::ServerContext* context, const ::guildpb::GetGuildRankByGuildRequest* request, ::guildpb::GetGuildRankByGuildResponse* response) {
   (void) context;
   (void) request;
   (void) response;

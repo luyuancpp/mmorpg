@@ -44,6 +44,7 @@ func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest
 		Level:        1,
 		CreateTimeMs: now,
 		MaxMembers:   50,
+		ZoneID:       req.ZoneId,
 		Members: []data.MemberData{
 			{
 				PlayerID:     req.PlayerId,
@@ -59,6 +60,10 @@ func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest
 	}
 	if err := l.repo.SetPlayerGuild(ctx, req.PlayerId, guildID); err != nil {
 		logx.Errorf("set player guild mapping: %v", err)
+	}
+	// 新公会加入排行榜（初始分数 0）
+	if err := l.repo.UpdateGuildScore(ctx, guildID, req.ZoneId, 0); err != nil {
+		logx.Errorf("init guild rank score: %v", err)
 	}
 
 	return &pb.CreateGuildResponse{Guild: toProtoGuild(guild)}, nil
@@ -213,6 +218,10 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 	if err := l.repo.DeleteGuild(ctx, guildID); err != nil {
 		return nil, err
 	}
+	// 从排行榜移除
+	if err := l.repo.RemoveGuildFromRank(ctx, guildID, guild.ZoneID); err != nil {
+		logx.Errorf("remove guild %d from rank: %v", guildID, err)
+	}
 	return &pb.DisbandGuildResponse{}, nil
 }
 
@@ -248,6 +257,111 @@ func (l *GuildLogic) SetAnnouncement(ctx context.Context, req *pb.SetAnnouncemen
 	return &pb.SetAnnouncementResponse{}, nil
 }
 
+// ── 排行榜 ─────────────────────────────────────────────────────
+
+func (l *GuildLogic) UpdateGuildScore(ctx context.Context, req *pb.UpdateGuildScoreRequest) (*pb.UpdateGuildScoreResponse, error) {
+	guild, err := l.repo.GetGuild(ctx, req.GuildId)
+	if err != nil {
+		return nil, err
+	}
+	if guild == nil {
+		return &pb.UpdateGuildScoreResponse{
+			ErrorMessage: &base.TipInfoMessage{Id: 2, Parameters: []string{"guild not found"}},
+		}, nil
+	}
+	// Use the guild's own zone_id for per-zone ranking
+	zoneID := guild.ZoneID
+	if req.ZoneId > 0 {
+		zoneID = req.ZoneId
+	}
+	if err := l.repo.UpdateGuildScore(ctx, req.GuildId, zoneID, req.Score); err != nil {
+		return nil, fmt.Errorf("update guild score: %w", err)
+	}
+	return &pb.UpdateGuildScoreResponse{}, nil
+}
+
+func (l *GuildLogic) GetGuildRank(ctx context.Context, req *pb.GetGuildRankRequest) (*pb.GetGuildRankResponse, error) {
+	pageSize := req.PageSize
+	if pageSize == 0 {
+		pageSize = 20
+	}
+	page := req.Page
+	if page == 0 {
+		page = 1
+	}
+
+	entries, total, err := l.repo.GetGuildRankPage(ctx, req.ZoneId, page, pageSize)
+	if err != nil {
+		return nil, fmt.Errorf("get guild rank page: %w", err)
+	}
+
+	pbEntries, err := l.enrichRankEntries(ctx, entries)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetGuildRankResponse{
+		Entries:    pbEntries,
+		TotalCount: total,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
+}
+
+func (l *GuildLogic) GetGuildRankByGuild(ctx context.Context, req *pb.GetGuildRankByGuildRequest) (*pb.GetGuildRankByGuildResponse, error) {
+	entry, err := l.repo.GetGuildRank(ctx, req.GuildId, req.ZoneId)
+	if err != nil {
+		return nil, err
+	}
+	if entry.Rank == 0 {
+		return &pb.GetGuildRankByGuildResponse{
+			ErrorMessage: &base.TipInfoMessage{Id: 8, Parameters: []string{"guild not ranked"}},
+		}, nil
+	}
+
+	guild, err := l.repo.GetGuild(ctx, entry.GuildID)
+	if err != nil {
+		return nil, err
+	}
+
+	pbEntry := &pb.GuildRankEntry{
+		GuildId: entry.GuildID,
+		Score:   entry.Score,
+		Rank:    entry.Rank,
+	}
+	if guild != nil {
+		pbEntry.Name = guild.Name
+		pbEntry.LeaderId = guild.LeaderID
+		pbEntry.Level = guild.Level
+		pbEntry.MemberCount = uint32(len(guild.Members))
+	}
+
+	return &pb.GetGuildRankByGuildResponse{Entry: pbEntry}, nil
+}
+
+// enrichRankEntries fills in guild name/level/member_count from cache for a page of rank entries.
+func (l *GuildLogic) enrichRankEntries(ctx context.Context, entries []data.RankEntry) ([]*pb.GuildRankEntry, error) {
+	result := make([]*pb.GuildRankEntry, 0, len(entries))
+	for _, e := range entries {
+		pbEntry := &pb.GuildRankEntry{
+			GuildId: e.GuildID,
+			Score:   e.Score,
+			Rank:    e.Rank,
+		}
+		guild, err := l.repo.GetGuild(ctx, e.GuildID)
+		if err != nil {
+			logx.Errorf("enrich rank entry guild %d: %v", e.GuildID, err)
+		} else if guild != nil {
+			pbEntry.Name = guild.Name
+			pbEntry.LeaderId = guild.LeaderID
+			pbEntry.Level = guild.Level
+			pbEntry.MemberCount = uint32(len(guild.Members))
+		}
+		result = append(result, pbEntry)
+	}
+	return result, nil
+}
+
 // ── Proto conversion ───────────────────────────────────────────
 
 func toProtoGuild(g *data.GuildData) *pb.GuildInfo {
@@ -262,6 +376,7 @@ func toProtoGuild(g *data.GuildData) *pb.GuildInfo {
 		Announcement: g.Announcement,
 		CreateTimeMs: g.CreateTimeMs,
 		MaxMembers:   g.MaxMembers,
+		ZoneId:       g.ZoneID,
 	}
 	for _, m := range g.Members {
 		info.Members = append(info.Members, &pb.GuildMember{

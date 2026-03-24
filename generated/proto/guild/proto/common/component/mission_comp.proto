@@ -16,17 +16,17 @@ message MissionComp
 	uint32 id = 1;
 	uint32 status = 2;
 	repeated uint32 progress = 3;
-	bytes data = 4; // 各种类型buff的各种数据
+	bytes data = 4; // Various buff data
 }
 
 message MissionListComp
 {
 	enum eMissionScope
 	{
-		kPlayerMission = 0;//普通任务
-		kPlayerAchievment = 1;//成就
-		kPlayerDailyActivity = 2;//每日活动
-		kPlayerMissionSize = 3;//最大值
+		kPlayerMission = 0;// Normal missions
+		kPlayerAchievment = 1;// Achievements
+		kPlayerDailyActivity = 2;// Daily activities
+		kPlayerMissionSize = 3;// Max enum value
 	}
 	map<uint32, MissionComp> missions = 1;
 	bytes complete_missions = 2;

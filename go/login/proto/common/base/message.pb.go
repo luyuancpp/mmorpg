@@ -21,11 +21,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 路由节点信息
+// Routing node info
 type RoutingNodeInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeInfo      *NodeInfo              `protobuf:"bytes,1,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"`     // 节点信息
-	MessageId     uint32                 `protobuf:"varint,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"` // 消息 ID
+	NodeInfo      *NodeInfo              `protobuf:"bytes,1,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"`     // Node info
+	MessageId     uint32                 `protobuf:"varint,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"` // Message ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -74,13 +74,13 @@ func (x *RoutingNodeInfo) GetMessageId() uint32 {
 	return 0
 }
 
-// 消息主体
+// Message content
 type MessageContent struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	SerializedMessage []byte                 `protobuf:"bytes,1,opt,name=serialized_message,json=serializedMessage,proto3" json:"serialized_message,omitempty"` // 消息内容
-	MessageId         uint32                 `protobuf:"varint,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`                        // 消息 ID
-	Id                uint64                 `protobuf:"varint,3,opt,name=id,proto3" json:"id,omitempty"`                                                       // 消息的唯一 ID
-	ErrorMessage      *TipInfoMessage        `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`                // 错误消息（可选）
+	SerializedMessage []byte                 `protobuf:"bytes,1,opt,name=serialized_message,json=serializedMessage,proto3" json:"serialized_message,omitempty"` // Serialized message body
+	MessageId         uint32                 `protobuf:"varint,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`                        // Message ID
+	Id                uint64                 `protobuf:"varint,3,opt,name=id,proto3" json:"id,omitempty"`                                                       // Unique message ID
+	ErrorMessage      *TipInfoMessage        `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`                // Error message (optional)
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -143,11 +143,11 @@ func (x *MessageContent) GetErrorMessage() *TipInfoMessage {
 	return nil
 }
 
-// 节点消息头部
+// Node message header
 type NodeMessageHeader struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeId        uint32                 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`          // 节点 ID
-	SessionId     uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // 会话 ID
+	NodeId        uint32                 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`          // Node ID
+	SessionId     uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // Session ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -196,11 +196,11 @@ func (x *NodeMessageHeader) GetSessionId() uint64 {
 	return 0
 }
 
-// 节点路由消息请求
+// Node route message request
 type NodeRouteMessageRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // 消息内容
-	Header         *NodeMessageHeader     `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // 节点消息头
+	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // Message content
+	Header         *NodeMessageHeader     `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // Node message header
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -249,11 +249,11 @@ func (x *NodeRouteMessageRequest) GetHeader() *NodeMessageHeader {
 	return nil
 }
 
-// 节点路由消息响应
+// Node route message response
 type NodeRouteMessageResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // 消息内容
-	Header         *NodeMessageHeader     `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // 节点消息头
+	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // Message content
+	Header         *NodeMessageHeader     `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // Node message header
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -302,10 +302,10 @@ func (x *NodeRouteMessageResponse) GetHeader() *NodeMessageHeader {
 	return nil
 }
 
-// 玩家信息（外部）
+// Player info (external)
 type PlayerInfoExternal struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"` // 玩家 ID
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"` // Player ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -347,11 +347,11 @@ func (x *PlayerInfoExternal) GetPlayerId() uint64 {
 	return 0
 }
 
-// 玩家节点服务请求
+// Player node service request
 type PlayerNodeServiceRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // 消息内容
-	Header         *PlayerInfoExternal    `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // 玩家信息
+	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // Message content
+	Header         *PlayerInfoExternal    `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // Player info
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -400,11 +400,11 @@ func (x *PlayerNodeServiceRequest) GetHeader() *PlayerInfoExternal {
 	return nil
 }
 
-// 玩家消息响应
+// Player message response
 type PlayerMessageResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // 消息内容
-	Header         *PlayerInfoExternal    `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // 玩家信息
+	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // Message content
+	Header         *PlayerInfoExternal    `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // Player info
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -453,10 +453,10 @@ func (x *PlayerMessageResponse) GetHeader() *PlayerInfoExternal {
 	return nil
 }
 
-// 节点路由消息体
+// Node routing message body
 type NodeRoutingMessageBody struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeInfo      *NodeInfo              `protobuf:"bytes,2,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"` // 节点信息
+	NodeInfo      *NodeInfo              `protobuf:"bytes,2,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"` // Node info
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -498,11 +498,11 @@ func (x *NodeRoutingMessageBody) GetNodeInfo() *NodeInfo {
 	return nil
 }
 
-// 注册游戏节点会话请求
+// Register scene node session request
 type RegisterGameNodeSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`    // 会话详情
-	SceneNodeId   uint32                 `protobuf:"varint,2,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"` // 游戏节点 ID
+	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`    // Session details
+	SceneNodeId   uint32                 `protobuf:"varint,2,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"` // Scene node ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -551,10 +551,10 @@ func (x *RegisterGameNodeSessionRequest) GetSceneNodeId() uint32 {
 	return 0
 }
 
-// 注册游戏节点会话响应
+// Register scene node session response
 type RegisterGameNodeSessionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // 会话详情
+	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // Session details
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -596,10 +596,10 @@ func (x *RegisterGameNodeSessionResponse) GetSessionInfo() *SessionDetails {
 	return nil
 }
 
-// 注册网关节点会话响应
+// Register gate node session response
 type RegisterGateNodeSessionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // 会话详情
+	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // Session details
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -641,11 +641,11 @@ func (x *RegisterGateNodeSessionResponse) GetSessionInfo() *SessionDetails {
 	return nil
 }
 
-// 注册中心节点会话请求
+// Register centre node session request
 type RegisterCentreSessionNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`       // 会话详情
-	CentreNodeId  uint32                 `protobuf:"varint,2,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"` // 中心节点 ID
+	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`       // Session details
+	CentreNodeId  uint32                 `protobuf:"varint,2,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"` // Centre node ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -694,10 +694,10 @@ func (x *RegisterCentreSessionNodeRequest) GetCentreNodeId() uint32 {
 	return 0
 }
 
-// 注册中心节点会话响应
+// Register centre node session response
 type RegisterSessionCentreNodeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // 会话详情
+	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // Session details
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -739,10 +739,10 @@ func (x *RegisterSessionCentreNodeResponse) GetSessionInfo() *SessionDetails {
 	return nil
 }
 
-// 网关会话断开请求
+// Gate session disconnect request
 type GateSessionDisconnectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // 会话详情
+	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // Session details
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -784,14 +784,14 @@ func (x *GateSessionDisconnectRequest) GetSessionInfo() *SessionDetails {
 	return nil
 }
 
-// 路由消息请求（字符串形式）
+// Route message request (bytes form)
 type RouteMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // 消息内容（字符串）
-	RouteNodes    []*RoutingNodeInfo     `protobuf:"bytes,2,rep,name=route_nodes,json=routeNodes,proto3" json:"route_nodes,omitempty"` // 路由节点信息列表
-	SessionId     uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // 会话 ID
-	Id            uint64                 `protobuf:"varint,4,opt,name=id,proto3" json:"id,omitempty"`                                  // 消息唯一 ID
-	IsClient      bool                   `protobuf:"varint,5,opt,name=is_client,json=isClient,proto3" json:"is_client,omitempty"`      // 是否为客户端消息
+	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
+	RouteNodes    []*RoutingNodeInfo     `protobuf:"bytes,2,rep,name=route_nodes,json=routeNodes,proto3" json:"route_nodes,omitempty"` // Routing node list
+	SessionId     uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // Session ID
+	Id            uint64                 `protobuf:"varint,4,opt,name=id,proto3" json:"id,omitempty"`                                  // Unique message ID
+	IsClient      bool                   `protobuf:"varint,5,opt,name=is_client,json=isClient,proto3" json:"is_client,omitempty"`      // Whether from client
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -861,14 +861,14 @@ func (x *RouteMessageRequest) GetIsClient() bool {
 	return false
 }
 
-// 路由消息响应（字符串形式）
+// Route message response (bytes form)
 type RouteMessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // 消息内容（字符串）
-	RouteNodes    []*RoutingNodeInfo     `protobuf:"bytes,2,rep,name=route_nodes,json=routeNodes,proto3" json:"route_nodes,omitempty"` // 路由节点信息列表
-	SessionId     uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // 会话 ID
-	Id            uint64                 `protobuf:"varint,4,opt,name=id,proto3" json:"id,omitempty"`                                  // 消息唯一 ID
-	IsClient      bool                   `protobuf:"varint,5,opt,name=is_client,json=isClient,proto3" json:"is_client,omitempty"`      // 是否为客户端消息
+	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
+	RouteNodes    []*RoutingNodeInfo     `protobuf:"bytes,2,rep,name=route_nodes,json=routeNodes,proto3" json:"route_nodes,omitempty"` // Routing node list
+	SessionId     uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // Session ID
+	Id            uint64                 `protobuf:"varint,4,opt,name=id,proto3" json:"id,omitempty"`                                  // Unique message ID
+	IsClient      bool                   `protobuf:"varint,5,opt,name=is_client,json=isClient,proto3" json:"is_client,omitempty"`      // Whether from client
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -938,12 +938,12 @@ func (x *RouteMessageResponse) GetIsClient() bool {
 	return false
 }
 
-// 路由玩家消息请求（字符串形式）
+// Route player message request (bytes form)
 type RoutePlayerMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // 消息内容（字符串）
-	NodeList      []*NodeInfo            `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // 节点列表
-	PlayerInfo    *PlayerInfoExternal    `protobuf:"bytes,3,opt,name=player_info,json=playerInfo,proto3" json:"player_info,omitempty"` // 玩家信息
+	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
+	NodeList      []*NodeInfo            `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // Node list
+	PlayerInfo    *PlayerInfoExternal    `protobuf:"bytes,3,opt,name=player_info,json=playerInfo,proto3" json:"player_info,omitempty"` // Player info
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -999,12 +999,12 @@ func (x *RoutePlayerMessageRequest) GetPlayerInfo() *PlayerInfoExternal {
 	return nil
 }
 
-// 路由玩家消息响应（字符串形式）
+// Route player message response (bytes form)
 type RoutePlayerMessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // 消息内容（字符串）
-	NodeList      []*NodeInfo            `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // 节点列表
-	PlayerInfo    *PlayerInfoExternal    `protobuf:"bytes,3,opt,name=player_info,json=playerInfo,proto3" json:"player_info,omitempty"` // 玩家信息
+	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
+	NodeList      []*NodeInfo            `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // Node list
+	PlayerInfo    *PlayerInfoExternal    `protobuf:"bytes,3,opt,name=player_info,json=playerInfo,proto3" json:"player_info,omitempty"` // Player info
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1060,14 +1060,14 @@ func (x *RoutePlayerMessageResponse) GetPlayerInfo() *PlayerInfoExternal {
 	return nil
 }
 
-// 注册游戏节点请求
+// Register scene node request
 type RegisterGameNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcClient     *NetworkAddress        `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`                // 客户端 RPC 地址
-	RpcServer     *NetworkAddress        `protobuf:"bytes,2,opt,name=rpc_server,json=rpcServer,proto3" json:"rpc_server,omitempty"`                // 服务器 RPC 地址
-	SceneNodeId   uint32                 `protobuf:"varint,3,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`       // 游戏节点 ID
-	ServerType    uint32                 `protobuf:"varint,4,opt,name=server_type,json=serverType,proto3" json:"server_type,omitempty"`            // 服务器类型
-	SceneNodeType uint32                 `protobuf:"varint,5,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"` // 服务器类型
+	RpcClient     *NetworkAddress        `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`                // Client RPC address
+	RpcServer     *NetworkAddress        `protobuf:"bytes,2,opt,name=rpc_server,json=rpcServer,proto3" json:"rpc_server,omitempty"`                // Server RPC address
+	SceneNodeId   uint32                 `protobuf:"varint,3,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`       // Scene node ID
+	ServerType    uint32                 `protobuf:"varint,4,opt,name=server_type,json=serverType,proto3" json:"server_type,omitempty"`            // Server type
+	SceneNodeType uint32                 `protobuf:"varint,5,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"` // Scene node type
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1137,11 +1137,11 @@ func (x *RegisterGameNodeRequest) GetSceneNodeType() uint32 {
 	return 0
 }
 
-// 注册网关节点请求
+// Register gate node request
 type RegisterGateNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RpcClient     *NetworkAddress        `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`       // 客户端 RPC 地址
-	GateNodeId    uint32                 `protobuf:"varint,2,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"` // 网关节点 ID
+	RpcClient     *NetworkAddress        `protobuf:"bytes,1,opt,name=rpc_client,json=rpcClient,proto3" json:"rpc_client,omitempty"`       // Client RPC address
+	GateNodeId    uint32                 `protobuf:"varint,2,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"` // Gate node ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1190,10 +1190,10 @@ func (x *RegisterGateNodeRequest) GetGateNodeId() uint32 {
 	return 0
 }
 
-// 注销游戏节点请求
+// Unregister scene node request
 type UnregisterGameNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneNodeId   uint32                 `protobuf:"varint,1,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"` // 游戏节点 ID
+	SceneNodeId   uint32                 `protobuf:"varint,1,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"` // Scene node ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1323,14 +1323,14 @@ func (x *ProtoFieldCheckerTestPB) GetSubMessage() *ProtoFieldCheckerTestSubPB {
 	return nil
 }
 
-// 主消息类型
+// Main message type (test)
 type MyProtoMessage struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	SingleInt32Field   int32                  `protobuf:"varint,1,opt,name=single_int32_field,json=singleInt32Field,proto3" json:"single_int32_field,omitempty"`              // 单个 int32 字段
-	SingleInt64Field   int64                  `protobuf:"varint,2,opt,name=single_int64_field,json=singleInt64Field,proto3" json:"single_int64_field,omitempty"`              // 单个 int64 字段
-	RepeatedInt32Field []int32                `protobuf:"varint,3,rep,packed,name=repeated_int32_field,json=repeatedInt32Field,proto3" json:"repeated_int32_field,omitempty"` // repeated int32 字段
-	RepeatedInt64Field []int64                `protobuf:"varint,4,rep,packed,name=repeated_int64_field,json=repeatedInt64Field,proto3" json:"repeated_int64_field,omitempty"` // repeated int64 字段
-	NestedMessage      *MyNestedMessage       `protobuf:"bytes,5,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`                          // 嵌套消息字段
+	SingleInt32Field   int32                  `protobuf:"varint,1,opt,name=single_int32_field,json=singleInt32Field,proto3" json:"single_int32_field,omitempty"`              // Single int32 field
+	SingleInt64Field   int64                  `protobuf:"varint,2,opt,name=single_int64_field,json=singleInt64Field,proto3" json:"single_int64_field,omitempty"`              // Single int64 field
+	RepeatedInt32Field []int32                `protobuf:"varint,3,rep,packed,name=repeated_int32_field,json=repeatedInt32Field,proto3" json:"repeated_int32_field,omitempty"` // Repeated int32 field
+	RepeatedInt64Field []int64                `protobuf:"varint,4,rep,packed,name=repeated_int64_field,json=repeatedInt64Field,proto3" json:"repeated_int64_field,omitempty"` // Repeated int64 field
+	NestedMessage      *MyNestedMessage       `protobuf:"bytes,5,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`                          // Nested message field
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1400,11 +1400,11 @@ func (x *MyProtoMessage) GetNestedMessage() *MyNestedMessage {
 	return nil
 }
 
-// 嵌套消息类型
+// Nested message type (test)
 type MyNestedMessage struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	NestedInt32Field int32                  `protobuf:"varint,1,opt,name=nested_int32_field,json=nestedInt32Field,proto3" json:"nested_int32_field,omitempty"` // 单个 int32 字段
-	NestedInt64Field int64                  `protobuf:"varint,2,opt,name=nested_int64_field,json=nestedInt64Field,proto3" json:"nested_int64_field,omitempty"` // 单个 int64 字段
+	NestedInt32Field int32                  `protobuf:"varint,1,opt,name=nested_int32_field,json=nestedInt32Field,proto3" json:"nested_int32_field,omitempty"` // Single int32 field
+	NestedInt64Field int64                  `protobuf:"varint,2,opt,name=nested_int64_field,json=nestedInt64Field,proto3" json:"nested_int64_field,omitempty"` // Single int64 field
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1591,8 +1591,8 @@ func (x *NodeHandshakeRequest) GetSelfNode() *NodeInfo {
 
 type NodeHandshakeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误消息（可选）
-	PeerNode      *NodeInfo              `protobuf:"bytes,2,opt,name=peer_node,json=peerNode,proto3" json:"peer_node,omitempty"`             // 对方的节点信息（返回的是对方）
+	ErrorMessage  *TipInfoMessage        `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // Error message (optional)
+	PeerNode      *NodeInfo              `protobuf:"bytes,2,opt,name=peer_node,json=peerNode,proto3" json:"peer_node,omitempty"`             // Peer node info (returns the remote side)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

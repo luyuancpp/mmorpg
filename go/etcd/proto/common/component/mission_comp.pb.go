@@ -79,10 +79,10 @@ func (MissionCompEMissionStatus) EnumDescriptor() ([]byte, []int) {
 type MissionListCompEMissionScope int32
 
 const (
-	MissionListComp_kPlayerMission       MissionListCompEMissionScope = 0 //普通任务
-	MissionListComp_kPlayerAchievment    MissionListCompEMissionScope = 1 //成就
-	MissionListComp_kPlayerDailyActivity MissionListCompEMissionScope = 2 //每日活动
-	MissionListComp_kPlayerMissionSize   MissionListCompEMissionScope = 3 //最大值
+	MissionListComp_kPlayerMission       MissionListCompEMissionScope = 0 // Normal missions
+	MissionListComp_kPlayerAchievment    MissionListCompEMissionScope = 1 // Achievements
+	MissionListComp_kPlayerDailyActivity MissionListCompEMissionScope = 2 // Daily activities
+	MissionListComp_kPlayerMissionSize   MissionListCompEMissionScope = 3 // Max enum value
 )
 
 // Enum value maps for MissionListCompEMissionScope.
@@ -133,7 +133,7 @@ type MissionComp struct {
 	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Status        uint32                 `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"`
 	Progress      []uint32               `protobuf:"varint,3,rep,packed,name=progress,proto3" json:"progress,omitempty"`
-	Data          []byte                 `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"` // 各种类型buff的各种数据
+	Data          []byte                 `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"` // Various buff data
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

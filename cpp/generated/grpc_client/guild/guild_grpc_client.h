@@ -146,6 +146,63 @@ void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity node
 void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetAnnouncementRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+#pragma region GuildServiceUpdateGuildScore
+
+struct AsyncGuildServiceUpdateGuildScoreGrpcClient {
+    uint32_t messageId{ GuildServiceUpdateGuildScoreMessageId };
+    ClientContext context;
+    Status status;
+    ::guildpb::UpdateGuildScoreResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::guildpb::UpdateGuildScoreResponse>> response_reader;
+};
+
+class ::guildpb::UpdateGuildScoreRequest;
+using AsyncGuildServiceUpdateGuildScoreHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::guildpb::UpdateGuildScoreResponse&)>;
+extern AsyncGuildServiceUpdateGuildScoreHandlerFunctionType AsyncGuildServiceUpdateGuildScoreHandler;
+
+void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request);
+void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region GuildServiceGetGuildRank
+
+struct AsyncGuildServiceGetGuildRankGrpcClient {
+    uint32_t messageId{ GuildServiceGetGuildRankMessageId };
+    ClientContext context;
+    Status status;
+    ::guildpb::GetGuildRankResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::guildpb::GetGuildRankResponse>> response_reader;
+};
+
+class ::guildpb::GetGuildRankRequest;
+using AsyncGuildServiceGetGuildRankHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::guildpb::GetGuildRankResponse&)>;
+extern AsyncGuildServiceGetGuildRankHandlerFunctionType AsyncGuildServiceGetGuildRankHandler;
+
+void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request);
+void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region GuildServiceGetGuildRankByGuild
+
+struct AsyncGuildServiceGetGuildRankByGuildGrpcClient {
+    uint32_t messageId{ GuildServiceGetGuildRankByGuildMessageId };
+    ClientContext context;
+    Status status;
+    ::guildpb::GetGuildRankByGuildResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::guildpb::GetGuildRankByGuildResponse>> response_reader;
+};
+
+class ::guildpb::GetGuildRankByGuildRequest;
+using AsyncGuildServiceGetGuildRankByGuildHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::guildpb::GetGuildRankByGuildResponse&)>;
+extern AsyncGuildServiceGetGuildRankByGuildHandlerFunctionType AsyncGuildServiceGetGuildRankByGuildHandler;
+
+void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request);
+void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 void SetGuildHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetGuildIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void HandleGuildCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);

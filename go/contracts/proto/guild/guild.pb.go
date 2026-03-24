@@ -108,6 +108,7 @@ type GuildInfo struct {
 	CreateTimeMs  int64                  `protobuf:"varint,6,opt,name=create_time_ms,json=createTimeMs,proto3" json:"create_time_ms,omitempty"`
 	MaxMembers    uint32                 `protobuf:"varint,7,opt,name=max_members,json=maxMembers,proto3" json:"max_members,omitempty"`
 	Members       []*GuildMember         `protobuf:"bytes,8,rep,name=members,proto3" json:"members,omitempty"`
+	ZoneId        uint32                 `protobuf:"varint,9,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"` // Zone this guild belongs to
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -198,10 +199,18 @@ func (x *GuildInfo) GetMembers() []*GuildMember {
 	return nil
 }
 
+func (x *GuildInfo) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
 type CreateGuildRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ZoneId        uint32                 `protobuf:"varint,3,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"` // Zone where the guild is created
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -248,6 +257,13 @@ func (x *CreateGuildRequest) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+func (x *CreateGuildRequest) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
 }
 
 type CreateGuildResponse struct {
@@ -870,6 +886,443 @@ func (x *SetAnnouncementResponse) GetErrorMessage() *base.TipInfoMessage {
 	return nil
 }
 
+// Guild summary in ranking (without full member list)
+type GuildRankEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GuildId       uint64                 `protobuf:"varint,1,opt,name=guild_id,json=guildId,proto3" json:"guild_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	LeaderId      uint64                 `protobuf:"varint,3,opt,name=leader_id,json=leaderId,proto3" json:"leader_id,omitempty"`
+	Level         uint32                 `protobuf:"varint,4,opt,name=level,proto3" json:"level,omitempty"`
+	MemberCount   uint32                 `protobuf:"varint,5,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"`
+	Score         int64                  `protobuf:"varint,6,opt,name=score,proto3" json:"score,omitempty"` // Ranking score
+	Rank          uint32                 `protobuf:"varint,7,opt,name=rank,proto3" json:"rank,omitempty"`   // Rank (1-based)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GuildRankEntry) Reset() {
+	*x = GuildRankEntry{}
+	mi := &file_proto_guild_guild_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildRankEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildRankEntry) ProtoMessage() {}
+
+func (x *GuildRankEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GuildRankEntry.ProtoReflect.Descriptor instead.
+func (*GuildRankEntry) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GuildRankEntry) GetGuildId() uint64 {
+	if x != nil {
+		return x.GuildId
+	}
+	return 0
+}
+
+func (x *GuildRankEntry) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GuildRankEntry) GetLeaderId() uint64 {
+	if x != nil {
+		return x.LeaderId
+	}
+	return 0
+}
+
+func (x *GuildRankEntry) GetLevel() uint32 {
+	if x != nil {
+		return x.Level
+	}
+	return 0
+}
+
+func (x *GuildRankEntry) GetMemberCount() uint32 {
+	if x != nil {
+		return x.MemberCount
+	}
+	return 0
+}
+
+func (x *GuildRankEntry) GetScore() int64 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+func (x *GuildRankEntry) GetRank() uint32 {
+	if x != nil {
+		return x.Rank
+	}
+	return 0
+}
+
+type UpdateGuildScoreRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GuildId       uint64                 `protobuf:"varint,1,opt,name=guild_id,json=guildId,proto3" json:"guild_id,omitempty"`
+	Score         int64                  `protobuf:"varint,2,opt,name=score,proto3" json:"score,omitempty"`                 // New ranking score
+	ZoneId        uint32                 `protobuf:"varint,3,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"` // Zone for per-zone ranking (0 = update global only)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateGuildScoreRequest) Reset() {
+	*x = UpdateGuildScoreRequest{}
+	mi := &file_proto_guild_guild_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateGuildScoreRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateGuildScoreRequest) ProtoMessage() {}
+
+func (x *UpdateGuildScoreRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateGuildScoreRequest.ProtoReflect.Descriptor instead.
+func (*UpdateGuildScoreRequest) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *UpdateGuildScoreRequest) GetGuildId() uint64 {
+	if x != nil {
+		return x.GuildId
+	}
+	return 0
+}
+
+func (x *UpdateGuildScoreRequest) GetScore() int64 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+func (x *UpdateGuildScoreRequest) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
+type UpdateGuildScoreResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateGuildScoreResponse) Reset() {
+	*x = UpdateGuildScoreResponse{}
+	mi := &file_proto_guild_guild_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateGuildScoreResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateGuildScoreResponse) ProtoMessage() {}
+
+func (x *UpdateGuildScoreResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateGuildScoreResponse.ProtoReflect.Descriptor instead.
+func (*UpdateGuildScoreResponse) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *UpdateGuildScoreResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+type GetGuildRankRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          uint32                 `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`                         // Page number (1-based)
+	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // Items per page
+	ZoneId        uint32                 `protobuf:"varint,3,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`       // 0 = global ranking, >0 = per-zone ranking
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGuildRankRequest) Reset() {
+	*x = GetGuildRankRequest{}
+	mi := &file_proto_guild_guild_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGuildRankRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGuildRankRequest) ProtoMessage() {}
+
+func (x *GetGuildRankRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGuildRankRequest.ProtoReflect.Descriptor instead.
+func (*GetGuildRankRequest) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetGuildRankRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetGuildRankRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *GetGuildRankRequest) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
+type GetGuildRankResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Entries       []*GuildRankEntry      `protobuf:"bytes,2,rep,name=entries,proto3" json:"entries,omitempty"`
+	TotalCount    uint32                 `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"` // Total guilds in ranking
+	Page          uint32                 `protobuf:"varint,4,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGuildRankResponse) Reset() {
+	*x = GetGuildRankResponse{}
+	mi := &file_proto_guild_guild_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGuildRankResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGuildRankResponse) ProtoMessage() {}
+
+func (x *GetGuildRankResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGuildRankResponse.ProtoReflect.Descriptor instead.
+func (*GetGuildRankResponse) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetGuildRankResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *GetGuildRankResponse) GetEntries() []*GuildRankEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *GetGuildRankResponse) GetTotalCount() uint32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
+func (x *GetGuildRankResponse) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetGuildRankResponse) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type GetGuildRankByGuildRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GuildId       uint64                 `protobuf:"varint,1,opt,name=guild_id,json=guildId,proto3" json:"guild_id,omitempty"`
+	ZoneId        uint32                 `protobuf:"varint,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"` // 0 = global ranking, >0 = per-zone ranking
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGuildRankByGuildRequest) Reset() {
+	*x = GetGuildRankByGuildRequest{}
+	mi := &file_proto_guild_guild_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGuildRankByGuildRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGuildRankByGuildRequest) ProtoMessage() {}
+
+func (x *GetGuildRankByGuildRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGuildRankByGuildRequest.ProtoReflect.Descriptor instead.
+func (*GetGuildRankByGuildRequest) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetGuildRankByGuildRequest) GetGuildId() uint64 {
+	if x != nil {
+		return x.GuildId
+	}
+	return 0
+}
+
+func (x *GetGuildRankByGuildRequest) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
+type GetGuildRankByGuildResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Entry         *GuildRankEntry        `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"` // Guild info in ranking (including rank)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGuildRankByGuildResponse) Reset() {
+	*x = GetGuildRankByGuildResponse{}
+	mi := &file_proto_guild_guild_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGuildRankByGuildResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGuildRankByGuildResponse) ProtoMessage() {}
+
+func (x *GetGuildRankByGuildResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGuildRankByGuildResponse.ProtoReflect.Descriptor instead.
+func (*GetGuildRankByGuildResponse) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetGuildRankByGuildResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *GetGuildRankByGuildResponse) GetEntry() *GuildRankEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return nil
+}
+
 var File_proto_guild_guild_proto protoreflect.FileDescriptor
 
 const file_proto_guild_guild_proto_rawDesc = "" +
@@ -881,7 +1334,7 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\fjoin_time_ms\x18\x03 \x01(\x03R\n" +
 	"joinTimeMs\x12$\n" +
 	"\x0elast_active_ms\x18\x04 \x01(\x03R\flastActiveMs\x12\"\n" +
-	"\fcontribution\x18\x05 \x01(\x04R\fcontribution\"\x88\x02\n" +
+	"\fcontribution\x18\x05 \x01(\x04R\fcontribution\"\xa1\x02\n" +
 	"\tGuildInfo\x12\x19\n" +
 	"\bguild_id\x18\x01 \x01(\x04R\aguildId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
@@ -891,10 +1344,12 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\x0ecreate_time_ms\x18\x06 \x01(\x03R\fcreateTimeMs\x12\x1f\n" +
 	"\vmax_members\x18\a \x01(\rR\n" +
 	"maxMembers\x12.\n" +
-	"\amembers\x18\b \x03(\v2\x14.guildpb.GuildMemberR\amembers\"E\n" +
+	"\amembers\x18\b \x03(\v2\x14.guildpb.GuildMemberR\amembers\x12\x17\n" +
+	"\azone_id\x18\t \x01(\rR\x06zoneId\"^\n" +
 	"\x12CreateGuildRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"u\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
+	"\azone_id\x18\x03 \x01(\rR\x06zoneId\"u\n" +
 	"\x13CreateGuildResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12(\n" +
 	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\",\n" +
@@ -926,7 +1381,38 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\"\n" +
 	"\fannouncement\x18\x03 \x01(\tR\fannouncement\"O\n" +
 	"\x17SetAnnouncementResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage2\x9a\x04\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"\xbf\x01\n" +
+	"\x0eGuildRankEntry\x12\x19\n" +
+	"\bguild_id\x18\x01 \x01(\x04R\aguildId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
+	"\tleader_id\x18\x03 \x01(\x04R\bleaderId\x12\x14\n" +
+	"\x05level\x18\x04 \x01(\rR\x05level\x12!\n" +
+	"\fmember_count\x18\x05 \x01(\rR\vmemberCount\x12\x14\n" +
+	"\x05score\x18\x06 \x01(\x03R\x05score\x12\x12\n" +
+	"\x04rank\x18\a \x01(\rR\x04rank\"c\n" +
+	"\x17UpdateGuildScoreRequest\x12\x19\n" +
+	"\bguild_id\x18\x01 \x01(\x04R\aguildId\x12\x14\n" +
+	"\x05score\x18\x02 \x01(\x03R\x05score\x12\x17\n" +
+	"\azone_id\x18\x03 \x01(\rR\x06zoneId\"P\n" +
+	"\x18UpdateGuildScoreResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"_\n" +
+	"\x13GetGuildRankRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\rR\bpageSize\x12\x17\n" +
+	"\azone_id\x18\x03 \x01(\rR\x06zoneId\"\xd1\x01\n" +
+	"\x14GetGuildRankResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x121\n" +
+	"\aentries\x18\x02 \x03(\v2\x17.guildpb.GuildRankEntryR\aentries\x12\x1f\n" +
+	"\vtotal_count\x18\x03 \x01(\rR\n" +
+	"totalCount\x12\x12\n" +
+	"\x04page\x18\x04 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x05 \x01(\rR\bpageSize\"P\n" +
+	"\x1aGetGuildRankByGuildRequest\x12\x19\n" +
+	"\bguild_id\x18\x01 \x01(\x04R\aguildId\x12\x17\n" +
+	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\x82\x01\n" +
+	"\x1bGetGuildRankByGuildResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12-\n" +
+	"\x05entry\x18\x02 \x01(\v2\x17.guildpb.GuildRankEntryR\x05entry2\xa2\x06\n" +
 	"\fGuildService\x12H\n" +
 	"\vCreateGuild\x12\x1b.guildpb.CreateGuildRequest\x1a\x1c.guildpb.CreateGuildResponse\x12?\n" +
 	"\bGetGuild\x12\x18.guildpb.GetGuildRequest\x1a\x19.guildpb.GetGuildResponse\x12Q\n" +
@@ -935,7 +1421,10 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\n" +
 	"LeaveGuild\x12\x1a.guildpb.LeaveGuildRequest\x1a\x1b.guildpb.LeaveGuildResponse\x12K\n" +
 	"\fDisbandGuild\x12\x1c.guildpb.DisbandGuildRequest\x1a\x1d.guildpb.DisbandGuildResponse\x12T\n" +
-	"\x0fSetAnnouncement\x12\x1f.guildpb.SetAnnouncementRequest\x1a .guildpb.SetAnnouncementResponseB\x17Z\x15contracts/proto/guildb\x06proto3"
+	"\x0fSetAnnouncement\x12\x1f.guildpb.SetAnnouncementRequest\x1a .guildpb.SetAnnouncementResponse\x12W\n" +
+	"\x10UpdateGuildScore\x12 .guildpb.UpdateGuildScoreRequest\x1a!.guildpb.UpdateGuildScoreResponse\x12K\n" +
+	"\fGetGuildRank\x12\x1c.guildpb.GetGuildRankRequest\x1a\x1d.guildpb.GetGuildRankResponse\x12`\n" +
+	"\x13GetGuildRankByGuild\x12#.guildpb.GetGuildRankByGuildRequest\x1a$.guildpb.GetGuildRankByGuildResponseB\x17Z\x15contracts/proto/guildb\x06proto3"
 
 var (
 	file_proto_guild_guild_proto_rawDescOnce sync.Once
@@ -949,57 +1438,75 @@ func file_proto_guild_guild_proto_rawDescGZIP() []byte {
 	return file_proto_guild_guild_proto_rawDescData
 }
 
-var file_proto_guild_guild_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_proto_guild_guild_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_proto_guild_guild_proto_goTypes = []any{
-	(*GuildMember)(nil),             // 0: guildpb.GuildMember
-	(*GuildInfo)(nil),               // 1: guildpb.GuildInfo
-	(*CreateGuildRequest)(nil),      // 2: guildpb.CreateGuildRequest
-	(*CreateGuildResponse)(nil),     // 3: guildpb.CreateGuildResponse
-	(*GetGuildRequest)(nil),         // 4: guildpb.GetGuildRequest
-	(*GetGuildResponse)(nil),        // 5: guildpb.GetGuildResponse
-	(*GetPlayerGuildRequest)(nil),   // 6: guildpb.GetPlayerGuildRequest
-	(*GetPlayerGuildResponse)(nil),  // 7: guildpb.GetPlayerGuildResponse
-	(*JoinGuildRequest)(nil),        // 8: guildpb.JoinGuildRequest
-	(*JoinGuildResponse)(nil),       // 9: guildpb.JoinGuildResponse
-	(*LeaveGuildRequest)(nil),       // 10: guildpb.LeaveGuildRequest
-	(*LeaveGuildResponse)(nil),      // 11: guildpb.LeaveGuildResponse
-	(*DisbandGuildRequest)(nil),     // 12: guildpb.DisbandGuildRequest
-	(*DisbandGuildResponse)(nil),    // 13: guildpb.DisbandGuildResponse
-	(*SetAnnouncementRequest)(nil),  // 14: guildpb.SetAnnouncementRequest
-	(*SetAnnouncementResponse)(nil), // 15: guildpb.SetAnnouncementResponse
-	(*base.TipInfoMessage)(nil),     // 16: TipInfoMessage
+	(*GuildMember)(nil),                 // 0: guildpb.GuildMember
+	(*GuildInfo)(nil),                   // 1: guildpb.GuildInfo
+	(*CreateGuildRequest)(nil),          // 2: guildpb.CreateGuildRequest
+	(*CreateGuildResponse)(nil),         // 3: guildpb.CreateGuildResponse
+	(*GetGuildRequest)(nil),             // 4: guildpb.GetGuildRequest
+	(*GetGuildResponse)(nil),            // 5: guildpb.GetGuildResponse
+	(*GetPlayerGuildRequest)(nil),       // 6: guildpb.GetPlayerGuildRequest
+	(*GetPlayerGuildResponse)(nil),      // 7: guildpb.GetPlayerGuildResponse
+	(*JoinGuildRequest)(nil),            // 8: guildpb.JoinGuildRequest
+	(*JoinGuildResponse)(nil),           // 9: guildpb.JoinGuildResponse
+	(*LeaveGuildRequest)(nil),           // 10: guildpb.LeaveGuildRequest
+	(*LeaveGuildResponse)(nil),          // 11: guildpb.LeaveGuildResponse
+	(*DisbandGuildRequest)(nil),         // 12: guildpb.DisbandGuildRequest
+	(*DisbandGuildResponse)(nil),        // 13: guildpb.DisbandGuildResponse
+	(*SetAnnouncementRequest)(nil),      // 14: guildpb.SetAnnouncementRequest
+	(*SetAnnouncementResponse)(nil),     // 15: guildpb.SetAnnouncementResponse
+	(*GuildRankEntry)(nil),              // 16: guildpb.GuildRankEntry
+	(*UpdateGuildScoreRequest)(nil),     // 17: guildpb.UpdateGuildScoreRequest
+	(*UpdateGuildScoreResponse)(nil),    // 18: guildpb.UpdateGuildScoreResponse
+	(*GetGuildRankRequest)(nil),         // 19: guildpb.GetGuildRankRequest
+	(*GetGuildRankResponse)(nil),        // 20: guildpb.GetGuildRankResponse
+	(*GetGuildRankByGuildRequest)(nil),  // 21: guildpb.GetGuildRankByGuildRequest
+	(*GetGuildRankByGuildResponse)(nil), // 22: guildpb.GetGuildRankByGuildResponse
+	(*base.TipInfoMessage)(nil),         // 23: TipInfoMessage
 }
 var file_proto_guild_guild_proto_depIdxs = []int32{
 	0,  // 0: guildpb.GuildInfo.members:type_name -> guildpb.GuildMember
-	16, // 1: guildpb.CreateGuildResponse.error_message:type_name -> TipInfoMessage
+	23, // 1: guildpb.CreateGuildResponse.error_message:type_name -> TipInfoMessage
 	1,  // 2: guildpb.CreateGuildResponse.guild:type_name -> guildpb.GuildInfo
-	16, // 3: guildpb.GetGuildResponse.error_message:type_name -> TipInfoMessage
+	23, // 3: guildpb.GetGuildResponse.error_message:type_name -> TipInfoMessage
 	1,  // 4: guildpb.GetGuildResponse.guild:type_name -> guildpb.GuildInfo
-	16, // 5: guildpb.GetPlayerGuildResponse.error_message:type_name -> TipInfoMessage
+	23, // 5: guildpb.GetPlayerGuildResponse.error_message:type_name -> TipInfoMessage
 	1,  // 6: guildpb.GetPlayerGuildResponse.guild:type_name -> guildpb.GuildInfo
-	16, // 7: guildpb.JoinGuildResponse.error_message:type_name -> TipInfoMessage
-	16, // 8: guildpb.LeaveGuildResponse.error_message:type_name -> TipInfoMessage
-	16, // 9: guildpb.DisbandGuildResponse.error_message:type_name -> TipInfoMessage
-	16, // 10: guildpb.SetAnnouncementResponse.error_message:type_name -> TipInfoMessage
-	2,  // 11: guildpb.GuildService.CreateGuild:input_type -> guildpb.CreateGuildRequest
-	4,  // 12: guildpb.GuildService.GetGuild:input_type -> guildpb.GetGuildRequest
-	6,  // 13: guildpb.GuildService.GetPlayerGuild:input_type -> guildpb.GetPlayerGuildRequest
-	8,  // 14: guildpb.GuildService.JoinGuild:input_type -> guildpb.JoinGuildRequest
-	10, // 15: guildpb.GuildService.LeaveGuild:input_type -> guildpb.LeaveGuildRequest
-	12, // 16: guildpb.GuildService.DisbandGuild:input_type -> guildpb.DisbandGuildRequest
-	14, // 17: guildpb.GuildService.SetAnnouncement:input_type -> guildpb.SetAnnouncementRequest
-	3,  // 18: guildpb.GuildService.CreateGuild:output_type -> guildpb.CreateGuildResponse
-	5,  // 19: guildpb.GuildService.GetGuild:output_type -> guildpb.GetGuildResponse
-	7,  // 20: guildpb.GuildService.GetPlayerGuild:output_type -> guildpb.GetPlayerGuildResponse
-	9,  // 21: guildpb.GuildService.JoinGuild:output_type -> guildpb.JoinGuildResponse
-	11, // 22: guildpb.GuildService.LeaveGuild:output_type -> guildpb.LeaveGuildResponse
-	13, // 23: guildpb.GuildService.DisbandGuild:output_type -> guildpb.DisbandGuildResponse
-	15, // 24: guildpb.GuildService.SetAnnouncement:output_type -> guildpb.SetAnnouncementResponse
-	18, // [18:25] is the sub-list for method output_type
-	11, // [11:18] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	23, // 7: guildpb.JoinGuildResponse.error_message:type_name -> TipInfoMessage
+	23, // 8: guildpb.LeaveGuildResponse.error_message:type_name -> TipInfoMessage
+	23, // 9: guildpb.DisbandGuildResponse.error_message:type_name -> TipInfoMessage
+	23, // 10: guildpb.SetAnnouncementResponse.error_message:type_name -> TipInfoMessage
+	23, // 11: guildpb.UpdateGuildScoreResponse.error_message:type_name -> TipInfoMessage
+	23, // 12: guildpb.GetGuildRankResponse.error_message:type_name -> TipInfoMessage
+	16, // 13: guildpb.GetGuildRankResponse.entries:type_name -> guildpb.GuildRankEntry
+	23, // 14: guildpb.GetGuildRankByGuildResponse.error_message:type_name -> TipInfoMessage
+	16, // 15: guildpb.GetGuildRankByGuildResponse.entry:type_name -> guildpb.GuildRankEntry
+	2,  // 16: guildpb.GuildService.CreateGuild:input_type -> guildpb.CreateGuildRequest
+	4,  // 17: guildpb.GuildService.GetGuild:input_type -> guildpb.GetGuildRequest
+	6,  // 18: guildpb.GuildService.GetPlayerGuild:input_type -> guildpb.GetPlayerGuildRequest
+	8,  // 19: guildpb.GuildService.JoinGuild:input_type -> guildpb.JoinGuildRequest
+	10, // 20: guildpb.GuildService.LeaveGuild:input_type -> guildpb.LeaveGuildRequest
+	12, // 21: guildpb.GuildService.DisbandGuild:input_type -> guildpb.DisbandGuildRequest
+	14, // 22: guildpb.GuildService.SetAnnouncement:input_type -> guildpb.SetAnnouncementRequest
+	17, // 23: guildpb.GuildService.UpdateGuildScore:input_type -> guildpb.UpdateGuildScoreRequest
+	19, // 24: guildpb.GuildService.GetGuildRank:input_type -> guildpb.GetGuildRankRequest
+	21, // 25: guildpb.GuildService.GetGuildRankByGuild:input_type -> guildpb.GetGuildRankByGuildRequest
+	3,  // 26: guildpb.GuildService.CreateGuild:output_type -> guildpb.CreateGuildResponse
+	5,  // 27: guildpb.GuildService.GetGuild:output_type -> guildpb.GetGuildResponse
+	7,  // 28: guildpb.GuildService.GetPlayerGuild:output_type -> guildpb.GetPlayerGuildResponse
+	9,  // 29: guildpb.GuildService.JoinGuild:output_type -> guildpb.JoinGuildResponse
+	11, // 30: guildpb.GuildService.LeaveGuild:output_type -> guildpb.LeaveGuildResponse
+	13, // 31: guildpb.GuildService.DisbandGuild:output_type -> guildpb.DisbandGuildResponse
+	15, // 32: guildpb.GuildService.SetAnnouncement:output_type -> guildpb.SetAnnouncementResponse
+	18, // 33: guildpb.GuildService.UpdateGuildScore:output_type -> guildpb.UpdateGuildScoreResponse
+	20, // 34: guildpb.GuildService.GetGuildRank:output_type -> guildpb.GetGuildRankResponse
+	22, // 35: guildpb.GuildService.GetGuildRankByGuild:output_type -> guildpb.GetGuildRankByGuildResponse
+	26, // [26:36] is the sub-list for method output_type
+	16, // [16:26] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_proto_guild_guild_proto_init() }
@@ -1013,7 +1520,7 @@ func file_proto_guild_guild_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_guild_guild_proto_rawDesc), len(file_proto_guild_guild_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

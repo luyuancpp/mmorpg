@@ -422,7 +422,7 @@ func (x *CreatePlayerResponse) GetPlayers() []*AccountSimplePlayerWrapper {
 type EnterGameRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	// 新增：客户端生成的幂等 request id（客户端重试同一次业务请求时必须复用）
+	// Client-generated idempotent request ID (must reuse for retries of the same request)
 	RequestId     string `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

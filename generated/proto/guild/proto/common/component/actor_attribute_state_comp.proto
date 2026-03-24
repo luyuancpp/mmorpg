@@ -4,19 +4,19 @@ option go_package = "guild/proto/common/component";
 
 
 message CombatStateFlagsComp {
-    map<uint32, bool> state_flags = 1; // 单独的属性同步映射
+    map<uint32, bool> state_flags = 1; // Per-attribute sync map
 }
 
-// 计算属性，服务器端计算
+// Calculated attributes, computed server-side
 message CalculatedAttributesComp {
-    uint64 attack_power = 1;   // 攻击力
-    uint64 defense_power = 2;  // 防御力
-	bool isDead = 3; // 独立的生死状态
+    uint64 attack_power = 1;   // Attack power
+    uint64 defense_power = 2;  // Defense power
+	bool isDead = 3; // Dead/alive state
 }
 
-// 衍生属性，服务器端计算
+// Derived attributes, computed server-side
 message DerivedAttributesComp {
-    uint64 max_health = 1;     // 最大生命值
+    uint64 max_health = 1;     // Max HP
 }
 
 

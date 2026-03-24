@@ -30,7 +30,7 @@ type PlayerMigrationPbEvent struct {
 	SerializedPlayerData []byte                         `protobuf:"bytes,4,opt,name=serialized_player_data,json=serializedPlayerData,proto3" json:"serialized_player_data,omitempty"`
 	FromZone             uint32                         `protobuf:"varint,5,opt,name=from_zone,json=fromZone,proto3" json:"from_zone,omitempty"`
 	ToZone               uint32                         `protobuf:"varint,6,opt,name=to_zone,json=toZone,proto3" json:"to_zone,omitempty"`
-	Timestamp            int64                          `protobuf:"varint,7,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // 事件生成时间
+	Timestamp            int64                          `protobuf:"varint,7,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // Event generation time
 	CentreNodeId         uint32                         `protobuf:"varint,8,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`
 	SceneInfo            *component.ChangeSceneInfoComp `protobuf:"bytes,9,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields        protoimpl.UnknownFields

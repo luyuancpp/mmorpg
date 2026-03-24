@@ -16,7 +16,7 @@ message NodeInfo {
   uint32 scene_node_type = 4;
   EndpointComp endpoint = 5;
   uint32 zone_id = 6;
-  uint32 protocol_type = 7; // 节点通信协议类型
+  uint32 protocol_type = 7; // Node communication protocol type
   string node_uuid = 8;
 }
 
@@ -33,10 +33,10 @@ message NetworkAddress
 
 message SceneInfoComp
 {
-  uint32 scene_confid = 1;//场景id
-  uint32 guid = 2;//场景唯一id
-  uint32 mirror_confid = 3;//镜像id
-  uint32 dungen_confid = 4;//副本id
-  map<uint64, bool> creators = 5;//创建者
+  uint32 scene_confid = 1;// Scene config ID
+  uint32 guid = 2;// Scene unique ID
+  uint32 mirror_confid = 3;// Mirror ID
+  uint32 dungen_confid = 4;// Dungeon ID
+  map<uint64, bool> creators = 5;// Creators
 }
 

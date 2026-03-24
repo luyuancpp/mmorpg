@@ -28,7 +28,7 @@
 
 namespace friendpb {
 
-// ── 服务定义 ─────────────────────────────────────────────────
+// ── Service definition ─────────────────────────────────────────────────────
 //
 class FriendService final {
  public:

@@ -77,7 +77,7 @@ func (FriendRequestStatus) EnumDescriptor() ([]byte, []int) {
 type FriendEntry struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	FriendPlayerId uint64                 `protobuf:"varint,1,opt,name=friend_player_id,json=friendPlayerId,proto3" json:"friend_player_id,omitempty"`
-	SinceMs        int64                  `protobuf:"varint,2,opt,name=since_ms,json=sinceMs,proto3" json:"since_ms,omitempty"` // 成为好友的时间
+	SinceMs        int64                  `protobuf:"varint,2,opt,name=since_ms,json=sinceMs,proto3" json:"since_ms,omitempty"` // Friendship start time
 	LastActiveMs   int64                  `protobuf:"varint,3,opt,name=last_active_ms,json=lastActiveMs,proto3" json:"last_active_ms,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache

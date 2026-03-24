@@ -21,7 +21,7 @@ public class OauthService {
     }
 
     /**
-     * 找到绑定用户或创建一个新用户并写入 user_oauth
+     * Find the bound user or create a new one and persist to user_oauth
      */
     public Long findOrCreateAndBind(String provider, String openid, String nickname, String avatar) {
         Optional<UserOauth> maybe = oauthRepository.findByProviderAndOpenId(provider, openid);

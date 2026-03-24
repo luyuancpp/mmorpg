@@ -110,6 +110,9 @@ namespace guildpb{void SendGuildServiceJoinGuild(entt::registry& , entt::entity 
 namespace guildpb{void SendGuildServiceLeaveGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace guildpb{void SendGuildServiceDisbandGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace guildpb{void SendGuildServiceSetAnnouncement(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace guildpb{void SendGuildServiceUpdateGuildScore(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace guildpb{void SendGuildServiceGetGuildRank(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace guildpb{void SendGuildServiceGetGuildRankByGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginLogin(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -344,6 +347,21 @@ void InitMessageInfo()
         std::make_unique<::guildpb::SetAnnouncementRequest>(),
         std::make_unique<::guildpb::SetAnnouncementResponse>(),
         nullptr, 0, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetAnnouncement};
+    gRpcMethodRegistry[GuildServiceUpdateGuildScoreMessageId] = RpcMethodMeta{
+        "GuildService", "UpdateGuildScore",
+        std::make_unique<::guildpb::UpdateGuildScoreRequest>(),
+        std::make_unique<::guildpb::UpdateGuildScoreResponse>(),
+        nullptr, 0, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpdateGuildScore};
+    gRpcMethodRegistry[GuildServiceGetGuildRankMessageId] = RpcMethodMeta{
+        "GuildService", "GetGuildRank",
+        std::make_unique<::guildpb::GetGuildRankRequest>(),
+        std::make_unique<::guildpb::GetGuildRankResponse>(),
+        nullptr, 0, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRank};
+    gRpcMethodRegistry[GuildServiceGetGuildRankByGuildMessageId] = RpcMethodMeta{
+        "GuildService", "GetGuildRankByGuild",
+        std::make_unique<::guildpb::GetGuildRankByGuildRequest>(),
+        std::make_unique<::guildpb::GetGuildRankByGuildResponse>(),
+        nullptr, 0, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRankByGuild};
 
     // --- ClientPlayerLogin ---
     gRpcMethodRegistry[ClientPlayerLoginLoginMessageId] = RpcMethodMeta{

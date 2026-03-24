@@ -19,13 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GuildService_CreateGuild_FullMethodName     = "/guildpb.GuildService/CreateGuild"
-	GuildService_GetGuild_FullMethodName        = "/guildpb.GuildService/GetGuild"
-	GuildService_GetPlayerGuild_FullMethodName  = "/guildpb.GuildService/GetPlayerGuild"
-	GuildService_JoinGuild_FullMethodName       = "/guildpb.GuildService/JoinGuild"
-	GuildService_LeaveGuild_FullMethodName      = "/guildpb.GuildService/LeaveGuild"
-	GuildService_DisbandGuild_FullMethodName    = "/guildpb.GuildService/DisbandGuild"
-	GuildService_SetAnnouncement_FullMethodName = "/guildpb.GuildService/SetAnnouncement"
+	GuildService_CreateGuild_FullMethodName         = "/guildpb.GuildService/CreateGuild"
+	GuildService_GetGuild_FullMethodName            = "/guildpb.GuildService/GetGuild"
+	GuildService_GetPlayerGuild_FullMethodName      = "/guildpb.GuildService/GetPlayerGuild"
+	GuildService_JoinGuild_FullMethodName           = "/guildpb.GuildService/JoinGuild"
+	GuildService_LeaveGuild_FullMethodName          = "/guildpb.GuildService/LeaveGuild"
+	GuildService_DisbandGuild_FullMethodName        = "/guildpb.GuildService/DisbandGuild"
+	GuildService_SetAnnouncement_FullMethodName     = "/guildpb.GuildService/SetAnnouncement"
+	GuildService_UpdateGuildScore_FullMethodName    = "/guildpb.GuildService/UpdateGuildScore"
+	GuildService_GetGuildRank_FullMethodName        = "/guildpb.GuildService/GetGuildRank"
+	GuildService_GetGuildRankByGuild_FullMethodName = "/guildpb.GuildService/GetGuildRankByGuild"
 )
 
 // GuildServiceClient is the client API for GuildService service.
@@ -39,6 +42,10 @@ type GuildServiceClient interface {
 	LeaveGuild(ctx context.Context, in *LeaveGuildRequest, opts ...grpc.CallOption) (*LeaveGuildResponse, error)
 	DisbandGuild(ctx context.Context, in *DisbandGuildRequest, opts ...grpc.CallOption) (*DisbandGuildResponse, error)
 	SetAnnouncement(ctx context.Context, in *SetAnnouncementRequest, opts ...grpc.CallOption) (*SetAnnouncementResponse, error)
+	// Ranking
+	UpdateGuildScore(ctx context.Context, in *UpdateGuildScoreRequest, opts ...grpc.CallOption) (*UpdateGuildScoreResponse, error)
+	GetGuildRank(ctx context.Context, in *GetGuildRankRequest, opts ...grpc.CallOption) (*GetGuildRankResponse, error)
+	GetGuildRankByGuild(ctx context.Context, in *GetGuildRankByGuildRequest, opts ...grpc.CallOption) (*GetGuildRankByGuildResponse, error)
 }
 
 type guildServiceClient struct {
@@ -119,6 +126,36 @@ func (c *guildServiceClient) SetAnnouncement(ctx context.Context, in *SetAnnounc
 	return out, nil
 }
 
+func (c *guildServiceClient) UpdateGuildScore(ctx context.Context, in *UpdateGuildScoreRequest, opts ...grpc.CallOption) (*UpdateGuildScoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateGuildScoreResponse)
+	err := c.cc.Invoke(ctx, GuildService_UpdateGuildScore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *guildServiceClient) GetGuildRank(ctx context.Context, in *GetGuildRankRequest, opts ...grpc.CallOption) (*GetGuildRankResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetGuildRankResponse)
+	err := c.cc.Invoke(ctx, GuildService_GetGuildRank_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *guildServiceClient) GetGuildRankByGuild(ctx context.Context, in *GetGuildRankByGuildRequest, opts ...grpc.CallOption) (*GetGuildRankByGuildResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetGuildRankByGuildResponse)
+	err := c.cc.Invoke(ctx, GuildService_GetGuildRankByGuild_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GuildServiceServer is the server API for GuildService service.
 // All implementations must embed UnimplementedGuildServiceServer
 // for forward compatibility.
@@ -130,6 +167,10 @@ type GuildServiceServer interface {
 	LeaveGuild(context.Context, *LeaveGuildRequest) (*LeaveGuildResponse, error)
 	DisbandGuild(context.Context, *DisbandGuildRequest) (*DisbandGuildResponse, error)
 	SetAnnouncement(context.Context, *SetAnnouncementRequest) (*SetAnnouncementResponse, error)
+	// Ranking
+	UpdateGuildScore(context.Context, *UpdateGuildScoreRequest) (*UpdateGuildScoreResponse, error)
+	GetGuildRank(context.Context, *GetGuildRankRequest) (*GetGuildRankResponse, error)
+	GetGuildRankByGuild(context.Context, *GetGuildRankByGuildRequest) (*GetGuildRankByGuildResponse, error)
 	mustEmbedUnimplementedGuildServiceServer()
 }
 
@@ -160,6 +201,15 @@ func (UnimplementedGuildServiceServer) DisbandGuild(context.Context, *DisbandGui
 }
 func (UnimplementedGuildServiceServer) SetAnnouncement(context.Context, *SetAnnouncementRequest) (*SetAnnouncementResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetAnnouncement not implemented")
+}
+func (UnimplementedGuildServiceServer) UpdateGuildScore(context.Context, *UpdateGuildScoreRequest) (*UpdateGuildScoreResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateGuildScore not implemented")
+}
+func (UnimplementedGuildServiceServer) GetGuildRank(context.Context, *GetGuildRankRequest) (*GetGuildRankResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetGuildRank not implemented")
+}
+func (UnimplementedGuildServiceServer) GetGuildRankByGuild(context.Context, *GetGuildRankByGuildRequest) (*GetGuildRankByGuildResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetGuildRankByGuild not implemented")
 }
 func (UnimplementedGuildServiceServer) mustEmbedUnimplementedGuildServiceServer() {}
 func (UnimplementedGuildServiceServer) testEmbeddedByValue()                      {}
@@ -308,6 +358,60 @@ func _GuildService_SetAnnouncement_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GuildService_UpdateGuildScore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateGuildScoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuildServiceServer).UpdateGuildScore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GuildService_UpdateGuildScore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuildServiceServer).UpdateGuildScore(ctx, req.(*UpdateGuildScoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GuildService_GetGuildRank_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGuildRankRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuildServiceServer).GetGuildRank(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GuildService_GetGuildRank_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuildServiceServer).GetGuildRank(ctx, req.(*GetGuildRankRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GuildService_GetGuildRankByGuild_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGuildRankByGuildRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuildServiceServer).GetGuildRankByGuild(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GuildService_GetGuildRankByGuild_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuildServiceServer).GetGuildRankByGuild(ctx, req.(*GetGuildRankByGuildRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GuildService_ServiceDesc is the grpc.ServiceDesc for GuildService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -342,6 +446,18 @@ var GuildService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetAnnouncement",
 			Handler:    _GuildService_SetAnnouncement_Handler,
+		},
+		{
+			MethodName: "UpdateGuildScore",
+			Handler:    _GuildService_UpdateGuildScore_Handler,
+		},
+		{
+			MethodName: "GetGuildRank",
+			Handler:    _GuildService_GetGuildRank_Handler,
+		},
+		{
+			MethodName: "GetGuildRankByGuild",
+			Handler:    _GuildService_GetGuildRankByGuild_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

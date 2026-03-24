@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users") // 改为 users
+@Table(name = "users") // table name: users
 public class User {
 
     public void setId(Long id) {
@@ -31,7 +31,7 @@ public class User {
         return id;
     }
 
-    // ❌ 不提供 setId
+    // setId is intentionally omitted here (auto-generated)
 
     public LocalDateTime getCreateTime() {
         return createTime;

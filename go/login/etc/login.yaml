@@ -1,23 +1,23 @@
-# 基础RPC服务配置
+# Base RPC service config
 Name: login.rpc
 ListenOn: 127.0.0.1:50000
-Timeout: 100000  # 服务器端处理单个请求的最大超时（10秒）
+Timeout: 100000  # Max server-side timeout per request (10s)
 
 Etcd:
   Hosts:
     - 127.0.0.1:2379
   Key: login.rpc
 
-# 节点配置（新增登录时长限制）
+# Node config (with login duration limits)
 Node:
   ZoneId: 0
-  SessionExpireMin: 1                  # 会话闲置超时（1分钟未操作则过期）
-  MaxLoginDevices: 3                   # 单账号最大登录设备数
-  LeaseTTL: 500                        # 租约超时（秒）
-  QueueShardCount: 50                  # 队列分片数
-  # 新增：登录时长限制（单次登录的最大在线时长）
-  MaxLoginDuration: 5m                # 最大登录时长（24小时，超时强制下线）
-  LogoutGraceTime: 5s                  # 超时前5分钟提醒玩家
+  SessionExpireMin: 1                  # Session idle timeout (expires after 1 min of inactivity)
+  MaxLoginDevices: 3                   # Max concurrent login devices per account
+  LeaseTTL: 500                        # Lease TTL (seconds)
+  QueueShardCount: 50                  # Queue shard count
+  # Login duration limit (max online time per session)
+  MaxLoginDuration: 5m                # Max login duration (forced logout on timeout)
+  LogoutGraceTime: 5s                  # Grace period to notify player before timeout
   RedisClient:
     Host: 127.0.0.1:6379
     Password: ""
@@ -27,23 +27,23 @@ Node:
     ReadTimeout: 3s
     WriteTimeout: 3s
 
-# 雪花ID配置
+# Snowflake ID config
 Snowflake:
-  Epoch: 1721473263000  # 2024-07-20 15:01:03 的毫秒时间戳
+  Epoch: 1721473263000  # Epoch ms for 2024-07-20 15:01:03
   NodeBits: 13
   StepBits: 9
 
-# 分布式锁配置
+# Distributed lock config
 Locker:
-  AccountLockTTL: 10  # 10秒
-  PlayerLockTTL: 5    # 5秒
+  AccountLockTTL: 10  # 10 seconds
+  PlayerLockTTL: 5    # 5 seconds
 
-# 账号配置
+# Account config
 Account:
   MaxDevicesPerAccount: 3
-  CacheExpire: 12h    # 12小时
+  CacheExpire: 12h    # 12 hours
 
-# 服务注册发现配置
+# Service registry/discovery config
 Registry:
   Etcd:
     Hosts:
@@ -51,16 +51,16 @@ Registry:
     Key: loginservice.rpc
     DialTimeout: 5s
 
-# 超时配置
+# Timeout config
 Timeouts:
   EtcdDialTimeout: 5s
   ServiceDiscoveryTimeout: 10s
   TaskWaitTimeout: 5s
-  LoginTotalTimeout: 10s  # 登录过程总超时（包含Redis加载、数据库操作等）
+  LoginTotalTimeout: 10s  # Total login timeout (including Redis load, DB ops, etc.)
   RoleCacheExpire: 24h
-  TaskManagerCleanInterval: 5s   # 任务管理器清理间隔
-  TaskBatchExpireTime: 10s       # 任务批次过期时间
-# PlayerLocator gRPC 客户端 (通过 etcd 发现)
+  TaskManagerCleanInterval: 5s   # Task manager cleanup interval
+  TaskBatchExpireTime: 10s       # Task batch expiration time
+# PlayerLocator gRPC client (discovered via etcd)
 PlayerLocatorRpc:
   Etcd:
     Hosts:
@@ -68,7 +68,7 @@ PlayerLocatorRpc:
     Key: playerlocator.rpc
   Timeout: 5000
 
-# Kafka配置
+# Kafka config
 Kafka:
   Brokers:
     - "127.0.0.1:9092"

@@ -1,53 +1,53 @@
-# MMO 跨服架构设计（完整沉淀）
+# MMO Cross-Server Architecture Design (Complete Reference)
 
-## 1. 背景与目标
+## 1. Background & Goals
 
-- 游戏形态：MMO（魔兽类），约 1000+ 区服（Zone）。
-- 玩家归属：每个玩家有归属服（home zone），但可自由访问其他服场景。
-- 当前约束：每个大区/区域（Region）有独立 Redis 集群。
-- 设计优先级：稳定性与正确性优先，切场额外延迟可接受。
+- Game type: MMO (WoW-style), approximately 1000+ zones.
+- Player affiliation: each player has a home zone, but can freely visit scenes on other zones.
+- Current constraint: each region has an independent Redis cluster.
+- Design priority: stability and correctness first; extra latency during scene transitions is acceptable.
 
-核心目标：
+Core goals:
 
-- 跨服能力对业务逻辑层“透明”。
-- 不做玩家数据跨服搬迁。
-- 让跨服复杂度收敛到少数基础组件，避免扩散到 Scene/Gate 业务代码。
+- Cross-server capability must be transparent to the business logic layer.
+- No cross-server player data migration.
+- Confine cross-server complexity to a small set of base components; prevent it from leaking into Scene/Gate business code.
 
-## 2. 总原则：位置透明（Location Transparency）
+## 2. Core Principle: Location Transparency
 
-> 无论玩家当前在哪个服，逻辑层处理方式都应与“本服玩家”完全一致。
+> Regardless of which server a player is currently on, the logic layer should handle them exactly the same as a local player.
 
-落地规则：
+Implementation rules:
 
-- 业务层禁止出现 `is_cross_server` 分支。
-- Scene/Gate 不关心玩家归属服或 Redis 拓扑。
-- 玩家数据永远保存在归属服（home zone）的存储中。
-- 路由变化、跨服策略调整仅在路由层/数据服务层生效。
+- Business layer must never branch on `is_cross_server`.
+- Scene/Gate must not care about the player's home zone or Redis topology.
+- Player data is always persisted in the home zone's storage.
+- Routing changes and cross-server policy adjustments happen only at the routing/data-service layer.
 
-反模式（历史问题，明确禁止）：
+Anti-patterns (historical issues, explicitly prohibited):
 
-- 把数据复制到目标服（带来一致性灾难）。
-- 在登录/切场/技能/背包等逻辑中到处判断“是否跨服”。
-- 在每个 Scene 节点内自行维护跨服 Redis 连接与路由规则。
+- Copying data to the destination server (consistency nightmare).
+- Checking "is this cross-server?" everywhere — login, scene switch, skills, bag, etc.
+- Each Scene node maintaining its own cross-server Redis connections and routing rules.
 
-## 3. 架构选择：方案 A（独立数据代理服务）
+## 3. Architecture Choice: Option A (Independent Data Proxy Service)
 
-### 3.1 结论
+### 3.1 Conclusion
 
-采用独立 Data Service（Go/go-zero）作为跨服数据代理层，统一承接 Scene 的读写请求并内部路由到归属服存储。
+Adopt an independent Data Service (Go/go-zero) as the cross-server data proxy layer, uniformly handling Scene read/write requests and internally routing them to the home zone's storage.
 
-### 3.2 为什么选 A，不选 B（Scene 内嵌路由）
+### 3.2 Why Option A, Not Option B (Scene-Embedded Routing)
 
-- 若每个 Scene 直连全量区服 Redis，会出现连接数爆炸。
-- 路由逻辑分散在所有 Scene 节点，升级和排障成本高。
-- 方案 A 将复杂度集中到一个可水平扩展的服务层，更利于稳定运行与运维治理。
+- If every Scene directly connects to all zone Redis instances, connection count explodes.
+- Routing logic scattered across all Scene nodes makes upgrades and troubleshooting expensive.
+- Option A concentrates complexity into a horizontally scalable service layer, better for stable operation and ops governance.
 
-### 3.3 逻辑拓扑
+### 3.3 Logical Topology
 
 ```text
-Player -> Gate -> Scene (任意目标服)
+Player -> Gate -> Scene (any target zone)
                    |
-                   | gRPC（统一接口，服务端无感跨服）
+                   | gRPC (unified interface, server-side cross-zone transparent)
                    v
               Data Service
                    |
@@ -56,192 +56,192 @@ Player -> Gate -> Scene (任意目标服)
              Home Redis/DB
 ```
 
-## 4. 控制面与数据面拆分
+## 4. Control Plane vs Data Plane
 
-### 4.1 控制面（玩家路由/切场调度）
+### 4.1 Control Plane (Player Routing / Scene Scheduling)
 
-- Centre / SceneManager / PlayerLocator 负责“玩家当前在哪个 Scene 节点”。
-- Gate 负责客户端连接承载与转发。
-- Gate 与 SceneManager 之间使用 Kafka 控制消息，避免大规模 gRPC 长连接网状拓扑。
+- Centre / SceneManager / PlayerLocator handle "which Scene node is the player currently on".
+- Gate handles client connection hosting and forwarding.
+- Gate and SceneManager communicate via Kafka control messages, avoiding large-scale gRPC long-connection mesh topology.
 
-当前约定：
+Current conventions:
 
-- Kafka Topic：`gate-{gate_id}`。
-- 命令协议：`GateCommand`（例如 `RoutePlayer`、`KickPlayer`）。
-- 安全字段：`target_instance_id`，用于过滤僵尸消息（节点重启后旧消息误投）。
+- Kafka Topic: `gate-{gate_id}`.
+- Command protocol: `GateCommand` (e.g. `RoutePlayer`, `KickPlayer`).
+- Safety field: `target_instance_id`, used to filter zombie messages (stale messages from restarted nodes).
 
-### 4.2 数据面（玩家数据读写）
+### 4.2 Data Plane (Player Data Read/Write)
 
-- Scene 只调用统一数据接口（如 `GetPlayerBag(player_id)`），不感知跨服。
-- Data Service 负责：
-  - `player_id -> home_zone_id` 映射解析。
-  - `home_zone_id -> region_id -> redis_cluster` 路由。
-  - 重试、熔断、降级、观测、热点缓存。
+- Scene only calls unified data interfaces (e.g. `GetPlayerBag(player_id)`), unaware of cross-server details.
+- Data Service responsibilities:
+  - `player_id -> home_zone_id` mapping resolution.
+  - `home_zone_id -> region_id -> redis_cluster` routing.
+  - Retry, circuit breaking, degradation, observability, hotspot caching.
 
-## 5. 区服分层与锁区规则
+## 5. Zone Layering & Region Lock Rules
 
-- Zone：游戏逻辑服（玩家创建角色与长期归属的“服”）。
-- Region：Zone 的上层分组（运维与存储分配单位）。
-- 存储策略：Redis 按 Region 分配，而非按单 Zone 一服一 Redis。
+- Zone: game logic server (where players create characters and permanently belong).
+- Region: grouping layer above Zones (ops and storage allocation unit).
+- Storage strategy: Redis is allocated per Region, not per individual Zone.
 
-锁区（Lock Region）规则：
+Region Lock rules:
 
-- 锁区开启：玩家仅可访问归属 Region 内 Zone。
-- 锁区关闭：玩家可访问任意 Zone。
-- 锁区判定归 SceneManager（控制面），不放在 Data Service（数据面）。
+- Lock enabled: players can only access Zones within their home Region.
+- Lock disabled: players can access any Zone.
+- Lock decisions belong to SceneManager (control plane), not Data Service (data plane).
 
-## 6. 玩家 ID 与映射表设计
+## 6. Player ID & Mapping Table Design
 
-### 6.1 Player ID 规则
+### 6.1 Player ID Rules
 
-- 使用现有 Snowflake：`[time:32][node_id:17][step:15]`。
-- 禁止将 `zone_id` 编入 `player_id`。
-- `node_id` 仅表示“生成 ID 的物理节点”，不是区服语义。
+- Uses existing Snowflake: `[time:32][node_id:17][step:15]`.
+- `zone_id` must NOT be encoded into `player_id`.
+- `node_id` only represents "the physical node that generated the ID", not a zone semantic.
 
-原因：
+Rationale:
 
-- 合服时若 ID 含 zone 语义，会导致系统性重写风险。
-- 玩家 ID 必须全生命周期不变（跨服、合服、迁移都不改）。
+- If IDs contain zone semantics, server merges risk systemic rewrites.
+- Player IDs must remain immutable for their entire lifecycle (cross-server, merge, migration — never change).
 
-### 6.2 独立映射表
+### 6.2 Independent Mapping Tables
 
-- `player_id -> home_zone_id`（全局真值映射）。
-- `home_zone_id -> region_id`（配置映射）。
-- `region_id -> redis_addr`（路由配置）。
+- `player_id -> home_zone_id` (global truth mapping).
+- `home_zone_id -> region_id` (configuration mapping).
+- `region_id -> redis_addr` (routing configuration).
 
-建议存储：
+Recommended storage:
 
-- `player_id -> home_zone_id` 放 Global Redis 或 MySQL+本地缓存。
-- 注册角色时写入映射，作为后续全部数据路由依据。
+- `player_id -> home_zone_id` in Global Redis or MySQL + local cache.
+- Written at character registration time; serves as the basis for all subsequent data routing.
 
-## 7. 跨服切场时序（关键一致性约束）
+## 7. Cross-Server Scene Transition Sequence (Critical Consistency Constraint)
 
-核心不变量：同一玩家同一时刻只能有一个 Scene 写入其数据（Single Writer）。
+Core invariant: at any given moment, only one Scene may write a player's data (Single Writer).
 
-标准时序：
+Standard sequence:
 
-1. SceneManager 通知旧 Scene：释放玩家并落盘。
-2. 旧 Scene 确认“已保存并释放”。
-3. SceneManager 才通知新 Scene：加载玩家。
-4. 若步骤 2 超时，则中止迁移，不允许新 Scene 先行加载。
+1. SceneManager notifies the old Scene: release the player and flush to storage.
+2. Old Scene confirms "saved and released".
+3. Only then does SceneManager notify the new Scene: load the player.
+4. If step 2 times out, abort the migration — the new Scene must not load preemptively.
 
-该时序保证：
+This sequence guarantees:
 
-- 避免两边 Scene 并发写同一玩家。
-- 避免切场过程中的状态覆盖与回滚困难。
+- No concurrent writes to the same player from two Scenes.
+- No state overwrites or rollback difficulties during scene transitions.
 
-## 8. 一致性防线（分层兜底）
+## 8. Consistency Defense Layers
 
-第一层（主防线）：
+Layer 1 (primary defense):
 
-- SceneManager 串行化切换流程，保障 Single Writer。
+- SceneManager serializes the transition flow, enforcing Single Writer.
 
-第二层（异常兜底）：
+Layer 2 (anomaly fallback):
 
-- Data Service 对玩家键做短期分布式锁（例如 Redis `SETNX` + TTL 约 3 秒）。
+- Data Service applies short-lived distributed locks on player keys (e.g. Redis `SETNX` + TTL ~3 seconds).
 
-第三层（最终保险）：
+Layer 3 (last resort):
 
-- 关键数据引入版本号（乐观锁）或事务检测（WATCH/MULTI）。
+- Critical data uses version numbers (optimistic locking) or transactional checks (WATCH/MULTI).
 
-说明：Redis 单线程只保证同 key 单连接 FIFO；真正风险来自上游并发写入，因此必须把 Single Writer 放在架构层保证。
+Note: Redis single-threading only guarantees same-key single-connection FIFO; the real risk comes from upstream concurrent writes, so Single Writer must be enforced at the architecture layer.
 
-## 9. 合服策略（不改玩家 ID）
+## 9. Server Merge Strategy (Player IDs Unchanged)
 
-策略 A（推荐）：
+Strategy A (recommended):
 
-- 将目标服数据迁入主服存储，批量更新 `player_id -> home_zone_id` 映射。
+- Migrate target server data into the primary server's storage; batch-update `player_id -> home_zone_id` mappings.
 
-策略 B（过渡）：
+Strategy B (transitional):
 
-- 将多个 Zone 路由到同一 Redis 集群，逐步完成数据合并。
+- Route multiple Zones to the same Redis cluster; gradually complete data merging.
 
-共同点：
+Common properties:
 
-- 都不修改 `player_id`。
-- 业务代码（Scene/Gate）无需改动。
+- Neither modifies `player_id`.
+- Business code (Scene/Gate) requires no changes.
 
-## 10. NodeId 冲突与快速恢复设计
+## 10. NodeId Conflict & Fast Recovery Design
 
-### 10.1 问题定义
+### 10.1 Problem Definition
 
-etcd lease 过期重注册窗口可能导致同一 `node_id` 双活（旧节点恢复网络 + 新节点已接管）。
+The etcd lease expiry/re-registration window can cause the same `node_id` to be dual-active (old node recovers network + new node has already taken over).
 
-风险：
+Risks:
 
-- 双活处理玩家请求。
-- Snowflake 同 `node_id` 并发发号冲突。
+- Dual-active nodes processing player requests.
+- Snowflake ID collision with same `node_id` issuing concurrently.
 
-### 10.2 冲突时处理要求
+### 10.2 Conflict Handling Requirements
 
-当节点确认“自己的 `node_id` 已被其他 uuid 占用”时，必须执行：
+When a node confirms "my `node_id` has been taken by another uuid", it must:
 
-1. 立即停止接受新业务请求。
-2. 尽快 flush 在线玩家数据。
-3. 踢出或迁移在线玩家（按节点类型策略）。
-4. 自杀退出，避免双活持续。
+1. Immediately stop accepting new business requests.
+2. Flush online player data as quickly as possible.
+3. Kick or migrate online players (per node-type strategy).
+4. Self-terminate to prevent continued dual-active state.
 
-节点类型策略：
+Node-type strategies:
 
-- SceneNode：存档后迁移到同 zone 的可用节点。
-- GateNode：断开客户端并触发重连路由。
-- InstanceNode：副本态不可平移，直接通知副本失败并踢出。
+- SceneNode: save state, then migrate players to an available node in the same zone.
+- GateNode: disconnect clients and trigger reconnection routing.
+- InstanceNode: instance state cannot be migrated — notify instance failure and kick players.
 
-### 10.3 Snowflake 冲突防护
+### 10.3 Snowflake Conflict Protection
 
-- keepalive 同步写 `snowflake_guard:{zone}:{type}:{node_id}`（TTL 600s）。
-- 新节点接管后 `SetGuardTime(now_utc)`，跳过当前秒发号窗口。
-- 不做“等待安全窗口”延迟启动，保障灰度/重连恢复速度。
+- Keepalive writes `snowflake_guard:{zone}:{type}:{node_id}` (TTL 600s).
+- After a new node takes over, call `SetGuardTime(now_utc)` to skip the current-second ID issuance window.
+- No "wait for safe window" startup delay — preserve fast gray-release / reconnection recovery.
 
-## 11. 与当前工程的集成边界
+## 11. Integration Boundaries with Current Codebase
 
-- Gate：保留 Kafka 控制面消费者，按 `gate-{id}` 接收 SceneManager 命令。
-- SceneManager：负责切场编排、锁区策略、Single Writer 时序执行。
-- PlayerLocator：记录玩家当前 Scene 位置，可扩展携带 home_zone 信息。
-- Data Service：可扩展现有 `go/db/` 或新建 `go/data_service/`。
+- Gate: retains Kafka control-plane consumer, receiving SceneManager commands on `gate-{id}`.
+- SceneManager: responsible for scene-transition orchestration, region-lock strategy, Single Writer sequence execution.
+- PlayerLocator: records the player's current Scene location; extensible to carry home_zone info.
+- Data Service: can extend existing `go/db/` or create new `go/data_service/`.
 
-## 12. 必须长期遵守的设计红线
+## 12. Permanent Design Red Lines
 
-1. 任何业务模块都不允许引入“跨服模式分支”。
-2. 玩家数据不做跨服复制作为常态手段。
-3. 所有跨服路由真值必须集中在数据代理层。
-4. 任何新特性若需要关心“玩家来自哪个服”，应先重审架构。
-5. 稳定性高于延迟；正确性高于局部性能。
+1. No business module may introduce a "cross-server mode branch".
+2. Player data must not be cross-server copied as a routine mechanism.
+3. All cross-server routing truth must be centralized in the data proxy layer.
+4. Any new feature that needs to know "which server the player came from" should trigger an architecture review first.
+5. Stability over latency; correctness over local performance.
 
-## 13. 后续实施清单
+## 13. Follow-Up Implementation Checklist
 
-- 完成 Node 子类 `OnNodeIdConflictShutdown` 的差异化实现（Scene/Gate/Instance）。
-- 在优雅停机流程加入：存档玩家 -> 迁移/踢出 -> 主动注销节点键。
-- Data Service 增加 per-player lock 与关键写入版本字段。
-- 建立跨服切场链路观测：切场阶段耗时、失败原因、回滚计数。
-## 14. 跨场景玩家消息投递（Cross-Scene Player Messaging）
+- Complete differentiated implementations of `OnNodeIdConflictShutdown` in Node subclasses (Scene/Gate/Instance).
+- Add to the graceful shutdown flow: persist player data -> migrate/kick players -> actively deregister node key.
+- Data Service: add per-player lock and critical write version fields.
+- Establish cross-server scene-switch observability: per-phase latency, failure reasons, rollback counts.
+## 14. Cross-Scene Player Messaging
 
-### 14.1 问题
+### 14.1 Problem
 
-Scene A 需要给玩家发消息（如任务奖励、交易结果、系统通知），但玩家可能不在 Scene A 上。
-旧方案通过 Centre 转发，Centre 成为瓶颈且流程复杂。新方案基于 Kafka 投递，但引入了路由窗口期一致性问题。
+Scene A needs to send a message to a player (e.g., quest reward, trade result, system notification), but the player may not be on Scene A.
+The old approach forwarded through Centre, making Centre a bottleneck with complex flow. The new approach delivers via Kafka, but introduces routing-window consistency issues.
 
-### 14.2 两种场景
+### 14.2 Two Scenarios
 
-**场景 1：玩家不在本 Scene（跨场景投递）**
+**Scenario 1: Player is not on the local Scene (cross-scene delivery)**
 
-- 通过 Kafka 将消息投递到玩家当前所在 Scene 的 topic。
-- 关键边界：消息已入 Kafka（目标 Scene B），路由过程中玩家从 B 切换到 C → Scene B 收到时玩家已不在。
+- Deliver the message via Kafka to the topic of the Scene where the player currently resides.
+- Key edge case: the message has entered Kafka (target Scene B), but during routing the player switches from B to C; by the time Scene B receives it, the player is already gone.
 
-**场景 2：玩家在本 Scene（本地投递）**
+**Scenario 2: Player is on the local Scene (local delivery)**
 
-- 本地场景可直接处理，也可统一走玩家消息队列。
+- The local Scene can process directly, or route uniformly through a player message queue.
 
-### 14.3 消息重要性分级（Protobuf Option 标记）
+### 14.3 Message Priority Classification (Protobuf Option Annotation)
 
-在 RPC service 方法定义上通过 `option` 标记消息重要性，代码生成层据此生成不同的投递策略：
+Annotate message priority on RPC service method definitions via `option`; the code generation layer produces different delivery strategies accordingly:
 
-| 级别 | 含义 | 投递保证 | 路由失败处理 |
-|------|------|---------|-------------|
-| IMPORTANT | 交易结果、奖励发放、状态变更等 | at-least-once | 目标 Scene 发现玩家已离开 → 重查 PlayerLocator → 转投新 Scene；若仍失败 → 落库/Redis 持久化，玩家下次进场景补发 |
-| NORMAL | 一般通知、非关键 UI 提示 | best-effort | 目标 Scene 发现玩家不在 → 直接丢弃 |
+| Level | Meaning | Delivery Guarantee | Routing Failure Handling |
+|-------|---------|--------------------|--------------------------|
+| IMPORTANT | Trade results, reward grants, state changes, etc. | at-least-once | Target Scene finds player has left -> re-query PlayerLocator -> forward to new Scene; if still fails -> persist to DB/Redis, redeliver when player enters a scene next time |
+| NORMAL | General notifications, non-critical UI hints | best-effort | Target Scene finds player absent -> discard |
 
-示例 proto option 定义（待细化）：
+Example proto option definition (to be refined):
 
 ```protobuf
 extend google.protobuf.MethodOptions {
@@ -263,97 +263,97 @@ service ScenePlayerService {
 }
 ```
 
-### 14.4 本地投递策略
+### 14.4 Local Delivery Strategy
 
-**方案 A：直接处理（同步路径）**
+**Option A: Direct processing (synchronous path)**
 
-- 延迟最低，适合移动同步等高频低延迟消息。
-- 缺点：本地 / 跨场景两条路径逻辑不一致，消息顺序无法统一保证。
+- Lowest latency; suitable for high-frequency, low-latency messages such as movement sync.
+- Drawback: local and cross-scene paths have inconsistent logic; unified message ordering cannot be guaranteed.
 
-**方案 B：统一走玩家消息队列（异步路径）**
+**Option B: Unified player message queue (asynchronous path)**
 
-- 所有发给玩家的消息（不论本地还是跨场景）都入玩家消息队列，由统一消费逻辑处理。
-- 优点：符合"位置透明"原则，逻辑一致，消息有序。
-- 缺点：本地消息多一次队列中转开销。
+- All messages destined for a player (whether local or cross-scene) enter a player message queue and are handled by a unified consumer.
+- Advantages: consistent with the "location transparency" principle; uniform logic; ordered messages.
+- Drawback: local messages incur one extra queue hop.
 
-**结论**：默认走统一消息队列（方案 B），与跨服"位置透明"原则一致。对移动同步等超低延迟场景，可标记走直接路径（方案 A）作为例外。
+**Conclusion**: Default to the unified message queue (Option B), consistent with the cross-server "location transparency" principle. For ultra-low-latency scenarios such as movement sync, allow marking messages to take the direct path (Option A) as an exception.
 
-### 14.5 投递流程
+### 14.5 Delivery Flow
 
 ```text
-发送方 Scene A
+Sender Scene A
     |
-    |-- 查 PlayerLocator：玩家在哪？
+    |-- Query PlayerLocator: where is the player?
     |
-    +-- 在本 Scene A --> 入本地玩家消息队列 --> 统一处理
+    +-- On local Scene A --> enqueue to local player message queue --> unified processing
     |
-    +-- 在 Scene B --> Kafka 投递到 scene-{scene_b_id} topic
+    +-- On Scene B --> Kafka deliver to scene-{scene_b_id} topic
                           |
                           v
-                       Scene B 消费消息
+                       Scene B consumes the message
                           |
-                          +-- 玩家在 --> 入本地玩家消息队列 --> 统一处理
+                          +-- Player present --> enqueue to local player message queue --> unified processing
                           |
-                          +-- 玩家已离开
+                          +-- Player has left
                                 |
-                                +-- IMPORTANT --> 重查 PlayerLocator --> 转投新 Scene / 落库补发
+                                +-- IMPORTANT --> re-query PlayerLocator --> forward to new Scene / persist for later redelivery
                                 |
-                                +-- NORMAL --> 丢弃
+                                +-- NORMAL --> discard
 ```
 
-### 14.6 与现有架构的关系
+### 14.6 Relationship to Existing Architecture
 
-- 复用 Kafka 基础设施：与 Gate 控制面共享 Kafka 集群，新增 `scene-{scene_id}` topic。
-- PlayerLocator 查询：复用已有 `player_locator` 服务获取玩家当前位置。
-- 单写者保证：消息投递不破坏 Single Writer（§7），消息只在玩家当前所在 Scene 被消费处理。
-- 持久化兜底：重要消息落库复用 Data Service（§3）的统一数据通道。
+- Reuses Kafka infrastructure: shares the Kafka cluster with the Gate control plane, adding `scene-{scene_id}` topics.
+- PlayerLocator query: reuses the existing `player_locator` service to obtain the player's current location.
+- Single Writer guarantee: message delivery does not violate Single Writer (§7); messages are consumed and processed only on the Scene where the player currently resides.
+- Persistence fallback: important messages are persisted via the unified data channel of Data Service (§3).
 
-### 14.7 待实施
+### 14.7 To Be Implemented
 
-- [ ] 定义 `MessagePriority` protobuf option 并集成到 proto-gen（历史名 pbgen）代码生成流程。
-- [ ] 实现 Scene 侧玩家消息队列（ECS Comp + 消费 System）。
-- [ ] Scene Kafka Consumer 增加 `scene-{scene_id}` topic 订阅。
-- [ ] 重要消息失败后的重试 / 落库补发逻辑。
-- [ ] 确定 Kafka topic 分区策略（按玩家 hash 还是按场景 ID）。
+- [ ] Define `MessagePriority` protobuf option and integrate into proto-gen (historical name: pbgen) code generation pipeline.
+- [ ] Implement player message queue on the Scene side (ECS Comp + consumer System).
+- [ ] Add `scene-{scene_id}` topic subscription to the Scene Kafka Consumer.
+- [ ] Retry / persist-and-redeliver logic for important messages after delivery failure.
+- [ ] Determine Kafka topic partitioning strategy (player hash vs. scene ID).
 
-## 15. 无状态微服务的就绪门控
+## 15. Readiness Gating for Stateless Microservices
 
-### 15.1 问题
+### 15.1 Problem
 
-在分布式游戏后端中，服务常常需要先完成数据加载（配置表、缓存预热、依赖连接检查）才能安全处理请求；
-但微服务又希望保持无状态与可弹性扩缩。
+In a distributed game backend, services often need to complete data loading (config tables, cache warm-up, dependency connectivity checks) before they can safely handle requests;
+however, microservices also aim to remain stateless and elastically scalable.
 
-### 15.2 原则
+### 15.2 Principles
 
-- 就绪状态外置：把"可接流量"判断交给服务发现与编排层，不把复杂等待状态耦合进业务流程。
-- 调用方只发现 ready 实例：未就绪实例不应进入服务发现可见集合。
+- Externalize readiness state: delegate the "ready to accept traffic" decision to the service discovery and orchestration layer; do not couple complex wait-state logic into business flows.
+- Callers discover only ready instances: instances that are not ready must not appear in the service discovery visible set.
 
-### 15.3 推荐启动顺序
+### 15.3 Recommended Startup Sequence
 
 ```text
-启动进程
-  -> 加载配置/静态数据
-  -> 预热缓存与依赖连通性检查
-  -> 打开服务端口（可选）
-  -> 注册服务发现（etcd）
-  -> 切换 readiness=ready
+Start process
+  -> Load configuration / static data
+  -> Warm up caches & check dependency connectivity
+  -> Open service port (optional)
+  -> Register with service discovery (etcd)
+  -> Switch readiness=ready
 ```
 
-### 15.4 依赖等待策略
+### 15.4 Dependency Wait Strategy
 
-- 强依赖链路：watch 服务发现（etcd）并在目标实例 ready 后恢复业务流。
-- 弱依赖链路：快速失败 + 指数退避重试，避免全链路阻塞。
+- Hard dependency path: watch service discovery (etcd) and resume business flow after the target instance becomes ready.
+- Soft dependency path: fail fast + exponential back-off retry; avoid blocking the entire call chain.
 
-### 15.5 项目落地约定
+### 15.5 Project-Level Conventions
 
-- Go 服务：etcd 注册应晚于加载与预热完成。
-- C++ 节点：对外可路由时机应晚于节点初始化完成。
-- Kubernetes：readiness probe 与注册时机保持一致语义，禁止出现"已注册但未 ready"的长期窗口。
+- Go services: etcd registration must occur after loading and warm-up are complete.
+- C++ nodes: the externally routable point-in-time must come after node initialization is complete.
+- Kubernetes: readiness probe and registration timing must have consistent semantics; a prolonged "registered but not ready" window is prohibited.
 
-### 15.6 待实施
+### 15.6 To Be Implemented
 
-- [ ] 形成统一"服务就绪门控"检查清单（Go/C++ 共用）。
-- [ ] 为关键服务补齐 readiness 健康检查与启动期指标埋点。
+- [ ] Produce a unified "service readiness gating" checklist (shared by Go/C++).
+- [ ] Add readiness health checks and startup-phase metric instrumentation for critical services.
 ---
 
-本文件用于替代零散会话结论，作为跨服架构的统一设计基线。后续改动应直接更新本文件，避免“只在会话里说、不进文档”的信息丢失。
+This document serves as the unified design baseline for cross-server architecture, replacing scattered conversation conclusions. Future changes should be applied directly to this document to avoid information loss from "discussed in chat but never written down."

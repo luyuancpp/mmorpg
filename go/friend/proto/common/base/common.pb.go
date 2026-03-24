@@ -81,7 +81,7 @@ type NodeInfo struct {
 	SceneNodeType uint32                 `protobuf:"varint,4,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"`
 	Endpoint      *EndpointComp          `protobuf:"bytes,5,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
 	ZoneId        uint32                 `protobuf:"varint,6,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
-	ProtocolType  uint32                 `protobuf:"varint,7,opt,name=protocol_type,json=protocolType,proto3" json:"protocol_type,omitempty"` // 节点通信协议类型
+	ProtocolType  uint32                 `protobuf:"varint,7,opt,name=protocol_type,json=protocolType,proto3" json:"protocol_type,omitempty"` // Node communication protocol type
 	NodeUuid      string                 `protobuf:"bytes,8,opt,name=node_uuid,json=nodeUuid,proto3" json:"node_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -271,11 +271,11 @@ func (x *NetworkAddress) GetPort() uint32 {
 
 type SceneInfoComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneConfid   uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`                                                   //场景id
-	Guid          uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"`                                                                                    //场景唯一id
-	MirrorConfid  uint32                 `protobuf:"varint,3,opt,name=mirror_confid,json=mirrorConfid,proto3" json:"mirror_confid,omitempty"`                                                //镜像id
-	DungenConfid  uint32                 `protobuf:"varint,4,opt,name=dungen_confid,json=dungenConfid,proto3" json:"dungen_confid,omitempty"`                                                //副本id
-	Creators      map[uint64]bool        `protobuf:"bytes,5,rep,name=creators,proto3" json:"creators,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` //创建者
+	SceneConfid   uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`                                                   // Scene config ID
+	Guid          uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"`                                                                                    // Scene unique ID
+	MirrorConfid  uint32                 `protobuf:"varint,3,opt,name=mirror_confid,json=mirrorConfid,proto3" json:"mirror_confid,omitempty"`                                                // Mirror ID
+	DungenConfid  uint32                 `protobuf:"varint,4,opt,name=dungen_confid,json=dungenConfid,proto3" json:"dungen_confid,omitempty"`                                                // Dungeon ID
+	Creators      map[uint64]bool        `protobuf:"bytes,5,rep,name=creators,proto3" json:"creators,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Creators
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

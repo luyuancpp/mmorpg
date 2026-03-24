@@ -310,13 +310,13 @@ int32_t win_connect(int sockfd, const struct sockaddr* addr)
         if (error_code == WSAEWOULDBLOCK) {
             LOG_INFO << "Connect is in progress (WSAEWOULDBLOCK). Waiting for completion..." ;
 
-            // 使用 select 等待套接字可写
+            // Use select to wait for the socket to become writable
             fd_set writefds;
             FD_ZERO(&writefds);
             FD_SET(sockfd, &writefds);
 
             timeval timeout;
-            timeout.tv_sec = 5;  // 等待 5 秒
+            timeout.tv_sec = 5;  // Wait 5 seconds
             timeout.tv_usec = 0;
 
             result = select(0, nullptr, &writefds, nullptr, &timeout);
