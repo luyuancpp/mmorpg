@@ -12,6 +12,9 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <atomic>
 #include <functional>
+#include <thread_context/registry_manager.h>
+#include <thread_context/entity_manager.h>
+#include <network/node_utils.h>
 #include "infra/messaging/kafka/kafka_manager.h"
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/etcd/etcd_manager.h"
@@ -57,6 +60,37 @@ public:
     uint32_t GetPort();
 	EtcdManager& GetEtcdManager() { return etcdManager; }
 	grpc_channel_cache::GrpcChannelCache& GetGrpcChannelCache() { return grpcChannelCache; }
+    bool HasDiscoveredServiceNode(uint32_t nodeType) const {
+        auto& allNodes = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+        if (nodeType >= allNodes.size()) {
+            return false;
+        }
+
+        const auto& nodes = allNodes[nodeType].node_list();
+        return nodes.size() > 0;
+    }
+
+    std::vector<uint32_t> CollectMissingDiscoveredServiceNodes(const std::vector<uint32_t>& requiredNodeTypes) const {
+        std::vector<uint32_t> missingNodeTypes;
+        missingNodeTypes.reserve(requiredNodeTypes.size());
+
+        for (uint32_t nodeType : requiredNodeTypes) {
+            if (!HasDiscoveredServiceNode(nodeType)) {
+                missingNodeTypes.push_back(nodeType);
+            }
+        }
+
+        return missingNodeTypes;
+    }
+
+    static std::string FormatNodeTypeNames(const std::vector<uint32_t>& nodeTypes) {
+        std::string output;
+        for (size_t i = 0; i < nodeTypes.size(); ++i) {
+            if (i > 0) output += ",";
+            output += eNodeType_Name(static_cast<eNodeType>(nodeTypes[i]));
+        }
+        return output;
+    }
 
     // Node registration and service handling
     void HandleServiceNodeStop(const std::string& key, const std::string& nodeJson);
@@ -125,6 +159,52 @@ protected:
     grpc_channel_cache::GrpcChannelCache grpcChannelCache;
     std::atomic<bool> shutdownStarted{ false };
     bool kafkaPollingStarted{ false };
+};
+
+// DependencyGate — polls for required service-discovery dependencies before
+// firing a one-shot "ready" callback.  Eliminates boilerplate in node main files.
+//
+// Usage (inside SetAfterStart):
+//   DependencyGate gate;
+//   gate.WaitAndRun(n, { SceneManagerNodeService }, [&](auto&) {
+//       worldTimer.RunEvery(dt, World::Update);
+//   });
+//
+struct DependencyGate {
+    TimerTaskComp probeTimer;
+    bool ready{ false };
+    uint32_t waitLogTick{ 0 };
+
+    // nodeName: e.g. "Scene", "Gate" — used only in log messages.
+    // requiredNodeTypes: service types to wait for.
+    // onReady: invoked exactly once when all dependencies are discovered.
+    template <typename TNode, typename ReadyFn>
+    void WaitAndRun(TNode& node,
+                    const std::vector<uint32_t>& requiredNodeTypes,
+                    ReadyFn onReady,
+                    const std::string& nodeName = "",
+                    double probeIntervalSec = 1.0,
+                    uint32_t logEveryNTicks = 5)
+    {
+        probeTimer.RunEvery(probeIntervalSec,
+            [this, &node, requiredNodeTypes, onReady = std::move(onReady), nodeName, logEveryNTicks] {
+                if (ready) return;
+
+                auto missing = node.CollectMissingDiscoveredServiceNodes(requiredNodeTypes);
+                if (!missing.empty()) {
+                    if (++waitLogTick % logEveryNTicks == 0) {
+                        LOG_INFO << nodeName << " startup waiting dependencies: missing="
+                                 << Node::FormatNodeTypeNames(missing);
+                    }
+                    return;
+                }
+
+                ready = true;
+                LOG_INFO << nodeName << " dependency ready: all required nodes discovered. "
+                         << "required=" << Node::FormatNodeTypeNames(requiredNodeTypes);
+                onReady(node);
+            });
+    }
 };
 
 extern Node* gNode;

@@ -10,7 +10,7 @@
 #include "actor/action_state/system/actor_action_state.h"
 #include "combat_state/system/combat_state.h"
 #include "combat/buff/system/buff.h"
-#include "combat/skill/comp/skill.h"
+#include "combat/skill/comp/skill_comp.h"
 #include "combat/skill/constants/skill.h"
 #include "spatial/system/view.h"
 #include "proto/common/event/combat_event.pb.h"
@@ -80,16 +80,11 @@ void AddSkillContext(entt::entity caster, const ReleaseSkillRequest* request, st
 }
 
 void ConsumeItems(entt::entity caster, const SkillTable* skillTable) {
-	for (const auto& item : skillTable->requireditem()) {
-		// TODO: Implement item consumption logic
-	}
+	// TODO: Implement item consumption logic
 }
 
-// Consume required resources
 void ConsumeResources(entt::entity caster, const SkillTable* skillTable) {
-	for (const auto& resource : skillTable->requestresource()) {
-		// TODO: Implement resource consumption logic
-	}
+	// TODO: Implement resource consumption logic
 }
 
 void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t targetId) {
@@ -233,7 +228,7 @@ void SkillSystem::HandleSkillFinish(const entt::entity casterEntity, uint64_t sk
         return;
     }
 
-	// todo player off line 
+	// TODO: Handle offline player
 	auto& casterSkillContextMap = tlsRegistryManager.actorRegistry.get_or_emplace<SkillContextCompMap>(casterEntity);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
 	if (skillContentIt != casterSkillContextMap.end()) {
@@ -270,9 +265,8 @@ void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t sk
 		});
 }
 
-// Placeholder for channeling think logic
 void SkillSystem::HandleChannelThink(entt::entity casterEntity, uint64_t skillId) {
-	// TODO: Implement channel think logic here
+	// TODO: Implement channel think logic
 }
 
 void SkillSystem::HandleChannelFinish(const entt::entity casterEntity, const uint64_t skillId) {
@@ -443,7 +437,6 @@ void SkillSystem::SendSkillInterruptedMessage(const entt::entity casterEntity, c
 	SkillInterruptedS2C skillInterruptedS2C;
 	skillInterruptedS2C.set_entity(entt::to_integral(casterEntity));
 	skillInterruptedS2C.set_skill_table_id(skillTableId);
-	//skillInterruptedS2C.set_skill_id(skillTableID);
 
 	ViewSystem::BroadcastMessageToVisiblePlayers(
 		casterEntity,

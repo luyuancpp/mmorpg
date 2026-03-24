@@ -72,7 +72,7 @@ void CallRemoteMethodOnSession(uint32_t messageId, const google::protobuf::Messa
 	const auto node = registry.try_get<RpcSession>(entity);
 	if (!node)
 	{
-		LOG_ERROR << "RpcClientPtr not found for node: " << nodeId;
+		LOG_ERROR << "RpcSession not found for node: " << nodeId;
 		return;
 	}
 

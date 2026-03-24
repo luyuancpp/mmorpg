@@ -3,11 +3,11 @@
 #include <array>
 #include <ranges>
 
-#include "actor/attribute/comp/actor_attribute.h"
+#include "actor/attribute/comp/actor_attribute_comp.h"
 
 #include "table/code/buff_table.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
-#include "combat/buff/comp/buff.h"
+#include "combat/buff/comp/buff_comp.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include <thread_context/registry_manager.h>
@@ -63,11 +63,11 @@ void ActorAttributeCalculatorSystem::MarkAttributeForUpdate(const entt::entity a
     attributeBits.set(attributeBit);
 }
 
-void ActorAttributeCalculatorSystem::Update(double delta)
+void ActorAttributeCalculatorSystem::Update()
 {
-    for (auto&& [entity, AttributeDirtyFlagsComponent] : tlsRegistryManager.actorRegistry.view<AttributeDirtyFlagsComp>().each())
+    for (auto&& [entity, dirtyFlags] : tlsRegistryManager.actorRegistry.view<AttributeDirtyFlagsComp>().each())
     {
-        auto& attributeBits = AttributeDirtyFlagsComponent.attributeBits;
+        auto& attributeBits = dirtyFlags.attributeBits;
         for (const auto& [attributeIndex, updateFunction] : kAttributeConfigs) {
             if (updateFunction && attributeBits.test(attributeIndex)) {
                 updateFunction(entity);

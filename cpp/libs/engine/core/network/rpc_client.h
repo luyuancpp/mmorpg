@@ -17,7 +17,7 @@ public:
     RpcClient(muduo::net::EventLoop* loop,
         const muduo::net::InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
-        channel_(new GameChannel)
+        channel_(std::make_shared<GameChannel>())
     {
         client_.setConnectionCallback(
             std::bind(&RpcClient::onConnection, this, std::placeholders::_1));
@@ -28,7 +28,7 @@ public:
 
     const muduo::net::InetAddress& local_addr()const
     {
-        if (nullptr == client_.connection())
+        if (client_.connection() == nullptr)
         {
             static muduo::net::InetAddress s;
             return s;
@@ -39,7 +39,7 @@ public:
 
     const muduo::net::InetAddress& peer_addr()const
     {
-        if (nullptr == client_.connection())
+        if (client_.connection() == nullptr)
         {
             static muduo::net::InetAddress s;
             return s;
@@ -99,7 +99,7 @@ public:
     }
 
 	muduo::net::TcpConnectionPtr GetConnection() const {
-		if (nullptr == client_.connection())
+if (client_.connection() == nullptr)
 		{
 			static muduo::net::TcpConnectionPtr c;
 			return c;

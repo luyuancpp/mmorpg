@@ -1,5 +1,7 @@
 #include "world.h"
 
+#include <algorithm>
+
 #include "actor/attribute/system/actor_attribute_calculator.h"
 #include "actor/attribute/system/actor_state_attribute_sync.h"
 #include "combat/buff/system/buff.h"
@@ -7,7 +9,6 @@
 #include "spatial/system/aoi.h"
 #include "spatial/system/movement_acceleration.h"
 #include "spatial/system/movement.h"
-#include "Recast/Recast.h"
 #include "frame/manager/frame_time.h"
 #include "proto/common/component/frame_comp.pb.h"
 #include "core/system/id_generator.h"
@@ -19,7 +20,7 @@ using namespace std::chrono;
 constexpr int kMaxSimulationIterationsPerFrame = 5;
 constexpr double kMillisecondsToSeconds = 1000.0;
 
-uint64_t GetTimeInMilliseconds()
+static uint64_t GetTimeInMilliseconds()
 {
     return duration_cast<std::chrono::milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
@@ -38,7 +39,7 @@ void World::Update()
     const double deltaTime = static_cast<double>((currentTime - tlsFrameTimeManager.frameTime.previous_time())) / kMillisecondsToSeconds;
     tlsFrameTimeManager.frameTime.set_previous_time(currentTime);
 
-    double accumulatedTime = rcClamp(tlsFrameTimeManager.frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
+    double accumulatedTime = std::clamp(tlsFrameTimeManager.frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
     int simulationIterations = 0;
     const double fixedDeltaTime = tlsFrameTimeManager.frameTime.delta_time();
 
@@ -53,7 +54,7 @@ void World::Update()
             BuffSystem::Update(fixedDeltaTime);
 
             // Attribute calculation must run last (depends on state changes above)
-            ActorAttributeCalculatorSystem::Update(fixedDeltaTime);
+            ActorAttributeCalculatorSystem::Update();
             ActorStateAttributeSyncSystem::Update(fixedDeltaTime);
 
             tlsFrameTimeManager.frameTime.set_current_frame(tlsFrameTimeManager.frameTime.current_frame() + 1);

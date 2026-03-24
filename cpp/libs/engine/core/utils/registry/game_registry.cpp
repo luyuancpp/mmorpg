@@ -6,7 +6,7 @@
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
 
-//to check 
+// TODO: review whether validity check is sufficient
 void DestroyEntity(entt::registry& registry, entt::entity entity)
 {
     if (!registry.valid(entity))

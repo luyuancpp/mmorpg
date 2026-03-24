@@ -31,7 +31,5 @@ public:
     static void LookAtPosition(entt::entity entity, const Vector3& pos);
 private:
     static bool BothAreNpcs(entt::entity observer, entt::entity entrant);
-
-    static bool EntrantIsNpc(entt::entity entrant);
 };
 

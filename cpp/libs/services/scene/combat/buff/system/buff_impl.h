@@ -2,7 +2,7 @@
 
 #include "entt/src/entt/entity/entity.hpp"
 #include "engine/core/type_define/type_define.h"
-#include "combat/buff/comp/buff.h"
+#include "combat/buff/comp/buff_comp.h"
 
 class BuffTable;
 class DamageEventComp;

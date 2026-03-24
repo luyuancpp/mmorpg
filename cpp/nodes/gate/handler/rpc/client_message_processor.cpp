@@ -130,10 +130,10 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     // TODO: Handle unauthenticated messages sent before login
-    if (conn->connected()){
+    if (conn->connected()) {
         HandleConnectionEstablished(conn);
     }
-    else{
+    else {
         HandleConnectionDisconnection(conn);
     }
 }
@@ -163,7 +163,7 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
     message.set_message_id(SceneClientPlayerCommonSendTipToClientMessageId);
     GetGateCodec().send(conn, message);
 
-    LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
+    LOG_TRACE << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
 
 bool RpcClientSessionHandler::CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
@@ -181,7 +181,7 @@ bool RpcClientSessionHandler::CheckMessageSize(const RpcClientMessagePtr& reques
 }
 
 bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
-    if (const auto err = session.messageLimiter.CanSend(request->message_id()); kSuccess != err) {
+    if (const auto err = session.messageLimiter.CanSend(request->message_id()); err != kSuccess) {
         LOG_ERROR << "Failed to send message. Message ID: " << request->message_id() << ", Error: " << err;
         MessageContent errResponse;
         errResponse.set_id(request->id());
@@ -296,22 +296,22 @@ void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr&
 }
 
 void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn){
-	auto& rpcHandlerMeta  = gRpcMethodRegistry[request->message_id()];
-	ParseMessageFromRequestBody(*rpcHandlerMeta .requestProto, request, sessionId);
+	auto& rpcHandlerMeta = gRpcMethodRegistry[request->message_id()];
+	ParseMessageFromRequestBody(*rpcHandlerMeta.requestProto, request, sessionId);
 
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(sessionId);
 	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 	if (sessionIt == tlsSessionManager.sessions().end()) {
 		LOG_ERROR << "Session not found for session id: " << sessionId;
-		return ;
+		return;
 	}
-    sessionDetails.set_player_id(sessionIt->second.playerId);
-    sessionDetails.set_gate_node_id(gNode->GetNodeId());
-    sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
+	sessionDetails.set_player_id(sessionIt->second.playerId);
+	sessionDetails.set_gate_node_id(gNode->GetNodeId());
+	sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
 
-	if (rpcHandlerMeta .sender){
-		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta .targetNodeType);
+	if (rpcHandlerMeta.sender){
+		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta.targetNodeType);
 		if (!node)
 		{
 			LOG_ERROR << "Node not found for session id: " << sessionId << ", message id: " << request->message_id();
@@ -319,12 +319,11 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 			return;
 		}
 
-		
-		rpcHandlerMeta .sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta .targetNodeType), 
-            *node, 
-            *rpcHandlerMeta .requestProto, 
-            { kSessionBinMetaKey }, 
-            SerializeSessionDetails(sessionDetails));
+		rpcHandlerMeta.sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType), 
+			*node, 
+			*rpcHandlerMeta.requestProto, 
+			{ kSessionBinMetaKey }, 
+			SerializeSessionDetails(sessionDetails));
 	}
 }
 
@@ -335,7 +334,7 @@ bool RpcClientSessionHandler::ValidateClientMessage(SessionInfo& session, const 
 }
 
 
-//// Main request handler, forwards the request to the appropriate service
+// Main request handler, forwards the request to the appropriate service
 void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConnectionPtr& conn,
 	const RpcClientMessagePtr& request,
 	muduo::Timestamp)
@@ -359,9 +358,9 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
     if (!ValidateClientMessage(session, request, conn)) return;
 
 	auto& messageInfo = gRpcMethodRegistry[request->message_id()];
-    if (messageInfo.protocol == PROTOCOL_TCP){
+    if (messageInfo.protocol == PROTOCOL_TCP) {
 		HandleTcpNodeMessage(session, request, sessionId, conn);
-    }else if (messageInfo.protocol == PROTOCOL_GRPC){
+    } else if (messageInfo.protocol == PROTOCOL_GRPC) {
     	HandleGrpcNodeMessage(sessionId, request, conn);
     }
 }

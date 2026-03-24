@@ -1,6 +1,6 @@
 #pragma once
 
-#include "spatial/comp/nav.h"
+#include "spatial/comp/nav_comp.h"
 
 using SceneNavMapComp = std::unordered_map<uint32_t, NavComp>;
 

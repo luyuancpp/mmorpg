@@ -1,6 +1,6 @@
 #include "scene_crowd.h"
 
-#include "spatial/comp/dt_crowd.h"
+#include "spatial/comp/dt_crowd_comp.h"
 
 #include "modules/scene/comp/scene_comp.h"
 #include "spatial/constants/dt_crowd.h"
@@ -59,9 +59,5 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 	int agentIndex = (*dtCrowd)->addAgent(position, agentParams, nullptr);
 }
 
-void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
-{
-	// Placeholder for any necessary cleanup or handling before leaving the scene
-	// No implementation needed currently
-}
+void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {}
 

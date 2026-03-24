@@ -27,6 +27,7 @@ struct GateRuntimeContext {
     ProtobufDispatcher protobufDispatcher;
     ProtobufCodec codec;
     RpcClientSessionHandler rpcClientHandler;
+    DependencyGate dependencyGate;
 
     GateRuntimeContext()
         : protobufDispatcher([](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp) {
@@ -79,15 +80,18 @@ int main(int argc, char* argv[])
 
             // Post-startup: attach client TCP callbacks + initialize session ID generator
             node.SetAfterStart([&context](SimpleNode<GateHandler>& n) {
-                n.GetTcpServer().setConnectionCallback(
-                    [&context](const TcpConnectionPtr& conn) {
-                        context.rpcClientHandler.OnConnection(conn);
-                    });
-                n.GetTcpServer().setMessageCallback(
-                    [&context](const TcpConnectionPtr& conn, muduo::net::Buffer* buf, Timestamp ts) {
-                        context.codec.onMessage(conn, buf, ts);
-                    });
-                tlsSessionManager.session_id_gen().set_node_id(n.GetNodeId());
+                context.dependencyGate.WaitAndRun(n, { LoginNodeService, SceneNodeService },
+                    [&context](SimpleNode<GateHandler>& n) {
+                        n.GetTcpServer().setConnectionCallback(
+                            [&context](const TcpConnectionPtr& conn) {
+                                context.rpcClientHandler.OnConnection(conn);
+                            });
+                        n.GetTcpServer().setMessageCallback(
+                            [&context](const TcpConnectionPtr& conn, muduo::net::Buffer* buf, Timestamp ts) {
+                                context.codec.onMessage(conn, buf, ts);
+                            });
+                        tlsSessionManager.session_id_gen().set_node_id(n.GetNodeId());
+                    }, "Gate");
             });
 
             // Kafka: unified registration path for all node command-consumers.

@@ -49,8 +49,8 @@ mmorpg/
 | C++ node main templates | `cpp/nodes/_template/` | Use `main.simple.cpp.example` or `main.with_context.cpp.example` |
 | C++ gameplay/domain logic | `cpp/libs/services/scene/` | Systems, comps, world, actor/player logic |
 | Go login service | `go/login/login.go` | etcd registration + grpc startup |
-| Go scene manager | `go/scene_manager/scenemanagerservice.go` | go-zero scene manager + load reporter |
-| Go data service | `go/data_service/dataservice.go` | go-zero RPC service pattern |
+| Go scene manager | `go/scene_manager/scene_manager_service.go` | go-zero scene manager + load reporter |
+| Go data service | `go/data_service/data_service.go` | go-zero RPC service pattern |
 | Java auth grpc node | `java/sa_token_node/` | Maven Spring Boot auth/grpc service |
 | Proto contracts | `proto/` | Authoritative source; regenerate consumers after edits |
 | Checked-in generated contracts | `generated/proto/` | Review only; do not hand-edit |
