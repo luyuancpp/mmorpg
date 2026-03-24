@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include "hexagons_grid.h"
 #include "core/network/message_system.h"
-#include "spatial/comp/grid.h"
+#include "spatial/comp/grid_comp.h"
 #include "spatial/system/grid.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "modules/scene/comp/scene_comp.h"
@@ -110,7 +110,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         }
     }
 
-    GridSystem::UpdateLogGridSize(0.1);
+    GridSystem::UpdateLogGridSize();
 }
 
 // Test player movement across six neighboring hexes

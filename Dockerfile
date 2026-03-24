@@ -1,19 +1,20 @@
-FROM gcc:latest
+# Development container for the C++ build toolchain.
+# Not used for production — see deploy/k8s/ for runtime images.
+#
+# Usage:
+#   docker build -t mmorpg-dev .
+#   docker run -it --rm -v .:/workspace mmorpg-dev bash
+FROM gcc:13
 
 RUN apt-get update && apt-get -y --no-install-recommends install \
     build-essential \
+    cmake \
     gdb \
     wget \
     make \
     libboost-dev \
-    vim
+    libssl-dev \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-RUN mkdir /usr/src/mmorpg
-
-COPY . /usr/src/mmorpg
-
-WORKDIR /usr/src/mmorpg
-
-CMD ["bash", "-c", "while true; do echo Hello Docker; sleep 1; done"]
+WORKDIR /workspace

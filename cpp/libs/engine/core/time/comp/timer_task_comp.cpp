@@ -3,7 +3,9 @@
 #include "muduo/net/TimerId.h"
 #include "time/system/time.h"
 
-#define tlsEventLoop EventLoop::getEventLoopOfCurrentThread()
+static inline muduo::net::EventLoop* GetThreadEventLoop() {
+    return muduo::net::EventLoop::getEventLoopOfCurrentThread();
+}
 
 TimerTaskComp::TimerTaskComp() {
     Cancel();
@@ -33,19 +35,19 @@ TimerTaskComp& TimerTaskComp::operator=(TimerTaskComp&& param) noexcept
 void TimerTaskComp::RunAt(const Timestamp& time, const TimerCallback& cb) {
     Cancel();
     callback = cb;
-    timerId = tlsEventLoop->runAt(time, std::bind(&TimerTaskComp::OnTimer, this));
+    timerId = GetThreadEventLoop()->runAt(time, std::bind(&TimerTaskComp::OnTimer, this));
 }
 
 void TimerTaskComp::RunAfter(const double delay, const TimerCallback& cb) {
     Cancel();
     callback = cb;
-    timerId = tlsEventLoop->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
+    timerId = GetThreadEventLoop()->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
 }
 
 void TimerTaskComp::RunEvery(const double interval, const TimerCallback& cb) {
     Cancel();
     callback = cb;
-    timerId = tlsEventLoop->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
+    timerId = GetThreadEventLoop()->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
 }
 
 void TimerTaskComp::Run() const
@@ -56,10 +58,10 @@ void TimerTaskComp::Run() const
 }
 
 void TimerTaskComp::Cancel() {
-    tlsEventLoop->cancel(timerId);
+    GetThreadEventLoop()->cancel(timerId);
     timerId = TimerId();
     callback = TimerCallback();
-    assert(nullptr == timerId.GetTimer());
+    assert(timerId.GetTimer() == nullptr);
 }
 
 

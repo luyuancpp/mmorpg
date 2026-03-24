@@ -5,7 +5,7 @@
 #include <network/rpc_client.h>
 #include "thread_context/node_context_manager.h"
 
-// Static node-type-to-name map //todo
+// Static node-type-to-name map
 const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
 	{ eNodeType::SceneNodeService,   eNodeType_Name(SceneNodeService) },
 	{ eNodeType::GateNodeService,    eNodeType_Name(GateNodeService) },

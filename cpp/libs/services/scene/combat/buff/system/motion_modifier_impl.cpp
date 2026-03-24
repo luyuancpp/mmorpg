@@ -17,7 +17,7 @@ bool MotionModifierBuffImplSystem::OnBuffRemove(entt::entity parent, BuffEntry& 
         return false;
     }
     
-    return  false;
+    return false;
 }
 
 bool MotionModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
@@ -26,7 +26,7 @@ bool MotionModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry&
         return false;
     }
     
-    return  false;
+    return false;
 }
 
 bool MotionModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)

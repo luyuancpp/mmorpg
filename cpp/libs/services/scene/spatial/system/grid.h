@@ -3,7 +3,7 @@
 #include <absl/hash/hash.h>
 #include <absl/numeric/int128.h>
 
-#include "spatial/comp/grid.h"
+#include "spatial/comp/grid_comp.h"
 
 class Transform;
 struct Hex;
@@ -17,7 +17,7 @@ public:
     static Hex CalculateHexPosition(const Transform& transform);
     static void GetNeighborGridIds(const Hex& hex, GridSet& gridSet);
     static void GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet);
-    static void GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSelf);
-    static void GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites);
-    static void UpdateLogGridSize(double delta);
+    static void GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entities, bool excludingSelf);
+    static void GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entities);
+    static void UpdateLogGridSize();
 };

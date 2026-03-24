@@ -1,6 +1,6 @@
 #pragma once
 
-#include "combat/buff/comp/buff.h"
+#include "combat/buff/comp/buff_comp.h"
 #include "engine/core/type_define/type_define.h"
 
 class BuffTable;

@@ -31,7 +31,7 @@ using StdFilePtr = std::unique_ptr<std::FILE, StdFilePtrDeleter>;
 void RecastSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 {
 	StdFilePtr fp(std::fopen(path, "rb"));
-	if (nullptr == fp)
+	if (fp == nullptr)
 	{
 		LOG_ERROR << "load nav bin header " << path;
 		return;

@@ -44,7 +44,7 @@ public:
     static void SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId);
 
     // Send skill-interrupted message
-    static void SendSkillInterruptedMessage(entt::entity casterEntity, const uint32_t skillTableId) ;
+    static void SendSkillInterruptedMessage(entt::entity casterEntity, uint32_t skillTableId);
 
 	static void TriggerSkillEffect(entt::entity casterEntity, uint64_t skillId);
 

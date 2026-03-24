@@ -165,7 +165,6 @@ private:
 #ifdef ENABLE_SNOWFLAKE_TESTING
 		if (use_mock_time_) {
 			auto now_epoch = mock_now_++ - epoch_;
-			//CheckTimestampOverflow(now_epoch, kTimeShift, epoch_);
 			return now_epoch;
 		}
 #endif
@@ -175,36 +174,8 @@ private:
 				std::chrono::system_clock::now().time_since_epoch())
 			.count()) - epoch_;
 
-		//CheckTimestampOverflow(now_epoch, kTimeShift, epoch_);
 		return now_epoch;
 
-	}
-
-	inline void CheckTimestampOverflow(uint64_t now_epoch, uint64_t kTimeShift, uint64_t epoch) {
-		constexpr uint64_t kSecondsPerYear = 31536000; // 365 * 24 * 60 * 60
-		constexpr uint64_t kTimeThreshold = 100000000; // ~3.17 years
-
-		uint64_t max_time_value = (1ULL << (64 - kTimeShift));
-
-		if (now_epoch >= max_time_value) {
-			LOG_FATAL << "Snowflake time field overflow! now=" << now_epoch
-				<< ", max=" << max_time_value
-				<< ", base epoch=" << epoch;
-		}
-		else if (max_time_value - now_epoch <= kTimeThreshold) {
-			LOG_WARN << "Snowflake timestamp approaching limit. Remaining seconds: "
-				<< (max_time_value - now_epoch)
-				<< " (~" << (max_time_value - now_epoch) / kSecondsPerYear
-				<< " years left)";
-		}
-	}
-
-
-	inline uint64_t GetMaxSupportedYears(uint64_t kTimeShift) {
-		constexpr uint64_t seconds_per_year = 31536000;
-		uint64_t time_bits = 64 - kTimeShift;
-		uint64_t max_seconds = (1ULL << time_bits);
-		return max_seconds / seconds_per_year;
 	}
 
 private:

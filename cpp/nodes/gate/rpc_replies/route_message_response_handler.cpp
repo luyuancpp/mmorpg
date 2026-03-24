@@ -32,7 +32,7 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 	}
 	
 	auto& route_data = replied->route_nodes(replied->route_nodes_size() - 1);
-	if ( route_data.message_id() >= gRpcMethodRegistry.size())
+	if (route_data.message_id() >= gRpcMethodRegistry.size())
 	{
 		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;
@@ -41,13 +41,13 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 	const auto it = tlsSessionManager.sessions().find(replied->session_id());
 	if (it == tlsSessionManager.sessions().end())
 	{
-		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
+		LOG_ERROR << "conn id not found, session id: " << replied->session_id();
 		return;
 	}
 
 	MessageContent message;
 	message.set_serialized_message(replied->body());
-	message.set_message_id(route_data.message_id());;
+	message.set_message_id(route_data.message_id());
 	GetGateCodec().send(it->second.conn, message);
 	///<<< END WRITING YOUR CODE
 }

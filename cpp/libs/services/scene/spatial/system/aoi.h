@@ -1,6 +1,6 @@
 #pragma once
 
-#include "spatial/comp/grid.h"
+#include "spatial/comp/grid_comp.h"
 
 class AfterEnterScene;
 class BeforeLeaveScene;
@@ -19,7 +19,7 @@ private:
     static void NotifyEntityVisibilityChanges(entt::entity entity,
                                               const EntityUnorderedSet& enteringEntities, 
                                               const EntityUnorderedSet& leavingEntities);
-    static void RemoveEntityFromGrid(const Hex& hex, SceneGridListComp& gridList, entt::entity entity) ;
+    static void RemoveEntityFromGrid(const Hex& hex, SceneGridListComp& gridList, entt::entity entity);
 
     static void BroadcastEntityLeave(const SceneGridListComp& gridList, entt::entity entity, const GridSet& gridsToLeave);
 };

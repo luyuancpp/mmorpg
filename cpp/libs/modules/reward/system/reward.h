@@ -3,7 +3,7 @@
 #include <bitset>
 #include <cstdint>
 
-#include "modules/reward/comp/reward.h"
+#include "modules/reward/comp/reward_comp.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/reward_error_tip.pb.h"
 

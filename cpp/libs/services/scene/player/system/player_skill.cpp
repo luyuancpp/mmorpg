@@ -9,11 +9,10 @@ void PlayerSkillSystem::RegisterPlayer(entt::entity player)
 {
 	for (const auto& tableClass : GetClassAllTable().data())
 	{
-		auto pbSkill = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSkillListComp>(player).add_skill_list();
-
 		for (auto& skillId : tableClass.skill())
 		{
-            pbSkill->set_skill_table_id(skillId);
+			auto pbSkill = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSkillListComp>(player).add_skill_list();
+			pbSkill->set_skill_table_id(skillId);
 		}
 	}
 }
