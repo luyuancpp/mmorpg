@@ -8,7 +8,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "modifier_buff_impl.h"
 #include "motion_modifier_impl.h"
-#include "combat/buff/comp/buff.h"
+#include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff.h"
 #include "proto/common/event/skill_event.pb.h"
 #include "core/utils/utility/utility.h"
@@ -202,6 +202,10 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
 {
     FetchBuffTableOrReturnFalse(buffTableId);
 
+    if (!abilityContext) {
+        return false;
+    }
+
     auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
     for (auto& buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
@@ -247,15 +251,17 @@ void BuffSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTab
 {
     if (BuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
-    }else if (ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
+    } else if (ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
-    }
-    else if (MotionModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
+    } else if (MotionModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
     }
 }
 
-void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffEntry& buffComp) {}
+void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffEntry& buffComp)
+{
+    // TODO: implement buff refresh logic (e.g. reset duration, reapply modifiers)
+}
 
 void BuffSystem::OnBuffRemove(const entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
@@ -300,6 +306,7 @@ void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
 }
 void BuffSystem::OnSkillExecuted(SkillExecutedEvent& event)
 {
+    // TODO: implement buff reactions to skill execution events
 }
 
 void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
@@ -310,10 +317,12 @@ void BuffSystem::OnBeforeGiveDamage(const entt::entity casterEntity, const entt:
 
 void BuffSystem::OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
+    // TODO: implement post-damage-dealt buff triggers
 }
 
 void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
+    // TODO: implement pre-damage-taken buff triggers (e.g. damage reduction shields)
 }
 
 void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
@@ -323,17 +332,17 @@ void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::
 
 void BuffSystem::OnBeforeDead(entt::entity parent)
 {
-
+    // TODO: implement pre-death buff triggers (e.g. death prevention, last stand)
 }
 
 void BuffSystem::OnAfterDead(entt::entity parent)
 {
-
+    // TODO: implement post-death buff cleanup or triggers
 }
 
 void BuffSystem::OnKill(entt::entity parent)
 {
-
+    // TODO: implement on-kill buff triggers (e.g. life steal, kill streak buffs)
 }
 
 void BuffSystem::OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity) {

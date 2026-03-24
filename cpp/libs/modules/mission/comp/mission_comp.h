@@ -15,6 +15,7 @@ class MissionConditionEvent;
 
 using MissionsBits = std::bitset<kMissionMaxBitIndex>;
 
+/// Per-scope container for active and completed missions.
 class MissionsComp : public EventOwner
 {
 public:
@@ -22,72 +23,69 @@ public:
 
     MissionsComp();
 
-    [[nodiscard]] const auto& GetEventMissionsClassifyForUnitTest() const { return eventMissionsClassify; }
-    [[nodiscard]] const MissionListComp& getMissionsComp() const { return missionsComp; }
-    [[nodiscard]] std::size_t MissionSize() const { return missionsComp.missions().size(); }
-    [[nodiscard]] std::size_t CompleteSize() const { return completedMissions.count(); }
-    [[nodiscard]] std::size_t TypeSetSize() const { return typeFilter.size(); }
+    // ── Query ────────────────────────────────────────────────────────────
+
+    [[nodiscard]] std::size_t MissionSize() const { return missionList_.missions().size(); }
+    [[nodiscard]] std::size_t CompleteSize() const { return completedMissions_.count(); }
+    [[nodiscard]] std::size_t TypeSetSize() const { return typeFilter_.size(); }
     [[nodiscard]] std::size_t CanGetRewardSize() const;
-    MissionsBits& GetCompleteMissions() { return completedMissions; }
-    MissionsBits& GetClaimableRewards() { return claimableRewards; }
+    MissionsBits& GetCompleteMissions() { return completedMissions_; }
+    MissionsBits& GetClaimableRewards() { return claimableRewards_; }
 
     [[nodiscard]] bool IsClaimable(const uint32_t missionId) const
     {
-        return TestBit(MissionBitMap, claimableRewards, missionId);
+        return TestBit(MissionBitMap, claimableRewards_, missionId);
     }
 
-    [[nodiscard]] MissionListComp& GetMissionsComp()
+    [[nodiscard]] bool IsAccepted(uint32_t missionId) const
     {
-        return missionsComp;
+        return missionList_.missions().count(missionId) > 0;
     }
 
-    [[nodiscard]] EventMissionClassifyMap& GetEventMissionsClassify()
-    {
-        return eventMissionsClassify;
-    }
-
-    [[nodiscard]] UInt32PairSet& GetTypeFilter()
-    {
-        return typeFilter;
-    }
-
-    [[nodiscard]] bool IsMissionTypeNotRepeated() const
-    {
-        return missionTypeNotRepeated;
-    }
-
-    void SetMissionTypeNotRepeated(const bool mission_type_not_repeated)
-    {
-        missionTypeNotRepeated = mission_type_not_repeated;
-    }
-
-    [[nodiscard]] bool IsAccepted(const uint32_t missionId) const
-    {
-        return missionsComp.missions().count(missionId) > 0;
-    }
-
-    [[nodiscard]] bool IsComplete(const uint32_t missionId) const
+    [[nodiscard]] bool IsComplete(uint32_t missionId) const
     {
         if (!MissionBitMap.contains(missionId))
         {
             return false;
         }
-        return completedMissions.test(MissionBitMap.at(missionId));
+        return completedMissions_.test(MissionBitMap.at(missionId));
     }
 
-    void AbandonMission(const uint32_t missionId);
+    [[nodiscard]] bool IsMissionTypeNotRepeated() const { return missionTypeNotRepeated_; }
 
     [[nodiscard]] uint32_t IsMissionUnaccepted(uint32_t missionId) const;
     [[nodiscard]] uint32_t IsMissionUncompleted(uint32_t missionId) const;
 
+    // ── Accessors ────────────────────────────────────────────────────────
+
+    [[nodiscard]] const MissionListComp& GetMissionList() const { return missionList_; }
+    [[nodiscard]] MissionListComp& GetMutableMissionList() { return missionList_; }
+
+    [[nodiscard]] const EventMissionClassifyMap& GetEventMissionsClassify() const { return eventMissionsClassify_; }
+    [[nodiscard]] EventMissionClassifyMap& GetMutableEventMissionsClassify() { return eventMissionsClassify_; }
+
+    [[nodiscard]] const UInt32PairSet& GetTypeFilter() const { return typeFilter_; }
+    [[nodiscard]] UInt32PairSet& GetMutableTypeFilter() { return typeFilter_; }
+
+    [[nodiscard]] const MissionsBits& GetCompletedMissions() const { return completedMissions_; }
+    [[nodiscard]] MissionsBits& GetMutableCompletedMissions() { return completedMissions_; }
+
+    // ── Test-only ────────────────────────────────────────────────────────
+
+    [[nodiscard]] const auto& GetEventMissionsClassifyForUnitTest() const { return eventMissionsClassify_; }
+
+    // ── Mutators ─────────────────────────────────────────────────────────
+
+    void SetMissionTypeNotRepeated(bool value) { missionTypeNotRepeated_ = value; }
+    void AbandonMission(uint32_t missionId);
 
 private:
-    MissionListComp missionsComp;
-    EventMissionClassifyMap eventMissionsClassify; // key: classify mission by event type, value: mission list
-    UInt32PairSet typeFilter;
-    bool missionTypeNotRepeated{ true }; //mission type must be unique
-    MissionsBits completedMissions;
-    MissionsBits claimableRewards;
+    MissionListComp missionList_;
+    EventMissionClassifyMap eventMissionsClassify_;
+    UInt32PairSet typeFilter_;
+    bool missionTypeNotRepeated_{ true };
+    MissionsBits completedMissions_;
+    MissionsBits claimableRewards_;
 };
 
 using PlayerMissionList = std::array<MissionsComp, MissionListComp::kPlayerMissionSize>;
@@ -105,7 +103,6 @@ struct MissionsContainerComp {
 		return it->second;
 	}
 
-	// const read accessor
 	const MissionsComp* Get(uint32_t scope) const {
 		auto it = map.find(scope);
 		return (it == map.end()) ? nullptr : &it->second;

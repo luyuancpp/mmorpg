@@ -1,6 +1,5 @@
 #include "player_lifecycle.h"
 #include "proto/common/event/actor_event.pb.h"
-#include "core/network/message_system.h"
 #include "proto/common/component/player_async_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_login_comp.pb.h"
@@ -12,10 +11,8 @@
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/defer/defer.h"
 #include "network/node_utils.h"
-#include "network/node_message_utils.h"
 #include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
-#include "proto/common/database/mysql_database_table.pb.h"
 #include "proto/common/event/player_migration_event.pb.h"
 #include "node/system/zone_utils.h"
 #include "table/proto/tip/cross_server_error_tip.pb.h"
@@ -118,15 +115,9 @@ void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsT
 	switch (enterGsType)
 	{
 	case LOGIN_FIRST:
-		LOG_INFO << "OnPlayerLogin: first login, player=" << playerId;
-		PlayerSceneSystem::HandleEnterScene(player, sceneEntity->sceneEntity);
-		break;
 	case LOGIN_REPLACE:
-		LOG_INFO << "OnPlayerLogin: replace login (new device/session), player=" << playerId;
-		PlayerSceneSystem::HandleEnterScene(player, sceneEntity->sceneEntity);
-		break;
 	case LOGIN_RECONNECT:
-		LOG_INFO << "OnPlayerLogin: reconnect login, player=" << playerId;
+		LOG_INFO << "OnPlayerLogin: enter_gs_type=" << enterGsType << " player=" << playerId;
 		PlayerSceneSystem::HandleEnterScene(player, sceneEntity->sceneEntity);
 		break;
 	case LOGIN_NONE:
@@ -140,7 +131,7 @@ void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsT
 
 void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity player)
 {
-
+	// TODO: notify client that gate binding is ready; send initial scene state snapshot
 }
 
 // TODO: Validate session before removal

@@ -149,6 +149,44 @@ cd java\sa_token_node && mvn test
 
 ---
 
+## Architecture Overview
+
+```
+Client ──TCP──▶ Gate Node (C++) ──Kafka──▶ Scene Node (C++)
+                     │                          │
+                     │ gRPC                     │ gRPC
+                     ▼                          ▼
+              Login Service (Go)        Scene Manager (Go)
+                     │                          │
+                     │                   Player Locator (Go)
+                     ▼                          │
+              Data Service (Go) ◀──────────────┘
+                     │
+                Kafka topics
+                     ▼
+              DB Consumer (Go) ──▶ MySQL
+```
+
+- **Gate Node**: accepts client TCP connections, authenticates via Login, routes messages via Kafka
+- **Scene Node**: runs ECS game simulation, handles player actions and scene logic
+- **Go services**: stateless microservices for auth, data, scene management, player location
+- **Kafka**: decouples gate/scene control messages (`gate-{id}` topic pattern)
+- **etcd**: service discovery for gRPC endpoints
+
+For detailed design docs, see [docs/](docs/).
+
+---
+
+## Contributing
+
+1. Edit `.proto` files in `proto/` first; regenerate consumers with `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`
+2. Do **not** hand-edit files under `generated/` or generated proto output trees
+3. Keep RPC handlers thin — delegate business logic to `*System` classes
+4. Follow naming conventions: `*Comp` suffix for ECS components, trailing underscore for private members
+5. C++ runtime code splits: node-facing adapters (`cpp/nodes/*`) vs reusable services (`cpp/libs/services/*`)
+
+---
+
 ## License
 
 This project is licensed under the **MIT License** — see [LICENSE](./LICENSE) for details.

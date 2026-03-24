@@ -1,6 +1,6 @@
 #include "scene_crowd.h"
 
-#include "spatial/comp/dt_crowd.h"
+#include "spatial/comp/dt_crowd_comp.h"
 
 #include "modules/scene/comp/scene_comp.h"
 #include "spatial/constants/dt_crowd.h"

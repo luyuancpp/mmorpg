@@ -2,6 +2,4 @@
 #include "muduo/net/TcpConnection.h"
 #include "proto/scene/game_scene.pb.h"
 
-using namespace muduo;
-using namespace muduo::net;
-void OnSceneSceneTestReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp);
+void OnSceneSceneTestReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp);

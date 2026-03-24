@@ -83,14 +83,17 @@ private:
     uint32_t OnNewGrid(Guid guid);
     static bool CanStack(const ItemComp& item1, const ItemComp& item2);
 
+    uint32_t AddNonStackableItem(ItemComp itemPBComp);
+    uint32_t AddStackableItem(ItemComp itemPBComp, uint32_t maxStackSize);
+
     std::size_t empty_grid_size() const { ValidateCapacity(); return size() - items_.size(); }
     void ValidateCapacity() const { assert(size() >= items_.size()); }
 
-	entt::entity entity;
+	entt::entity entity_{};
 	ItemsMap items_{};
 	PosMap pos_{};
 	uint32_t type_{};
     std::size_t capacity_{ kDefaultCapacity };
-	entt::registry itemRegistry;
+	entt::registry itemRegistry_{};
 	Guid player_guid_{ kInvalidGuid };
 };

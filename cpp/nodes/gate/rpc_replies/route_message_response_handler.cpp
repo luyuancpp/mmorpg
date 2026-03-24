@@ -32,7 +32,7 @@ void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::s
 	}
 	
 	auto& route_data = replied->route_nodes(replied->route_nodes_size() - 1);
-	if ( route_data.message_id() >= gRpcMethodRegistry.size())
+	if (route_data.message_id() >= gRpcMethodRegistry.size())
 	{
 		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;

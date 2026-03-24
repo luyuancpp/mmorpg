@@ -23,7 +23,7 @@ import (
 	pb "player_locator/proto/player_locator"
 )
 
-var configFile = flag.String("f", "etc/playerlocator.yaml", "config file path")
+var configFile = flag.String("f", "etc/player_locator.yaml", "config file path")
 
 const nodeType = uint32(proto_common.ENodeType_PlayerLocatorNodeService)
 

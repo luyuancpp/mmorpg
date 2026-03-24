@@ -11,7 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\mission\comp\mission_comp.h" />
-    <ClInclude Include="src\scene\comp\player_scene.h" />
+    <ClInclude Include="src\scene\comp\player_scene_comp.h" />
     <ClInclude Include="src\scene\comp\scene_comp.h" />
     <ClInclude Include="src\scene\comp\node_scene_comp.h" />
     <ClInclude Include="src\mission\constants\mission_constants.h" />

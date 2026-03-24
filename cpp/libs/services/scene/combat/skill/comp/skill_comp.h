@@ -29,4 +29,4 @@ struct ChannelIntervalTimerComp
 using SkillContextPtrComp = std::shared_ptr<SkillContextComp>;
 
 // Skill context container
-using  SkillContextCompMap = std::unordered_map<uint64_t, SkillContextPtrComp>;
+using SkillContextCompMap = std::unordered_map<uint64_t, SkillContextPtrComp>;

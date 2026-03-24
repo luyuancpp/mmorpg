@@ -17,7 +17,7 @@ public:
     RpcClient(muduo::net::EventLoop* loop,
         const muduo::net::InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
-        channel_(new GameChannel)
+        channel_(std::make_shared<GameChannel>())
     {
         client_.setConnectionCallback(
             std::bind(&RpcClient::onConnection, this, std::placeholders::_1));

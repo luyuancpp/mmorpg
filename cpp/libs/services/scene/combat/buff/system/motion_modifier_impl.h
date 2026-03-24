@@ -1,7 +1,7 @@
 #pragma once
 #include <entt/src/entt/entity/entity.hpp>
 
-#include "combat/skill/comp/skill.h"
+#include "combat/skill/comp/skill_comp.h"
 
 struct BuffEntry;
 class BuffTable;

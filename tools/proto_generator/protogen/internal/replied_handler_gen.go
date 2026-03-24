@@ -111,11 +111,9 @@ func GetServiceRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
 	const tmplStr = `#pragma once
 #include "muduo/net/TcpConnection.h"
 {{.FirstMethodInfo.IncludeName }}
-using namespace muduo;
-using namespace muduo::net;
 
 {{- range .Methods }}
-void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, Timestamp timestamp);
+void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, muduo::Timestamp timestamp);
 
 {{- end }}
 `
@@ -163,7 +161,7 @@ void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
 {{- range .Methods }}
 {{- if .HasCode }}
 
-void {{ .FuncName }}(const TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, Timestamp timestamp)
+void {{ .FuncName }}(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, muduo::Timestamp timestamp)
 {
 {{ .Code -}}
 }

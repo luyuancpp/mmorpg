@@ -10,7 +10,7 @@
 #include "actor/action_state/system/actor_action_state.h"
 #include "combat_state/system/combat_state.h"
 #include "combat/buff/system/buff.h"
-#include "combat/skill/comp/skill.h"
+#include "combat/skill/comp/skill_comp.h"
 #include "combat/skill/constants/skill.h"
 #include "spatial/system/view.h"
 #include "proto/common/event/combat_event.pb.h"

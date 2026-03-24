@@ -50,8 +50,7 @@ private:
 
 
 struct NodeStateComp {
-	// implicit conversion to enum for direct comparison
-	operator NodeState() const {
+	explicit operator NodeState() const {
 		return state;
 	}
 
@@ -63,7 +62,7 @@ struct NodeStateComp {
 };
 
 struct NodePressureComp {
-	operator NodePressureState() const {
+	explicit operator NodePressureState() const {
 		return state;
 	}
 

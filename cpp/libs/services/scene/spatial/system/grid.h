@@ -3,7 +3,7 @@
 #include <absl/hash/hash.h>
 #include <absl/numeric/int128.h>
 
-#include "spatial/comp/grid.h"
+#include "spatial/comp/grid_comp.h"
 
 class Transform;
 struct Hex;
