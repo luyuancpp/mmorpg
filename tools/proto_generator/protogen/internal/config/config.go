@@ -8,19 +8,19 @@ import (
 	"strings"
 	"sync"
 
-	"protogen/logger" // 引入全局logger包
+	"protogen/logger" // global logger package
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
-// 移除原有局部logger变量和InitLogger方法
-// 直接使用 protogen/logger 包中的 Global 实例
+// Removed original local logger variable and InitLogger method.
+// Using protogen/logger package's Global instance directly.
 
-// Config 代码生成器全局配置
+// Config is the global configuration for the code generator.
 type Config struct {
 	Paths          Paths                 `yaml:"paths"`
-	DirectoryNames DirectoryNames        `yaml:"directory_names"` // 新增：目录命名常量
+	DirectoryNames DirectoryNames        `yaml:"directory_names"` // directory naming constants
 	FileExtensions FileExtensions        `yaml:"file_extensions"`
 	Naming         Naming                `yaml:"naming"`
 	PathLists      PathLists             `yaml:"path_lists"`
@@ -31,21 +31,21 @@ type Config struct {
 	DomainMeta     map[string]DomainMeta `yaml:"domain_meta"`
 }
 
-// DirectoryNames 目录命名常量（对应YAML中的directory_names节点）
+// DirectoryNames holds directory naming constants (maps to YAML directory_names node).
 type DirectoryNames struct {
-	GeneratedRpcName     string `yaml:"generated_rpc_name"`       // RPC生成目录名
-	ServiceInfoName      string `yaml:"service_info_name"`        // 服务元数据目录名
-	ProtoDirName         string `yaml:"proto_dir_name"`           // Proto目录名
-	GoZeroProtoDirName   string `yaml:"go_zero_proto_dir_name"`   // Go-zero Proto目录名
-	NormalGoProto        string `yaml:"normal_go_proto"`          // 新增：普通Go代码目录名（对应YAML中的normal_go_dir_name）
-	RobotProtoName       string `yaml:"robot_proto_name"`         // Robot Proto目录名常量
-	RobotGoZeroProtoName string `yaml:"robot_go_zero_proto_name"` // Robot Go-zero Proto目录名常量
-	ModelDirName         string `yaml:"model_dir_name"`           // 模型目录名
-	ServiceIncludeDir    string `yaml:"service_include_dir"`      // 服务导入目录名
-	GoGrpcBaseDirName    string `yaml:"go_grpc_base_dir_name"`    // Go GRPC服务根目录路径片段
+	GeneratedRpcName     string `yaml:"generated_rpc_name"`       // generated RPC directory name
+	ServiceInfoName      string `yaml:"service_info_name"`        // service metadata directory name
+	ProtoDirName         string `yaml:"proto_dir_name"`           // proto directory name
+	GoZeroProtoDirName   string `yaml:"go_zero_proto_dir_name"`   // go-zero proto directory name
+	NormalGoProto        string `yaml:"normal_go_proto"`          // normal Go code directory name (maps to normal_go_dir_name in YAML)
+	RobotProtoName       string `yaml:"robot_proto_name"`         // robot proto directory name constant
+	RobotGoZeroProtoName string `yaml:"robot_go_zero_proto_name"` // robot go-zero proto directory name constant
+	ModelDirName         string `yaml:"model_dir_name"`           // model directory name
+	ServiceIncludeDir    string `yaml:"service_include_dir"`      // service include directory name
+	GoGrpcBaseDirName    string `yaml:"go_grpc_base_dir_name"`    // Go GRPC service base directory path segment
 }
 
-// Paths 路径配置（对应YAML中的paths节点）
+// Paths holds path configuration (maps to YAML paths node).
 type Paths struct {
 	OutputRoot              string `yaml:"output_root"`
 	ProtoDir                string `yaml:"proto_dir"`
@@ -106,14 +106,14 @@ type Paths struct {
 	PlayerStorageSystemDir  string `yaml:"player_storage_system_dir"`
 	PlayerDataLoaderFile    string `yaml:"player_data_loader_file"`
 
-	// 原有配置中的路径
+	// paths from original config
 	EventHandlerSourceDirectory    string `yaml:"event_handler_source_directory"`
 	SceneNodeEventHandlerDirectory string `yaml:"scene_node_event_handler_directory"`
 	GateNodeEventHandlerDirectory  string `yaml:"gate_node_event_handler_directory"`
 	SceneAttributeSyncDir          string `yaml:"scene_attribute_sync_dir"`
 }
 
-// FileExtensions 文件扩展名配置（仅存放文件后缀/扩展名）
+// FileExtensions holds file extension configuration (suffixes/extensions only).
 type FileExtensions struct {
 	Proto           string `yaml:"proto"`
 	PbCc            string `yaml:"pb_cc"`
@@ -130,7 +130,7 @@ type FileExtensions struct {
 	GrpcClientCpp   string `yaml:"grpc_client_cpp"`
 	LoaderCpp       string `yaml:"loader_cpp"`
 
-	// 原有配置中的扩展名
+	// extensions from original config
 	RepliedHandlerHeaderExtension      string `yaml:"replied_handler_header_extension"`
 	CppRepliedHandlerEx                string `yaml:"cpp_replied_handler_ex"`
 	ModelSqlExtension                  string `yaml:"model_sql_extension"`
@@ -141,7 +141,7 @@ type FileExtensions struct {
 	RegisterHandlerCppExtension        string `yaml:"register_handler_cpp_extension"`
 }
 
-// Naming 命名规则配置（业务逻辑命名常量）
+// Naming holds naming convention configuration (business logic naming constants).
 type Naming struct {
 	MessageId            string `yaml:"message_id"`
 	EventId              string `yaml:"event_id"`
@@ -161,7 +161,7 @@ type Naming struct {
 	GameRpcProto         string `yaml:"game_rpc_proto"`
 	GrpcName             string `yaml:"grpc_name"`
 
-	// 原有配置中的命名常量
+	// naming constants from original config
 	PlayerServiceIncludeName        string `yaml:"player_service_include_name"`
 	PlayerServiceRepliedIncludeName string `yaml:"player_service_replied_include_name"`
 	MacroReturnIncludeName          string `yaml:"macro_return_include_name"`
@@ -179,7 +179,7 @@ type Naming struct {
 	Model                           string `yaml:"model_dir_name"`
 }
 
-// PathLists 路径列表配置
+// PathLists holds path list configuration.
 type PathLists struct {
 	ProtoDirectories         []string          `yaml:"proto_directories"`
 	RobotProtoDirectories    []string          `yaml:"robot_proto_directories"`
@@ -210,14 +210,14 @@ type ProtoDirs struct {
 	Etcd string `yaml:"etcd"`
 }
 
-// NodeTypes 节点类型配置
+// NodeTypes holds node type configuration.
 type NodeTypes struct {
 	TcpNode  uint32 `yaml:"tcp_node"`
 	GrpcNode uint32 `yaml:"grpc_node"`
 	HttpNode uint32 `yaml:"http_node"`
 }
 
-// MethodHandlerDirs 方法处理器目录映射
+// MethodHandlerDirs holds method handler directory mappings.
 type MethodHandlerDirs struct {
 	Robot                  string `yaml:"robot"`
 	SceneNode              string `yaml:"scene_node"`
@@ -230,7 +230,7 @@ type MethodHandlerDirs struct {
 	GateNodePlayerReplied  string `yaml:"gate_node_player_replied"`
 }
 
-// Generators 生成器开关配置
+// Generators holds generator toggle configuration.
 type Generators struct {
 	EnableCpp           bool `yaml:"enable_cpp"`
 	EnableGo            bool `yaml:"enable_go"`
@@ -241,50 +241,50 @@ type Generators struct {
 	EnableAttributeSync bool `yaml:"enable_attribute_sync"`
 }
 
-// Mapping 模板映射配置
+// Mapping holds template mapping configuration.
 type Mapping struct {
 	Path     string `yaml:"path"`
 	Template string `yaml:"template"`
 	Lang     string `yaml:"lang"`
 }
 
-// Parser Proto解析器配置
+// Parser holds proto parser configuration.
 type Parser struct {
 	IncludePaths []string `yaml:"include_paths"`
 	IgnoreFiles  []string `yaml:"ignore_files"`
 }
 
-// LogConfig 日志配置
+// LogConfig holds logging configuration.
 type LogConfig struct {
 	Level    string `yaml:"level"`
 	Output   string `yaml:"output"`
 	FilePath string `yaml:"file_path"`
 }
 
-// RpcMeta 代表 RPC 类型
+// RpcMeta represents the RPC type.
 type RpcMeta struct {
 	Type string `yaml:"type"` // grpc | rpc | both | none | etcd
 }
 
-// DomainMeta 领域元数据
+// DomainMeta holds domain metadata.
 type DomainMeta struct {
 	Source  string                       `yaml:"source"`
-	Rpc     RpcMeta                      `yaml:"rpc"`     // 统一对象
+	Rpc     RpcMeta                      `yaml:"rpc"`     // unified object
 	Outputs map[string]map[string]string `yaml:"outputs"` // lang -> type -> dir
 }
 
 var (
-	// 全局配置实例
+	// Global is the global config instance.
 	Global Config
 
-	// 初始化锁
+	// initOnce guards initialization.
 	initOnce sync.Once
 
-	// 错误存储
+	// initError stores initialization error.
 	initError error
 )
 
-// Load 加载配置文件（线程安全）
+// Load loads the configuration file (thread-safe).
 func Load() error {
 	initOnce.Do(func() {
 		initError = loadConfig()
@@ -292,94 +292,94 @@ func Load() error {
 	return initError
 }
 
-// loadConfig 实际的配置加载逻辑
+// loadConfig performs the actual config loading logic.
 func loadConfig() error {
-	// 检查全局logger是否已初始化
+	// Check if global logger is initialized
 	if logger.Global == nil {
-		// 防御性创建临时logger（避免主程序未初始化的情况）
+		// Defensive: create a temporary logger (in case main program hasn't initialized)
 		tempLogger, err := zap.NewProduction()
 		if err != nil {
-			return fmt.Errorf("全局logger未初始化，创建临时logger失败: %w", err)
+			return fmt.Errorf("global logger not initialized and failed to create temp logger: %w", err)
 		}
-		tempLogger.Warn("全局logger未初始化，配置加载使用临时logger")
+		tempLogger.Warn("Global logger not initialized, using temporary logger for config loading")
 		defer tempLogger.Sync()
 
-		// 使用临时logger完成配置加载
+		// Use temporary logger for config loading
 		return loadConfigWithLogger(tempLogger)
 	}
 
-	// 使用全局logger加载配置
+	// Use global logger for config loading
 	return loadConfigWithLogger(logger.Global)
 }
 
-// loadConfigWithLogger 带logger的配置加载逻辑（抽离便于复用）
+// loadConfigWithLogger loads config with the given logger (extracted for reuse).
 func loadConfigWithLogger(log *zap.Logger) error {
-	// 确定配置文件路径
+	// Determine config file path
 	filePath := os.Getenv("PROTO_GEN_CONFIG_PATH")
 	if filePath == "" {
-		// 优先尝试当前目录，再尝试etc目录
+		// Try current directory first, then etc directory
 		if _, err := os.Stat("proto_gen.yaml"); err == nil {
 			filePath = "proto_gen.yaml"
 		} else if _, err := os.Stat("etc/proto_gen.yaml"); err == nil {
 			filePath = "etc/proto_gen.yaml"
 		} else {
-			return fmt.Errorf("配置文件未找到，当前目录和etc目录下均无proto_gen.yaml")
+			return fmt.Errorf("config file not found: proto_gen.yaml missing from both current directory and etc/")
 		}
 	}
 
-	logger.Global.Info("开始加载配置文件", zap.String("file_path", filePath))
+	logger.Global.Info("Loading config file", zap.String("file_path", filePath))
 
-	// 读取配置文件
+	// Read config file
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("读取配置文件失败: %w", err)
+		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	// 解析YAML
+	// Parse YAML
 	if err := yaml.Unmarshal(data, &Global); err != nil {
-		return fmt.Errorf("解析配置文件失败: %w", err)
+		return fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	// 处理路径中的变量替换（支持嵌套变量）
+	// Resolve path variables (supports nested variables)
 	if err := resolvePathVariables(); err != nil {
-		return fmt.Errorf("路径变量替换失败: %w", err)
+		return fmt.Errorf("failed to resolve path variables: %w", err)
 	}
 
-	// 转换为绝对路径
+	// Convert to absolute paths
 	if err := resolveAbsolutePaths(); err != nil {
-		return fmt.Errorf("绝对路径转换失败: %w", err)
+		return fmt.Errorf("failed to resolve absolute paths: %w", err)
 	}
 
-	// 设置默认值
+	// Set defaults
 	setDefaults()
 
-	// 补充原有配置中的常量计算
+	// Calculate derived constants from original config
 	calculateDerivedConstants()
 
-	// 验证配置
+	// Validate config
 	if err := validateConfig(); err != nil {
-		return fmt.Errorf("配置验证失败: %w", err)
+		return fmt.Errorf("config validation failed: %w", err)
 	}
 
-	// 创建必要的目录
+	// Create required directories
 	if err := createRequiredDirs(); err != nil {
-		logger.Global.Warn("创建必要目录失败",
+		logger.Global.Warn("Failed to create required directories",
 			zap.Error(err),
 		)
 	}
 
-	logger.Global.Info("配置文件加载成功", zap.String("output_root", Global.Paths.OutputRoot))
+	logger.Global.Info("Config file loaded successfully", zap.String("output_root", Global.Paths.OutputRoot))
 	return nil
 }
 
-// calculateDerivedConstants 计算派生的常量值
+// calculateDerivedConstants computes derived constant values.
 func calculateDerivedConstants() {
-	// 计算YourCodePair
+	// Calculate YourCodePair
 	if Global.Naming.YourCodePair == "" && Global.Naming.YourCodeBegin != "" && Global.Naming.YourCodeEnd != "" {
 		Global.Naming.YourCodePair = Global.Naming.YourCodeBegin + "\n" + Global.Naming.YourCodeEnd
 	}
 
-	// 计算注册处理器扩展名
+	// Calculate register handler extensions
 	if Global.FileExtensions.RegisterRepliedHandlerCppExtension == "" {
 		Global.FileExtensions.RegisterRepliedHandlerCppExtension = "register" + Global.FileExtensions.CppRepliedHandlerEx
 	}
@@ -391,10 +391,10 @@ func calculateDerivedConstants() {
 func replaceVariablesInDomainMeta(vars map[string]string) error {
 	for domain, meta := range Global.DomainMeta {
 
-		// 替换 Source
+		// Replace Source
 		meta.Source = replaceVariables(meta.Source, vars)
 
-		// 替换 Output
+		// Replace Output
 		for lang, outputs := range meta.Outputs {
 			for k, v := range outputs {
 				meta.Outputs[lang][k] = replaceVariables(v, vars)
@@ -406,26 +406,26 @@ func replaceVariablesInDomainMeta(vars map[string]string) error {
 	return nil
 }
 
-// resolvePathVariables 处理路径中的变量替换（支持嵌套变量）
+// resolvePathVariables resolves path variables (supports nested variables).
 func resolvePathVariables() error {
-	// 收集所有可替换的变量
+	// Collect all replaceable variables
 	vars := make(map[string]string)
 
-	// 收集Paths的变量
+	// Collect Paths variables
 	collectStructVariables(reflect.ValueOf(&Global.Paths).Elem(), vars)
 
-	// 收集FileExtensions的变量
+	// Collect FileExtensions variables
 	collectStructVariables(reflect.ValueOf(&Global.FileExtensions).Elem(), vars)
 
-	// 收集Naming的变量
+	// Collect Naming variables
 	collectStructVariables(reflect.ValueOf(&Global.Naming).Elem(), vars)
 
-	// 替换所有结构体中的变量
+	// Replace variables in all structs
 	if err := replaceVariablesInAllStructs(vars); err != nil {
 		return err
 	}
 
-	// 替换切片中的变量
+	// Replace variables in slices
 	if err := replaceVariablesInAllSlices(vars); err != nil {
 		return err
 	}
@@ -433,7 +433,7 @@ func resolvePathVariables() error {
 	return nil
 }
 
-// collectStructVariables 收集结构体中的变量
+// collectStructVariables collects variables from struct fields.
 func collectStructVariables(val reflect.Value, vars map[string]string) {
 	valType := val.Type()
 	for i := 0; i < valType.NumField(); i++ {
@@ -448,29 +448,29 @@ func collectStructVariables(val reflect.Value, vars map[string]string) {
 	}
 }
 
-// replaceVariablesInAllStructs 替换所有结构体中的变量
+// replaceVariablesInAllStructs replaces variables in all structs.
 func replaceVariablesInAllStructs(vars map[string]string) error {
-	// 替换Paths中的变量
+	// Replace variables in Paths
 	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.Paths).Elem(), vars); err != nil {
 		return err
 	}
 
-	// 替换DirectoryNames中的变量（新增）
+	// Replace variables in DirectoryNames
 	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.DirectoryNames).Elem(), vars); err != nil {
 		return err
 	}
 
-	// 替换FileExtensions中的变量
+	// Replace variables in FileExtensions
 	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.FileExtensions).Elem(), vars); err != nil {
 		return err
 	}
 
-	// 替换Naming中的变量
+	// Replace variables in Naming
 	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.Naming).Elem(), vars); err != nil {
 		return err
 	}
 
-	// 替换MethodHandlerDirectories中的变量
+	// Replace variables in MethodHandlerDirectories
 	if err := replacePlaceholderInStruct(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem(), vars); err != nil {
 		return err
 	}
@@ -482,7 +482,7 @@ func replaceVariablesInAllStructs(vars map[string]string) error {
 	return nil
 }
 
-// replaceVariablesInAllSlices 替换所有切片中的变量
+// replaceVariablesInAllSlices replaces variables in all slices.
 func replaceVariablesInAllSlices(vars map[string]string) error {
 	if err := replaceVariablesInSlice(reflect.ValueOf(&Global.PathLists.RobotProtoDirectories), vars); err != nil {
 		return err
@@ -499,10 +499,10 @@ func replaceVariablesInAllSlices(vars map[string]string) error {
 	return nil
 }
 
-// replacePlaceholderInStruct 替换结构体中的变量
+// replacePlaceholderInStruct replaces variables in a struct's fields.
 func replacePlaceholderInStruct(val reflect.Value, vars map[string]string) error {
 	valType := val.Type()
-	maxIterations := 10 // 防止无限循环
+	maxIterations := 10 // prevent infinite loop
 
 	for iter := 0; iter < maxIterations; iter++ {
 		changed := false
@@ -520,7 +520,7 @@ func replacePlaceholderInStruct(val reflect.Value, vars map[string]string) error
 				field.SetString(resolved)
 				changed = true
 
-				// 更新vars中的值，用于后续嵌套变量替换
+				// Update vars for subsequent nested variable replacement
 				yamlTag := valType.Field(i).Tag.Get("yaml")
 				if yamlTag != "" {
 					vars["{{"+yamlTag+"}}"] = resolved
@@ -533,14 +533,14 @@ func replacePlaceholderInStruct(val reflect.Value, vars map[string]string) error
 		}
 
 		if iter == maxIterations-1 {
-			return fmt.Errorf("变量替换超过最大迭代次数，可能存在循环引用")
+			return fmt.Errorf("variable replacement exceeded max iterations, possible circular reference")
 		}
 	}
 
 	return nil
 }
 
-// replaceVariablesInSlice 替换字符串切片中的变量
+// replaceVariablesInSlice replaces variables in a string slice.
 func replaceVariablesInSlice(val reflect.Value, vars map[string]string) error {
 	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
 		return nil
@@ -564,7 +564,7 @@ func replaceVariablesInSlice(val reflect.Value, vars map[string]string) error {
 	return nil
 }
 
-// replaceVariables 替换字符串中的变量
+// replaceVariables replaces variables in a string.
 func replaceVariables(s string, vars map[string]string) string {
 	for k, v := range vars {
 		s = strings.ReplaceAll(s, k, v)
@@ -572,19 +572,19 @@ func replaceVariables(s string, vars map[string]string) string {
 	return s
 }
 
-// resolveAbsolutePaths 将所有路径转换为绝对路径，统一使用/并保留末尾斜杠
+// resolveAbsolutePaths converts all paths to absolute paths, using / separator and preserving trailing slashes.
 func resolveAbsolutePaths() error {
-	// 转换Paths中的所有路径为绝对路径
+	// Convert Paths fields to absolute paths
 	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.Paths).Elem()); err != nil {
 		return err
 	}
 
-	// 转换MethodHandlerDirectories中的路径为绝对路径
+	// Convert MethodHandlerDirectories fields to absolute paths
 	if err := resolveAbsolutePathsInStruct(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()); err != nil {
 		return err
 	}
 
-	// 转换切片中的路径为绝对路径
+	// Convert slice paths to absolute paths
 	if err := resolveAbsolutePathsInSlice(reflect.ValueOf(&Global.PathLists.RobotProtoDirectories)); err != nil {
 		return err
 	}
@@ -596,7 +596,7 @@ func resolveAbsolutePaths() error {
 	return nil
 }
 
-// resolveAbsolutePathsInStruct 转换结构体中的路径为绝对路径
+// resolveAbsolutePathsInStruct converts struct field paths to absolute paths.
 func resolveAbsolutePathsInStruct(val reflect.Value) error {
 	valType := val.Type()
 
@@ -613,10 +613,10 @@ func resolveAbsolutePathsInStruct(val reflect.Value) error {
 
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			return fmt.Errorf("路径 '%s' 转换失败: %w", path, err)
+			return fmt.Errorf("failed to resolve path '%s': %w", path, err)
 		}
 
-		// 统一替换为/并保留末尾斜杠
+		// Normalize to / separator and preserve trailing slash
 		absPath = formatPathWithSlash(absPath, path)
 		field.SetString(absPath)
 	}
@@ -624,7 +624,7 @@ func resolveAbsolutePathsInStruct(val reflect.Value) error {
 	return nil
 }
 
-// resolveAbsolutePathsInSlice 转换字符串切片中的路径为绝对路径
+// resolveAbsolutePathsInSlice converts string slice paths to absolute paths.
 func resolveAbsolutePathsInSlice(val reflect.Value) error {
 	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
 		return nil
@@ -652,16 +652,16 @@ func resolveAbsolutePathsInSlice(val reflect.Value) error {
 	return nil
 }
 
-// formatPathWithSlash 统一路径分隔符为/，并根据原始路径保留末尾斜杠
+// formatPathWithSlash normalizes path separator to / and preserves trailing slash based on original path.
 func formatPathWithSlash(absPath, originalPath string) string {
-	// 将系统分隔符替换为/
+	// Replace system separator with /
 	absPath = strings.ReplaceAll(absPath, string(filepath.Separator), "/")
 
-	// 检查原始路径是否以/或系统分隔符结尾
+	// Check if original path ends with / or system separator
 	hasTrailingSlash := strings.HasSuffix(originalPath, "/") ||
 		strings.HasSuffix(originalPath, string(filepath.Separator))
 
-	// 若原始路径有末尾斜杠且当前路径没有，则补充
+	// Append trailing slash if original had one and current doesn't
 	if hasTrailingSlash && !strings.HasSuffix(absPath, "/") {
 		absPath += "/"
 	}
@@ -669,14 +669,14 @@ func formatPathWithSlash(absPath, originalPath string) string {
 	return absPath
 }
 
-// setDefaults 设置默认值（处理未配置的字段）
+// setDefaults sets default values for unconfigured fields.
 func setDefaults() {
-	// 处理器路径默认值补充
+	// Handler path defaults
 	if Global.PathLists.MethodHandlerDirectories.Robot == "" {
 		Global.PathLists.MethodHandlerDirectories.Robot = filepath.Join(Global.Paths.OutputRoot, Global.Paths.Robot, "logic/handler/")
 	}
 
-	// 日志默认值
+	// Logging defaults
 	if Global.Log.Level == "" {
 		Global.Log.Level = "info"
 	}
@@ -687,12 +687,12 @@ func setDefaults() {
 		Global.Log.FilePath = "protogen.log"
 	}
 
-	// 解析器默认值
+	// Parser defaults
 	if Global.Paths.AllInOneDesc == "" && Global.Paths.ProtoBufDescDir != "" {
 		Global.Paths.AllInOneDesc = filepath.Join(Global.Paths.ProtoBufDescDir, "all_in_one.desc")
 	}
 
-	// 设置DirectoryNames默认值（新增）
+	// Set DirectoryNames defaults
 	if Global.DirectoryNames.GeneratedRpcName == "" {
 		Global.DirectoryNames.GeneratedRpcName = "rpc/"
 	}
@@ -712,9 +712,9 @@ func setDefaults() {
 		Global.DirectoryNames.ServiceIncludeDir = "rpc/"
 	}
 
-	// Robot相关默认值
+	// Robot-related defaults
 	if Global.Paths.Robot != "" {
-		// 使用DirectoryNames中的目录名配置（修改）
+		// Use directory names from DirectoryNames config
 		protoDirName := Global.DirectoryNames.ProtoDirName
 		if protoDirName == "" {
 			protoDirName = "proto/"
@@ -752,7 +752,7 @@ func setDefaults() {
 		}
 	}
 
-	// 生成器开关默认值
+	// Generator toggle defaults
 	if !Global.Generators.EnableRobotProto && Global.Paths.Robot != "" {
 		Global.Generators.EnableRobotProto = true
 	}
@@ -773,7 +773,7 @@ func setDefaults() {
 		Global.Paths.GateNodeEventHandlerDirectory = filepath.Join(Global.Paths.GateNodeDir, Global.Paths.EventHandlerSourceDirectory)
 	}
 	if Global.Paths.SceneAttributeSyncDir == "" {
-		// 和 YAML 中一致：cpp/libs/services/scene/generated/attribute/
+		// matches YAML value: cpp/libs/services/scene/generated/attribute/
 		Global.Paths.SceneAttributeSyncDir = filepath.Join(
 			Global.Paths.NodeLibGame,
 			"scene/generated/attribute/",
@@ -781,63 +781,63 @@ func setDefaults() {
 	}
 }
 
-// validateConfig 验证配置的完整性和正确性
+// validateConfig validates the completeness and correctness of the config.
 func validateConfig() error {
-	// 检查关键路径是否存在未替换的变量
+	// Check for unresolved variables in key paths
 	if err := validatePaths(); err != nil {
 		return err
 	}
 
-	// 检查必要的目录是否配置
+	// Check required directories are configured
 	if Global.Paths.OutputRoot == "" {
-		return fmt.Errorf("output_root 未配置")
+		return fmt.Errorf("output_root not configured")
 	}
 
 	if Global.Paths.ProtoDir == "" {
-		return fmt.Errorf("proto_dir 未配置")
+		return fmt.Errorf("proto_dir not configured")
 	}
 
-	// Robot相关配置检查
+	// Robot config checks
 	if Global.Generators.EnableRobotProto && Global.Paths.Robot == "" {
-		return fmt.Errorf("启用了robot proto生成，但robot_dir未配置")
+		return fmt.Errorf("robot proto generation enabled but robot_dir not configured")
 	}
 
-	// 检查日志配置
+	// Logging config checks
 	if Global.Log.Output == "file" && Global.Log.FilePath == "" {
-		return fmt.Errorf("日志输出为file时，file_path不能为空")
+		return fmt.Errorf("log output set to file but file_path is empty")
 	}
 
 	return nil
 }
 
-// validatePaths 验证路径中是否包含未替换的变量
+// validatePaths checks for unresolved variables in paths.
 func validatePaths() error {
-	// 检查Paths结构体
+	// Check Paths struct
 	if err := validateStructPaths(reflect.ValueOf(&Global.Paths).Elem()); err != nil {
 		return err
 	}
 
-	// 检查DirectoryNames结构体（新增）
+	// Check DirectoryNames struct
 	if err := validateStructPaths(reflect.ValueOf(&Global.DirectoryNames).Elem()); err != nil {
 		return err
 	}
 
-	// 检查FileExtensions结构体
+	// Check FileExtensions struct
 	if err := validateStructPaths(reflect.ValueOf(&Global.FileExtensions).Elem()); err != nil {
 		return err
 	}
 
-	// 检查Naming结构体
+	// Check Naming struct
 	if err := validateStructPaths(reflect.ValueOf(&Global.Naming).Elem()); err != nil {
 		return err
 	}
 
-	// 检查处理器目录
+	// Check handler directories
 	if err := validateStructPaths(reflect.ValueOf(&Global.PathLists.MethodHandlerDirectories).Elem()); err != nil {
 		return err
 	}
 
-	// 检查字符串切片
+	// Check string slices
 	if err := validateSlicePaths(reflect.ValueOf(&Global.PathLists.ProtoDirectories), "ProtoDirectories"); err != nil {
 		return err
 	}
@@ -853,7 +853,7 @@ func validatePaths() error {
 	return nil
 }
 
-// validateStructPaths 验证结构体中的路径
+// validateStructPaths validates paths in a struct for unresolved variables.
 func validateStructPaths(val reflect.Value) error {
 	valType := val.Type()
 
@@ -862,14 +862,14 @@ func validateStructPaths(val reflect.Value) error {
 		value := val.Field(i).String()
 
 		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
-			return fmt.Errorf("路径字段 '%s' 包含未替换的变量: %s", field.Name, value)
+			return fmt.Errorf("path field '%s' contains unresolved variable: %s", field.Name, value)
 		}
 	}
 
 	return nil
 }
 
-// validateSlicePaths 验证字符串切片中的路径
+// validateSlicePaths validates paths in a string slice for unresolved variables.
 func validateSlicePaths(val reflect.Value, name string) error {
 	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
 		return nil
@@ -879,14 +879,14 @@ func validateSlicePaths(val reflect.Value, name string) error {
 	for i := 0; i < slice.Len(); i++ {
 		value := slice.Index(i).String()
 		if strings.Contains(value, "{{") || strings.Contains(value, "}}") {
-			return fmt.Errorf("%s[%d] 包含未替换的变量: %s", name, i, value)
+			return fmt.Errorf("%s[%d] contains unresolved variable: %s", name, i, value)
 		}
 	}
 
 	return nil
 }
 
-// createRequiredDirs 创建必要的目录
+// createRequiredDirs creates necessary directories.
 func createRequiredDirs() error {
 	dirs := []string{
 		Global.Paths.GeneratedOutputDir,
@@ -898,7 +898,7 @@ func createRequiredDirs() error {
 		Global.Paths.GateNodeEventHandlerDirectory,
 	}
 
-	// 添加DirectoryNames中的目录（新增）
+	// Add DirectoryNames directories
 	if Global.DirectoryNames.RobotProtoName != "" {
 		dirs = append(dirs, Global.DirectoryNames.RobotProtoName)
 	}
@@ -906,7 +906,7 @@ func createRequiredDirs() error {
 		dirs = append(dirs, Global.DirectoryNames.RobotGoZeroProtoName)
 	}
 
-	// 添加robot相关目录
+	// Add robot-related directories
 	if Global.Generators.EnableRobotProto {
 		dirs = append(dirs,
 			Global.Paths.RobotGenerated,
@@ -922,33 +922,33 @@ func createRequiredDirs() error {
 			continue
 		}
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("创建目录 %s 失败: %w", dir, err)
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
 
 	return nil
 }
 
-// GetTemplatePath 获取模板的完整路径
+// GetTemplatePath returns the full path of a template.
 func (c *Config) GetTemplatePath(mappingName string) (string, error) {
 	mapping, ok := c.Mappings[mappingName]
 	if !ok {
-		return "", fmt.Errorf("模板映射 '%s' 不存在", mappingName)
+		return "", fmt.Errorf("template mapping '%s' not found", mappingName)
 	}
 	return mapping.Template, nil
 }
 
-// GetOutputPath 获取生成文件的输出路径
+// GetOutputPath returns the output path for a generated file.
 func (c *Config) GetOutputPath(mappingName, protoDir, protoFile string) (string, error) {
 	mapping, ok := c.Mappings[mappingName]
 	if !ok {
-		return "", fmt.Errorf("模板映射 '%s' 不存在", mappingName)
+		return "", fmt.Errorf("template mapping '%s' not found", mappingName)
 	}
 
 	path := replaceVariables(mapping.Path, map[string]string{
 		"{{proto_dir}}":      protoDir,
 		"{{proto_file}}":     protoFile,
-		"{{proto_dir_name}}": c.DirectoryNames.ProtoDirName, // 修改：从DirectoryNames获取
+		"{{proto_dir_name}}":  c.DirectoryNames.ProtoDirName, // from DirectoryNames config
 	})
 
 	return path, nil

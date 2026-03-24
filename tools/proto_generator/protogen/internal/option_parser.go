@@ -95,7 +95,7 @@ func IsPlayerService(serviceDesc *descriptorpb.ServiceDescriptorProto) bool {
 func GetFileDefaultNode(fileDesc *descriptorpb.FileDescriptorProto) messageoption.NodeType {
 	opts := fileDesc.GetOptions()
 	if opts == nil {
-		return messageoption.NodeType_NODE_UNSPECIFIED // 默认未指定
+		return messageoption.NodeType_NODE_UNSPECIFIED // default: unspecified
 	}
 	extValue := proto.GetExtension(opts, messageoption.E_OptionFileDefaultNode)
 	if node, ok := nodeTypeFromExtensionValue(extValue); ok {

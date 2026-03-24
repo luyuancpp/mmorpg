@@ -227,7 +227,7 @@ void Bag::Neaten()
 		{
 			continue;
 		}
-		bool hasNotSameItem = true;
+		bool foundMatchingGroup = false;
 		for (auto& sameVector : stackableItemGroups)
 		{
 			auto& itemOther = itemRegistry_.get_or_emplace<ItemComp>(*sameVector.begin());
@@ -237,11 +237,11 @@ void Bag::Neaten()
 			}
 
 			sameVector.emplace_back(e);
-			hasNotSameItem = false;
+			foundMatchingGroup = true;
 			break;
 		}
 
-		if (hasNotSameItem)
+		if (!foundMatchingGroup)
 		{
 			stackableItemGroups.emplace_back(EntityVector{e});
 		}
@@ -335,7 +335,7 @@ uint32_t Bag::AddNonStackableItem(ItemComp itemPBComp)
 		if (!it.second)
 		{
 			defer(DestroyEntity(itemRegistry_, newItem));
-			LOG_ERROR << "bag add item" << PlayerGuid();
+			LOG_ERROR << "AddNonStackableItem: duplicate guid " << newItemPBComp.item_id() << " player " << PlayerGuid();
 			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 		}
 
@@ -355,7 +355,7 @@ uint32_t Bag::AddNonStackableItem(ItemComp itemPBComp)
 			auto it = items_.emplace(newItemPBComp.item_id(), newItem);
 			if (!it.second)
 			{
-				LOG_ERROR << "bag add item" << PlayerGuid();
+				LOG_ERROR << "AddNonStackableItem(batch): duplicate guid " << newItemPBComp.item_id() << " player " << PlayerGuid();
 				return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 			}
 
@@ -376,7 +376,11 @@ uint32_t Bag::AddStackableItem(ItemComp itemPBComp, uint32_t maxStackSize)
 		{
 			continue;
 		}
-		assert(item.size() <= maxStackSize);
+		if (item.size() > maxStackSize)
+		{
+			LOG_ERROR << "AddStackableItem: item.size() " << item.size() << " > maxStackSize " << maxStackSize << " player " << PlayerGuid();
+			continue;
+		}
 		auto remainStackSize = maxStackSize - item.size();
 		if (remainStackSize <= 0)
 		{
@@ -445,8 +449,8 @@ uint32_t Bag::AddStackableItem(ItemComp itemPBComp, uint32_t maxStackSize)
 		auto it = items_.emplace(newItemPBComp.item_id(), newItem);
 		if (!it.second)
 		{
-			LOG_ERROR << "bag add item" << PlayerGuid();
-			return kBagDeleteItemAlreadyHasGuid;
+			LOG_ERROR << "AddStackableItem: duplicate guid " << newItemPBComp.item_id() << " player " << PlayerGuid();
+			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 		}
 
 		OnNewGrid(newItemPBComp.item_id());

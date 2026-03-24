@@ -1,7 +1,7 @@
 ﻿#include <google/protobuf/descriptor.h>
 #include <google/protobuf/message.h>
 
-void copyCommonFields(
+void CopyCommonFields(
 	const google::protobuf::Message& src,
 	google::protobuf::Message& dst)
 {

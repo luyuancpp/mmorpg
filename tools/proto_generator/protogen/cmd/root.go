@@ -27,7 +27,7 @@ func makeProjectDir() {
 
 func init() {
 	if err := logger.Init(); err != nil {
-		panic(fmt.Sprintf("初始化全局logger失败: %v", err))
+		panic(fmt.Sprintf("Failed to initialize global logger: %v", err))
 	}
 }
 
@@ -41,11 +41,11 @@ func startPprofServer() {
 }
 
 func waitForShutdownSignal() {
-	logger.Global.Info("程序已进入等待状态，可访问localhost:11111/debug/pprof分析，按Ctrl+C退出")
+	logger.Global.Info("Waiting for shutdown. Visit localhost:11111/debug/pprof for profiling. Press Ctrl+C to exit.")
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
-	logger.Global.Info("程序开始优雅退出...")
+	logger.Global.Info("Graceful shutdown started...")
 }
 
 func isEnabledEnv(key string) bool {
@@ -69,10 +69,10 @@ func main() {
 	}
 
 	if err := _config.Load(); err != nil {
-		logger.Global.Fatal("配置初始化失败", zap.Error(err))
+		logger.Global.Fatal("Failed to load config", zap.Error(err))
 	}
 
-	logger.Global.Info("配置加载成功", zap.String("proto根目录", _config.Global.Paths.OutputRoot))
+	logger.Global.Info("Config loaded", zap.String("output_root", _config.Global.Paths.OutputRoot))
 
 	dir, err := os.Getwd()
 	if err != nil {
@@ -91,5 +91,5 @@ func main() {
 		return
 	}
 
-	logger.Global.Info("生成流程完成，默认直接退出。若需性能分析，请设置环境变量 PROTOGEN_ENABLE_PPROF=1（兼容旧 PBGEN_ENABLE_PPROF=1）")
+	logger.Global.Info("Generation complete. To enable profiling, set PROTOGEN_ENABLE_PPROF=1 (legacy: PBGEN_ENABLE_PPROF=1)")
 }

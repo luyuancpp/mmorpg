@@ -41,8 +41,8 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 		return err
 	}
 	if err == nil && bytes.Equal(existingContent, content) {
-		logger.Global.Info("文件内容无变化，跳过写入",
-			zap.String("文件路径", outputPath),
+		logger.Global.Info("File unchanged, skipping write",
+			zap.String("file_path", outputPath),
 		)
 		return nil
 	}
@@ -52,8 +52,8 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 	if err = os.WriteFile(outputPath, content, 0644); err != nil {
 		return err
 	}
-	logger.Global.Info("文件已更新",
-		zap.String("文件路径", outputPath),
+	logger.Global.Info("File updated",
+		zap.String("file_path", outputPath),
 	)
 	return nil
 }
@@ -61,8 +61,8 @@ func WriteFileIfChanged(outputPath string, content []byte) error {
 // WriteFileIfChangedSafe writes content when it changed and logs warnings instead of returning errors.
 func WriteFileIfChangedSafe(filePath string, content []byte) {
 	if err := WriteFileIfChanged(filePath, content); err != nil {
-		logger.Global.Warn("写入文件失败",
-			zap.String("文件路径", filePath),
+		logger.Global.Warn("Failed to write file",
+			zap.String("file_path", filePath),
 			zap.Error(err),
 		)
 	}
@@ -107,16 +107,16 @@ func CopyFileIfChangedAsync(wg *sync.WaitGroup, inputPath, outputPath string) {
 		defer wg.Done()
 		srcContent, err := os.ReadFile(inputPath)
 		if err != nil {
-			logger.Global.Fatal("读取源文件失败",
-				zap.String("源文件路径", inputPath),
+			logger.Global.Fatal("Failed to read source file",
+				zap.String("source_path", inputPath),
 				zap.Error(err),
 			)
 			return
 		}
 		dstContent, err := os.ReadFile(outputPath)
 		if err != nil && !os.IsNotExist(err) {
-			logger.Global.Fatal("读取目标文件失败",
-				zap.String("目标文件路径", outputPath),
+			logger.Global.Fatal("Failed to read destination file",
+				zap.String("dest_path", outputPath),
 				zap.Error(err),
 			)
 			return
@@ -125,14 +125,14 @@ func CopyFileIfChangedAsync(wg *sync.WaitGroup, inputPath, outputPath string) {
 			return
 		}
 		if err := os.WriteFile(outputPath, srcContent, 0644); err != nil {
-			logger.Global.Fatal("写入目标文件失败",
-				zap.String("目标文件路径", outputPath),
+			logger.Global.Fatal("Failed to write destination file",
+				zap.String("dest_path", outputPath),
 				zap.Error(err),
 			)
 			return
 		}
-		logger.Global.Info("文件已复制",
-			zap.String("目标文件路径", outputPath),
+		logger.Global.Info("File copied",
+			zap.String("dest_path", outputPath),
 		)
 	}()
 }

@@ -15,64 +15,64 @@ import (
 	"go.uber.org/zap"
 )
 
-// GenerateAllInOneDescriptor 生成合并的Protobuf描述符文件
+// GenerateAllInOneDescriptor generates a merged Protobuf descriptor file.
 func GenerateAllInOneDescriptor(wg *sync.WaitGroup) {
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
 		if err := generateAllInOneDesc(); err != nil {
-			logger.Global.Warn("描述符生成失败",
+			logger.Global.Warn("Failed to generate descriptor",
 				zap.Error(err),
 			)
 		}
 	}()
 }
 
-// generateAllInOneDesc 生成并解析全量描述符文件
+// generateAllInOneDesc generates and parses the all-in-one descriptor file.
 func generateAllInOneDesc() error {
 	protoFiles, err := collectUniqueProtoFiles()
 	if err != nil {
-		logger.Global.Fatal("收集Proto文件失败",
+		logger.Global.Fatal("Failed to collect proto files",
 			zap.Error(err),
 		)
 	}
 	if len(protoFiles) == 0 {
-		logger.Global.Info("描述符生成: 未找到任何Proto文件")
+		logger.Global.Info("Descriptor generation: no proto files found")
 		return nil
 	}
-	logger.Global.Info("描述符生成: 收集到唯一Proto文件",
+	logger.Global.Info("Descriptor generation: collected unique proto files",
 		zap.Int("count", len(protoFiles)),
 	)
 
 	args, err := buildDescriptorArgs(protoFiles)
 	if err != nil {
-		logger.Global.Fatal("构建命令参数失败",
+		logger.Global.Fatal("Failed to build command arguments",
 			zap.Error(err),
 		)
 	}
 
 	if err := executeDescriptorCommand(args); err != nil {
-		logger.Global.Fatal("执行protoc失败",
+		logger.Global.Fatal("Failed to execute protoc",
 			zap.Error(err),
 		)
 	}
 
 	if err := parseDescriptorFile(); err != nil {
-		logger.Global.Fatal("解析描述符文件失败",
+		logger.Global.Fatal("Failed to parse descriptor file",
 			zap.Error(err),
 		)
 	}
 
-	logger.Global.Info("描述符生成成功",
+	logger.Global.Info("Descriptor generation succeeded",
 		zap.String("output_path", _config.Global.Paths.AllInOneDesc),
 	)
 	return nil
 }
 
-// collectUniqueProtoFiles 收集所有唯一的Proto文件
+// collectUniqueProtoFiles collects all unique proto files across domains.
 func collectUniqueProtoFiles() ([]string, error) {
-	protoFileSet := make(map[string]struct{}) // 用于去重
+	protoFileSet := make(map[string]struct{}) // deduplication set
 	var allProtoFiles []string
 
 	// map iteration order is random in Go; sort keys to stabilize generation output.
@@ -86,7 +86,7 @@ func collectUniqueProtoFiles() ([]string, error) {
 		meta := _config.Global.DomainMeta[key]
 		fileEntries, err := os.ReadDir(meta.Source)
 		if err != nil {
-			logger.Global.Warn("描述符生成: 读取目录失败，跳过",
+			logger.Global.Warn("Descriptor generation: failed to read directory, skipping",
 				zap.String("dir", meta.Source),
 				zap.Error(err),
 			)
@@ -97,7 +97,7 @@ func collectUniqueProtoFiles() ([]string, error) {
 			if utils2.IsProtoFile(entry) {
 				absPath, err := filepath.Abs(filepath.Join(meta.Source, entry.Name()))
 				if err != nil {
-					logger.Global.Warn("描述符生成: 获取文件绝对路径失败，跳过",
+					logger.Global.Warn("Descriptor generation: failed to get absolute path, skipping",
 						zap.String("file_name", entry.Name()),
 						zap.String("dir", meta.Source),
 						zap.Error(err),
@@ -120,14 +120,14 @@ func collectUniqueProtoFiles() ([]string, error) {
 	return allProtoFiles, nil
 }
 
-// buildDescriptorArgs 构建生成描述符的protoc参数
+// buildDescriptorArgs builds protoc arguments for descriptor generation.
 func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 	descOutput := filepath.ToSlash(_config.Global.Paths.AllInOneDesc)
 
 	args := []string{
 		"--descriptor_set_out=" + descOutput,
-		"--include_imports",     // 包含所有依赖的描述符
-		"--include_source_info", // 包含源码信息，便于调试
+		"--include_imports",     // include all dependency descriptors
+		"--include_source_info", // include source info for debugging
 	}
 
 	importPaths := []string{
@@ -136,7 +136,7 @@ func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 	}
 	for _, ip := range importPaths {
 		if ip == "" {
-			continue // 跳过空路径
+			continue // skip empty path
 		}
 		args = append(args, "--proto_path="+filepath.ToSlash(ip))
 	}
@@ -145,28 +145,28 @@ func buildDescriptorArgs(protoFiles []string) ([]string, error) {
 	return args, nil
 }
 
-// executeDescriptorCommand 执行生成描述符的protoc命令
+// executeDescriptorCommand runs protoc to generate the descriptor file.
 func executeDescriptorCommand(args []string) error {
-	protocPath := "protoc" // 默认使用系统protoc
+	protocPath := "protoc" // use system protoc by default
 	cmd := exec.Command(protocPath, args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	logger.Global.Debug("描述符生成: 执行protoc命令",
+	logger.Global.Debug("Descriptor generation: executing protoc",
 		zap.String("protoc_path", protocPath),
 		zap.Strings("args", args),
 	)
 	if err := cmd.Run(); err != nil {
-		logger.Global.Fatal("命令执行失败",
+		logger.Global.Fatal("Command execution failed",
 			zap.Error(err),
 			zap.String("stderr", stderr.String()),
 		)
 	}
 
 	if stdout.Len() > 0 {
-		logger.Global.Info("描述符生成: 命令输出",
+		logger.Global.Info("Descriptor generation: command output",
 			zap.String("stdout", stdout.String()),
 		)
 	}

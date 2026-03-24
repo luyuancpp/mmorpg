@@ -105,13 +105,12 @@ void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
     dtReal direction[3] = { 0, 0, 0 };
     dtVsub(direction, targetLocation, location);
 
-    // Normalize the direction vector
-    dtVnormalize(direction);
-
-    // Validate direction vector
-    if (direction[0] == 0.0 && direction[1] == 0.0 && direction[2] == 0.0) {
-        return; // Zero-length direction; can't determine facing
+    // Zero-length direction means entity is already at target — nothing to face
+    if (dtVlenSqr(direction) < 1e-12f) {
+        return;
     }
+
+    dtVnormalize(direction);
 
     // Compute rotation Euler angles (radians)
     float yaw = atan2(direction[0], direction[2]);   // Rotation around Y axis

@@ -35,7 +35,7 @@ bool ProtoFieldChecker::CheckFieldSizes(const google::protobuf::Message& message
     std::string error_details;
     const bool has_exceeding_fields = CheckFieldSizes(message, threshold, error_details);
 
-    if (!has_exceeding_fields) {
+    if (has_exceeding_fields) {
         LOG_ERROR << error_details;
     }
 

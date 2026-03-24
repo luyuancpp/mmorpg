@@ -34,7 +34,7 @@ func ReadCodeSectionsFromFile(
 		if os.IsNotExist(err) {
 			return buildDefaultCodeMap(methods, methodFunc, funcParam), _config.Global.Naming.YourCodePair, nil
 		}
-		logger.Global.Error("打开CPP文件失败",
+		logger.Global.Error("Failed to open CPP file",
 			zap.String("file_name", cppFileName),
 			zap.Error(err),
 		)
@@ -47,7 +47,7 @@ func ReadCodeSectionsFromFile(
 	result := parser.parse(scanner)
 
 	if err := scanner.Err(); err != nil {
-		logger.Global.Error("读取CPP文件时出错",
+		logger.Global.Error("Error reading CPP file",
 			zap.String("file_name", cppFileName),
 			zap.Error(err),
 		)

@@ -26,6 +26,8 @@ func NewMarkOfflineLogic(ctx context.Context, svcCtx *svc.ServiceContext) *MarkO
 
 func (l *MarkOfflineLogic) MarkOffline(in *pb.PlayerId) (*common.Empty, error) {
 	key := locationKey(in.Uid)
-	l.svcCtx.RedisClient.Del(l.ctx, key)
+	if err := l.svcCtx.RedisClient.Del(l.ctx, key).Err(); err != nil {
+		l.Errorf("MarkOffline: failed to delete location for player %d: %v", in.Uid, err)
+	}
 	return &common.Empty{}, nil
 }

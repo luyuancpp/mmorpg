@@ -30,12 +30,11 @@ entt::registry& NodeUtils::GetRegistryForNodeType(uint32_t nodeType) {
 }
 
 std::string NodeUtils::GetRegistryName(const entt::registry& registry) {
-	for (uint32_t i = 0; i < tlsNodeContextManager.GetAllRegistries().size(); ++i){
-		if (&tlsNodeContextManager.GetRegistry(i) == &registry) {
-			return eNodeType_Name(i);
-		}
+	const auto type = GetRegistryType(registry);
+	if (type == eNodeType(std::numeric_limits<::int32_t>::max())) {
+		return "UnknownRegistry";
 	}
-	return "UnknownRegistry";
+	return eNodeType_Name(static_cast<uint32_t>(type));
 }
 
 eNodeType NodeUtils::GetRegistryType(const entt::registry& registry){

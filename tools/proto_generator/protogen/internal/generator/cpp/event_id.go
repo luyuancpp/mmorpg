@@ -50,7 +50,7 @@ func registerProtoEvents(protoRelativeDir string, files []os.DirEntry) {
 		protoFilePath := filepath.Join(_config.Global.Paths.ProtoDir, protoRelativeDir, file.Name())
 		messages, err := parseProtoMessages(protoFilePath)
 		if err != nil {
-			logger.Global.Fatal("解析event proto失败",
+			logger.Global.Fatal("Failed to parse event proto file",
 				zap.String("proto_file", protoFilePath),
 				zap.Error(err),
 			)
@@ -58,7 +58,7 @@ func registerProtoEvents(protoRelativeDir string, files []os.DirEntry) {
 
 		packageName, err := parseProtoPackage(protoFilePath)
 		if err != nil {
-			logger.Global.Fatal("解析event proto package失败",
+			logger.Global.Fatal("Failed to parse event proto package",
 				zap.String("proto_file", protoFilePath),
 				zap.Error(err),
 			)
@@ -74,7 +74,7 @@ func registerProtoEvents(protoRelativeDir string, files []os.DirEntry) {
 			idName := buildEventIdName(packageName, messageName)
 			for _, existing := range globalProtoEventList {
 				if existing.IdName == idName {
-					logger.Global.Fatal("event ID 名称冲突",
+					logger.Global.Fatal("Duplicate event ID name",
 						zap.String("event_name", idName),
 						zap.String("qualified_name", qualifyProtoType(packageName, messageName)),
 					)
@@ -99,7 +99,7 @@ func ReadAllProtoEvents(wg *sync.WaitGroup) {
 
 		logicEventFiles, err := readProtoFiles(_config.Global.PathLists.ProtoDirs.LogicEvent)
 		if err != nil {
-			logger.Global.Fatal("读取逻辑event proto目录失败",
+			logger.Global.Fatal("Failed to read logic event proto directory",
 				zap.String("dir", _config.Global.PathLists.ProtoDirs.LogicEvent),
 				zap.Error(err),
 			)
@@ -112,7 +112,7 @@ func ReadAllProtoEvents(wg *sync.WaitGroup) {
 
 		kafkaEventFiles, err := readProtoFiles(_config.Global.PathLists.ProtoDirs.ContractsKafka)
 		if err != nil {
-			logger.Global.Warn("读取Kafka event proto目录失败，跳过Kafka event ID生成",
+			logger.Global.Warn("Failed to read Kafka event proto directory, skipping Kafka event ID generation",
 				zap.String("dir", _config.Global.PathLists.ProtoDirs.ContractsKafka),
 				zap.Error(err),
 			)
@@ -136,7 +136,7 @@ func ReadEventIdFile(wg *sync.WaitGroup) {
 			if os.IsNotExist(err) {
 				return
 			}
-			logger.Global.Fatal("读取event ID文件失败",
+			logger.Global.Fatal("Failed to open event ID file",
 				zap.String("file_path", _config.Global.Paths.EventIdFile),
 				zap.Error(err),
 			)
@@ -148,7 +148,7 @@ func ReadEventIdFile(wg *sync.WaitGroup) {
 			line := scanner.Text()
 			parts := strings.Split(line, "=")
 			if len(parts) != 2 {
-				logger.Global.Warn("event ID文件格式错误，跳过无效行",
+				logger.Global.Warn("Invalid line in event ID file, skipping",
 					zap.String("line", line),
 				)
 				continue
@@ -156,7 +156,7 @@ func ReadEventIdFile(wg *sync.WaitGroup) {
 
 			id, convErr := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 64)
 			if convErr != nil {
-				logger.Global.Fatal("解析event ID失败",
+				logger.Global.Fatal("Failed to parse event ID",
 					zap.String("line", line),
 					zap.Error(convErr),
 				)
@@ -169,7 +169,7 @@ func ReadEventIdFile(wg *sync.WaitGroup) {
 		}
 
 		if err = scanner.Err(); err != nil {
-			logger.Global.Fatal("扫描event ID文件失败",
+			logger.Global.Fatal("Failed to scan event ID file",
 				zap.String("file_path", _config.Global.Paths.EventIdFile),
 				zap.Error(err),
 			)
@@ -281,7 +281,7 @@ func writeEventIdHeaderFiles() {
 		utils2.WriteFileIfChanged(outputPath, []byte(builder.String()))
 	}
 
-	logger.Global.Info("事件ID头文件生成完成",
+	logger.Global.Info("Event ID header files generated",
 		zap.Int("file_count", len(groups)),
 		zap.Int("event_count", len(globalProtoEventList)),
 	)

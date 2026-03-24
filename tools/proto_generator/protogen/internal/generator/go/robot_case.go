@@ -6,10 +6,11 @@ import (
 	"sync"
 	"text/template"
 
-	"go.uber.org/zap"
 	"protogen/internal"
 	_config "protogen/internal/config"
 	"protogen/logger"
+
+	"go.uber.org/zap"
 )
 
 const handlerTotalTemplate = `package handler
@@ -71,7 +72,7 @@ type CasesData struct {
 	Cases []HandlerCase
 }
 
-// isClientMethodRepliedHandler 检查是否为客户端方法已响应处理器
+// isClientMethodRepliedHandler checks if this is a client method replied handler.
 func isClientMethodRepliedHandler(methodList *internal.RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 	return internal.IsClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
@@ -85,7 +86,7 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 		handlerCases := make([]HandlerCase, 0)
 		for _, service := range internal.GlobalRPCServiceList {
 			if !isClientMethodRepliedHandler(&service.Methods) {
-				logger.Global.Debug("跳过非客户端响应服务",
+				logger.Global.Debug("Skipping non-client-response service",
 					zap.String("service_name", service.Service()),
 				)
 				continue
@@ -93,7 +94,7 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 
 			for _, method := range service.Methods {
 				if !isRelevantService(method) {
-					logger.Global.Debug("跳过无关服务方法",
+					logger.Global.Debug("Skipping irrelevant service method",
 						zap.String("service_name", method.Service()),
 						zap.String("method_name", method.Method()),
 					)
@@ -103,19 +104,19 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 			}
 		}
 
-		logger.Global.Info("开始生成Robot消息处理器文件",
+		logger.Global.Info("Generating robot message handler file",
 			zap.Int("handler_case_count", len(handlerCases)),
 		)
 
 		err := generateTotalHandlerFile(_config.Global.Paths.RobotMsgBodyHandlerFile, handlerCases)
 		if err != nil {
-			logger.Global.Error("生成Robot消息处理器文件失败",
+			logger.Global.Error("Failed to generate robot message handler file",
 				zap.Error(err),
 			)
 			return
 		}
 
-		logger.Global.Info("Robot消息处理器文件生成成功",
+		logger.Global.Info("Robot message handler file generated",
 			zap.String("file_path", _config.Global.Paths.RobotMsgBodyHandlerFile),
 			zap.Int("handler_case_count", len(handlerCases)),
 		)
@@ -131,7 +132,7 @@ func generateHandlerCases(method *internal.MethodInfo, cases []HandlerCase) []Ha
 		FunctionCall:    method.Service() + method.Method() + "Handler",
 	}
 
-	logger.Global.Debug("生成处理器Case",
+	logger.Global.Debug("Generated handler case",
 		zap.String("service_name", method.Service()),
 		zap.String("method_name", method.Method()),
 		zap.String("message_id", handlerCase.MessageID),
@@ -146,12 +147,12 @@ func generateHandlerCases(method *internal.MethodInfo, cases []HandlerCase) []Ha
 // generateHandlerFile creates a new handler file with the specified parameters.
 func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 	if fileName == "" {
-		logger.Global.Fatal("生成处理器文件失败: 文件路径为空")
+		logger.Global.Fatal("Failed to generate handler file: file path is empty")
 	}
 
 	file, err := os.Create(fileName)
 	if err != nil {
-		logger.Global.Fatal("创建处理器文件失败",
+		logger.Global.Fatal("Failed to create handler file",
 			zap.String("file_name", fileName),
 			zap.Error(err),
 		)
@@ -160,7 +161,7 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 
 	tmpl, err := template.New("handler").Parse(handlerTotalTemplate)
 	if err != nil {
-		logger.Global.Fatal("解析处理器模板失败",
+		logger.Global.Fatal("Failed to parse handler template",
 			zap.Error(err),
 		)
 	}
@@ -170,14 +171,14 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 	}
 
 	if err := tmpl.Execute(file, data); err != nil {
-		logger.Global.Fatal("执行处理器模板失败",
+		logger.Global.Fatal("Failed to execute handler template",
 			zap.String("file_name", fileName),
 			zap.Int("case_count", len(cases)),
 			zap.Error(err),
 		)
 	}
 
-	logger.Global.Debug("处理器模板执行完成",
+	logger.Global.Debug("Handler template executed",
 		zap.String("file_name", fileName),
 		zap.Int("case_count", len(cases)),
 	)
@@ -190,7 +191,7 @@ func isRelevantService(method *internal.MethodInfo) bool {
 	isRelevant := strings.Contains(method.Service(), "GamePlayer") || strings.Contains(method.Service(), "ClientPlayer")
 
 	if !isRelevant {
-		logger.Global.Debug("服务方法不相关，跳过",
+		logger.Global.Debug("Service method is irrelevant, skipping",
 			zap.String("service_name", method.Service()),
 			zap.String("method_name", method.Method()),
 		)
@@ -205,7 +206,7 @@ func determineResponseType(method *internal.MethodInfo) string {
 
 	if strings.Contains(responseType, _config.Global.Naming.EmptyResponse) {
 		responseType = method.GoRequest()
-		logger.Global.Debug("响应类型为空，使用请求类型",
+		logger.Global.Debug("Response type is empty, using request type",
 			zap.String("service_name", method.Service()),
 			zap.String("method_name", method.Method()),
 			zap.String("original_response_type", method.GoResponse()),

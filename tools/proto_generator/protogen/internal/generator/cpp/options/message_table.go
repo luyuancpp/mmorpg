@@ -2,26 +2,27 @@ package options
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
-	"github.com/luyuancpp/protooption"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"os"
 	_config "protogen/internal/config"
-	"protogen/internal/prototools/option"
+	prototools "protogen/internal/prototools/option"
 	"protogen/internal/utils"
 	"protogen/logger"
 	"strings"
 	"text/template"
+
+	"github.com/iancoleman/strcase"
+	messageoption "github.com/luyuancpp/protooption"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// BuildOption 注册消息选项和扩展字段的回调函数
+// BuildOption registers callbacks for message options and extension fields.
 func BuildOption() {
 	if logger.Global == nil {
 		tempLogger, _ := zap.NewProduction()
 		defer tempLogger.Sync()
-		tempLogger.Warn("全局logger未初始化，使用临时logger")
+		tempLogger.Warn("Global logger not initialized, using temporary logger")
 
 		registerCallbacks(tempLogger)
 		return
@@ -30,38 +31,38 @@ func BuildOption() {
 	registerCallbacks(logger.Global)
 }
 
-// registerCallbacks 提取回调注册逻辑，便于复用
+// registerCallbacks extracts callback registration logic for reuse.
 func registerCallbacks(log *zap.Logger) {
 	prototools.RegisterCallback(prototools.OptionTypeMessage,
 		func(desc interface{}, opts interface{}, context *prototools.OptionContext) error {
 			type AttributeField struct {
-				FieldName      string // 原始字段名（如 entity_id）
-				CamelFieldName string // 大驼峰字段名（如 EntityId）
-				Number         int32  // 字段编号
-				FieldType      string // 字段类型名称（如 uint64、Transform、CombatStateFlagsPbComponent）
+				FieldName      string // Original field name (e.g. entity_id)
+				CamelFieldName string // Upper camel case field name (e.g. EntityId)
+				Number         int32  // Field number
+				FieldType      string // Field type name (e.g. uint64, Transform, CombatStateFlagsPbComponent)
 			}
 
 			type AttributeSyncMessage struct {
-				MessageName     string           // 消息名称（如 ActorBaseAttributesS2C）
-				CppClass        string           // C++类名（与消息名一致）
-				ProtoHeaderFile string           // proto文件对应的头文件
-				ProtoFileName   string           // 原始proto文件名
-				Fields          []AttributeField // 消息所有字段
+				MessageName     string           // Message name (e.g. ActorBaseAttributesS2C)
+				CppClass        string           // C++ class name (same as message name)
+				ProtoHeaderFile string           // Header file corresponding to the proto file
+				ProtoFileName   string           // Original proto file name
+				Fields          []AttributeField // All fields in the message
 			}
 
 			msgDesc, ok := desc.(*descriptorpb.DescriptorProto)
 			if !ok {
-				return fmt.Errorf("desc类型断言失败，期望*descriptorpb.DescriptorProto，实际为%T", desc)
+				return fmt.Errorf("desc type assertion failed: expected *descriptorpb.DescriptorProto, got %T", desc)
 			}
 
 			if context == nil || context.File == nil {
-				return fmt.Errorf("获取消息[%s]的文件上下文失败", msgDesc.GetName())
+				return fmt.Errorf("failed to get file context for message [%s]", msgDesc.GetName())
 			}
 			fileDesc := context.File
 
 			protoFileName := fileDesc.GetName()
 			if protoFileName == "" {
-				return fmt.Errorf("消息[%s]所属的proto文件名为空", msgDesc.GetName())
+				return fmt.Errorf("proto file name is empty for message [%s]", msgDesc.GetName())
 			}
 			protoHeaderFile := strings.TrimSuffix(protoFileName, ".proto") + ".pb.h"
 
@@ -70,7 +71,7 @@ func registerCallbacks(log *zap.Logger) {
 				messageoption.E_OptionAttributeSync,
 			)
 			if rawValue == nil {
-				logger.Global.Debug("消息未配置属性同步Option，跳过生成",
+				logger.Global.Debug("Message has no attribute sync option, skipping generation",
 					zap.String("message_name", msgDesc.GetName()),
 					zap.String("proto_file", protoFileName),
 				)
@@ -79,11 +80,11 @@ func registerCallbacks(log *zap.Logger) {
 
 			enabled, ok := rawValue.(bool)
 			if !ok {
-				return fmt.Errorf("消息[%s]的属性同步Option类型错误，期望bool，实际为%T",
+				return fmt.Errorf("attribute sync option type error for message [%s]: expected bool, got %T",
 					msgDesc.GetName(), rawValue)
 			}
 			if !enabled {
-				logger.Global.Debug("消息属性同步Option为false，跳过生成",
+				logger.Global.Debug("Attribute sync option is false, skipping generation",
 					zap.String("message_name", msgDesc.GetName()),
 					zap.String("proto_file", protoFileName),
 				)
@@ -105,11 +106,11 @@ func registerCallbacks(log *zap.Logger) {
 					FieldName:      field.GetName(),
 					CamelFieldName: strcase.ToCamel(field.GetName()),
 					Number:         field.GetNumber(),
-					FieldType:      fieldType, // 现在能拿到CombatStateFlagsPbComponent这类短名称
+					FieldType:      fieldType, // Now resolves short names like CombatStateFlagsPbComponent
 				})
 			}
 
-			logger.Global.Info("开始生成属性同步代码",
+			logger.Global.Info("Generating attribute sync code",
 				zap.String("message_name", asm.MessageName),
 				zap.String("proto_file", asm.ProtoFileName),
 				zap.String("proto_header", asm.ProtoHeaderFile),
@@ -119,7 +120,7 @@ func registerCallbacks(log *zap.Logger) {
 			base := strings.ToLower(msgDesc.GetName())
 			outputDir := _config.Global.Paths.SceneAttributeSyncDir
 			if err := os.MkdirAll(outputDir, 0755); err != nil {
-				return fmt.Errorf("创建输出目录[%s]失败: %w", outputDir, err)
+				return fmt.Errorf("failed to create output directory [%s]: %w", outputDir, err)
 			}
 
 			funcMap := template.FuncMap{
@@ -128,28 +129,28 @@ func registerCallbacks(log *zap.Logger) {
 			}
 			cppFile, err := _config.Global.GetOutputPath("attribute_sync_cpp", outputDir, base)
 			if err != nil {
-				return fmt.Errorf("获取CPP文件路径失败: %w", err)
+				return fmt.Errorf("failed to get cpp file path: %w", err)
 			}
 			cppTemplatePath, err := _config.Global.GetTemplatePath("attribute_sync_cpp")
 			if err != nil {
-				return fmt.Errorf("获取CPP模板路径失败: %w", err)
+				return fmt.Errorf("failed to get cpp template path: %w", err)
 			}
 			if err := utils.RenderTemplateToFileWithFuncs(cppTemplatePath, cppFile, asm, funcMap); err != nil {
-				return fmt.Errorf("生成CPP文件[%s]失败: %w", cppFile, err)
+				return fmt.Errorf("failed to generate cpp file [%s]: %w", cppFile, err)
 			}
 			hFile, err := _config.Global.GetOutputPath("attribute_sync_h", outputDir, base)
 			if err != nil {
-				return fmt.Errorf("获取头文件路径失败: %w", err)
+				return fmt.Errorf("failed to get header file path: %w", err)
 			}
 			hTemplatePath, err := _config.Global.GetTemplatePath("attribute_sync_h")
 			if err != nil {
-				return fmt.Errorf("获取头文件模板路径失败: %w", err)
+				return fmt.Errorf("failed to get header template path: %w", err)
 			}
 			if err := utils.RenderTemplateToFileWithFuncs(hTemplatePath, hFile, asm, funcMap); err != nil {
-				return fmt.Errorf("生成头文件[%s]失败: %w", hFile, err)
+				return fmt.Errorf("failed to generate header file [%s]: %w", hFile, err)
 			}
 
-			logger.Global.Info("属性同步代码生成完成",
+			logger.Global.Info("Attribute sync code generation completed",
 				zap.String("message_name", asm.MessageName),
 				zap.String("proto_header", asm.ProtoHeaderFile),
 				zap.String("cpp_file", cppFile),
@@ -160,10 +161,10 @@ func registerCallbacks(log *zap.Logger) {
 		})
 }
 
-// getShortFieldTypeName 解析Protobuf字段的**短类型名**（核心优化）
-// - 基础类型：uint64、string、bool
-// - 自定义消息：Transform、Velocity、CombatStateFlagsPbComponent
-// - 官方消息：Timestamp（而非google.protobuf.Timestamp）
+// getShortFieldTypeName resolves the short type name for a protobuf field.
+// - Primitive types: uint64, string, bool
+// - Custom messages: Transform, Velocity, CombatStateFlagsPbComponent
+// - Well-known types: Timestamp (not google.protobuf.Timestamp)
 func getShortFieldTypeName(fileDesc *descriptorpb.FileDescriptorProto, msgDesc *descriptorpb.DescriptorProto, field *descriptorpb.FieldDescriptorProto) string {
 	fieldType := field.GetType()
 	if fieldType != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE &&
@@ -178,6 +179,6 @@ func getShortFieldTypeName(fileDesc *descriptorpb.FileDescriptorProto, msgDesc *
 	parts := strings.Split(typeName, ".")
 	shortName := parts[len(parts)-1]
 
-	// （可选：确保自定义类型名100%准确）
+	// (Optional: ensure 100% accuracy of custom type names)
 	return shortName
 }
