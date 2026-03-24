@@ -43,7 +43,7 @@ class MissionSystem {
 public:
 	using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
 
-	static uint32_t GetMissionReward(const GetRewardParam& param);
+	static uint32_t GetMissionReward(const GetRewardParam& param, MissionsComp& comp);
 	static uint32_t AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComp& comp, const IMissionConfig& config);
 	static uint32_t AbandonMission(const AbandonParam& param, MissionsComp& comp, const IMissionConfig& config);
 	static void CompleteAllMissions(entt::entity player, uint32_t op, MissionsComp& comp);

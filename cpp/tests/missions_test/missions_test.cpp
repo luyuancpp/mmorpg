@@ -549,8 +549,6 @@ TEST(MissionsComp, MissionRewardList)
 	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(playerEntity);
 	auto& missionsComponent = container.GetOrCreate(MissionListComp::kPlayerMission);
 
-	auto& reward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(playerEntity);
-
 	// Accept mission
 	uint32_t missionId = 12;
 	AcceptMissionEvent acceptMissionEvent;
@@ -564,7 +562,7 @@ TEST(MissionsComp, MissionRewardList)
 	param.playerEntity = playerEntity;
 
 	// Verify mission is not in reward list
-	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
+	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param, missionsComponent));
 	EXPECT_TRUE(missionsComponent.IsAccepted(missionId));
 	EXPECT_FALSE(missionsComponent.IsComplete(missionId));
 
@@ -581,8 +579,8 @@ TEST(MissionsComp, MissionRewardList)
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId));
 
 	// Verify successfully getting mission reward and cannot repeat
-	EXPECT_EQ(kSuccess, MissionSystem::GetMissionReward(param));
-	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
+	EXPECT_EQ(kSuccess, MissionSystem::GetMissionReward(param, missionsComponent));
+	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param, missionsComponent));
 
 	// Verify mission reward list size is 0 after mission completion
 	EXPECT_EQ(0, missionsComponent.CanGetRewardSize());
@@ -610,8 +608,8 @@ TEST(MissionsComp, AbandonMission)
 	auto& typeMissions = missionsComponent.GetEventMissionsClassifyForUnitTest();
 	EXPECT_EQ(1, typeMissions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
 
-	// Set mission as rewardable
-	tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
+	// Set mission as claimable via bitset
+	SetBit(MissionBitMap, missionsComponent.GetClaimableRewards(), missionId);
 
 	// Prepare abandon mission parameters
 	AbandonParam abandonParam;

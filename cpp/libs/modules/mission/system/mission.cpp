@@ -33,25 +33,21 @@ namespace {
 } // anonymous namespace
 
 // Function to retrieve reward for completing a mission
-uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
+uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param, MissionsComp& missionComp) {
 	// Check if player exists in the registry
 	if (!tlsRegistryManager.actorRegistry.valid(param.playerEntity)) {
 		LOG_ERROR << "Player not found: playerId = " << tlsRegistryManager.actorRegistry.get<Guid>(param.playerEntity);
 		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
-	// Retrieve mission reward component for the player
-	auto& missionRewardComp = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(param.playerEntity);
-
-	// Check if the mission ID is valid for reward
-	auto rewardMissionIdMap = missionRewardComp.mutable_can_reward_mission_id();
-	if (rewardMissionIdMap->find(param.missionId) == rewardMissionIdMap->end()) {
+	// Check if the mission ID is claimable
+	if (!missionComp.IsClaimable(param.missionId)) {
 		LOG_ERROR << "Mission ID not found in reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity);
 		return PrintStackAndReturnError(kMissionIdNotInRewardList);
 	}
 
-	// Remove mission ID from reward list
-	rewardMissionIdMap->erase(param.missionId);
+	// Clear mission ID from claimable rewards
+	SetBit(MissionBitMap, missionComp.GetClaimableRewards(), param.missionId, false);
 	LOG_INFO << "Removed mission ID from reward list: missionId = " << param.missionId << ", playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity);
 	return kSuccess;
 }
@@ -139,9 +135,8 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComp& 
 		return kMissionAlreadyCompleted;
 	}
 
-	// Remove mission ID from reward list if applicable
-	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(param.playerEntity);
-	missionReward.mutable_can_reward_mission_id()->erase(param.missionId);
+	// Clear claimable reward bit if applicable
+	SetBit(MissionBitMap, missionComp.GetClaimableRewards(), param.missionId, false);
 
 	// Remove mission from missions component
 	missionComp.GetMissionsComp().mutable_missions()->erase(param.missionId);
@@ -384,8 +379,6 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 	// Retrieve mission component for the player
 	auto& missionComp = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsComp>(playerEntity);
 
-	auto& missionReward = tlsRegistryManager.actorRegistry.get_or_emplace<RewardListComp>(playerEntity);
-
 	// Process each completed mission
 	for (const auto& missionId : completedMissionsThisTime) {
 		DeleteMissionClassification(playerEntity, missionId, config);
@@ -403,7 +396,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 			break;
 		}
 		case RewardAction::kClaimable:
-			missionReward.mutable_can_reward_mission_id()->insert({ missionId, false });
+			SetBit(MissionBitMap, missionComp.GetClaimableRewards(), missionId);
 			break;
 		default:
 			break;

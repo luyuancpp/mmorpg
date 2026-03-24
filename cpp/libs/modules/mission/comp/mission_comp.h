@@ -29,6 +29,12 @@ public:
     [[nodiscard]] std::size_t TypeSetSize() const { return typeFilter.size(); }
     [[nodiscard]] std::size_t CanGetRewardSize() const;
     MissionsBits& GetCompleteMissions() { return completedMissions; }
+    MissionsBits& GetClaimableRewards() { return claimableRewards; }
+
+    [[nodiscard]] bool IsClaimable(const uint32_t missionId) const
+    {
+        return TestBit(MissionBitMap, claimableRewards, missionId);
+    }
 
     [[nodiscard]] MissionListComp& GetMissionsComp()
     {
@@ -81,6 +87,7 @@ private:
     UInt32PairSet typeFilter;
     bool missionTypeNotRepeated{ true }; //mission type must be unique
     MissionsBits completedMissions;
+    MissionsBits claimableRewards;
 };
 
 using PlayerMissionList = std::array<MissionsComp, MissionListComp::kPlayerMissionSize>;
