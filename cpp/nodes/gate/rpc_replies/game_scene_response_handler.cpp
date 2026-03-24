@@ -15,7 +15,7 @@ void InitSceneSceneReply()
         std::bind(&OnSceneSceneTestReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-void OnSceneSceneTestReply(const TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, Timestamp timestamp)
+void OnSceneSceneTestReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
