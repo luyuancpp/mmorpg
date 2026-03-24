@@ -3,6 +3,7 @@ package scenemanagerlogic
 import (
 	"context"
 
+	"scene_manager/internal/logic"
 	"scene_manager/internal/svc"
 	"scene_manager/scene_manager"
 
@@ -25,7 +26,5 @@ func NewEnterSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterS
 
 // Login/player_locator requests a player to enter a scene
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
-	// todo: add your logic here and delete this line
-
-	return &scene_manager.EnterSceneResponse{}, nil
+	return logic.NewEnterSceneLogic(l.ctx, l.svcCtx).EnterScene(in)
 }

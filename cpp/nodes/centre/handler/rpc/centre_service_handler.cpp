@@ -82,13 +82,13 @@ void InitReply()
 		std::bind(&OnGateBindSessionToGateReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-void InitPlayerServiceReplied() {}
+void InitPlayerServiceReplied() { /* TODO: Register player service reply handlers if needed */ }
 
 namespace {
-void OnSceneCreatedHandler(const OnSceneCreated& event) {}
-void OnSceneDestroyedHandler(const OnSceneDestroyed& event) {}
-void BeforeEnterSceneHandler(const BeforeEnterScene& event) {}
-void AfterEnterSceneHandler(const AfterEnterScene& event) {}
+void OnSceneCreatedHandler(const OnSceneCreated& event) { /* TODO: Notify centre of new scene availability */ }
+void OnSceneDestroyedHandler(const OnSceneDestroyed& event) { /* TODO: Update centre scene registry on destruction */ }
+void BeforeEnterSceneHandler(const BeforeEnterScene& event) { /* TODO: Pre-enter validation on centre side */ }
+void AfterEnterSceneHandler(const AfterEnterScene& event) { /* TODO: Post-enter bookkeeping on centre side */ }
 
 void BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
@@ -112,7 +112,7 @@ void BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 		<< tlsRegistryManager.sceneRegistry.get<SceneInfoComp>(tlsRegistryManager.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity).guid();
 }
 
-void AfterLeaveSceneHandler(const AfterLeaveScene& event) {}
+void AfterLeaveSceneHandler(const AfterLeaveScene& event) { /* TODO: Post-leave cleanup on centre side */ }
 
 void S2CEnterSceneHandler(const S2CEnterScene& event)
 {

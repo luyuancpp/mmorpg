@@ -53,8 +53,8 @@ public:
 
     [[nodiscard]] bool IsMissionTypeNotRepeated() const { return missionTypeNotRepeated_; }
 
-    [[nodiscard]] uint32_t IsMissionUnaccepted(uint32_t missionId) const;
-    [[nodiscard]] uint32_t IsMissionUncompleted(uint32_t missionId) const;
+    [[nodiscard]] uint32_t ValidateNotAccepted(uint32_t missionId) const;
+    [[nodiscard]] uint32_t ValidateNotCompleted(uint32_t missionId) const;
 
     // ── Accessors ────────────────────────────────────────────────────────
 

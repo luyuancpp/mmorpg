@@ -92,10 +92,14 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 
 	// Compare scenes
 	const auto sceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player);
-	if (!sceneEntity) return;
+	if (!sceneEntity) {
+		return;
+	}
 
 	const auto sceneInfo = tlsRegistryManager.actorRegistry.try_get<SceneInfoComp>(sceneEntity->sceneEntity);
-	if (!sceneInfo) return;
+	if (!sceneInfo) {
+		return;
+	}
 
 	uint64_t currentSceneId = sceneInfo->guid(); // Assuming guid is scene_id (uint32 vs uint64 issue handled by cast)
 	uint64_t leaderSceneId = loc.scene_id();

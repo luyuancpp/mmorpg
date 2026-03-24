@@ -59,5 +59,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 	int agentIndex = (*dtCrowd)->addAgent(position, agentParams, nullptr);
 }
 
-void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {}
+void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
+    // TODO: Remove agent from dtCrowd when player leaves scene
+}
 

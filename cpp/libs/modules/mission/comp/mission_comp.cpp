@@ -14,8 +14,8 @@
 
 MissionsComp::MissionsComp()
 {
-	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster);
-	     i < static_cast<uint32_t>(eCondtionType::kConditionTypeMax); ++i)
+	for (uint32_t i = static_cast<uint32_t>(eConditionType::kConditionKillMonster);
+	     i < static_cast<uint32_t>(eConditionType::kConditionTypeMax); ++i)
 	{
 		eventMissionsClassify_.emplace(i, UInt32Set{});
 	}
@@ -31,7 +31,7 @@ void MissionsComp::AbandonMission(uint32_t missionId)
     SetBit(MissionBitMap, completedMissions_, missionId, false);
 }
 
-uint32_t MissionsComp::IsMissionUnaccepted(uint32_t missionId) const
+uint32_t MissionsComp::ValidateNotAccepted(uint32_t missionId) const
 {
 	if (missionList_.missions().find(missionId) != missionList_.missions().end())
 	{
@@ -40,7 +40,7 @@ uint32_t MissionsComp::IsMissionUnaccepted(uint32_t missionId) const
 	return kSuccess;
 }
 
-uint32_t MissionsComp::IsMissionUncompleted(uint32_t missionId) const
+uint32_t MissionsComp::ValidateNotCompleted(uint32_t missionId) const
 {
 	if (IsComplete(missionId))
 	{
