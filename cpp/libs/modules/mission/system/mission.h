@@ -50,11 +50,11 @@ public:
 	static void HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComp& comp, const IMissionConfig& config);
 
 private:
-	static void DeleteMissionClassification(entt::entity player, uint32_t missionId, const IMissionConfig& config);
+	static void DeleteMissionClassification(MissionsComp& comp, uint32_t missionId, const IMissionConfig& config);
 	static bool UpdateMission(const MissionConditionEvent& conditionEvent, MissionComp& mission);
 	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionComp& mission, const IMissionConfig& config);
 	static void UpdateMissionStatus(MissionComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions);
-	static void OnMissionCompletion(entt::entity player, const UInt32Set& completedMissions, const IMissionConfig& config);
+	static void OnMissionCompletion(entt::entity player, const UInt32Set& completedMissions, MissionsComp& comp, const IMissionConfig& config);
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp& missionComp, const IMissionConfig& config);
 	static void RemoveMissionClassification(MissionsComp& missionComp, uint32_t missionId, const IMissionConfig& config);
 	static bool AreAllConditionsFulfilled(const MissionComp& mission, uint32_t missionId, MissionsComp& missionComp, const IMissionConfig& config);
