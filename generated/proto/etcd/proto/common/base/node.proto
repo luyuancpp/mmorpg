@@ -29,6 +29,7 @@ enum eNodeType {
 	PlayerLocatorNodeService		   = 24; // 跨服玩家定位服务
 	SceneManagerNodeService = 25; // 场景管理服务（Go-Zero）
 	DataServiceNodeService  = 26; // 跨服数据代理服务（Go-Zero）
+	FriendNodeService       = 27; // 好友系统服务（Go-Zero）
 };
 
 enum eSceneNodeType

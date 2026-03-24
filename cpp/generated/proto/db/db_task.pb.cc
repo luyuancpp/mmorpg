@@ -152,14 +152,14 @@ const char descriptor_table_protodef_proto_2fdb_2fdb_5ftask_2eproto[] ABSL_ATTRI
     "p\030\003 \001(\t\022\020\n\010msg_type\030\004 \001(\t\022\014\n\004body\030\005 \001(\014\022"
     "\017\n\007task_id\030\006 \001(\t\022\023\n\013retry_count\030\007 \001(\005\"M\n"
     "\nTaskResult\022\017\n\007success\030\001 \001(\010\022\014\n\004data\030\002 \001"
-    "(\014\022\r\n\005error\030\003 \001(\t\022\021\n\ttimestamp\030\004 \001(\003b\006pr"
-    "oto3"
+    "(\014\022\r\n\005error\030\003 \001(\t\022\021\n\ttimestamp\030\004 \001(\003B\004Z\002"
+    "dbb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fdb_2fdb_5ftask_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdb_2fdb_5ftask_2eproto = {
     false,
     false,
-    244,
+    250,
     descriptor_table_protodef_proto_2fdb_2fdb_5ftask_2eproto,
     "proto/db/db_task.proto",
     &descriptor_table_proto_2fdb_2fdb_5ftask_2eproto_once,

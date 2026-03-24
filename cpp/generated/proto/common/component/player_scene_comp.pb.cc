@@ -115,13 +115,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fscene
     "_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\"v\n\026PlayerSce"
     "neContextComp\022(\n\nscene_info\030\001 \001(\0132\024.Play"
     "erSceneInfoComp\0222\n\024scene_info_last_time\030"
-    "\002 \001(\0132\024.PlayerSceneInfoCompb\006proto3"
+    "\002 \001(\0132\024.PlayerSceneInfoCompB\022Z\020common/co"
+    "mponentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto = {
     false,
     false,
-    235,
+    255,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
     "proto/common/component/player_scene_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once,

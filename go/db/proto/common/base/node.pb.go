@@ -49,6 +49,7 @@ const (
 	ENodeType_PlayerLocatorNodeService ENodeType = 24 // 跨服玩家定位服务
 	ENodeType_SceneManagerNodeService  ENodeType = 25 // 场景管理服务（Go-Zero）
 	ENodeType_DataServiceNodeService   ENodeType = 26 // 跨服数据代理服务（Go-Zero）
+	ENodeType_FriendNodeService        ENodeType = 27 // 好友系统服务（Go-Zero）
 )
 
 // Enum value maps for ENodeType.
@@ -79,6 +80,7 @@ var (
 		24: "PlayerLocatorNodeService",
 		25: "SceneManagerNodeService",
 		26: "DataServiceNodeService",
+		27: "FriendNodeService",
 	}
 	ENodeType_value = map[string]int32{
 		"UnknownNodeService":       0,
@@ -106,6 +108,7 @@ var (
 		"PlayerLocatorNodeService": 24,
 		"SceneManagerNodeService":  25,
 		"DataServiceNodeService":   26,
+		"FriendNodeService":        27,
 	}
 )
 
@@ -242,7 +245,7 @@ var File_proto_common_base_node_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_node_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/common/base/node.proto\x12\vcommon.base*\xcb\x04\n" +
+	"\x1cproto/common/base/node.proto\x12\vcommon.base*\xe2\x04\n" +
 	"\teNodeType\x12\x16\n" +
 	"\x12UnknownNodeService\x10\x00\x12\x14\n" +
 	"\x10SceneNodeService\x10\x03\x12\x13\n" +
@@ -269,7 +272,8 @@ const file_proto_common_base_node_proto_rawDesc = "" +
 	"\rGmNodeService\x10\x17\x12\x1c\n" +
 	"\x18PlayerLocatorNodeService\x10\x18\x12\x1b\n" +
 	"\x17SceneManagerNodeService\x10\x19\x12\x1a\n" +
-	"\x16DataServiceNodeService\x10\x1a*g\n" +
+	"\x16DataServiceNodeService\x10\x1a\x12\x15\n" +
+	"\x11FriendNodeService\x10\x1b*g\n" +
 	"\x0eeSceneNodeType\x12\x12\n" +
 	"\x0ekMainSceneNode\x10\x00\x12\x0e\n" +
 	"\n" +

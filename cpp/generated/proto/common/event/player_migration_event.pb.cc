@@ -106,7 +106,8 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fplayer_5fmigration
     "_player_data\030\004 \001(\014\022\021\n\tfrom_zone\030\005 \001(\r\022\017\n"
     "\007to_zone\030\006 \001(\r\022\021\n\ttimestamp\030\007 \001(\003\022\026\n\016cen"
     "tre_node_id\030\010 \001(\r\022(\n\nscene_info\030\t \001(\0132\024."
-    "ChangeSceneInfoCompb\006proto3"
+    "ChangeSceneInfoCompB\016Z\014common/eventb\006pro"
+    "to3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fevent_2fplayer_5fmigration_5fevent_2eproto_deps[1] = {
@@ -116,7 +117,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fplayer_5fmigr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fplayer_5fmigration_5fevent_2eproto = {
     false,
     false,
-    347,
+    363,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fplayer_5fmigration_5fevent_2eproto,
     "proto/common/event/player_migration_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fplayer_5fmigration_5fevent_2eproto_once,

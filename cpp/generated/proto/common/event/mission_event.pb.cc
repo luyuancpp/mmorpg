@@ -195,13 +195,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fmission_5fevent_2e
     "\r\"<\n\026OnAcceptedMissionEvent\022\016\n\006entity\030\001 "
     "\001(\004\022\022\n\nmission_id\030\002 \001(\r\"9\n\023OnMissionAwar"
     "dEvent\022\016\n\006entity\030\001 \001(\004\022\022\n\nmission_id\030\002 \001"
-    "(\rb\006proto3"
+    "(\rB\016Z\014common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fmission_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fmission_5fevent_2eproto = {
     false,
     false,
-    330,
+    346,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fmission_5fevent_2eproto,
     "proto/common/event/mission_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fmission_5fevent_2eproto_once,

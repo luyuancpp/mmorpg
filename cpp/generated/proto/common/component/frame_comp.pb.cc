@@ -88,13 +88,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fframe_5fcomp_2
     "o\"{\n\tFrameTime\022\025\n\rprevious_time\030\001 \001(\004\022\022\n"
     "\ndelta_time\030\002 \001(\001\022\022\n\ntarget_fps\030\003 \001(\r\022\030\n"
     "\020time_accumulator\030\004 \001(\001\022\025\n\rcurrent_frame"
-    "\030\005 \001(\004b\006proto3"
+    "\030\005 \001(\004B\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fframe_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fframe_5fcomp_2eproto = {
     false,
     false,
-    174,
+    194,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fframe_5fcomp_2eproto,
     "proto/common/component/frame_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fframe_5fcomp_2eproto_once,

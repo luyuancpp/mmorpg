@@ -1,15 +1,16 @@
-# 事件
+# Events
 ---
-## 1 优先级
-    异步事件处理用在我需要解耦的地方，比如我不能马上调用的副本的东西
-    异步事件根据分类，如果在压力大的情况下可根据选择把当前事件去分类，
-    在每一帧里面去处理对应的消息，压力大只处理重要消息，不重要的消息可以扔掉，
-    如果消息需要存储，那么可以存到玩家身上等下次上线的时候再去处理，
-    异步事件不应该依赖于顺序，如果顺序必须一致，则直调用顺序事件即可
-## 2 优先级分类
-    0 非常重要，在玩家的tick end 会处理,如果没处理完会存储数据库
-    1 一般，在压力过后再继续处理
-    2 可以丢弃，不重要，比如tip消息提示
+## 1. Priority
+    Async event handling is used where decoupling is needed — e.g., when an instance-related action
+    cannot be invoked immediately. Async events are categorized so that under high load only important
+    messages are processed each frame; unimportant ones can be dropped. If a message needs to be
+    persisted, it can be stored on the player entity and processed on next login.
+    Async events must NOT depend on ordering; if strict ordering is required, use synchronous (direct-call) events.
 
-## 3 跨服架构文档入口
-    参见: docs/design/mmo_cross_server_architecture.md
+## 2. Priority Categories
+    0 — Critical: processed at tick-end; if unfinished, persisted to database
+    1 — Normal: processed after load subsides
+    2 — Discardable: non-essential (e.g., UI tip notifications)
+
+## 3. Cross-Server Architecture
+    See: docs/design/mmo_cross_server_architecture.md

@@ -1,9 +1,9 @@
 syntax = "proto3";
+option go_package = "contracts/proto/chat";
 
 import "proto/db/proto_option.proto";
 import "proto/common/base/tip.proto";
 
-option go_package = "contracts/proto/chat";
 package chatpb;
 
 option cc_generic_services = false;

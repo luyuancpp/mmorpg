@@ -227,13 +227,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_
     "r\"\032\n\007Account\022\017\n\007account\030\001 \001(\t\"\022\n\020Unregis"
     "terPlayer\"2\n\020PlayerUint64Comp\022\036\n\026registr"
     "ation_timestamp\030\001 \001(\004\"!\n\020PlayerUint32Com"
-    "p\022\r\n\005class\030\001 \001(\rb\006proto3"
+    "p\022\r\n\005class\030\001 \001(\rB\022Z\020common/componentb\006pr"
+    "oto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto = {
     false,
     false,
-    224,
+    244,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto,
     "proto/common/component/player_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto_once,

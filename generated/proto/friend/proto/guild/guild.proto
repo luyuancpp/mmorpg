@@ -1,0 +1,104 @@
+syntax = "proto3";
+package guildpb;
+
+option go_package = "friend/proto/guild";
+
+import "proto/common/base/tip.proto";
+
+// ── 公会基础数据 ─────────────────────────────────────────────
+
+message GuildMember {
+  uint64 player_id     = 1;
+  uint32 role          = 2;  // 0=member, 1=officer, 2=vice_leader, 3=leader
+  int64  join_time_ms  = 3;
+  int64  last_active_ms = 4;
+  uint64 contribution  = 5;
+}
+
+message GuildInfo {
+  uint64 guild_id       = 1;
+  string name           = 2;
+  uint64 leader_id      = 3;
+  uint32 level          = 4;
+  string announcement   = 5;
+  int64  create_time_ms = 6;
+  uint32 max_members    = 7;
+  repeated GuildMember members = 8;
+}
+
+// ── 请求/响应 ────────────────────────────────────────────────
+
+message CreateGuildRequest {
+  uint64 player_id = 1;
+  string name      = 2;
+}
+
+message CreateGuildResponse {
+  TipInfoMessage error_message = 1;
+  GuildInfo guild = 2;
+}
+
+message GetGuildRequest {
+  uint64 guild_id = 1;
+}
+
+message GetGuildResponse {
+  TipInfoMessage error_message = 1;
+  GuildInfo guild = 2;
+}
+
+message GetPlayerGuildRequest {
+  uint64 player_id = 1;
+}
+
+message GetPlayerGuildResponse {
+  TipInfoMessage error_message = 1;
+  GuildInfo guild = 2;
+}
+
+message JoinGuildRequest {
+  uint64 player_id = 1;
+  uint64 guild_id  = 2;
+}
+
+message JoinGuildResponse {
+  TipInfoMessage error_message = 1;
+}
+
+message LeaveGuildRequest {
+  uint64 player_id = 1;
+}
+
+message LeaveGuildResponse {
+  TipInfoMessage error_message = 1;
+}
+
+message DisbandGuildRequest {
+  uint64 player_id = 1;
+}
+
+message DisbandGuildResponse {
+  TipInfoMessage error_message = 1;
+}
+
+message SetAnnouncementRequest {
+  uint64 guild_id     = 1;
+  uint64 player_id    = 2;
+  string announcement = 3;
+}
+
+message SetAnnouncementResponse {
+  TipInfoMessage error_message = 1;
+}
+
+// ── 服务定义 ─────────────────────────────────────────────────
+
+service GuildService {
+  rpc CreateGuild (CreateGuildRequest) returns (CreateGuildResponse);
+  rpc GetGuild (GetGuildRequest) returns (GetGuildResponse);
+  rpc GetPlayerGuild (GetPlayerGuildRequest) returns (GetPlayerGuildResponse);
+  rpc JoinGuild (JoinGuildRequest) returns (JoinGuildResponse);
+  rpc LeaveGuild (LeaveGuildRequest) returns (LeaveGuildResponse);
+  rpc DisbandGuild (DisbandGuildRequest) returns (DisbandGuildResponse);
+  rpc SetAnnouncement (SetAnnouncementRequest) returns (SetAnnouncementResponse);
+}

@@ -84,13 +84,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fstatistics_2eproto[
     "\n\"proto/common/base/statistics.proto\"e\n\021"
     "MessageStatistics\022\r\n\005count\030\001 \001(\r\022\030\n\020flow"
     "_rate_second\030\002 \001(\r\022\027\n\017flow_rate_total\030\003 "
-    "\001(\004\022\016\n\006second\030\004 \001(\rb\006proto3"
+    "\001(\004\022\016\n\006second\030\004 \001(\rB\rZ\013common/baseb\006prot"
+    "o3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fstatistics_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fstatistics_2eproto = {
     false,
     false,
-    147,
+    162,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fstatistics_2eproto,
     "proto/common/base/statistics.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fstatistics_2eproto_once,

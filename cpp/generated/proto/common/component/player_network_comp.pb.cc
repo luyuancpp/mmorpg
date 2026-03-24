@@ -134,13 +134,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fnetwo
     "(\t\022\027\n\017session_version\030\005 \001(\004\022\027\n\017token_exp"
     "iry_ms\030\006 \001(\004\022\020\n\010token_id\030\007 \001(\t\022\027\n\017last_r"
     "equest_id\030\010 \001(\t\032-\n\013NodeIdEntry\022\013\n\003key\030\001 "
-    "\001(\r\022\r\n\005value\030\002 \001(\r:\0028\001b\006proto3"
+    "\001(\r\022\r\n\005value\030\002 \001(\r:\0028\001B\022Z\020common/compone"
+    "ntb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto = {
     false,
     false,
-    350,
+    370,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto,
     "proto/common/component/player_network_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once,

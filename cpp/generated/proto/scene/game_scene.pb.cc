@@ -64,8 +64,8 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fscene_2eproto[] ABSL
     "\n\034proto/scene/game_scene.proto\032\033proto/db"
     "/proto_option.proto\032\035proto/common/base/e"
     "mpty.proto\"\017\n\rGameSceneTest2,\n\nSceneScen"
-    "e\022\036\n\004Test\022\016.GameSceneTest\032\006.EmptyB\007\200\001\001\230\324"
-    "a\003b\006proto3"
+    "e\022\036\n\004Test\022\016.GameSceneTest\032\006.EmptyB\016Z\005sce"
+    "ne\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fgame_5fscene_2eproto_deps[2] = {
@@ -76,7 +76,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fscene_2eproto_o
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fscene_2eproto = {
     false,
     false,
-    170,
+    177,
     descriptor_table_protodef_proto_2fscene_2fgame_5fscene_2eproto,
     "proto/scene/game_scene.proto",
     &descriptor_table_proto_2fscene_2fgame_5fscene_2eproto_once,

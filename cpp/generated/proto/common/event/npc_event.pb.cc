@@ -74,13 +74,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fnpc_5fevent_2eprot
     protodesc_cold) = {
     "\n\"proto/common/event/npc_event.proto\"4\n\034"
     "InitializeNpcComponentsEvent\022\024\n\014actor_en"
-    "tity\030\001 \001(\004b\006proto3"
+    "tity\030\001 \001(\004B\016Z\014common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto = {
     false,
     false,
-    98,
+    114,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto,
     "proto/common/event/npc_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto_once,

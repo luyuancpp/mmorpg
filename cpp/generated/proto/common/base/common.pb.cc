@@ -282,13 +282,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto[] AB
     "uid\030\002 \001(\r\022\025\n\rmirror_confid\030\003 \001(\r\022\025\n\rdung"
     "en_confid\030\004 \001(\r\022.\n\010creators\030\005 \003(\0132\034.Scen"
     "eInfoComp.CreatorsEntry\032/\n\rCreatorsEntry"
-    "\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\010:\0028\001b\006proto3"
+    "\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\010:\0028\001B\rZ\013comm"
+    "on/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto = {
     false,
     false,
-    560,
+    575,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto,
     "proto/common/base/common.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto_once,
