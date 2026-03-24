@@ -57,7 +57,9 @@ func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*s
 
 	// 4. Increment scene count on the target node for load tracking
 	sceneCountKey := fmt.Sprintf(NodeSceneCountKey, targetNode)
-	l.svcCtx.Redis.Incr(sceneCountKey)
+	if _, err := l.svcCtx.Redis.Incr(sceneCountKey); err != nil {
+		l.Logger.Errorf("Failed to increment scene count for node %s: %v", targetNode, err)
+	}
 
 	l.Logger.Infof("Created scene %d on node %s (target was %s)", sceneId, targetNode, in.TargetNodeId)
 	return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: targetNode, ErrorCode: 0}, nil

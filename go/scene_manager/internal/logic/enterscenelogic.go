@@ -99,19 +99,20 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		bytes, err := proto.Marshal(cmd)
 		if err != nil {
 			l.Logger.Errorf("Failed to marshal GateCommand: %v", err)
-		} else {
-			topic := fmt.Sprintf("gate-%s", in.GateId)
-			err = l.svcCtx.Kafka.WriteMessages(l.ctx, kafkago.Message{
-				Topic: topic,
-				Key:   []byte(fmt.Sprintf("%d", in.PlayerId)),
-				Value: bytes,
-			})
-			if err != nil {
-				l.Logger.Errorf("Failed to push to Kafka topic %s: %v", topic, err)
-			} else {
-				l.Logger.Infof("Pushed RoutePlayer to Kafka topic %s for player %d -> node %s", topic, in.PlayerId, l.svcCtx.Config.NodeID)
-			}
+			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Failed to encode gate command"}, nil
 		}
+
+		topic := fmt.Sprintf("gate-%s", in.GateId)
+		err = l.svcCtx.Kafka.WriteMessages(l.ctx, kafkago.Message{
+			Topic: topic,
+			Key:   []byte(fmt.Sprintf("%d", in.PlayerId)),
+			Value: bytes,
+		})
+		if err != nil {
+			l.Logger.Errorf("Failed to push to Kafka topic %s: %v", topic, err)
+			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Failed to route player to gate"}, nil
+		}
+		l.Logger.Infof("Pushed RoutePlayer to Kafka topic %s for player %d -> node %s", topic, in.PlayerId, l.svcCtx.Config.NodeID)
 	} else {
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}

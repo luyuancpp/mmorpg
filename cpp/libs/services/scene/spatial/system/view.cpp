@@ -39,7 +39,6 @@ bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEnti
 	const auto& viewerTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(viewer);
 	const auto& targetTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(targetEntity);
 
-	// Get observer and target entity positions
 	const dtReal viewerLocation[] = {
 		viewerTransform.location().x(),
 		viewerTransform.location().y(),
@@ -67,7 +66,6 @@ double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity
 	auto& transform1 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity1);
 	auto& transform2 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2);
 
-	// Get positions of both entities
 	const dtReal location1[] = {
 		transform1.location().x(),
 		transform1.location().y(),
@@ -79,7 +77,6 @@ double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity
 		transform2.location().z()
 	};
 
-	// Compute and return the distance between entities
 	return dtVdist(location1, location2);
 }
 

@@ -30,11 +30,11 @@
 #include <core/system/id_generator.h>
 #include <thread_context/dispatcher_manager.h>
 
-uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
+uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterSkillContexts, const SkillContextCompMap& targetSkillContexts) {
 	uint64_t newSkillId;
 	do {
 		newSkillId = tlsIdGeneratorManager.skillIdGenerator.Generate();
-	} while (casterBuffList.contains(newSkillId) || targetBuffList.contains(newSkillId));
+	} while (casterSkillContexts.contains(newSkillId) || targetSkillContexts.contains(newSkillId));
 	return newSkillId;
 }
 
@@ -327,6 +327,26 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 	return err;
 }
 
+// Common interrupt-or-reject check for casting/recovery/channel timers
+template <typename TimerComp>
+uint32_t CheckTimerPhase(const entt::entity casterEntity, const SkillTable* skillTable) {
+	auto& timerComp = tlsRegistryManager.actorRegistry.get_or_emplace<TimerComp>(casterEntity);
+	if (timerComp.timer.IsActive()) {
+		if (skillTable->immediately()) {
+			LOG_INFO << "Immediate skill: " << skillTable->id()
+				<< " is currently in phase. Sending interrupt message.";
+			SendSkillInterruptedMessage(casterEntity, skillTable->id());
+			tlsRegistryManager.actorRegistry.remove<TimerComp>(casterEntity);
+			return kSuccess;
+		}
+		LOG_ERROR << "Non-immediate skill: " << skillTable->id()
+			<< " is currently in phase and cannot be interrupted.";
+		return kSkillUnInterruptible;
+	}
+	tlsRegistryManager.actorRegistry.remove<TimerComp>(casterEntity);
+	return kSuccess;
+}
+
 uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const SkillTable* skillTable) {
 	auto& coolDownTimeListComp = tlsRegistryManager.actorRegistry.get_or_emplace<CooldownTimeListComp>(casterEntity);
 	if (const auto it = coolDownTimeListComp.cooldown_list().find(skillTable->cooldown_id());
@@ -343,66 +363,15 @@ uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const Skill
 }
 
 uint32_t SkillSystem::CheckCasting(const entt::entity casterEntity, const SkillTable* skillTable) {
-	auto& castTimerComp = tlsRegistryManager.actorRegistry.get_or_emplace<CastingTimerComp>(casterEntity);
-	if (skillTable->immediately() && castTimerComp.timer.IsActive()) {
-		LOG_INFO << "Immediate skill: " << skillTable->id()
-			<< " is currently casting. Sending interrupt message.";
-		SendSkillInterruptedMessage(casterEntity, skillTable->id());
-		tlsRegistryManager.actorRegistry.remove<CastingTimerComp>(casterEntity);
-		return kSuccess;
-	}
-
-	if (!skillTable->immediately() && castTimerComp.timer.IsActive()) {
-		LOG_ERROR << "Non-immediate skill: " << skillTable->id()
-			<< " is currently casting and cannot be interrupted.";
-		return kSkillUnInterruptible;
-	}
-	tlsRegistryManager.actorRegistry.remove<CastingTimerComp>(casterEntity);
-
-	return kSuccess;
+	return CheckTimerPhase<CastingTimerComp>(casterEntity, skillTable);
 }
 
 uint32_t SkillSystem::CheckRecovery(const entt::entity casterEntity, const SkillTable* skillTable) {
-	auto& recoveryTimeTimerComp = tlsRegistryManager.actorRegistry.get_or_emplace<RecoveryTimerComp>(casterEntity);
-	if (skillTable->immediately() && recoveryTimeTimerComp.timer.IsActive()) {
-		LOG_INFO << "Immediate skill: " << skillTable->id()
-			<< " is currently casting. Sending interrupt message.";
-		SendSkillInterruptedMessage(casterEntity, skillTable->id());
-		tlsRegistryManager.actorRegistry.remove<RecoveryTimerComp>(casterEntity);
-		return kSuccess;
-	}
-
-	if (!skillTable->immediately() && recoveryTimeTimerComp.timer.IsActive()) {
-		LOG_ERROR << "Non-immediate skill: " << skillTable->id()
-			<< " is currently casting and cannot be interrupted.";
-		return kSkillUnInterruptible;
-	}
-	tlsRegistryManager.actorRegistry.remove<RecoveryTimerComp>(casterEntity);
-
-	return kSuccess;
+	return CheckTimerPhase<RecoveryTimerComp>(casterEntity, skillTable);
 }
 
 uint32_t SkillSystem::CheckChannel(const entt::entity casterEntity, const SkillTable* skillTable) {
-	auto& channelFinishTimerComp = tlsRegistryManager.actorRegistry.get_or_emplace<ChannelFinishTimerComp>(casterEntity);
-	if (skillTable->immediately() && channelFinishTimerComp.timer.IsActive()) {
-		LOG_INFO << "Immediate skill: " << skillTable->id()
-			<< " is currently casting. Sending interrupt message.";
-		SendSkillInterruptedMessage(casterEntity, skillTable->id());
-		// TODO: Implement logic for handling the skill interruption
-		tlsRegistryManager.actorRegistry.remove<ChannelFinishTimerComp>(casterEntity);
-		return kSuccess;
-	}
-
-	if (!skillTable->immediately() && channelFinishTimerComp.timer.IsActive()) {
-		LOG_ERROR << "Non-immediate skill: " << skillTable->id()
-			<< " is currently casting and cannot be interrupted.";
-		return kSkillUnInterruptible;
-	}
-
-	// TODO: Implement logic for handling the skill interruption
-	tlsRegistryManager.actorRegistry.remove<ChannelFinishTimerComp>(casterEntity);
-
-	return kSuccess;
+	return CheckTimerPhase<ChannelFinishTimerComp>(casterEntity, skillTable);
 }
 
 void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, const ::ReleaseSkillRequest* request) {

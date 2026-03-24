@@ -12,7 +12,6 @@
 
 #include <thread_context/registry_manager.h>
 
-// Add combat state
 void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) {
     const auto entityId = entt::to_entity(addEvent.actor_entity());
     auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
@@ -36,7 +35,6 @@ void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) 
     ActorAttributeCalculatorSystem::MarkAttributeForUpdate(entityId, kCombatState);
 }
 
-// Remove combat state
 void CombatStateSystem::RemoveCombatState(const CombatStateRemovedPbEvent& removeEvent) {
     const auto entityId = entt::to_entity(removeEvent.actor_entity());
     auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
