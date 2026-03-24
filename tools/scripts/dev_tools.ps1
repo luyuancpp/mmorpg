@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-stop", "dev-status")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-stop", "dev-status", "merge-zone")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -61,7 +61,14 @@ param(
     [string[]]$CppNodes = @(),
     [int]$GateCount = 1,
     [int]$SceneCount = 1,
-    [switch]$UseVSGenerator
+    [switch]$UseVSGenerator,
+    # merge-zone command
+    [int]$MergeSourceZone = 0,
+    [int]$MergeTargetZone = 0,
+    [string]$MergeMySqlDsn = "root:@tcp(127.0.0.1:3306)/mmorpg?charset=utf8mb4&parseTime=true&loc=Local",
+    [string]$MergeRedisAddr = "127.0.0.1:6379",
+    [string]$MergeRedisPassword = "",
+    [int]$MergeRedisDB = 2
 )
 
 $ErrorActionPreference = "Stop"
@@ -434,6 +441,11 @@ Other common commands:
     -Command k8s-stage-runtime
     -Command k8s-image-preflight | k8s-build-image | k8s-push-image | k8s-release-zone | k8s-release-all
 
+Zone merge (合服) commands:
+    -Command merge-zone -MergeSourceZone <id> -MergeTargetZone <id> [-DryRun]
+        Migrates guild data (MySQL zone_id + Redis ranking ZSET) from source zone into target zone.
+        Use -DryRun first to preview changes.
+
 Proto-gen naming docs:
     tools/docs/proto_gen_naming_audit.md
     tools/docs/proto_gen_naming_migration.md
@@ -490,6 +502,12 @@ switch ($Command) {
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command status
         Write-Host "`n=== Go services ===" -ForegroundColor Cyan
         & (Join-Path $ScriptDir "go_services.ps1") -Command status
+    }
+    "merge-zone" {
+        $mergeArgs = @("-SourceZone", $MergeSourceZone, "-TargetZone", $MergeTargetZone, "-MySqlDsn", $MergeMySqlDsn, "-RedisAddr", $MergeRedisAddr, "-RedisDB", $MergeRedisDB)
+        if ($MergeRedisPassword -ne "") { $mergeArgs += @("-RedisPassword", $MergeRedisPassword) }
+        if ($DryRun) { $mergeArgs += "-DryRun" }
+        & (Join-Path $ScriptDir "merge_zone.ps1") @mergeArgs
     }
     default { throw "Unsupported command: $Command" }
 }
