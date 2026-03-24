@@ -68,10 +68,7 @@ void InitServiceHandler()
 	gNodeService.emplace("Centre", std::make_unique<CentreHandler>());
 }
 
-void InitPlayerService()
-{
-	// Centre player services have been decommissioned.
-}
+void InitPlayerService() {}
 
 entt::entity GetPlayerEntityBySessionId(uint64_t session_id);
 void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp);
@@ -85,27 +82,13 @@ void InitReply()
 		std::bind(&OnGateBindSessionToGateReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
-void InitPlayerServiceReplied()
-{
-	// Centre-side player replied handlers have been decommissioned.
-}
+void InitPlayerServiceReplied() {}
 
 namespace {
-void OnSceneCreatedHandler(const OnSceneCreated& event)
-{
-}
-
-void OnSceneDestroyedHandler(const OnSceneDestroyed& event)
-{
-}
-
-void BeforeEnterSceneHandler(const BeforeEnterScene& event)
-{
-}
-
-void AfterEnterSceneHandler(const AfterEnterScene& event)
-{
-}
+void OnSceneCreatedHandler(const OnSceneCreated& event) {}
+void OnSceneDestroyedHandler(const OnSceneDestroyed& event) {}
+void BeforeEnterSceneHandler(const BeforeEnterScene& event) {}
+void AfterEnterSceneHandler(const AfterEnterScene& event) {}
 
 void BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
@@ -129,9 +112,7 @@ void BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 		<< tlsRegistryManager.sceneRegistry.get<SceneInfoComp>(tlsRegistryManager.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity).guid();
 }
 
-void AfterLeaveSceneHandler(const AfterLeaveScene& event)
-{
-}
+void AfterLeaveSceneHandler(const AfterLeaveScene& event) {}
 
 void S2CEnterSceneHandler(const S2CEnterScene& event)
 {
@@ -153,7 +134,7 @@ void RegisterSceneEventHandlers()
 void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp)
 {
 	const auto player = GetPlayerEntityBySessionId(replied->session_info().session_id());
-	if (entt::null == player)
+	if (player == entt::null)
 	{
 		LOG_TRACE << "session player not found " << replied->session_info().session_id();
 		return;

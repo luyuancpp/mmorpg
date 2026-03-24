@@ -12,9 +12,7 @@
 #include "world/world.h"
 #include "core/system/redis.h"
 #include "frame/manager/frame_time.h"
-#include "time/comp/timer_task_comp.h"
 #include "node/system/node/node_kafka_command_handler.h"
-#include "proto/common/base/node.pb.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
 
 using namespace muduo;
@@ -24,6 +22,7 @@ namespace {
 
 struct SceneRuntimeContext {
     TimerTaskComp worldTimer;
+    DependencyGate dependencyGate;
 };
 
 } // namespace
@@ -41,8 +40,11 @@ int main(int argc, char* argv[])
             World::InitializeSystemBeforeConnect();
             OnTablesLoadSuccess([] { ConfigSystem::OnConfigLoadSuccessful(); });
 
-            node.SetAfterStart([&context](SimpleNode<SceneHandler>&) {
-                context.worldTimer.RunEvery(tlsFrameTimeManager.frameTime.delta_time(), World::Update);
+            node.SetAfterStart([&context](SimpleNode<SceneHandler>& n) {
+                context.dependencyGate.WaitAndRun(n, { SceneManagerNodeService },
+                    [&context](auto&) {
+                        context.worldTimer.RunEvery(tlsFrameTimeManager.frameTime.delta_time(), World::Update);
+                    }, "Scene");
             });
 
             // Kafka: unified registration path for all node command-consumers.

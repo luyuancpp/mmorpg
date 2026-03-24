@@ -157,7 +157,7 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
     const auto& serviceHandler = serviceIt->second;
     google::protobuf::Service* service = serviceHandler->service();
     const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-    if (nullptr == method)
+    if (method == nullptr)
     {
         LOG_ERROR << "Method not found in PlayerService: " << messageInfo.methodName;
         return;
@@ -225,7 +225,7 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 
 		google::protobuf::Service* service = serviceIt->second->service();
 		const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-		if (nullptr == method)
+		if (method == nullptr)
 		{
 			LOG_ERROR << "ProcessClientPlayerMessage: method not found " << messageInfo.methodName;
 			return;
@@ -239,7 +239,7 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 		}
 
 		const auto player = GetPlayer(it->second);
-		if (entt::null == player)
+		if (player == entt::null)
 		{
 			LOG_ERROR << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
 				<< " message_id=" << msg.message_id();
@@ -306,7 +306,7 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 	}
 
 	const auto player = GetPlayer(it->second);
-	if (entt::null == player)
+	if (player == entt::null)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
 		return;
@@ -331,7 +331,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	}
 
 	const auto player = GetPlayer(it->second);
-	if (entt::null == player)
+	if (player == entt::null)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
 		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
@@ -357,7 +357,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	const auto& serviceHandler = serviceIt->second;
 	google::protobuf::Service* service = serviceHandler->service();
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-	if (nullptr == method)
+	if (method == nullptr)
 	{
 		LOG_ERROR << "PlayerService method not found " << request->message_content().message_id();
 		return;

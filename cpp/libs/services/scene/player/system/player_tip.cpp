@@ -20,9 +20,9 @@ void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const St
 void PlayerTipSystem::SendToPlayer(const Guid playerId, const uint32_t tipId, const StringVector& strParam)
 {
 	auto playerIt = tlsPlayerList.find(playerId);
-	if (tlsPlayerList.end() == playerIt)
+	if (playerIt == tlsPlayerList.end())
 	{
-		return ;
+		return;
 	}
 
 	SendToPlayer(playerIt->second, tipId, strParam);

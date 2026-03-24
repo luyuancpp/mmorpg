@@ -63,11 +63,11 @@ void ActorAttributeCalculatorSystem::MarkAttributeForUpdate(const entt::entity a
     attributeBits.set(attributeBit);
 }
 
-void ActorAttributeCalculatorSystem::Update(double delta)
+void ActorAttributeCalculatorSystem::Update()
 {
-    for (auto&& [entity, AttributeDirtyFlagsComponent] : tlsRegistryManager.actorRegistry.view<AttributeDirtyFlagsComp>().each())
+    for (auto&& [entity, dirtyFlags] : tlsRegistryManager.actorRegistry.view<AttributeDirtyFlagsComp>().each())
     {
-        auto& attributeBits = AttributeDirtyFlagsComponent.attributeBits;
+        auto& attributeBits = dirtyFlags.attributeBits;
         for (const auto& [attributeIndex, updateFunction] : kAttributeConfigs) {
             if (updateFunction && attributeBits.test(attributeIndex)) {
                 updateFunction(entity);

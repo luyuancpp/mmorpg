@@ -16,8 +16,8 @@ public:
         skillIdGenerator.set_node_id(nodeId);
     }
 
-	TransientNode32BitCompositeIdGenerator  buffIdGenerator;
-	TransientNode32BitCompositeIdGenerator  skillIdGenerator;
+	TransientNode32BitCompositeIdGenerator buffIdGenerator;
+	TransientNode32BitCompositeIdGenerator skillIdGenerator;
 };
 
 extern thread_local ThreadLocalIdGeneratorManager tlsIdGeneratorManager;
