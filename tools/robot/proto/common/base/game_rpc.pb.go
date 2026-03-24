@@ -26,8 +26,8 @@ type GameMessageType int32
 const (
 	GameMessageType_REQUEST            GameMessageType = 0
 	GameMessageType_RESPONSE           GameMessageType = 1
-	GameMessageType_RPC_CLIENT_REQUEST GameMessageType = 2 //服务器到客户端
-	GameMessageType_NODE_ROUTE         GameMessageType = 3 //服务器间传递
+	GameMessageType_RPC_CLIENT_REQUEST GameMessageType = 2 // Server-to-client
+	GameMessageType_NODE_ROUTE         GameMessageType = 3 // Inter-node forwarding
 	GameMessageType_RPC_ERROR          GameMessageType = 4 // not used
 )
 

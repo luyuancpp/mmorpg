@@ -67,14 +67,14 @@ func (x *SkillComp) GetSkillTableId() uint64 {
 
 type SkillContextComp struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Caster         uint64                 `protobuf:"varint,1,opt,name=caster,proto3" json:"caster,omitempty"`                                                                                           // 施法者
-	Target         uint64                 `protobuf:"varint,2,opt,name=target,proto3" json:"target,omitempty"`                                                                                           // 目标（如果有）
-	SkillId        uint64                 `protobuf:"varint,3,opt,name=SkillId,proto3" json:"SkillId,omitempty"`                                                                                         // 技能唯一id
-	SkillTableId   uint32                 `protobuf:"varint,4,opt,name=skillTableId,proto3" json:"skillTableId,omitempty"`                                                                               // 技能表id
-	CastPosition   *Transform             `protobuf:"bytes,5,opt,name=castPosition,proto3" json:"castPosition,omitempty"`                                                                                // 施法位置
-	CastTime       uint64                 `protobuf:"varint,6,opt,name=castTime,proto3" json:"castTime,omitempty"`                                                                                       // 施法时间
-	State          string                 `protobuf:"bytes,7,opt,name=state,proto3" json:"state,omitempty"`                                                                                              // 当前状态
-	AdditionalData map[string]uint32      `protobuf:"bytes,8,rep,name=additionalData,proto3" json:"additionalData,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 附加数据
+	Caster         uint64                 `protobuf:"varint,1,opt,name=caster,proto3" json:"caster,omitempty"`                                                                                           // Caster
+	Target         uint64                 `protobuf:"varint,2,opt,name=target,proto3" json:"target,omitempty"`                                                                                           // Target (if any)
+	SkillId        uint64                 `protobuf:"varint,3,opt,name=SkillId,proto3" json:"SkillId,omitempty"`                                                                                         // Skill unique ID
+	SkillTableId   uint32                 `protobuf:"varint,4,opt,name=skillTableId,proto3" json:"skillTableId,omitempty"`                                                                               // Skill table ID
+	CastPosition   *Transform             `protobuf:"bytes,5,opt,name=castPosition,proto3" json:"castPosition,omitempty"`                                                                                // Cast position
+	CastTime       uint64                 `protobuf:"varint,6,opt,name=castTime,proto3" json:"castTime,omitempty"`                                                                                       // Cast time
+	State          string                 `protobuf:"bytes,7,opt,name=state,proto3" json:"state,omitempty"`                                                                                              // Current state
+	AdditionalData map[string]uint32      `protobuf:"bytes,8,rep,name=additionalData,proto3" json:"additionalData,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Additional data
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }

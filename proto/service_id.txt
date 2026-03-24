@@ -6,6 +6,7 @@
 5=LeaseLeaseGrant
 6=WatchWatch
 7=FriendServiceAcceptFriend
+8=GuildServiceUpdateGuildScore
 9=ScenePlayerExitGame
 10=SceneProcessClientPlayerMessage
 11=FriendServiceAddFriend
@@ -24,6 +25,7 @@
 24=SceneUpdateSessionDetail
 25=KVTxn
 26=ClientPlayerLoginEnterGame
+27=GuildServiceGetGuildRank
 28=ClientPlayerChatPullChatHistory
 29=GuildServiceLeaveGuild
 30=SceneScenePlayerEnterScene
@@ -46,6 +48,7 @@
 48=ClientPlayerLoginLogin
 50=ScenePlayerCentre2GsLogin
 51=SceneSceneClientPlayerNotifyActorDestroy
+52=GuildServiceGetGuildRankByGuild
 53=FriendServiceRemoveFriend
 55=ScenePlayerSyncSyncAttribute5Frames
 56=GateBindSessionToGate

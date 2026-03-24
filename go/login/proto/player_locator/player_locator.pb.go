@@ -26,9 +26,9 @@ type PlayerSessionState int32
 
 const (
 	PlayerSessionState_SESSION_STATE_UNKNOWN       PlayerSessionState = 0
-	PlayerSessionState_SESSION_STATE_ONLINE        PlayerSessionState = 1 // 正常在线
-	PlayerSessionState_SESSION_STATE_DISCONNECTING PlayerSessionState = 2 // 断线中, 等待重连 (30s lease)
-	PlayerSessionState_SESSION_STATE_OFFLINE       PlayerSessionState = 3 // 已下线
+	PlayerSessionState_SESSION_STATE_ONLINE        PlayerSessionState = 1 // Online
+	PlayerSessionState_SESSION_STATE_DISCONNECTING PlayerSessionState = 2 // Disconnecting, waiting for reconnect (30s lease)
+	PlayerSessionState_SESSION_STATE_OFFLINE       PlayerSessionState = 3 // Offline
 )
 
 // Enum value maps for PlayerSessionState.
@@ -74,7 +74,7 @@ func (PlayerSessionState) EnumDescriptor() ([]byte, []int) {
 	return file_proto_player_locator_player_locator_proto_rawDescGZIP(), []int{0}
 }
 
-// 玩家位置结构
+// Player location
 type PlayerLocation struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Uid           int64                  `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
@@ -216,16 +216,16 @@ type PlayerSession struct {
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session ID
 	GateId         string                 `protobuf:"bytes,3,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                           // Gate node ID
-	GateInstanceId string                 `protobuf:"bytes,4,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate instance UUID (防僵尸消息)
-	SceneNodeId    string                 `protobuf:"bytes,5,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`          // 当前 Scene node ID
-	SceneId        uint64                 `protobuf:"varint,6,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // 当前 scene ID
+	GateInstanceId string                 `protobuf:"bytes,4,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate instance UUID (prevent zombie messages)
+	SceneNodeId    string                 `protobuf:"bytes,5,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`          // Current Scene node ID
+	SceneId        uint64                 `protobuf:"varint,6,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // Current scene ID
 	TokenId        string                 `protobuf:"bytes,7,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`                        // SHA256(login_token)
 	TokenExpiryMs  uint64                 `protobuf:"varint,8,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
-	SessionVersion uint64                 `protobuf:"varint,9,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"` // 每次真正变更+1, 防旧连接消息
+	SessionVersion uint64                 `protobuf:"varint,9,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"` // Incremented on each real change, prevents stale messages
 	State          PlayerSessionState     `protobuf:"varint,10,opt,name=state,proto3,enum=playerlocator.PlayerSessionState" json:"state,omitempty"`
-	LastActiveTs   int64                  `protobuf:"varint,11,opt,name=last_active_ts,json=lastActiveTs,proto3" json:"last_active_ts,omitempty"` // 最后活跃时间 (unix ms)
-	RequestId      string                 `protobuf:"bytes,12,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`             // 最近一次登录 request_id (幂等)
-	Account        string                 `protobuf:"bytes,13,opt,name=account,proto3" json:"account,omitempty"`                                  // 账号名 (Login 用于 reconnect 决策)
+	LastActiveTs   int64                  `protobuf:"varint,11,opt,name=last_active_ts,json=lastActiveTs,proto3" json:"last_active_ts,omitempty"` // Last active time (unix ms)
+	RequestId      string                 `protobuf:"bytes,12,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`             // Latest login request_id (idempotent)
+	Account        string                 `protobuf:"bytes,13,opt,name=account,proto3" json:"account,omitempty"`                                  // Account name (used by Login for reconnect decisions)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -491,12 +491,12 @@ func (x *GetSessionResponse) GetFound() bool {
 	return false
 }
 
-// 断线请求: 标记 DISCONNECTING + 启动 TTL lease
+// Disconnect request: mark DISCONNECTING + start TTL lease
 type SetDisconnectingRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId        uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SessionId       uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	LeaseTtlSeconds uint32                 `protobuf:"varint,3,opt,name=lease_ttl_seconds,json=leaseTtlSeconds,proto3" json:"lease_ttl_seconds,omitempty"` // 默认 30s
+	LeaseTtlSeconds uint32                 `protobuf:"varint,3,opt,name=lease_ttl_seconds,json=leaseTtlSeconds,proto3" json:"lease_ttl_seconds,omitempty"` // Default 30s
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -552,7 +552,7 @@ func (x *SetDisconnectingRequest) GetLeaseTtlSeconds() uint32 {
 	return 0
 }
 
-// 重连请求: 取消 lease, 恢复 ONLINE
+// Reconnect request: cancel lease, restore ONLINE
 type ReconnectRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -562,7 +562,7 @@ type ReconnectRequest struct {
 	TokenId        string                 `protobuf:"bytes,5,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
 	TokenExpiryMs  uint64                 `protobuf:"varint,6,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
 	RequestId      string                 `protobuf:"bytes,7,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	Account        string                 `protobuf:"bytes,8,opt,name=account,proto3" json:"account,omitempty"` // 账号名 (Login 传入)
+	Account        string                 `protobuf:"bytes,8,opt,name=account,proto3" json:"account,omitempty"` // Account name (from Login)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -656,7 +656,7 @@ func (x *ReconnectRequest) GetAccount() string {
 type ReconnectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Session       *PlayerSession         `protobuf:"bytes,2,opt,name=session,proto3" json:"session,omitempty"` // 更新后的 session
+	Session       *PlayerSession         `protobuf:"bytes,2,opt,name=session,proto3" json:"session,omitempty"` // Updated session
 	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -713,7 +713,7 @@ func (x *ReconnectResponse) GetErrorMessage() string {
 	return ""
 }
 
-// Lease 到期清理结果
+// Lease expired cleanup result
 type LeaseExpiredEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`

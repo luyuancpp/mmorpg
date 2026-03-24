@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -21,6 +22,7 @@ type GuildData struct {
 	Announcement string        `json:"announcement"`
 	CreateTimeMs int64         `json:"create_time_ms"`
 	MaxMembers   uint32        `json:"max_members"`
+	ZoneID       uint32        `json:"zone_id"`
 	Members      []MemberData  `json:"members"`
 }
 
@@ -58,6 +60,12 @@ func guildKey(guildID uint64) string {
 
 func playerGuildKey(playerID uint64) string {
 	return fmt.Sprintf("player_guild:%d", playerID)
+}
+
+const guildRankKey = "guild_rank" // Redis ZSET: member=guildID, score=rankScore (global)
+
+func zoneRankKey(zoneID uint32) string {
+	return fmt.Sprintf("guild_rank:zone:%d", zoneID)
 }
 
 // ── Read (cache-aside + singleflight) ──────────────────────────
@@ -180,12 +188,12 @@ func (r *GuildRepo) cacheGuild(ctx context.Context, guild *GuildData) error {
 
 func (r *GuildRepo) loadGuildFromMySQL(ctx context.Context, guildID uint64) (*GuildData, error) {
 	row := r.db.QueryRowContext(ctx,
-		"SELECT guild_id, name, leader_id, level, announcement, create_time_ms, max_members FROM guild WHERE guild_id = ?",
+		"SELECT guild_id, name, leader_id, level, announcement, create_time_ms, max_members, zone_id FROM guild WHERE guild_id = ?",
 		guildID)
 
 	var guild GuildData
 	err := row.Scan(&guild.GuildID, &guild.Name, &guild.LeaderID, &guild.Level,
-		&guild.Announcement, &guild.CreateTimeMs, &guild.MaxMembers)
+		&guild.Announcement, &guild.CreateTimeMs, &guild.MaxMembers, &guild.ZoneID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -229,12 +237,12 @@ func (r *GuildRepo) loadPlayerGuildFromMySQL(ctx context.Context, playerID uint6
 
 func (r *GuildRepo) saveGuildToMySQL(ctx context.Context, guild *GuildData) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO guild (guild_id, name, leader_id, level, announcement, create_time_ms, max_members)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)
+		`INSERT INTO guild (guild_id, name, leader_id, level, announcement, create_time_ms, max_members, zone_id)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		 ON DUPLICATE KEY UPDATE name=VALUES(name), leader_id=VALUES(leader_id), level=VALUES(level),
-		   announcement=VALUES(announcement), max_members=VALUES(max_members)`,
+		   announcement=VALUES(announcement), max_members=VALUES(max_members), zone_id=VALUES(zone_id)`,
 		guild.GuildID, guild.Name, guild.LeaderID, guild.Level,
-		guild.Announcement, guild.CreateTimeMs, guild.MaxMembers)
+		guild.Announcement, guild.CreateTimeMs, guild.MaxMembers, guild.ZoneID)
 	return err
 }
 
@@ -266,4 +274,102 @@ func (r *GuildRepo) deleteGuildFromMySQL(ctx context.Context, guildID uint64) er
 		return err
 	}
 	return tx.Commit()
+}
+
+// ── Ranking (Redis ZSET) ───────────────────────────────────────
+
+// RankEntry is a guild's position in the leaderboard.
+type RankEntry struct {
+	GuildID uint64
+	Score   int64
+	Rank    uint32 // 1-based
+}
+
+// UpdateGuildScore sets or updates a guild's score in both global and per-zone ranking ZSETs.
+func (r *GuildRepo) UpdateGuildScore(ctx context.Context, guildID uint64, zoneID uint32, score int64) error {
+	z := redis.Z{Score: float64(score), Member: guildID}
+	pipe := r.rdb.Pipeline()
+	pipe.ZAdd(ctx, guildRankKey, z)
+	if zoneID > 0 {
+		pipe.ZAdd(ctx, zoneRankKey(zoneID), z)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+// RemoveGuildFromRank removes a guild from both global and per-zone ranking ZSETs.
+func (r *GuildRepo) RemoveGuildFromRank(ctx context.Context, guildID uint64, zoneID uint32) error {
+	pipe := r.rdb.Pipeline()
+	pipe.ZRem(ctx, guildRankKey, guildID)
+	if zoneID > 0 {
+		pipe.ZRem(ctx, zoneRankKey(zoneID), guildID)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+// GetGuildRankPage returns a page of guilds sorted by score descending.
+// page is 1-based; zoneID=0 means global ranking.
+func (r *GuildRepo) GetGuildRankPage(ctx context.Context, zoneID, page, pageSize uint32) ([]RankEntry, uint32, error) {
+	key := guildRankKey
+	if zoneID > 0 {
+		key = zoneRankKey(zoneID)
+	}
+
+	total, err := r.rdb.ZCard(ctx, key).Result()
+	if err != nil {
+		return nil, 0, fmt.Errorf("zcard %s: %w", key, err)
+	}
+	if total == 0 || page == 0 || pageSize == 0 {
+		return nil, uint32(total), nil
+	}
+
+	start := int64((page - 1) * pageSize)
+	stop := start + int64(pageSize) - 1
+
+	members, err := r.rdb.ZRevRangeWithScores(ctx, key, start, stop).Result()
+	if err != nil {
+		return nil, 0, fmt.Errorf("zrevrange %s: %w", key, err)
+	}
+
+	entries := make([]RankEntry, 0, len(members))
+	for i, z := range members {
+		guildID, _ := strconv.ParseUint(fmt.Sprintf("%v", z.Member), 10, 64)
+		entries = append(entries, RankEntry{
+			GuildID: guildID,
+			Score:   int64(z.Score),
+			Rank:    uint32(start) + uint32(i) + 1,
+		})
+	}
+	return entries, uint32(total), nil
+}
+
+// GetGuildRank returns a single guild's rank and score. zoneID=0 means global. Rank is 1-based (0 = not ranked).
+func (r *GuildRepo) GetGuildRank(ctx context.Context, guildID uint64, zoneID uint32) (RankEntry, error) {
+	key := guildRankKey
+	if zoneID > 0 {
+		key = zoneRankKey(zoneID)
+	}
+
+	member := fmt.Sprintf("%d", guildID)
+
+	// ZREVRANK: 0-based index in descending order
+	rank, err := r.rdb.ZRevRank(ctx, key, member).Result()
+	if err == redis.Nil {
+		return RankEntry{}, nil // not in ranking
+	}
+	if err != nil {
+		return RankEntry{}, fmt.Errorf("zrevrank guild %d: %w", guildID, err)
+	}
+
+	score, err := r.rdb.ZScore(ctx, key, member).Result()
+	if err != nil {
+		return RankEntry{}, fmt.Errorf("zscore guild %d: %w", guildID, err)
+	}
+
+	return RankEntry{
+		GuildID: guildID,
+		Score:   int64(score),
+		Rank:    uint32(rank) + 1, // 1-based
+	}, nil
 }

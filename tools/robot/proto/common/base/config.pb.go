@@ -21,11 +21,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 服务配置，避免与 protobuf 的 Service 冲突
+// Service config, avoid conflict with protobuf's Service
 type ServiceConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // 服务名称
-	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`   // 服务的健康检查或访问URL
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // Service name
+	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`   // Health check or access URL
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -76,10 +76,10 @@ func (x *ServiceConfig) GetUrl() string {
 
 type KafkaConfig struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	Brokers          []string               `protobuf:"bytes,1,rep,name=brokers,proto3" json:"brokers,omitempty"`                                              // Kafka broker 列表
-	Topics           []string               `protobuf:"bytes,2,rep,name=topics,proto3" json:"topics,omitempty"`                                                // 可配置多个 topic
-	GroupId          string                 `protobuf:"bytes,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                               // consumer group ID
-	EnableAutoCommit bool                   `protobuf:"varint,4,opt,name=enable_auto_commit,json=enableAutoCommit,proto3" json:"enable_auto_commit,omitempty"` // 是否开启自动提交
+	Brokers          []string               `protobuf:"bytes,1,rep,name=brokers,proto3" json:"brokers,omitempty"`                                              // Kafka broker list
+	Topics           []string               `protobuf:"bytes,2,rep,name=topics,proto3" json:"topics,omitempty"`                                                // Configurable topic list
+	GroupId          string                 `protobuf:"bytes,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                               // Consumer group ID
+	EnableAutoCommit bool                   `protobuf:"varint,4,opt,name=enable_auto_commit,json=enableAutoCommit,proto3" json:"enable_auto_commit,omitempty"` // Enable auto-commit
 	AutoOffsetReset  string                 `protobuf:"bytes,5,opt,name=auto_offset_reset,json=autoOffsetReset,proto3" json:"auto_offset_reset,omitempty"`     // earliest / latest
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -150,7 +150,7 @@ func (x *KafkaConfig) GetAutoOffsetReset() string {
 	return ""
 }
 
-// 部署基础配置
+// Base deploy config
 type BaseDeployConfig struct {
 	state                    protoimpl.MessageState `protogen:"open.v1"`
 	EtcdHosts                []string               `protobuf:"bytes,1,rep,name=etcd_hosts,json=etcdHosts,proto3" json:"etcd_hosts,omitempty"`
@@ -161,9 +161,9 @@ type BaseDeployConfig struct {
 	DeployservicePrefix      string                 `protobuf:"bytes,6,opt,name=deployservice_prefix,json=deployservicePrefix,proto3" json:"deployservice_prefix,omitempty"`
 	NodeTtlSeconds           uint32                 `protobuf:"varint,7,opt,name=node_ttl_seconds,json=nodeTtlSeconds,proto3" json:"node_ttl_seconds,omitempty"`
 	HealthCheckInterval      uint32                 `protobuf:"varint,8,opt,name=health_check_interval,json=healthCheckInterval,proto3" json:"health_check_interval,omitempty"`
-	Kafka                    *KafkaConfig           `protobuf:"bytes,9,opt,name=kafka,proto3" json:"kafka,omitempty"` // ✅ 新增 Kafka 配置
-	// 新增配置表目录字段
-	TableDataDirectory string `protobuf:"bytes,10,opt,name=table_data_directory,json=tableDataDirectory,proto3" json:"table_data_directory,omitempty"` // 配置表的目录路径
+	Kafka                    *KafkaConfig           `protobuf:"bytes,9,opt,name=kafka,proto3" json:"kafka,omitempty"` // Kafka config
+	// Table data directory path
+	TableDataDirectory string `protobuf:"bytes,10,opt,name=table_data_directory,json=tableDataDirectory,proto3" json:"table_data_directory,omitempty"` // Config table directory path
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -268,12 +268,12 @@ func (x *BaseDeployConfig) GetTableDataDirectory() string {
 	return ""
 }
 
-// 游戏配置
+// Game config
 type GameConfig struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneNodeType uint32                      `protobuf:"varint,1,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"` // 场景节点类型，使用 uint32
-	ZoneId        uint32                      `protobuf:"varint,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`                        // 区域ID，使用 uint32
-	ZoneRedis     *GameConfig_ZoneRedisConfig `protobuf:"bytes,7,opt,name=zone_redis,json=zoneRedis,proto3" json:"zone_redis,omitempty"`                // 添加一个 ZoneRedisConfig 配置
+	SceneNodeType uint32                      `protobuf:"varint,1,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"` // Scene node type
+	ZoneId        uint32                      `protobuf:"varint,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`                        // Zone ID
+	ZoneRedis     *GameConfig_ZoneRedisConfig `protobuf:"bytes,7,opt,name=zone_redis,json=zoneRedis,proto3" json:"zone_redis,omitempty"`                // Zone Redis config
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -329,13 +329,13 @@ func (x *GameConfig) GetZoneRedis() *GameConfig_ZoneRedisConfig {
 	return nil
 }
 
-// Zoneredis 配置
+// Zone Redis config
 type GameConfig_ZoneRedisConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Host          string                 `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`         // Redis 服务器地址
-	Port          uint32                 `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`        // Redis 服务器端口
-	Password      string                 `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"` // Redis 密码（可选）
-	Db            uint32                 `protobuf:"varint,6,opt,name=db,proto3" json:"db,omitempty"`            // 使用的 Redis 数据库编号
+	Host          string                 `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`         // Redis host
+	Port          uint32                 `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`        // Redis port
+	Password      string                 `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"` // Redis password (optional)
+	Db            uint32                 `protobuf:"varint,6,opt,name=db,proto3" json:"db,omitempty"`            // Redis database number
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

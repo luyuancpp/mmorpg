@@ -24,32 +24,32 @@ const (
 type ENodeType int32
 
 const (
-	ENodeType_UnknownNodeService       ENodeType = 0  // 未知节点服务
-	ENodeType_SceneNodeService         ENodeType = 3  // 场景服务器服务
-	ENodeType_GateNodeService          ENodeType = 4  // 网关节点服务
-	ENodeType_LoginNodeService         ENodeType = 5  // 登录服务器节点服务
-	ENodeType_RedisNodeService         ENodeType = 6  // Redis 节点服务
-	ENodeType_EtcdNodeService          ENodeType = 7  // etcd节点
-	ENodeType_MailNodeService          ENodeType = 8  // 邮件节点服务
-	ENodeType_ChatNodeService          ENodeType = 9  // 聊天节点服务
-	ENodeType_TeamNodeService          ENodeType = 10 // 组队节点服务
-	ENodeType_ActivityNodeService      ENodeType = 11 // 活动节点服务
-	ENodeType_TradeNodeService         ENodeType = 12 // 玩家交易或拍卖行服务
-	ENodeType_RankNodeService          ENodeType = 13 // 排行榜服务
-	ENodeType_TaskNodeService          ENodeType = 14 // 任务系统服务
-	ENodeType_GuildNodeService         ENodeType = 15 // 公会系统服务
-	ENodeType_MatchNodeService         ENodeType = 16 // 匹配系统服务（如组队副本、PVP等）
-	ENodeType_AiNodeService            ENodeType = 17 // AI/NPC 控制服务
-	ENodeType_LogNodeService           ENodeType = 18 // 日志处理/收集服务
-	ENodeType_PaymentNodeService       ENodeType = 19 // 支付或充值服务
-	ENodeType_SecurityNodeService      ENodeType = 20 // 反作弊/安全验证服务
-	ENodeType_CrossServerNodeService   ENodeType = 21 // 跨服服务处理（如跨服战场）
-	ENodeType_AnalyticsNodeService     ENodeType = 22 // 数据统计与分析服务
-	ENodeType_GmNodeService            ENodeType = 23 // GM工具服务（客服/管理员指令）
-	ENodeType_PlayerLocatorNodeService ENodeType = 24 // 跨服玩家定位服务
-	ENodeType_SceneManagerNodeService  ENodeType = 25 // 场景管理服务（Go-Zero）
-	ENodeType_DataServiceNodeService   ENodeType = 26 // 跨服数据代理服务（Go-Zero）
-	ENodeType_FriendNodeService        ENodeType = 27 // 好友系统服务（Go-Zero）
+	ENodeType_UnknownNodeService       ENodeType = 0  // Unknown node service
+	ENodeType_SceneNodeService         ENodeType = 3  // Scene node service
+	ENodeType_GateNodeService          ENodeType = 4  // Gate node service
+	ENodeType_LoginNodeService         ENodeType = 5  // Login node service
+	ENodeType_RedisNodeService         ENodeType = 6  // Redis node service
+	ENodeType_EtcdNodeService          ENodeType = 7  // etcd node
+	ENodeType_MailNodeService          ENodeType = 8  // Mail node service
+	ENodeType_ChatNodeService          ENodeType = 9  // Chat node service
+	ENodeType_TeamNodeService          ENodeType = 10 // Team node service
+	ENodeType_ActivityNodeService      ENodeType = 11 // Activity node service
+	ENodeType_TradeNodeService         ENodeType = 12 // Trade/auction service
+	ENodeType_RankNodeService          ENodeType = 13 // Ranking service
+	ENodeType_TaskNodeService          ENodeType = 14 // Task/quest service
+	ENodeType_GuildNodeService         ENodeType = 15 // Guild service
+	ENodeType_MatchNodeService         ENodeType = 16 // Match service (e.g. dungeon, PVP)
+	ENodeType_AiNodeService            ENodeType = 17 // AI/NPC control service
+	ENodeType_LogNodeService           ENodeType = 18 // Log collection service
+	ENodeType_PaymentNodeService       ENodeType = 19 // Payment/recharge service
+	ENodeType_SecurityNodeService      ENodeType = 20 // Anti-cheat/security service
+	ENodeType_CrossServerNodeService   ENodeType = 21 // Cross-server service (e.g. cross-server battleground)
+	ENodeType_AnalyticsNodeService     ENodeType = 22 // Analytics service
+	ENodeType_GmNodeService            ENodeType = 23 // GM tool service (admin/CS commands)
+	ENodeType_PlayerLocatorNodeService ENodeType = 24 // Cross-server player locator service
+	ENodeType_SceneManagerNodeService  ENodeType = 25 // Scene manager service (Go-Zero)
+	ENodeType_DataServiceNodeService   ENodeType = 26 // Cross-server data proxy service (Go-Zero)
+	ENodeType_FriendNodeService        ENodeType = 27 // Friend system service (Go-Zero)
 )
 
 // Enum value maps for ENodeType.
@@ -142,10 +142,10 @@ func (ENodeType) EnumDescriptor() ([]byte, []int) {
 type ESceneNodeType int32
 
 const (
-	ESceneNodeType_kMainSceneNode       ESceneNodeType = 0 //主世界场景
-	ESceneNodeType_kSceneNode           ESceneNodeType = 1 //副本场景
-	ESceneNodeType_kMainSceneCrossNode  ESceneNodeType = 2 //跨服主世界场景
-	ESceneNodeType_kSceneSceneCrossNode ESceneNodeType = 3 //跨服副本场景
+	ESceneNodeType_kMainSceneNode       ESceneNodeType = 0 // Main world scene
+	ESceneNodeType_kSceneNode           ESceneNodeType = 1 // Instance scene
+	ESceneNodeType_kMainSceneCrossNode  ESceneNodeType = 2 // Cross-server main world scene
+	ESceneNodeType_kSceneSceneCrossNode ESceneNodeType = 3 // Cross-server instance scene
 )
 
 // Enum value maps for ESceneNodeType.
@@ -191,7 +191,7 @@ func (ESceneNodeType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_common_base_node_proto_rawDescGZIP(), []int{1}
 }
 
-// 定义节点协议类型的枚举
+// Node protocol type enum
 type ENodeProtocolType int32
 
 const (

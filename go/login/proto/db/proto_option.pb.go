@@ -23,45 +23,45 @@ const (
 )
 
 // ==============================================================================
-// 节点类型定义（所有服务节点的类型标识）
+// Node type definitions (type identifiers for all service nodes)
 // ==============================================================================
 type NodeType int32
 
 const (
-	// 基础类型
-	NodeType_NODE_UNSPECIFIED NodeType = 0 // 默认值（未指定）
-	NodeType_NODE_CLIENT      NodeType = 1 // 客户端节点
-	// 核心服务节点
-	NodeType_NODE_GATE       NodeType = 2 // 网关服节点
-	NodeType_NODE_SCENE      NodeType = 3 // 房间服节点 确实是scene 节点
-	NodeType_NODE_CENTRE     NodeType = 4 // 中心服节点
-	NodeType_NODE_DB         NodeType = 5 // 数据库节点
-	NodeType_NODE_DEPLOY     NodeType = 6 // 部署节点服务
-	NodeType_NODE_DB_SERVICE NodeType = 7 // 数据库节点服务
-	// 游戏业务节点
-	NodeType_NODE_CENTRE_SCENE  NodeType = 8  // 场景切换中心服务器服务
-	NodeType_NODE_SCENE_MANAGER NodeType = 9  // 场景管理服 (管理所有游戏玩家不管哪个区都是用场景管理服区切换)
-	NodeType_NODE_LOGIN         NodeType = 10 // 登录服务器节点服务
-	NodeType_NODE_MAIL          NodeType = 13 // 邮件节点服务
-	NodeType_NODE_CHAT          NodeType = 14 // 聊天节点服务
-	NodeType_NODE_TEAM          NodeType = 15 // 组队节点服务
-	NodeType_NODE_ACTIVITY      NodeType = 16 // 活动节点服务
-	NodeType_NODE_TRADE         NodeType = 17 // 玩家交易或拍卖行服务
-	NodeType_NODE_RANK          NodeType = 18 // 排行榜服务
-	NodeType_NODE_TASK          NodeType = 19 // 任务系统服务
-	NodeType_NODE_GUILD         NodeType = 20 // 公会系统服务
-	NodeType_NODE_MATCH         NodeType = 21 // 匹配系统服务（如组队副本、PVP等）
-	NodeType_NODE_AI            NodeType = 22 // AI/NPC 控制服务
-	// 基础设施节点
-	NodeType_NODE_REDIS          NodeType = 11 // Redis 节点服务
-	NodeType_NODE_ETCD           NodeType = 12 // etcd节点
-	NodeType_NODE_LOG            NodeType = 23 // 日志处理/收集服务
-	NodeType_NODE_PAYMENT        NodeType = 24 // 支付或充值服务
-	NodeType_NODE_SECURITY       NodeType = 25 // 反作弊/安全验证服务
-	NodeType_NODE_CROSS_SERVER   NodeType = 26 // 跨服服务处理（如跨服战场）
-	NodeType_NODE_ANALYTICS      NodeType = 27 // 数据统计与分析服务
-	NodeType_NODE_GM             NodeType = 28 // GM工具服务（客服/管理员指令）
-	NodeType_NODE_PLAYER_LOCATOR NodeType = 29 // 跨服玩家定位服务
+	// Base types
+	NodeType_NODE_UNSPECIFIED NodeType = 0 // Default (unspecified)
+	NodeType_NODE_CLIENT      NodeType = 1 // Client node
+	// Core service nodes
+	NodeType_NODE_GATE       NodeType = 2 // Gate node
+	NodeType_NODE_SCENE      NodeType = 3 // Scene node
+	NodeType_NODE_CENTRE     NodeType = 4 // Centre node
+	NodeType_NODE_DB         NodeType = 5 // Database node
+	NodeType_NODE_DEPLOY     NodeType = 6 // Deploy service node
+	NodeType_NODE_DB_SERVICE NodeType = 7 // Database service node
+	// Game business nodes
+	NodeType_NODE_CENTRE_SCENE  NodeType = 8  // Scene-change centre service
+	NodeType_NODE_SCENE_MANAGER NodeType = 9  // Scene manager (handles all player scene transfers)
+	NodeType_NODE_LOGIN         NodeType = 10 // Login service node
+	NodeType_NODE_MAIL          NodeType = 13 // Mail service node
+	NodeType_NODE_CHAT          NodeType = 14 // Chat service node
+	NodeType_NODE_TEAM          NodeType = 15 // Team service node
+	NodeType_NODE_ACTIVITY      NodeType = 16 // Activity service node
+	NodeType_NODE_TRADE         NodeType = 17 // Trade/auction service
+	NodeType_NODE_RANK          NodeType = 18 // Ranking service
+	NodeType_NODE_TASK          NodeType = 19 // Task/quest service
+	NodeType_NODE_GUILD         NodeType = 20 // Guild service
+	NodeType_NODE_MATCH         NodeType = 21 // Match service (e.g. dungeon, PVP)
+	NodeType_NODE_AI            NodeType = 22 // AI/NPC control service
+	// Infrastructure nodes
+	NodeType_NODE_REDIS          NodeType = 11 // Redis service node
+	NodeType_NODE_ETCD           NodeType = 12 // etcd node
+	NodeType_NODE_LOG            NodeType = 23 // Log collection service
+	NodeType_NODE_PAYMENT        NodeType = 24 // Payment/recharge service
+	NodeType_NODE_SECURITY       NodeType = 25 // Anti-cheat/security service
+	NodeType_NODE_CROSS_SERVER   NodeType = 26 // Cross-server service (e.g. cross-server battleground)
+	NodeType_NODE_ANALYTICS      NodeType = 27 // Analytics service
+	NodeType_NODE_GM             NodeType = 28 // GM tool service (admin/CS commands)
+	NodeType_NODE_PLAYER_LOCATOR NodeType = 29 // Cross-server player locator service
 )
 
 // Enum value maps for NodeType.
@@ -159,19 +159,19 @@ func (NodeType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{0}
 }
 
-// 数据操作类型
+// Database operation type
 type OPERATE_TYPE int32
 
 const (
-	OPERATE_TYPE_OPERATE_NONE          OPERATE_TYPE = 0 //无操作
-	OPERATE_TYPE_OPERATE_INSERT        OPERATE_TYPE = 1 //插入数据
-	OPERATE_TYPE_OPERATE_UPDATE        OPERATE_TYPE = 2 //更新数据
-	OPERATE_TYPE_OPERATE_DELETE        OPERATE_TYPE = 3 //删除数据
-	OPERATE_TYPE_OPERATE_LOAD          OPERATE_TYPE = 4 //加载数据
-	OPERATE_TYPE_OPERATE_DELETE_CACHE  OPERATE_TYPE = 5 //删除缓存
-	OPERATE_TYPE_OPERATE_REPLACE       OPERATE_TYPE = 6 //替换数据
-	OPERATE_TYPE_OPERATE_CALL_PROC     OPERATE_TYPE = 7 //调用存储过程
-	OPERATE_TYPE_OPERATE_DELETE_BACKUP OPERATE_TYPE = 8 //删除备份
+	OPERATE_TYPE_OPERATE_NONE          OPERATE_TYPE = 0 // No operation
+	OPERATE_TYPE_OPERATE_INSERT        OPERATE_TYPE = 1 // Insert
+	OPERATE_TYPE_OPERATE_UPDATE        OPERATE_TYPE = 2 // Update
+	OPERATE_TYPE_OPERATE_DELETE        OPERATE_TYPE = 3 // Delete
+	OPERATE_TYPE_OPERATE_LOAD          OPERATE_TYPE = 4 // Load
+	OPERATE_TYPE_OPERATE_DELETE_CACHE  OPERATE_TYPE = 5 // Delete cache
+	OPERATE_TYPE_OPERATE_REPLACE       OPERATE_TYPE = 6 // Replace
+	OPERATE_TYPE_OPERATE_CALL_PROC     OPERATE_TYPE = 7 // Call stored procedure
+	OPERATE_TYPE_OPERATE_DELETE_BACKUP OPERATE_TYPE = 8 // Delete backup
 )
 
 // Enum value maps for OPERATE_TYPE.
@@ -227,13 +227,13 @@ func (OPERATE_TYPE) EnumDescriptor() ([]byte, []int) {
 	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{1}
 }
 
-// 业务操作结果类型
+// Business operation result type
 type BS_RESULT_TYPE int32
 
 const (
-	BS_RESULT_TYPE_BS_RESULT_NONE    BS_RESULT_TYPE = 0 //无结果
-	BS_RESULT_TYPE_BS_RESULT_SUCCESS BS_RESULT_TYPE = 1 //操作成功
-	BS_RESULT_TYPE_BS_RESULT_FAILED  BS_RESULT_TYPE = 2 //操作失败
+	BS_RESULT_TYPE_BS_RESULT_NONE    BS_RESULT_TYPE = 0 // None
+	BS_RESULT_TYPE_BS_RESULT_SUCCESS BS_RESULT_TYPE = 1 // Success
+	BS_RESULT_TYPE_BS_RESULT_FAILED  BS_RESULT_TYPE = 2 // Failed
 )
 
 // Enum value maps for BS_RESULT_TYPE.
@@ -277,7 +277,7 @@ func (BS_RESULT_TYPE) EnumDescriptor() ([]byte, []int) {
 	return file_proto_db_proto_option_proto_rawDescGZIP(), []int{2}
 }
 
-// RPC 消息优先级（用于跨场景/跨节点投递策略）
+// RPC message priority (for cross-scene/cross-node delivery strategy)
 type MessagePriority int32
 
 const (
@@ -567,11 +567,11 @@ var (
 
 // Extension fields to descriptorpb.ServiceOptions.
 var (
-	// 标记该服务是否是玩家相关服务（PlayerService）
+	// Whether this service is a player service
 	//
 	// optional bool OptionIsPlayerService = 400000;
 	E_OptionIsPlayerService = &file_proto_db_proto_option_proto_extTypes[1]
-	// 标记该服务是否是客户端协议服务（供客户端调用）
+	// Whether this service is a client protocol service (called by client)
 	//
 	// optional bool OptionIsClientProtocolService = 400001;
 	E_OptionIsClientProtocolService = &file_proto_db_proto_option_proto_extTypes[2]
@@ -579,7 +579,7 @@ var (
 
 // Extension fields to descriptorpb.MethodOptions.
 var (
-	// 标记消息投递优先级，用于区分重要消息和普通消息
+	// Message delivery priority, to distinguish important vs normal messages
 	//
 	// optional MessagePriority OptionMessagePriority = 410000;
 	E_OptionMessagePriority = &file_proto_db_proto_option_proto_extTypes[3]
@@ -588,61 +588,61 @@ var (
 // Extension fields to descriptorpb.MessageOptions.
 var (
 	// optional uint32 OptionTableId = 500000;
-	E_OptionTableId = &file_proto_db_proto_option_proto_extTypes[4] //表ID
+	E_OptionTableId = &file_proto_db_proto_option_proto_extTypes[4] // Table ID
 	// optional string OptionTableName = 500001;
-	E_OptionTableName = &file_proto_db_proto_option_proto_extTypes[5] //表名
+	E_OptionTableName = &file_proto_db_proto_option_proto_extTypes[5] // Table name
 	// optional string OptionPrimaryKey = 500002;
-	E_OptionPrimaryKey = &file_proto_db_proto_option_proto_extTypes[6] //主键
+	E_OptionPrimaryKey = &file_proto_db_proto_option_proto_extTypes[6] // Primary key
 	// optional string OptionForeignKey = 500003;
-	E_OptionForeignKey = &file_proto_db_proto_option_proto_extTypes[7] //外键
+	E_OptionForeignKey = &file_proto_db_proto_option_proto_extTypes[7] // Foreign key
 	// optional string OptionForeignReferences = 500005;
-	E_OptionForeignReferences = &file_proto_db_proto_option_proto_extTypes[8] //外键的关联表
+	E_OptionForeignReferences = &file_proto_db_proto_option_proto_extTypes[8] // Foreign key referenced table
 	// optional string OptionAutoIncrementKey = 500006;
-	E_OptionAutoIncrementKey = &file_proto_db_proto_option_proto_extTypes[9] //自增长的Key
+	E_OptionAutoIncrementKey = &file_proto_db_proto_option_proto_extTypes[9] // Auto-increment key
 	// optional string OptionBackupTableName = 500007;
-	E_OptionBackupTableName = &file_proto_db_proto_option_proto_extTypes[10] //备份表的名称
+	E_OptionBackupTableName = &file_proto_db_proto_option_proto_extTypes[10] // Backup table name
 	// optional bool OptionLoadOnly = 500008;
-	E_OptionLoadOnly = &file_proto_db_proto_option_proto_extTypes[11] //只用于数据加载
+	E_OptionLoadOnly = &file_proto_db_proto_option_proto_extTypes[11] // Load-only (no write)
 	// optional string OptionProcedureName = 500009;
-	E_OptionProcedureName = &file_proto_db_proto_option_proto_extTypes[12] //存储过程名称
+	E_OptionProcedureName = &file_proto_db_proto_option_proto_extTypes[12] // Stored procedure name
 	// optional string OptionProcedureResult = 500010;
-	E_OptionProcedureResult = &file_proto_db_proto_option_proto_extTypes[13] //存储过程返回结果的PB结构Name
+	E_OptionProcedureResult = &file_proto_db_proto_option_proto_extTypes[13] // Stored procedure result PB message name
 	// optional string OptionIndex = 500011;
-	E_OptionIndex = &file_proto_db_proto_option_proto_extTypes[14] //建立索引
+	E_OptionIndex = &file_proto_db_proto_option_proto_extTypes[14] // Index definition
 	// optional string OptionUniqueKey = 500012;
-	E_OptionUniqueKey = &file_proto_db_proto_option_proto_extTypes[15] //唯一键
+	E_OptionUniqueKey = &file_proto_db_proto_option_proto_extTypes[15] // Unique key
 	// optional bool OptionIsPlayerDatabase = 500013;
-	E_OptionIsPlayerDatabase = &file_proto_db_proto_option_proto_extTypes[16] // 标识是否是玩家数据库
+	E_OptionIsPlayerDatabase = &file_proto_db_proto_option_proto_extTypes[16] // Whether this is a player database
 	// optional OPERATE_TYPE OptionOperateType = 500014;
 	E_OptionOperateType = &file_proto_db_proto_option_proto_extTypes[17]
-	// ---------- 属性同步相关 ----------
+	// ---------- Attribute sync related ----------
 	//
 	// optional bool OptionAttributeSync = 700000;
-	E_OptionAttributeSync = &file_proto_db_proto_option_proto_extTypes[18] // 基础属性同步
+	E_OptionAttributeSync = &file_proto_db_proto_option_proto_extTypes[18] // Base attribute sync
 )
 
 // Extension fields to descriptorpb.FieldOptions.
 var (
 	// optional uint32 OptionRepeatLimit = 600000;
-	E_OptionRepeatLimit = &file_proto_db_proto_option_proto_extTypes[19] // repeat 字段限制的个数
+	E_OptionRepeatLimit = &file_proto_db_proto_option_proto_extTypes[19] // Repeated field max count
 	// optional string OptionDBFieldExtra = 600001;
-	E_OptionDBFieldExtra = &file_proto_db_proto_option_proto_extTypes[20] // 创建数据库要用到得额外信息，如果没有该属性表示非数据库字段
+	E_OptionDBFieldExtra = &file_proto_db_proto_option_proto_extTypes[20] // Extra DB field info; absence means non-DB field
 	// optional bool OptionDBReadOnly = 600002;
-	E_OptionDBReadOnly = &file_proto_db_proto_option_proto_extTypes[21] // 该字段对DB是否只读
+	E_OptionDBReadOnly = &file_proto_db_proto_option_proto_extTypes[21] // Whether field is read-only in DB
 	// optional string OptionDBNamePrefix = 600003;
-	E_OptionDBNamePrefix = &file_proto_db_proto_option_proto_extTypes[22] // 数据库名称前缀
+	E_OptionDBNamePrefix = &file_proto_db_proto_option_proto_extTypes[22] // DB name prefix
 	// optional string OptionDBLoadSql = 600004;
-	E_OptionDBLoadSql = &file_proto_db_proto_option_proto_extTypes[23] // 数据加载SQL语句
+	E_OptionDBLoadSql = &file_proto_db_proto_option_proto_extTypes[23] // Data load SQL statement
 	// optional bool OptionDBNeedEscape = 600005;
-	E_OptionDBNeedEscape = &file_proto_db_proto_option_proto_extTypes[24] // 字段是否需要转义存储
+	E_OptionDBNeedEscape = &file_proto_db_proto_option_proto_extTypes[24] // Whether field needs escape for storage
 	// optional bool OptionDBProcParam = 600006;
-	E_OptionDBProcParam = &file_proto_db_proto_option_proto_extTypes[25] // 是否存储过程参数
+	E_OptionDBProcParam = &file_proto_db_proto_option_proto_extTypes[25] // Whether this is a stored procedure parameter
 	// optional string OptionOldName = 600007;
-	E_OptionOldName = &file_proto_db_proto_option_proto_extTypes[26] //用来自动修改字段名
+	E_OptionOldName = &file_proto_db_proto_option_proto_extTypes[26] // Used for auto-renaming fields
 	// optional string OptionTable = 600008;
-	E_OptionTable = &file_proto_db_proto_option_proto_extTypes[27] // 建表名称
+	E_OptionTable = &file_proto_db_proto_option_proto_extTypes[27] // Table name for DDL
 	// optional string OptionBackUpTabel = 600009;
-	E_OptionBackUpTabel = &file_proto_db_proto_option_proto_extTypes[28] //备份表
+	E_OptionBackUpTabel = &file_proto_db_proto_option_proto_extTypes[28] // Backup table
 )
 
 var File_proto_db_proto_option_proto protoreflect.FileDescriptor

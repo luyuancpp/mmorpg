@@ -43,3 +43,15 @@ func (s *GuildServer) DisbandGuild(ctx context.Context, req *pb.DisbandGuildRequ
 func (s *GuildServer) SetAnnouncement(ctx context.Context, req *pb.SetAnnouncementRequest) (*pb.SetAnnouncementResponse, error) {
 	return s.logic.SetAnnouncement(ctx, req)
 }
+
+func (s *GuildServer) UpdateGuildScore(ctx context.Context, req *pb.UpdateGuildScoreRequest) (*pb.UpdateGuildScoreResponse, error) {
+	return s.logic.UpdateGuildScore(ctx, req)
+}
+
+func (s *GuildServer) GetGuildRank(ctx context.Context, req *pb.GetGuildRankRequest) (*pb.GetGuildRankResponse, error) {
+	return s.logic.GetGuildRank(ctx, req)
+}
+
+func (s *GuildServer) GetGuildRankByGuild(ctx context.Context, req *pb.GetGuildRankByGuildRequest) (*pb.GetGuildRankByGuildResponse, error) {
+	return s.logic.GetGuildRankByGuild(ctx, req)
+}

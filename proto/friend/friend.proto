@@ -5,7 +5,7 @@ option go_package = "friend/proto/friend";
 
 import "proto/common/base/tip.proto";
 
-// ── 好友关系数据 ─────────────────────────────────────────────
+// ── Friend relation data ─────────────────────────────────────────────
 
 enum FriendRequestStatus {
   FRIEND_REQUEST_UNKNOWN  = 0;
@@ -16,7 +16,7 @@ enum FriendRequestStatus {
 
 message FriendEntry {
   uint64 friend_player_id = 1;
-  int64  since_ms         = 2;  // 成为好友的时间
+  int64  since_ms         = 2;  // Friendship start time
   int64  last_active_ms   = 3;
 }
 
@@ -27,7 +27,7 @@ message FriendRequest {
   FriendRequestStatus status = 4;
 }
 
-// ── 请求/响应 ────────────────────────────────────────────────
+// ── Request/Response ────────────────────────────────────────────────
 
 message AddFriendRequest {
   uint64 player_id        = 1;
@@ -83,7 +83,7 @@ message GetPendingRequestsResponse {
   repeated FriendRequest requests = 2;
 }
 
-// ── 服务定义 ─────────────────────────────────────────────────
+// ── Service definition ─────────────────────────────────────────────────────
 
 service FriendService {
   rpc AddFriend (AddFriendRequest) returns (AddFriendResponse);

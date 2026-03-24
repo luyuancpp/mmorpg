@@ -1,12 +1,12 @@
-﻿# ==== 配置部分 ====
+﻿# ==== Configuration ====
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RootPath = Resolve-Path (Join-Path $ScriptDir "..")
 $ExcludePaths = @()
 
 $OutputFile = Join-Path $RootPath "docs\tree.txt"
-$MaxDepth = 100  # 最大递归深度（含根目录）
+$MaxDepth = 100  # Max recursion depth (including root)
 
-# ==== 主函数 ====
+# ==== Main function ====
 function Show-Tree {
     param (
         [string]$Path,
@@ -14,7 +14,7 @@ function Show-Tree {
         [int]$Depth = 20
     )
 
-    # 检查是否在排除路径中
+    # Check if path is in exclusion list
     foreach ($exclude in $ExcludePaths) {
         if ($Path -like "$exclude*") {
             return
@@ -24,25 +24,25 @@ function Show-Tree {
     $prefix = ' ' * $Indent + '|-- '
     Add-Content -Path $OutputFile -Value "$prefix$(Split-Path $Path -Leaf)"
 
-    # 如果已达最大深度，则停止递归
+    # Stop recursion if max depth reached
     if ($Depth -ge $MaxDepth) {
         return
     }
 
-    # 列出子目录
+    # List subdirectories
     Get-ChildItem -Path $Path -Directory -Force | Sort-Object Name | ForEach-Object {
         Show-Tree -Path $_.FullName -Indent ($Indent + 4) -Depth ($Depth + 1)
     }
 
-    # 列出文件
+    # List files
     Get-ChildItem -Path $Path -File -Force | Sort-Object Name | ForEach-Object {
         $filePrefix = ' ' * ($Indent + 4) + '|-- '
         Add-Content -Path $OutputFile -Value "$filePrefix$($_.Name)"
     }
 }
 
-# ==== 执行 ====
-# 新建/清空输出文件
+# ==== Execution ====
+# Create or clear the output file
 Set-Content -Path $OutputFile -Value "" -Force
-# 开始构建树
+# Start building the tree
 Show-Tree -Path $RootPath

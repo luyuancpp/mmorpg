@@ -11,9 +11,11 @@ CREATE TABLE IF NOT EXISTS guild (
   announcement   TEXT,
   create_time_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
   max_members    INT UNSIGNED    NOT NULL DEFAULT 50,
+  zone_id        INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT 'zone the guild belongs to',
   PRIMARY KEY (guild_id),
   UNIQUE KEY uk_name (name),
-  KEY idx_leader (leader_id)
+  KEY idx_leader (leader_id),
+  KEY idx_zone (zone_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='guild';
 
 CREATE TABLE IF NOT EXISTS guild_member (

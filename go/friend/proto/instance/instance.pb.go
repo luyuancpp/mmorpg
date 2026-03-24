@@ -24,10 +24,10 @@ const (
 
 type CreateInstanceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`                                                          // 发起者玩家ID
-	TemplateId    uint32                 `protobuf:"varint,2,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`                                                    // 副本模板ID，对应副本类型（如 dungeon_001）
-	TeamMemberIds []uint64               `protobuf:"varint,3,rep,packed,name=team_member_ids,json=teamMemberIds,proto3" json:"team_member_ids,omitempty"`                                  // 队伍成员（多人副本用）
-	Metadata      map[string]string      `protobuf:"bytes,4,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 扩展字段：如活动ID、限时等
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`                                                          // Initiating player ID
+	TemplateId    uint32                 `protobuf:"varint,2,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`                                                    // Instance template ID (e.g. dungeon_001)
+	TeamMemberIds []uint64               `protobuf:"varint,3,rep,packed,name=team_member_ids,json=teamMemberIds,proto3" json:"team_member_ids,omitempty"`                                  // Team members (for multiplayer instances)
+	Metadata      map[string]string      `protobuf:"bytes,4,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Extension fields: e.g. activity ID, time limit
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -92,9 +92,9 @@ func (x *CreateInstanceRequest) GetMetadata() map[string]string {
 
 type CreateInstanceResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	InstanceId    uint64                 `protobuf:"varint,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`      // 创建成功的副本ID
-	ExpireTime    int64                  `protobuf:"varint,2,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`      // 副本过期时间（Unix时间戳）
-	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误信息或成功提示
+	InstanceId    uint64                 `protobuf:"varint,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`      // Created instance ID
+	ExpireTime    int64                  `protobuf:"varint,2,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`      // Instance expiry time (Unix timestamp)
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // Error or success message
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

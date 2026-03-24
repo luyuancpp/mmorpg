@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 普通登录
+// Normal login
 type NormalLogin struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -58,7 +58,7 @@ func (*NormalLogin) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_comp_proto_rawDescGZIP(), []int{0}
 }
 
-// 顶号登录
+// Session takeover login
 type CoverLogin struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields

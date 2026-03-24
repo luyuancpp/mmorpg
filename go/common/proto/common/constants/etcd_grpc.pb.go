@@ -21,15 +21,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 定义 gRPC 操作的枚举类型
+// gRPC operation type enum
 type GrpcOperation int32
 
 const (
-	GrpcOperation_READ        GrpcOperation = 0 // 读取操作
-	GrpcOperation_INIT        GrpcOperation = 1 // 初始化操作
-	GrpcOperation_WRITE       GrpcOperation = 2 // 写入操作
-	GrpcOperation_WRITES_DONE GrpcOperation = 3 // 写入完成
-	GrpcOperation_FINISH      GrpcOperation = 4 // 操作结束
+	GrpcOperation_READ        GrpcOperation = 0 // Read operation
+	GrpcOperation_INIT        GrpcOperation = 1 // Init operation
+	GrpcOperation_WRITE       GrpcOperation = 2 // Write operation
+	GrpcOperation_WRITES_DONE GrpcOperation = 3 // Writes done
+	GrpcOperation_FINISH      GrpcOperation = 4 // Operation finished
 )
 
 // Enum value maps for GrpcOperation.

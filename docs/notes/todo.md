@@ -1,218 +1,213 @@
-1行为跟踪3
-2消息频繁发送
-3行为日志，可追踪玩家操作，玩家行为日志链
-4所有的列表应该有上限，超过某个值发出警告
-5数据库字段过大发出警告
-6金币刷统计，回滚有两个措施，第一个是有告警系统，第二个是有追缴系统。
-7房间取消原来的人要放到队列前面，不然前面的人可能会匹配更长时间
-8消息频繁发送
-9客户端数据不可信，物品个数负数判断
-10自动战斗跟随都是服务器做
-11组队应该要有各种额外状态，这样不用在各个服务器间去转消息
-12底层组件只提供基本功能，上层继续封装上层功能，一层一层，不堆在一层
-13角色数据改变了再存
-14框架封装，尽量简单，以后小白也能写服务器
-15每个操作应该有时间戳，为了以后做直播和回放
-16mmo观战，回放
-17发送的数据尽量不要重复
-18删除todo
-19多语言分支通过写工具在u3d自动切换
-20组队中应该通过消息去处理通信
-21正常关服
-22分布式朋友圈，好友，通讯，聊天，社区
-23切后台很久，客户端服务器版本更新很多了，断线重连提示更新版本？
-24哈利波特已经注册账号语言等待下载完毕才能进入游戏
-25表id 是否可以用uint64
-26测试修改协议包测试
-27我现在觉得我缺的是，如果线上出问题了，怎么快速定位问题，比如我们上线那天，io满了，有个活动一直io操作，但是cpu不满，或者cpu满了，没反应了
-28用户行为统计，测试中玩家喜欢做什么功能，也就是op
-29错误码和提示不能混用的问题
-30移动同步
-31 mysql 链接中断，中如果mysql 链接中断 那中断的这些时间里存储的东西会丢吗
-32rpc链接中断
-33红包
-34答题
-35投票
-36客户端热加载lua
-39个人流量满了怎么处理
-40服务器流量满了怎么处理
-41单个玩家回档
-42表中环检测
-43服务器服务中应该是先检测完再写逻辑
-44断线重连很久，但是其实有其他号已经在上了，切后天很久了，比如两天
-45角色满了合服
-46玩家从redis缓存删除
-47c++对象里面不能有裸指针
-48跨服断线重连
-49全服排行榜
-50成功以后不能再提示频繁
-51国家公祭日，活动往后加一天
-52断线重连几次以后需要重新登录
-53逻辑层级
-58玩家数据强制修改
-59追缴
-60在逻辑不清晰的时候试着加注释，并把注释转换成逻辑
-61网状node
-62跨服崩溃以后没有回到原来的服务器
-64各个服务器重启以后就可以直接恢复，如王者荣耀
-65客户端服务器版本
-66对于别人写的接口返回二进制流数据，应该封装一个根据类型去序列化，这样客户端就不用每个人都去取到流数据再做自己的转化了，比如redis取出来的二进制数据，直接再反序列化成客户给的类就行
-67状态机，行为树,fms
-68聊天广告屏蔽
-69假的热重启更新，分布式更新解决方案
-70有错误码的时候打印错误堆栈和请求协议
-71数据备份回档
-72跨服世界聊天
-73跨服显示家族信息
-75底层包协议检测
-76消息被篡改检测
-77负数和数相加溢出
-79误操作日志
-80浮点定点数
-81下线重上以后以前的场景满了
-82客户端消息过滤器
-83pb字段过大警告
-84进入游戏时候以后断掉
-85非ticktimer,TimeMeter
-86粒度太细层级太深，类多
-87同一个功能维护两份数据很危险
-88简单代码一眼就能出问题
-89玩家没登录直接发其他消息，乱发消息
-90跨服的时候切换角色
-91跨服断线重连，重连过程中对应的服务器挂了
-92pb 表字段是set 
-93服务器断了玩家链接
-94跨服的时候同意组队
-95服务器个人流量包过大警告
-96跨服的候聊天
-97所有不通过的逻辑都要提示，rpc return的时候
-98登录排队的时候能不能把已经注册过游戏的玩家优先级提高，让新玩家去新的服务器
-99新上线活动经常炸服务器，考虑活动可以平衡扩展
-100底层错误日志
-101玩家某段时间数据包流量过大
-102流量冲击，活动峰值
-103c2client string  长度判断
-104场景和玩家最大解耦
-105玩家在服务器崩溃的时候没有登出时间
-106消息优先级，为了做服务器压力大时候低优先级消息，就是不需要保证顺序的消息扔掉或者缓存起来，待服务器压力不大以后再给客户端返回去
-107玩家db数据分级类似海战在线离线数据
-108数据过大检测，pb和db 过大检测
-109快速定位问题，打印堆栈功能或者日志
-110不能有全局变量，销毁顺序不定
-111 流量检测，英雄联盟一场戏流量很少
-112服务器场景没有线的概念，线是前端示，告诉前端示规则
-113面向对象统一抽象和算法的特殊处理不能一概而论，比如之前的背包
-    添加叠加物品和非叠加物品的处理的时候，在获得一个非叠加，
-    因为非叠加物品和叠加物品统一对待，所以每次都遍历叠加物品，其实这个
-    可以特殊对待，这样算法效率就高了，很多算法优化就是这么优化的
-114进度领奖了么不应该记录奖励id，万一策划改奖励id了
-115 50万人同时跨服，要排队一个个进入
-116 所有node 快速重启
-117所有函数应该小，重用的函数不应该再调用重用的函数，应该是逻辑顺序调用一个个小函数
-如果小函数为了重用继续调用小函数，就是粒度分不清楚的问题了，函数最小粒度应该是重用，重用的粒度函数里面不应该再调用重用的小粒度函数
-118逻辑顺序应该有1 2 3 4 5 .. 步骤，我先做第一步，然后在做第二步，每一步是一个粒度抽象
-比如unity 的awak enble disable。。。
-119 优先消息队列，
-120 系统的优先级
-121只有这个地方需要重用了，代码重复了，才需要封装抽象，或者是个基础控件
-122优化应该优化经常调用的地方，性能瓶颈
-123服务器多线程通过消息队列去实现高性能，而不是锁
-124代码注入:你用了一个开源库，使用的时候必须继承某个东西，或者定义某个宏就是代码注入，不能直接调用的
-125根据协议处理返回的错误记录协议以及它返回什么错误，方便排查，打印请求信息
-126数据分块，哪些可以清除哪些不可以清除，比如原来做的任务，如果活动任务出了问题我能不能只清除活动任务
-127换场景的时候玩家消息处理？丢失问题
-128 gs间的rpccall
-129我的背包组队现在想起来我没把组队底层和逻辑层分开
-130功能打点，看哪个功能玩家玩的多，比如之前的组队互相跟随，如果你把这个功能数据打上了就知道这个功能没人玩了，所以就知道有没有在浪费时间在无效功能上了
-131load save失败情况处理
-132报警
-133数据库访问限流节流
-134同步异步事件
-135表只能保存id，不能保存指针
-136slg重启后的定时器
-137如果摸模板太复杂能用代码生成代替
-138同一个逻辑玩法，如果两个模块可以分开，那么就应该分开，这样互不影响，比如掉落表现和掉落状态，虽然掉落状态看上去像是依赖于掉落表现，但是认真考虑这两个可以不关联不耦合，这样只改一个地方不影响其他地方，模块化解偶
-139timer重新载入，比如率土之滨默哀期间所有的时间往后移动
-140同一个表字段用在不同系统这种方式不推荐
-141有些逻辑操作应该是原子性的，比如拍卖会，当前竞价和我的出价一口价，这三个应该是同一个逻辑模块里面改变，其中一个出错就不应该改数据,程序犯的问题,所以一般是前面条件所有判断过了再改数据
-142传送不进副本也不应该让玩家处于置空状态
-143有些东西可以做成工具，不一定写到代码里面
-144静态数据和动态数据转换
-145表尽量不要一列多行函数
-146基础功能和逻辑重用，逻辑重用可以抽出来不放在基础功能里面，封装成通用函数就行，调用基础组件
-147进程的内存数据转移，并不存数据库的数据
-148只有自己能改变自己状态，我见过别人的客户端代码直接改变另外一个玩家的状态，那么我们在写服务器的时候应该避免别的玩家改变我自己的状态
-149正常停服
-150副本无敌模式，可以观察别人的东西
-151npc 战斗详情，副本战斗详情
-152操作追踪界面追踪分分布式链路追踪技术
-153调用链少，出bug的几率少，看懂代码的代价少，就和缩进层次一样，能迅速观察代码在做啥，如果出了bug能不能马上发现，涉及到维护成本，嫡修改时间的成本
-154调用层次要少，看逻辑查bug快
-155一眼就能看出代码在干啥
-156gate异步同时登陆情况
-157gate异步同时登陆情况,老gate晚于新gate登录到centre会不会导致登录不成功了?这时候怎么处理
-158 代码隐晦的时候怎么查bug
-159 用一句话总结一段逻辑，然后看看这个逻辑和前后逻辑是不是差不多一个意思，不是一个意思的话那么可能是不是放错地方了，比如，其实逻辑只是控制显示隐藏，那么
-加载完控件以后，再应该有函数控制显示隐藏
-160一眼能看出代码在做什么，整个流程是什么，运行顺序能看出来，这样找问题容易，看不出来的代码都可能有bug
-161系统和开发者之间的约定，如果开发者遵循某些规则，那么开发者执行读操作或写操作的结果是可预测的，这句话最重要的是可以测，可预测保证了程序逻辑的确定性，如果对一个系统执行读写操作却无法返回可预测的结果，那么这样的系统是很难使用的。
-162回去多看自己代码，就会发现有问题的地方,用chatgpt去检查
-163不应该客户端请求数据，应该是服务器发数据给客户端，客户端不知道服务器啥时候切换完场景
-164先，C++程序员应该尽量少使用宏，因为预处理器对于宏只是简单的字符替换，完全没有类型检查，而且宏使用不当出现的错误难以排查
-165拍卖会审核以后如果客户端统一在10.1请求，那么那瞬间服务器压力会很大，所以同一时间瞬间流量要考虑怎么做
-166 有个网络线程收网络消息，就是想在处理场景tick的时候还能读取网络的消息，不会导致底层网络缓冲区满了卡住
-167玩家可以改变登录区服
-168一个字段只表达同一个意义，比如之前海战项目，自己一个字段在这个情况下表达这个意义，那个情况下这种个字段又是另外一种意义，比如拿奖励找回次数-1做不可找回的意思，这种做法错误，正确的是奖励找回次数就是次数的意思，已找回，找回，不可找回应该是另外一个字段，表明另外一个意思。 就好比一个函数只做一件事情
-169自己以前调用链太多，回调太多，复杂，一眼看不到调用关系和代码路程
-170刷guid，比如一个物品放到另一个地方其实是删除再加，来回换导致刷guid，不如交换
-171服务器热更支持表新加行数据
-172尽量让两个系统之间没关系，看上去有关系，但是代码层面没有关系，解偶，但是可以重用
-173 所有的重构，抽象，多态目的都是把复杂度降低
-174调用层次要少，看逻辑查bug快
-175东西有应用场景，不能为了用而用
-176上线时候数据量很大
-178前置条件制作
-179功能条件开启解锁
-180在一个汇总的地方去做一个统一的接口事件，比如在做UI的时候,跳转到别的界面，道法提升，返回界面得时候应该刷新道法，另一个程序说应该在返回的接口里面加，但是这种不
-统一，如果不一定是返回界面刷新，那加的地方就多了，二应该是统一在界面重新显示的时候请求数据，这样不管是返回，还是其他方式返回，都能保证界面得数据最新的。定时属性不可取，定时刷新导致IO满，而且数据不一定是最新的
-181代码技术债务，调用层次深，查找bug麻烦，代码复杂就相当于可能会出更多问题！
-182基础功能不要加额外的扩展功能，应该是扩展功能去调用基础功能
-183跳出当前限制，逻辑，放弃当前逻辑，试试看其他逻辑
-184状态条件二维表
-185二维表条件功能检测
-186类不能有指针变量
-187任何取出了流数据，可以直接封魔板转化成自己想要的类，序列化成自己想要的类
-188记得对比两种方案的区别，比如删除迭代器做法有两种，是复制一份原始的列表去迭代还是把待删除的放到一个列表，第二种比第一种好，把待删除放进一个列表数据会少很多
-187ue视野同步，根据远近同步的数据会有多少，这种优化可以延展到登录排队上面，越靠前的同步现在排名的帧率越快！ue还会根据物体类型改变同步帧率,还有根据重要性去改变数据同步帧率
-188客户端与服务端的交互，能拉数据的就不要推，否则以后优化会很麻烦。尽量让客户端发 request 来获取数据，不要让服务端主动 push。这样做的好处是，主动权放到客户端那边，它可以根据不同的运行环境做不同的适配，调整拉取数据的时机，或者有选择性的拉取自己需要的数据，这样更灵活。
-189cpu峰值毛刺性能会有潜在风险
-190底层系统不应该有逻辑，在网络发送的时候去判断发送包逻辑不好
-191代码层次，逻辑
-192pb协议参数长度检查
-193 不同game node 之间玩家互相发协议
-194删除数据库某行
-195某个玩家网络异常处理
-196游戏中的暂停
-197系统应该加功能才改变，否则不变，这才稳定，别的系统不应该影响到我的系统
-198mmo中视角切换到队友身上，或者观战功能
-199操作玩家的离线数据
-200服务重启数据同步
-201观战
-202观战时间压缩、暂停技术
-203使用道具未回包再使用提示已经在使用
-204存储看看能不能做成有改变存储
-205 消息列表长度检查
-206检测客户端发过来的数据大小
-207货币有尝试扣的款,因为扣的款得去别的服务器认证
-208游戏场景服玩家直接往另外一个游戏场景服上的玩家发消息
-209golang登录鉴权
-210外网数据直接搞到内网
-211单个玩家数据往内网拷贝
-212各种服务器重启数据同步
-213服务器正常关闭
-214登录排队使用开源限流器
-215任务类型字段要区分，工会任务是工会任务类型，应该不和每日类型公用枚举变量，就是不互斥的意思，每日任务应该是每日任务系统去做，不应该放在基础任务去做
-216给服务器发消息打印当前所有线程的堆栈
-217玩家生涯历史操作记录，以及玩家做了事，事件
-218db不应该有逻辑，应该值关心存储，之前还做了db创建角色,这是不对的
-~~219无状态微服务就绪门控统一：初始化完成后再注册服务发现，配套readiness探针与watch机制，避免未就绪实例接流量~~ ✅ 已完成：DependencyGate 抽象在 node.h，Scene/Gate main.cpp 已接入
+# Engineering TODO / Design Notes
+
+1. Behavior tracking v3
+2. Rate-limit frequent message sending
+3. Player behavior audit log — traceable operation chain per player
+4. All lists must have upper bounds; warn when a threshold is exceeded
+5. Warn when database fields grow too large
+6. Gold exploit statistics — two rollback measures: (1) alerting system, (2) clawback system
+7. When a room match is cancelled, return the original player to the front of the queue to avoid longer wait times
+8. (Duplicate of #2) Rate-limit frequent message sending
+9. Client data is untrusted — validate item counts for negative values
+10. Auto-battle and follow logic runs server-side
+11. Team system should carry extra state flags so messages don't need to be forwarded between servers
+12. Base components provide only basic functionality; higher layers wrap higher-level features — layer by layer, don't pile everything into one layer
+13. Only persist character data when it has actually changed
+14. Framework should be simple enough that junior devs can write server code
+15. Every operation should have a timestamp (for future replay/spectating support)
+16. MMO spectating and replay
+17. Avoid sending duplicate data
+18. (Delete this todo)
+19. Multi-language branching via a Unity tool for auto-switching
+20. Team communication should go through message passing
+21. Graceful server shutdown
+22. Distributed social features: moments, friends, messaging, chat, community
+23. Long background → client/server version mismatch → prompt version update on reconnect?
+24. Account registration flow: wait for full download before entering the game
+25. Can table IDs use uint64?
+26. Test protocol packet modification
+27. Production issue triage: how to quickly locate problems (e.g., IO saturation from an activity loop, or CPU saturation with no responsiveness)
+28. User behavior analytics: track which features players use during testing (operation stats)
+29. Error codes and user-facing tips must not be conflated
+30. Movement synchronization
+31. MySQL connection loss: will data queued for storage during the disconnect window be lost?
+32. RPC connection interruption handling
+33. Red envelope (hongbao) feature
+34. Quiz / trivia feature
+35. Voting feature
+36. Client-side Lua hot-reload
+39. Handle individual player bandwidth saturation
+40. Handle server-wide bandwidth saturation
+41. Single-player rollback (data restore for one player)
+42. Circular reference detection in config tables
+43. Server services should validate all preconditions before executing logic
+44. Long disconnection while another account is already online; resume after e.g. 2 days offline
+45. Character slot exhaustion during server merge
+46. Evicting player data from Redis cache
+47. No raw pointers in C++ objects
+48. Cross-server reconnection
+49. Global (all-server) leaderboard
+50. Don't show "too frequent" warning after a success response
+51. National memorial days: shift activity schedule by one day
+52. After N reconnection attempts, require full re-login
+53. Logic layering / separation of concerns
+58. Force-modify player data (admin tool)
+59. Clawback system for exploited resources
+60. When logic is unclear, add comments first, then refine them into code
+61. Mesh-topology node architecture
+62. After cross-server crash, player doesn't return to origin server
+64. All services should auto-recover after restart (like Honor of Kings)
+65. Client-server version negotiation
+66. Wrap binary-stream responses from third-party APIs into typed deserialization, so each consumer doesn't parse raw bytes
+67. State machine / behavior tree / FSM patterns
+68. Chat advertisement / spam filtering
+69. Pseudo-hot-restart: distributed rolling update solution
+70. When an error code is returned, log the full stack trace and request protocol
+71. Database backup and point-in-time recovery
+72. Cross-server world chat
+73. Cross-server guild/clan info display
+75. Low-level packet protocol validation
+76. Message tampering detection
+77. Integer overflow when adding negative to positive numbers
+79. Accidental-operation audit log
+80. Floating-point vs fixed-point arithmetic
+81. Player returns online but previous scene is full
+82. Client-side message filter
+83. Warn if protobuf field size exceeds threshold
+84. Disconnect immediately after entering the game
+85. Non-tick-based timers (TimeMeter)
+86. Too fine granularity → too deep call hierarchy → too many classes
+87. Maintaining two copies of state for the same feature is dangerous
+88. Simple code should be obviously correct at a glance
+89. Player sends non-login messages without being authenticated — handle random/malicious packets
+90. Character switching during cross-server play
+91. Cross-server reconnect while the target server is down
+92. Protobuf table field as a set type
+93. Server drops the player connection
+94. Accept team invitation during cross-server play
+95. Warn on abnormally large per-player packet sizes
+96. Chat during cross-server play
+97. All rejected logic paths must return a user-facing error message (on RPC return)
+98. Login queue priority: boost players with existing accounts; redirect new players to new servers
+99. New activity launches often crash servers — design activities to scale horizontally
+100. Low-level error logging infrastructure
+101. Detect abnormal packet volume per-player over a time window
+102. Traffic spike handling: activity peak load
+103. Validate string length in client-to-server messages
+104. Maximize decoupling between scene and player systems
+105. Player has no logout timestamp if the server crashes
+106. Message priority queue: under high load, drop or defer low-priority messages (that don't require ordering), then flush them to client when load subsides
+107. Tiered player data (online vs offline), like the naval battles project
+108. Detect oversized data in both protobuf and database fields
+109. Fast issue localization: stack trace printing and logging
+110. No global variables — destruction order is undefined
+111. Traffic profiling (e.g., a League of Legends match uses very little bandwidth)
+112. Server scenes have no "line/channel" concept — lines are a client-side display convention
+113. OOP uniform abstraction vs algorithm-specific optimization: e.g., bag system treated stackable and non-stackable items identically, causing unnecessary iteration. Special-case the non-stackable path for efficiency
+114. Progress reward claim status should NOT be keyed by reward ID — if a designer changes the reward ID, claim data breaks
+115. 500K players crossing servers simultaneously need queue-based admission
+116. Fast restart for all nodes
+117. Functions should be small and compose linearly. Reusable functions should not call other reusable functions — that confuses granularity. The minimum granularity should be the unit of reuse
+118. Logic steps should be numbered (step 1, step 2, …), like Unity's Awake/OnEnable/OnDisable lifecycle
+119. Priority message queue
+120. System priority levels
+121. Only abstract/encapsulate when actual code duplication exists, or it's a base component
+122. Optimize hot paths — focus on performance bottlenecks
+123. Server multi-threading via message queues for high performance, not locks
+124. Code injection: when an open-source lib forces you to inherit or define a macro, that's injection — prefer direct-call APIs
+125. Log the full request protocol and error response for every failed RPC, for easier debugging
+126. Data partitioning: which data can be cleared vs not (e.g., can we wipe only event-quest data without touching main quests?)
+127. How to handle in-flight player messages during scene transitions? Message loss risk
+128. RPC calls between game servers (GS-to-GS)
+129. (Retroactive note) Bag and team systems didn't separate base layer from logic layer
+130. Feature telemetry: track which features players actually use (e.g., team follow — if nobody uses it, stop investing time)
+131. Handle load/save failures gracefully
+132. Alerting / monitoring system
+133. Database access rate limiting / throttling
+134. Sync vs async event handling
+135. Config tables must store IDs only, never pointers
+136. SLG timer restoration after restart
+137. If templates get too complex, use code generation instead
+138. If two modules within the same feature can be independent, separate them. E.g., loot presentation vs loot state — they look related but can be fully decoupled
+139. Timer reload (e.g., during a memorial period, shift all timers forward)
+140. Don't share the same table field across different systems
+141. Some logic operations should be atomic. E.g., auction: current bid / my bid / buy-now must all change in one atomic block. If any step fails, no data should change
+142. Teleport failure into an instance must not leave the player in a void state
+143. Some things should be tools, not code
+144. Static data ↔ dynamic data conversion patterns
+145. Config tables should avoid multi-value columns
+146. Base functionality vs logic reuse: extract reusable logic into utility functions that call base components, don't embed it in the base layer
+147. In-memory data migration between processes (data not persisted to DB)
+148. Only the owning entity should mutate its own state. Don't let one player's code directly modify another player's state
+149. Graceful server shutdown (expanded)
+150. Instance god-mode: observe other players' state
+151. NPC combat detail / instance combat replay detail
+152. Distributed tracing for operation tracking (UI + backend)
+153. Fewer call chains = fewer bugs = faster comprehension. Like indentation depth: can you see what the code does at a glance? Can you spot a bug immediately? This is a maintenance cost factor
+154. Shallow call hierarchies → faster logic tracing and bug hunting
+155. Code should be readable at a glance
+156. Gate async concurrent login case
+157. Gate async concurrent login: if old gate's logout arrives at centre after new gate's login, does login fail? How to handle?
+158. How to debug obscure code paths
+159. Summarize a code block in one sentence, then check if it matches surrounding logic. If not, it might be misplaced. E.g., if logic only controls show/hide, wire it from the "view becomes visible" hook, not from arbitrary return paths
+160. Code should reveal: what it does, the full flow, the execution order — so problems are easy to find. Unreadable code probably has bugs
+161. System-developer contract: if devs follow the rules, read/write results are predictable. Predictability ensures determinism. An unpredictable system is hard to use
+162. Review your own code repeatedly — you'll find issues. Use ChatGPT to assist
+163. Server should push data to client, not wait for client to request it — client doesn't know when server finishes scene transition
+164. C++ devs should minimize macro usage — preprocessor just does text substitution with no type checking, and macro bugs are hard to trace
+165. Auction review: if all clients request at 10:01 AM, instantaneous load spike. Plan for burst traffic at fixed times
+166. Dedicated network thread for receiving messages: allows scene tick to continue while network I/O proceeds, preventing kernel buffer saturation
+167. Allow players to change their login region/server
+168. One field = one meaning. Don't overload a field with different semantics in different contexts (e.g., using reward-recovery-count = -1 to mean "non-recoverable"). Use separate fields for separate concepts, like "one function does one thing"
+169. (Retroactive note) Previous code had too many call chains and callbacks — couldn't see the flow at a glance
+170. GUID recycling: moving an item = delete + add → generates new GUID each time. Better to swap
+171. Hot-reload support for new config table rows
+172. Decouple systems as much as possible — even if they look related, make them independent at the code level. Reuse is still fine
+173. Every refactoring / abstraction / polymorphism should reduce complexity
+174. (Duplicate of #154) Shallow call hierarchies → faster debugging
+175. Apply techniques only when there's a real use case — don't use patterns just to use them
+176. Handle large data volumes at launch time
+178. Prerequisites / precondition system
+179. Feature unlock / condition system
+180. Centralized refresh hook: e.g., always refresh UI data when a view becomes visible (not just on "back" navigation). Timer-based refresh is bad (IO saturation + stale data)
+181. Tech debt: deep call chains → hard to trace bugs → more complexity → more bugs
+182. Base features must not include extension logic; extensions should call base features
+183. When stuck in current logic, step back and try a completely different approach
+184. 2D state-condition table
+185. 2D condition-feature validation table
+186. Classes must not have pointer member variables
+187. Any extracted byte stream should be directly deserializable into the target type via template
+188. Compare two approaches before choosing. E.g., for iterator-delete: copy-and-iterate vs collect-then-delete — the latter is better (smaller working set)
+187b. UE-style relevancy sync: closer objects get more frequent updates. Extend to login queue: higher position = faster status refresh rate. UE also varies sync rate by object type and importance
+188b. Client-server interaction: prefer pull over push. Let client send requests and control timing, adapting to its runtime environment. This gives client flexibility to fetch only what it needs
+189. CPU spike / jitter poses latent performance risk
+190. Low-level systems should not contain business logic (e.g., don't put send-packet conditions in the network layer)
+191. Code layering discipline
+192. Protobuf field length validation
+193. Players on different game nodes sending messages to each other
+194. Delete a specific database row
+195. Handle individual player network anomalies
+196. Pause functionality in games
+197. A system should only change when new features are added; otherwise it stays stable. Other systems should never affect mine
+198. MMO camera switch to teammate / spectate feature
+199. Operating on a player's offline data
+200. Data sync after service restart
+201. Spectating system
+202. Spectate time compression / pause technology
+203. "Item already in use" prompt when using an item before previous response arrives
+204. Dirty-flag storage: only persist when data has actually changed
+205. Validate message list lengths
+206. Validate client-sent data sizes
+207. Tentative currency deduction (cross-server auth required for final confirmation)
+208. Player on one game-scene server sending message directly to a player on another game-scene server
+209. Golang login authentication
+210. Importing external network data into internal network (security boundary)
+211. Copying single-player data into internal network
+212. Data sync for various server restart scenarios
+213. Graceful server shutdown (final)
+214. Login queue using open-source rate limiter
+215. Quest type fields must be distinct: guild quests get their own type enum, not shared with daily quest enum. Daily quests should be handled by the daily quest system, not the base quest system
+216. Send a signal to server to dump all thread stack traces
+217. Player career: historical operation records and events
+218. DB layer should have no business logic — it should only care about storage. (Previous mistake: DB service was creating characters)
+~~219. Stateless microservice readiness gate: register with service discovery only after initialization completes, with readiness probes and watch mechanism to prevent traffic to unready instances~~ ✅ Done: DependencyGate abstraction in node.h, Scene/Gate main.cpp integrated

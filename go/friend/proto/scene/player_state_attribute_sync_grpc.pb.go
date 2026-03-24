@@ -32,7 +32,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// 服务定义，用于处理实体属性的同步
+// Service for entity attribute sync
 type ScenePlayerSyncClient interface {
 	SyncBaseAttribute(ctx context.Context, in *ActorBaseAttributesS2C, opts ...grpc.CallOption) (*base.Empty, error)
 	SyncAttribute2Frames(ctx context.Context, in *AttributeDelta2FramesS2C, opts ...grpc.CallOption) (*base.Empty, error)
@@ -114,7 +114,7 @@ func (c *scenePlayerSyncClient) SyncAttribute60Frames(ctx context.Context, in *A
 // All implementations must embed UnimplementedScenePlayerSyncServer
 // for forward compatibility.
 //
-// 服务定义，用于处理实体属性的同步
+// Service for entity attribute sync
 type ScenePlayerSyncServer interface {
 	SyncBaseAttribute(context.Context, *ActorBaseAttributesS2C) (*base.Empty, error)
 	SyncAttribute2Frames(context.Context, *AttributeDelta2FramesS2C) (*base.Empty, error)

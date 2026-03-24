@@ -425,6 +425,183 @@ void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity node
     SendGuildServiceSetAnnouncement(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
+#pragma region GuildServiceUpdateGuildScore
+boost::object_pool<AsyncGuildServiceUpdateGuildScoreGrpcClient> GuildServiceUpdateGuildScorePool;
+using AsyncGuildServiceUpdateGuildScoreHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::guildpb::UpdateGuildScoreResponse&)>;
+AsyncGuildServiceUpdateGuildScoreHandlerFunctionType AsyncGuildServiceUpdateGuildScoreHandler;
+
+void AsyncCompleteGrpcGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncGuildServiceUpdateGuildScoreGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncGuildServiceUpdateGuildScoreHandler) {
+            AsyncGuildServiceUpdateGuildScoreHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	GuildServiceUpdateGuildScorePool.destroy(call);
+}
+
+void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(GuildServiceUpdateGuildScorePool.construct());
+    call->response_reader = registry
+        .get<GuildServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncUpdateGuildScore(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(GuildServiceUpdateGuildScoreMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(GuildServiceUpdateGuildScorePool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<GuildServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncUpdateGuildScore(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(GuildServiceUpdateGuildScoreMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::guildpb::UpdateGuildScoreRequest& derived = static_cast<const ::guildpb::UpdateGuildScoreRequest&>(message);
+    SendGuildServiceUpdateGuildScore(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region GuildServiceGetGuildRank
+boost::object_pool<AsyncGuildServiceGetGuildRankGrpcClient> GuildServiceGetGuildRankPool;
+using AsyncGuildServiceGetGuildRankHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::guildpb::GetGuildRankResponse&)>;
+AsyncGuildServiceGetGuildRankHandlerFunctionType AsyncGuildServiceGetGuildRankHandler;
+
+void AsyncCompleteGrpcGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncGuildServiceGetGuildRankGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncGuildServiceGetGuildRankHandler) {
+            AsyncGuildServiceGetGuildRankHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	GuildServiceGetGuildRankPool.destroy(call);
+}
+
+void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(GuildServiceGetGuildRankPool.construct());
+    call->response_reader = registry
+        .get<GuildServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncGetGuildRank(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildRankMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(GuildServiceGetGuildRankPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<GuildServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncGetGuildRank(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildRankMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::guildpb::GetGuildRankRequest& derived = static_cast<const ::guildpb::GetGuildRankRequest&>(message);
+    SendGuildServiceGetGuildRank(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region GuildServiceGetGuildRankByGuild
+boost::object_pool<AsyncGuildServiceGetGuildRankByGuildGrpcClient> GuildServiceGetGuildRankByGuildPool;
+using AsyncGuildServiceGetGuildRankByGuildHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::guildpb::GetGuildRankByGuildResponse&)>;
+AsyncGuildServiceGetGuildRankByGuildHandlerFunctionType AsyncGuildServiceGetGuildRankByGuildHandler;
+
+void AsyncCompleteGrpcGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncGuildServiceGetGuildRankByGuildGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncGuildServiceGetGuildRankByGuildHandler) {
+            AsyncGuildServiceGetGuildRankByGuildHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	GuildServiceGetGuildRankByGuildPool.destroy(call);
+}
+
+void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(GuildServiceGetGuildRankByGuildPool.construct());
+    call->response_reader = registry
+        .get<GuildServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncGetGuildRankByGuild(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildRankByGuildMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(GuildServiceGetGuildRankByGuildPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<GuildServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncGetGuildRankByGuild(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildRankByGuildMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::guildpb::GetGuildRankByGuildRequest& derived = static_cast<const ::guildpb::GetGuildRankByGuildRequest&>(message);
+    SendGuildServiceGetGuildRankByGuild(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
 
 void HandleGuildCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
@@ -456,6 +633,18 @@ void HandleGuildCompletedQueueMessage(entt::registry& registry, entt::entity nod
             AsyncCompleteGrpcGuildServiceSetAnnouncement(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
+        case GuildServiceUpdateGuildScoreMessageId:
+            AsyncCompleteGrpcGuildServiceUpdateGuildScore(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case GuildServiceGetGuildRankMessageId:
+            AsyncCompleteGrpcGuildServiceGetGuildRank(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case GuildServiceGetGuildRankByGuildMessageId:
+            AsyncCompleteGrpcGuildServiceGetGuildRankByGuild(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
         default:
             break;
         }
@@ -470,6 +659,9 @@ void SetGuildHandler(const std::function<void(const ClientContext&, const ::goog
     AsyncGuildServiceLeaveGuildHandler = handler;
     AsyncGuildServiceDisbandGuildHandler = handler;
     AsyncGuildServiceSetAnnouncementHandler = handler;
+    AsyncGuildServiceUpdateGuildScoreHandler = handler;
+    AsyncGuildServiceGetGuildRankHandler = handler;
+    AsyncGuildServiceGetGuildRankByGuildHandler = handler;
 }
 
 void SetGuildIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
@@ -494,6 +686,15 @@ void SetGuildIfEmptyHandler(const std::function<void(const ClientContext&, const
     }
     if (!AsyncGuildServiceSetAnnouncementHandler) {
         AsyncGuildServiceSetAnnouncementHandler = handler;
+    }
+    if (!AsyncGuildServiceUpdateGuildScoreHandler) {
+        AsyncGuildServiceUpdateGuildScoreHandler = handler;
+    }
+    if (!AsyncGuildServiceGetGuildRankHandler) {
+        AsyncGuildServiceGetGuildRankHandler = handler;
+    }
+    if (!AsyncGuildServiceGetGuildRankByGuildHandler) {
+        AsyncGuildServiceGetGuildRankByGuildHandler = handler;
     }
 }
 

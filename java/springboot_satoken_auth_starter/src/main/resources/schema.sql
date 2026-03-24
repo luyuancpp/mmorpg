@@ -22,8 +22,8 @@ CREATE TABLE user_phone (
 CREATE TABLE user_oauth (
                             id BIGINT PRIMARY KEY AUTO_INCREMENT,
                             user_id BIGINT,
-                            provider VARCHAR(32),  -- weixin / qq / google / apple …
-                            openid VARCHAR(128),   -- 或 sub
+                            provider VARCHAR(32),  -- e.g. weixin / qq / google / apple
+                            openid VARCHAR(128),   -- or sub (OpenID Connect)
                             UNIQUE(provider, openid),
                             CONSTRAINT fk_user_oauth FOREIGN KEY (user_id) REFERENCES users(id)
 );
