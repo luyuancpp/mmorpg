@@ -5,14 +5,12 @@
 
 void EventHandler::Register()
 {
-GateEventHandler::Register();
-PlayerEventHandler::Register();
-
+	GateEventHandler::Register();
+	PlayerEventHandler::Register();
 }
 
 void EventHandler::UnRegister()
 {
-GateEventHandler::UnRegister();
-PlayerEventHandler::UnRegister();
-
+	GateEventHandler::UnRegister();
+	PlayerEventHandler::UnRegister();
 }
