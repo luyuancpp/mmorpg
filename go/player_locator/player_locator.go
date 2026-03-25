@@ -19,8 +19,8 @@ import (
 	"player_locator/internal/node"
 	"player_locator/internal/server"
 	"player_locator/internal/svc"
-	proto_common "player_locator/proto/common"
-	pb "player_locator/proto/player_locator"
+	proto_common "proto/common/base"
+	pb "proto/player_locator"
 )
 
 var configFile = flag.String("f", "etc/player_locator.yaml", "config file path")

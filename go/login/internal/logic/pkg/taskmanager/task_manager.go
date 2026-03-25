@@ -7,7 +7,7 @@ import (
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/cache"
-	login_proto "login/proto/db"
+	login_proto "proto/db"
 	"strconv"
 	"sync"
 	"time"

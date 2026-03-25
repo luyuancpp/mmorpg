@@ -20,8 +20,8 @@ import (
 	"guild/internal/node"
 	"guild/internal/server"
 	"guild/internal/svc"
-	base "guild/proto/common/base"
-	pb "guild/proto/guild"
+	base "proto/common/base"
+	pb "proto/guild"
 )
 
 var configFile = flag.String("f", "etc/guild.yaml", "config file path")

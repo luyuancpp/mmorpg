@@ -1,0 +1,137 @@
+package _go
+
+import (
+	"os"
+	"path/filepath"
+	"sync"
+
+	_config "protogen/internal/config"
+	utils2 "protogen/internal/utils"
+	"protogen/logger"
+
+	"go.uber.org/zap"
+)
+
+const unifiedStagingDir = "_unified"
+
+// BuildUnifiedGoProto generates all Go proto outputs into a single shared
+// module directory (go/proto/) instead of duplicating into each service.
+//
+// Pipeline: stage → set go_package → protoc → go/proto/
+func BuildUnifiedGoProto(wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		stagingRoot := filepath.Join(
+			_config.Global.Paths.GeneratorProtoDir,
+			unifiedStagingDir,
+			_config.Global.DirectoryNames.ProtoDirName,
+		)
+
+		// 1. Clean and recreate staging directory.
+		if err := os.RemoveAll(filepath.Join(_config.Global.Paths.GeneratorProtoDir, unifiedStagingDir)); err != nil {
+			logger.Global.Fatal("Unified Go proto: failed to clean staging dir",
+				zap.String("dir", stagingRoot),
+				zap.Error(err),
+			)
+		}
+		if err := os.MkdirAll(stagingRoot, 0755); err != nil {
+			logger.Global.Fatal("Unified Go proto: failed to create staging dir",
+				zap.String("dir", stagingRoot),
+				zap.Error(err),
+			)
+		}
+
+		// 2. Copy all proto sources into the staging directory.
+		if err := utils2.CopyLocalDir(_config.Global.Paths.ProtoDir, stagingRoot); err != nil {
+			logger.Global.Fatal("Unified Go proto: failed to copy proto sources",
+				zap.String("src", _config.Global.Paths.ProtoDir),
+				zap.String("dst", stagingRoot),
+				zap.Error(err),
+			)
+		}
+
+		// 3. Set go_package = "proto/{relative_path}" for every proto file.
+		if err := setUnifiedGoPackage(stagingRoot); err != nil {
+			logger.Global.Fatal("Unified Go proto: failed to set go_package",
+				zap.String("staging_root", stagingRoot),
+				zap.Error(err),
+			)
+		}
+
+		// 4. Collect all proto files.
+		protoFiles, err := collectGoGrpcProtoFiles(stagingRoot)
+		if err != nil {
+			logger.Global.Fatal("Unified Go proto: failed to collect proto files",
+				zap.String("staging_root", stagingRoot),
+				zap.Error(err),
+			)
+		}
+		if len(protoFiles) == 0 {
+			logger.Global.Warn("Unified Go proto: no proto files found, skipping")
+			return
+		}
+
+		// 5. Ensure output directory exists.
+		nodeGoDir := _config.Global.Paths.NodeGoDir
+		if err := utils2.EnsureDir(nodeGoDir); err != nil {
+			logger.Global.Fatal("Unified Go proto: failed to create output dir",
+				zap.String("dir", nodeGoDir),
+				zap.Error(err),
+			)
+		}
+
+		// 6. Run protoc. proto_path is the parent of stagingRoot so that
+		//    import "proto/common/base/tip.proto" resolves correctly.
+		protoRootPath := filepath.Dir(filepath.Clean(stagingRoot))
+		if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
+			logger.Global.Fatal("Unified Go proto: code generation failed",
+				zap.String("staging_root", stagingRoot),
+				zap.String("output_dir", nodeGoDir),
+				zap.Error(err),
+			)
+		}
+
+		logger.Global.Info("Unified Go proto: generation complete",
+			zap.Int("proto_file_count", len(protoFiles)),
+			zap.String("output_dir", nodeGoDir+"/proto/"),
+		)
+	}()
+}
+
+// setUnifiedGoPackage sets go_package = "proto/{relative_dir}" for every
+// .proto file under rootDir.
+func setUnifiedGoPackage(rootDir string) error {
+	return filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || filepath.Ext(path) != ".proto" {
+			return nil
+		}
+
+		relDir, err := filepath.Rel(rootDir, filepath.Dir(path))
+		if err != nil {
+			logger.Global.Fatal("Unified GoPackage: failed to compute relative path",
+				zap.String("root", rootDir),
+				zap.String("file", path),
+				zap.Error(err),
+			)
+		}
+
+		goPackage := "proto"
+		if relDir != "." {
+			goPackage = "proto/" + filepath.ToSlash(relDir)
+		}
+
+		if _, err := AddGoPackage(path, goPackage, false); err != nil {
+			logger.Global.Fatal("Unified GoPackage: failed to set go_package",
+				zap.String("file", path),
+				zap.String("go_package", goPackage),
+				zap.Error(err),
+			)
+		}
+		return nil
+	})
+}

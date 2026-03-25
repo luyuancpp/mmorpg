@@ -7,8 +7,8 @@ package scenemanager
 import (
 	"context"
 
-	"scene_manager/proto/common/base"
-	"scene_manager/scene_manager"
+	"proto/common/base"
+	"proto/scene_manager"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"

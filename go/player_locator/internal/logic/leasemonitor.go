@@ -11,9 +11,9 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 
-	kafkapb "player_locator/contracts/kafka"
+	kafkapb "proto/contracts/kafka"
 	"player_locator/internal/svc"
-	pb "player_locator/proto/player_locator"
+	pb "proto/player_locator"
 )
 
 // popExpiredLeasesScript atomically fetches and removes expired leases.
@@ -147,7 +147,7 @@ func sendLeaseExpiredToGate(ctx context.Context, svcCtx *svc.ServiceContext, ses
 		Payload:          eventPayload,
 		TargetGateId:     parseGateID(session.GateId),
 		TargetInstanceId: session.GateInstanceId,
-		EventId:          &eventId,
+		EventId:          eventId,
 	}
 	cmdBytes, err := proto.Marshal(cmd)
 	if err != nil {

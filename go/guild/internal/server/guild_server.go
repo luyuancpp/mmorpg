@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"guild/internal/logic"
-	pb "guild/proto/guild"
+	pb "proto/guild"
 )
 
 type GuildServer struct {

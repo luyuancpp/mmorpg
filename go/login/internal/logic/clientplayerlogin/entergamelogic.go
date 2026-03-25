@@ -13,9 +13,9 @@ import (
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/svc"
-	login_proto_common "login/proto/common/base"
-	login_proto_database "login/proto/common/database"
-	login_proto "login/proto/login"
+	login_proto_common "proto/common/base"
+	login_proto_database "proto/common/database"
+	login_proto "proto/login"
 	"strconv"
 	"time"
 

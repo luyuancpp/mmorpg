@@ -9,7 +9,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"player_locator/internal/svc"
-	pb "player_locator/proto/player_locator"
+	pb "proto/player_locator"
 )
 
 type ReconnectLogic struct {
