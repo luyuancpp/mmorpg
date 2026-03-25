@@ -3,7 +3,6 @@ package cpp
 const AsyncClientHeaderTemplate = `#pragma once
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
-#include <boost/circular_buffer.hpp>
 #include "grpc_client/grpc_call_tag.h"
 {{.GrpcIncludeHeadName}}
 {{ range $index, $m := .ServiceInfo }}
