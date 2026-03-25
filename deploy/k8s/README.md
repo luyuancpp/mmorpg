@@ -122,6 +122,44 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up `
 
 Omit `-GoSvcRegistry` or pass `-SkipGoSvc` to deploy only C++ nodes.
 
+## Java Sa-Token Auth Service Image Flow
+
+The Java auth service uses `deploy/k8s/Dockerfile.java-svc` (multi-stage build). Build context is the `java/sa_token_node/` directory.
+
+| Service | Image Name |
+|---------|------------|
+| auth (sa-token) | `mmorpg-auth` |
+
+### Build Java auth image
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command java-svc-build-image `
+  -JavaSvcRegistry ghcr.io/luyuancpp -JavaSvcTag v1
+```
+
+### Push Java auth image
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command java-svc-push-image `
+  -JavaSvcRegistry ghcr.io/luyuancpp -JavaSvcTag v1
+```
+
+### Deploy Java auth alongside a zone
+
+Pass `-JavaSvcRegistry` to include the Java auth service in zone deployment:
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up `
+  -ZoneName yesterday -ZoneId 101 `
+  -OpsProfile managed-cloud `
+  -NodeImage ghcr.io/luyuancpp/mmorpg-node:latest `
+  -GoSvcRegistry ghcr.io/luyuancpp -GoSvcTag v1 `
+  -JavaSvcRegistry ghcr.io/luyuancpp -JavaSvcTag v1 `
+  -WaitReady
+```
+
+Omit `-JavaSvcRegistry` or pass `-SkipJavaSvc` to skip Java service deployment.
+
 ## Ops Recommendation
 
 - Config format: prefer YAML for daily operations. It is the normal Kubernetes ops format and easier to review during change windows.

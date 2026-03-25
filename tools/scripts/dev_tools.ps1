@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-stop", "dev-status", "merge-zone")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-stop", "dev-status", "merge-zone")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -39,6 +39,9 @@ param(
     [switch]$SkipGoSvc,
     [string]$GoSvcRegistry = "ghcr.io/luyuancpp",
     [string]$GoSvcTag = "latest",
+    [switch]$SkipJavaSvc,
+    [string]$JavaSvcRegistry = "ghcr.io/luyuancpp",
+    [string]$JavaSvcTag = "latest",
     [bool]$BuildRelease = $true,
     [bool]$BuildDebug = $true,
     # iwyu-run
@@ -313,6 +316,15 @@ function Invoke-K8sDeploy {
         $args.GoSvcTag = $GoSvcTag
     }
 
+    if ($SkipJavaSvc) {
+        $args.SkipJavaSvc = $true
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($JavaSvcRegistry)) {
+        $args.JavaSvcRegistry = $JavaSvcRegistry
+        $args.JavaSvcTag = $JavaSvcTag
+    }
+
     if ($DryRun) {
         $args.DryRun = $true
     }
@@ -419,6 +431,10 @@ Go micro-service Docker image commands:
     -Command go-svc-build-images [-GoSvcRegistry <registry> -GoSvcTag <tag>]
     -Command go-svc-push-images  [-GoSvcRegistry <registry> -GoSvcTag <tag>]
 
+Java sa-token auth Docker image commands:
+    -Command java-svc-build-image [-JavaSvcRegistry <registry> -JavaSvcTag <tag>]
+    -Command java-svc-push-image  [-JavaSvcRegistry <registry> -JavaSvcTag <tag>]
+
 C++ node commands (local dev):
     -Command cpp-node-start [-CppNodes gate,scene] [-GateCount N] [-SceneCount N]
     -Command cpp-node-stop  [-CppNodes gate,...]
@@ -481,6 +497,8 @@ switch ($Command) {
     "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
     "go-svc-build-images" { & (Join-Path $ScriptDir "go_svc_image.ps1") -Command build-all -Registry $GoSvcRegistry -Tag $GoSvcTag -DryRun:$DryRun }
     "go-svc-push-images"  { & (Join-Path $ScriptDir "go_svc_image.ps1") -Command push-all  -Registry $GoSvcRegistry -Tag $GoSvcTag -DryRun:$DryRun }
+    "java-svc-build-image" { & (Join-Path $ScriptDir "java_svc_image.ps1") -Command build -Registry $JavaSvcRegistry -Tag $JavaSvcTag -DryRun:$DryRun }
+    "java-svc-push-image"  { & (Join-Path $ScriptDir "java_svc_image.ps1") -Command push  -Registry $JavaSvcRegistry -Tag $JavaSvcTag -DryRun:$DryRun }
     "cpp-node-start"  { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start  -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount }
     "cpp-node-stop"   { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command stop   -Nodes $CppNodes }
     "cpp-node-status" { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command status }
