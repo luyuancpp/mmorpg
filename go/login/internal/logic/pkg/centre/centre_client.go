@@ -2,7 +2,7 @@ package centre
 
 import (
 	"fmt"
-	common "login/proto/common/base"
+	common "proto/common/base"
 
 	"github.com/google/uuid"
 	"github.com/luyuancpp/muduoclient-new/muduo"

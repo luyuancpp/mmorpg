@@ -10,7 +10,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	plpb "login/proto/player_locator"
+	plpb "proto/player_locator"
 )
 
 // PlayerSession is the Login-side view of a player session.
