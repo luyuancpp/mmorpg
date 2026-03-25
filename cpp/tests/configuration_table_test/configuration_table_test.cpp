@@ -8,90 +8,101 @@
 
 void LoadTables();
 
-TEST(LoadConfigsTest, GetAbilityAllTable)
+// ---------------------------------------------------------------------------
+// 验证各配置表能正常加载并遍历
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, IterateSkillTable)
 {
-	for (auto& it : GetSkillAllTable().data())
+	for (auto& row : GetSkillAllTable().data())
 	{
-		LOG_INFO << it.DebugString();
+		LOG_INFO << row.DebugString();
 	}
 }
 
-TEST(LoadConfigsTest, GetBuffAllTable)
+TEST(ConfigTableTest, IterateBuffTable)
 {
-	for (auto& it : GetBuffAllTable().data())
+	for (auto& row : GetBuffAllTable().data())
 	{
-		LOG_INFO << it.DebugString();
+		LOG_INFO << row.DebugString();
 	}
 }
 
-
-TEST(LoadConfigsTest, GetTestAllTable)
+TEST(ConfigTableTest, IterateTestTable)
 {
-    for (auto& it : GetTestAllTable().data())
-    {
-        LOG_INFO << it.DebugString();
-    }
-}
-
-TEST(LoadConfigsTest, GetTestMultiKeyAllTable)
-{
-	for (auto& it : GetTestMultiKeyAllTable().data())
+	for (auto& row : GetTestAllTable().data())
 	{
-		LOG_INFO << it.DebugString();
+		LOG_INFO << row.DebugString();
 	}
 }
 
-TEST(LoadConfigsTest, GetTestMultiUint32ValueRangeTable)
+TEST(ConfigTableTest, IterateTestMultiKeyTable)
+{
+	for (auto& row : GetTestMultiKeyAllTable().data())
+	{
+		LOG_INFO << row.DebugString();
+	}
+}
+
+// ---------------------------------------------------------------------------
+// 多键表 equal_range 范围查询
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, MultiKeyUint32RangeQuery)
 {
 	auto& data = TestMultiKeyTableManager::Instance().GetMuint32keyData();
-	auto range17 = data.equal_range(17);
-	for (auto it = range17.first; it != range17.second; ++it) {
+	auto range = data.equal_range(17);
+	for (auto it = range.first; it != range.second; ++it)
+	{
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
-
 	}
 }
 
-TEST(LoadConfigsTest, GetTestMultiInt32ValueRangeTable)
+TEST(ConfigTableTest, MultiKeyInt32RangeQuery)
 {
 	auto& data = TestMultiKeyTableManager::Instance().GetMin32keyData();
-	auto range10 = data.equal_range(10);
-	for (auto it = range10.first; it != range10.second; ++it) {
+	auto range = data.equal_range(10);
+	for (auto it = range.first; it != range.second; ++it)
+	{
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
 	}
 }
 
-TEST(LoadConfigsTest, GetTestMultiStringValueRangeTable)
+TEST(ConfigTableTest, MultiKeyStringRangeQuery)
 {
 	auto& data = TestMultiKeyTableManager::Instance().GetMstringkeyData();
-	auto rangeaa = data.equal_range("aa");
-	for (auto it = rangeaa.first; it != rangeaa.second; ++it) {
+	auto range = data.equal_range("aa");
+	for (auto it = range.first; it != range.second; ++it)
+	{
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
 	}
 }
 
-TEST(LoadConfigsTest, GetTestUint32ValueFindTable)
+// ---------------------------------------------------------------------------
+// 多键表精确查找
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, FindByUint32Key)
 {
-	auto it = TestMultiKeyTableManager::Instance().GetByUint32key(14);
-	EXPECT_EQ(it.first->id(), 1);
+	auto result = TestMultiKeyTableManager::Instance().GetByUint32key(14);
+	EXPECT_EQ(result.first->id(), 1);
 }
 
-TEST(LoadConfigsTest, GetTestInt32ValueAllTable)
+TEST(ConfigTableTest, FindByInt32Key)
 {
-	auto it = TestMultiKeyTableManager::Instance().GetByIn32key(8);
-	EXPECT_EQ(it.first->id(), 1);
+	auto result = TestMultiKeyTableManager::Instance().GetByIn32key(8);
+	EXPECT_EQ(result.first->id(), 1);
 }
 
-TEST(LoadConfigsTest, GetTestStringValueAllTable)
+TEST(ConfigTableTest, FindByStringKey)
 {
-	auto it = TestMultiKeyTableManager::Instance().GetByStringkey("aa");
-	EXPECT_EQ(it.first->id(), 1);
+	auto result = TestMultiKeyTableManager::Instance().GetByStringkey("aa");
+	EXPECT_EQ(result.first->id(), 1);
 }
 
-// Main function
-int main(int argc, char** argv) {
-
-    ::testing::InitGoogleTest(&argc, argv);
-    LoadTables();
-    int ret = RUN_ALL_TESTS();
-    return ret;
+int main(int argc, char** argv)
+{
+	::testing::InitGoogleTest(&argc, argv);
+	LoadTables();
+	return RUN_ALL_TESTS();
 }

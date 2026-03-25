@@ -5,18 +5,21 @@
 #include "teams/team_system.h"
 #include "thread_local/storage_common_logic.h"
 
-TEST(TeamManger, CreateFullDismiss)
+// ---------------------------------------------------------------------------
+// 创建/解散队伍
+// ---------------------------------------------------------------------------
+
+TEST(TeamManager, CreateMaxTeamsThenDismissAll)
 {
 	TeamSystem team_list;
 
-	typedef std::vector<Guid> PlayerIDVector;
-	PlayerIDVector team_idl_ist;
+	std::vector<Guid> teamIds;
 	Guid player_id = 1;
 	for (int32_t i = 0; i < kMaxTeamSize; ++i)
 	{
 		const CreateTeamParams p{player_id, UInt64Set{player_id}};
 		EXPECT_EQ(kSuccess, team_list.CreateTeam(p));
-		team_idl_ist.push_back(team_list.GetLastTeamId());
+		teamIds.push_back(team_list.GetLastTeamId());
 		++player_id;
 	}
 
@@ -26,15 +29,20 @@ TEST(TeamManger, CreateFullDismiss)
 
 	EXPECT_EQ(kMaxTeamSize, team_list.GetTeamSize());
 
-	for (auto it = team_idl_ist.begin(); it != team_idl_ist.end(); ++it)
+	// 逐一解散所有队伍
+	for (auto& teamId : teamIds)
 	{
-		EXPECT_EQ(kSuccess, team_list.Disbanded(*it, TeamSystem::GetLeaderIdByTeamId(*it)));
+		EXPECT_EQ(kSuccess, team_list.Disbanded(teamId, TeamSystem::GetLeaderIdByTeamId(teamId)));
 	}
 	EXPECT_EQ(0, team_list.GetTeamSize());
 	EXPECT_EQ(0, team_list.GetPlayersSize());
 }
 
-TEST(TeamManger, TeamSizeTest)
+// ---------------------------------------------------------------------------
+// 队员人数限制
+// ---------------------------------------------------------------------------
+
+TEST(TeamManager, JoinUntilMemberLimitReached)
 {
 	TeamSystem team_list;
 	Guid member_id = 100;
@@ -54,7 +62,11 @@ TEST(TeamManger, TeamSizeTest)
 	EXPECT_EQ(kFiveMemberMaxSize, team_list.GetMemberSize(team_list.GetLastTeamId()));
 }
 
-TEST(TeamManger, LeaveTeam)
+// ---------------------------------------------------------------------------
+// 离队
+// ---------------------------------------------------------------------------
+
+TEST(TeamManager, LeaveTeamAndLeaderSuccession)
 {
 	TeamSystem team_list;
 	constexpr Guid member_id = 100;
@@ -97,7 +109,11 @@ TEST(TeamManger, LeaveTeam)
 }
 
 
-TEST(TeamManger, KickTeaamMember)
+// ---------------------------------------------------------------------------
+// 踢出队员
+// ---------------------------------------------------------------------------
+
+TEST(TeamManager, KickMember)
 {
 	TeamSystem team_list;
 	Guid member_id = 100;
@@ -126,7 +142,11 @@ TEST(TeamManger, KickTeaamMember)
 }
 
 
-TEST(TeamManger, AppointLaderAndLeaveTeam1)
+// ---------------------------------------------------------------------------
+// 转让队长 + 离队
+// ---------------------------------------------------------------------------
+
+TEST(TeamManager, AppointLeaderThenLeave_FullTeam)
 {
 	TeamSystem team_list;
 	Guid member_id = 100;
@@ -181,7 +201,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
 	EXPECT_FALSE(team_list.HasTeam(100));
 }
 
-TEST(TeamManger, AppointLaderAndLeaveTeam2)
+TEST(TeamManager, AppointLeaderThenLeave_TwoMembers)
 {
 	TeamSystem team_list;
 	Guid member_id = 100;
@@ -202,7 +222,11 @@ TEST(TeamManger, AppointLaderAndLeaveTeam2)
 }
 
 
-TEST(TeamManger, DismissTeam)
+// ---------------------------------------------------------------------------
+// 解散队伍
+// ---------------------------------------------------------------------------
+
+TEST(TeamManager, DismissTeam)
 {
 	TeamSystem team_list;
 	Guid member_id = 100;
@@ -217,7 +241,11 @@ TEST(TeamManger, DismissTeam)
 	EXPECT_FALSE(team_list.HasTeam(100));
 }
 
-TEST(TeamManger, ApplyFull)
+// ---------------------------------------------------------------------------
+// 申请队列
+// ---------------------------------------------------------------------------
+
+TEST(TeamManager, ApplyQueueOverflowEvictsOldest)
 {
 	TeamSystem  team_list;
 	constexpr Guid member_id =1001;
@@ -251,7 +279,7 @@ TEST(TeamManger, ApplyFull)
 	}
 }
 
-TEST(TeamManger, ApplicantOrder)
+TEST(TeamManager, ApplicantOrderPreserved)
 {
 	TeamSystem team_list;
 	Guid member_id;
@@ -276,7 +304,7 @@ TEST(TeamManger, ApplicantOrder)
 	EXPECT_EQ(nMax - kMaxApplicantSize, team_list.GetFirstApplicant(team_list.GetLastTeamId()));
 }
 
-TEST(TeamManger, InTeamApplyForTeam)
+TEST(TeamManager, InTeamPlayerCannotApplyOrJoinAnother)
 {
 	TeamSystem team_list;
 	Guid member_id;
@@ -318,7 +346,7 @@ TEST(TeamManger, InTeamApplyForTeam)
 }
 
 
-TEST(TeamManger, RemoveApplicant)
+TEST(TeamManager, RemoveApplicant)
 {
 	TeamSystem team_list;
 	constexpr Guid member_id = 1001;
@@ -346,7 +374,7 @@ TEST(TeamManger, RemoveApplicant)
 
 }
 
-TEST(TeamManger, AgreeApplicant)
+TEST(TeamManager, AcceptApplicantIntoTeam)
 {
 	TeamSystem team_list;
 	Guid member_id;
@@ -395,7 +423,11 @@ TEST(TeamManger, AgreeApplicant)
 	}
 }
 
-TEST(TeamManger, PlayerTeamId)
+// ---------------------------------------------------------------------------
+// 玩家与队伍关联
+// ---------------------------------------------------------------------------
+
+TEST(TeamManager, PlayerTeamIdTracking)
 {
 	TeamSystem team_list;
 	Guid member_id;
@@ -467,7 +499,7 @@ TEST(TeamManger, PlayerTeamId)
     }
 }
 
-TEST(TeamManger, PlayerInTeam)
+TEST(TeamManager, AlreadyInTeamCannotJoinOrApply)
 {
 	TeamSystem team_list;
 	Guid member_id = (1);
@@ -495,15 +527,9 @@ TEST(TeamManger, PlayerInTeam)
 	EXPECT_EQ(kSuccess, team_list.JoinTeam(team_id1, member_id));
 	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
 
-	//invite
-	/*EXPECT_EQ(kSuccess, team_list.LeaveTeam(m));
-	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_id1, m));
-	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.ApplyForTeam(team_id1, m));
-	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.AgreeApplicant(team_id1, m));*/
 }
 
-
-TEST(TeamManger, AppointLeaderNotInTeam)
+TEST(TeamManager, AppointLeaderTargetNotInTeam)
 {
 	TeamSystem team_list;
 	constexpr Guid member_id = (1);
@@ -522,10 +548,5 @@ int main(int argc, char** argv)
 		tlsCommonLogic.GetPlayerList().emplace(i, tls.registry.create());
 	}
 	testing::InitGoogleTest(&argc, argv);
-
-	/*while (true)
-	{
-	    RUN_ALL_TESTS();
-	}*/
 	return RUN_ALL_TESTS();
 }
