@@ -1,0 +1,137 @@
+syntax = "proto3";
+option optimize_for = SPEED;
+
+option go_package = "proto/db";
+
+import "google/protobuf/descriptor.proto";
+
+// ==============================================================================
+// Node type definitions (type identifiers for all service nodes)
+// ==============================================================================
+enum NodeType {
+	// Base types
+	NODE_UNSPECIFIED = 0;                      // Default (unspecified)
+	NODE_CLIENT = 1;                           // Client node
+
+	// Core service nodes
+	NODE_GATE = 2;                             // Gate node
+	NODE_SCENE = 3;                             // Scene node
+	NODE_CENTRE = 4;                           // Centre node
+	NODE_DB = 5;                               // Database node
+	NODE_DEPLOY = 6;                           // Deploy service node
+	NODE_DB_SERVICE = 7;                       // Database service node
+
+	// Game business nodes
+	NODE_CENTRE_SCENE = 8;                     // Scene-change centre service
+	NODE_SCENE_MANAGER = 9;                    // Scene manager (handles all player scene transfers)
+	NODE_LOGIN = 10;                           // Login service node
+	NODE_MAIL = 13;                            // Mail service node
+	NODE_CHAT = 14;                            // Chat service node
+	NODE_TEAM = 15;                            // Team service node
+	NODE_ACTIVITY = 16;                        // Activity service node
+	NODE_TRADE = 17;                           // Trade/auction service
+	NODE_RANK = 18;                            // Ranking service
+	NODE_TASK = 19;                            // Task/quest service
+	NODE_GUILD = 20;                           // Guild service
+	NODE_MATCH = 21;                           // Match service (e.g. dungeon, PVP)
+	NODE_AI = 22;                              // AI/NPC control service
+
+	// Infrastructure nodes
+	NODE_REDIS = 11;                           // Redis service node
+	NODE_ETCD = 12;                            // etcd node
+	NODE_LOG = 23;                             // Log collection service
+	NODE_PAYMENT = 24;                         // Payment/recharge service
+	NODE_SECURITY = 25;                        // Anti-cheat/security service
+	NODE_CROSS_SERVER = 26;                    // Cross-server service (e.g. cross-server battleground)
+	NODE_ANALYTICS = 27;                       // Analytics service
+	NODE_GM = 28;                              // GM tool service (admin/CS commands)
+	NODE_PLAYER_LOCATOR = 29;                  // Cross-server player locator service
+}
+
+// ==============================================================================
+// Protobuf extension option definitions
+// ==============================================================================
+
+// File-level option: mark default node type for entire file
+extend google.protobuf.FileOptions {
+	NodeType OptionFileDefaultNode = 200003;
+}
+
+// Service-level options
+extend google.protobuf.ServiceOptions {
+	// Whether this service is a player service
+	bool OptionIsPlayerService = 400000;
+	// Whether this service is a client protocol service (called by client)
+	bool OptionIsClientProtocolService = 400001;
+}
+
+// Method-level options (RPC routing/delivery strategy)
+extend google.protobuf.MethodOptions {
+	// Message delivery priority, to distinguish important vs normal messages
+	MessagePriority OptionMessagePriority = 410000;
+}
+
+// Message-level options (database related)
+extend google.protobuf.MessageOptions {
+	optional uint32 OptionTableId			= 500000 ;	// Table ID
+	optional string OptionTableName			= 500001 ;	// Table name
+	optional string OptionPrimaryKey		= 500002 ;	// Primary key
+	optional string OptionForeignKey		= 500003 ;	// Foreign key
+	optional string OptionForeignReferences	= 500005 ;	// Foreign key referenced table
+	optional string OptionAutoIncrementKey	= 500006 ;	// Auto-increment key
+	optional string	OptionBackupTableName	= 500007	;	// Backup table name
+	optional bool	OptionLoadOnly			= 500008	;	// Load-only (no write)
+	optional string	OptionProcedureName		= 500009	;	// Stored procedure name
+	optional string	OptionProcedureResult	= 500010	;	// Stored procedure result PB message name
+	optional string	OptionIndex				= 500011	;	// Index definition
+	optional string OptionUniqueKey			= 500012	;   // Unique key
+	optional bool OptionIsPlayerDatabase = 500013;  // Whether this is a player database
+	optional OPERATE_TYPE OptionOperateType = 500014;
+
+	// ---------- Attribute sync related ----------
+	optional bool OptionAttributeSync   = 700000;  // Base attribute sync
+}
+
+// Field-level options (database related)
+extend google.protobuf.FieldOptions {
+	optional uint32 OptionRepeatLimit	= 600000 ;	// Repeated field max count
+	optional string OptionDBFieldExtra	= 600001 ;	// Extra DB field info; absence means non-DB field
+	optional bool   OptionDBReadOnly	= 600002 ;	// Whether field is read-only in DB
+	optional string	OptionDBNamePrefix	= 600003 ;	// DB name prefix
+	optional string	OptionDBLoadSql		= 600004 ;	// Data load SQL statement
+	optional bool	OptionDBNeedEscape	= 600005 ;	// Whether field needs escape for storage
+	optional bool	OptionDBProcParam	= 600006 ;	// Whether this is a stored procedure parameter
+	optional string OptionOldName		= 600007 ;   // Used for auto-renaming fields
+	optional string OptionTable			= 600008 ;	// Table name for DDL
+	optional string OptionBackUpTabel	= 600009 ;	// Backup table
+}
+
+// ==============================================================================
+// Common enum types
+// ==============================================================================
+
+// Database operation type
+enum OPERATE_TYPE {
+	OPERATE_NONE   = 0;     // No operation
+	OPERATE_INSERT = 1;     // Insert
+	OPERATE_UPDATE = 2;     // Update
+	OPERATE_DELETE = 3;     // Delete
+	OPERATE_LOAD   = 4;     // Load
+	OPERATE_DELETE_CACHE = 5;     // Delete cache
+	OPERATE_REPLACE = 6;    // Replace
+	OPERATE_CALL_PROC = 7;	// Call stored procedure
+	OPERATE_DELETE_BACKUP =8;	// Delete backup
+}
+
+// Business operation result type
+enum BS_RESULT_TYPE{
+	BS_RESULT_NONE		= 0;     // None
+	BS_RESULT_SUCCESS	= 1;     // Success
+	BS_RESULT_FAILED	= 2;     // Failed
+};
+
+// RPC message priority (for cross-scene/cross-node delivery strategy)
+enum MessagePriority {
+	MESSAGE_PRIORITY_NORMAL = 0;
+	MESSAGE_PRIORITY_IMPORTANT = 1;
+}

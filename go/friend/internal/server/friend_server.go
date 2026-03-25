@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"friend/internal/logic"
-	pb "friend/proto/friend"
+	pb "proto/friend"
 )
 
 type FriendServer struct {

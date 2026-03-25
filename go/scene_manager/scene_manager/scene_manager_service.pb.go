@@ -7,11 +7,11 @@
 package scene_manager
 
 import (
-	_ "contracts/kafka"
+	_ "proto/contracts/kafka"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	base "scene_manager/proto/common/base"
+	base "proto/common/base"
 	sync "sync"
 	unsafe "unsafe"
 )

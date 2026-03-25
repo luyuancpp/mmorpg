@@ -33,6 +33,7 @@ void SceneCurrencyClientPlayerReply::GmBlockCurrency(entt::entity player,const :
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneCurrencyClientPlayerReply::GmUnblockCurrency(entt::entity player,const ::GmUnblockCurrencyRequest* request,
@@ -40,4 +41,5 @@ void SceneCurrencyClientPlayerReply::GmUnblockCurrency(entt::entity player,const
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }

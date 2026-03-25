@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"player_locator/internal/config"
-	proto_common "player_locator/proto/common"
+	proto_common "proto/common/base"
 )
 
 type Node struct {

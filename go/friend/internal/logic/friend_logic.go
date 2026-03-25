@@ -8,8 +8,8 @@ import (
 
 	"friend/internal/config"
 	"friend/internal/data"
-	base "friend/proto/common/base"
-	pb "friend/proto/friend"
+	base "proto/common/base"
+	pb "proto/friend"
 )
 
 type FriendLogic struct {

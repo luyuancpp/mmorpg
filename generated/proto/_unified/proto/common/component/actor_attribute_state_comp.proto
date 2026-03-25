@@ -1,0 +1,22 @@
+syntax = "proto3";
+option go_package = "proto/common/component";
+
+
+
+message CombatStateFlagsComp {
+    map<uint32, bool> state_flags = 1; // Per-attribute sync map
+}
+
+// Calculated attributes, computed server-side
+message CalculatedAttributesComp {
+    uint64 attack_power = 1;   // Attack power
+    uint64 defense_power = 2;  // Defense power
+	bool isDead = 3; // Dead/alive state
+}
+
+// Derived attributes, computed server-side
+message DerivedAttributesComp {
+    uint64 max_health = 1;     // Max HP
+}
+
+

@@ -9,7 +9,7 @@ import (
 
 	"db/internal/logic/db"
 	"db/internal/svc"
-	"db/proto/db"
+	"proto/db"
 )
 
 type DbServer struct {

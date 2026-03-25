@@ -9,8 +9,8 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 
 	"guild/internal/data"
-	base "guild/proto/common/base"
-	pb "guild/proto/guild"
+	base "proto/common/base"
+	pb "proto/guild"
 )
 
 type GuildLogic struct {

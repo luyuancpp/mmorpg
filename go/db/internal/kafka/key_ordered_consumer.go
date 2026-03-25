@@ -4,7 +4,7 @@ import (
 	"context"
 	db_config "db/internal/config"
 	"db/internal/logic/pkg/proto_sql"
-	db_proto "db/proto/db"
+	db_proto "proto/db"
 	"errors"
 	"fmt"
 	"runtime/debug"

@@ -9,7 +9,7 @@ import (
 
 	scenemanagerlogic "scene_manager/internal/logic/scenemanager"
 	"scene_manager/internal/svc"
-	base "scene_manager/proto/common/base"
+	base "proto/common/base"
 	"scene_manager/scene_manager"
 )
 

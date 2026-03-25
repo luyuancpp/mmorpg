@@ -92,3 +92,5 @@
 91=DataServiceGetPlayerField
 92=DataServiceSavePlayerData
 93=DataServiceGetPlayerHomeZone
+94=SceneCurrencyClientPlayerGmBlockCurrency
+95=SceneCurrencyClientPlayerGmUnblockCurrency
