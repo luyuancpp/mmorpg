@@ -16,6 +16,7 @@
 #include "proto/common/event/combat_event.pb.h"
 #include "proto/common/event/skill_event.pb.h"
 #include "macros/return_define.h"
+#include "macros/error_return.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/skill_error_tip.pb.h"
 #include "proto/common/component/buff_comp.pb.h"
@@ -126,7 +127,10 @@ uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 	const auto skillTypeIndex = (1 << skill);
 	if (skillTypeIndex >= skillPermissionTable->skilltype_size())
 	{
-		return kInvalidTableData;
+		return MAKE_ERROR_MSG(kInvalidTableData,
+			"state=" << state << " skill=" << skill
+			<< " skillTypeIndex=" << skillTypeIndex
+			<< " size=" << skillPermissionTable->skilltype_size());
 	}
 	
 	return skillPermissionTable->skilltype(skillTypeIndex);
@@ -284,10 +288,9 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 
 	// Validate target ID
 	if (!skillTable->targeting_mode().empty() && request->target_id() <= 0) {
-		LOG_ERROR << "Invalid target ID: " << request->target_id()
-			<< " provided for skill ID: " << request->skill_table_id()
-			<< ". Target ID must be positive if target type is specified.";
-		return kSkillInvalidTargetId;
+		return MAKE_ERROR_MSG(kSkillInvalidTargetId,
+			"target_id=" << request->target_id()
+			<< " skill_table_id=" << request->skill_table_id());
 	}
 
 	uint32_t err = kSuccess;
@@ -302,18 +305,19 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 
 			// Validate target entity
 			if (!tlsRegistryManager.actorRegistry.valid(target)) {
-				LOG_ERROR << "Target entity with ID: " << request->target_id()
-					<< " is invalid or does not exist for skill ID: " << request->skill_table_id();
-				return kSkillInvalidTargetId;
+				return MAKE_ERROR_MSG(kSkillInvalidTargetId,
+					"target_id=" << request->target_id()
+					<< " skill_table_id=" << request->skill_table_id()
+					<< " reason=entity_invalid");
 			}
 
 			// Check target entity type
 			bool isValidTargetType = tlsRegistryManager.actorRegistry.any_of<Player>(target) || tlsRegistryManager.actorRegistry.any_of<Npc>(target);
 			if (!isValidTargetType) {
-				LOG_ERROR << "Target entity with ID: " << request->target_id()
-					<< " is of an invalid type for skill ID: " << request->skill_table_id()
-					<< ". Expected Player or Npc.";
-				return kSkillInvalidTargetId;
+				return MAKE_ERROR_MSG(kSkillInvalidTargetId,
+					"target_id=" << request->target_id()
+					<< " skill_table_id=" << request->skill_table_id()
+					<< " reason=invalid_entity_type");
 			}
 
 			return kSuccess;
@@ -339,9 +343,9 @@ uint32_t CheckTimerPhase(const entt::entity casterEntity, const SkillTable* skil
 			tlsRegistryManager.actorRegistry.remove<TimerComp>(casterEntity);
 			return kSuccess;
 		}
-		LOG_ERROR << "Non-immediate skill: " << skillTable->id()
-			<< " is currently in phase and cannot be interrupted.";
-		return kSkillUnInterruptible;
+		return MAKE_ERROR_MSG(kSkillUnInterruptible,
+			"skill_id=" << skillTable->id()
+			<< " caster=" << entt::to_integral(casterEntity));
 	}
 	tlsRegistryManager.actorRegistry.remove<TimerComp>(casterEntity);
 	return kSuccess;
@@ -352,11 +356,11 @@ uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const Skill
 	if (const auto it = coolDownTimeListComp.cooldown_list().find(skillTable->cooldown_id());
 		it != coolDownTimeListComp.cooldown_list().end() &&
 		CoolDownTimeMillisecondSystem::IsInCooldown(it->second)) {
-		LOG_ERROR << "Skill ID: " << skillTable->id()
-			<< " is in cooldown for player: " << entt::to_integral(casterEntity)
-			<< ". Cooldown ID: " << skillTable->cooldown_id()
-			<< ". Time remaining: " << CoolDownTimeMillisecondSystem::Remaining(it->second) << "ms";
-		return kSkillCooldownNotReady;
+		return MAKE_ERROR_MSG(kSkillCooldownNotReady,
+			"skill_id=" << skillTable->id()
+			<< " caster=" << entt::to_integral(casterEntity)
+			<< " cooldown_id=" << skillTable->cooldown_id()
+			<< " remaining_ms=" << CoolDownTimeMillisecondSystem::Remaining(it->second));
 	}
 
 	return kSuccess;

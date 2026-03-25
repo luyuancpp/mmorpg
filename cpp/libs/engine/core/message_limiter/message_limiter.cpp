@@ -1,6 +1,7 @@
 ﻿#include "message_limiter.h"
 
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "macros/error_return.h"
 #include "table/code/messagelimiter_table.h"
 #include "time/system/time.h"
 
@@ -36,6 +37,7 @@ uint32_t MessageLimiter::CanSend(uint32_t messageId) {
         return kSuccess;
     }
     else {
-        return kRateLimitExceeded; // Rate limited
+        return MAKE_ERROR_MSG(kRateLimitExceeded,
+            "messageId=" << messageId);
     }
 }
