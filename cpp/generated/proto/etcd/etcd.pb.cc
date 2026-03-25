@@ -1444,7 +1444,8 @@ const char descriptor_table_protodef_proto_2fetcd_2fetcd_2eproto[] ABSL_ATTRIBUT
     "rverpb.LeaseTimeToLiveRequest\032%.etcdserv"
     "erpb.LeaseTimeToLiveResponse\022R\n\013LeaseLea"
     "ses\022 .etcdserverpb.LeaseLeasesRequest\032!."
-    "etcdserverpb.LeaseLeasesResponseb\006proto3"
+    "etcdserverpb.LeaseLeasesResponseB\006Z\004etcd"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fetcd_2fetcd_2eproto_deps[2] = {
@@ -1455,7 +1456,7 @@ static ::absl::once_flag descriptor_table_proto_2fetcd_2fetcd_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fetcd_2fetcd_2eproto = {
     false,
     false,
-    5640,
+    5648,
     descriptor_table_protodef_proto_2fetcd_2fetcd_2eproto,
     "proto/etcd/etcd.proto",
     &descriptor_table_proto_2fetcd_2fetcd_2eproto_once,

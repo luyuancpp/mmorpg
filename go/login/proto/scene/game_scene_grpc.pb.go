@@ -27,8 +27,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// 正常或者顶号进入场景
-// 断线重连进入场景,断线重连分时间
+// Normal or session-takeover enter scene
+// Reconnect enter scene (time-dependent)
 type SceneSceneClient interface {
 	Test(ctx context.Context, in *GameSceneTest, opts ...grpc.CallOption) (*base.Empty, error)
 }
@@ -55,8 +55,8 @@ func (c *sceneSceneClient) Test(ctx context.Context, in *GameSceneTest, opts ...
 // All implementations must embed UnimplementedSceneSceneServer
 // for forward compatibility.
 //
-// 正常或者顶号进入场景
-// 断线重连进入场景,断线重连分时间
+// Normal or session-takeover enter scene
+// Reconnect enter scene (time-dependent)
 type SceneSceneServer interface {
 	Test(context.Context, *GameSceneTest) (*base.Empty, error)
 	mustEmbedUnimplementedSceneSceneServer()

@@ -21,14 +21,14 @@
         <java.version>21</java.version>
         <sa.token.version>1.44.0</sa.token.version>
         <justauth.version>1.16.6</justauth.version>
-        <!-- 复用parent的Jackson 2.x版本（3.5.8默认就是2.x，无需额外指定） -->
+        <!-- Reuse parent's Jackson 2.x version (3.5.8 defaults to 2.x, no override needed) -->
         <jackson.version>2.17.2</jackson.version>
     </properties>
 
-    <!-- 移除冗余的dependencyManagement：parent已包含Jackson 2.x版本锁定 -->
+    <!-- Removed redundant dependencyManagement: parent already locks Jackson 2.x -->
 
     <dependencies>
-        <!-- Web - 仅排除高版本Jackson，保留基础依赖（简化排除规则） -->
+        <!-- Web - exclude higher Jackson version, keep base deps (simplified exclusions) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -40,7 +40,7 @@
             </exclusions>
         </dependency>
 
-        <!-- 手动引入适配的Jackson 2.x核心依赖 -->
+        <!-- Manually include compatible Jackson 2.x core dependencies -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -57,30 +57,30 @@
             <version>${jackson.version}</version>
         </dependency>
 
-        <!-- JPA - 无需额外排除Jackson（3.5.8的JPA依赖Jackson 2.x） -->
+        <!-- JPA - no extra Jackson exclusion needed (3.5.8 JPA depends on Jackson 2.x) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- Redis - 无需额外排除Jackson（3.5.8的Redis依赖Jackson 2.x） -->
+        <!-- Redis - no extra Jackson exclusion needed (3.5.8 Redis depends on Jackson 2.x) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- Sa-Token - 核心修复：直接排除Jackson插件模块 -->
+        <!-- Sa-Token - core fix: exclude Jackson plugin module directly -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-spring-boot3-starter</artifactId>
             <version>${sa.token.version}</version>
             <exclusions>
-                <!-- 关键：排除Sa-Token的Jackson插件模块（根源解决） -->
+                <!-- Key: exclude Sa-Token's Jackson plugin module (root cause fix) -->
                 <exclusion>
                     <groupId>cn.dev33</groupId>
                     <artifactId>sa-token-jackson</artifactId>
                 </exclusion>
-                <!-- 兜底：排除所有Jackson相关依赖 -->
+                <!-- Fallback: exclude all Jackson-related dependencies -->
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>*</artifactId>
@@ -130,7 +130,7 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- 保留依赖树插件，用于验证Jackson版本 -->
+            <!-- Keep dependency tree plugin for verifying Jackson version -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>

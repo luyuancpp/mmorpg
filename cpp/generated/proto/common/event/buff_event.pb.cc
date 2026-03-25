@@ -80,14 +80,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fbuff_5fevent_2epro
     protodesc_cold) = {
     "\n#proto/common/event/buff_event.proto\"L\n"
     "\rBuffTestEvent\022\016\n\006period\030\001 \001(\004\022\026\n\016period"
-    "ic_timer\030\002 \001(\004\022\023\n\013period_done\030\003 \001(\rb\006pro"
-    "to3"
+    "ic_timer\030\002 \001(\004\022\023\n\013period_done\030\003 \001(\rB\016Z\014c"
+    "ommon/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto = {
     false,
     false,
-    123,
+    139,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto,
     "proto/common/event/buff_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fbuff_5fevent_2eproto_once,

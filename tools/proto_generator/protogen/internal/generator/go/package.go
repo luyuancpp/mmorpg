@@ -46,8 +46,8 @@ func GenGoPackageOptWithAdjustedPath(goPackagePath string) string {
 func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 	file, err := os.Open(protoFile)
 	if err != nil {
-		logger.Global.Fatal("打开Proto文件失败",
-			zap.String("文件路径", protoFile),
+	logger.Global.Fatal("Failed to open proto file",
+		zap.String("file_path", protoFile),
 			zap.Error(err),
 		)
 	}
@@ -59,8 +59,8 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 		lines = append(lines, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		logger.Global.Fatal("读取Proto文件内容失败",
-			zap.String("文件路径", protoFile),
+	logger.Global.Fatal("Failed to read proto file content",
+		zap.String("file_path", protoFile),
 			zap.Error(err),
 		)
 	}
@@ -92,13 +92,13 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 
 		if strings.HasPrefix(trimmed, "syntax =") {
 			foundSyntax = true
-			insertIndex = i + 1 // 紧跟syntax之后
+			insertIndex = i + 1 // right after syntax
 			continue
 		}
 
 		if strings.HasPrefix(trimmed, "package ") {
 			foundPackage = true
-			insertIndex = i // 插入到package之前
+			insertIndex = i // insert before package
 			break
 		}
 	}
@@ -127,8 +127,8 @@ func AddGoPackage(protoFile, goPackagePath string, isMulti bool) (bool, error) {
 func writeProtoFile(protoFile string, lines []string) (bool, error) {
 	output, err := os.Create(protoFile)
 	if err != nil {
-		logger.Global.Fatal("创建Proto文件写入句柄失败",
-			zap.String("文件路径", protoFile),
+		logger.Global.Fatal("Failed to create proto file write handle",
+			zap.String("file_path", protoFile),
 			zap.Error(err),
 		)
 	}
@@ -137,15 +137,15 @@ func writeProtoFile(protoFile string, lines []string) (bool, error) {
 	writer := bufio.NewWriter(output)
 	for _, line := range lines {
 		if _, err := writer.WriteString(line + "\n"); err != nil {
-			logger.Global.Fatal("写入Proto文件内容失败",
-				zap.String("文件路径", protoFile),
+			logger.Global.Fatal("Failed to write proto file content",
+				zap.String("file_path", protoFile),
 				zap.Error(err),
 			)
 		}
 	}
 	if err := writer.Flush(); err != nil {
-		logger.Global.Fatal("刷新Proto文件写入缓存失败",
-			zap.String("文件路径", protoFile),
+		logger.Global.Fatal("Failed to flush proto file write buffer",
+			zap.String("file_path", protoFile),
 			zap.Error(err),
 		)
 	}

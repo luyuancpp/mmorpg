@@ -19,8 +19,12 @@ bool KafkaProducer::init(const std::string& brokers) {
 		return false;
 	}
 
-	conf_->set("dr_cb", this, errstr);
-	conf_->set("enable.sparse.connections", "true", errstr);
+	if (conf_->set("dr_cb", this, errstr) != RdKafka::Conf::CONF_OK) {
+		LOG_ERROR << "Kafka producer: failed to set dr_cb: " << errstr;
+	}
+	if (conf_->set("enable.sparse.connections", "true", errstr) != RdKafka::Conf::CONF_OK) {
+		LOG_ERROR << "Kafka producer: failed to set enable.sparse.connections: " << errstr;
+	}
 
 	producer_.reset(RdKafka::Producer::create(conf_.get(), errstr));
 	if (!producer_) {

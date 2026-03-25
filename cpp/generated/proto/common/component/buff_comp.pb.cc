@@ -294,13 +294,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fbuff_5fcomp_2e
     "ttacker_id\030\002 \001(\004\022\016\n\006target\030\003 \001(\004\022\016\n\006dama"
     "ge\030\004 \001(\001\022\023\n\013damage_type\030\005 \001(\r\"<\n\'BuffNoD"
     "amageOrSkillHitInLastSecondsComp\022\021\n\tlast"
-    "_time\030\001 \001(\004b\006proto3"
+    "_time\030\001 \001(\004B\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fbuff_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fbuff_5fcomp_2eproto = {
     false,
     false,
-    699,
+    719,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fbuff_5fcomp_2eproto,
     "proto/common/component/buff_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fbuff_5fcomp_2eproto_once,

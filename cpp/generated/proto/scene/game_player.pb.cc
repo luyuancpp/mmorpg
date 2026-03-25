@@ -100,8 +100,8 @@ const char descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_2eproto[] ABS
     "uest2\224\001\n\013ScenePlayer\022@\n\016Centre2GsLogin\022\026"
     ".Centre2GsLoginRequest\032\026.google.protobuf"
     ".Empty\022<\n\010ExitGame\022\030.GameNodeExitGameReq"
-    "uest\032\026.google.protobuf.Empty\032\005\200\250\303\001\001B\007\200\001\001"
-    "\230\324a\003b\006proto3"
+    "uest\032\026.google.protobuf.Empty\032\005\200\250\303\001\001B\016Z\005s"
+    "cene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_deps[2] = {
@@ -112,7 +112,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto = {
     false,
     false,
-    332,
+    339,
     descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_2eproto,
     "proto/scene/game_player.proto",
     &descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_once,

@@ -266,8 +266,8 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_
     "amesS2C\032\006.Empty\022;\n\025SyncAttribute30Frames"
     "\022\032.AttributeDelta30FramesS2C\032\006.Empty\022;\n\025"
     "SyncAttribute60Frames\022\032.AttributeDelta60"
-    "FramesS2C\032\006.Empty\032\005\200\250\303\001\001B\007\200\001\001\230\324a\003b\006proto"
-    "3"
+    "FramesS2C\032\006.Empty\032\005\200\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[4] = {
@@ -280,7 +280,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fstate_5fattri
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto = {
     false,
     false,
-    1041,
+    1048,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto,
     "proto/scene/player_state_attribute_sync.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,

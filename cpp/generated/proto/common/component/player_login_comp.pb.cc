@@ -114,13 +114,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5flogin
     "shot_version\030\002 \001(\004*n\n\013EnterGsType\022\016\n\nLOG"
     "IN_NONE\020\000\022\017\n\013LOGIN_FIRST\020\001\022\021\n\rLOGIN_REPL"
     "ACE\020\002\022\023\n\017LOGIN_RECONNECT\020\003\022\026\n\022LOGIN_DISC"
-    "ONNECTED\020\004b\006proto3"
+    "ONNECTED\020\004B\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5flogin_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5flogin_5fcomp_2eproto = {
     false,
     false,
-    298,
+    318,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5flogin_5fcomp_2eproto,
     "proto/common/component/player_login_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5flogin_5fcomp_2eproto_once,

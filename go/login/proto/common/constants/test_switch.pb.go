@@ -21,12 +21,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 定义一个枚举类型来标识测试标志
+// Test flag type enum
 type ETestFlagType int32
 
 const (
-	ETestFlagType_kTestMessageStatistics ETestFlagType = 0 // 开启消息统计
-	ETestFlagType_kTestClearEmptyTiles   ETestFlagType = 1 // 开启清除视野同步没有人的格子
+	ETestFlagType_kTestMessageStatistics ETestFlagType = 0 // Enable message statistics
+	ETestFlagType_kTestClearEmptyTiles   ETestFlagType = 1 // Enable clearing empty AOI tiles
 )
 
 // Enum value maps for ETestFlagType.

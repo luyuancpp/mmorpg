@@ -44,6 +44,20 @@ namespace etcdserverpb {
     void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
+namespace friendpb {
+    void SetFriendHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetFriendIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void InitFriendGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandleFriendCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+}
+
+namespace guildpb {
+    void SetGuildHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetGuildIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void InitGuildGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandleGuildCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+}
+
 namespace loginpb {
     void SetLoginHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -66,6 +80,10 @@ void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::go
 
     etcdserverpb::SetEtcdIfEmptyHandler(handler);
 
+    friendpb::SetFriendIfEmptyHandler(handler);
+
+    guildpb::SetGuildIfEmptyHandler(handler);
+
     loginpb::SetLoginIfEmptyHandler(handler);
 
     scene_manager::SetSceneManagerServiceIfEmptyHandler(handler);
@@ -79,6 +97,10 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
     data_service::SetDataServiceHandler(handler);
 
     etcdserverpb::SetEtcdHandler(handler);
+
+    friendpb::SetFriendHandler(handler);
+
+    guildpb::SetGuildHandler(handler);
 
     loginpb::SetLoginHandler(handler);
 
@@ -108,6 +130,12 @@ void HandleCompletedQueueMessage(entt::registry& registry){
             else if (common::base::eNodeType::EtcdNodeService == nodeType) {
                 etcdserverpb::HandleEtcdCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
+            else if (common::base::eNodeType::FriendNodeService == nodeType) {
+                friendpb::HandleFriendCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
+            else if (common::base::eNodeType::GuildNodeService == nodeType) {
+                guildpb::HandleGuildCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
             else if (common::base::eNodeType::LoginNodeService == nodeType) {
                 loginpb::HandleLoginCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
@@ -129,6 +157,12 @@ void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, ent
     }
     else if (common::base::eNodeType::EtcdNodeService == nodeType) {
         etcdserverpb::InitEtcdGrpcNode(channel, registry, nodeEntity);
+    }
+    else if (common::base::eNodeType::FriendNodeService == nodeType) {
+        friendpb::InitFriendGrpcNode(channel, registry, nodeEntity);
+    }
+    else if (common::base::eNodeType::GuildNodeService == nodeType) {
+        guildpb::InitGuildGrpcNode(channel, registry, nodeEntity);
     }
     else if (common::base::eNodeType::LoginNodeService == nodeType) {
         loginpb::InitLoginGrpcNode(channel, registry, nodeEntity);

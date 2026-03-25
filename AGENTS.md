@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE
 
-**Updated:** 2026-03-22
+**Updated:** 2026-03-24
 **Branch:** main
 
 ## OVERVIEW
@@ -30,7 +30,7 @@ mmorpg/
 │   ├── proto_generator/ # Canonical proto-gen source (Go)
 │   ├── archived/ #   Legacy scripts (retained for reference)
 │   └── dev/      #   mprocs dashboard configs
-├── docs/         # Ops/docs snapshots
+├── docs/         # Ops/docs snapshots (design/, notes/, ops/)
 ├── third_party/  # Vendored C++ dependencies (source)
 └── lib/          # Compiled library outputs (Windows .lib/.dll)
 ```
@@ -40,6 +40,20 @@ mmorpg/
 |-----------|----------|---------------|
 | `cpp/libs/base/` | Only `.vcxproj.user` files | No source code; VS user settings only |
 | `cpp/libs/game/` | Only `.vcxproj.user` files | Abandoned stub; `.gitignore` marks it as such |
+
+### Cleaned up (2026-03-24)
+The following were removed from git tracking:
+- `bin/zoneinfo/` — 1800 IANA timezone files (available at runtime, not for VCS)
+- `bin/start_server.*`, `bin/stop_server.*` — superseded by `dev_tools.ps1`
+- `proto/player/player.proto` — empty 0-byte file
+- `cpp/tests/draw_test/` — unrelated MFC GUI app
+- `cpp/tests/zone_and_area_test/` — obsolete test referencing old namespaces
+- `docs/design/ai_session_*.md` — AI chat logs, not design docs
+- `docs/notes/questions.md` — ChatGPT transcript
+- `tools/contracts/`, `tools/data_service/`, `tools/scene_manager/`, `tools/github.com/` — duplicate .pb.go outputs (canonical location: `go/`)
+- `go/chat/` — stub directory with only generated files, no service code
+- `cpp/libs/modules/game_logic.vcxproj.filters` — orphaned project file
+- `bin/cpp_nodes.pid.json` — runtime state file
 
 ## WHERE TO LOOK
 | Task | Location | Notes |

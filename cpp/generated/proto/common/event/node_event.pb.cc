@@ -179,13 +179,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fnode_5fevent_2epro
     "ode_type\030\002 \001(\r\022\027\n\017scene_node_type\030\003 \001(\r\""
     "9\n\024ConnectToNodePbEvent\022\016\n\006entity\030\001 \001(\r\022"
     "\021\n\tnode_type\030\002 \001(\r\"\030\n\026OnNodeConnectedPbE"
-    "ventb\006proto3"
+    "ventB\016Z\014common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto = {
     false,
     false,
-    292,
+    308,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fnode_5fevent_2eproto,
     "proto/common/event/node_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto_once,

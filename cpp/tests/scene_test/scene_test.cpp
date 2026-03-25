@@ -433,7 +433,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 }
 
 
-//崩溃时候的消息不能处理
+// Messages during a crash cannot be processed
 TEST(GS, CrashMovePlayer2NewServer)
 {
 	SceneSystem sm;

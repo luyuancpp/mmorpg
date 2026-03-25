@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Kafka服务
+  # Kafka service
   kafka:
     image: apache/kafka:latest
     container_name: kafka
@@ -22,7 +22,7 @@ services:
       - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
     volumes:
       - kafka-data:/tmp/kafka-logs
-    user: "root:root"  # Windows权限适配
+    user: "root:root"  # Windows permission workaround
 
   # Kafka UI
   kafka-ui:
@@ -36,7 +36,7 @@ services:
     depends_on:
       - kafka
 
-  # Redis服务
+  # Redis service
   redis:
     image: redis:latest
     container_name: redis
@@ -47,7 +47,7 @@ services:
       - redis-data:/data
     restart: unless-stopped
 
-  # MySQL服务
+  # MySQL service
   mysql:
     image: mysql:latest
     container_name: mysql
@@ -58,7 +58,7 @@ services:
       - MYSQL_DATABASE=testdb
       - MYSQL_USER=appuser
       - MYSQL_PASSWORD=apppass123
-      - MYSQL_INITDB_SKIP_TZINFO=1  # 避免Windows时区配置警告
+      - MYSQL_INITDB_SKIP_TZINFO=1  # Avoid Windows timezone config warning
     volumes:
       - mysql-data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
@@ -69,24 +69,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # 新增Nacos服务（配置中心/注册中心）
+  # Nacos service (config center / service registry)
   nacos:
     image: nacos/nacos-server:latest
     container_name: nacos
     ports:
-      - "8848:8848"  # 服务端口
-      - "9848:9848"  # 客户端grpc端口
-      - "9849:9849"  # 服务端grpc端口
+      - "8848:8848"  # Service port
+      - "9848:9848"  # Client gRPC port
+      - "9849:9849"  # Server gRPC port
     environment:
-      - MODE=standalone  # 单机模式（适合开发测试）
+      - MODE=standalone  # Standalone mode (for dev/test)
       - NACOS_AUTH_ENABLE=true
       - NACOS_AUTH_IDENTITY_KEY=serverIdentity
       - NACOS_AUTH_IDENTITY_VALUE=security
       - NACOS_AUTH_TOKEN=VGhpc0lzQURldk9ubHlUb2tlblN0cmluZ0Zvck5hY29zMzIh
-      - SPRING_DATASOURCE_PLATFORM=mysql  # 可选：结合MySQL持久化配置
-      - MYSQL_SERVICE_HOST=mysql  # 连接上面的MySQL容器
+      - SPRING_DATASOURCE_PLATFORM=mysql  # Optional: enable MySQL-backed persistence
+      - MYSQL_SERVICE_HOST=mysql  # Connect to the MySQL container above
       - MYSQL_SERVICE_PORT=3306
-      - MYSQL_SERVICE_DB_NAME=nacos_db  # Nacos专用数据库
+      - MYSQL_SERVICE_DB_NAME=nacos_db  # Dedicated Nacos database
       - MYSQL_SERVICE_USER=root
       - MYSQL_SERVICE_PASSWORD=root123
       - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
@@ -96,32 +96,32 @@ services:
       - nacos-log:/home/nacos/logs
     depends_on:
       mysql:
-        condition: service_healthy  # 等待MySQL健康后启动
+        condition: service_healthy  # Wait for MySQL to be healthy before starting
     restart: unless-stopped
 
-  # 新增Etcd服务（分布式键值存储）
+  # Etcd service (distributed key-value store)
   etcd:
-    image: bitnami/etcd:latest  # 推荐bitnami镜像，配置简单
+    image: bitnami/etcd:latest  # Recommended bitnami image, easy to configure
     container_name: etcd
     ports:
-      - "2379:2379"  # 客户端通信端口
-      - "2380:2380"  # 集群节点通信端口
+      - "2379:2379"  # Client communication port
+      - "2380:2380"  # Cluster peer communication port
     environment:
-      - ALLOW_NONE_AUTHENTICATION=yes  # 开发环境关闭认证（生产需开启）
+      - ALLOW_NONE_AUTHENTICATION=yes  # Disable auth for dev (must enable in production)
       - ETCD_NAME=default
       - ETCD_INITIAL_CLUSTER=default=http://etcd:2380
       - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
-      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379,http://${HOST_IP:-host.docker.internal}:2379  # 客户端暴露地址
-      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379  # 监听客户端地址
-      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380  # 监听节点通信地址
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379,http://${HOST_IP:-host.docker.internal}:2379  # Advertised client URLs
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379  # Listen on all interfaces for client connections
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380  # Listen on all interfaces for peer communication
     volumes:
-      - etcd-data:/bitnami/etcd/data  # 持久化数据
+      - etcd-data:/bitnami/etcd/data  # Persistent data volume
     restart: unless-stopped
 
 volumes:
   kafka-data:
   redis-data:
   mysql-data:
-  nacos-data:  # Nacos数据持久化
-  nacos-log:   # Nacos日志
-  etcd-data:   # Etcd数据持久化
+  nacos-data:  # Nacos data persistence
+  nacos-log:   # Nacos logs
+  etcd-data:   # Etcd data persistence

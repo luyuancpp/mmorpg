@@ -21,12 +21,12 @@ import (
 	"protogen/logger"
 )
 
-// MessageListConfig 定义消息名列表结构
+// MessageListConfig defines the message name list structure.
 type MessageListConfig struct {
 	Messages []string `json:"messages"`
 }
 
-// extractMessageNamesFromProto 提取消息全限定名（适配 v1.36.6）
+// extractMessageNamesFromProto extracts fully qualified message names (adapted for v1.36.6).
 func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 	var messageNames []string
 
@@ -40,12 +40,12 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 		for _, msgDesc := range fileDesc.GetMessageType() {
 			var fullName string
 			if pkgName == "" {
-				fullName = msgDesc.GetName() // 无包名，直接用消息名
+				fullName = msgDesc.GetName() // no package, use message name directly
 			} else {
 				fullName = pkgName + "." + msgDesc.GetName()
 			}
 			messageNames = append(messageNames, fullName)
-			logger.Global.Info("提取消息全限定名",
+			logger.Global.Info("Extracted fully qualified message name",
 				zap.String("proto_file", fileDesc.GetName()),
 				zap.String("message_full_name", fullName),
 				zap.String("target_proto_file", protoFile),
@@ -54,7 +54,7 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 	}
 
 	if len(messageNames) == 0 {
-		logger.Global.Warn("未提取到任何消息",
+		logger.Global.Warn("No messages extracted",
 			zap.String("target_proto_file", protoFile),
 			zap.Int("total_files_scanned", len(internal.FdSet.GetFile())),
 		)
@@ -62,13 +62,13 @@ func extractMessageNamesFromProto(protoFile string) ([]string, error) {
 	return messageNames, nil
 }
 
-// LoadAllDescriptors 激活描述符（v1.36.6 专用，无需 protoregistry.NewFiles()）
-// LoadAllDescriptors 适配你的 protoregistry 版本：用 Files 管理 + protodesc 激活
+// LoadAllDescriptors activates descriptors (v1.36.6 compatible, no protoregistry.NewFiles() needed).
+// LoadAllDescriptors adapts to your protoregistry version: uses Files management + protodesc activation.
 func LoadAllDescriptors(wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
 
-	logger.Global.Info("开始激活描述符",
+	logger.Global.Info("Starting descriptor activation",
 		zap.Int("total_files", len(internal.FdSet.GetFile())),
 	)
 
@@ -77,7 +77,7 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 	for _, rawFile := range internal.FdSet.GetFile() {
 		activeFileDesc, err := protodesc.NewFile(rawFile, fileReg)
 		if err != nil {
-			logger.Global.Warn("激活文件失败，跳过",
+			logger.Global.Warn("Failed to activate file, skipping",
 				zap.String("file_name", rawFile.GetName()),
 				zap.Error(err),
 			)
@@ -85,7 +85,7 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 		}
 
 		if err := fileReg.RegisterFile(activeFileDesc); err != nil {
-			logger.Global.Warn("注册文件到registry失败，跳过",
+			logger.Global.Warn("Failed to register file in registry, skipping",
 				zap.String("file_path", activeFileDesc.Path()),
 				zap.Error(err),
 			)
@@ -93,14 +93,14 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 		}
 
 		internal.FileDescCache[rawFile.GetName()] = activeFileDesc
-		logger.Global.Debug("已激活并注册文件",
+		logger.Global.Debug("Activated and registered file",
 			zap.String("file_path", activeFileDesc.Path()),
 			zap.String("package", string(activeFileDesc.Package())),
 			zap.Int("message_count", activeFileDesc.Messages().Len()),
 		)
 	}
 
-	internal.ActiveMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor) // 清空旧缓存
+	internal.ActiveMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor) // clear old cache
 	fileReg.RangeFiles(func(activeFileDesc protoreflect.FileDescriptor) bool {
 		messages := activeFileDesc.Messages()
 		for i := 0; i < messages.Len(); i++ {
@@ -114,7 +114,7 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 			fullName := protoreflect.FullName(fullNameStr)
 
 			internal.ActiveMsgDescCache[fullName] = activeMsgDesc
-			logger.Global.Debug("缓存消息描述符",
+			logger.Global.Debug("Cached message descriptor",
 				zap.String("message_full_name", fullNameStr),
 				zap.Int("field_count", activeMsgDesc.Fields().Len()),
 				zap.String("file_path", string(activeFileDesc.Path())),
@@ -123,7 +123,7 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 		return true
 	})
 
-	logger.Global.Info("描述符激活完成",
+	logger.Global.Info("Descriptor activation completed",
 		zap.Int("cached_message_count", len(internal.ActiveMsgDescCache)),
 		zap.Int("processed_file_count", len(internal.FileDescCache)),
 	)
@@ -139,7 +139,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 
 		activeMsgDesc, exists := internal.ActiveMsgDescCache[msgFullName]
 		if !exists {
-			logger.Global.Warn("未找到激活的消息描述符，跳过",
+			logger.Global.Warn("Activated message descriptor not found, skipping",
 				zap.String("message_full_name", msgFullNameStr),
 			)
 			continue
@@ -147,12 +147,12 @@ func GenerateMergedTableSQL(messageNames []string) error {
 
 		msgInstance := dynamicpb.NewMessage(activeMsgDesc)
 		if msgInstance == nil {
-			logger.Global.Warn("无法创建消息实例，跳过",
+			logger.Global.Warn("Failed to create message instance, skipping",
 				zap.String("message_full_name", msgFullNameStr),
 			)
 			continue
 		}
-		logger.Global.Debug("创建消息实例成功",
+		logger.Global.Debug("Message instance created",
 			zap.String("message_full_name", msgFullNameStr),
 		)
 
@@ -165,8 +165,8 @@ func GenerateMergedTableSQL(messageNames []string) error {
 	}
 
 	if mergedSQL.Len() == 0 {
-		logger.Global.Info("未生成任何SQL",
-			zap.String("reason", "无有效消息实例"),
+		logger.Global.Info("No SQL generated",
+			zap.String("reason", "no valid message instances"),
 			zap.Int("input_message_count", len(messageNames)),
 		)
 		return nil
@@ -179,7 +179,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 
 		sqlDir := utils2.BuildModelGoPath(meta.Source)
 		if err := os.MkdirAll(sqlDir, 0755); err != nil {
-			logger.Global.Error("创建SQL目录失败",
+			logger.Global.Error("Failed to create SQL directory",
 				zap.String("sql_dir", sqlDir),
 				zap.String("proto_dir", meta.Source),
 				zap.Error(err),
@@ -191,13 +191,13 @@ func GenerateMergedTableSQL(messageNames []string) error {
 		sqlPath := filepath.Join(sqlDir, sqlFileName)
 
 		if err := os.WriteFile(sqlPath, []byte(mergedSQL.String()), 0644); err != nil {
-			logger.Global.Error("写入SQL文件失败",
+			logger.Global.Error("Failed to write SQL file",
 				zap.String("sql_path", sqlPath),
 				zap.Error(err),
 			)
 			return err
 		}
-		logger.Global.Info("SQL文件生成成功",
+		logger.Global.Info("SQL file generated",
 			zap.String("sql_path", sqlPath),
 			zap.String("proto_dir", meta.Source),
 			zap.Int("sql_length", mergedSQL.Len()),
@@ -215,7 +215,7 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 	for i := 0; i < fields.Len(); i++ {
 		fd := fields.Get(i)
 		fieldCount++
-		logger.Global.Debug("消息实例字段信息",
+		logger.Global.Debug("Message instance field info",
 			zap.String("message_name", msgName),
 			zap.String("field_name", string(fd.Name())),
 			zap.String("field_kind", fd.Kind().String()),
@@ -224,12 +224,12 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 	}
 
 	if fieldCount == 0 {
-		logger.Global.Warn("消息无任何字段",
+		logger.Global.Warn("Message has no fields",
 			zap.String("message_name", msgName),
-			zap.String("reason", "激活失败"),
+			zap.String("reason", "activation failed"),
 		)
 	} else {
-		logger.Global.Info("消息验证通过",
+		logger.Global.Info("Message validation passed",
 			zap.String("message_name", msgName),
 			zap.Int("field_count", fieldCount),
 		)
@@ -238,7 +238,7 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 func writeMessageNamesToJSON(messages []string) error {
 	data, err := json.MarshalIndent(&MessageListConfig{Messages: messages}, "", "  ")
 	if err != nil {
-		logger.Global.Error("JSON序列化失败",
+		logger.Global.Error("JSON serialization failed",
 			zap.Error(err),
 			zap.Int("message_count", len(messages)),
 		)
@@ -247,14 +247,14 @@ func writeMessageNamesToJSON(messages []string) error {
 
 	outputPath := _config.Global.Paths.TableGeneratorDir + _config.Global.Naming.DbTableListJson
 	if err := os.WriteFile(outputPath, data, 0644); err != nil {
-		logger.Global.Error("写入JSON配置文件失败",
+		logger.Global.Error("Failed to write JSON config file",
 			zap.String("output_path", outputPath),
 			zap.Error(err),
 		)
 		return err
 	}
 
-	logger.Global.Info("配置文件生成成功",
+	logger.Global.Info("Config file generated",
 		zap.String("output_path", outputPath),
 		zap.Int("message_count", len(messages)),
 	)
@@ -274,19 +274,19 @@ func GenerateDBResource(wg *sync.WaitGroup) {
 		defer wg.Done()
 
 		protoFile := _config.Global.Naming.DbTableFile
-		logger.Global.Info("开始处理目标Proto文件",
+		logger.Global.Info("Processing target proto file",
 			zap.String("proto_file", protoFile),
 		)
 
 		messageNames, err := extractMessageNamesFromProto(protoFile)
 		if err != nil {
-			logger.Global.Fatal("提取消息名失败",
+			logger.Global.Fatal("Failed to extract message names",
 				zap.String("proto_file", protoFile),
 				zap.Error(err),
 			)
 		}
 		if len(messageNames) == 0 {
-			logger.Global.Info("未提取到任何消息",
+			logger.Global.Info("No messages extracted",
 				zap.String("proto_file", protoFile),
 			)
 		}
@@ -295,7 +295,7 @@ func GenerateDBResource(wg *sync.WaitGroup) {
 		go func() {
 			defer wg.Done()
 			if err := writeMessageNamesToJSON(messageNames); err != nil {
-				logger.Global.Fatal("生成JSON配置失败",
+				logger.Global.Fatal("Failed to generate JSON config",
 					zap.Error(err),
 					zap.Int("message_count", len(messageNames)),
 				)
@@ -306,7 +306,7 @@ func GenerateDBResource(wg *sync.WaitGroup) {
 		go func() {
 			defer wg.Done()
 			if err := GenerateMergedTableSQL(messageNames); err != nil {
-				logger.Global.Fatal("生成SQL失败",
+				logger.Global.Fatal("Failed to generate SQL",
 					zap.Error(err),
 					zap.Int("message_count", len(messageNames)),
 				)

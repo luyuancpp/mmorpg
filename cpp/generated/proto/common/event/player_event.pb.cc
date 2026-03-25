@@ -144,13 +144,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fplayer_5fevent_2ep
     " \001(\004\"=\n\022PlayerUpgradeEvent\022\024\n\014actor_enti"
     "ty\030\001 \001(\004\022\021\n\tnew_level\030\002 \001(\r\"7\n\037Initializ"
     "ePlayerComponentsEvent\022\024\n\014actor_entity\030\001"
-    " \001(\004b\006proto3"
+    " \001(\004B\016Z\014common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto = {
     false,
     false,
-    212,
+    228,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto,
     "proto/common/event/player_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto_once,

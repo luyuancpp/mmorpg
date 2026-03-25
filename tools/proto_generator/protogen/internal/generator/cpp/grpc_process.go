@@ -18,7 +18,7 @@ import (
 	messageoption "github.com/luyuancpp/protooption"
 )
 
-// GrpcServiceTemplateData 用于传递给模板的数据结构
+// GrpcServiceTemplateData holds data passed to gRPC templates.
 type GrpcServiceTemplateData struct {
 	ServiceInfo           []*internal.RPCServiceInfo
 	GrpcIncludeHeadName   string
@@ -28,17 +28,17 @@ type GrpcServiceTemplateData struct {
 	FileBaseNameCamel     string
 }
 
-// generateGrpcFile 根据模板生成 gRPC 文件，并避免重复写入
+// generateGrpcFile generates a gRPC file from a template and avoids duplicate writes.
 func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, text string) error {
 	if len(grpcServices) == 0 {
-		logger.Global.Fatal("生成gRPC文件失败: 服务信息不能为空",
+		logger.Global.Fatal("Failed to generate gRPC file: service info must not be empty",
 			zap.String("target_file", fileName),
 		)
 	}
 
 	tmpl, err := template.New(fileName).Parse(text)
 	if err != nil {
-		logger.Global.Fatal("生成gRPC文件失败: 解析模板失败",
+		logger.Global.Fatal("Failed to generate gRPC file: template parsing failed",
 			zap.String("template_name", fileName),
 			zap.Error(err),
 		)
@@ -55,14 +55,14 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 
 	var generatedContent bytes.Buffer
 	if err := tmpl.Execute(&generatedContent, data); err != nil {
-		logger.Global.Fatal("生成gRPC文件失败: 执行模板失败",
+		logger.Global.Fatal("Failed to generate gRPC file: template execution failed",
 			zap.String("target_file", fileName),
 			zap.Error(err),
 		)
 	}
 
 	if err := utils2.WriteFileIfChanged(fileName, []byte(utils2.NormalizeGeneratedLayout(generatedContent.String()))); err != nil {
-		logger.Global.Error("生成gRPC文件失败: 写入文件失败",
+		logger.Global.Error("Failed to generate gRPC file: write failed",
 			zap.String("file_path", fileName),
 			zap.String("directory", path.Dir(fileName)),
 			zap.Error(err),
@@ -102,7 +102,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			targetDir := path.Dir(_config.Global.Paths.CppGenGrpcDir + firstService.LogicalPath())
 			err := os.MkdirAll(targetDir, os.FileMode(0777))
 			if err != nil {
-				logger.Global.Fatal("生成gRPC客户端代码失败: 创建目录失败",
+				logger.Global.Fatal("Failed to generate gRPC client code: directory creation failed",
 					zap.String("directory", targetDir),
 					zap.String("proto_file", protoFile),
 					zap.Error(err),
@@ -114,7 +114,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 
 			filePath := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientH
 			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
-				logger.Global.Fatal("生成gRPC客户端头文件失败",
+				logger.Global.Fatal("Failed to generate gRPC client header file",
 					zap.String("file_path", filePath),
 					zap.String("proto_file", protoFile),
 					zap.Error(err),
@@ -123,7 +123,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 
 			filePathCpp := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientCpp
 			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
-				logger.Global.Fatal("生成gRPC客户端cpp文件失败",
+				logger.Global.Fatal("Failed to generate gRPC client cpp file",
 					zap.String("file_path", filePathCpp),
 					zap.String("proto_file", protoFile),
 					zap.Error(err),
@@ -173,7 +173,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 
 			err := os.MkdirAll(path.Dir(_config.Global.Paths.GrpcInitCppFile), os.FileMode(0777))
 			if err != nil {
-				logger.Global.Error("生成gRPC初始化文件失败: 创建目录失败",
+				logger.Global.Error("Failed to generate gRPC init file: directory creation failed",
 					zap.String("directory", path.Dir(_config.Global.Paths.GrpcInitCppFile)),
 					zap.Error(err),
 				)
@@ -194,14 +194,14 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			}
 
 			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.cpp.tmpl", _config.Global.Paths.GrpcInitCppFile, cppData); err != nil {
-				logger.Global.Fatal("生成gRPC初始化cpp文件失败",
+				logger.Global.Fatal("Failed to generate gRPC init cpp file",
 					zap.String("file_path", _config.Global.Paths.GrpcInitCppFile),
 					zap.Error(err),
 				)
 			}
 
 			if err := utils2.RenderTemplateToFile("internal/template/grpc_init_total.h.tmpl", _config.Global.Paths.GrpcInitHeadFile, cppData); err != nil {
-				logger.Global.Fatal("生成gRPC初始化头文件失败",
+				logger.Global.Fatal("Failed to generate gRPC init header file",
 					zap.String("file_path", _config.Global.Paths.GrpcInitHeadFile),
 					zap.Error(err),
 				)

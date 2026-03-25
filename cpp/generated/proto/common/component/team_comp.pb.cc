@@ -114,13 +114,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fteam_5fcomp_2e
     "\n&proto/common/component/team_comp.proto"
     "\"\031\n\006TeamId\022\017\n\007team_id\030\001 \001(\004\"\?\n\010TeamInfo\022"
     "\017\n\007team_id\030\001 \001(\004\022\021\n\tleader_id\030\002 \001(\004\022\017\n\007m"
-    "embers\030\003 \003(\004b\006proto3"
+    "embers\030\003 \003(\004B\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto = {
     false,
     false,
-    140,
+    160,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto,
     "proto/common/component/team_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fteam_5fcomp_2eproto_once,

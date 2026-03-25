@@ -6,8 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
 	"protogen/logger"
+
+	"go.uber.org/zap"
 )
 
 // WaitTimeRecord stores elapsed time by task or group name.
@@ -138,7 +139,7 @@ func (r *ExecutionRunner) PrintStats() {
 	}
 }
 
-func wrapNoWG(fn func()) func(*sync.WaitGroup) {
+func adaptSimpleTask(fn func()) func(*sync.WaitGroup) {
 	return func(_ *sync.WaitGroup) {
 		fn()
 	}

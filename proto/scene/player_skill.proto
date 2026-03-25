@@ -1,4 +1,5 @@
 syntax = "proto3";
+option go_package = "scene";
 
 
 import "proto/db/proto_option.proto";
@@ -40,11 +41,11 @@ message SkillUsedS2C
   uint64 time_stamp = 5;
 }
 
-// 获取技能列表请求
+// Get skill list request
 message GetSkillListRequest {
 }
 
-// 获取技能列表响应
+// Get skill list response
 message GetSkillListResponse {
   TipInfoMessage error_message = 1;  
   PlayerSkillListComp skill_list = 2;

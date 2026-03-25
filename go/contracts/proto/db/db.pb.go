@@ -24,7 +24,7 @@ const (
 
 type TestRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// 可以嵌套导入的message，但外层必须是当前proto的message
+	// Can nest imported messages, but outer must be from current proto
 	Empty         *base.Empty `protobuf:"bytes,1,opt,name=empty,proto3" json:"empty,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

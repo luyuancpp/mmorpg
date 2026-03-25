@@ -1,8 +1,8 @@
-# Proto代码生成器配置文件
-# 基于常量定义的配置映射
+# Proto code generator configuration file
+# Configuration mapping based on constant definitions
 
 paths:
-  # 项目根目录及基础路径
+  # Project root and base paths
   output_root: "../../../"
   proto_dir: "{{output_root}}proto/"
   proto_parent_include_path: "{{output_root}}"
@@ -10,7 +10,7 @@ paths:
   grpc_dir: "{{output_root}}{{third_party_dir}}grpc/"
   protobuf_dir: "{{grpc_dir}}third_party/protobuf/src/"
 
-  # 节点与生成目录
+  # Node and generated directories
   node_go_dir: "{{output_root}}go/"
   node_cpp_dir: "{{output_root}}cpp/"
   node_pkg_dir: "cpp/libs/"
@@ -21,11 +21,11 @@ paths:
   gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
   robot: "tools/robot/"
   robot_generated: "{{output_root}}generated/robot/"
-  robot_proto: "{{robot_generated}}proto/"  # robot专用proto源目录
-  robot_generated_proto: "{{robot_generated}}/proto/"  # robot生成的proto目录
+  robot_proto: "{{robot_generated}}proto/"  # Robot-specific proto source directory
+  robot_generated_proto: "{{robot_generated}}/proto/"  # Robot generated proto directory
   generated_dir: "cpp/generated/"
 
-  # 工具与临时目录
+  # Tools and temporary directories
   tool_dir: "tools/"
   temp_file_gen_dir: "{{output_root}}{{tool_dir}}generated/temp/files/"
   proto_buf_desc_dir: "{{temp_file_gen_dir}}proto_desc/"
@@ -34,7 +34,7 @@ paths:
   proto_buf_c_temp_dir: "{{temp_file_gen_dir}}"
   player_storage_temp_dir: "{{temp_file_gen_dir}}/node/game/storage/"
 
-  # 输出目录
+  # Output directories
   proto_buf_c_proto_output_dir: "{{output_root}}{{generated_dir}}"
   generated_output_dir: "{{output_root}}{{generated_dir}}"
   grpc_output_dir: "{{output_root}}{{generated_dir}}"
@@ -54,11 +54,11 @@ paths:
   game_rpc_proto_path: "{{proto_dir}}common/base/"
   tools_dir: "{{output_root}}{{tool_dir}}"
 
-  # 特定文件路径
+  # Specific file paths
   service_id_file: "{{proto_dir}}service_id.txt"
   event_id_file: "{{proto_dir}}event_id.txt"
   robot_message_id_file: "{{robot_go_game_pb_dir}}/message_id.go"
-  robot_proto_import_path: "{{output_root}}{{robot_proto}}"  # robot proto导入路径
+  robot_proto_import_path: "{{output_root}}{{robot_proto}}"  # Robot proto import path
   service_cpp_file: "{{service_info_dir}}rpc_event_registry.cpp"
   service_header_file: "{{service_info_dir}}rpc_event_registry.h"
   grpc_init_cpp_file: "{{cpp_gen_grpc_dir}}grpc_init_client.cpp"
@@ -73,24 +73,24 @@ paths:
   scene_node_event_handler_directory: "{{scene_node_dir}}{{event_handler_source_directory}}"
   gate_node_event_handler_directory: "{{gate_node_dir}}{{event_handler_source_directory}}"
 
-  # Scene 属性同步生成目录
+  # Scene attribute sync generated directory
   scene_attribute_sync_dir: "{{output_root}}{{node_pkg_dir}}/services/scene/generated/attribute/"
 
 
-# 目录命名常量（专门存放目录名/路径片段常量）
+# Directory name constants (for directory names / path segment constants)
 directory_names:
-  generated_rpc_name: "rpc/"               # RPC生成目录名
-  service_info_name: "service_metadata/"   # 服务元数据目录名
-  proto_dir_name: "proto/"                 # Proto目录名
-  go_zero_proto_dir_name: "go-zero/" # Go-zero Proto目录名
-  robot_proto_name: "{{robot_proto}}"      # Robot Proto目录名常量
-  robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero Proto目录名常量
-  model_dir_name: "model/"                 # 模型目录名
-  service_include_dir: "rpc/"              # 服务导入目录名
-  normal_go_proto: "proto/"                 # 新增：普通Go代码目录名（不含斜杠，路径拼接时统一添加）
-  go_grpc_base_dir_name: "service/grpc/"  # Go GRPC服务根目录路径片段
+  generated_rpc_name: "rpc/"               # RPC generated directory name
+  service_info_name: "service_metadata/"   # Service metadata directory name
+  proto_dir_name: "proto/"                 # Proto directory name
+  go_zero_proto_dir_name: "go-zero/" # Go-zero proto directory name
+  robot_proto_name: "{{robot_proto}}"      # Robot proto directory name constant
+  robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero proto directory name constant
+  model_dir_name: "model/"                 # Model directory name
+  service_include_dir: "rpc/"              # Service include directory name
+  normal_go_proto: "proto/"                 # Standard Go code directory name (without slash; unified when joining paths)
+  go_grpc_base_dir_name: "service/grpc/"  # Go gRPC service root directory path segment
 
-# 文件扩展名配置（仅存放文件后缀/扩展名）
+# File extension configuration (file suffixes / extensions only)
 file_extensions:
   proto: ".proto"
   pb_cc: ".pb.cc"
@@ -109,7 +109,7 @@ file_extensions:
   grpc_client_cpp: "_grpc_client.cpp"
   loader_cpp: "_loader.cpp"
 
-  # 原有配置中的扩展名
+  # Original config extensions
   replied_handler_header_extension: "_response_handler.h"
   cpp_replied_handler_ex: "_response_handler.cpp"
   model_sql_extension: "mysql_database_table.sql"
@@ -119,7 +119,7 @@ file_extensions:
   register_replied_handler_cpp_extension: "register{{cpp_replied_handler_ex}}"
   register_handler_cpp_extension: "register{{handler_cpp}}"
 
-# 命名规则配置（业务逻辑命名常量）
+# Naming convention configuration (business logic naming constants)
 naming:
   message_id: "MessageId"
   event_id: "EventId"
@@ -139,7 +139,7 @@ naming:
   game_rpc_proto: "game_rpc.proto"
   grpc_name: "grpc"
 
-  # 原有配置中的命名常量
+  # Original config naming constants
   player_service_include_name: "#include \"rpc/player_service_interface.h\"\n"
   player_service_replied_include_name: "#include \"rpc/player_rpc_response_handler.h\"\n"
   macro_return_include_name: "#include \"macros/return_define.h\""
@@ -155,9 +155,9 @@ naming:
   your_code_end: "///<<< END WRITING YOUR CODE"
   your_code_pair: "{{your_code_begin}}\n{{your_code_end}}"
 
-# 路径列表配置
+# Path list configuration
 path_lists:
-  # Proto目录列表（按原顺序保留）
+  # Proto directory list (original order preserved)
   proto_directories:
     - "common/base/"
     - "common/component/"
@@ -177,13 +177,13 @@ path_lists:
     - "mail/"
     - "database/"
 
-  # robot专用Proto目录列表
+  # Robot-specific proto directory list
   robot_proto_directories:
     - "{{robot_proto}}common/base/"
     - "{{robot_proto}}rpc/"
     - "{{robot_proto}}message/"
 
-  # 方法处理器目录列表
+  # Method handler directory list
   method_handler_directories:
     robot: "{{output_root}}{{robot}}logic/handler/"
     scene_node: "{{scene_node_dir}}handler/rpc/"
@@ -195,7 +195,7 @@ path_lists:
     gate_node_player: "{{gate_node_dir}}handler/rpc/player/"
     gate_node_player_replied: "{{gate_node_dir}}rpc_replies/player/"
 
-  # 节点类型配置
+  # Node type configuration
   node_types:
     tcp_node: 0
     grpc_node: 1
@@ -222,17 +222,17 @@ path_lists:
 
     etcd: "etcd/"
 
-# 生成器开关配置
+# Generator toggle configuration
 generators:
   enable_cpp: true
   enable_go: true
   enable_handler: true
   enable_rpc_response: true
-  enable_robot_proto: true  # 启用robot proto生成
-  enable_robot_go_zero: true  # 启用robot go-zero proto生成
+  enable_robot_proto: true  # Enable robot proto generation
+  enable_robot_go_zero: true  # Enable robot go-zero proto generation
   enable_attribute_sync: true
 
-# 模板映射配置
+# Template mapping configuration
 mappings:
   handler:
     path: "handlers/{{proto_dir}}/{{proto_file}}_handler.cpp"
@@ -260,18 +260,18 @@ mappings:
     lang: "cpp"
 
 
-# Proto解析器配置
+# Proto parser configuration
 parser:
   include_paths:
     - "../../proto/common"
     - "../../proto/service"
-    - "../../{{robot_proto}}"  # 添加robot proto到include路径
+    - "../../{{robot_proto}}"  # Add robot proto to include paths
   ignore_files:
     - "test_*.proto"
     - "deprecated_*.proto"
-    - "{{robot_proto}}test_*.proto"  # 忽略robot测试proto
+    - "{{robot_proto}}test_*.proto"  # Ignore robot test protos
 
-# 日志配置
+# Logging configuration
 log:
   level: "info"
   output: "stdout"
@@ -398,3 +398,23 @@ domain_meta:
         proto: "go/generated/contracts/proto"
       cpp:
         proto: "cpp/generated/contracts/proto"
+
+  guild:
+    source: "{{proto_dir}}guild/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/guild/proto"
+        handler: "go/generated/guild/handler"
+        grpc:    "go/generated/guild/grpc"
+
+  friend:
+    source: "{{proto_dir}}friend/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto:   "go/generated/friend/proto"
+        handler: "go/generated/friend/handler"
+        grpc:    "go/generated/friend/grpc"

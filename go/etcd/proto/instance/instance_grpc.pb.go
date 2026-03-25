@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InstanceClient interface {
-	// 创建副本
+	// Create instance
 	CreateInstance(ctx context.Context, in *CreateInstanceRequest, opts ...grpc.CallOption) (*CreateInstanceResponse, error)
 }
 
@@ -52,7 +52,7 @@ func (c *instanceClient) CreateInstance(ctx context.Context, in *CreateInstanceR
 // All implementations must embed UnimplementedInstanceServer
 // for forward compatibility.
 type InstanceServer interface {
-	// 创建副本
+	// Create instance
 	CreateInstance(context.Context, *CreateInstanceRequest) (*CreateInstanceResponse, error)
 	mustEmbedUnimplementedInstanceServer()
 }

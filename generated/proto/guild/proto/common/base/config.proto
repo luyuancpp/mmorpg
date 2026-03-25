@@ -1,0 +1,48 @@
+syntax = "proto3";
+option go_package = "guild/proto/common/base";
+
+// Service config, avoid conflict with protobuf's Service
+message ServiceConfig {
+    string name = 1;  // Service name
+    string url = 2;   // Health check or access URL
+}
+
+message KafkaConfig {
+    repeated string brokers = 1;            // Kafka broker list
+    repeated string topics = 2;             // Configurable topic list
+    string group_id = 3;                    // Consumer group ID
+    bool enable_auto_commit = 4;            // Enable auto-commit
+    string auto_offset_reset = 5;           // earliest / latest
+}
+
+// Base deploy config
+message BaseDeployConfig {
+    repeated string etcd_hosts = 1;
+    uint32 log_level = 2;
+    repeated ServiceConfig services = 3;
+    repeated string service_discovery_prefixes = 4;
+    uint32 keep_alive_interval = 5;
+    string deployservice_prefix = 6;
+    uint32 node_ttl_seconds = 7;
+    uint32 health_check_interval = 8;
+
+    KafkaConfig kafka = 9;  // Kafka config
+
+    // Table data directory path
+    string table_data_directory = 10; // Config table directory path
+}
+
+// Game config
+message GameConfig {
+    uint32 scene_node_type = 1;  // Scene node type
+    uint32 zone_id = 2;          // Zone ID
+    // Zone Redis config
+    message ZoneRedisConfig {
+        string host = 3;           // Redis host
+        uint32 port = 4;           // Redis port
+        string password = 5;       // Redis password (optional)
+        uint32 db = 6;             // Redis database number
+    }
+
+    ZoneRedisConfig zone_redis = 7; // Zone Redis config
+}

@@ -14,11 +14,23 @@ bool KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 	std::string errstr;
 
 	conf_.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
-	conf_->set("bootstrap.servers", brokers, errstr);
-	conf_->set("group.id", groupId, errstr);
-	conf_->set("enable.auto.commit", "true", errstr);
-	conf_->set("auto.offset.reset", "earliest", errstr);
-	conf_->set("enable.sparse.connections", "true", errstr);
+	if (conf_->set("bootstrap.servers", brokers, errstr) != RdKafka::Conf::CONF_OK) {
+		LOG_ERROR << "KafkaConsumer: failed to set bootstrap.servers: " << errstr;
+		return false;
+	}
+	if (conf_->set("group.id", groupId, errstr) != RdKafka::Conf::CONF_OK) {
+		LOG_ERROR << "KafkaConsumer: failed to set group.id: " << errstr;
+		return false;
+	}
+	if (conf_->set("enable.auto.commit", "true", errstr) != RdKafka::Conf::CONF_OK) {
+		LOG_ERROR << "KafkaConsumer: failed to set enable.auto.commit: " << errstr;
+	}
+	if (conf_->set("auto.offset.reset", "earliest", errstr) != RdKafka::Conf::CONF_OK) {
+		LOG_ERROR << "KafkaConsumer: failed to set auto.offset.reset: " << errstr;
+	}
+	if (conf_->set("enable.sparse.connections", "true", errstr) != RdKafka::Conf::CONF_OK) {
+		LOG_ERROR << "KafkaConsumer: failed to set enable.sparse.connections: " << errstr;
+	}
 
 	consumer_.reset(RdKafka::KafkaConsumer::create(conf_.get(), errstr));
 	if (!consumer_) {
@@ -51,7 +63,7 @@ bool KafkaConsumer::init(const std::string& brokers, const std::string& groupId,
 		LOG_INFO << "Assigned to specific partitions.";
 	}
 	else {
-		// Fall back to subscribe mode
+		// No specific partitions — use group-managed subscription
 		RdKafka::ErrorCode err = consumer_->subscribe(topics);
 		if (err) {
 			LOG_ERROR << "Failed to subscribe to topics: " << RdKafka::err2str(err);

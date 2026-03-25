@@ -13,9 +13,9 @@ public class AuthService {
     public boolean isLogin() {
         if (StpUtil.isLogin()) {
             System.out.println("id:" + StpUtil.getLoginIdAsInt());
-            System.out.println("token：" + StpUtil.getTokenValue());
+            System.out.println("token: " + StpUtil.getTokenValue());
         } else {
-            System.out.println("未登录");
+            System.out.println("Not logged in");
         }
 
         return StpUtil.isLogin();

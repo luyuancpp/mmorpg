@@ -126,8 +126,8 @@ type BuffComp struct {
 	Layer           uint32                 `protobuf:"varint,5,opt,name=layer,proto3" json:"layer,omitempty"`
 	Caster          uint64                 `protobuf:"varint,6,opt,name=caster,proto3" json:"caster,omitempty"`
 	Triggerdamage   bool                   `protobuf:"varint,7,opt,name=triggerdamage,proto3" json:"triggerdamage,omitempty"`
-	ProcessedCaster uint64                 `protobuf:"varint,8,opt,name=processed_caster,json=processedCaster,proto3" json:"processed_caster,omitempty"` // 根据表处理后的施法者
-	Data            []byte                 `protobuf:"bytes,9,opt,name=data,proto3" json:"data,omitempty"`                                               // 各种类型buff的各种数据
+	ProcessedCaster uint64                 `protobuf:"varint,8,opt,name=processed_caster,json=processedCaster,proto3" json:"processed_caster,omitempty"` // Caster after table processing
+	Data            []byte                 `protobuf:"bytes,9,opt,name=data,proto3" json:"data,omitempty"`                                               // Various buff type data
 	Periodic        *BuffPeriodicBuffComp  `protobuf:"bytes,10,opt,name=periodic,proto3" json:"periodic,omitempty"`
 	SubBuffListId   map[uint64]bool        `protobuf:"bytes,11,rep,name=sub_buff_list_id,json=subBuffListId,proto3" json:"sub_buff_list_id,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	HasAddedSubBuff bool                   `protobuf:"varint,12,opt,name=has_added_sub_buff,json=hasAddedSubBuff,proto3" json:"has_added_sub_buff,omitempty"`

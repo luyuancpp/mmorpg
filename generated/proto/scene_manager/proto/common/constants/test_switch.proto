@@ -2,9 +2,9 @@ syntax = "proto3";
 option go_package = "scene_manager/proto/common/constants";
 
 
-// 定义一个枚举类型来标识测试标志
+// Test flag type enum
 enum eTestFlagType 
 {
-    kTestMessageStatistics = 0; // 开启消息统计
-    kTestClearEmptyTiles = 1;   // 开启清除视野同步没有人的格子
+    kTestMessageStatistics = 0; // Enable message statistics
+    kTestClearEmptyTiles = 1;   // Enable clearing empty AOI tiles
 };

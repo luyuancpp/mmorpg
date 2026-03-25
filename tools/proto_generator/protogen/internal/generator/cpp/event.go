@@ -18,7 +18,7 @@ import (
 	"protogen/logger"
 )
 
-// generateClassNameFromFile 从 proto 文件名生成 C++ 类名（下划线转为大写驼峰），加后缀
+// generateClassNameFromFile generates a C++ class name from a proto file name (underscore to upper camel case) with a suffix.
 func generateClassNameFromFile(file os.DirEntry, suffix string) string {
 	baseName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 	parts := strings.Split(baseName, "_")
@@ -36,7 +36,7 @@ func generateClassNameFromFile(file os.DirEntry, suffix string) string {
 	return strings.Join(classParts, "") + suffix
 }
 
-// parseProtoMessages 提取 proto 文件中的所有 message 名称
+// parseProtoMessages extracts all message names from a proto file.
 func parseProtoMessages(protoFilePath string) ([]string, error) {
 	file, err := os.Open(protoFilePath)
 	if err != nil {
@@ -89,12 +89,12 @@ func qualifyProtoType(packageName, typeName string) string {
 	return strings.Join(parts, "::") + "::" + typeName
 }
 
-// buildEventHandlerSignature 构建事件处理函数的定义签名
+// buildEventHandlerSignature builds the definition signature for an event handler function.
 func buildEventHandlerSignature(className, qualifiedTypeName, eventName string) string {
 	return fmt.Sprintf("void %s::%sHandler(const %s& event)\n", className, eventName, qualifiedTypeName)
 }
 
-// extractUserCodeBlocks 提取 .cpp 文件中每个事件处理函数的自定义代码区域
+// extractUserCodeBlocks extracts user-written code blocks from each event handler function in a .cpp file.
 func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[string]string, string, error) {
 	codeMap := make(map[string]string)
 
@@ -171,7 +171,7 @@ func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[strin
 	return codeMap, globalCode, scanner.Err()
 }
 
-// EventTemplateData 用于渲染模板的数据结构
+// EventTemplateData holds data for rendering templates.
 type EventTemplateData struct {
 	ClassName      string
 	HeaderFile     string
@@ -188,14 +188,14 @@ type EventHandlerMessage struct {
 	IsLast        bool
 }
 
-// generateEventHandlerFiles 使用模板生成每个 proto 对应的 .h 和 .cpp 文件
+// generateEventHandlerFiles generates .h and .cpp files for each proto using templates.
 func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelativeDir string, outputDir string) {
 	defer wg.Done()
 
 	protoFilePath := filepath.Join(_config.Global.Paths.ProtoDir, protoRelativeDir, file.Name())
 	eventMessages, err := parseProtoMessages(protoFilePath)
 	if err != nil {
-		logger.Global.Error("解析proto文件失败",
+		logger.Global.Error("Failed to parse proto file",
 			zap.String("proto_file", protoFilePath),
 			zap.Error(err),
 		)
@@ -204,7 +204,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 
 	packageName, err := parseProtoPackage(protoFilePath)
 	if err != nil {
-		logger.Global.Warn("解析proto package失败，默认按无命名空间处理",
+		logger.Global.Warn("Failed to parse proto package, treating as no namespace",
 			zap.String("proto_file", protoFilePath),
 			zap.Error(err),
 		)
@@ -226,7 +226,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 
 	userCodeBlocks, globalCode, err := extractUserCodeBlocks(cppFilePath, handlerSignatures)
 	if err != nil {
-		logger.Global.Warn("读取用户代码失败",
+		logger.Global.Warn("Failed to read user code",
 			zap.String("cpp_file", cppFilePath),
 			zap.Error(err),
 		)
@@ -253,13 +253,13 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 	}
 
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler.h.tmpl", headerFilePath, tmplData); err != nil {
-		logger.Global.Error("生成头文件失败",
+		logger.Global.Error("Failed to generate header file",
 			zap.String("header_file", headerFilePath),
 			zap.Error(err),
 		)
 	}
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler.cpp.tmpl", cppFilePath, tmplData); err != nil {
-		logger.Global.Error("生成cpp文件失败",
+		logger.Global.Error("Failed to generate cpp file",
 			zap.String("cpp_file", cppFilePath),
 			zap.Error(err),
 		)
@@ -294,11 +294,11 @@ func readProtoFiles(relativeDir string) ([]os.DirEntry, error) {
 	return os.ReadDir(filepath.Join(_config.Global.Paths.ProtoDir, relativeDir))
 }
 
-// generateAllEventHandlers 生成所有事件处理器
+// GenerateAllEventHandlers generates all event handlers.
 func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 	logicEventFiles, err := readProtoFiles(_config.Global.PathLists.ProtoDirs.LogicEvent)
 	if err != nil {
-		logger.Global.Fatal("读取proto目录失败",
+		logger.Global.Fatal("Failed to read proto directory",
 			zap.String("dir", _config.Global.PathLists.ProtoDirs.LogicEvent),
 			zap.Error(err),
 		)
@@ -314,7 +314,7 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 	if _config.Global.PathLists.ProtoDirs.ContractsKafka != "" {
 		files, readErr := readProtoFiles(_config.Global.PathLists.ProtoDirs.ContractsKafka)
 		if readErr != nil {
-			logger.Global.Warn("读取Kafka proto目录失败，跳过Gate事件处理器生成",
+			logger.Global.Warn("Failed to read Kafka proto directory, skipping Gate event handler generation",
 				zap.String("dir", _config.Global.PathLists.ProtoDirs.ContractsKafka),
 				zap.Error(readErr),
 			)
@@ -331,7 +331,7 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
 		if err = GenerateEventHandlersTemplate(logicEventFiles, _config.Global.Paths.SceneNodeEventHandlerDirectory); err != nil {
-			logger.Global.Fatal("生成事件处理器模板失败",
+			logger.Global.Fatal("Failed to generate event handler template",
 				zap.String("dir", _config.Global.Paths.SceneNodeEventHandlerDirectory),
 				zap.Error(err),
 			)
@@ -339,7 +339,7 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 		}
 		if len(kafkaContractFiles) > 0 {
 			if err = GenerateEventHandlersTemplate(kafkaContractFiles, _config.Global.Paths.GateNodeEventHandlerDirectory); err != nil {
-				logger.Global.Fatal("生成Gate事件处理器模板失败",
+				logger.Global.Fatal("Failed to generate Gate event handler template",
 					zap.String("dir", _config.Global.Paths.GateNodeEventHandlerDirectory),
 					zap.Error(err),
 				)
@@ -396,13 +396,13 @@ public:
 	headerFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Header)
 	cppFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Cpp)
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
-		logger.Global.Error("生成总头文件失败",
+		logger.Global.Error("Failed to generate aggregate header file",
 			zap.String("header_file", headerFilePath),
 			zap.Error(err),
 		)
 	}
 	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
-		logger.Global.Error("生成总cpp文件失败",
+		logger.Global.Error("Failed to generate aggregate cpp file",
 			zap.String("cpp_file", cppFilePath),
 			zap.Error(err),
 		)

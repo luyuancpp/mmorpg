@@ -86,13 +86,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fsession_2eproto[] A
     "\n\037proto/common/base/session.proto\"g\n\016Ses"
     "sionDetails\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplaye"
     "r_id\030\002 \001(\004\022\024\n\014gate_node_id\030\003 \001(\r\022\030\n\020gate"
-    "_instance_id\030\004 \001(\tb\006proto3"
+    "_instance_id\030\004 \001(\tB\rZ\013common/baseb\006proto"
+    "3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fsession_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fsession_2eproto = {
     false,
     false,
-    146,
+    161,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fsession_2eproto,
     "proto/common/base/session.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fsession_2eproto_once,
