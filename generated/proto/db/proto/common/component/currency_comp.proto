@@ -1,0 +1,11 @@
+syntax = "proto3";
+option go_package = "db/proto/common/component";
+
+// Persistent currency slot array stored per player.
+// Slot index is defined by CurrencyType (kCurrencyGold, ...).
+message CurrencyComp
+{
+  repeated uint64 values = 1;
+  // GM-blocked currency types — AddCurrency is rejected for these types.
+  repeated uint32 blocked_types = 2;
+}

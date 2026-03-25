@@ -20,12 +20,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bag\bag_system.cpp" />
+    <ClCompile Include="currency\system\currency_system.cpp" />
     <ClCompile Include="mission\comp\mission_comp.cpp" />
     <ClCompile Include="mission\system\mission.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bag\bag_system.h" />
     <ClInclude Include="bag\item_system.h" />
+    <ClInclude Include="currency\comp\player_currency_comp.h" />
+    <ClInclude Include="currency\constants\currency.h" />
+    <ClInclude Include="currency\system\currency_system.h" />
     <ClInclude Include="mission\comp\missions_config_comp.h" />
     <ClInclude Include="mission\comp\mission_comp.h" />
     <ClInclude Include="mission\constants\mission.h" />

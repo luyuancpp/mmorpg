@@ -238,6 +238,7 @@ inline constexpr player_database::Impl_::Impl_(
         uint32_pb_component_{nullptr},
         derived_attributes_component_{nullptr},
         level_component_{nullptr},
+        currency_{nullptr},
         player_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -357,7 +358,7 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_._has_bits_),
-        10, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.transform_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint64_pb_component_),
@@ -365,13 +366,15 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint32_pb_component_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.derived_attributes_component_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.level_component_),
-        6,
+        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.currency_),
+        7,
         0,
         1,
         2,
         3,
         4,
         5,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_._has_bits_),
         4, // hasbit index offset
@@ -389,7 +392,7 @@ static const ::_pbi::MigrationSchema
         {51, sizeof(::account_share_database)},
         {56, sizeof(::player_centre_database)},
         {63, sizeof(::player_database)},
-        {80, sizeof(::player_database_1)},
+        {82, sizeof(::player_database_1)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_user_default_instance_._instance,
@@ -411,46 +414,49 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabas
     ".proto\032\'proto/common/component/actor_com"
     "p.proto\032(proto/common/component/player_c"
     "omp.proto\032.proto/common/component/player"
-    "_skill_comp.proto\"\204\001\n\004user\022\n\n\002id\030\001 \001(\004\022\024"
-    "\n\014display_name\030\002 \001(\t\022\020\n\010is_guest\030\003 \001(\010\022\023"
-    "\n\013create_time\030\004 \001(\004\022\022\n\nlast_login\030\005 \001(\004:"
-    "\037\212\222\364\001\004user\222\222\364\001\002id\332\222\364\001\nlast_login\"\230\001\n\nuse"
-    "r_oauth\022\017\n\007user_id\030\001 \001(\004\022\020\n\010provider\030\002 \001"
-    "(\t\022\023\n\013provider_id\030\003 \001(\t\022\023\n\013create_time\030\004"
-    " \001(\004:=\212\222\364\001\nuser_oauth\222\222\364\001\020user_id,provid"
-    "er\342\222\364\001\024provider,provider_id\"h\n\nuser_phon"
-    "e\022\017\n\007user_id\030\001 \001(\004\022\r\n\005phone\030\002 \001(\t\022\023\n\013cre"
-    "ate_time\030\003 \001(\004:%\212\222\364\001\nuser_phone\222\222\364\001\007user"
-    "_id\342\222\364\001\005phone\"c\n\ruser_password\022\017\n\007user_i"
-    "d\030\001 \001(\004\022\014\n\004hash\030\002 \001(\t\022\023\n\013create_time\030\003 \001"
-    "(\004:\036\212\222\364\001\ruser_password\222\222\364\001\007user_id\"\204\001\n\ru"
-    "ser_accounts\022\017\n\007account\030\001 \001(\t\022\020\n\010passwor"
-    "d\030\002 \001(\t\0220\n\016simple_players\030\003 \001(\0132\030.Accoun"
-    "tSimplePlayerList:\036\212\222\364\001\ruser_accounts\222\222\364"
-    "\001\007account\"R\n\026account_share_database\022\017\n\007a"
-    "ccount\030\001 \001(\t:\'\212\222\364\001\026account_share_databas"
-    "e\222\222\364\001\007account\"\221\001\n\026player_centre_database"
-    "\022\021\n\tplayer_id\030\001 \001(\004\022+\n\nscene_info\030\002 \001(\0132"
-    "\027.PlayerSceneContextComp:7\212\222\364\001\026player_ce"
-    "ntre_database\222\222\364\001\tplayer_id\262\222\364\001\tplayer_i"
-    "d\"\344\002\n\017player_database\022\021\n\tplayer_id\030\001 \001(\004"
-    "\022\035\n\ttransform\030\002 \001(\0132\n.Transform\022.\n\023uint6"
-    "4_pb_component\030\003 \001(\0132\021.PlayerUint64Comp\022"
-    "(\n\nskill_list\030\004 \001(\0132\024.PlayerSkillListCom"
-    "p\022.\n\023uint32_pb_component\030\005 \001(\0132\021.PlayerU"
-    "int32Comp\0229\n\034derived_attributes_componen"
-    "t\030\006 \001(\0132\023.BaseAttributesComp\022#\n\017level_co"
-    "mponent\030\007 \001(\0132\n.LevelComp:5\212\222\364\001\017player_d"
-    "atabase\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001\001"
-    "\"_\n\021player_database_1\022\021\n\tplayer_id\030\001 \001(\004"
-    ":7\212\222\364\001\021player_database_1\222\222\364\001\tplayer_id\262\222"
-    "\364\001\tplayer_id\350\222\364\001\001B\021Z\017common/databaseb\006pr"
-    "oto3"
+    "_skill_comp.proto\032*proto/common/componen"
+    "t/currency_comp.proto\"\204\001\n\004user\022\n\n\002id\030\001 \001"
+    "(\004\022\024\n\014display_name\030\002 \001(\t\022\020\n\010is_guest\030\003 \001"
+    "(\010\022\023\n\013create_time\030\004 \001(\004\022\022\n\nlast_login\030\005 "
+    "\001(\004:\037\212\222\364\001\004user\222\222\364\001\002id\332\222\364\001\nlast_login\"\230\001\n"
+    "\nuser_oauth\022\017\n\007user_id\030\001 \001(\004\022\020\n\010provider"
+    "\030\002 \001(\t\022\023\n\013provider_id\030\003 \001(\t\022\023\n\013create_ti"
+    "me\030\004 \001(\004:=\212\222\364\001\nuser_oauth\222\222\364\001\020user_id,pr"
+    "ovider\342\222\364\001\024provider,provider_id\"h\n\nuser_"
+    "phone\022\017\n\007user_id\030\001 \001(\004\022\r\n\005phone\030\002 \001(\t\022\023\n"
+    "\013create_time\030\003 \001(\004:%\212\222\364\001\nuser_phone\222\222\364\001\007"
+    "user_id\342\222\364\001\005phone\"c\n\ruser_password\022\017\n\007us"
+    "er_id\030\001 \001(\004\022\014\n\004hash\030\002 \001(\t\022\023\n\013create_time"
+    "\030\003 \001(\004:\036\212\222\364\001\ruser_password\222\222\364\001\007user_id\"\204"
+    "\001\n\ruser_accounts\022\017\n\007account\030\001 \001(\t\022\020\n\010pas"
+    "sword\030\002 \001(\t\0220\n\016simple_players\030\003 \001(\0132\030.Ac"
+    "countSimplePlayerList:\036\212\222\364\001\ruser_account"
+    "s\222\222\364\001\007account\"R\n\026account_share_database\022"
+    "\017\n\007account\030\001 \001(\t:\'\212\222\364\001\026account_share_dat"
+    "abase\222\222\364\001\007account\"\221\001\n\026player_centre_data"
+    "base\022\021\n\tplayer_id\030\001 \001(\004\022+\n\nscene_info\030\002 "
+    "\001(\0132\027.PlayerSceneContextComp:7\212\222\364\001\026playe"
+    "r_centre_database\222\222\364\001\tplayer_id\262\222\364\001\tplay"
+    "er_id\"\205\003\n\017player_database\022\021\n\tplayer_id\030\001"
+    " \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Transform\022.\n\023u"
+    "int64_pb_component\030\003 \001(\0132\021.PlayerUint64C"
+    "omp\022(\n\nskill_list\030\004 \001(\0132\024.PlayerSkillLis"
+    "tComp\022.\n\023uint32_pb_component\030\005 \001(\0132\021.Pla"
+    "yerUint32Comp\0229\n\034derived_attributes_comp"
+    "onent\030\006 \001(\0132\023.BaseAttributesComp\022#\n\017leve"
+    "l_component\030\007 \001(\0132\n.LevelComp\022\037\n\010currenc"
+    "y\030\010 \001(\0132\r.CurrencyComp:5\212\222\364\001\017player_data"
+    "base\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001\001\"_\n"
+    "\021player_database_1\022\021\n\tplayer_id\030\001 \001(\004:7\212"
+    "\222\364\001\021player_database_1\222\222\364\001\tplayer_id\262\222\364\001\t"
+    "player_id\350\222\364\001\001B\021Z\017common/databaseb\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[6] = {
+    descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[7] = {
         &::descriptor_table_proto_2fcommon_2fbase_2fuser_5faccounts_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
+        &::descriptor_table_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
@@ -460,12 +466,12 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fda
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    1644,
+    1721,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/common/database/mysql_database_table.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once,
     descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps,
-    6,
+    7,
     9,
     schemas,
     file_default_instances,
@@ -2907,6 +2913,11 @@ void player_database::clear_level_component() {
   if (_impl_.level_component_ != nullptr) _impl_.level_component_->Clear();
   _impl_._has_bits_[0] &= ~0x00000020u;
 }
+void player_database::clear_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.currency_ != nullptr) _impl_.currency_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000040u;
+}
 player_database::player_database(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, player_database_class_data_.base()) {
@@ -2955,6 +2966,9 @@ player_database::player_database(
   _impl_.level_component_ = ((cached_has_bits & 0x00000020u) != 0)
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.level_component_)
                 : nullptr;
+  _impl_.currency_ = ((cached_has_bits & 0x00000040u) != 0)
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.currency_)
+                : nullptr;
   _impl_.player_id_ = from._impl_.player_id_;
 
   // @@protoc_insertion_point(copy_constructor:player_database)
@@ -2987,6 +3001,7 @@ inline void player_database::SharedDtor(MessageLite& self) {
   delete this_._impl_.uint32_pb_component_;
   delete this_._impl_.derived_attributes_component_;
   delete this_._impl_.level_component_;
+  delete this_._impl_.currency_;
   this_._impl_.~Impl_();
 }
 
@@ -3033,17 +3048,17 @@ player_database::GetClassData() const {
   return player_database_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 7, 6, 0, 2>
+const ::_pbi::TcParseTable<3, 8, 7, 0, 2>
 player_database::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(player_database, _impl_._has_bits_),
     0, // no _extensions_
-    7, 56,  // max_field_number, fast_idx_mask
+    8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967168,  // skipmap
+    4294967040,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    7,  // num_field_entries
-    6,  // num_aux_entries
+    8,  // num_field_entries
+    7,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     player_database_class_data_.base(),
     nullptr,  // post_loop_handler
@@ -3052,10 +3067,12 @@ player_database::_table_ = {
     ::_pbi::TcParser::GetTable<::player_database>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // .CurrencyComp currency = 8;
+    {::_pbi::TcParser::FastMtS1,
+     {66, 6, 6, PROTOBUF_FIELD_OFFSET(player_database, _impl_.currency_)}},
     // uint64 player_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database, _impl_.player_id_), 6>(),
-     {8, 6, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database, _impl_.player_id_), 7>(),
+     {8, 7, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_)}},
     // .Transform transform = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_)}},
@@ -3078,7 +3095,7 @@ player_database::_table_ = {
     65535, 65535
   }}, {{
     // uint64 player_id = 1;
-    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_), _Internal::kHasBitsOffset + 6, 0,
+    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_), _Internal::kHasBitsOffset + 7, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // .Transform transform = 2;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
@@ -3098,6 +3115,9 @@ player_database::_table_ = {
     // .LevelComp level_component = 7;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.level_component_), _Internal::kHasBitsOffset + 5, 5,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .CurrencyComp currency = 8;
+    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.currency_), _Internal::kHasBitsOffset + 6, 6,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::Transform>()},
@@ -3106,6 +3126,7 @@ player_database::_table_ = {
       {::_pbi::TcParser::GetTable<::PlayerUint32Comp>()},
       {::_pbi::TcParser::GetTable<::BaseAttributesComp>()},
       {::_pbi::TcParser::GetTable<::LevelComp>()},
+      {::_pbi::TcParser::GetTable<::CurrencyComp>()},
   }},
   {{
   }},
@@ -3118,7 +3139,7 @@ PROTOBUF_NOINLINE void player_database::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000003fu) != 0) {
+  if ((cached_has_bits & 0x0000007fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       ABSL_DCHECK(_impl_.transform_ != nullptr);
       _impl_.transform_->Clear();
@@ -3143,6 +3164,10 @@ PROTOBUF_NOINLINE void player_database::Clear() {
       ABSL_DCHECK(_impl_.level_component_ != nullptr);
       _impl_.level_component_->Clear();
     }
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      ABSL_DCHECK(_impl_.currency_ != nullptr);
+      _impl_.currency_->Clear();
+    }
   }
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
@@ -3165,7 +3190,7 @@ PROTOBUF_NOINLINE void player_database::Clear() {
   (void)cached_has_bits;
 
   // uint64 player_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -3216,6 +3241,13 @@ PROTOBUF_NOINLINE void player_database::Clear() {
         stream);
   }
 
+  // .CurrencyComp currency = 8;
+  if ((cached_has_bits & 0x00000040u) != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        8, *this_._impl_.currency_, this_._impl_.currency_->GetCachedSize(), target,
+        stream);
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -3241,7 +3273,7 @@ PROTOBUF_NOINLINE void player_database::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000007fu) != 0) {
+  if ((cached_has_bits & 0x000000ffu) != 0) {
     // .Transform transform = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       total_size += 1 +
@@ -3272,8 +3304,13 @@ PROTOBUF_NOINLINE void player_database::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.level_component_);
     }
-    // uint64 player_id = 1;
+    // .CurrencyComp currency = 8;
     if ((cached_has_bits & 0x00000040u) != 0) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.currency_);
+    }
+    // uint64 player_id = 1;
+    if ((cached_has_bits & 0x00000080u) != 0) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
@@ -3294,7 +3331,7 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000007fu) != 0) {
+  if ((cached_has_bits & 0x000000ffu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       ABSL_DCHECK(from._impl_.transform_ != nullptr);
       if (_this->_impl_.transform_ == nullptr) {
@@ -3344,6 +3381,14 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
       }
     }
     if ((cached_has_bits & 0x00000040u) != 0) {
+      ABSL_DCHECK(from._impl_.currency_ != nullptr);
+      if (_this->_impl_.currency_ == nullptr) {
+        _this->_impl_.currency_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.currency_);
+      } else {
+        _this->_impl_.currency_->MergeFrom(*from._impl_.currency_);
+      }
+    }
+    if ((cached_has_bits & 0x00000080u) != 0) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
       }

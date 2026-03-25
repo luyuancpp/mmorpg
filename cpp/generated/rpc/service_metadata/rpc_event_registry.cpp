@@ -14,6 +14,7 @@
 #include "proto/scene/game_player.pb.h"
 #include "proto/scene/game_player_scene.pb.h"
 #include "proto/scene/game_scene.pb.h"
+#include "proto/scene/player_currency.pb.h"
 #include "proto/scene/player_scene.pb.h"
 #include "proto/scene/player_skill.pb.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
@@ -31,6 +32,7 @@
 #include "rpc/service_metadata/game_player_service_metadata.h"
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
 #include "rpc/service_metadata/game_scene_service_metadata.h"
+#include "rpc/service_metadata/player_currency_service_metadata.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "rpc/service_metadata/player_skill_service_metadata.h"
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"
@@ -71,6 +73,7 @@ class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon {};
 class ScenePlayerImpl final : public ScenePlayer {};
 class SceneScenePlayerImpl final : public SceneScenePlayer {};
 class SceneSceneImpl final : public SceneScene {};
+class SceneCurrencyClientPlayerImpl final : public SceneCurrencyClientPlayer {};
 class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer {};
 class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
 class ScenePlayerSyncImpl final : public ScenePlayerSync {};
@@ -437,6 +440,33 @@ void InitMessageInfo()
         std::make_unique<::GameSceneTest>(),
         std::make_unique<::Empty>(),
         std::make_unique<SceneSceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+
+    // --- SceneCurrencyClientPlayer ---
+    gRpcMethodRegistry[SceneCurrencyClientPlayerGmAddCurrencyMessageId] = RpcMethodMeta{
+        "SceneCurrencyClientPlayer", "GmAddCurrency",
+        std::make_unique<::GmAddCurrencyRequest>(),
+        std::make_unique<::GmAddCurrencyResponse>(),
+        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneCurrencyClientPlayerGmDeductCurrencyMessageId] = RpcMethodMeta{
+        "SceneCurrencyClientPlayer", "GmDeductCurrency",
+        std::make_unique<::GmDeductCurrencyRequest>(),
+        std::make_unique<::GmDeductCurrencyResponse>(),
+        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneCurrencyClientPlayerGetCurrencyListMessageId] = RpcMethodMeta{
+        "SceneCurrencyClientPlayer", "GetCurrencyList",
+        std::make_unique<::GetCurrencyListRequest>(),
+        std::make_unique<::GetCurrencyListResponse>(),
+        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneCurrencyClientPlayerGmBlockCurrencyMessageId] = RpcMethodMeta{
+        "SceneCurrencyClientPlayer", "GmBlockCurrency",
+        std::make_unique<::GmBlockCurrencyRequest>(),
+        std::make_unique<::GmBlockCurrencyResponse>(),
+        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneCurrencyClientPlayerGmUnblockCurrencyMessageId] = RpcMethodMeta{
+        "SceneCurrencyClientPlayer", "GmUnblockCurrency",
+        std::make_unique<::GmUnblockCurrencyRequest>(),
+        std::make_unique<::GmUnblockCurrencyResponse>(),
+        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneSceneClientPlayer ---
     gRpcMethodRegistry[SceneSceneClientPlayerEnterSceneMessageId] = RpcMethodMeta{

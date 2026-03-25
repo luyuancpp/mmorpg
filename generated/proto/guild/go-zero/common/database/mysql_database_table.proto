@@ -7,6 +7,7 @@ import "proto/common/component/player_scene_comp.proto";
 import "proto/common/component/actor_comp.proto";
 import "proto/common/component/player_comp.proto";
 import "proto/common/component/player_skill_comp.proto";
+import "proto/common/component/currency_comp.proto";
 
 // ------------------- User basic info table -------------------
 message user
@@ -99,6 +100,7 @@ message player_database
   PlayerUint32Comp uint32_pb_component = 5;
   BaseAttributesComp derived_attributes_component = 6;
   LevelComp level_component = 7;
+  CurrencyComp currency = 8;
 }
 
 message player_database_1
