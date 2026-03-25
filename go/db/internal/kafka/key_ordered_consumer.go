@@ -4,9 +4,9 @@ import (
 	"context"
 	db_config "db/internal/config"
 	"db/internal/logic/pkg/proto_sql"
-	db_proto "proto/db"
 	"errors"
 	"fmt"
+	db_proto "proto/db"
 	"runtime/debug"
 	"strconv"
 	"sync"
@@ -66,13 +66,20 @@ type KeyOrderedKafkaConsumer struct {
 
 type worker struct {
 	partition     int32
-	msgCh         chan *sarama.ConsumerMessage
+	taskCh        chan *workerTask
 	ctx           context.Context
 	redisClient   redis.Cmdable
 	locker        *locker.RedisLocker
 	topic         string
 	retryQueueKey string
 	wg            *sync.WaitGroup
+}
+
+// workerTask wraps either a Kafka message or a pre-parsed retry task.
+type workerTask struct {
+	kafkaMsg *sarama.ConsumerMessage
+	session  sarama.ConsumerGroupSession
+	dbTask   *db_proto.DBTask // non-nil for retry tasks
 }
 
 // dbOpHandler is the handler signature for DB operations.
@@ -166,7 +173,7 @@ func NewKeyOrderedKafkaConsumer(
 	for i := int32(0); i < cfg.ServerConfig.Kafka.PartitionCnt; i++ {
 		workers[i] = &worker{
 			partition:     i,
-			msgCh:         make(chan *sarama.ConsumerMessage, 1000),
+			taskCh:        make(chan *workerTask, 1000),
 			ctx:           ctx,
 			redisClient:   redisClient,
 			locker:        lockerIns,
@@ -197,7 +204,7 @@ func NewKeyOrderedKafkaConsumer(
 func (c *KeyOrderedKafkaConsumer) Start() error {
 	for _, w := range c.workers {
 		c.wg.Add(1)
-		go w.start(processDBTaskMessage, c.isOfflineExpand)
+		go w.start(c.isOfflineExpand)
 	}
 
 	c.StartRetryConsumer()
@@ -266,37 +273,28 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 	}
 
 	task.RetryCount++
-	if err := processTaskWithoutLock(c.ctx, c.redisClient, &task); err != nil {
-		logx.Errorf("retry process task failed: taskID=%s, retryCount=%d, err=%v", task.TaskId, task.RetryCount, err)
-		retryTaskBytes, marshalErr := proto.Marshal(&task)
-		if marshalErr != nil {
-			logx.Errorf("failed to marshal retry task: taskID=%s, err=%v", task.TaskId, marshalErr)
-			return
-		}
-		if pushErr := c.redisClient.LPush(c.ctx, c.retryQueueKey, retryTaskBytes).Err(); pushErr != nil {
-			logx.Errorf("failed to push retry task to queue: taskID=%s, err=%v", task.TaskId, pushErr)
-		}
+
+	// Route retry task to the correct worker based on key to preserve per-key serialization
+	partition := int32(task.Key % uint64(c.partitionCount))
+	w, ok := c.workers[partition]
+	if !ok {
+		logx.Errorf("no worker for partition %d during retry: taskID=%s", partition, task.TaskId)
 		return
 	}
 
-	logx.Infof("retry process task success: taskID=%s, retryCount=%d", task.TaskId, task.RetryCount)
+	retryTask := &workerTask{dbTask: &task}
+	select {
+	case w.taskCh <- retryTask:
+		logx.Debugf("retry task routed to worker: taskID=%s, partition=%d, retryCount=%d", task.TaskId, partition, task.RetryCount)
+	case <-c.ctx.Done():
+		return
+	}
 }
 
-func (w *worker) start(
-	processFunc func(ctx context.Context, worker *worker, msg *sarama.ConsumerMessage, isOfflineExpand bool) error,
-	isOfflineExpand bool,
-) {
+func (w *worker) start(isOfflineExpand bool) {
 	defer func() {
-		close(w.msgCh)
 		w.wg.Done()
 		logx.Infof("worker stopped: partition=%d, topic=%s", w.partition, w.topic)
-	}()
-
-	defer func() {
-		if r := recover(); r != nil {
-			logx.Errorf("worker panic recovered: partition=%d, panic=%v, stack=%s",
-				w.partition, r, string(debug.Stack()))
-		}
 	}()
 
 	logx.Infof("worker started: partition=%d, topic=%s, isOfflineExpand=%v", w.partition, w.topic, isOfflineExpand)
@@ -306,20 +304,51 @@ func (w *worker) start(
 		case <-w.ctx.Done():
 			logx.Infof("worker received stop signal: partition=%d", w.partition)
 			return
-		case msg, ok := <-w.msgCh:
+		case task, ok := <-w.taskCh:
 			if !ok {
-				logx.Infof("worker msg channel closed: partition=%d", w.partition)
+				logx.Infof("worker task channel closed: partition=%d", w.partition)
 				return
 			}
-			startTime := time.Now()
-			if err := processFunc(w.ctx, w, msg, isOfflineExpand); err != nil {
-				logx.Errorf("worker process msg failed: partition=%d, offset=%d, cost=%v, err=%v",
-					w.partition, msg.Offset, time.Since(startTime), err)
-			} else {
-				logx.Debugf("worker process msg success: partition=%d, offset=%d, cost=%v",
-					w.partition, msg.Offset, time.Since(startTime))
+			w.handleTask(task, isOfflineExpand)
+		}
+	}
+}
+
+func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
+	// Per-message panic recovery: a single bad message won't kill the partition worker
+	defer func() {
+		if r := recover(); r != nil {
+			logx.Errorf("worker panic recovered: partition=%d, panic=%v, stack=%s",
+				w.partition, r, string(debug.Stack()))
+		}
+	}()
+
+	startTime := time.Now()
+	var err error
+
+	if task.dbTask != nil {
+		err = processDBTask(w.ctx, w, task.dbTask, w.partition, isOfflineExpand)
+	} else if task.kafkaMsg != nil {
+		err = processDBTaskMessage(w.ctx, w, task.kafkaMsg, isOfflineExpand)
+	}
+
+	if err != nil {
+		logx.Errorf("worker process task failed: partition=%d, cost=%v, err=%v",
+			w.partition, time.Since(startTime), err)
+		// Re-queue failed retry tasks for another attempt
+		if task.dbTask != nil {
+			if saveErr := saveToRetryQueue(w.ctx, w.redisClient, w.retryQueueKey, task.dbTask); saveErr != nil {
+				logx.Errorf("failed to re-queue retry task: taskID=%s, err=%v", task.dbTask.TaskId, saveErr)
 			}
 		}
+	} else {
+		logx.Debugf("worker process task success: partition=%d, cost=%v",
+			w.partition, time.Since(startTime))
+	}
+
+	// Mark Kafka offset AFTER processing completes (not at dispatch time)
+	if task.session != nil && task.kafkaMsg != nil {
+		task.session.MarkMessage(task.kafkaMsg, "")
 	}
 }
 
@@ -364,7 +393,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			msg.Topic, msg.Partition, msg.Offset, string(msg.Key))
 
 		partition := msg.Partition
-		worker, ok := h.consumer.workers[partition]
+		w, ok := h.consumer.workers[partition]
 		if !ok {
 			logx.Errorf("no worker found for partition: topic=%s, partition=%d, offset=%d",
 				h.consumer.topic, partition, msg.Offset)
@@ -372,67 +401,64 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			continue
 		}
 
+		task := &workerTask{
+			kafkaMsg: msg,
+			session:  session,
+		}
+
+		// Block until worker accepts the task or context is canceled.
+		// Never drop messages — the worker will mark the offset after processing.
 		select {
-		case worker.msgCh <- msg:
-			session.MarkMessage(msg, "")
+		case w.taskCh <- task:
 			logx.Debugf("message dispatched to worker: partition=%d, offset=%d", partition, msg.Offset)
-		case <-worker.ctx.Done():
+		case <-w.ctx.Done():
 			logx.Infof("worker context canceled, stop dispatching: topic=%s, partition=%d",
 				h.consumer.topic, partition)
 			return nil
-		case <-time.After(100 * time.Millisecond):
-			logx.Errorf("worker msg channel full, retrying: topic=%s, partition=%d, offset=%d",
-				h.consumer.topic, partition, msg.Offset)
-			time.Sleep(50 * time.Millisecond)
-
-			select {
-			case worker.msgCh <- msg:
-				session.MarkMessage(msg, "")
-				logx.Debugf("message dispatched after retry: partition=%d, offset=%d", partition, msg.Offset)
-			default:
-				logx.Errorf("worker channel still full, drop message: partition=%d, offset=%d", partition, msg.Offset)
-				session.MarkMessage(msg, "")
-			}
 		}
 	}
 	return nil
 }
 
-func processDBTaskMessage(ctx context.Context, worker *worker, msg *sarama.ConsumerMessage, isOfflineExpand bool) error {
+func processDBTaskMessage(ctx context.Context, w *worker, msg *sarama.ConsumerMessage, isOfflineExpand bool) error {
 	var task db_proto.DBTask
 	if err := proto.Unmarshal(msg.Value, &task); err != nil {
 		return fmt.Errorf("unmarshal task failed: offset=%d, err=%w", msg.Offset, err)
 	}
+	return processDBTask(ctx, w, &task, msg.Partition, isOfflineExpand)
+}
+
+func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, partition int32, isOfflineExpand bool) error {
 	key := strconv.FormatUint(task.Key, 10)
 	logx.Debugf("received db task: taskID=%s, key=%s, partition=%d, isOfflineExpand=%v",
-		task.TaskId, key, msg.Partition, isOfflineExpand)
+		task.TaskId, key, partition, isOfflineExpand)
 
 	if isOfflineExpand {
 		logx.Debugf("offline expand mode: skip lock/status check, taskID=%s", task.TaskId)
-		return processTaskWithoutLock(ctx, worker.redisClient, &task)
+		return processTaskWithoutLock(ctx, w.redisClient, task)
 	}
 
-	expandStatus, err := kafkautil.GetExpandStatus(ctx, worker.redisClient, worker.topic)
+	expandStatus, err := kafkautil.GetExpandStatus(ctx, w.redisClient, w.topic)
 	if err != nil {
 		logx.Errorf("get expand status failed: key=%s, taskID=%s, err=%v", key, task.TaskId, err)
-		return tryLockAndProcess(ctx, worker, key, &task, msg.Offset)
+		return tryLockAndProcess(ctx, w, key, task, 0)
 	}
 
 	currentTime := time.Now().UnixMilli()
 	if expandStatus.Status == kafkautil.ExpandStatusExpanding &&
 		(expandStatus.UpdateTime == 0 || currentTime-expandStatus.UpdateTime > expandStatusExpireDuration.Milliseconds()) {
 		logx.Errorf("expand status expired: topic=%s, key=%s, lastUpdate=%d",
-			worker.topic, key, expandStatus.UpdateTime)
+			w.topic, key, expandStatus.UpdateTime)
 		expandStatus.Status = kafkautil.ExpandStatusNormal
-		_ = kafkautil.SetExpandStatus(ctx, worker.redisClient, worker.topic, kafkautil.ExpandStatusNormal, expandStatus.PartitionCount)
+		_ = kafkautil.SetExpandStatus(ctx, w.redisClient, w.topic, kafkautil.ExpandStatusNormal, expandStatus.PartitionCount)
 	}
 
 	if expandStatus.Status == kafkautil.ExpandStatusExpanding {
 		logx.Debugf("expanding mode: try lock for task: taskID=%s, key=%s", task.TaskId, key)
-		return tryLockAndProcess(ctx, worker, key, &task, msg.Offset)
+		return tryLockAndProcess(ctx, w, key, task, 0)
 	}
 
-	return processTaskWithoutLock(ctx, worker.redisClient, &task)
+	return processTaskWithoutLock(ctx, w.redisClient, task)
 }
 
 func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db_proto.DBTask, offset int64) error {
