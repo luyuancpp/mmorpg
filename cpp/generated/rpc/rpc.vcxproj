@@ -19,10 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="service_metadata\centre_player_scene_service_metadata.h" />
-    <ClInclude Include="service_metadata\centre_player_service_metadata.h" />
-    <ClInclude Include="service_metadata\centre_scene_service_metadata.h" />
-    <ClInclude Include="service_metadata\centre_service_service_metadata.h" />
     <ClInclude Include="service_metadata\chat_service_metadata.h" />
     <ClInclude Include="service_metadata\common_event_actor_combat_state_event_event_id.h" />
     <ClInclude Include="service_metadata\common_event_actor_event_event_id.h" />

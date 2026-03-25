@@ -3,7 +3,6 @@
 #include <time/comp/timer_task_comp.h>
 #include "node/system/node/node_util.h"
 #include <rpc/service_metadata/scene_service_metadata.h>
-#include <rpc/service_metadata/centre_service_service_metadata.h>
 #include <rpc/service_metadata/gate_service_service_metadata.h>
 #include <network/rpc_client.h>
 #include <network/rpc_session.h>
@@ -20,7 +19,7 @@
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,
 	0,
-	CentreNodeHandshakeMessageId,
+	0,
 	SceneNodeHandshakeMessageId,
 	GateNodeHandshakeMessageId
 };

@@ -282,6 +282,12 @@
     <ClCompile Include="guild\guild.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="scene\player_currency.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\component\currency_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="centre\centre_player.pb.h">
@@ -549,6 +555,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="guild\guild.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\player_currency.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\component\currency_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
