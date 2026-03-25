@@ -6,7 +6,7 @@ import (
 	"scene_manager/internal/logic"
 	"scene_manager/internal/svc"
 	"proto/common/base"
-	"scene_manager/scene_manager"
+	"proto/scene_manager"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

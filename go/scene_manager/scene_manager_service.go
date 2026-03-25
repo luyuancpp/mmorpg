@@ -9,7 +9,7 @@ import (
 	"scene_manager/internal/logic"
 	"scene_manager/internal/server"
 	"scene_manager/internal/svc"
-	"scene_manager/scene_manager"
+	"proto/scene_manager"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"

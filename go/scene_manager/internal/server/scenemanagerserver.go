@@ -10,7 +10,7 @@ import (
 	"scene_manager/internal/logic"
 	"scene_manager/internal/svc"
 	base "proto/common/base"
-	"scene_manager/scene_manager"
+	"proto/scene_manager"
 )
 
 type SceneManagerServer struct {

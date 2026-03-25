@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 
-	"data_service/data_service"
+	"proto/data_service"
 	"data_service/internal/constants"
 	"data_service/internal/logic"
 	"data_service/internal/svc"
