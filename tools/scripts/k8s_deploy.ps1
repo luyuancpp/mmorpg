@@ -24,6 +24,9 @@ param(
 	[switch]$SkipGoSvc,
 	[string]$GoSvcRegistry = "",
 	[string]$GoSvcTag = "latest",
+	[switch]$SkipJavaSvc,
+	[string]$JavaSvcRegistry = "",
+	[string]$JavaSvcTag = "latest",
 	[switch]$DryRun,
 	[switch]$WaitReady,
 	[int]$WaitTimeoutSeconds = 180,
@@ -39,6 +42,7 @@ $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 $K8sRoot = Join-Path $RepoRoot "deploy\k8s"
 $InfraManifestsDir = Join-Path $K8sRoot "manifests\infra"
 $GoSvcManifestsDir = Join-Path $K8sRoot "manifests\go-svc"
+$JavaSvcManifestsDir = Join-Path $K8sRoot "manifests\java-svc"
 
 # Go micro-service catalogue: name → { configMapName, manifestFile, port, configFlag, configFileName }
 $GoSvcCatalogue = @{
@@ -47,6 +51,11 @@ $GoSvcCatalogue = @{
 	login           = @{ ConfigMap = "go-svc-login-config";           Manifest = "login.yaml";           Port = 50000; ConfigFlag = "-loginService";   ConfigFile = "login.yaml";                  ImageName = "mmorpg-login" }
 	"player-locator"= @{ ConfigMap = "go-svc-player-locator-config";  Manifest = "player-locator.yaml";  Port = 50100; ConfigFlag = "-f";              ConfigFile = "player_locator.yaml";           ImageName = "mmorpg-player-locator" }
 	"scene-manager" = @{ ConfigMap = "go-svc-scene-manager-config";   Manifest = "scene-manager.yaml";   Port = 60000; ConfigFlag = "-f";              ConfigFile = "scene_manager_service.yaml";    ImageName = "mmorpg-scene-manager" }
+}
+
+# Java service catalogue
+$JavaSvcCatalogue = @{
+	auth = @{ ConfigMap = "java-svc-auth-config"; Manifest = "auth.yaml"; HttpPort = 5555; GrpcPort = 5556; ImageName = "mmorpg-auth" }
 }
 
 function Apply-OpsProfileDefaults {
@@ -341,6 +350,11 @@ function Wait-ForZoneReady {
 			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $svcName
 		}
 	}
+	if (-not $SkipJavaSvc -and -not [string]::IsNullOrWhiteSpace($JavaSvcRegistry)) {
+		foreach ($svcName in $JavaSvcCatalogue.Keys) {
+			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $svcName
+		}
+	}
 	Write-Host "Zone workloads are ready: namespace=$Namespace"
 }
 
@@ -576,6 +590,85 @@ function Apply-GoSvcManifests {
 	}
 }
 
+function New-JavaSvcConfigMapYaml {
+	param(
+		[Parameter(Mandatory = $true)][string]$SvcName
+	)
+
+	$info = $JavaSvcCatalogue[$SvcName]
+	$configMapName = $info.ConfigMap
+
+	$svcConfig = switch ($SvcName) {
+		"auth" {
+@"
+server:
+  port: 5555
+spring:
+  application:
+    name: sa-token-auth
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+  data:
+    redis:
+      host: redis
+sa-token:
+  is-read-cookie: false
+grpc:
+  server:
+    port: 5556
+"@
+		}
+		default {
+			throw "Unknown Java service: $SvcName"
+		}
+	}
+
+	return @"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: $configMapName
+data:
+  application.yaml: |
+$($svcConfig -split "`n" | ForEach-Object { "    `$_" } | Out-String)
+"@
+}
+
+function Apply-JavaSvcManifests {
+	param(
+		[Parameter(Mandatory = $true)][string]$Namespace
+	)
+
+	if ($SkipJavaSvc) { return }
+	if ([string]::IsNullOrWhiteSpace($JavaSvcRegistry)) {
+		Write-Host "[skip] Java services: -JavaSvcRegistry not set, skipping Java service deployment."
+		return
+	}
+
+	Write-Host "Applying Java service manifests to namespace $Namespace (registry=$JavaSvcRegistry tag=$JavaSvcTag)"
+
+	foreach ($svcName in $JavaSvcCatalogue.Keys) {
+		$info = $JavaSvcCatalogue[$svcName]
+		$svcImage = "$JavaSvcRegistry/$($info.ImageName):$JavaSvcTag"
+
+		# Apply ConfigMap
+		$cmYaml = New-JavaSvcConfigMapYaml -SvcName $svcName
+		Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $cmYaml
+
+		# Apply manifest with image placeholder replaced
+		$manifestPath = Join-Path $JavaSvcManifestsDir $info.Manifest
+		if (-not (Test-Path $manifestPath)) {
+			Write-Warning "Java service manifest not found: $manifestPath – skipping $svcName"
+			continue
+		}
+		$manifestContent = (Get-Content $manifestPath -Raw) -replace 'PLACEHOLDER_IMAGE', $svcImage
+		Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $manifestContent
+
+		Write-Host "  [applied] $svcName -> $svcImage (http=$($info.HttpPort) grpc=$($info.GrpcPort))"
+	}
+}
+
 function Get-ZonesFromJson {
 	param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -749,6 +842,8 @@ function Apply-Zone {
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $gateServiceYaml
 
 	Apply-GoSvcManifests -Namespace $namespace -CurrentZoneId $CurrentZoneId
+
+	Apply-JavaSvcManifests -Namespace $namespace
 
 	Wait-ForZoneReady -Namespace $namespace
 
