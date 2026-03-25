@@ -60,7 +60,7 @@ func TestFSMStore_SaveAndLoad(t *testing.T) {
 	assert.Equal(t, "middle", newFSM.Current())
 
 	// Transition again
-	err = newFSM.Event("to_end")
+	err = newFSM.Event(ctx, "to_end")
 	assert.NoError(t, err)
 	assert.Equal(t, "end", newFSM.Current())
 

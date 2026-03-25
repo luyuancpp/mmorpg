@@ -335,7 +335,7 @@ uint32_t CheckTimerPhase(const entt::entity casterEntity, const SkillTable* skil
 		if (skillTable->immediately()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently in phase. Sending interrupt message.";
-			SendSkillInterruptedMessage(casterEntity, skillTable->id());
+			SkillSystem::SendSkillInterruptedMessage(casterEntity, skillTable->id());
 			tlsRegistryManager.actorRegistry.remove<TimerComp>(casterEntity);
 			return kSuccess;
 		}

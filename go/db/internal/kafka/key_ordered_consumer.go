@@ -209,7 +209,7 @@ func (c *KeyOrderedKafkaConsumer) Start() error {
 				time.Sleep(1 * time.Second)
 			}
 			if c.ctx.Err() != nil {
-				logx.Info("consumer group stopped: groupID=%s, topic=%s", c.groupID, c.topic)
+				logx.Infof("consumer group stopped: groupID=%s, topic=%s", c.groupID, c.topic)
 				return
 			}
 		}
@@ -228,7 +228,7 @@ func (c *KeyOrderedKafkaConsumer) StartRetryConsumer() {
 		for {
 			select {
 			case <-c.ctx.Done():
-				logx.Info("retry consumer stopped: topic=%s, retryQueueKey=%s", c.topic, c.retryQueueKey)
+				logx.Infof("retry consumer stopped: topic=%s, retryQueueKey=%s", c.topic, c.retryQueueKey)
 				return
 			case <-ticker.C:
 				c.consumeRetryQueue()
@@ -377,7 +377,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			session.MarkMessage(msg, "")
 			logx.Debugf("message dispatched to worker: partition=%d, offset=%d", partition, msg.Offset)
 		case <-worker.ctx.Done():
-			logx.Info("worker context canceled, stop dispatching: topic=%s, partition=%d",
+			logx.Infof("worker context canceled, stop dispatching: topic=%s, partition=%d",
 				h.consumer.topic, partition)
 			return nil
 		case <-time.After(100 * time.Millisecond):
@@ -483,7 +483,7 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 		task.TaskId, task.Op, resultErr == "", resultErr)
 
 	if resultErr != "" {
-		return fmt.Errorf(resultErr)
+		return fmt.Errorf("%s", resultErr)
 	}
 	return nil
 }
@@ -502,6 +502,6 @@ func (c *KeyOrderedKafkaConsumer) Stop() {
 	if err := c.consumer.Close(); err != nil {
 		logx.Errorf("close consumer group failed: groupID=%s, err=%v", c.groupID, err)
 	} else {
-		logx.Info("consumer group closed: groupID=%s, topic=%s", c.groupID, c.topic)
+		logx.Infof("consumer group closed: groupID=%s, topic=%s", c.groupID, c.topic)
 	}
 }
