@@ -3,7 +3,7 @@ package clientplayerloginlogic
 import (
 	"context"
 	"login/internal/svc"
-	login_proto "login/proto/login"
+	login_proto "proto/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

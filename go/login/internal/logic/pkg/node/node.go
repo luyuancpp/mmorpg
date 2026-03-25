@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"login/internal/config"
 	etcd "login/internal/logic/pkg/etcd"
-	login_proto "login/proto/common/base"
+	login_proto "proto/common/base"
 	"time"
 
 	"github.com/google/uuid"
