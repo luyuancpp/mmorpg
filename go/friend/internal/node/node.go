@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"friend/internal/config"
-	base "friend/proto/common/base"
+	base "proto/common/base"
 )
 
 type Node struct {

@@ -3,7 +3,7 @@ package proto_sql
 import (
 	"database/sql"
 	"db/internal/config"
-	_ "db/proto/common/database"
+	_ "proto/common/database"
 	"encoding/json"
 	"errors"
 	"fmt"

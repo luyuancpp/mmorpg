@@ -1,0 +1,110 @@
+syntax = "proto3";
+package data_service;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "proto/data_service";
+
+// DataService: Cross-realm transparent data proxy.
+// Scene Server calls this service with player_id only;
+// DataService internally routes to the player's home-realm Redis.
+service DataService {
+  // ── Player lifecycle data ─────────────────────────────────────
+  rpc LoadPlayerData(LoadPlayerDataRequest) returns (LoadPlayerDataResponse) {}
+  rpc SavePlayerData(SavePlayerDataRequest) returns (SavePlayerDataResponse) {}
+
+  // ── Fine-grained key/value access ────────────────────────────
+  rpc GetPlayerField(GetPlayerFieldRequest) returns (GetPlayerFieldResponse) {}
+  rpc SetPlayerField(SetPlayerFieldRequest) returns (SetPlayerFieldResponse) {}
+
+  // ── Player-zone mapping (registration / merge) ───────────────
+  rpc RegisterPlayerZone(RegisterPlayerZoneRequest) returns (google.protobuf.Empty) {}
+  rpc GetPlayerHomeZone(GetPlayerHomeZoneRequest) returns (GetPlayerHomeZoneResponse) {}
+  rpc BatchGetPlayerHomeZone(BatchGetPlayerHomeZoneRequest) returns (BatchGetPlayerHomeZoneResponse) {}
+
+  // ── Cleanup / merge ──────────────────────────────────────────
+  rpc DeletePlayerData(DeletePlayerDataRequest) returns (DeletePlayerDataResponse) {}
+}
+
+// ── Load / Save ────────────────────────────────────────────────
+
+message LoadPlayerDataRequest {
+  uint64 player_id = 1;
+  repeated string fields = 2; // optional: specific fields to load; empty = all
+}
+
+message LoadPlayerDataResponse {
+  uint32 error_code = 1;
+  map<string, bytes> data = 2; // field_name → serialised value
+  uint64 version = 3;          // optimistic-lock version
+}
+
+message SavePlayerDataRequest {
+  uint64 player_id = 1;
+  map<string, bytes> data = 2;
+  uint64 expected_version = 3; // 0 = skip version check
+}
+
+message SavePlayerDataResponse {
+  uint32 error_code = 1;
+  uint64 new_version = 2;
+}
+
+// ── Field-level access ─────────────────────────────────────────
+
+message GetPlayerFieldRequest {
+  uint64 player_id = 1;
+  string field = 2;
+}
+
+message GetPlayerFieldResponse {
+  uint32 error_code = 1;
+  bytes value = 2;
+}
+
+message SetPlayerFieldRequest {
+  uint64 player_id = 1;
+  string field = 2;
+  bytes value = 3;
+  uint64 expected_version = 4; // 0 = skip version check
+}
+
+message SetPlayerFieldResponse {
+  uint32 error_code = 1;
+  uint64 new_version = 2;
+}
+
+// ── Zone mapping ───────────────────────────────────────────────
+
+message RegisterPlayerZoneRequest {
+  uint64 player_id = 1;
+  uint32 home_zone_id = 2;
+}
+
+message GetPlayerHomeZoneRequest {
+  uint64 player_id = 1;
+}
+
+message GetPlayerHomeZoneResponse {
+  uint32 home_zone_id = 1;
+}
+
+message BatchGetPlayerHomeZoneRequest {
+  repeated uint64 player_ids = 1;
+}
+
+message BatchGetPlayerHomeZoneResponse {
+  map<uint64, uint32> player_zone_map = 2; // player_id → home_zone_id
+}
+
+// ── Delete / Cleanup ───────────────────────────────────────────
+
+message DeletePlayerDataRequest {
+  uint64 player_id = 1;
+  bool   delete_zone_mapping = 2; // also remove player→zone mapping?
+}
+
+message DeletePlayerDataResponse {
+  uint32 error_code = 1;
+  uint32 keys_deleted = 2;
+}

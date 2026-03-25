@@ -2,7 +2,7 @@ package logic
 
 import (
 	"context"
-	kafkacontracts "contracts/kafka"
+	kafkacontracts "proto/contracts/kafka"
 	"fmt"
 	game "scene_manager/generated/pb/game"
 	"strconv"
