@@ -8,11 +8,11 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	RedisClient  RedisConf    `json:"RedisClient"`
-	MySQL        MySQLConf    `json:"MySQL"`
-	Node         NodeConf     `json:"Node"`
-	Registry     RegistryConf `json:"Registry"`
-	Cache        CacheConf    `json:"Cache"`
+	RedisClient RedisConf    `json:"RedisClient"`
+	MySQL       MySQLConf    `json:"MySQL"`
+	Node        NodeConf     `json:"Node"`
+	Registry    RegistryConf `json:"Registry"`
+	Cache       CacheConf    `json:"Cache"`
 }
 
 type RedisConf struct {

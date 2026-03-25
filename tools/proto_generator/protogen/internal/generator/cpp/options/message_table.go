@@ -172,10 +172,7 @@ func getShortFieldTypeName(fileDesc *descriptorpb.FileDescriptorProto, msgDesc *
 		return strings.ToLower(fieldType.String()[len("TYPE_"):])
 	}
 
-	typeName := field.GetTypeName()
-	if strings.HasPrefix(typeName, ".") {
-		typeName = typeName[1:]
-	}
+	typeName := strings.TrimPrefix(field.GetTypeName(), ".")
 	parts := strings.Split(typeName, ".")
 	shortName := parts[len(parts)-1]
 

@@ -127,7 +127,6 @@ func LoadAllDescriptors(wg *sync.WaitGroup) {
 		zap.Int("cached_message_count", len(internal.ActiveMsgDescCache)),
 		zap.Int("processed_file_count", len(internal.FileDescCache)),
 	)
-	return
 }
 
 func GenerateMergedTableSQL(messageNames []string) error {

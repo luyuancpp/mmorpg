@@ -15,15 +15,15 @@ import (
 
 // GuildData is the persistence-layer representation of a guild (stored in Redis + MySQL).
 type GuildData struct {
-	GuildID      uint64        `json:"guild_id"`
-	Name         string        `json:"name"`
-	LeaderID     uint64        `json:"leader_id"`
-	Level        uint32        `json:"level"`
-	Announcement string        `json:"announcement"`
-	CreateTimeMs int64         `json:"create_time_ms"`
-	MaxMembers   uint32        `json:"max_members"`
-	ZoneID       uint32        `json:"zone_id"`
-	Members      []MemberData  `json:"members"`
+	GuildID      uint64       `json:"guild_id"`
+	Name         string       `json:"name"`
+	LeaderID     uint64       `json:"leader_id"`
+	Level        uint32       `json:"level"`
+	Announcement string       `json:"announcement"`
+	CreateTimeMs int64        `json:"create_time_ms"`
+	MaxMembers   uint32       `json:"max_members"`
+	ZoneID       uint32       `json:"zone_id"`
+	Members      []MemberData `json:"members"`
 }
 
 type MemberData struct {
