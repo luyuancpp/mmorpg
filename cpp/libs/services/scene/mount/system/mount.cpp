@@ -5,6 +5,7 @@
 #include "actor/action_state/constants/actor_state.h"
 #include "actor/action_state/system/actor_action_state.h"
 #include "macros/return_define.h"
+#include "macros/error_return.h"
 
 uint32_t MountSystem::MountActor(const entt::entity actorEntity)
 {
@@ -16,7 +17,8 @@ uint32_t MountSystem::MountActor(const entt::entity actorEntity)
 uint32_t MountSystem::UnmountActor(const entt::entity actorEntity)
 {
     if (!ActorActionStateSystem::HasState(actorEntity, kActorStateMounted)) {
-        return kMountNotMounted;
+        return MAKE_ERROR_MSG(kMountNotMounted,
+            "entity=" << entt::to_integral(actorEntity));
     }
     // TODO: Clear mount state and detach rider from mount entity
     return kSuccess;

@@ -6,6 +6,7 @@
 #include <muduo/base/Logging.h>
 #include "table/proto/tip/buff_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "macros/error_return.h"
 #include "modifier_buff_impl.h"
 #include "motion_modifier_impl.h"
 #include "combat/buff/comp/buff_comp.h"
@@ -186,7 +187,9 @@ uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32
 
     const auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
     if (const bool isImmune = IsTargetImmune(buffList, buffTable)) {
-        return kBuffTargetImmuneToBuff;
+        return MAKE_ERROR_MSG(kBuffTargetImmuneToBuff,
+            "entity=" << entt::to_integral(parentEntity)
+            << " buffTableId=" << buffTableId);
     }
 
     return kSuccess;
@@ -238,7 +241,9 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     }
 
     if (addBuffTable->bufftype() != kBuffTypeDispel) {
-        return kInvalidTableData;
+        return MAKE_ERROR_MSG(kInvalidTableData,
+            "bufftype=" << addBuffTable->bufftype()
+            << " buffTableId=" << buffTableId);
     }
 
     return kSuccess;
