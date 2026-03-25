@@ -35,6 +35,7 @@
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_skill_comp.pb.h"
+#include "proto/common/component/currency_comp.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -1792,6 +1793,7 @@ class player_database final : public ::google::protobuf::Message
     kUint32PbComponentFieldNumber = 5,
     kDerivedAttributesComponentFieldNumber = 6,
     kLevelComponentFieldNumber = 7,
+    kCurrencyFieldNumber = 8,
     kPlayerIdFieldNumber = 1,
   };
   // .Transform transform = 2;
@@ -1884,6 +1886,21 @@ class player_database final : public ::google::protobuf::Message
   ::LevelComp* PROTOBUF_NONNULL _internal_mutable_level_component();
 
   public:
+  // .CurrencyComp currency = 8;
+  bool has_currency() const;
+  void clear_currency() ;
+  const ::CurrencyComp& currency() const;
+  [[nodiscard]] ::CurrencyComp* PROTOBUF_NULLABLE release_currency();
+  ::CurrencyComp* PROTOBUF_NONNULL mutable_currency();
+  void set_allocated_currency(::CurrencyComp* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_currency(::CurrencyComp* PROTOBUF_NULLABLE value);
+  ::CurrencyComp* PROTOBUF_NULLABLE unsafe_arena_release_currency();
+
+  private:
+  const ::CurrencyComp& _internal_currency() const;
+  ::CurrencyComp* PROTOBUF_NONNULL _internal_mutable_currency();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   ::uint64_t player_id() const;
@@ -1898,8 +1915,8 @@ class player_database final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 7,
-                                   6, 0,
+  static const ::google::protobuf::internal::TcParseTable<3, 8,
+                                   7, 0,
                                    2>
       _table_;
 
@@ -1926,6 +1943,7 @@ class player_database final : public ::google::protobuf::Message
     ::PlayerUint32Comp* PROTOBUF_NULLABLE uint32_pb_component_;
     ::BaseAttributesComp* PROTOBUF_NULLABLE derived_attributes_component_;
     ::LevelComp* PROTOBUF_NULLABLE level_component_;
+    ::CurrencyComp* PROTOBUF_NULLABLE currency_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -3161,7 +3179,7 @@ inline void player_centre_database::set_allocated_scene_info(::PlayerSceneContex
 inline void player_database::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000080u;
 }
 inline ::uint64_t player_database::player_id() const {
   // @@protoc_insertion_point(field_get:player_database.player_id)
@@ -3169,7 +3187,7 @@ inline ::uint64_t player_database::player_id() const {
 }
 inline void player_database::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000080u;
   // @@protoc_insertion_point(field_set:player_database.player_id)
 }
 inline ::uint64_t player_database::_internal_player_id() const {
@@ -3737,6 +3755,99 @@ inline void player_database::set_allocated_level_component(::LevelComp* PROTOBUF
 
   _impl_.level_component_ = reinterpret_cast<::LevelComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database.level_component)
+}
+
+// .CurrencyComp currency = 8;
+inline bool player_database::has_currency() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000040u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.currency_ != nullptr);
+  return value;
+}
+inline const ::CurrencyComp& player_database::_internal_currency() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::CurrencyComp* p = _impl_.currency_;
+  return p != nullptr ? *p : reinterpret_cast<const ::CurrencyComp&>(::_CurrencyComp_default_instance_);
+}
+inline const ::CurrencyComp& player_database::currency() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.currency)
+  return _internal_currency();
+}
+inline void player_database::unsafe_arena_set_allocated_currency(
+    ::CurrencyComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.currency_);
+  }
+  _impl_.currency_ = reinterpret_cast<::CurrencyComp*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000040u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000040u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.currency)
+}
+inline ::CurrencyComp* PROTOBUF_NULLABLE player_database::release_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000040u;
+  ::CurrencyComp* released = _impl_.currency_;
+  _impl_.currency_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::CurrencyComp* PROTOBUF_NULLABLE player_database::unsafe_arena_release_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_database.currency)
+
+  _impl_._has_bits_[0] &= ~0x00000040u;
+  ::CurrencyComp* temp = _impl_.currency_;
+  _impl_.currency_ = nullptr;
+  return temp;
+}
+inline ::CurrencyComp* PROTOBUF_NONNULL player_database::_internal_mutable_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.currency_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::CurrencyComp>(GetArena());
+    _impl_.currency_ = reinterpret_cast<::CurrencyComp*>(p);
+  }
+  return _impl_.currency_;
+}
+inline ::CurrencyComp* PROTOBUF_NONNULL player_database::mutable_currency()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000040u;
+  ::CurrencyComp* _msg = _internal_mutable_currency();
+  // @@protoc_insertion_point(field_mutable:player_database.currency)
+  return _msg;
+}
+inline void player_database::set_allocated_currency(::CurrencyComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.currency_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000040u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000040u;
+  }
+
+  _impl_.currency_ = reinterpret_cast<::CurrencyComp*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.currency)
 }
 
 // -------------------------------------------------------------------

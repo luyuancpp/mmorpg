@@ -460,6 +460,7 @@ type PlayerDatabase struct {
 	Uint32PbComponent          *component.PlayerUint32Comp    `protobuf:"bytes,5,opt,name=uint32_pb_component,json=uint32PbComponent,proto3" json:"uint32_pb_component,omitempty"`
 	DerivedAttributesComponent *component.BaseAttributesComp  `protobuf:"bytes,6,opt,name=derived_attributes_component,json=derivedAttributesComponent,proto3" json:"derived_attributes_component,omitempty"`
 	LevelComponent             *component.LevelComp           `protobuf:"bytes,7,opt,name=level_component,json=levelComponent,proto3" json:"level_component,omitempty"`
+	Currency                   *component.CurrencyComp        `protobuf:"bytes,8,opt,name=currency,proto3" json:"currency,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -543,6 +544,13 @@ func (x *PlayerDatabase) GetLevelComponent() *component.LevelComp {
 	return nil
 }
 
+func (x *PlayerDatabase) GetCurrency() *component.CurrencyComp {
+	if x != nil {
+		return x.Currency
+	}
+	return nil
+}
+
 type PlayerDatabase_1 struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -591,7 +599,7 @@ var File_proto_common_database_mysql_database_table_proto protoreflect.FileDescr
 
 const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\n" +
-	"0proto/common/database/mysql_database_table.proto\x1a\x1bproto/db/proto_option.proto\x1a%proto/common/base/user_accounts.proto\x1a.proto/common/component/player_scene_comp.proto\x1a'proto/common/component/actor_comp.proto\x1a(proto/common/component/player_comp.proto\x1a.proto/common/component/player_skill_comp.proto\"\xb5\x01\n" +
+	"0proto/common/database/mysql_database_table.proto\x1a\x1bproto/db/proto_option.proto\x1a%proto/common/base/user_accounts.proto\x1a.proto/common/component/player_scene_comp.proto\x1a'proto/common/component/actor_comp.proto\x1a(proto/common/component/player_comp.proto\x1a.proto/common/component/player_skill_comp.proto\x1a*proto/common/component/currency_comp.proto\"\xb5\x01\n" +
 	"\x04user\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x19\n" +
@@ -631,7 +639,7 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x16player_centre_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x126\n" +
 	"\n" +
-	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:7\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\xd6\x03\n" +
+	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:7\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\x81\x04\n" +
 	"\x0fplayer_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -642,7 +650,8 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x13uint32_pb_component\x18\x05 \x01(\v2\x11.PlayerUint32CompR\x11uint32PbComponent\x12U\n" +
 	"\x1cderived_attributes_component\x18\x06 \x01(\v2\x13.BaseAttributesCompR\x1aderivedAttributesComponent\x123\n" +
 	"\x0flevel_component\x18\a \x01(\v2\n" +
-	".LevelCompR\x0elevelComponent:5\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"i\n" +
+	".LevelCompR\x0elevelComponent\x12)\n" +
+	"\bcurrency\x18\b \x01(\v2\r.CurrencyCompR\bcurrency:5\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"i\n" +
 	"\x11player_database_1\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:7\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01B\x1eZ\x1cfriend/proto/common/databaseb\x06proto3"
 
@@ -677,6 +686,7 @@ var file_proto_common_database_mysql_database_table_proto_goTypes = []any{
 	(*component.PlayerUint32Comp)(nil),       // 14: PlayerUint32Comp
 	(*component.BaseAttributesComp)(nil),     // 15: BaseAttributesComp
 	(*component.LevelComp)(nil),              // 16: LevelComp
+	(*component.CurrencyComp)(nil),           // 17: CurrencyComp
 }
 var file_proto_common_database_mysql_database_table_proto_depIdxs = []int32{
 	9,  // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
@@ -687,11 +697,12 @@ var file_proto_common_database_mysql_database_table_proto_depIdxs = []int32{
 	14, // 5: player_database.uint32_pb_component:type_name -> PlayerUint32Comp
 	15, // 6: player_database.derived_attributes_component:type_name -> BaseAttributesComp
 	16, // 7: player_database.level_component:type_name -> LevelComp
-	8,  // [8:8] is the sub-list for method output_type
-	8,  // [8:8] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	17, // 8: player_database.currency:type_name -> CurrencyComp
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_mysql_database_table_proto_init() }

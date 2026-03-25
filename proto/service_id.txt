@@ -35,6 +35,7 @@
 34=SceneClientPlayerCommonKickPlayer
 35=GuildServiceGetPlayerGuild
 36=SceneCreateScene
+37=SceneCurrencyClientPlayerGmAddCurrency
 38=GuildServiceDisbandGuild
 39=GuildServiceSetAnnouncement
 40=SceneInvokePlayerService
@@ -46,10 +47,12 @@
 46=SceneManagerEnterScene
 47=SceneSceneClientPlayerNotifyActorListCreate
 48=ClientPlayerLoginLogin
+49=SceneCurrencyClientPlayerGmDeductCurrency
 50=ScenePlayerCentre2GsLogin
 51=SceneSceneClientPlayerNotifyActorDestroy
 52=GuildServiceGetGuildRankByGuild
 53=FriendServiceRemoveFriend
+54=SceneCurrencyClientPlayerGetCurrencyList
 55=ScenePlayerSyncSyncAttribute5Frames
 56=GateBindSessionToGate
 57=SceneCentreSendToPlayerViaGameNode
@@ -89,3 +92,5 @@
 91=DataServiceGetPlayerField
 92=DataServiceSavePlayerData
 93=DataServiceGetPlayerHomeZone
+94=SceneCurrencyClientPlayerGmBlockCurrency
+95=SceneCurrencyClientPlayerGmUnblockCurrency
