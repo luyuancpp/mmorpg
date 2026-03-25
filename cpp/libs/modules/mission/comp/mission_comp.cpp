@@ -6,6 +6,7 @@
 #include "mission/constants/mission.h"
 
 #include "core/macros/return_define.h"
+#include "core/macros/error_return.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
 
@@ -35,7 +36,7 @@ uint32_t MissionsComp::ValidateNotAccepted(uint32_t missionId) const
 {
 	if (missionList_.missions().find(missionId) != missionList_.missions().end())
 	{
-		return kMissionIdRepeated;
+		return MAKE_ERROR_MSG(kMissionIdRepeated, "missionId=" << missionId);
 	}
 	return kSuccess;
 }
@@ -44,7 +45,7 @@ uint32_t MissionsComp::ValidateNotCompleted(uint32_t missionId) const
 {
 	if (IsComplete(missionId))
 	{
-		return kMissionAlreadyCompleted;
+		return MAKE_ERROR_MSG(kMissionAlreadyCompleted, "missionId=" << missionId);
 	}
 	return kSuccess;
 }

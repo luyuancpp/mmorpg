@@ -7,7 +7,6 @@
 inline uint32_t PrintStackAndReturnError(const uint32_t error_code) {
     LOG_ERROR << "Stack trace (error code: " << error_code << "):";
     LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
-
     return error_code;
 }
 

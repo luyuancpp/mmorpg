@@ -8,6 +8,7 @@
 
 #include "engine/core/error_handling/error_handling.h"
 #include "engine/core/macros/return_define.h"
+#include "engine/core/macros/error_return.h"
 #include "engine/core/utils/bit_index/bit_index_util.h"
 
 #include "mission/comp/mission_comp.h"
@@ -108,9 +109,9 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent, Mis
 
 uint32_t MissionSystem::AbandonMission(const AbandonParam& param, MissionsComp& comp, const IMissionConfig& config) {
 	if (kMissionAlreadyCompleted == comp.ValidateNotCompleted(param.missionId)) {
-		LOG_ERROR << "Cannot abandon completed mission: missionId = " << param.missionId
-			<< ", playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity);
-		return kMissionAlreadyCompleted;
+		return MAKE_ERROR_MSG(kMissionAlreadyCompleted,
+			"missionId=" << param.missionId
+			<< " playerId=" << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(param.playerEntity));
 	}
 
 	SetBit(MissionBitMap, comp.GetClaimableRewards(), param.missionId, false);

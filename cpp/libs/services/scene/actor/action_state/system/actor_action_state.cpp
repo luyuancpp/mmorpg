@@ -6,6 +6,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "actor/action_state/constants/actor_state.h"
 #include "engine/core/macros/return_define.h"
+#include "engine/core/macros/error_return.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/event/actor_event.pb.h"
 #include "engine/thread_context/dispatcher_manager.h"
@@ -90,7 +91,9 @@ bool ActorActionStateSystem::HasState(const entt::entity actorEntity, const uint
 uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     if (actorState >= kActorStateActorStateMax){
-        return kInvalidParameter; 
+        return MAKE_ERROR_MSG(kInvalidParameter,
+            "entity=" << entt::to_integral(actorEntity)
+            << " actorState=" << actorState);
     }
 
     if (actorStatePbComponent.state_list().contains(actorState)){
@@ -105,7 +108,9 @@ uint32_t ActorActionStateSystem::RemoveState(entt::entity actorEntity, uint32_t 
     auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     if (actorState >= kActorStateActorStateMax ||
         !actorStatePbComponent.state_list().contains(actorState)) {
-        return kInvalidParameter;
+        return MAKE_ERROR_MSG(kInvalidParameter,
+            "entity=" << entt::to_integral(actorEntity)
+            << " actorState=" << actorState);
     }
 
     actorStatePbComponent.mutable_state_list()->erase(actorState);
