@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"scene_manager/internal/svc"
-	"scene_manager/scene_manager"
+	"proto/scene_manager"
 
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/logx"

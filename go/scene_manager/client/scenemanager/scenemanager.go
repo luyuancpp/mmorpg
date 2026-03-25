@@ -8,7 +8,7 @@ import (
 	"context"
 
 	base "proto/common/base"
-	"scene_manager/scene_manager"
+	"proto/scene_manager"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"

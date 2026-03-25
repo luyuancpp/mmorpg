@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"scene_manager/internal/svc"
-	"scene_manager/scene_manager"
+	"proto/scene_manager"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
