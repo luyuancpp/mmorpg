@@ -9,6 +9,7 @@
 #include "core/utils/registry/game_registry.h"
 #include "modules/currency/comp/player_currency_comp.h"
 #include "proto/common/component/currency_comp.pb.h"
+#include <registry_manager.h>
 
 // ---------------------------------------------------------------------------
 // Internal helper
