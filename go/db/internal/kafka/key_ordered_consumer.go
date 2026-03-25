@@ -32,6 +32,20 @@ const (
 	taskResultExpireDuration   = 5 * time.Minute
 )
 
+// buildCacheKey builds the same Redis key as login's cache.BuildRedisKey:
+// "{MsgType}:{Key}" — e.g. "db.PlayerData:12345"
+func buildCacheKey(task *db_proto.DBTask) string {
+	return fmt.Sprintf("%s:%d", task.MsgType, task.Key)
+}
+
+func cacheTTL() time.Duration {
+	sec := db_config.AppConfig.ServerConfig.RedisClient.DefaultTTLSeconds
+	if sec <= 0 {
+		return 24 * time.Hour
+	}
+	return time.Duration(sec) * time.Second
+}
+
 // ExpandStatus holds expansion state.
 type ExpandStatus struct {
 	Status         string
@@ -110,6 +124,12 @@ func handleDBReadOp(
 		return fmt.Sprintf("marshal read result failed: %v", err)
 	}
 
+	// Write-back: update Redis cache so login can hit cache next time
+	cacheKey := buildCacheKey(task)
+	if err := redisClient.Set(ctx, cacheKey, resultData, cacheTTL()).Err(); err != nil {
+		logx.Errorf("cache write-back failed on read: key=%s, taskID=%s, err=%v", cacheKey, task.TaskId, err)
+	}
+
 	// Write result to Redis (read ops only)
 	if task.TaskId != "" {
 		result := &db_proto.TaskResult{
@@ -142,6 +162,18 @@ func handleDBWriteOp(
 	if err := proto_sql.DB.SqlModel.Save(msg); err != nil {
 		return fmt.Sprintf("db write failed: %v", err)
 	}
+
+	// Write-back: update Redis cache after MySQL write (serial per key via Kafka partition)
+	cacheKey := buildCacheKey(task)
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		logx.Errorf("cache write-back marshal failed: key=%s, taskID=%s, err=%v", cacheKey, task.TaskId, err)
+		return ""
+	}
+	if err := redisClient.Set(ctx, cacheKey, data, cacheTTL()).Err(); err != nil {
+		logx.Errorf("cache write-back failed on write: key=%s, taskID=%s, err=%v", cacheKey, task.TaskId, err)
+	}
+
 	return ""
 }
 
