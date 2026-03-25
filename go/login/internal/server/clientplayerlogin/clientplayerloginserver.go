@@ -9,7 +9,7 @@ import (
 
 	"login/internal/logic/clientplayerlogin"
 	"login/internal/svc"
-	"login/proto/login"
+	"proto/login"
 )
 
 type ClientPlayerLoginServer struct {

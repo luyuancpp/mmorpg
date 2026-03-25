@@ -9,8 +9,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"player_locator/internal/svc"
-	common "player_locator/proto/common"
-	pb "player_locator/proto/player_locator"
+	common "proto/common/base"
+	pb "proto/player_locator"
 )
 
 type SetDisconnectingLogic struct {

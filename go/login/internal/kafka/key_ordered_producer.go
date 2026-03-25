@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"login/internal/logic/pkg/consistent"
-	db_proto "login/proto/db"
+	db_proto "proto/db"
 
 	"github.com/IBM/sarama"
 	"github.com/zeromicro/go-zero/core/logx"

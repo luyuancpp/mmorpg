@@ -2,7 +2,7 @@ package ctxkeys
 
 import (
 	"context"
-	login_proto "login/proto/common/base"
+	login_proto "proto/common/base"
 )
 
 // contextKey is a custom type to avoid key collisions.

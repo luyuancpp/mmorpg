@@ -19,8 +19,8 @@ import (
 	"friend/internal/node"
 	"friend/internal/server"
 	"friend/internal/svc"
-	base "friend/proto/common/base"
-	pb "friend/proto/friend"
+	base "proto/common/base"
+	pb "proto/friend"
 )
 
 var configFile = flag.String("f", "etc/friend.yaml", "config file path")

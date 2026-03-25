@@ -1,0 +1,38 @@
+syntax = "proto3";
+option go_package = "proto/common/component";
+
+
+
+// Normal login
+message NormalLogin
+{
+}
+
+// Session takeover login
+message CoverLogin
+{
+}
+
+message Player
+{
+}
+
+message Account
+{
+	string account = 1;
+}
+
+message UnregisterPlayer
+{
+}
+
+message PlayerUint64Comp
+{
+	uint64 registration_timestamp  = 1;
+}
+
+message PlayerUint32Comp
+{
+	uint32 class  = 1;
+}
+

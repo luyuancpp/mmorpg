@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"login/internal/config"
-	login_proto "login/proto/common/base"
+	login_proto "proto/common/base"
 	"sync"
 
 	"github.com/zeromicro/go-zero/core/logx"

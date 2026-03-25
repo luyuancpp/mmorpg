@@ -11,13 +11,13 @@ import (
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/protobuf/proto"
 
-	kafkapb "login/contracts/kafka"
+	kafkapb "proto/contracts/kafka"
 	game "login/generated/pb/game"
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/taskmanager"
-	login_proto "login/proto/common/base"
-	plpb "login/proto/player_locator"
+	login_proto "proto/common/base"
+	plpb "proto/player_locator"
 	"time"
 )
 
@@ -108,7 +108,7 @@ func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string,
 	cmd := &kafkapb.GateCommand{
 		SessionId:        sessionID,
 		TargetInstanceId: gateInstanceID,
-		EventId:          &eventId,
+		EventId:          eventId,
 	}
 
 	gateNodeID, err := strconv.ParseUint(gateID, 10, 32)

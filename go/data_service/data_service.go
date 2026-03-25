@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"data_service/data_service"
+	"proto/data_service"
 	"data_service/internal/config"
 	"data_service/internal/server"
 	"data_service/internal/svc"

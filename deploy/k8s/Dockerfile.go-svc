@@ -3,7 +3,7 @@
 # Multi-stage Dockerfile for Go micro-services.
 #
 # Build context MUST be the go/ directory (to resolve local
-# replace directives like ../contracts, ../generated).
+# replace directives like ../proto, ../shared).
 #
 # Usage:
 #   docker build -f deploy/k8s/Dockerfile.go-svc \
@@ -22,9 +22,9 @@ RUN apk add --no-cache git
 
 WORKDIR /src
 
-# Copy shared local modules first (used by scene_manager's replace directives)
-COPY contracts/ /src/contracts/
-COPY generated/ /src/generated/
+# Copy shared local modules (used by replace directives in go.mod)
+COPY proto/  /src/proto/
+COPY shared/ /src/shared/
 
 # Copy the target service
 COPY ${SERVICE}/ /src/${SERVICE}/
@@ -33,7 +33,7 @@ WORKDIR /src/${SERVICE}
 
 RUN go mod download \
     && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-       go build -ldflags="-s -w" -o /app/service ${ENTRY}
+    go build -ldflags="-s -w" -o /app/service ${ENTRY}
 
 # ── Runtime stage ────────────────────────────────────────────────
 FROM alpine:3.20
@@ -43,9 +43,6 @@ RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 
 COPY --from=builder /app/service /app/service
-
-# Copy generated data files (e.g. mysql_database_table_list.json for db service)
-COPY --from=builder /src/generated/data/ /app/data/
 
 # Each service keeps its etc/ config inside the image as a default.
 # K8s deployments override it via ConfigMap mount at /app/etc/.
