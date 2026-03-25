@@ -261,6 +261,27 @@
     <ClCompile Include="data_service\data_service.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="chat\chat.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="chat\chat.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="contracts\kafka\player_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="friend\friend.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="friend\friend.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="guild\guild.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="guild\guild.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="centre\centre_player.pb.h">
@@ -507,6 +528,27 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="data_service\data_service.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="chat\chat.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="chat\chat.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="contracts\kafka\player_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="friend\friend.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="friend\friend.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="guild\guild.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="guild\guild.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
