@@ -3,12 +3,12 @@ option go_package = "common/proto/common/component";
 
 
 
-//普通登录
+// Normal login
 message NormalLogin
 {
 }
 
-//顶号登录
+// Session takeover login
 message CoverLogin
 {
 }

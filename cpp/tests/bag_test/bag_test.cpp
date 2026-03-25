@@ -214,48 +214,48 @@ TEST(BagTest, AdequateSizeAddItemCannotStackItemFull)
     EXPECT_EQ(kSuccess, bag.HasEnoughSpace(adequate_add));
 }
 
-//可叠加混合,测试物品里面全满的情况，如999
+// Mixed stackable/non-stackable, test when all slots are full (e.g. 999)
 TEST(BagTest, AdequateSizeAddItemmixtureFull)
 {
-    uint32_t cannot_stack_config_id = 1;//不可以叠加的物品id
-    uint32_t stack_config_id = 10;//可以叠加的物品id
-    //一个不可叠加，10个可以叠加
+    uint32_t cannot_stack_config_id = 1;// non-stackable item id
+    uint32_t stack_config_id = 10;// stackable item id
+    // 1 non-stackable, 10 stackable
     Bag bag;
     ItemCountMap adequate_add{ {cannot_stack_config_id, 1 },
         {stack_config_id, GetItemTable(stack_config_id).first->max_statck_size() * (uint32_t)kDefaultCapacity} };
 
 
     EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));
-    //改成一个不可叠加，九个可以叠加
+    // change to 1 non-stackable, 9 stackable
     adequate_add[stack_config_id] = (uint32_t)(kDefaultCapacity - 1) * GetItemTable(stack_config_id).first->max_statck_size();
     EXPECT_EQ(kSuccess, bag.HasEnoughSpace(adequate_add));
-    //添加一个格子以后不可以叠加了，添加一个可以叠加的物品
+    // after occupying one slot, add a stackable item
     InitItemParam p;
     p.itemPBComp.set_config_id(cannot_stack_config_id);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
 
     
-    EXPECT_EQ(kSuccess, bag.AddItem(p));//剩九个格子
-    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));//因为占用了一个格子，所以总共不满十个格子
-    //改成8个可以叠加的格子,一个不可叠加，总共需要九个格子
+    EXPECT_EQ(kSuccess, bag.AddItem(p));// 9 slots remaining
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));// one slot occupied, less than 10 total
+    // change to 8 stackable + 1 non-stackable = 9 total needed
     adequate_add[stack_config_id] = (uint32_t)(kDefaultCapacity - 2) * GetItemTable(stack_config_id).first->max_statck_size();
     EXPECT_EQ(kSuccess, bag.HasEnoughSpace(adequate_add));
     p.itemPBComp.set_config_id(stack_config_id);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
     EXPECT_EQ(kSuccess, bag.AddItem(p));
-    //改成7个可以叠加的格子,1个不可叠加，总共需要8个格子
+    // change to 7 stackable + 1 non-stackable = 8 total needed
     EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));
     adequate_add[stack_config_id] = (uint32_t)(kDefaultCapacity - 3) * GetItemTable(stack_config_id).first->max_statck_size();
     EXPECT_EQ(kSuccess, bag.HasEnoughSpace(adequate_add));
 
     p.itemPBComp.set_config_id(stack_config_id);
-    //放一个可以叠加的格子，个数少100
+    // add one stackable slot, 100 less than max
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() - 100);
     EXPECT_EQ(kSuccess, bag.AddItem(p));
     EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));
 }
 
-//��Ʒ�㹻����
+// Item sufficiency check
 TEST(BagTest, AdequateItem)
 {
     Bag bag;
@@ -265,7 +265,7 @@ TEST(BagTest, AdequateItem)
     uint32_t config_id2 = 2;
     uint32_t config_id11 = 11;
     ItemCountMap adequate_item{ {config_id10 , 1} };
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//空背包测试
+    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));// empty bag test
     InitItemParam p;
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
@@ -273,45 +273,45 @@ TEST(BagTest, AdequateItem)
     EXPECT_EQ(kSuccess, bag.HasSufficientItems(adequate_item));
     adequate_item[config_id10] = GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() / 2;
     EXPECT_EQ(kSuccess, bag.HasSufficientItems(adequate_item));
-    adequate_item.emplace(config_id1, 1);//不可叠加一个
+    adequate_item.emplace(config_id1, 1);// 1 non-stackable
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));
 
-    //创建一个不可以叠加的
+    // create a non-stackable item
     p.itemPBComp.set_config_id(config_id1);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
    
     EXPECT_EQ(kSuccess, bag.AddItem(p));
     EXPECT_EQ(kSuccess, bag.HasSufficientItems(adequate_item));
-    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size();//1个10可叠加999
+    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size();// 1 stack of id 10 = 999
     EXPECT_EQ(kSuccess, bag.HasSufficientItems(adequate_item));
-    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size() + 1;//1个10可叠加1000
+    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size() + 1;// 1 stack of id 10 = 1000
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));
-    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size() * 3;//3个10可叠加999*3
+    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size() * 3;// 3 stacks of id 10 = 999*3
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));
 
-    //创建一个可以叠加的
+    // create a stackable item
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
 
     EXPECT_EQ(kSuccess, bag.AddItem(p));
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//2个10的叠加999
+    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));// 2 stacks of id 10, 999 each
 
     p.itemPBComp.set_config_id(config_id11);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() * 3);
     EXPECT_EQ(kSuccess, bag.AddItem(p));
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//2个10的叠加999
+    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));// 2 stacks of id 10, 999 each
 
-    //创建一个可以叠加的
+    // create a stackable item
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
     EXPECT_EQ(kSuccess, bag.AddItem(p));
-    EXPECT_EQ(kSuccess, bag.HasSufficientItems(adequate_item));//3个10的叠加99
+    EXPECT_EQ(kSuccess, bag.HasSufficientItems(adequate_item));// 3 stacks of id 10
 
-    adequate_item[config_id11] = GetItemTable(config_id11).first->max_statck_size() * 3;//3个10可叠加999 3个11可叠加999
+    adequate_item[config_id11] = GetItemTable(config_id11).first->max_statck_size() * 3;// 3 stacks of id 10 (999), 3 stacks of id 11 (999)
     EXPECT_EQ(kSuccess, bag.HasSufficientItems(adequate_item));
 }
 
-//��Ʒ�㹻����
+// Item deletion test
 TEST(BagTest, DelItem)
 {
     Bag bag;
@@ -409,7 +409,7 @@ TEST(BagTest, RemoveItemByPos)
     EXPECT_EQ(0, bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->size());
 }
 
-//����1��ÿ������ʹ��һ��
+// Neaten: each slot reduced to 1 item
 TEST(BagTest, Neaten1)
 {
     Bag bag;
@@ -460,7 +460,7 @@ TEST(BagTest, Neaten1)
     EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(config_id11));
 }
 
-//����400���ӣ�ÿ����998
+// Neaten: 400 slots, each reduced to 1
 TEST(BagTest, Neaten400)
 {
     Bag bag;
@@ -512,7 +512,7 @@ TEST(BagTest, Neaten400)
     EXPECT_EQ(grid_sz, bag.GetItemStackSize(config_id11));
 }
 
-//测试400格子，每种物品前100个用998
+// Test 400 slots, first 100 of each item type at 998
 TEST(BagTest, Neaten400_1)
 {
     Bag bag;
@@ -561,10 +561,10 @@ TEST(BagTest, Neaten400_1)
         dp.size_ = GetItemTable(config_id11).first->max_statck_size() - 1;
         EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp));
     }
-    auto index1 = use_config_id10_sz;//第1百个格子以前1
-    auto index2 = use_config_id10_sz * 2;//第2百个格子以前999
-    auto index3 = use_config_id10_sz * 3;//第3百个格子以前1
-    auto index4 = use_config_id10_sz * 4;//第4百个格子以前999
+    auto index1 = use_config_id10_sz;// slots 0-99: size 1
+    auto index2 = use_config_id10_sz * 2;// slots 100-199: size 999
+    auto index3 = use_config_id10_sz * 3;// slots 200-299: size 1
+    auto index4 = use_config_id10_sz * 4;// slots 300-399: size 999
     for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         if (i < index1)
@@ -613,7 +613,7 @@ TEST(BagTest, Neaten400_1)
     EXPECT_EQ(per_grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id11));
 }
 
-//����1��ÿ������ʹ��һ��
+// Neaten with non-stackable items
 TEST(BagTest, NeatenCanNotStack)
 {
     Bag bag;

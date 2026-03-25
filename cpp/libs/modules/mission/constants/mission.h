@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-enum class eCondtionType : uint32_t
+enum class eConditionType : uint32_t
 {
 	kConditionKillMonster = 1,//kill monster	
 	kConditionTalkWithNpc = 2, //talk with NPC

@@ -161,13 +161,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fcombat
     "ateCollectionComp.StatesEntry\032F\n\013StatesE"
     "ntry\022\013\n\003key\030\001 \001(\r\022&\n\005value\030\002 \001(\0132\027.Comba"
     "tStateDetailsComp:\0028\001*\034\n\014eCombatState\022\014\n"
-    "\010kSilence\020\000b\006proto3"
+    "\010kSilence\020\000B\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto = {
     false,
     false,
-    379,
+    399,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto,
     "proto/common/component/actor_combat_state_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once,

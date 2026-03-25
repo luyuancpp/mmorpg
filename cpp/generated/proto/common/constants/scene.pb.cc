@@ -34,14 +34,14 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
     file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2fcommon_2fconstants_2fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\"proto/common/constants/scene.protob\006pr"
-    "oto3"
+    "\n\"proto/common/constants/scene.protoB\022Z\020"
+    "common/constantsb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fconstants_2fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fconstants_2fscene_2eproto = {
     false,
     false,
-    44,
+    64,
     descriptor_table_protodef_proto_2fcommon_2fconstants_2fscene_2eproto,
     "proto/common/constants/scene.proto",
     &descriptor_table_proto_2fcommon_2fconstants_2fscene_2eproto_once,

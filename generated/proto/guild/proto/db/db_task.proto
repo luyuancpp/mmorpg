@@ -1,0 +1,27 @@
+syntax = "proto3";
+option go_package = "guild/proto/db";
+
+package taskpb;
+
+
+
+// DBTask: DB operation task struct transmitted via Kafka
+// Usage: producer sends DB operation requests, consumer receives and executes
+message DBTask {
+  uint64 key = 1;                // Business unique key (e.g. user ID, order ID) for locking and partition routing
+  string where_case = 2;         // Query condition (read-only, e.g. "id=123 AND status=0")
+  string op = 3;                 // Operation type: "read" or "write"
+  string msg_type = 4;           // Target proto message type (e.g. "userpb.UserInfo") for deserializing body
+  bytes body = 5;                // Serialized business data (e.g. UserInfo bytes)
+  string task_id = 6;            // Unique task ID for storing result in Redis (producer queries by this ID)
+  int32 retry_count = 7;         // Retry count (default 0, +1 per retry, for max-retry control)
+}
+
+// TaskResult: DB task execution result struct
+// Usage: consumer stores result in Redis after execution, for producer to query
+message TaskResult {
+  bool success = 1;              // Result: true=success, false=failure
+  bytes data = 2;                // Business data on success (e.g. UserInfo bytes from read)
+  string error = 3;              // Error message on failure (e.g. DB timeout, SQL syntax error)
+  int64 timestamp = 4;           // Result timestamp (ms) for producer to check freshness
+}

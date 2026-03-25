@@ -16,7 +16,7 @@ decltype(auto) CreatePlayerEntityWithRewardComponent(){
     return playerEntity;
 }
 
-// 测试：初始化时所有奖励未领取
+// Test: all rewards unclaimed at initialization
 TEST(RewardClaimSystemTest, InitializationTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
@@ -24,13 +24,13 @@ TEST(RewardClaimSystemTest, InitializationTest) {
 
     RewardClaimSystem RewardClaimSystem;
 
-    // 检查所有奖励都未领取
+    // verify all rewards are unclaimed
     for (int i = 0; i < kRewardMaxBitIndex; ++i) {
         EXPECT_FALSE(RewardClaimSystem.IsRewardClaimedByIndex(i, claimedRewards));
     }
 }
 
-// 测试：领取一个奖励
+// Test: claim a single reward
 TEST(RewardClaimSystemTest, ClaimRewardTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
@@ -38,12 +38,12 @@ TEST(RewardClaimSystemTest, ClaimRewardTest) {
 
     RewardClaimSystem RewardClaimSystem;
 
-    RewardClaimSystem.ClaimRewardByIndex(5, claimedRewards);  // 领取奖励 5
+    RewardClaimSystem.ClaimRewardByIndex(5, claimedRewards);  // claim reward 5
 
-    // 检查奖励 5 是否已领取
+    // verify reward 5 is claimed
     EXPECT_TRUE(RewardClaimSystem.IsRewardClaimedByIndex(5, claimedRewards));
 
-    // 检查其他奖励仍未领取
+    // verify other rewards remain unclaimed
     for (int i = 0; i < kRewardMaxBitIndex; ++i) {
         if (i != 5) {
             EXPECT_FALSE(RewardClaimSystem.IsRewardClaimedByIndex(i, claimedRewards));
@@ -51,7 +51,7 @@ TEST(RewardClaimSystemTest, ClaimRewardTest) {
     }
 }
 
-// 测试：重复领取同一个奖励
+// Test: claim the same reward twice
 TEST(RewardClaimSystemTest, ClaimAlreadyClaimedRewardTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
@@ -59,14 +59,14 @@ TEST(RewardClaimSystemTest, ClaimAlreadyClaimedRewardTest) {
 
     RewardClaimSystem RewardClaimSystem;
 
-    RewardClaimSystem.ClaimRewardByIndex(3, claimedRewards);  // 领取奖励 3
-    RewardClaimSystem.ClaimRewardByIndex(3, claimedRewards);  // 再次领取奖励 3
+    RewardClaimSystem.ClaimRewardByIndex(3, claimedRewards);  // claim reward 3
+    RewardClaimSystem.ClaimRewardByIndex(3, claimedRewards);  // claim reward 3 again
 
-    // 检查奖励 3 是否已领取
+    // verify reward 3 is claimed
     EXPECT_TRUE(RewardClaimSystem.IsRewardClaimedByIndex(3, claimedRewards));
 }
 
-// 测试：无效奖励编号
+// Test: invalid reward index
 TEST(RewardClaimSystemTest, InvalidRewardIndexTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
@@ -74,12 +74,12 @@ TEST(RewardClaimSystemTest, InvalidRewardIndexTest) {
 
     RewardClaimSystem RewardClaimSystem;
 
-    // 传入无效奖励编号
-    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem.ClaimRewardByIndex(-1, claimedRewards));  // 无效编号
-    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem.ClaimRewardByIndex(kRewardMaxBitIndex, claimedRewards));  // 超过最大编号
+    // pass invalid reward index
+    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem.ClaimRewardByIndex(-1, claimedRewards));  // invalid index
+    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem.ClaimRewardByIndex(kRewardMaxBitIndex, claimedRewards));  // exceeds max index
 }
 
-// 测试：显示奖励状态
+// Test: display reward status
 TEST(RewardClaimSystemTest, ShowRewardStatusTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
@@ -87,10 +87,10 @@ TEST(RewardClaimSystemTest, ShowRewardStatusTest) {
 
     RewardClaimSystem RewardClaimSystem;
 
-    RewardClaimSystem.ClaimRewardByIndex(0, claimedRewards);  // 领取奖励 0
-    RewardClaimSystem.ClaimRewardByIndex(4, claimedRewards);  // 领取奖励 4
+    RewardClaimSystem.ClaimRewardByIndex(0, claimedRewards);  // claim reward 0
+    RewardClaimSystem.ClaimRewardByIndex(4, claimedRewards);  // claim reward 4
 
-    // 测试状态
+    // verify status
     EXPECT_TRUE(RewardClaimSystem.IsRewardClaimedByIndex(0, claimedRewards));
     EXPECT_TRUE(RewardClaimSystem.IsRewardClaimedByIndex(4, claimedRewards));
     EXPECT_FALSE(RewardClaimSystem.IsRewardClaimedByIndex(1, claimedRewards));

@@ -18,11 +18,13 @@ uint32_t MountSystem::UnmountActor(const entt::entity actorEntity)
     if (!ActorActionStateSystem::HasState(actorEntity, kActorStateMounted)) {
         return kMountNotMounted;
     }
+    // TODO: Clear mount state and detach rider from mount entity
     return kSuccess;
 }
 
 uint32_t MountSystem::ForceUnmountActor(entt::entity actorEntity)
 {
+    // TODO: Force-remove mount state regardless of current action/combat state
     return kSuccess;
 }
 

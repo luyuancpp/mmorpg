@@ -22,7 +22,7 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 		targetDir := path.Dir(_config.Global.Paths.GenUtilHeadFile)
 		err := os.MkdirAll(targetDir, os.FileMode(0777))
 		if err != nil {
-			logger.Global.Fatal("生成节点工具类失败: 创建目录失败",
+			logger.Global.Fatal("Failed to generate node util: directory creation failed",
 				zap.String("directory", targetDir),
 				zap.Error(err),
 			)
@@ -61,7 +61,7 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 		}
 
 		if err := utils2.RenderTemplateToFile("internal/template/node_util.h.tmpl", _config.Global.Paths.GenUtilHeadFile, cppData); err != nil {
-			logger.Global.Fatal("生成节点工具类失败: 渲染头文件模板失败",
+			logger.Global.Fatal("Failed to generate node util: header template rendering failed",
 				zap.String("file_path", _config.Global.Paths.GenUtilHeadFile),
 				zap.String("template", "internal/template/node_util.h.tmpl"),
 				zap.Error(err),
@@ -69,7 +69,7 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 		}
 
 		if err := utils2.RenderTemplateToFile("internal/template/node_util.cpp.tmpl", _config.Global.Paths.GenUtilCppFile, cppData); err != nil {
-			logger.Global.Fatal("生成节点工具类失败: 渲染cpp文件模板失败",
+			logger.Global.Fatal("Failed to generate node util: cpp template rendering failed",
 				zap.String("file_path", _config.Global.Paths.GenUtilCppFile),
 				zap.String("template", "internal/template/node_util.cpp.tmpl"),
 				zap.Error(err),

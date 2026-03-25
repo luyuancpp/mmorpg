@@ -24,13 +24,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 消息定义，用于同步实体的基础属性增量
+// Message for syncing entity base attribute deltas
 type ActorBaseAttributesS2C struct {
 	state            protoimpl.MessageState          `protogen:"open.v1"`
-	EntityId         uint64                          `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
-	Transform        *component.Transform            `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`                // 速度信息
+	EntityId         uint64                          `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // Entity unique ID
+	Transform        *component.Transform            `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`                // Transform info
 	Velocity         *component.Velocity             `protobuf:"bytes,3,opt,name=velocity,proto3" json:"velocity,omitempty"`
-	CombatStateFlags *component.CombatStateFlagsComp `protobuf:"bytes,4,opt,name=combat_state_flags,json=combatStateFlags,proto3" json:"combat_state_flags,omitempty"` //战斗状态
+	CombatStateFlags *component.CombatStateFlagsComp `protobuf:"bytes,4,opt,name=combat_state_flags,json=combatStateFlags,proto3" json:"combat_state_flags,omitempty"` // Combat state
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -93,10 +93,10 @@ func (x *ActorBaseAttributesS2C) GetCombatStateFlags() *component.CombatStateFla
 	return nil
 }
 
-// 各种帧率同步消息
+// Frame-rate sync messages
 type AttributeDelta2FramesS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
+	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // Entity unique ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -140,7 +140,7 @@ func (x *AttributeDelta2FramesS2C) GetEntityId() uint64 {
 
 type AttributeDelta5FramesS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
+	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // Entity unique ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -184,7 +184,7 @@ func (x *AttributeDelta5FramesS2C) GetEntityId() uint64 {
 
 type AttributeDelta10FramesS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
+	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // Entity unique ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -228,7 +228,7 @@ func (x *AttributeDelta10FramesS2C) GetEntityId() uint64 {
 
 type AttributeDelta30FramesS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
+	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // Entity unique ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -272,7 +272,7 @@ func (x *AttributeDelta30FramesS2C) GetEntityId() uint64 {
 
 type AttributeDelta60FramesS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
+	EntityId      uint64                 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // Entity unique ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

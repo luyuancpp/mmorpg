@@ -62,13 +62,13 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fnpc_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n%proto/common/component/npc_comp.proto\""
-    "\005\n\003Npcb\006proto3"
+    "\005\n\003NpcB\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fnpc_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fnpc_5fcomp_2eproto = {
     false,
     false,
-    54,
+    74,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fnpc_5fcomp_2eproto,
     "proto/common/component/npc_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fnpc_5fcomp_2eproto_once,

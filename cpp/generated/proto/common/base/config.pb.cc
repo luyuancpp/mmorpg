@@ -290,13 +290,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fconfig_2eproto[] AB
     "/\n\nzone_redis\030\007 \001(\0132\033.GameConfig.ZoneRed"
     "isConfig\032K\n\017ZoneRedisConfig\022\014\n\004host\030\003 \001("
     "\t\022\014\n\004port\030\004 \001(\r\022\020\n\010password\030\005 \001(\t\022\n\n\002db\030"
-    "\006 \001(\rb\006proto3"
+    "\006 \001(\rB\rZ\013common/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto = {
     false,
     false,
-    693,
+    708,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fconfig_2eproto,
     "proto/common/base/config.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto_once,

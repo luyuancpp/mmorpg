@@ -12,8 +12,8 @@ func isSceneOwnedMethod(m *internal.MethodInfo) bool {
 	return internal.IsFileBelongToNode(m.Fd, messageoption.NodeType_NODE_SCENE) || strings.Contains(strings.ToLower(m.Path()), "/scene/")
 }
 
-// IsSceneNodeHostedProtocolHandler 判断是否是SceneNode节点对外提供的协议服务处理器
-// （SceneNode作为服务端，处理外部调用的客户端协议接口）
+// IsSceneNodeHostedProtocolHandler checks if the handler serves external protocol requests on the SceneNode.
+// (SceneNode acts as server, handling incoming client protocol calls.)
 func IsSceneNodeHostedProtocolHandler(methods *internal.RPCMethods) bool {
 	return checkFirstMethod(methods,
 		func(m *internal.MethodInfo) bool {
@@ -28,8 +28,8 @@ func IsSceneNodeHostedProtocolHandler(methods *internal.RPCMethods) bool {
 	)
 }
 
-// IsSceneNodeHostedPlayerProtocolHandler 判断是否是SceneNode节点对外提供的玩家协议服务处理器
-// （SceneNode作为服务端，处理外部调用的玩家相关客户端协议接口）
+// IsSceneNodeHostedPlayerProtocolHandler checks if the handler serves player protocol requests on the SceneNode.
+// (SceneNode acts as server, handling incoming player-related client protocol calls.)
 func IsSceneNodeHostedPlayerProtocolHandler(methods *internal.RPCMethods) bool {
 	return checkFirstMethod(methods,
 		func(m *internal.MethodInfo) bool {
@@ -44,13 +44,13 @@ func IsSceneNodeHostedPlayerProtocolHandler(methods *internal.RPCMethods) bool {
 	)
 }
 
-// IsNoOpHandler 空处理器判断（始终返回false）
+// IsNoOpHandler is a no-op handler check (always returns false).
 func IsNoOpHandler(methods *internal.RPCMethods) bool {
 	return false
 }
 
-// IsSceneNodeReceivedPlayerResponseHandler 判断是否是SceneNode节点接收的玩家服务响应处理器
-// （SceneNode作为客户端，处理外部服务返回的玩家相关响应）
+// IsSceneNodeReceivedPlayerResponseHandler checks if the handler processes player service responses received by the SceneNode.
+// (SceneNode acts as client, handling player-related responses from external services.)
 func IsSceneNodeReceivedPlayerResponseHandler(methodList *internal.RPCMethods) bool {
 	return checkFirstMethod(methodList,
 		func(m *internal.MethodInfo) bool {
@@ -68,8 +68,8 @@ func IsSceneNodeReceivedPlayerResponseHandler(methodList *internal.RPCMethods) b
 	)
 }
 
-// IsSceneNodeReceivedProtocolResponseHandler 判断是否是SceneNode节点接收的普通协议响应处理器
-// （SceneNode作为客户端，处理外部服务返回的协议相关响应）
+// IsSceneNodeReceivedProtocolResponseHandler checks if the handler processes protocol responses received by the SceneNode.
+// (SceneNode acts as client, handling protocol-related responses from external services.)
 func IsSceneNodeReceivedProtocolResponseHandler(methodList *internal.RPCMethods) bool {
 	return checkFirstMethod(methodList,
 		func(m *internal.MethodInfo) bool {

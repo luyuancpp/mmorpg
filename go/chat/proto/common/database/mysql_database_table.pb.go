@@ -24,14 +24,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ------------------- 用户基础信息表 -------------------
+// ------------------- User basic info table -------------------
 type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                     // 全局唯一用户ID
-	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"` // 昵称，可为空
-	IsGuest       bool                   `protobuf:"varint,3,opt,name=is_guest,json=isGuest,proto3" json:"is_guest,omitempty"`            // 是否游客
-	CreateTime    uint64                 `protobuf:"varint,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`   // 创建时间（时间戳）
-	LastLogin     uint64                 `protobuf:"varint,5,opt,name=last_login,json=lastLogin,proto3" json:"last_login,omitempty"`      // 上次登录时间（时间戳）
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                     // Globally unique user ID
+	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"` // Nickname, may be empty
+	IsGuest       bool                   `protobuf:"varint,3,opt,name=is_guest,json=isGuest,proto3" json:"is_guest,omitempty"`            // Whether guest
+	CreateTime    uint64                 `protobuf:"varint,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`   // Creation timestamp
+	LastLogin     uint64                 `protobuf:"varint,5,opt,name=last_login,json=lastLogin,proto3" json:"last_login,omitempty"`      // Last login timestamp
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -101,13 +101,13 @@ func (x *User) GetLastLogin() uint64 {
 	return 0
 }
 
-// ------------------- 第三方绑定表 -------------------
+// ------------------- Third-party OAuth binding table -------------------
 type UserOauth struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 外键 -> user.id
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // FK -> user.id
 	Provider      string                 `protobuf:"bytes,2,opt,name=provider,proto3" json:"provider,omitempty"`                        // weixin/google/apple/qq
 	ProviderId    string                 `protobuf:"bytes,3,opt,name=provider_id,json=providerId,proto3" json:"provider_id,omitempty"`  // openid/sub
-	CreateTime    uint64                 `protobuf:"varint,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // 创建时间
+	CreateTime    uint64                 `protobuf:"varint,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // Creation timestamp
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -170,12 +170,12 @@ func (x *UserOauth) GetCreateTime() uint64 {
 	return 0
 }
 
-// ------------------- 手机号绑定表 -------------------
+// ------------------- Phone binding table -------------------
 type UserPhone struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 外键 -> user.id
-	Phone         string                 `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,omitempty"`                              // 手机号
-	CreateTime    uint64                 `protobuf:"varint,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // 创建时间
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // FK -> user.id
+	Phone         string                 `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,omitempty"`                              // Phone number
+	CreateTime    uint64                 `protobuf:"varint,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // Creation timestamp
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -231,12 +231,12 @@ func (x *UserPhone) GetCreateTime() uint64 {
 	return 0
 }
 
-// ------------------- 密码表 -------------------
+// ------------------- Password table -------------------
 type UserPassword struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 外键 -> user.id
-	Hash          string                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`                                // 密码哈希
-	CreateTime    uint64                 `protobuf:"varint,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // 创建时间
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // FK -> user.id
+	Hash          string                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`                                // Password hash
+	CreateTime    uint64                 `protobuf:"varint,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"` // Creation timestamp
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -396,7 +396,7 @@ func (x *AccountShareDatabase) GetAccount() string {
 	return ""
 }
 
-// 中心服玩家专用数据
+// Centre-specific player data
 type PlayerCentreDatabase struct {
 	state         protoimpl.MessageState            `protogen:"open.v1"`
 	PlayerId      uint64                            `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -449,7 +449,8 @@ func (x *PlayerCentreDatabase) GetSceneInfo() *component.PlayerSceneContextComp 
 	return nil
 }
 
-// 玩家数据库表1,重要数据放这里，不重要数据放另外一个表，(重要:比如金钱，跟收入有关)，登录马上加载
+// Player database table 1: important data here, less important in another table
+// (important = money, revenue-related); loaded immediately on login
 type PlayerDatabase struct {
 	state                      protoimpl.MessageState         `protogen:"open.v1"`
 	PlayerId                   uint64                         `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`

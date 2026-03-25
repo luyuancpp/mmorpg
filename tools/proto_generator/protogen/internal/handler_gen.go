@@ -7,14 +7,14 @@ import (
 	"protogen/internal/utils"
 )
 
-// ServiceHandlerData 服务处理器头文件数据
+// ServiceHandlerData holds data for generating a service handler header.
 type ServiceHandlerData struct {
 	Include string
 	Service string
 	Methods RPCMethods
 }
 
-// GetServiceHandlerHeadStr 生成服务处理器头文件
+// GetServiceHandlerHeadStr generates the service handler header file.
 func GetServiceHandlerHeadStr(methods RPCMethods) (string, error) {
 	const tmplStr = `#pragma once
 {{.Include}}
@@ -44,7 +44,7 @@ public:
 	return utils.GlobalEngine.MustExecute("serviceHandlerHead", tmplStr, data, funcs)
 }
 
-// getServiceHandlerMethodStr 生成单个方法签名
+// getServiceHandlerMethodStr generates a single method signature.
 func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 	const tmplStr = `
 	void {{.Method}}({{.GoogleMethodController}} const {{.CppRequest}}* request, {{.CppResponse}}* response, ::google::protobuf::Closure* done) override;
@@ -65,7 +65,7 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 	return utils.GlobalEngine.MustExecute("serviceHandlerMethod", tmplStr, data)
 }
 
-// HandlerMethod 处理器方法数据
+// HandlerMethod holds data for a handler method.
 type HandlerMethod struct {
 	HandlerName string
 	CppRequest  string
@@ -74,7 +74,7 @@ type HandlerMethod struct {
 	HasCode     bool
 }
 
-// HandlerCppData CPP处理器文件数据
+// HandlerCppData holds data for generating a CPP handler file.
 type HandlerCppData struct {
 	CppHandlerInclude      string
 	GoogleMethodController string
@@ -83,7 +83,7 @@ type HandlerCppData struct {
 	Methods                []HandlerMethod
 }
 
-// GetServiceHandlerCppStr 生成服务处理器CPP文件内容
+// GetServiceHandlerCppStr generates the service handler CPP file content.
 func GetServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
 	const tmplStr = `
 {{ .CppHandlerInclude }}
@@ -139,12 +139,12 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	return utils.ExecuteTemplate("serviceHandlerCpp", tmplStr, data)
 }
 
-// GenerateMethodHandlerNameWrapper 生成方法处理器名称
+// GenerateMethodHandlerNameWrapper generates the method handler name.
 func GenerateMethodHandlerNameWrapper(info *MethodInfo, _ string) string {
 	return info.Service() + _config.Global.Naming.HandlerFile + "::" + info.Method() + "("
 }
 
-// GenerateMethodHandlerNameWithClassPrefixWrapper 生成带类前缀的方法处理器名称
+// GenerateMethodHandlerNameWithClassPrefixWrapper generates the handler name with class prefix.
 func GenerateMethodHandlerNameWithClassPrefixWrapper(info *MethodInfo, classPrefix string) string {
 	return classPrefix + "::" + info.Method() + "("
 }

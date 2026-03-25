@@ -8,8 +8,8 @@ message ChangeSceneInfoComp
 
   enum eChangeGsType
   {
-      eSameGs = 0;//同服务器间切换
-      eDifferentGs = 1;//不同服务器间切换
+      eSameGs = 0;// Same server transfer
+      eDifferentGs = 1;// Cross-server transfer
   };
   
   enum eChangeSceneState  
@@ -24,16 +24,16 @@ message ChangeSceneInfoComp
 
   
   uint32 scene_confid = 1;
-  uint32 guid = 2;//场景id
+  uint32 guid = 2;// Scene ID
   uint32 dungen_confid = 3;
   uint32 mirror_confid = 4;
   uint32 change_sequence = 5;
   uint32 change_gs_type = 6;
-  uint64 change_time = 7;//设置超时，超时代表服务器崩溃了,或者网络延时
-  bool ignore_full = 8;//忽略人数满了
+  uint64 change_time = 7;// Timeout means server crash or network delay
+  bool ignore_full = 8;// Ignore capacity full
   bool processing = 9;
   uint32 state = 10;
   uint32 from_zone_id = 11;
-  uint32 to_zone_id = 12;   // ✨ 一定要放入结构里！
-  bool is_cross_zone = 13; // 是否跨 Zone
+  uint32 to_zone_id = 12;
+  bool is_cross_zone = 13; // Whether cross-zone
 }

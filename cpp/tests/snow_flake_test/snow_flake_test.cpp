@@ -95,16 +95,16 @@ TEST(TestSnowFlakeThreadSafe, generate)
 TEST(SnowFlakeTest, ClockRollback_SingleThread) {
 	SnowFlake sf;
 	sf.set_node_id(1);
-	sf.set_mock_now(1000);  // 当前时间为 1000
+	sf.set_mock_now(1000);  // current time is 1000
 
 	auto id1 = sf.Generate();
 	auto c1 = ParseGuid(id1);
 
-	sf.set_mock_now(990);  // 模拟时钟回拨
+	sf.set_mock_now(990);  // simulate clock rollback
 	auto id2 = sf.Generate();
 	auto c2 = ParseGuid(id2);
 
-	EXPECT_GE(c2.timestamp, c1.timestamp);  // ID 不能比之前的时间戳小
+	EXPECT_GE(c2.timestamp, c1.timestamp);  // ID timestamp must not be earlier than previous
 }
 
 TEST(SnowFlakeTest, ClockRollbackSingleThread) {
@@ -115,11 +115,11 @@ TEST(SnowFlakeTest, ClockRollbackSingleThread) {
 	Guid id1 = sf.Generate();
 	auto c1 = ParseGuid(id1);
 
-	sf.set_mock_now(990); // 模拟时钟回拨
+	sf.set_mock_now(990); // simulate clock rollback
 	Guid id2 = sf.Generate();
 	auto c2 = ParseGuid(id2);
 
-	// 回拨后产生的 ID 不能小于之前
+	// ID generated after rollback must not be less than previous
 	EXPECT_GE(c2.timestamp, c1.timestamp);
 	EXPECT_EQ(c2.node_id, c1.node_id);
 }
@@ -136,20 +136,20 @@ TEST(SnowFlakeTest, Generate100MillionGUIDs_UniqueInSingleNode)
 	for (size_t i = 0; i < kTotal; ++i) {
 		Guid id = sf.Generate();
 
-		// 检查是否重复
+		// check for duplicates
 		auto result = ids.insert(id);
-		ASSERT_TRUE(result.second) << "重复 ID 出现在索引 " << i << ", ID=" << id;
+		ASSERT_TRUE(result.second) << "duplicate ID at index " << i << ", ID=" << id;
 
-		// 可选：每 10M 输出一次进度
+		// optional: print progress every 10M
 		if ((i + 1) % 10'000'000 == 0) {
-			std::cout << "已生成 " << (i + 1) << " 个 ID..." << std::endl;
+			std::cout << "Generated " << (i + 1) << " IDs..." << std::endl;
 		}
 	}
 
 	EXPECT_EQ(ids.size(), kTotal);
 }
 
-// 批量 ID 生成是否正确
+// Verify batch ID generation
 TEST(SnowFlakeTest, GenerateBatch)
 {
 	SnowFlake sf;
@@ -161,12 +161,12 @@ TEST(SnowFlakeTest, GenerateBatch)
 
 	EXPECT_EQ(ids.size(), count);
 
-	// 检查唯一性
+	// check uniqueness
 	std::unordered_set<Guid> id_set(ids.begin(), ids.end());
 	EXPECT_EQ(id_set.size(), count);
 }
 
-// 多节点 ID 是否不同
+// Verify different nodes produce different IDs
 TEST(SnowFlakeTest, NodeIDAffectsGeneratedID)
 {
 	SnowFlake sf1;
@@ -183,7 +183,7 @@ TEST(SnowFlakeTest, NodeIDAffectsGeneratedID)
 	EXPECT_NE(id1, id2);
 }
 
-//单线程 + 普通生成（SnowFlake::Generate）
+// Single-thread + normal generation (SnowFlake::Generate)
 TEST(SnowFlakeTest, UniqueIds_SingleThread_NormalGenerate) {
 	constexpr int32_t kNodeCount = 5;
 
@@ -204,7 +204,7 @@ TEST(SnowFlakeTest, UniqueIds_SingleThread_NormalGenerate) {
 	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
 }
 
-//单线程 + 批量生成（SnowFlake::GenerateBatch）
+// Single-thread + batch generation (SnowFlake::GenerateBatch)
 TEST(SnowFlakeTest, UniqueIds_SingleThread_BatchGenerate) {
 	constexpr int32_t kNodeCount = 5;
 
@@ -225,7 +225,7 @@ TEST(SnowFlakeTest, UniqueIds_SingleThread_BatchGenerate) {
 	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
 }
 
-//多线程 + 普通生成（SnowFlakeAtomic::Generate）
+// Multi-thread + normal generation (SnowFlakeAtomic::Generate)
 TEST(SnowFlakeTest, UniqueIds_MultiThread_NormalGenerate) {
 	constexpr int32_t kNodeCount = 5;
 
@@ -255,7 +255,7 @@ TEST(SnowFlakeTest, UniqueIds_MultiThread_NormalGenerate) {
 	EXPECT_EQ(all_ids.size(), kNodeCount * kTotal);
 }
 
-//多线程 + 批量生成（SnowFlakeAtomic::GenerateBatch）
+// Multi-thread + batch generation (SnowFlakeAtomic::GenerateBatch)
 TEST(SnowFlakeTest, UniqueIds_MultiThread_BatchGenerate) {
 	constexpr int32_t kNodeCount = 5;
 
@@ -354,10 +354,10 @@ TEST(SnowFlakeTest, IdParsing) {
 
 	ASSERT_EQ(components.node_id, 3);
 	ASSERT_LT(components.sequence, (1ULL << kStepBits));
-	ASSERT_GT(real_time, 1600000000); // Unix 时间戳 sanity check
+	ASSERT_GT(real_time, 1600000000); // Unix timestamp sanity check
 }
 
-// 测试批量生成的唯一性
+// Test batch generation uniqueness
 TEST(SnowFlakeTest, GenerateBatchUnique)
 {
 	SnowFlake generator;
@@ -372,7 +372,7 @@ TEST(SnowFlakeTest, GenerateBatchUnique)
 	EXPECT_EQ(unique_ids.size(), ids.size()) << "IDs are not unique";
 }
 
-// 测试多次批量生成的正确性
+// Test correctness of multiple batch generations
 TEST(SnowFlakeTest, MultipleBatchGeneration)
 {
 	SnowFlakeAtomic generator;
@@ -390,7 +390,7 @@ TEST(SnowFlakeTest, MultipleBatchGeneration)
 	EXPECT_EQ(all.size(), batch1 + batch2) << "Duplicate IDs found across batches";
 }
 
-// 测试解析 ID 成分
+// Test parsing ID components
 TEST(SnowFlakeTest, GuidParsing)
 {
 	SnowFlake generator;
@@ -440,7 +440,7 @@ TEST(SnowFlakeTest, AtomicSupportsBeyondUint32Timestamp)
 	EXPECT_EQ(p1.timestamp, beyond - kEpoch);
 }
 
-// 并发压力测试：多个线程并发批量生成，确保 ID 唯一
+// Concurrent stress test: multiple threads batch-generate, ensuring uniqueness
 TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 {
 	constexpr size_t kThreads = 8;
@@ -454,7 +454,7 @@ TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 	std::vector<Guid> all_ids;
 	all_ids.reserve(kTotalIDs);
 
-	std::mutex mutex;  // 保护 all_ids
+	std::mutex mutex;  // protects all_ids
 
 	auto worker = [&]() {
 		auto ids = generator.GenerateBatch(kIDsPerThread);
@@ -470,15 +470,15 @@ TEST(SnowFlakeTest, ConcurrentBatchGeneration)
 		t.join();
 	}
 
-	// 验证总数
+	// verify total count
 	ASSERT_EQ(all_ids.size(), kTotalIDs);
 
-	// 验证唯一性
+	// verify uniqueness
 	std::unordered_set<Guid> unique_ids(all_ids.begin(), all_ids.end());
-	EXPECT_EQ(unique_ids.size(), all_ids.size()) << "并发生成的 ID 有重复";
+	EXPECT_EQ(unique_ids.size(), all_ids.size()) << "concurrent generation produced duplicate IDs";
 }
 
-// 验证不同节点 ID 不会生成重复 GUID
+// Verify different node IDs do not produce duplicate GUIDs
 TEST(SnowFlakeTest, DifferentNodeNoDuplicate)
 {
 	SnowFlake genA;

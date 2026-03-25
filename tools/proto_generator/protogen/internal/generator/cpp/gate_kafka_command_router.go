@@ -78,19 +78,19 @@ func resolveGateEventMessage(commandName string, eventMessageMap map[string]*des
 func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 	gateCommandFd := findProtoFileBySuffix("contracts.kafka", "gate_command.proto")
 	if gateCommandFd == nil {
-		logger.Global.Warn("未找到gate_command.proto，跳过Gate Kafka路由文件生成")
+		logger.Global.Warn("gate_command.proto not found, skipping Gate Kafka router file generation")
 		return nil
 	}
 
 	gateEventFd := findProtoFileBySuffix("contracts.kafka", "gate_event.proto")
 	if gateEventFd == nil {
-		logger.Global.Warn("未找到gate_event.proto，跳过Gate Kafka路由文件生成")
+		logger.Global.Warn("gate_event.proto not found, skipping Gate Kafka router file generation")
 		return nil
 	}
 
 	gateCommandMsg := findMessageByName(gateCommandFd, "GateCommand")
 	if gateCommandMsg == nil {
-		logger.Global.Warn("未找到GateCommand消息定义，跳过Gate Kafka路由文件生成")
+		logger.Global.Warn("GateCommand message definition not found, skipping Gate Kafka router file generation")
 		return nil
 	}
 
@@ -102,7 +102,7 @@ func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 		}
 	}
 	if commandTypeEnum == nil {
-		logger.Global.Warn("未找到GateCommand.CommandType枚举，跳过Gate Kafka路由文件生成")
+		logger.Global.Warn("GateCommand.CommandType enum not found, skipping Gate Kafka router file generation")
 		return nil
 	}
 
@@ -137,7 +137,7 @@ func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 				continue
 			}
 			if commandField.GetType() != eventField.GetType() {
-				logger.Global.Warn("GateCommand与Event字段类型不一致，跳过自动赋值",
+				logger.Global.Warn("GateCommand and Event field type mismatch, skipping auto-assignment",
 					zap.String("command", commandName),
 					zap.String("field", eventField.GetName()),
 				)
@@ -162,7 +162,7 @@ func GenerateGateKafkaCommandRouter(wg *sync.WaitGroup) {
 
 		cases := buildGateKafkaRouterCases()
 		if len(cases) == 0 {
-			logger.Global.Warn("Gate Kafka路由文件无可生成case，跳过输出")
+			logger.Global.Warn("No cases to generate for Gate Kafka router file, skipping output")
 			return
 		}
 
@@ -170,14 +170,14 @@ func GenerateGateKafkaCommandRouter(wg *sync.WaitGroup) {
 		data := gateKafkaRouterTemplateData{Cases: cases}
 
 		if err := utils2.RenderTemplateToFile("internal/template/gate_kafka_command_router.cpp.tmpl", outputPath, data); err != nil {
-			logger.Global.Error("生成Gate Kafka路由文件失败",
+			logger.Global.Error("Failed to generate Gate Kafka router file",
 				zap.String("output_file", outputPath),
 				zap.Error(err),
 			)
 			return
 		}
 
-		logger.Global.Info("生成Gate Kafka路由文件成功",
+		logger.Global.Info("Gate Kafka router file generated successfully",
 			zap.String("output_file", outputPath),
 			zap.Int("case_count", len(cases)),
 		)

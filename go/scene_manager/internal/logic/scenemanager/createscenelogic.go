@@ -3,6 +3,7 @@ package scenemanagerlogic
 import (
 	"context"
 
+	"scene_manager/internal/logic"
 	"scene_manager/internal/svc"
 	"scene_manager/scene_manager"
 
@@ -25,7 +26,5 @@ func NewCreateSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 
 // Create a scene on a specific node (implemented by the Scene node)
 func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
-	// todo: add your logic here and delete this line
-
-	return &scene_manager.CreateSceneResponse{}, nil
+	return logic.NewCreateSceneLogic(l.ctx, l.svcCtx).CreateScene(in)
 }

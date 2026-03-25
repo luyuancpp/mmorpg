@@ -1,13 +1,14 @@
 package internal
 
 import (
-	"go.uber.org/zap"
 	_config "protogen/internal/config"
 	"protogen/internal/utils"
 	"protogen/logger"
+
+	"go.uber.org/zap"
 )
 
-// GenServiceIdHeader 生成服务 ID 头文件内容
+// GenServiceIdHeader generates the service ID header file content.
 func GenServiceIdHeader(serviceInfo []*RPCServiceInfo) string {
 	if len(serviceInfo) == 0 {
 		return ""
@@ -39,7 +40,7 @@ constexpr uint32_t {{.KeyName}}Index = {{.Index}};
 	return utils.ExecuteTemplate("serviceIdHeader", tmplStr, data)
 }
 
-// writeServiceIdHeadFile 写入服务ID头文件
+// writeServiceIdHeadFile writes the service ID header file.
 func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
 	if len(serviceInfo) == 0 {
 		return
@@ -49,7 +50,7 @@ func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
 	outputPath := _config.Global.Paths.ServiceInfoDir + fileName
 	utils.WriteFileIfChanged(outputPath, []byte(GenServiceIdHeader(serviceInfo)))
 
-	logger.Global.Info("服务ID头文件生成完成",
+	logger.Global.Info("Service ID header file generated",
 		zap.String("file_path", outputPath),
 		zap.Int("service_count", len(serviceInfo)),
 	)

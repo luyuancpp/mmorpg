@@ -24,8 +24,8 @@ const (
 type ChangeSceneInfoCompEChangeGsType int32
 
 const (
-	ChangeSceneInfoComp_eSameGs      ChangeSceneInfoCompEChangeGsType = 0 //同服务器间切换
-	ChangeSceneInfoComp_eDifferentGs ChangeSceneInfoCompEChangeGsType = 1 //不同服务器间切换
+	ChangeSceneInfoComp_eSameGs      ChangeSceneInfoCompEChangeGsType = 0 // Same server transfer
+	ChangeSceneInfoComp_eDifferentGs ChangeSceneInfoCompEChangeGsType = 1 // Cross-server transfer
 )
 
 // Enum value maps for ChangeSceneInfoCompEChangeGsType.
@@ -128,18 +128,18 @@ func (ChangeSceneInfoCompEChangeSceneState) EnumDescriptor() ([]byte, []int) {
 type ChangeSceneInfoComp struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SceneConfid    uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`
-	Guid           uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"` //场景id
+	Guid           uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"` // Scene ID
 	DungenConfid   uint32                 `protobuf:"varint,3,opt,name=dungen_confid,json=dungenConfid,proto3" json:"dungen_confid,omitempty"`
 	MirrorConfid   uint32                 `protobuf:"varint,4,opt,name=mirror_confid,json=mirrorConfid,proto3" json:"mirror_confid,omitempty"`
 	ChangeSequence uint32                 `protobuf:"varint,5,opt,name=change_sequence,json=changeSequence,proto3" json:"change_sequence,omitempty"`
 	ChangeGsType   uint32                 `protobuf:"varint,6,opt,name=change_gs_type,json=changeGsType,proto3" json:"change_gs_type,omitempty"`
-	ChangeTime     uint64                 `protobuf:"varint,7,opt,name=change_time,json=changeTime,proto3" json:"change_time,omitempty"` //设置超时，超时代表服务器崩溃了,或者网络延时
-	IgnoreFull     bool                   `protobuf:"varint,8,opt,name=ignore_full,json=ignoreFull,proto3" json:"ignore_full,omitempty"` //忽略人数满了
+	ChangeTime     uint64                 `protobuf:"varint,7,opt,name=change_time,json=changeTime,proto3" json:"change_time,omitempty"` // Timeout means server crash or network delay
+	IgnoreFull     bool                   `protobuf:"varint,8,opt,name=ignore_full,json=ignoreFull,proto3" json:"ignore_full,omitempty"` // Ignore capacity full
 	Processing     bool                   `protobuf:"varint,9,opt,name=processing,proto3" json:"processing,omitempty"`
 	State          uint32                 `protobuf:"varint,10,opt,name=state,proto3" json:"state,omitempty"`
 	FromZoneId     uint32                 `protobuf:"varint,11,opt,name=from_zone_id,json=fromZoneId,proto3" json:"from_zone_id,omitempty"`
-	ToZoneId       uint32                 `protobuf:"varint,12,opt,name=to_zone_id,json=toZoneId,proto3" json:"to_zone_id,omitempty"`          // ✨ 一定要放入结构里！
-	IsCrossZone    bool                   `protobuf:"varint,13,opt,name=is_cross_zone,json=isCrossZone,proto3" json:"is_cross_zone,omitempty"` // 是否跨 Zone
+	ToZoneId       uint32                 `protobuf:"varint,12,opt,name=to_zone_id,json=toZoneId,proto3" json:"to_zone_id,omitempty"`
+	IsCrossZone    bool                   `protobuf:"varint,13,opt,name=is_cross_zone,json=isCrossZone,proto3" json:"is_cross_zone,omitempty"` // Whether cross-zone
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }

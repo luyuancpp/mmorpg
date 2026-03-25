@@ -34,9 +34,11 @@ void UpdateVelocity(entt::entity entity) {
 }
 
 void UpdateHealth(entt::entity actorEntity) {
+    // TODO: Implement health recalculation from base stats + buff modifiers
 }
 
 void UpdateEnergy(entt::entity actorEntity) {
+    // TODO: Implement energy recalculation from base stats + buff modifiers
 }
 
 void ResetCombatStateFlags(entt::entity actorEntity) {

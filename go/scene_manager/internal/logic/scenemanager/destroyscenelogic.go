@@ -3,6 +3,7 @@ package scenemanagerlogic
 import (
 	"context"
 
+	"scene_manager/internal/logic"
 	"scene_manager/internal/svc"
 	"scene_manager/proto/common/base"
 	"scene_manager/scene_manager"
@@ -26,7 +27,5 @@ func NewDestroySceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Dest
 
 // Destroy a scene
 func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) (*base.Empty, error) {
-	// todo: add your logic here and delete this line
-
-	return &base.Empty{}, nil
+	return logic.NewDestroySceneLogic(l.ctx, l.svcCtx).DestroyScene(in)
 }

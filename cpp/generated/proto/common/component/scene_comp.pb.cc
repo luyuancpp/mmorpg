@@ -120,13 +120,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fscene_5fcomp_2
     "SameGs\020\000\022\020\n\014eDifferentGs\020\001\"|\n\021eChangeSce"
     "neState\022\021\n\rePendingLeave\020\000\022\014\n\010eLeaving\020\001"
     "\022\021\n\reWaitingEnter\020\002\022\021\n\reEnterSucceed\020\003\022\025"
-    "\n\021eGateEnterSucceed\020\004\022\t\n\005eDone\020\005b\006proto3"
+    "\n\021eGateEnterSucceed\020\004\022\t\n\005eDone\020\005B\022Z\020comm"
+    "on/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto = {
     false,
     false,
-    520,
+    540,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto,
     "proto/common/component/scene_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto_once,

@@ -257,7 +257,9 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 
 	if task.RetryCount >= int32(c.retryMaxTimes) {
 		deadQueueKey := fmt.Sprintf("kafka:dead:queue:%s", c.topic)
-		_ = c.redisClient.LPush(c.ctx, deadQueueKey, msgBytes)
+		if err := c.redisClient.LPush(c.ctx, deadQueueKey, msgBytes).Err(); err != nil {
+			logx.Errorf("failed to push to dead queue %s: taskID=%s, err=%v", deadQueueKey, task.TaskId, err)
+		}
 		logx.Errorf("retry task exceed max times: taskID=%s, retryCount=%d, move to dead queue: %s",
 			task.TaskId, task.RetryCount, deadQueueKey)
 		return
@@ -266,8 +268,14 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 	task.RetryCount++
 	if err := processTaskWithoutLock(c.ctx, c.redisClient, &task); err != nil {
 		logx.Errorf("retry process task failed: taskID=%s, retryCount=%d, err=%v", task.TaskId, task.RetryCount, err)
-		retryTaskBytes, _ := proto.Marshal(&task)
-		_ = c.redisClient.LPush(c.ctx, c.retryQueueKey, retryTaskBytes)
+		retryTaskBytes, marshalErr := proto.Marshal(&task)
+		if marshalErr != nil {
+			logx.Errorf("failed to marshal retry task: taskID=%s, err=%v", task.TaskId, marshalErr)
+			return
+		}
+		if pushErr := c.redisClient.LPush(c.ctx, c.retryQueueKey, retryTaskBytes).Err(); pushErr != nil {
+			logx.Errorf("failed to push retry task to queue: taskID=%s, err=%v", task.TaskId, pushErr)
+		}
 		return
 	}
 

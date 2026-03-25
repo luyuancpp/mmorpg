@@ -36,7 +36,7 @@ func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cf
 
 	data, err := cfg.GenerateDataFunc(methodList)
 	if err != nil {
-		logger.Global.Fatal("生成处理器头文件失败",
+		logger.Global.Fatal("Failed to generate handler header file",
 			zap.String("file_path", fullPath),
 			zap.Error(err),
 		)

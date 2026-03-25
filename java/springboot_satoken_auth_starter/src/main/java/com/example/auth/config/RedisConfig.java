@@ -12,7 +12,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
     @Bean
-    @Primary   // ⭐⭐⭐ 这行是关键
+    @Primary   // This @Primary annotation is critical
     public RedisTemplate<String, Object> redisTemplate(
             RedisConnectionFactory factory) {
 

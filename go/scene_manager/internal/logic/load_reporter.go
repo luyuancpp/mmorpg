@@ -28,7 +28,9 @@ func StartLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
 		select {
 		case <-ctx.Done():
 			// Remove node from the load set on shutdown
-			_, _ = svcCtx.Redis.Zrem(NodeLoadKey, svcCtx.Config.NodeID)
+			if _, err := svcCtx.Redis.Zrem(NodeLoadKey, svcCtx.Config.NodeID); err != nil {
+				logx.Errorf("Failed to remove node %s from load set on shutdown: %v", svcCtx.Config.NodeID, err)
+			}
 			return
 		case <-ticker.C:
 			reportLoad(ctx, svcCtx)

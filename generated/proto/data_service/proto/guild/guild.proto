@@ -1,0 +1,158 @@
+syntax = "proto3";
+package guildpb;
+
+option go_package = "data_service/proto/guild";
+
+import "proto/common/base/tip.proto";
+
+// ── Guild basic data ─────────────────────────────────────────────
+
+message GuildMember {
+  uint64 player_id     = 1;
+  uint32 role          = 2;  // 0=member, 1=officer, 2=vice_leader, 3=leader
+  int64  join_time_ms  = 3;
+  int64  last_active_ms = 4;
+  uint64 contribution  = 5;
+}
+
+message GuildInfo {
+  uint64 guild_id       = 1;
+  string name           = 2;
+  uint64 leader_id      = 3;
+  uint32 level          = 4;
+  string announcement   = 5;
+  int64  create_time_ms = 6;
+  uint32 max_members    = 7;
+  repeated GuildMember members = 8;
+  uint32 zone_id        = 9;  // Zone this guild belongs to
+}
+
+// ── Request/Response ────────────────────────────────────────────────
+
+message CreateGuildRequest {
+  uint64 player_id = 1;
+  string name      = 2;
+  uint32 zone_id   = 3;  // Zone where the guild is created
+}
+
+message CreateGuildResponse {
+  TipInfoMessage error_message = 1;
+  GuildInfo guild = 2;
+}
+
+message GetGuildRequest {
+  uint64 guild_id = 1;
+}
+
+message GetGuildResponse {
+  TipInfoMessage error_message = 1;
+  GuildInfo guild = 2;
+}
+
+message GetPlayerGuildRequest {
+  uint64 player_id = 1;
+}
+
+message GetPlayerGuildResponse {
+  TipInfoMessage error_message = 1;
+  GuildInfo guild = 2;
+}
+
+message JoinGuildRequest {
+  uint64 player_id = 1;
+  uint64 guild_id  = 2;
+}
+
+message JoinGuildResponse {
+  TipInfoMessage error_message = 1;
+}
+
+message LeaveGuildRequest {
+  uint64 player_id = 1;
+}
+
+message LeaveGuildResponse {
+  TipInfoMessage error_message = 1;
+}
+
+message DisbandGuildRequest {
+  uint64 player_id = 1;
+}
+
+message DisbandGuildResponse {
+  TipInfoMessage error_message = 1;
+}
+
+message SetAnnouncementRequest {
+  uint64 guild_id     = 1;
+  uint64 player_id    = 2;
+  string announcement = 3;
+}
+
+message SetAnnouncementResponse {
+  TipInfoMessage error_message = 1;
+}
+
+// ── Ranking ───────────────────────────────────────────────────
+
+// Guild summary in ranking (without full member list)
+message GuildRankEntry {
+  uint64 guild_id       = 1;
+  string name           = 2;
+  uint64 leader_id      = 3;
+  uint32 level          = 4;
+  uint32 member_count   = 5;
+  int64  score          = 6;  // Ranking score
+  uint32 rank           = 7;  // Rank (1-based)
+}
+
+message UpdateGuildScoreRequest {
+  uint64 guild_id = 1;
+  int64  score    = 2;  // New ranking score
+  uint32 zone_id  = 3;  // Zone for per-zone ranking (0 = update global only)
+}
+
+message UpdateGuildScoreResponse {
+  TipInfoMessage error_message = 1;
+}
+
+message GetGuildRankRequest {
+  uint32 page      = 1;  // Page number (1-based)
+  uint32 page_size = 2;  // Items per page
+  uint32 zone_id   = 3;  // 0 = global ranking, >0 = per-zone ranking
+}
+
+message GetGuildRankResponse {
+  TipInfoMessage error_message = 1;
+  repeated GuildRankEntry entries = 2;
+  uint32 total_count = 3;  // Total guilds in ranking
+  uint32 page        = 4;
+  uint32 page_size   = 5;
+}
+
+message GetGuildRankByGuildRequest {
+  uint64 guild_id = 1;
+  uint32 zone_id  = 2;  // 0 = global ranking, >0 = per-zone ranking
+}
+
+message GetGuildRankByGuildResponse {
+  TipInfoMessage error_message = 1;
+  GuildRankEntry entry = 2;  // Guild info in ranking (including rank)
+}
+
+// ── Service definition ─────────────────────────────────────────────────────
+
+service GuildService {
+  rpc CreateGuild (CreateGuildRequest) returns (CreateGuildResponse);
+  rpc GetGuild (GetGuildRequest) returns (GetGuildResponse);
+  rpc GetPlayerGuild (GetPlayerGuildRequest) returns (GetPlayerGuildResponse);
+  rpc JoinGuild (JoinGuildRequest) returns (JoinGuildResponse);
+  rpc LeaveGuild (LeaveGuildRequest) returns (LeaveGuildResponse);
+  rpc DisbandGuild (DisbandGuildRequest) returns (DisbandGuildResponse);
+  rpc SetAnnouncement (SetAnnouncementRequest) returns (SetAnnouncementResponse);
+
+  // Ranking
+  rpc UpdateGuildScore (UpdateGuildScoreRequest) returns (UpdateGuildScoreResponse);
+  rpc GetGuildRank (GetGuildRankRequest) returns (GetGuildRankResponse);
+  rpc GetGuildRankByGuild (GetGuildRankByGuildRequest) returns (GetGuildRankByGuildResponse);
+}

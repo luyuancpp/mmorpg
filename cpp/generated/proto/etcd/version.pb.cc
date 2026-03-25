@@ -44,7 +44,7 @@ const char descriptor_table_protodef_proto_2fetcd_2fversion_2eproto[] ABSL_ATTRI
     "<\n\021etcd_version_enum\022\034.google.protobuf.E"
     "numOptions\030\322\206\003 \001(\t\210\001\001:G\n\027etcd_version_en"
     "um_value\022!.google.protobuf.EnumValueOpti"
-    "ons\030\323\206\003 \001(\t\210\001\001b\006proto3"
+    "ons\030\323\206\003 \001(\t\210\001\001B\006Z\004etcdb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fetcd_2fversion_2eproto_deps[1] = {
@@ -54,7 +54,7 @@ static ::absl::once_flag descriptor_table_proto_2fetcd_2fversion_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fetcd_2fversion_2eproto = {
     false,
     false,
-    342,
+    350,
     descriptor_table_protodef_proto_2fetcd_2fversion_2eproto,
     "proto/etcd/version.proto",
     &descriptor_table_proto_2fetcd_2fversion_2eproto_once,

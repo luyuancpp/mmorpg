@@ -47,14 +47,14 @@ func HasEtcdService(protoPath string) bool {
 
 func BuildModelGoPath(protoPath string) string {
 	basePath := strings.ToLower(path.Base(protoPath))
-	language := "go" // 写死为 go
+	language := "go" // hardcoded to go
 	return _config.Global.Paths.OutputRoot + "/" + language + "/" + basePath + "/" + _config.Global.Naming.Model
 }
 
 // GetGRPCSubdirectories returns relative paths of subdirectories under service/go/grpc.
 func GetGRPCSubdirectories() []string {
 	var grpcDirs []string
-	grpcBase := _config.Global.DirectoryNames.GoGrpcBaseDirName // 基础路径前缀
+	grpcBase := _config.Global.DirectoryNames.GoGrpcBaseDirName // base path prefix
 
 	for _, dir := range _config.Global.PathLists.ProtoDirectories {
 		if strings.HasPrefix(dir, grpcBase) && dir != grpcBase {

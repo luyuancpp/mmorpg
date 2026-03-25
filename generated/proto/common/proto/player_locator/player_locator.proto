@@ -6,7 +6,7 @@ package playerlocator;
 
 import "proto/common/base/empty.proto";
 
-// 玩家位置结构
+// Player location
 message PlayerLocation {
   int64 uid = 1;
   string server_id = 2;
@@ -25,25 +25,25 @@ message PlayerId {
 
 enum PlayerSessionState {
   SESSION_STATE_UNKNOWN = 0;
-  SESSION_STATE_ONLINE = 1;          // 正常在线
-  SESSION_STATE_DISCONNECTING = 2;   // 断线中, 等待重连 (30s lease)
-  SESSION_STATE_OFFLINE = 3;         // 已下线
+  SESSION_STATE_ONLINE = 1;          // Online
+  SESSION_STATE_DISCONNECTING = 2;   // Disconnecting, waiting for reconnect (30s lease)
+  SESSION_STATE_OFFLINE = 3;         // Offline
 }
 
 message PlayerSession {
   uint64 player_id = 1;
   uint64 session_id = 2;         // Gate session ID
   string gate_id = 3;            // Gate node ID
-  string gate_instance_id = 4;   // Gate instance UUID (防僵尸消息)
-  string scene_node_id = 5;      // 当前 Scene node ID
-  uint64 scene_id = 6;           // 当前 scene ID
+  string gate_instance_id = 4;   // Gate instance UUID (prevent zombie messages)
+  string scene_node_id = 5;      // Current Scene node ID
+  uint64 scene_id = 6;           // Current scene ID
   string token_id = 7;           // SHA256(login_token)
   uint64 token_expiry_ms = 8;
-  uint64 session_version = 9;    // 每次真正变更+1, 防旧连接消息
+  uint64 session_version = 9;    // Incremented on each real change, prevents stale messages
   PlayerSessionState state = 10;
-  int64 last_active_ts = 11;     // 最后活跃时间 (unix ms)
-  string request_id = 12;        // 最近一次登录 request_id (幂等)
-  string account = 13;           // 账号名 (Login 用于 reconnect 决策)
+  int64 last_active_ts = 11;     // Last active time (unix ms)
+  string request_id = 12;        // Latest login request_id (idempotent)
+  string account = 13;           // Account name (used by Login for reconnect decisions)
 }
 
 message SetSessionRequest {
@@ -59,14 +59,14 @@ message GetSessionResponse {
   bool found = 2;
 }
 
-// 断线请求: 标记 DISCONNECTING + 启动 TTL lease
+// Disconnect request: mark DISCONNECTING + start TTL lease
 message SetDisconnectingRequest {
   uint64 player_id = 1;
   uint64 session_id = 2;
-  uint32 lease_ttl_seconds = 3;  // 默认 30s
+  uint32 lease_ttl_seconds = 3;  // Default 30s
 }
 
-// 重连请求: 取消 lease, 恢复 ONLINE
+// Reconnect request: cancel lease, restore ONLINE
 message ReconnectRequest {
   uint64 player_id = 1;
   uint64 new_session_id = 2;
@@ -75,16 +75,16 @@ message ReconnectRequest {
   string token_id = 5;
   uint64 token_expiry_ms = 6;
   string request_id = 7;
-  string account = 8;           // 账号名 (Login 传入)
+  string account = 8;           // Account name (from Login)
 }
 
 message ReconnectResponse {
   bool success = 1;
-  PlayerSession session = 2;  // 更新后的 session
+  PlayerSession session = 2;  // Updated session
   string error_message = 3;
 }
 
-// Lease 到期清理结果
+// Lease expired cleanup result
 message LeaseExpiredEvent {
   uint64 player_id = 1;
   uint64 session_id = 2;

@@ -39,7 +39,6 @@ bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEnti
 	const auto& viewerTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(viewer);
 	const auto& targetTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(targetEntity);
 
-	// Get observer and target entity positions
 	const dtReal viewerLocation[] = {
 		viewerTransform.location().x(),
 		viewerTransform.location().y(),
@@ -67,7 +66,6 @@ double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity
 	auto& transform1 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity1);
 	auto& transform2 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2);
 
-	// Get positions of both entities
 	const dtReal location1[] = {
 		transform1.location().x(),
 		transform1.location().y(),
@@ -79,7 +77,6 @@ double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity
 		transform2.location().z()
 	};
 
-	// Compute and return the distance between entities
 	return dtVdist(location1, location2);
 }
 
@@ -108,13 +105,12 @@ void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
     dtReal direction[3] = { 0, 0, 0 };
     dtVsub(direction, targetLocation, location);
 
-    // Normalize the direction vector
-    dtVnormalize(direction);
-
-    // Validate direction vector
-    if (direction[0] == 0.0 && direction[1] == 0.0 && direction[2] == 0.0) {
-        return; // Zero-length direction; can't determine facing
+    // Zero-length direction means entity is already at target — nothing to face
+    if (dtVlenSqr(direction) < 1e-12f) {
+        return;
     }
+
+    dtVnormalize(direction);
 
     // Compute rotation Euler angles (radians)
     float yaw = atan2(direction[0], direction[2]);   // Rotation around Y axis

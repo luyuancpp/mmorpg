@@ -16,7 +16,7 @@ import me.zhyd.oauth.request.AuthGithubRequest;
 @RequestMapping("/auth")
 public class AuthController {
 
-    // 跳转到授权页
+    // Redirect to OAuth authorization page
     @GetMapping("/login/{provider}")
     public String renderAuth(@PathVariable("provider") String provider) {
         AuthRequest authRequest = getAuthRequest(provider);
@@ -30,13 +30,13 @@ public class AuthController {
 
         if (response.getCode() == AuthResponseStatus.SUCCESS.getCode()) {
 
-            // ⬇⬇⬇ 关键：强转为 AuthUser
+            // Cast response data to AuthUser
             AuthUser authUser = (AuthUser) response.getData();
 
-            // JustAuth 规范里的三方唯一 ID
+            // Third-party unique ID per JustAuth convention
             String uuid = authUser.getUuid();
 
-            // 登录 Sa-Token（临时用 uuid，后面你会换成 userId）
+            // Login via Sa-Token (using uuid temporarily; replace with userId later)
             StpUtil.login(uuid);
 
             return StpUtil.getTokenInfo();
@@ -45,17 +45,17 @@ public class AuthController {
     }
 
 
-    // 根据 provider 创建 AuthRequest（新版 JustAuth）
+    // Create AuthRequest for the given provider (JustAuth)
     private AuthRequest getAuthRequest(String provider) {
         switch (provider) {
             case "github":
                 return new AuthGithubRequest(AuthConfig.builder()
-                        .clientId("你的ClientId")
-                        .clientSecret("你的ClientSecret")
+                        .clientId("YOUR_CLIENT_ID")
+                        .clientSecret("YOUR_CLIENT_SECRET")
                         .redirectUri("http://localhost:8080/auth/callback/github")
                         .build());
             default:
-                throw new RuntimeException("不支持的 provider: " + provider);
+                throw new RuntimeException("Unsupported provider: " + provider);
         }
     }
 }

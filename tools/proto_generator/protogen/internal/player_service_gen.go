@@ -7,7 +7,7 @@ import (
 	"protogen/internal/utils"
 )
 
-// PlayerMethod 玩家服务方法数据
+// PlayerMethod holds data for a player service method.
 type PlayerMethod struct {
 	Method          string
 	CppRequest      string
@@ -15,13 +15,13 @@ type PlayerMethod struct {
 	IsEmptyResponse bool
 }
 
-// PlayerMethodFunctionsData 玩家方法函数数据
+// PlayerMethodFunctionsData holds data for generating player method functions.
 type PlayerMethodFunctionsData struct {
 	PlayerMethodController string
 	Methods                []PlayerMethod
 }
 
-// GetPlayerServiceHeadStr 生成玩家服务头文件
+// GetPlayerServiceHeadStr generates the player service header file.
 func GetPlayerServiceHeadStr(methods RPCMethods) (string, error) {
 	const tmplStr = `#pragma once
 
@@ -59,7 +59,7 @@ public:
 	return utils.GlobalEngine.MustExecute("playerServiceHead", tmplStr, data)
 }
 
-// getPlayerMethodHandlerFunctions 生成玩家方法处理函数
+// getPlayerMethodHandlerFunctions generates player method handler function declarations.
 func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 	const tmplStr = `
 {{- range .Methods }}
@@ -112,7 +112,7 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 	return utils.ExecuteTemplate("playerMethodFunctions", tmplStr, data)
 }
 
-// PlayerHandlerMethod 玩家处理器方法
+// PlayerHandlerMethod represents a player handler method.
 type PlayerHandlerMethod struct {
 	HandlerName string
 	CppRequest  string
@@ -121,7 +121,7 @@ type PlayerHandlerMethod struct {
 	HasCode     bool
 }
 
-// GetPlayerServiceHandlerCppStr 生成玩家服务处理器CPP文件
+// GetPlayerServiceHandlerCppStr generates the player service handler CPP file.
 func GetPlayerServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
 	const tmplStr = `
 {{ .IncludeName }}

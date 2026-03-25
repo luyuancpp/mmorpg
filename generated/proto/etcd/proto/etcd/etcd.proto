@@ -1,11 +1,11 @@
 syntax = "proto3";
+option go_package = "etcd/proto/etcd";
 
 import "proto/etcd/kv.proto";
 
 import "proto/etcd/version.proto";
 
 
-option go_package = "etcd/proto/etcd";
 package etcdserverpb;
 
 service KV {

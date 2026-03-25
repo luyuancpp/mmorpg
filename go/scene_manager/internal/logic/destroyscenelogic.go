@@ -39,7 +39,9 @@ func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) 
 		// Decrement scene count on the node
 		if nodeId != "" {
 			sceneCountKey := fmt.Sprintf(NodeSceneCountKey, nodeId)
-			l.svcCtx.Redis.Incrby(sceneCountKey, -1)
+			if _, countErr := l.svcCtx.Redis.Incrby(sceneCountKey, -1); countErr != nil {
+				l.Logger.Errorf("Failed to decrement scene count for node %s: %v", nodeId, countErr)
+			}
 		}
 	}
 	return &base.Empty{}, nil

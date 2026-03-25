@@ -27,10 +27,10 @@ type PlayerSessionSnapshotComp struct {
 	GateSessionId uint64                 `protobuf:"varint,2,opt,name=gate_session_id,json=gateSessionId,proto3" json:"gate_session_id,omitempty"`
 	NodeId        map[uint32]uint32      `protobuf:"bytes,3,rep,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	LoginToken    string                 `protobuf:"bytes,4,opt,name=login_token,json=loginToken,proto3" json:"login_token,omitempty"`
-	// 新增：用于并发和幂等判断
+	// Session version and idempotency fields
 	SessionVersion uint64 `protobuf:"varint,5,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
 	TokenExpiryMs  uint64 `protobuf:"varint,6,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
-	TokenId        string `protobuf:"bytes,7,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"` // server-side token id，Centre 只存 id，不存 secret
+	TokenId        string `protobuf:"bytes,7,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"` // Server-side token ID, Centre only stores ID, not secret
 	LastRequestId  string `protobuf:"bytes,8,opt,name=last_request_id,json=lastRequestId,proto3" json:"last_request_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache

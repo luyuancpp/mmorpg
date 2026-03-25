@@ -21,7 +21,6 @@
 // destruction or buff removal. Consider migrating all buff expiry and periodic triggers
 // to per-frame processing.
 
-// Generate unique buff ID
 uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 {
     uint64_t newBuffId = UINT64_MAX;
@@ -31,7 +30,6 @@ uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
     return newBuffId;
 }
 
-// Check target immunity
 bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTableParam)
 {
     for (const auto& buff : buffList | std::views::values) {
@@ -45,7 +43,6 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTablePara
     return false;
 }
 
-// Create buff data pointer
 BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     switch (buffTable->bufftype()) {
     case kBuffTypeNoDamageOrSkillHitInLastSeconds:

@@ -444,7 +444,8 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabas
     "atabase\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001\001"
     "\"_\n\021player_database_1\022\021\n\tplayer_id\030\001 \001(\004"
     ":7\212\222\364\001\021player_database_1\222\222\364\001\tplayer_id\262\222"
-    "\364\001\tplayer_id\350\222\364\001\001b\006proto3"
+    "\364\001\tplayer_id\350\222\364\001\001B\021Z\017common/databaseb\006pr"
+    "oto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[6] = {
@@ -459,7 +460,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fda
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    1625,
+    1644,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/common/database/mysql_database_table.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once,

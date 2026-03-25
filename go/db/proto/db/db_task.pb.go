@@ -21,17 +21,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// DBTask：Kafka传输的DB操作任务结构体
-// 用途：生产者发送DB操作请求，消费者接收并执行
+// DBTask: DB operation task struct transmitted via Kafka
+// Usage: producer sends DB operation requests, consumer receives and executes
 type DBTask struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           uint64                 `protobuf:"varint,1,opt,name=key,proto3" json:"key,omitempty"`                                 // 业务唯一键（如用户ID、订单ID），用于加锁和分区路由
-	WhereCase     string                 `protobuf:"bytes,2,opt,name=where_case,json=whereCase,proto3" json:"where_case,omitempty"`     // 查询条件（仅read操作使用，如"id=123 AND status=0"）
-	Op            string                 `protobuf:"bytes,3,opt,name=op,proto3" json:"op,omitempty"`                                    // 操作类型："read"（查询）、"write"（新增/修改）
-	MsgType       string                 `protobuf:"bytes,4,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"`           // 目标Proto结构体类型（如"userpb.UserInfo"），用于反序列化body
-	Body          []byte                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`                                // 序列化后的业务数据（如UserInfo的bytes）
-	TaskId        string                 `protobuf:"bytes,6,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`              // 任务唯一ID，用于Redis存储结果（生产者通过该ID查询结果）
-	RetryCount    int32                  `protobuf:"varint,7,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"` // 新增：重试次数（默认0，每次重试+1，用于控制最大重试次数）
+	Key           uint64                 `protobuf:"varint,1,opt,name=key,proto3" json:"key,omitempty"`                                 // Business unique key (e.g. user ID, order ID) for locking and partition routing
+	WhereCase     string                 `protobuf:"bytes,2,opt,name=where_case,json=whereCase,proto3" json:"where_case,omitempty"`     // Query condition (read-only, e.g. "id=123 AND status=0")
+	Op            string                 `protobuf:"bytes,3,opt,name=op,proto3" json:"op,omitempty"`                                    // Operation type: "read" or "write"
+	MsgType       string                 `protobuf:"bytes,4,opt,name=msg_type,json=msgType,proto3" json:"msg_type,omitempty"`           // Target proto message type (e.g. "userpb.UserInfo") for deserializing body
+	Body          []byte                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`                                // Serialized business data (e.g. UserInfo bytes)
+	TaskId        string                 `protobuf:"bytes,6,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`              // Unique task ID for storing result in Redis (producer queries by this ID)
+	RetryCount    int32                  `protobuf:"varint,7,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"` // Retry count (default 0, +1 per retry, for max-retry control)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -115,14 +115,14 @@ func (x *DBTask) GetRetryCount() int32 {
 	return 0
 }
 
-// TaskResult：DB任务执行结果结构体
-// 用途：消费者执行完任务后，将结果存入Redis，供生产者查询
+// TaskResult: DB task execution result struct
+// Usage: consumer stores result in Redis after execution, for producer to query
 type TaskResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`     // 执行结果：true=成功，false=失败
-	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`            // 成功时返回的业务数据（如read操作查询到的UserInfo bytes）
-	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`          // 失败时返回的错误信息（如DB连接超时、SQL语法错误）
-	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // 新增：结果生成时间戳（毫秒），用于生产者判断结果时效性
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`     // Result: true=success, false=failure
+	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`            // Business data on success (e.g. UserInfo bytes from read)
+	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`          // Error message on failure (e.g. DB timeout, SQL syntax error)
+	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // Result timestamp (ms) for producer to check freshness
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

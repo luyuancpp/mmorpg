@@ -1,0 +1,33 @@
+# Friend Service Configuration
+Name: friend.rpc
+ListenOn: 127.0.0.1:50400
+Timeout: 10000
+
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379
+  Key: friend.rpc
+
+# Global Redis (not per-zone — friends are cross-zone)
+RedisClient:
+  Host: 127.0.0.1:6379
+  Password: ""
+  DB: 3
+
+MySQL:
+  DataSource: "root:@tcp(127.0.0.1:3306)/mmorpg?charset=utf8mb4&parseTime=true&loc=Local"
+
+Node:
+  ZoneId: 0
+  LeaseTTL: 500
+
+Registry:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    DialTimeout: 5s
+
+Cache:
+  DefaultTTL: 30m
+  MaxFriends: 200
+  MaxPendingRequests: 50
