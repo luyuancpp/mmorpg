@@ -7,28 +7,26 @@
 
 #include <stdio.h>
 
-
 using namespace muduo;
 using namespace muduo::net;
 
 int cnt = 0;
-EventLoop* g_loop;
+EventLoop* g_loop = nullptr;
 
+/// 打印当前线程时间戳
 void printTid()
 {
-	//printf("pid = %d, tid = %d\n", getpid(), CurrentThread::tid());
 	printf("now %s\n", Timestamp::now().toString().c_str());
 }
 
+/// 打印消息并计数
 void print(const char* msg)
 {
 	printf("msg %s %s\n", Timestamp::now().toString().c_str(), msg);
-	if (++cnt == 20)
-	{
-		//g_loop->quit();
-	}
+	++cnt;
 }
 
+/// 取消定时器
 void cancel(TimerId timer)
 {
 	g_loop->cancel(timer);
@@ -91,6 +89,7 @@ private:
 
 };
 
+/// 测试：在 RunAt 回调中再次注册下一次 RunAt（递归调度）
 class RecursionTimerTest
 {
 public:
@@ -111,19 +110,24 @@ private:
     TimerTaskComp m_Timer;
 };
 
-typedef std::shared_ptr<GameTimerTest> t_p;
+using GameTimerTestPtr = std::shared_ptr<GameTimerTest>;
 
-typedef std::unordered_map<int32_t, t_p> t_list;
+using GameTimerTestMap = std::unordered_map<int32_t, GameTimerTestPtr>;
 
-TEST(main, TimerQueueUnitTest)
+// ---------------------------------------------------------------------------
+// 定时器队列基本功能测试（无断言，仅验证不崩溃）
+// ---------------------------------------------------------------------------
+
+TEST(TimerQueueTest, BasicTimerOperations)
 {
 	printTid();
-	
+
 	sleep(1);
 	{
 		EventLoop loop;
 		g_loop = &loop;
 
+		// --- RunAfter / RunEvery / Cancel 基本操作 ---
 		GameTimerTest a;
 		a.RunAfter();
 
@@ -132,8 +136,9 @@ TEST(main, TimerQueueUnitTest)
 
 		GameTimerTest c;
 		c.RunEvery();
-		c.Cancel();
+		c.Cancel(); // 立即取消
 
+		// --- 生命周期结束后定时器自动失效（不崩溃） ---
 		{
 			GameTimerTest t;
 			t.RunAfter();
@@ -144,6 +149,7 @@ TEST(main, TimerQueueUnitTest)
 			t.RunEvery();
 		}
 
+		// --- EventLoop 原生定时器 ---
 		print("main");
 		loop.runAfter(0.1, std::bind(print, "once0.1"));
 		loop.runAfter(1, std::bind(print, "once1"));
@@ -156,12 +162,14 @@ TEST(main, TimerQueueUnitTest)
 		loop.runEvery(2, std::bind(print, "every2"));
 		TimerId t3 = loop.runEvery(3, std::bind(print, "every3"));
 		loop.runAfter(9.001, std::bind(cancel, t3));
+		// --- 递归调度 + 循环中创建/销毁定时器（压力测试，需手动中断）---
         RecursionTimerTest r;
         r.RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
-        t_list v;
+        GameTimerTestMap v;
+		// 注意：以下是无限循环，仅用于手动观察输出
 		while (true)
 		{
-            t_p p(new GameTimerTest);
+            GameTimerTestPtr p(new GameTimerTest);
             p->RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
             v.emplace(1, p);
             v.erase(1);

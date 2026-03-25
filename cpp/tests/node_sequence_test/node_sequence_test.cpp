@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <cassert>
 #include <functional>
 #include <iostream>
 #include <thread>
@@ -9,50 +8,45 @@
 #include "core/utils/id/snow_flake.h"
 #include "core/utils/id/node_id_generator.h"
 
-
-
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
-using TransientNode32BitCompositeIdGenerator  = TransientNodeCompositeIdGenerator<uint64_t, 32>;
+using TransientNode32BitCompositeIdGenerator = TransientNodeCompositeIdGenerator<uint64_t, 32>;
 
-TransientNode32BitCompositeIdGenerator  idGenAtomic;
+TransientNode32BitCompositeIdGenerator idGenAtomic;
 
-static const std::size_t kTotal = 0xffffff;
+static const std::size_t kTotalIds = 0xffffff;
 
-void emplaceToVector(GuidVector& v)
+void GenerateIdsIntoVector(GuidVector& out)
 {
-	for (std::size_t i = 0; i < kTotal; ++i)
+	out.reserve(kTotalIds);
+	for (std::size_t i = 0; i < kTotalIds; ++i)
 	{
-		v.emplace_back(idGenAtomic.Generate());
+		out.emplace_back(idGenAtomic.Generate());
 	}
 }
 
-void putVectorIntoSet(GuidSet& s, GuidVector& v)
-{
-	for (auto& it : v)
-	{
-		s.emplace(it);
-	}
-}
+// ---------------------------------------------------------------------------
+// NodeCompositeIdGenerator 测试
+// ---------------------------------------------------------------------------
 
-
-TEST(TestSnowFlakeThreadSafe, justGenerateTime)
+TEST(NodeCompositeIdTest, SingleGeneration)
 {
 	idGenAtomic.set_node_id(1);
 	Guid id = idGenAtomic.Generate();
+	EXPECT_NE(id, 0);
 }
 
-TEST(TestSnowFlakeThreadSafe, generate)
+TEST(NodeCompositeIdTest, AllGeneratedIdsAreUnique)
 {
-	for (int32_t i = 0; i < 100; ++i)
+	for (int32_t round = 0; round < 100; ++round)
 	{
-		GuidSet guidSet;
-		GuidVector firstVector;
-		emplaceToVector(firstVector);
-		putVectorIntoSet(guidSet, firstVector);
+		GuidVector ids;
+		GenerateIdsIntoVector(ids);
 
-		assert(guidSet.size() == firstVector.size());
+		GuidSet uniqueIds(ids.begin(), ids.end());
+		ASSERT_EQ(uniqueIds.size(), ids.size())
+			<< "Duplicate ID detected in round " << round;
 	}
 }
 

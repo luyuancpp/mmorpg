@@ -1,4 +1,4 @@
-// test_aoi_system.cpp
+// aoi_system_test.cpp — AOI（兴趣区域）系统测试
 
 #include "spatial/system/aoi.h"
 #include <gtest/gtest.h>
@@ -18,14 +18,20 @@ extern const Point kDefaultSize(20.0, 20.0);
 extern const Point kOrigin(0.0, 0.0);
 extern const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
-// Mock class for testing purposes
-class MockAoiSystem : public AoiSystem  {
+// ---------------------------------------------------------------------------
+// 基础测试夹具：使用 MockAoiSystem 暴露内部方法
+// ---------------------------------------------------------------------------
+
+class MockAoiSystem : public AoiSystem {
 public:
     using AoiSystem::Update;
     using AoiSystem::BeforeLeaveSceneHandler;
 };
 
-// Test fixture for AoiSystem
+// ---------------------------------------------------------------------------
+// AoiSystemTest —— 网格分配、邻居查找、玩家移动
+// ---------------------------------------------------------------------------
+
 class AoiSystemTest : public ::testing::Test {
 protected:
     MockAoiSystem aoi_system;
@@ -49,7 +55,7 @@ protected:
     }
 };
 
-// Test GetGridId for Location
+// 坐标→网格 ID
 TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
     Vector3 location;
     location.set_x(10);
@@ -61,7 +67,7 @@ TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
     EXPECT_EQ(grid_id, expected_grid_id);
 }
 
-// Test ScanNeighborGridIds
+// 扫描邻居网格（六边形 6 个邻居）
 TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
     Hex hex{ 0, 0, 0 };
     GridSet neighbor_grid_set;
@@ -76,7 +82,7 @@ TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
     }
 }
 
-// Test Update method for player movement
+// 玩家随机移动后网格分配正确性
 TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
     // Mock data setup
     auto scene_entity = tlsRegistryManager.sceneRegistry.create();
@@ -113,7 +119,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
     GridSystem::UpdateLogGridSize();
 }
 
-// Test player movement across six neighboring hexes
+// 玩家在六个相邻六边形之间往返移动
 TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     // Mock data setup
     auto scene_entity = tlsRegistryManager.sceneRegistry.create();
@@ -172,27 +178,14 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
 
 
 
-// Mocking necessary classes and functions for testing
-class MockViewSystem {
-public:
-    static bool CheckSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
-        return true; // Mock behavior
-    }
-
-    static bool CheckSendPlayerEnterMessage(entt::entity observer, entt::entity entity) {
-        return true; // Mock behavior
-    }
-
-    static void FillActorCreateS2CInfo(entt::entity entity) {
-        // Mock behavior
-    }
-};
+// ---------------------------------------------------------------------------
+// AoiEntityVisibilityTest —— 实体进入/离开视野通知
+// ---------------------------------------------------------------------------
 
 EntityUnorderedMap entitiesToNotifyEntry;
 EntityUnorderedMap entitiesToNotifyExit;
 
-// Test fixture class
-class AoiSystemTest1 : public ::testing::Test {
+class AoiEntityVisibilityTest : public ::testing::Test {
 protected:
     AoiSystem aoiSystem;
     entt::entity entity1;
@@ -202,24 +195,22 @@ protected:
 
 
     void SetUp() override {
-
         tlsRegistryManager.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
         tlsRegistryManager.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
         tlsRegistryManager.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
         tlsRegistryManager.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
-        
-        // Setup mock data
+
         entity1 = tlsRegistryManager.actorRegistry.create();
         entity2 = tlsRegistryManager.actorRegistry.create();
 
-        // Set up mock components
+        // 将两个实体放入同一场景
         auto sceneEntity = tlsRegistryManager.sceneRegistry.create();
         sceneEntityComp1.sceneEntity = sceneEntity;
         sceneEntityComp2.sceneEntity = sceneEntity;
         tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
         tlsRegistryManager.actorRegistry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
 
-        // Set initial positions
+        // entity1 在原点，entity2 在 (100,100)
         auto& transform1 = tlsRegistryManager.actorRegistry.emplace<Transform>(entity1);
 
         auto& transform2 = tlsRegistryManager.actorRegistry.emplace<Transform>(entity2);
@@ -227,7 +218,7 @@ protected:
         transform2.mutable_location()->set_y(100);
 
 
-        // Set up grid list
+        // 创建场景网格
         tlsRegistryManager.sceneRegistry.emplace<SceneGridListComp>(sceneEntityComp1.sceneEntity);
     }
 
@@ -245,25 +236,23 @@ protected:
     }
 };
 
-// Test case for entering the view
-TEST_F(AoiSystemTest1, TestEntityEnterView) {
-    // Move entity2 to be within view range of entity1
+// 实体进入视野
+TEST_F(AoiEntityVisibilityTest, TestEntityEnterView) {
+    // 将 entity2 移到 entity1 附近
     auto& location = *tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2).mutable_location();
     location.set_x(20);
     location.set_y(20);
 
     aoiSystem.Update(0.0);
 
-    // Check that entity1 should be notified of entity2 entering its view
-    // Add your assertions here
-    // For example:
+    // 双方都应收到进入通知
     EXPECT_TRUE(entitiesToNotifyEntry.find(entity2)->second == entity1);
     EXPECT_TRUE(entitiesToNotifyEntry.find(entity1)->second == entity2);
 }
 
-// Test case for leaving the view
-TEST_F(AoiSystemTest1, TestEntityLeaveView) {
-    // Move entity2 out of view range of entity1
+// 实体离开视野
+TEST_F(AoiEntityVisibilityTest, TestEntityLeaveView) {
+    // 先将 entity2 移到 entity1 附近触发进入
     auto& location = *tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2).mutable_location();
     location.set_x(0);
     location.set_y(0);
@@ -273,14 +262,12 @@ TEST_F(AoiSystemTest1, TestEntityLeaveView) {
     EXPECT_TRUE(entitiesToNotifyEntry.find(entity2)->second == entity1);
     EXPECT_TRUE(entitiesToNotifyEntry.find(entity1)->second == entity2);
 
+    // 然后将 entity2 移远，验证离开通知
     location.set_x(50);
     location.set_y(50);
 
     aoiSystem.Update(0.0);
 
-    // Check that entity1 should be notified of entity2 leaving its view
-    // Add your assertions here
-    // For example:
     EXPECT_TRUE(entitiesToNotifyExit.find(entity2)->second == entity1);
     EXPECT_TRUE(entitiesToNotifyExit.find(entity1)->second == entity2);
 }

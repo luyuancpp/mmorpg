@@ -1,13 +1,10 @@
 #include <gtest/gtest.h>
+#include <string>
 
 #include "contrib/hiredis/Hiredis.h"
-
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
-
 #include "c2gw.pb.h"
-
-#include <string>
 
 using namespace muduo;
 using namespace muduo::net;
@@ -137,7 +134,11 @@ void loadPbCallback(hiredis::Hiredis* c, redisReply* reply, google::protobuf::Me
     LOG_INFO << pb.DebugString() << " " << redisReplyToString(reply);
 }
 
-TEST(Muduo, mredisclipb)
+// ---------------------------------------------------------------------------
+// Protobuf 序列化存取 Redis（异步回调模式）
+// ---------------------------------------------------------------------------
+
+TEST(HiredisAsyncTest, SaveAndLoadProtobuf)
 {
     Logger::setLogLevel(Logger::DEBUG);
 
@@ -152,6 +153,7 @@ TEST(Muduo, mredisclipb)
 
     std::string key = "luhailong0000000";
 
+    // 1) 延迟 2s 后将 LoginRequest 序列化后 SET 到 Redis
     LoginRequest save_message;
     loop.runAfter(2,[&hiredis, &key, &save_message]() ->void
     {        
@@ -163,6 +165,7 @@ TEST(Muduo, mredisclipb)
             message_cached_array.data(),
             message_cached_array.size());
     });
+    // 2) 延迟 3s 后从 Redis GET 并反序列化
     LoginRequest load_message;
     loop.runAfter(3, [&hiredis, &key, &load_message]() ->void
     {
@@ -174,7 +177,11 @@ TEST(Muduo, mredisclipb)
     loop.loop();
 }
 
-TEST(Muduo, mrediscli)
+// ---------------------------------------------------------------------------
+// Hiredis 基本命令（time / echo / dbsize / select / auth）
+// ---------------------------------------------------------------------------
+
+TEST(HiredisAsyncTest, BasicCommands)
 {
     Logger::setLogLevel(Logger::DEBUG);
 

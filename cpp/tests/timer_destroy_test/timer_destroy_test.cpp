@@ -8,7 +8,6 @@
 
 #include "time/comp/timer_task_comp.h"
 
-
 #include <stdio.h>
 #include <thread>
 #include <chrono>
@@ -21,16 +20,21 @@
 using namespace muduo;
 using namespace muduo::net;
 
-
-//����1ִ��timer�ص��� ����1���ö���2��timer���µ�ʱ��ص�,
-//����2ִ�лص�ʱ����Լ���timer������(����ȡ��),
-//����2����,
-//����1���õĶ���2�Ļص�δȡ��
-
-//��Ա1ִ�лص��� ���ö�Ա3���µ�ʱ��ص�,
-//��Ա3ִ�лص�ʱ����Լ���timer������(����ȡ��),
-//��Ա3����,
-//��Ա1���õĶ�Ա3�Ļص�δȡ����
+// ---------------------------------------------------------------------------
+// 测试场景说明（定时器销毁 & 悬空回调）:
+//
+// 场景 A:
+//   对象1 在 timer 回调中为对象2 注册新的定时回调,
+//   对象2 在回调中尝试取消自己的 timer（或已被销毁）,
+//   对象2 销毁,
+//   对象1 设置的对象2 回调尚未取消 → 验证不会崩溃
+//
+// 场景 B（类似）:
+//   成员1 在回调中为成员3 注册新的定时回调,
+//   成员3 在回调中尝试取消自己的 timer（或已被销毁）,
+//   成员3 销毁,
+//   成员1 设置的成员3 回调尚未取消 → 验证不会崩溃
+// ---------------------------------------------------------------------------
 
 int cnt = 0;
 EventLoop* g_loop;
@@ -101,9 +105,9 @@ private:
     TimerTaskComp m_Timer;
 };
 
-typedef std::shared_ptr<GameTimerTest> t_p;
+using GameTimerTestPtr = std::shared_ptr<GameTimerTest>;
 
-typedef std::unordered_map<int32_t, t_p> t_list;
+using GameTimerTestMap = std::unordered_map<int32_t, GameTimerTestPtr>;
 
 
 class TestCoreDump {
@@ -152,6 +156,7 @@ struct CastingTimerCompTest
 };
 
 
+// 场景: entity 在定时器回调中被销毁，接着重新创建 → 验证不崩溃
 void TestScenario() {
 
     auto entity = tlsRegistryManager.actorRegistry.create();
@@ -159,21 +164,20 @@ void TestScenario() {
     auto& t = tlsRegistryManager.actorRegistry.emplace<CastingTimerCompTest>(entity);
 
     auto fn = [entity]() {
-        std::cout << "TestCoreDump : new callback executed." << std::endl;
+        std::cout << "CastingTimerCompTest: callback — destroy entity and recreate." << std::endl;
 
         tlsRegistryManager.actorRegistry.destroy(entity);
 
-        auto entity = tlsRegistryManager.actorRegistry.create();
-        auto& t = tlsRegistryManager.actorRegistry.get_or_emplace<CastingTimerCompTest>(entity);
-
-        };
+        auto newEntity = tlsRegistryManager.actorRegistry.create();
+        tlsRegistryManager.actorRegistry.get_or_emplace<CastingTimerCompTest>(newEntity);
+    };
 
     t.timer.RunEvery(0.1, fn);
-
-
 }
 
 
+// 场景: 对象1 在定时器回调中为对象2 注册新回调，然后对象2 被销毁
+// → 验证悬空回调不会引发崩溃
 void TestScenario1() {
 
     using DestroyObjType = std::shared_ptr<TestCoreDump>;
@@ -184,29 +188,26 @@ void TestScenario1() {
     obj1.RunAfter(1.0, [&obj1, &obj2]() {
         std::cout << "Callback from obj2 executed." << obj2->id << std::endl;
 
-        //����1ִ��timer�ص��� ����1���ö���2��timer���µ�ʱ��ص�,
+        // 对象1 在回调中为对象2 注册新的定时回调
         obj2->timer.RunAfter(0.2, [&obj1, &obj2]() {
             std::cout << "obj2->timer.RunAfter" << &obj2->timer << std::endl;
-            //����2ִ�лص�ʱ����Լ���timer������(����ȡ��),
+            // 对象2 在回调中尝试注册自己的 timer
             obj2->TestTimer();
-             
-            });
+        });
 
-        //����2����,
+        // 对象2 随后被销毁（reset）
         obj1.RunAfter(0.15, [&obj2]() {
             std::cout << "reset ." << &obj2->timer << std::endl;
             obj2.reset();
-            });
-
-        //����1���õĶ���2�Ļص�δȡ��
-
         });
 
+        // 此时对象1 设置的对象2 回调可能悬空 → 验证不崩溃
+    });
 
     g_loop->loop();
-
 }
 
+// 副本定时器链式调用测试：准备→结算→强退→准备 循环
 class DungeonTimerTest
 {
 public:
@@ -247,7 +248,11 @@ public:
 
 };
 
-TEST(main, TimerQueueUnitTest)
+// ---------------------------------------------------------------------------
+// 综合测试: 定时器销毁安全性（无断言，仅验证不崩溃）
+// ---------------------------------------------------------------------------
+
+TEST(TimerDestroyTest, TimerDestroyDoesNotCrash)
 {
     EventLoop loop;
     g_loop = &loop;
@@ -256,7 +261,6 @@ TEST(main, TimerQueueUnitTest)
         TestScenario();
 
         {
-            std::cout << " DungeonTimerTest " << std::endl;
             DungeonTimerTest t;
             t.Init();
         }
@@ -273,44 +277,24 @@ TEST(main, TimerQueueUnitTest)
         GameTimerTest c;
         c.RunEvery();
 
-
-
-        {
-            GameTimerTest t;
-            t.RunAfter();
-        }
-
-        {
-            GameTimerTest t;
-            t.RunAfter();
-        }
-
-        {
-            GameTimerTest t;
-            t.RunEvery();
-        }
-
-        {
-            GameTimerTest t;
-            t.RunEvery();
-        }
-
-
+        // 定时器在作用域结束时被销毁 → 验证不崩溃
+        { GameTimerTest t; t.RunAfter(); }
+        { GameTimerTest t; t.RunAfter(); }
+        { GameTimerTest t; t.RunEvery(); }
+        { GameTimerTest t; t.RunEvery(); }
 
         RecursionTimerTest r;
         r.RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
-        t_list v;
+        GameTimerTestMap v;
 
         {
-            t_p p(new GameTimerTest);
+            GameTimerTestPtr p(new GameTimerTest);
             p->RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
         }
-        std::chrono::seconds s2(10);
-        std::this_thread::sleep_for(s2);
+        std::this_thread::sleep_for(std::chrono::seconds(10));
 
         TestScenario1();
     }
-
 }
 
 int main(int argc, char** argv)

@@ -25,6 +25,10 @@ entt::entity CreateMainSceneNode()
 	return node;
 }
 
+// ---------------------------------------------------------------------------
+// 场景创建 / 销毁
+// ---------------------------------------------------------------------------
+
 TEST(SceneSystemTests, CreateMainScene)
 {
 	const SceneSystem sceneSystem;
@@ -157,6 +161,10 @@ TEST(SceneSystemTests, DestroyServer)
 	EXPECT_EQ(SceneCommon::GetScenesSize(), SceneCommon::GetScenesSize());
 }
 
+// ---------------------------------------------------------------------------
+// 玩家进入/离开场景
+// ---------------------------------------------------------------------------
+
 TEST(SceneSystemTests, PlayerLeaveEnterScene)
 {
 	SceneSystem sceneSystem;
@@ -255,7 +263,11 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).destroy(node2);
 }
 
-TEST(GS, MainTainWeightRoundRobinMainScene)
+// ---------------------------------------------------------------------------
+// 节点维护模式下的场景分配
+// ---------------------------------------------------------------------------
+
+TEST(SceneNodeTest, MaintainModeWeightRoundRobinMainScene)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	SceneSystem sm;
@@ -320,7 +332,11 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 }
 
 
-TEST(GS, CompelToChangeScene)
+// ---------------------------------------------------------------------------
+// 强制迁移玩家到其他场景
+// ---------------------------------------------------------------------------
+
+TEST(SceneNodeTest, CompelPlayerChangeScene)
 {
 	SceneSystem sm;
 
@@ -373,7 +389,11 @@ TEST(GS, CompelToChangeScene)
 }
 
 
-TEST(GS, CrashWeightRoundRobinMainScene)
+// ---------------------------------------------------------------------------
+// 节点崩溃场景下的场景分配
+// ---------------------------------------------------------------------------
+
+TEST(SceneNodeTest, CrashModeWeightRoundRobinMainScene)
 {
 	SceneSystem sm;
 	EntityUnorderedSet serverEntities;
@@ -433,8 +453,8 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 }
 
 
-// Messages during a crash cannot be processed
-TEST(GS, CrashMovePlayer2NewServer)
+// 节点崩溃时的消息不能被处理
+TEST(SceneNodeTest, CrashNodeReplaceMovePlayersToNewNode)
 {
 	SceneSystem sm;
 	EntityUnorderedSet nodeList;
@@ -495,7 +515,11 @@ TEST(GS, CrashMovePlayer2NewServer)
 }
 
 
-TEST(GS, WeightRoundRobinMainScene)
+// ---------------------------------------------------------------------------
+// 权重轮循场景分配
+// ---------------------------------------------------------------------------
+
+TEST(SceneNodeTest, WeightRoundRobinMainScene)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	SceneSystem sm;
@@ -617,7 +641,11 @@ TEST(GS, WeightRoundRobinMainScene)
 	//leave 
 }
 
-TEST(GS, ServerEnterLeavePressure)
+// ---------------------------------------------------------------------------
+// 节点压力状态下的场景分配
+// ---------------------------------------------------------------------------
+
+TEST(SceneNodeTest, PressureModeEnterLeave)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	SceneSystem sm;
@@ -684,7 +712,11 @@ TEST(GS, ServerEnterLeavePressure)
 	}
 }
 
-TEST(GS, EnterDefaultScene)
+// ---------------------------------------------------------------------------
+// 进入默认场景
+// ---------------------------------------------------------------------------
+
+TEST(SceneNodeTest, EnterDefaultScene)
 {
 	const auto gameNode = CreateMainSceneNode();
 	CreateSceneOnNodeSceneParam createGSSceneParam{ gameNode };
@@ -718,7 +750,11 @@ struct TestNodeId
     uint32_t node_id_{ 0 };
 };
 
-TEST(GS, GetNotFullMainSceneWhenSceneFull)
+// ---------------------------------------------------------------------------
+// 场景人数满时的场景分配
+// ---------------------------------------------------------------------------
+
+TEST(SceneNodeTest, GetNotFullMainSceneWhenSceneFull)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	SceneSystem sm;
@@ -881,16 +917,20 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 }
 
 
-TEST(GS, CreateDungeon)
+TEST(SceneNodeTest, CreateDungeon)
 {
 }
 
-TEST(GS, Route)
+TEST(SceneNodeTest, Route)
 {
     tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 }
 
-TEST(GS, CheckEnterSceneScene)
+// ---------------------------------------------------------------------------
+// 场景进入条件检查
+// ---------------------------------------------------------------------------
+
+TEST(SceneNodeTest, CheckEnterSceneWithCreators)
 {
 	// Create a scene with creators set
 	SceneInfoComp sceneInfo;
