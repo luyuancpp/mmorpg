@@ -7,7 +7,7 @@ import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_SCENE;
 
-message Centre2GsLoginRequest
+message GateLoginNotifyRequest
 {
   uint32 enter_gs_type = 1;
 }
@@ -19,6 +19,6 @@ message GameNodeExitGameRequest
 service ScenePlayer
 {
   option (OptionIsPlayerService) = true;
-  rpc Centre2GsLogin (Centre2GsLoginRequest) returns (google.protobuf.Empty);
+  rpc GateLoginNotify (GateLoginNotifyRequest) returns (google.protobuf.Empty);
   rpc ExitGame (GameNodeExitGameRequest) returns (google.protobuf.Empty);
 }

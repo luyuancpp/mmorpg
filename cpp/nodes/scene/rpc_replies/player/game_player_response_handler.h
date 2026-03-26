@@ -9,8 +9,8 @@ class ScenePlayerReply : public ::PlayerServiceReplied
 public:
     using PlayerServiceReplied::PlayerServiceReplied;
 
-    static void Centre2GsLogin(entt::entity player,
-        const ::Centre2GsLoginRequest* request,
+    static void GateLoginNotify(entt::entity player,
+        const ::GateLoginNotifyRequest* request,
         ::google::protobuf::Empty* response);
     static void ExitGame(entt::entity player,
         const ::GameNodeExitGameRequest* request,
@@ -24,7 +24,7 @@ public:
         switch (method->index())
         {
         case 0:
-            Centre2GsLogin(player,
+            GateLoginNotify(player,
                 nullptr,
                 static_cast<::google::protobuf::Empty*>(response));
             break;

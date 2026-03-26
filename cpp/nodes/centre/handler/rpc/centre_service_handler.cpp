@@ -7,30 +7,22 @@
 #include "table/code/mainscene_table.h"
 #include "session/system/session.h"
 #include "rpc/player_service_interface.h"
-#include "rpc/player_rpc_response_handler.h"
 #include "muduo/net/Callbacks.h"
-#include "muduo/net/TcpConnection.h"
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
-#include "network/codec/message_response_dispatcher.h"
 #include "network/error_handling_system.h"
 #include "table/proto/tip/login_error_tip.pb.h"
 #include "player/system/player_lifecycle.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
-#include "proto/common/component/scene_comp.pb.h"
-#include "proto/common/event/scene_event.pb.h"
 #include "proto/common/base/node.pb.h"
 #include "scene/system/player_change_scene.h"
-#include "scene/system/player_scene.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/centre_service_service_metadata.h"
-#include "rpc/service_metadata/game_player_scene_service_metadata.h"
-#include "rpc/service_metadata/rpc_event_registry.h"
-#include "thread_context/redis_manager.h"
-#include "thread_context/dispatcher_manager.h"
+#include "rpc/service_metadata/service_metadata.h"
+#include "threading/redis_manager.h"
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/defer/defer.h"
 #include "core/utils/proto/proto_field_checker.h"
@@ -40,11 +32,10 @@
 #include "type_alias/player_redis.h"
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
-#include "thread_context/node_context_manager.h"
-#include "thread_context/player_manager.h"
-#include "thread_context/message_context.h"
+#include "threading/node_context_manager.h"
+#include "threading/player_manager.h"
+#include "threading/message_context.h"
 #include <modules/scene/comp/scene_node_comp.h>
-#include <modules/scene/comp/scene_comp.h>
 #include <scene/system/scene.h>
 #include <time/system/time.h>
 #include <utils/hash/sha.h>
@@ -52,173 +43,53 @@
 using namespace muduo;
 using namespace muduo::net;
 
-struct DelayedCleanupTimer {
+struct DelayedCleanupTimer
+{
 	TimerTaskComp timer;
 };
 
-constexpr std::size_t kMaxPlayerSize{ 50000 };
+constexpr std::size_t kMaxPlayerSize{50000};
 
 extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
-extern MessageResponseDispatcher gRpcResponseDispatcher;
-std::unordered_map<std::string, std::unique_ptr<PlayerService>> gPlayerService;
-std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> gPlayerServiceReplied;
 
-void InitServiceHandler()
+void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeoutMs)
 {
-	gNodeService.emplace("Centre", std::make_unique<CentreHandler>());
-}
-
-void InitPlayerService() {}
-
-entt::entity GetPlayerEntityBySessionId(uint64_t session_id);
-void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp);
-void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, Timestamp timestamp);
-
-void InitReply()
-{
-	gRpcResponseDispatcher.registerMessageCallback<::RegisterGameNodeSessionResponse>(GatePlayerEnterGameNodeMessageId,
-		std::bind(&OnGatePlayerEnterGameNodeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	gRpcResponseDispatcher.registerMessageCallback<::BindSessionToGateResponse>(GateBindSessionToGateMessageId,
-		std::bind(&OnGateBindSessionToGateReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-}
-
-void InitPlayerServiceReplied() { /* TODO: Register player service reply handlers if needed */ }
-
-namespace {
-void OnSceneCreatedHandler(const OnSceneCreated& event) { /* TODO: Notify centre of new scene availability */ }
-void OnSceneDestroyedHandler(const OnSceneDestroyed& event) { /* TODO: Update centre scene registry on destruction */ }
-void BeforeEnterSceneHandler(const BeforeEnterScene& event) { /* TODO: Pre-enter validation on centre side */ }
-void AfterEnterSceneHandler(const AfterEnterScene& event) { /* TODO: Post-enter bookkeeping on centre side */ }
-
-void BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
-{
-	const auto player = entt::to_entity(event.entity());
-
-	const auto& changeSceneQueue = tlsRegistryManager.actorRegistry.get_or_emplace<ChangeSceneQueueComp>(player);
-
-	GsLeaveSceneRequest leaveSceneRequest;
-
-	if (!changeSceneQueue.empty())
-	{
-		const auto& changeSceneInfo = *changeSceneQueue.front();
-		*leaveSceneRequest.mutable_change_scene_info() = changeSceneInfo;
-	}
-
-	SendMessageToPlayerOnSceneNode(SceneScenePlayerLeaveSceneMessageId, leaveSceneRequest, player);
-
-	LOG_INFO << "Player is leaving scene "
-		<< tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player)
-		<< ", Scene GUID: "
-		<< tlsRegistryManager.sceneRegistry.get<SceneInfoComp>(tlsRegistryManager.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity).guid();
-}
-
-void AfterLeaveSceneHandler(const AfterLeaveScene& event) { /* TODO: Post-leave cleanup on centre side */ }
-
-void S2CEnterSceneHandler(const S2CEnterScene& event)
-{
-	PlayerSceneSystem::SendToGameNodeEnterScene(entt::to_entity(event.entity()));
-}
-} // namespace
-
-void RegisterSceneEventHandlers()
-{
-	dispatcher.sink<OnSceneCreated>().connect<&OnSceneCreatedHandler>();
-	dispatcher.sink<OnSceneDestroyed>().connect<&OnSceneDestroyedHandler>();
-	dispatcher.sink<BeforeEnterScene>().connect<&BeforeEnterSceneHandler>();
-	dispatcher.sink<AfterEnterScene>().connect<&AfterEnterSceneHandler>();
-	dispatcher.sink<BeforeLeaveScene>().connect<&BeforeLeaveSceneHandler>();
-	dispatcher.sink<AfterLeaveScene>().connect<&AfterLeaveSceneHandler>();
-	dispatcher.sink<S2CEnterScene>().connect<&S2CEnterSceneHandler>();
-}
-
-void OnGatePlayerEnterGameNodeReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, Timestamp timestamp)
-{
-	const auto player = GetPlayerEntityBySessionId(replied->session_info().session_id());
-	if (player == entt::null)
-	{
-		LOG_TRACE << "session player not found " << replied->session_info().session_id();
-		return;
-	}
-
-	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
-	PlayerLifecycleSystem::ProcessPlayerSessionState(player);
-	PlayerChangeSceneUtil::OnTargetSceneNodeEnterComplete(player);
-	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
-}
-
-void OnGateBindSessionToGateReply(const TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, Timestamp timestamp)
-{
-	const uint64_t sessionId = replied->session_id();
-	const Guid playerId = replied->player_id();
-	const uint64_t respVersion = replied->session_version();
-
-	auto it = tlsPlayerList.find(playerId);
-	if (it == tlsPlayerList.end()) {
-		LOG_INFO << "BindResp ignored: player not exist, player=" << playerId;
-		return;
-	}
-
-	entt::entity playerEntity = it->second;
-	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
-	if (!sessionPB) {
-		LOG_INFO << "BindResp ignored: no snapshot, player=" << playerId;
-		return;
-	}
-
-	if (sessionPB->session_version() != respVersion) {
-		LOG_INFO << "BindResp ignored: version mismatch "
-			<< "resp=" << respVersion
-			<< " cur=" << sessionPB->session_version()
-			<< " player=" << playerId;
-		return;
-	}
-
-	if (sessionPB->gate_session_id() != sessionId) {
-		LOG_INFO << "BindResp ignored: session mismatch "
-			<< "resp=" << sessionId
-			<< " cur=" << sessionPB->gate_session_id()
-			<< " player=" << playerId;
-		return;
-	}
-
-	SessionMap()[sessionId] = playerId;
-
-	LOG_INFO << "BindResp accepted: session=" << sessionId
-		<< " player=" << playerId
-		<< " version=" << respVersion;
-}
-
-void StartDelayedCleanupTimer(entt::entity playerEntity, uint32_t timeoutMs) {
-	tlsRegistryManager.actorRegistry.get_or_emplace<DelayedCleanupTimer>(playerEntity).timer.RunAfter(static_cast<double>(timeoutMs) / 1000.0,
-		[playerEntity]() {
-			auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	tlsRegistryManager.actorRegistry.get_or_emplace<DelayedCleanupTimer>(playerEntity).timer.RunAfter(static_cast<double>(timeoutMs) / 1000.0, [playerEntity]()
+																									  {
+			auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 			auto* disconnectInfo = tlsRegistryManager.actorRegistry.try_get<PlayerDisconnectInfoComp>(playerEntity);
 			if (!sessionPB || !disconnectInfo) return;
 			if (sessionPB->session_version() != disconnectInfo->snapshot_version()) {
-				// Already reconnected/replaced — cancel cleanup
+				// 已经重连/被替换，取消清理
 				return;
 			}
 
-			// Still disconnected: remove global session mapping, then go offline
+			// 仍为断线状态：先移除全局 session 映射，再真正下线
 			const uint64_t gateSessionId = sessionPB->gate_session_id();
 			if (gateSessionId != kInvalidSessionId) {
 				SessionMap().erase(gateSessionId);
 				LOG_INFO << "Delayed cleanup: removed GlobalSessionList entry for session " << gateSessionId;
 			}
 			Guid playerGuid = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
-			PlayerLifecycleSystem::HandleNormalExit(playerGuid);
-		});
+			PlayerLifecycleSystem::HandleNormalExit(playerGuid); });
 }
 
-// Helper to cancel delayed cleanup timer (anonymous namespace)
-static void CancelDelayedCleanupTimer(entt::entity playerEntity) {
-	auto& registry = tlsRegistryManager.actorRegistry;
-	if (!registry.valid(playerEntity)) return;
-	if (registry.try_get<DelayedCleanupTimer>(playerEntity)) {
+// 新增：取消延迟清理计时器的辅助函数（匿名 namespace 内）
+static void CancelDelayedCleanupTimer(entt::entity playerEntity)
+{
+	auto &registry = tlsRegistryManager.actorRegistry;
+	if (!registry.valid(playerEntity))
+		return;
+	if (registry.try_get<DelayedCleanupTimer>(playerEntity))
+	{
 		registry.remove<DelayedCleanupTimer>(playerEntity);
-		if (registry.try_get<Guid>(playerEntity)) {
+		// 记录日志：使用 player GUID 更易读
+		if (registry.try_get<Guid>(playerEntity))
+		{
 			LOG_INFO << "Cancelled delayed cleanup timer for player " << registry.get<Guid>(playerEntity);
-		} else {
+		}
+		else
+		{
 			LOG_INFO << "Cancelled delayed cleanup timer for entity " << static_cast<uint32_t>(playerEntity);
 		}
 	}
@@ -253,87 +124,114 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 	return player_it->second;
 }
 
-// ---------- refactor helpers (anonymous namespace) ----------
+// ---------- refactor helpers (匿名 namespace) ----------
 // helpers for login / reconnect / kick decision (single-threaded simplified)
-namespace {
+namespace
+{
 
-// In-memory idempotency map: playerId -> (last_request_id, expiry_ms)
-thread_local std::unordered_map<Guid, std::pair<std::string, uint64_t>> g_inmemory_last_request_map;
-constexpr uint64_t kIdempotencyTtlMs = 300000; // 5 minutes
+	// In-memory idempotency map: playerId -> (last_request_id, expiry_ms)
+	thread_local std::unordered_map<Guid, std::pair<std::string, uint64_t>> g_inmemory_last_request_map;
+	constexpr uint64_t kIdempotencyTtlMs = 300000; // 5 minutes
 
-static void SetInMemoryLastRequestId(Guid playerId, const std::string& requestId) {
-    if (playerId == kInvalidGuid || requestId.empty()) return;
-    const uint64_t expireAt = TimeSystem::NowMilliseconds() + kIdempotencyTtlMs;
-    g_inmemory_last_request_map[playerId] = { requestId, expireAt };
-}
+	static void SetInMemoryLastRequestId(Guid playerId, const std::string &requestId)
+	{
+		if (playerId == kInvalidGuid || requestId.empty())
+			return;
+		const uint64_t expireAt = TimeSystem::NowMilliseconds() + kIdempotencyTtlMs;
+		g_inmemory_last_request_map[playerId] = {requestId, expireAt};
+	}
 
-static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& requestId) {
-    if (playerId == kInvalidGuid || requestId.empty()) return false;
-    const auto it = g_inmemory_last_request_map.find(playerId);
-    if (it == g_inmemory_last_request_map.end()) return false;
-    const auto& [storedId, expireMs] = it->second;
-    const uint64_t now = TimeSystem::NowMilliseconds();
-    if (now > expireMs) { // expired
-        g_inmemory_last_request_map.erase(it);
-        return false;
-    }
-    return storedId == requestId;
-}
+	static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string &requestId)
+	{
+		if (playerId == kInvalidGuid || requestId.empty())
+			return false;
+		const auto it = g_inmemory_last_request_map.find(playerId);
+		if (it == g_inmemory_last_request_map.end())
+			return false;
+		const auto &[storedId, expireMs] = it->second;
+		const uint64_t now = TimeSystem::NowMilliseconds();
+		if (now > expireMs)
+		{ // expired
+			g_inmemory_last_request_map.erase(it);
+			return false;
+		}
+		return storedId == requestId;
+	}
 
-	enum class EnterGameDecision {
-		FirstLogin,        // no player
-		ShortReconnect,    // < ReconnectWindow
-		ReplaceLogin       // all other cases
+	enum class EnterGameDecision
+	{
+		FirstLogin,		// 没有 player
+		ShortReconnect, // < ReconnectWindow
+		ReplaceLogin	// 其他一切情况
 	};
 
-	// DecideEnterGame with oldTokenValid parameter
+	// 修改：DecideEnterGame 增加 oldTokenValid 参数
 	EnterGameDecision DecideEnterGame(bool hasOldSession,
-		const std::string& oldLoginToken,
-		const std::string& newLoginToken,
-		bool oldTokenValid)
+									  const std::string &oldLoginToken,
+									  const std::string &newLoginToken,
+									  bool oldTokenValid)
 	{
-		if (!hasOldSession) return EnterGameDecision::FirstLogin;
-		// Only treat as Reconnect if old token is unexpired and matches new token
-		if (oldTokenValid && oldLoginToken == newLoginToken) return EnterGameDecision::ShortReconnect;
+		if (!hasOldSession)
+			return EnterGameDecision::FirstLogin;
+		// 只有在旧 token 未过期且与新 token 相同的情况下认为是 Reconnect
+		if (oldTokenValid && oldLoginToken == newLoginToken)
+			return EnterGameDecision::ShortReconnect;
 		return EnterGameDecision::ReplaceLogin;
 	}
 
-	// Update/create player session snapshot (write new sessionId + token)
-	// Returns old sessionId and old token (for decision-making and cleanup)
-// Update snapshot, increment version and notify Gate to store metadata
-// UpdatePlayerSessionSnapshot implementation (with requestId for idempotency)
-	std::tuple<uint64_t, std::string, uint64_t> UpdatePlayerSessionSnapshot(entt::entity playerEntity,
-		uint64_t newSessionId,
-		const std::string& newLoginToken,
-		uint64_t tokenExpiryMs /* = 0 */,
-		const std::string& requestId /* = "" */)
+	// 发送 kick（携带期望版本）
+	bool SendKickForOldSession(uint64_t oldSessionId, uint64_t expectedVersion)
 	{
-		auto& registry = tlsRegistryManager.actorRegistry;
+		if (oldSessionId == kInvalidSessionId)
+			return false;
+		KickSessionRequest kickMsg;
+		kickMsg.set_session_id(oldSessionId);
+		kickMsg.set_expected_session_version(expectedVersion);
+		SendMessageToGateById(GateKickSessionByCentreMessageId, kickMsg, GetGateNodeId(oldSessionId));
+		LOG_INFO << "Requested kick for old session: " << oldSessionId << " expected_version=" << expectedVersion;
+		return true;
+	}
 
-		// Cancel pending delayed cleanup timer (reconnect cancels cleanup)
+	// 更新/创建 player 的 session snapshot（写入新的 sessionId + token）
+	// 返回旧的 sessionId 与旧 token（用于判定与后续清理）
+	// 更新 snapshot，递增 version 并通知 Gate 存储元信息
+	// 替换 UpdatePlayerSessionSnapshot 实现（增加 requestId 参数）
+	std::tuple<uint64_t, std::string, uint64_t> UpdatePlayerSessionSnapshot(entt::entity playerEntity,
+																			uint64_t newSessionId,
+																			const std::string &newLoginToken,
+																			uint64_t tokenExpiryMs /* = 0 */,
+																			const std::string &requestId /* = "" */)
+	{
+		auto &registry = tlsRegistryManager.actorRegistry;
+
+		// 取消可能存在的延迟清理计时器（短重连取消清理）
 		CancelDelayedCleanupTimer(playerEntity);
 
-		auto& sessionPB = registry.get_or_emplace<PlayerSessionSnapshotComp>(playerEntity);
+		auto &sessionPB = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
 
 		uint64_t oldSessionId = sessionPB.gate_session_id();
-		// Old token_id (backward-compat with login_token field)
+		// 旧的 token_id（兼容历史 login_token）
 		std::string oldTokenId;
-		if (sessionPB.token_id().size() > 0) {
+		if (sessionPB.token_id().size() > 0)
+		{
 			oldTokenId = sessionPB.token_id();
 		}
-		else if (sessionPB.login_token().size() > 0) {
+		else if (sessionPB.login_token().size() > 0)
+		{
 			oldTokenId = Sha256Hex(sessionPB.login_token());
 		}
 		uint64_t oldVersion = sessionPB.session_version();
 
-		// Compute incoming token id (hash)
+		// 计算 incoming token id（hash）
 		const std::string newTokenId = Sha256Hex(newLoginToken);
 
-		// 1) Duplicate request_id: idempotent handling, but rebind session if changed (no ++version)
-		if (!requestId.empty() && sessionPB.last_request_id() == requestId) {
+		// 1) 重复 request_id：幂等处理，但若 sessionId 变化仍需绑定新的 session（不 ++version）
+		if (!requestId.empty() && sessionPB.last_request_id() == requestId)
+		{
 			LOG_DEBUG << "Duplicate request_id detected: " << requestId;
-			if (oldSessionId != newSessionId) {
-				// Update binding only, do not bump logical version
+			if (oldSessionId != newSessionId)
+			{
+				// 仅更新绑定，不改变逻辑版本
 				sessionPB.set_gate_session_id(newSessionId);
 				GetPlayerCentreDataRedis()->UpdateExtraData(tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity), sessionPB);
 
@@ -344,39 +242,41 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
 				SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(newSessionId));
 
 				LOG_INFO << "Duplicate request: updated gate binding only for player entity " << entt::to_integral(playerEntity)
-					<< " oldSession=" << oldSessionId << " newSession=" << newSessionId << " ver=" << oldVersion;
+						 << " oldSession=" << oldSessionId << " newSession=" << newSessionId << " ver=" << oldVersion;
 			}
-			return { oldSessionId, oldTokenId, oldVersion };
+			return {oldSessionId, oldTokenId, oldVersion};
 		}
 
-		// 2) Check if update is actually needed (session or token changed)
+		// 2) 判断是否真正需要更新（session 或 token 有变化）
 		const bool sessionChanged = (oldSessionId != newSessionId);
 		const bool tokenChanged = (oldTokenId != newTokenId);
 
-		if (!sessionChanged && !tokenChanged && requestId.empty()) {
-			// No change and no requestId: idempotent no-op
+		if (!sessionChanged && !tokenChanged && requestId.empty())
+		{
+			// 无变化且无 requestId 指定：幂等无操作
 			LOG_DEBUG << "UpdatePlayerSessionSnapshot: no-op (no change) for player entity " << entt::to_integral(playerEntity)
-				<< " session=" << newSessionId;
-			return { oldSessionId, oldTokenId, oldVersion };
+					  << " session=" << newSessionId;
+			return {oldSessionId, oldTokenId, oldVersion};
 		}
 
-		// 3) Actual change: increment version and update snapshot
+		// 3) 真正变化：递增版本并更新 snapshot
 		uint64_t newVersion = oldVersion + 1;
 		sessionPB.set_gate_session_id(newSessionId);
 		sessionPB.set_token_id(newTokenId);
 		sessionPB.set_token_expiry_ms(tokenExpiryMs);
 		sessionPB.set_session_version(newVersion);
 
-		if (!requestId.empty()) {
+		if (!requestId.empty())
+		{
 			sessionPB.set_last_request_id(requestId);
 		}
 
 		auto playerId = registry.get_or_emplace<Guid>(playerEntity);
 
-		// Persist snapshot (async)
+		// 持久化 snapshot（异步）
 		GetPlayerCentreDataRedis()->UpdateExtraData(playerId, sessionPB);
 
-		// Notify Gate: bind session (Centre->Gate BindSession RPC) using newVersion
+		// 通知 Gate：绑定 session（Centre->Gate 的 BindSession RPC）使用 newVersion
 		BindSessionToGateRequest bindReq;
 		bindReq.set_session_id(newSessionId);
 		bindReq.set_player_id(playerId);
@@ -384,46 +284,54 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
 		SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(newSessionId));
 
 		LOG_INFO << "UpdatePlayerSessionSnapshot: session updated for player entity " << entt::to_integral(playerEntity)
-			<< " oldSession=" << oldSessionId << " newSession=" << newSessionId
-			<< " oldVer=" << oldVersion << " newVer=" << newVersion
-			<< " req=" << (requestId.empty() ? "<none>" : requestId);
+				 << " oldSession=" << oldSessionId << " newSession=" << newSessionId
+				 << " oldVer=" << oldVersion << " newVer=" << newVersion
+				 << " req=" << (requestId.empty() ? "<none>" : requestId);
 
-		return { oldSessionId, oldTokenId, oldVersion };
+		return {oldSessionId, oldTokenId, oldVersion};
 	}
 
-    // HandleFirstLogin: persist snapshot with token_id/expiry, bind session to Gate (requestId for idempotency)
-    void HandleFirstLogin(Guid playerGuid, uint64_t sessionId, const std::string& loginToken, uint64_t tokenExpiryMs = 0, const std::string& requestId = "")
-    {
-        // Player entity is created after AsyncLoad completes; build initial snapshot here
-        PlayerSessionSnapshotComp sessionPB;
-        sessionPB.set_gate_session_id(sessionId);
-        sessionPB.set_token_id(Sha256Hex(loginToken));
-        sessionPB.set_token_expiry_ms(tokenExpiryMs);
-        // Initial version starts at 1
-        sessionPB.set_session_version(1);
-        // Store request_id in memory; persist other snapshot fields asynchronously
-        GetPlayerCentreDataRedis()->UpdateExtraData(playerGuid, sessionPB);
+	// 修改：HandleFirstLogin 改为存 token_id 与 expiry（expiry 可为 0）
+	// 并在首次登录时将 snapshot 持久化并绑定 session 到 Gate（包括可选的 requestId	用于幂等）
+	void HandleFirstLogin(Guid playerGuid, uint64_t sessionId, const std::string &loginToken, uint64_t tokenExpiryMs = 0, const std::string &requestId = "")
+	{
+		// 首次登录：在内存创建 player entity（如果尚不存在），然后使用统一的 UpdatePlayerSessionSnapshot
+		// 来完成持久化、去重与 Gate 绑定。随后异步加载玩家数据并在回调中填充其他组件。
 
-        // Save to in-memory idempotency map (TTL-based)
-        if (!requestId.empty()) {
-            SetInMemoryLastRequestId(playerGuid, requestId);
-        }
+		// 不在这里创建 player entity（遵循现有流程：在 AsyncLoad 完成后创建实体）
+		// 构建初始 snapshot 并持久化（包含 requestId 用于幂等）
+		PlayerSessionSnapshotPBComp sessionPB;
+		sessionPB.set_gate_session_id(sessionId);
+		sessionPB.set_token_id(Sha256Hex(loginToken));
+		sessionPB.set_token_expiry_ms(tokenExpiryMs);
+		// 初次登录版本从1开始
+		sessionPB.set_session_version(1);
+		// 不持久化 last_request_id 时，改为将 request_id 保存在内存中
+		// 持久化其他 snapshot 字段到 centre 的持久层（异步写入或同步接口）
+		GetPlayerCentreDataRedis()->UpdateExtraData(playerGuid, sessionPB);
 
-        // Update global SessionMap for routing (Centre is authoritative)
-        SessionMap()[sessionId] = playerGuid;
+		// 保存到内存的 idempotency map（TTL）以支持非持久化方案
+		if (!requestId.empty())
+		{
+			SetInMemoryLastRequestId(playerGuid, requestId);
+		}
 
-        // Async load player data; callback creates entity with sessionPB
-        GetPlayerCentreDataRedis()->AsyncLoad(playerGuid, sessionPB);
+		// 更新全局 SessionMap 以便后续路由（Centre 为权威）
+		SessionMap()[sessionId] = playerGuid;
 
-        LOG_INFO << "HandleFirstLogin persisted snapshot and initiated async load for player " << playerGuid << " session=" << sessionId << " req=" << (requestId.empty() ? "<none>" : requestId);
-    }
+		// 异步加载玩家 Centre 数据，完成后回调将创建 player 实体并使用 sessionPB（作为 extra）
+		GetPlayerCentreDataRedis()->AsyncLoad(playerGuid, sessionPB);
 
-	// Set login type and trigger scene entry for existing player
+		LOG_INFO << "HandleFirstLogin persisted snapshot and initiated async load for player " << playerGuid << " session=" << sessionId << " req=" << (requestId.empty() ? "<none>" : requestId);
+	}
+
+	// 已有 player 的后续执行（设置进入类型并触发进入场景流程）
 	void ApplyEnterGameDecision(entt::entity playerEntity, EnterGameDecision decision)
 	{
-		auto& registry = tlsRegistryManager.actorRegistry;
-		auto& enterComp = registry.get_or_emplace<PlayerEnterGameStateComp>(playerEntity);
-		switch (decision) {
+		auto &registry = tlsRegistryManager.actorRegistry;
+		auto &enterComp = registry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity);
+		switch (decision)
+		{
 		case EnterGameDecision::FirstLogin:
 			enterComp.set_enter_gs_type(LOGIN_FIRST);
 			break;
@@ -442,207 +350,248 @@ static bool IsDuplicateInMemoryRequest(Guid playerId, const std::string& request
 
 ///<<< END WRITING YOUR CODE
 
-void CentreHandler::GatePlayerService(::google::protobuf::RpcController* controller, const ::GateClientMessageRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::GatePlayerService(::google::protobuf::RpcController *controller, const ::GateClientMessageRequest *request,
+									  ::Empty *response,
+									  ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::GateSessionDisconnect(::google::protobuf::RpcController *controller, const ::GateSessionDisconnectRequest *request,
+										  ::Empty *response,
+										  ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const uint64_t session_id = request->session_info().session_id();
 
 	const auto player_id = GetPlayerIDBySessionId(session_id);
-	if (player_id == kInvalidGuid) return;
+	if (player_id == kInvalidGuid)
+		return;
 
 	auto playerIt = tlsPlayerList.find(player_id);
-	if (playerIt == tlsPlayerList.end()) return;
+	if (playerIt == tlsPlayerList.end())
+		return;
 	auto playerEntity = playerIt->second;
 
-	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
-	if (!sessionPB) return;
+	auto *sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!sessionPB)
+		return;
 
-	// Ignore if session doesn't match snapshot (stale disconnect)
-	if (sessionPB->gate_session_id() != session_id) {
+	// 如果不是 snapshot 记录的当前 session，忽略（可能是旧断开）
+	if (sessionPB->gate_session_id() != session_id)
+	{
 		LOG_INFO << "GateSessionDisconnect ignored: mismatch session id for player " << player_id;
 		return;
 	}
 
-	// Mark offline and record version for delayed cleanup verification
-	auto& enterComp = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(playerEntity);
+	// 标记离线并记录版本（便于延迟清理时再次校验）
+	auto &enterComp = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStatePbComp>(playerEntity);
 	enterComp.set_enter_gs_type(LOGIN_DISCONNECTED);
 
-	auto& disconnectInfo = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerDisconnectInfoComp>(playerEntity);
+	auto &disconnectInfo = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerDisconnectInfoComp>(playerEntity);
 	disconnectInfo.set_disconnected_at(TimeSystem::NowMilliseconds());
 	disconnectInfo.set_snapshot_version(sessionPB->session_version());
 
-	// Start delayed cleanup (30s)
+	// 启动延迟清理（例如 30s）
 	StartDelayedCleanupTimer(playerEntity, 30000);
 
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller, const ::CentreLoginRequest* request,
-	::CentreLoginResponse* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::LoginNodeAccountLogin(::google::protobuf::RpcController *controller, const ::CentreLoginRequest *request,
+										  ::CentreLoginResponse *response,
+										  ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
 	if (tlsPlayerList.size() >= kMaxPlayerSize)
 	{
-		//TODO: queue by account or by character?
+		// 如果登录的是新账号,满了得去排队,是帳號排隊，還是角色排隊>???
 		response->mutable_error_message()->set_id(kLoginAccountPlayerFull);
 		return;
 	}
-	//TODO: handle queue (duplicate connections, kick from other login servers, notify client)
-///<<< END WRITING YOUR CODE
+	// 排队
+	// todo 排队队列里面有同一個人的兩個鏈接
+	// 如果不是同一個登錄服務器,踢掉已經登錄的賬號
+	// 告訴客戶端登錄中
+	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController* controller, const ::CentrePlayerGameNodeEntryRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::LoginNodeEnterGame(::google::protobuf::RpcController *controller, const ::CentrePlayerGameNodeEntryRequest *request,
+									   ::Empty *response,
+									   ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-		// Ensure disconnection is handled by the current gate to prevent async message order issues.
-		// Consider rapid reconnect-disconnect cycles (A disc, B disc, A disc, B disc...).
-		// If gate reconnects first and disconnect arrives later, it could sever the new connection.
-		//
-		// Race condition: out-of-order Disconnect vs EnterGame can corrupt session mappings.
-		// Solution: GateSessionDisconnect marks offline + starts delayed cleanup;
-		//   only delayed cleanup (on timeout without reconnect) erases SessionMap and calls HandleNormalExit.
-		//   SessionMap inserts (LoginNodeEnterGame) are immediate for routing; deletes are deferred to avoid races.
-		//
-		// Centre does not store refresh tokens; access tokens are short-lived, used only for reconnect validation.
-		// Log token_id/hash, never raw tokens. Use oldTokenValid to prevent expired-token reconnect.
+	// 断开链接必须是当前的gate去断，防止异步消息顺序,入口先到然后断开才到
+	// 考虑a 断 b 断 a 断 b 断.....(中间不断重连)
+	// notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
+	// 玩家已经断开连接了
 
-	const auto& clientInfo = request->client_info();
-	const auto& sessionInfo = request->session_info();
+	// Ensure disconnection is handled by the current gate to prevent async message order issues
+	// Check for scenarios where reconnect-disconnect cycles might occur in rapid succession
+	// Notice: Asynchronous process: If the gate reconnects first and then disconnects, it might
+	// inadvertently disconnect a newly arrived connection. Extreme cases need testing to see
+	// •	当网络/消息乱序时（Gate 先发 Disconnect，再 Login 的 EnterGame 到达 Centre），会产生竞态：Centre 可能错误删除映射或 Login 再插入时覆盖不一致 snapshot，导致误判、重复清理或无法正确重连；
+	/*•	不要在收到 GateSessionDisconnect 时立即从 GlobalSessionList 删除映射；改为：
+•	在 GateSessionDisconnect 标记断线（记录 disconnectInfo + snapshot_version）并启动延迟清理；
+•	只在延迟清理确定“超时且未重连”时再删除 GlobalSessionList 显配并执行 PlayerLifecycleSystem::HandleNormalExit（已实现的延时回调应负责）。
+•	保持 GlobalSessionList 的插入（LoginNodeEnterGame）仍可立即写，用于路由；删除统一由延时清理负责，避免 race。*/
+	// •	Centre 不必保存 refresh token；access token 在 Login 服务签发并短期有效，Centre 只用于判断重连合法性。
+	// •	为安全起见，记录 token id 或 token 哈希到日志/持久化而不是原文 token。
+	// •	当 token 有 expiry，DecideEnterGame 里使用 oldTokenValid 防止用已过期 token 判定为 Reconnect
+	//  登录的时候在换场景,这时候是不是应该幂等
+
+	const auto &clientInfo = request->client_info();
+	const auto &sessionInfo = request->session_info();
 	Guid playerId = clientInfo.player_id();
 	uint64_t sessionId = sessionInfo.session_id();
-	auto& loginToken = request->login_token();
-	const std::string& requestId = request->request_id();
+	auto &loginToken = request->login_token();
+	const std::string &requestId = request->request_id(); // 新增字段
 
 	LOG_INFO << "LoginNodeEnterGame request: player=" << playerId << " session=" << sessionId << " req=" << requestId;
 
-	// Race: new session writes SessionMap -> old Disconnect arrives -> delayed cleanup
-	// erases the *new* session entry. Guarded by version check in cleanup callback.
+	// A session login → 写入 SessionMap
+	//	旧 session 的 Disconnect 延迟到达
+	//	→ DelayedCleanupTimer 触发
+	//	→ erase SessionMap(新 session) ❌
+
+	// 是否在内存中已有 player 对象
 	auto it = tlsPlayerList.find(playerId);
-    if (it == tlsPlayerList.end()) {
-        HandleFirstLogin(playerId, sessionId, loginToken, request->token_expiry_ms(), requestId);
-        return;
-    }
+	if (it == tlsPlayerList.end())
+	{
+		// 首次登录：异步加载/创建玩家数据
+		HandleFirstLogin(playerId, sessionId, loginToken, request->token_expiry_ms(), requestId);
+		return;
+	}
 
 	entt::entity playerEntity = it->second;
 
-	// token_expiry_ms: 0 means unknown/no-expiry
+	// 若客户端/登陆服务同时提供 token_expiry_ms 在 clientMsg，请读取；否则传 0（表示未知/不过期）
 	uint64_t incomingTokenExpiryMs = request->token_expiry_ms();
 
-	// Read old snapshot (read-only, decision based on old data)
-	auto* oldSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	// 读取旧 snapshot（只读，决策基于旧数据）
+	auto *oldSessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
 	const bool hasOldSession = (oldSessionPB != nullptr);
 	uint64_t oldSessionId = hasOldSession ? oldSessionPB->gate_session_id() : kInvalidSessionId;
-	auto& oldTokenId = hasOldSession ? oldSessionPB->token_id() : std::string{};
+	auto &oldTokenId = hasOldSession ? oldSessionPB->token_id() : std::string{};
 	uint64_t oldVersion = hasOldSession ? oldSessionPB->session_version() : 0;
 
-	// token_expiry_ms == 0 means no-expiry/unknown
+	// 计算 oldTokenValid：如果 proto 中 token_expiry_ms == 0 表示不过期/未知
 	uint64_t now_ms = TimeSystem::NowMilliseconds();
 	bool oldTokenValid = false;
-	if (oldSessionPB) {
+	if (oldSessionPB)
+	{
 		uint64_t expiry = oldSessionPB->token_expiry_ms();
 		oldTokenValid = (expiry == 0 || expiry > now_ms);
 	}
 
+	// 计算 incoming token id
 	std::string incomingTokenId = Sha256Hex(loginToken);
 
-	// Reconnect only if old token is unexpired and token_id matches
+	// 决策：只有旧 token 未过期且 token_id 相等才判为重连
 	EnterGameDecision decision = DecideEnterGame(hasOldSession, oldTokenId, incomingTokenId, oldTokenValid);
-    if (decision == EnterGameDecision::ReplaceLogin) {
-        // If using in-memory idempotency, short-circuit duplicate requests here
-        if (!requestId.empty() && IsDuplicateInMemoryRequest(playerId, requestId)) {
-            LOG_DEBUG << "Duplicate in-memory request detected for player: " << playerId << " req=" << requestId;
-            if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-                // update binding only, do not bump version
-                auto& registry = tlsRegistryManager.actorRegistry;
-                auto& sessionPBRef = registry.get_or_emplace<PlayerSessionSnapshotComp>(playerEntity);
-                sessionPBRef.set_gate_session_id(sessionId);
-                GetPlayerCentreDataRedis()->UpdateExtraData(registry.get_or_emplace<Guid>(playerEntity), sessionPBRef);
 
-                BindSessionToGateRequest bindReq;
-                bindReq.set_session_id(sessionId);
-                bindReq.set_player_id(registry.get_or_emplace<Guid>(playerEntity));
-                bindReq.set_session_version(oldVersion);
-                SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(sessionId));
+	// 根据决策决定是否更新 snapshot 并是否踢人
+	if (decision == EnterGameDecision::ReplaceLogin)
+	{
+		// If using in-memory idempotency, short-circuit duplicate requests here
+		if (!requestId.empty() && IsDuplicateInMemoryRequest(playerId, requestId))
+		{
+			LOG_DEBUG << "Duplicate in-memory request detected for player: " << playerId << " req=" << requestId;
+			if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId)
+			{
+				// update binding only, do not bump version
+				auto &registry = tlsRegistryManager.actorRegistry;
+				auto &sessionPBRef = registry.get_or_emplace<PlayerSessionSnapshotPBComp>(playerEntity);
+				sessionPBRef.set_gate_session_id(sessionId);
+				GetPlayerCentreDataRedis()->UpdateExtraData(registry.get_or_emplace<Guid>(playerEntity), sessionPBRef);
 
-                LOG_INFO << "Duplicate request: updated gate binding only for player entity " << entt::to_integral(playerEntity)
-                    << " oldSession=" << oldSessionId << " newSession=" << sessionId << " ver=" << oldVersion;
-            }
-            return;
-        }
+				BindSessionToGateRequest bindReq;
+				bindReq.set_session_id(sessionId);
+				bindReq.set_player_id(registry.get_or_emplace<Guid>(playerEntity));
+				bindReq.set_session_version(oldVersion);
+				SendMessageToGateById(GateBindSessionToGateMessageId, bindReq, GetGateNodeId(sessionId));
 
-        auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
-        // record in-memory last_request_id for non-persistent idempotency
-        if (!requestId.empty()) SetInMemoryLastRequestId(playerId, requestId);
-        if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-            SessionMap().erase(oldSessionId);
-        }
-        SessionMap()[sessionId] = playerId;
-    }
-    else if (decision == EnterGameDecision::ShortReconnect) {
-        // Reconnect (idempotency no longer depends on session_id equality)
-        CancelDelayedCleanupTimer(playerEntity);
+				LOG_INFO << "Duplicate request: updated gate binding only for player entity " << entt::to_integral(playerEntity)
+						 << " oldSession=" << oldSessionId << " newSession=" << sessionId << " ver=" << oldVersion;
+			}
+			return;
+		}
 
-        if (!requestId.empty() && IsDuplicateInMemoryRequest(playerId, requestId)) {
-            LOG_DEBUG << "Duplicate in-memory request detected for player: " << playerId << " req=" << requestId;
-            if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-                SessionMap().erase(oldSessionId);
-            }
-            SessionMap()[sessionId] = playerId;
-            return;
-        }
+		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
+		// record in-memory last_request_id for non-persistent idempotency
+		if (!requestId.empty())
+			SetInMemoryLastRequestId(playerId, requestId);
+		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId)
+		{
+			SendKickForOldSession(oldSessionId, oldVersion);
+			SessionMap().erase(oldSessionId);
+		}
+		SessionMap()[sessionId] = playerId;
+	}
+	else if (decision == EnterGameDecision::ShortReconnect)
+	{
+		// 重连（不再依赖 session_id 相等判幂等）
+		CancelDelayedCleanupTimer(playerEntity);
 
-        auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
-        if (!requestId.empty()) SetInMemoryLastRequestId(playerId, requestId);
-        if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId) {
-            SessionMap().erase(oldSessionId);
-        }
-        SessionMap()[sessionId] = playerId;
-    }
-	else {
-		// FirstLogin already handled above
+		if (!requestId.empty() && IsDuplicateInMemoryRequest(playerId, requestId))
+		{
+			LOG_DEBUG << "Duplicate in-memory request detected for player: " << playerId << " req=" << requestId;
+			if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId)
+			{
+				SessionMap().erase(oldSessionId);
+				SendKickForOldSession(oldSessionId, oldVersion);
+			}
+			SessionMap()[sessionId] = playerId;
+			return;
+		}
+
+		auto updated = UpdatePlayerSessionSnapshot(playerEntity, sessionId, loginToken, incomingTokenExpiryMs, requestId);
+		if (!requestId.empty())
+			SetInMemoryLastRequestId(playerId, requestId);
+		if (oldSessionId != kInvalidSessionId && oldSessionId != sessionId)
+		{
+			SessionMap().erase(oldSessionId);
+			SendKickForOldSession(oldSessionId, oldVersion);
+		}
+		SessionMap()[sessionId] = playerId;
+	}
+	else
+	{
+		// FirstLogin 已在上层处理
 	}
 
+	// 执行进入场景相关副作用（保持原有流程）
 	ApplyEnterGameDecision(playerEntity, decision);
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* controller, const ::LoginNodeLeaveGameRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::LoginNodeLeaveGame(::google::protobuf::RpcController *controller, const ::LoginNodeLeaveGameRequest *request,
+									   ::Empty *response,
+									   ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (SessionMap().find(request->session_info().session_id()) == SessionMap().end()) {
+	if (SessionMap().find(request->session_info().session_id()) == SessionMap().end())
+	{
 		return;
 	}
 
 	defer(SessionMap().erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
 	PlayerLifecycleSystem::HandleNormalExit(player_id);
-	//todo statistics
-///<<< END WRITING YOUR CODE
+	// todo statistics
+	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller, const ::GateSessionDisconnectRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController *controller, const ::GateSessionDisconnectRequest *request,
+											   ::Empty *response,
+											   ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
-	if (SessionMap().find(request->session_info().session_id()) == SessionMap().end()) {
+	if (SessionMap().find(request->session_info().session_id()) == SessionMap().end())
+	{
 		return;
 	}
 
@@ -652,9 +601,9 @@ void CentreHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::PlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::PlayerService(::google::protobuf::RpcController *controller, const ::NodeRouteMessageRequest *request,
+								  ::NodeRouteMessageResponse *response,
+								  ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const auto it = SessionMap().find(request->header().session_id());
@@ -685,14 +634,14 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 		return;
 	}
 
-	if (request->message_content().message_id() >= gRpcMethodRegistry.size())
+	if (request->message_content().message_id() >= gRpcServiceRegistry.size())
 	{
 		LOG_ERROR << "Message ID not found: " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kMessageIdNotFound);
 		return;
 	}
 
-	const auto& message_info = gRpcMethodRegistry.at(request->message_content().message_id());
+	const auto &message_info = gRpcServiceRegistry.at(request->message_content().message_id());
 
 	const auto service_it = gPlayerService.find(message_info.serviceName);
 	if (service_it == gPlayerService.end())
@@ -701,9 +650,9 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 		return;
 	}
 
-	const auto& service_handler = service_it->second;
-	google::protobuf::Service* service = service_handler->service();
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.methodName);
+	const auto &service_handler = service_it->second;
+	google::protobuf::Service *service = service_handler->service();
+	const google::protobuf::MethodDescriptor *method = service->GetDescriptor()->FindMethodByName(message_info.methodName);
 	if (!method)
 	{
 		LOG_ERROR << "Method not found: " << message_info.methodName;
@@ -712,7 +661,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 
 	const MessagePtr playerRequest(service->GetRequestPrototype(method).New());
 	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(),
-		request->message_content().serialized_message().size()))
+											  request->message_content().serialized_message().size()))
 	{
 		LOG_ERROR << "Failed to parse request for message ID: " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kRequestMessageParseError);
@@ -721,16 +670,20 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 
 	std::string errorDetails;
 
-	if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
+	// 检查字段大小
+	if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails))
+	{
 		LOG_ERROR << errorDetails << " Failed to check request for message ID: "
-			<< request->message_content().message_id();
+				  << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
 		return;
 	}
 
-	if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
+	// 检查负数
+	if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails))
+	{
 		LOG_ERROR << errorDetails << " Failed to check request for message ID: "
-			<< request->message_content().message_id();
+				  << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kNegativeValueInMessage);
 		return;
 	}
@@ -746,7 +699,8 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 		return;
 	}
 
-	if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
+	{
 		return;
 	}
 
@@ -754,7 +708,7 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 	const auto byte_size = playerResponse->ByteSizeLong();
 	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
 	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
-		static_cast<int32_t>(byte_size)))
+												 static_cast<int32_t>(byte_size)))
 	{
 		LOG_ERROR << "Failed to serialize response for message ID: " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kResponseMessageParseError);
@@ -771,14 +725,14 @@ void CentreHandler::PlayerService(::google::protobuf::RpcController* controller,
 	}
 
 	LOG_TRACE << "Successfully processed message ID: " << request->message_content().message_id()
-		<< " for player ID: " << playerId;
+			  << " for player ID: " << playerId;
 
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller, const ::EnterGameNodeSuccessRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController *controller, const ::EnterGameNodeSuccessRequest *request,
+								   ::Empty *response,
+								   ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	LOG_TRACE << "Enter Scene Node Succeed request received.";
@@ -799,18 +753,19 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 		return;
 	}
 
-	// Verify session snapshot is valid before proceeding
-	auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
-	if (!sessionPB || sessionPB->gate_session_id() == kInvalidSessionId) {
-	    LOG_ERROR << "EnterGsSucceed: missing or invalid session snapshot for player " << playerId;
-	    return;
+	// 在 EnterGsSucceed 前确保 sessionPB 有效，然后调用添加到 gate 的逻辑
+	auto *sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(player);
+	if (!sessionPB || sessionPB->gate_session_id() == kInvalidSessionId)
+	{
+		LOG_ERROR << "EnterGsSucceed: missing or invalid session snapshot for player " << playerId;
+		return;
 	}
 
-	auto& nodeIdMap = *sessionPB->mutable_node_id();
+	auto &nodeIdMap = *sessionPB->mutable_node_id();
 	nodeIdMap[eNodeType::SceneNodeService] = request->scene_node_id();
 
 	PlayerLifecycleSystem::RequestGatePlayerEnterScene(player);
-	PlayerChangeSceneUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoComp::eEnterSucceed);
+	PlayerChangeSceneUtil::SetCurrentChangeSceneState(player, ChangeSceneInfoPBComponent::eEnterSucceed);
 	PlayerChangeSceneUtil::ProgressSceneChangeState(player);
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
@@ -818,9 +773,9 @@ void CentreHandler::EnterGsSucceed(::google::protobuf::RpcController* controller
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
-	::RouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController *controller, const ::RouteMessageRequest *request,
+									   ::RouteMessageResponse *response,
+									   ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -844,17 +799,17 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	auto& route_data = request->route_nodes(request->route_nodes_size() - 1);
+	auto &route_data = request->route_nodes(request->route_nodes_size() - 1);
 
-	if (route_data.message_id() >= gRpcMethodRegistry.size())
+	if (route_data.message_id() >= gRpcServiceRegistry.size())
 	{
 		LOG_ERROR << "Message ID not found: " << route_data.message_id();
 		return;
 	}
 
-	const auto& messageInfo = gRpcMethodRegistry[route_data.message_id()];
+	const auto &messageInfo = gRpcServiceRegistry[route_data.message_id()];
 
-	if (!messageInfo.handler)
+	if (!messageInfo.handlerInstance)
 	{
 		LOG_ERROR << "Message service implementation not found for message ID: " << route_data.message_id();
 		return;
@@ -867,9 +822,9 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto& service = it->second;
+	const auto &service = it->second;
 
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+	const google::protobuf::MethodDescriptor *method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
 	if (!method)
 	{
 		LOG_ERROR << "Method not found: " << messageInfo.methodName;
@@ -879,7 +834,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	const std::unique_ptr<google::protobuf::Message> current_node_request(service->GetRequestPrototype(method).New());
 
 	if (!current_node_request->ParsePartialFromArray(request->body().data(),
-		static_cast<int32_t>(request->body().size())))
+													 static_cast<int32_t>(request->body().size())))
 	{
 		LOG_ERROR << "Failed to parse request serialized_message: " << request->DebugString();
 		return;
@@ -889,7 +844,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 
 	service->CallMethod(method, nullptr, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 
-	auto* mutable_request = const_cast<::RouteMessageRequest*>(request);
+	auto *mutable_request = const_cast<::RouteMessageRequest *>(request);
 
 	if (tlsMessageContext.GetNextRouteNodeType() == UINT32_MAX)
 	{
@@ -898,7 +853,7 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 		current_node_response->SerializePartialToArray(response->mutable_body()->data(), byte_size);
 
 		// Copy route data list to response
-		for (const auto& request_data_it : request->route_nodes())
+		for (const auto &request_data_it : request->route_nodes())
 		{
 			*response->add_route_nodes() = request_data_it;
 		}
@@ -909,18 +864,18 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	}
 
 	// Need to route to the next node
-	auto* next_route_data = mutable_request->add_route_nodes();
+	auto *next_route_data = mutable_request->add_route_nodes();
 	next_route_data->CopyFrom(tlsMessageContext.GetRoutingNodeInfo());
 	next_route_data->mutable_node_info()->CopyFrom(gNode->GetNodeInfo());
-	mutable_request->set_body(tlsMessageContext.GetRouteMsgBody());
+	mutable_request->set_body(tlsMessageContext.RouteMsgBody());
 	mutable_request->set_id(request->id());
 
 	switch (tlsMessageContext.GetNextRouteNodeType())
 	{
 	case GateNodeService:
 	{
-		entt::entity gate_node_id{ tlsMessageContext.GetNextRouteNodeId() };
-		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+		entt::entity gate_node_id{tlsMessageContext.GetNextRouteNodeId()};
+		auto &registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(gate_node_id))
 		{
 			LOG_ERROR << "Gate node not found: " << tlsMessageContext.GetNextRouteNodeId();
@@ -937,8 +892,8 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	}
 	case SceneNodeService:
 	{
-		entt::entity game_node_id{ tlsMessageContext.GetNextRouteNodeId() };
-		auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+		entt::entity game_node_id{tlsMessageContext.GetNextRouteNodeId()};
+		auto &registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 		if (!registry.valid(game_node_id))
 		{
 			LOG_ERROR << "Game node not found: " << tlsMessageContext.GetNextRouteNodeId() << ", " << request->DebugString();
@@ -962,12 +917,13 @@ void CentreHandler::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
-	::RoutePlayerMessageResponse* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController *controller, const ::RoutePlayerMessageRequest *request,
+										 ::RoutePlayerMessageResponse *response,
+										 ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (!request || !response) {
+	if (!request || !response)
+	{
 		return;
 	}
 
@@ -976,37 +932,45 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 	response->mutable_node_list()->CopyFrom(request->node_list());
 
 	const Guid playerId = request->player_info().player_id();
-	if (playerId == kInvalidGuid) {
+	if (playerId == kInvalidGuid)
+	{
 		LOG_ERROR << "RoutePlayerStringMsg: invalid player id";
 		return;
 	}
 
-	if (request->node_list_size() > 0) {
+	if (request->node_list_size() > 0)
+	{
 		RoutePlayerMessageRequest nextRequest(*request);
 		nextRequest.mutable_node_list()->DeleteSubrange(0, 1);
 
-		const auto& nextNode = request->node_list(0);
-		const entt::entity nextNodeEntity{ nextNode.node_id() };
-		auto& nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
-		if (!nextRegistry.valid(nextNodeEntity)) {
+		const auto &nextNode = request->node_list(0);
+		const entt::entity nextNodeEntity{nextNode.node_id()};
+		auto &nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
+		if (!nextRegistry.valid(nextNodeEntity))
+		{
 			LOG_ERROR << "RoutePlayerStringMsg: next node not found, node_type=" << nextNode.node_type()
 					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
 			return;
 		}
 
 		const auto nextSession = nextRegistry.try_get<RpcSession>(nextNodeEntity);
-		if (!nextSession) {
+		if (!nextSession)
+		{
 			LOG_ERROR << "RoutePlayerStringMsg: next node session missing, node_type=" << nextNode.node_type()
 					  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
 			return;
 		}
 
-		switch (nextNode.node_type()) {
+		switch (nextNode.node_type())
+		{
 		case eNodeType::SceneNodeService:
 			nextSession->SendRequest(SceneRoutePlayerStringMsgMessageId, nextRequest);
 			return;
 		case eNodeType::GateNodeService:
 			nextSession->SendRequest(GateRoutePlayerMessageMessageId, nextRequest);
+			return;
+		case eNodeType::CentreNodeService:
+			nextSession->SendRequest(CentreRoutePlayerStringMsgMessageId, nextRequest);
 			return;
 		default:
 			LOG_ERROR << "RoutePlayerStringMsg: unsupported next node_type=" << nextNode.node_type()
@@ -1016,29 +980,35 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 	}
 
 	const auto playerIt = tlsPlayerList.find(playerId);
-	if (playerIt == tlsPlayerList.end()) {
+	if (playerIt == tlsPlayerList.end())
+	{
 		LOG_WARN << "RoutePlayerStringMsg: player not loaded on centre, player_id=" << playerId;
 		return;
 	}
 
 	const auto playerEntity = playerIt->second;
-	if (!tlsRegistryManager.actorRegistry.valid(playerEntity)) {
+	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
+	{
 		LOG_WARN << "RoutePlayerStringMsg: player entity invalid on centre, player_id=" << playerId;
 		return;
 	}
 
-	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
-	if (!sessionPB) {
+	const auto *sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotPBComp>(playerEntity);
+	if (!sessionPB)
+	{
 		LOG_WARN << "RoutePlayerStringMsg: missing session snapshot, player_id=" << playerId;
 		return;
 	}
 
 	const auto sceneNodeIt = sessionPB->node_id().find(eNodeType::SceneNodeService);
-	if (sceneNodeIt != sessionPB->node_id().end()) {
-		const entt::entity sceneEntity{ sceneNodeIt->second };
-		auto& sceneRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
-		if (sceneRegistry.valid(sceneEntity)) {
-			if (const auto sceneSession = sceneRegistry.try_get<RpcSession>(sceneEntity)) {
+	if (sceneNodeIt != sessionPB->node_id().end())
+	{
+		const entt::entity sceneEntity{sceneNodeIt->second};
+		auto &sceneRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+		if (sceneRegistry.valid(sceneEntity))
+		{
+			if (const auto sceneSession = sceneRegistry.try_get<RpcSession>(sceneEntity))
+			{
 				sceneSession->SendRequest(SceneRoutePlayerStringMsgMessageId, *request);
 				return;
 			}
@@ -1046,11 +1016,14 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 	}
 
 	const auto gateSessionId = sessionPB->gate_session_id();
-	if (gateSessionId != kInvalidSessionId) {
-		const entt::entity gateEntity{ GetGateNodeId(gateSessionId) };
-		auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
-		if (gateRegistry.valid(gateEntity)) {
-			if (const auto gateSession = gateRegistry.try_get<RpcSession>(gateEntity)) {
+	if (gateSessionId != kInvalidSessionId)
+	{
+		const entt::entity gateEntity{GetGateNodeId(gateSessionId)};
+		auto &gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+		if (gateRegistry.valid(gateEntity))
+		{
+			if (const auto gateSession = gateRegistry.try_get<RpcSession>(gateEntity))
+			{
 				gateSession->SendRequest(GateRoutePlayerMessageMessageId, *request);
 				return;
 			}
@@ -1061,13 +1034,13 @@ void CentreHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* cont
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller, const ::InitSceneNodeRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::InitSceneNode(::google::protobuf::RpcController *controller, const ::InitSceneNodeRequest *request,
+								  ::Empty *response,
+								  ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto sceneNodeId = entt::entity{ request->node_id() };
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
+	auto sceneNodeId = entt::entity{request->node_id()};
+	auto &registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService);
 
 	// Check if the scene node ID is valid
 	if (!registry.valid(sceneNodeId))
@@ -1099,12 +1072,11 @@ void CentreHandler::InitSceneNode(::google::protobuf::RpcController* controller,
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
-	::NodeHandshakeResponse* response,
-	::google::protobuf::Closure* done)
+void CentreHandler::NodeHandshake(::google::protobuf::RpcController *controller, const ::NodeHandshakeRequest *request,
+								  ::NodeHandshakeResponse *response,
+								  ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
 	///<<< END WRITING YOUR CODE
 }
-

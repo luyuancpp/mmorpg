@@ -24,6 +24,31 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
+
+inline constexpr GateLoginNotifyRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        enter_gs_type_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GateLoginNotifyRequest::GateLoginNotifyRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GateLoginNotifyRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GateLoginNotifyRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GateLoginNotifyRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GateLoginNotifyRequestDefaultTypeInternal() {}
+  union {
+    GateLoginNotifyRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GateLoginNotifyRequestDefaultTypeInternal _GateLoginNotifyRequest_default_instance_;
 template <typename>
 PROTOBUF_CONSTEXPR GameNodeExitGameRequest::GameNodeExitGameRequest(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -42,31 +67,6 @@ struct GameNodeExitGameRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameNodeExitGameRequestDefaultTypeInternal _GameNodeExitGameRequest_default_instance_;
-
-inline constexpr Centre2GsLoginRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        enter_gs_type_{0u} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR Centre2GsLoginRequest::Centre2GsLoginRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(Centre2GsLoginRequest_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct Centre2GsLoginRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR Centre2GsLoginRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~Centre2GsLoginRequestDefaultTypeInternal() {}
-  union {
-    Centre2GsLoginRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 Centre2GsLoginRequestDefaultTypeInternal _Centre2GsLoginRequest_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fscene_2fgame_5fplayer_2eproto = nullptr;
 static const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL
@@ -75,33 +75,33 @@ const ::uint32_t
     TableStruct_proto_2fscene_2fgame_5fplayer_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::Centre2GsLoginRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::GateLoginNotifyRequest, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::Centre2GsLoginRequest, _impl_.enter_gs_type_),
+        PROTOBUF_FIELD_OFFSET(::GateLoginNotifyRequest, _impl_.enter_gs_type_),
         0,
         0x000, // bitmap
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::Centre2GsLoginRequest)},
+        {0, sizeof(::GateLoginNotifyRequest)},
         {5, sizeof(::GameNodeExitGameRequest)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_Centre2GsLoginRequest_default_instance_._instance,
+    &::_GateLoginNotifyRequest_default_instance_._instance,
     &::_GameNodeExitGameRequest_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\035proto/scene/game_player.proto\032\033proto/d"
     "b/proto_option.proto\032\033google/protobuf/em"
-    "pty.proto\".\n\025Centre2GsLoginRequest\022\025\n\ren"
-    "ter_gs_type\030\001 \001(\r\"\031\n\027GameNodeExitGameReq"
-    "uest2\224\001\n\013ScenePlayer\022@\n\016Centre2GsLogin\022\026"
-    ".Centre2GsLoginRequest\032\026.google.protobuf"
-    ".Empty\022<\n\010ExitGame\022\030.GameNodeExitGameReq"
-    "uest\032\026.google.protobuf.Empty\032\005\200\250\303\001\001B\016Z\005s"
-    "cene\200\001\001\230\324a\003b\006proto3"
+    "pty.proto\"/\n\026GateLoginNotifyRequest\022\025\n\re"
+    "nter_gs_type\030\001 \001(\r\"\031\n\027GameNodeExitGameRe"
+    "quest2\226\001\n\013ScenePlayer\022B\n\017GateLoginNotify"
+    "\022\027.GateLoginNotifyRequest\032\026.google.proto"
+    "buf.Empty\022<\n\010ExitGame\022\030.GameNodeExitGame"
+    "Request\032\026.google.protobuf.Empty\032\005\200\250\303\001\001B\016"
+    "Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_deps[2] = {
@@ -112,7 +112,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto = {
     false,
     false,
-    339,
+    342,
     descriptor_table_protodef_proto_2fscene_2fgame_5fplayer_2eproto,
     "proto/scene/game_player.proto",
     &descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto_once,
@@ -127,27 +127,27 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_
 };
 // ===================================================================
 
-class Centre2GsLoginRequest::_Internal {
+class GateLoginNotifyRequest::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<Centre2GsLoginRequest>()._impl_._has_bits_);
+      decltype(::std::declval<GateLoginNotifyRequest>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(Centre2GsLoginRequest, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(GateLoginNotifyRequest, _impl_._has_bits_);
 };
 
-Centre2GsLoginRequest::Centre2GsLoginRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+GateLoginNotifyRequest::GateLoginNotifyRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, Centre2GsLoginRequest_class_data_.base()) {
+    : ::google::protobuf::Message(arena, GateLoginNotifyRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:Centre2GsLoginRequest)
+  // @@protoc_insertion_point(arena_constructor:GateLoginNotifyRequest)
 }
-Centre2GsLoginRequest::Centre2GsLoginRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Centre2GsLoginRequest& from)
+GateLoginNotifyRequest::GateLoginNotifyRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GateLoginNotifyRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, Centre2GsLoginRequest_class_data_.base()),
+    : ::google::protobuf::Message(arena, GateLoginNotifyRequest_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -155,73 +155,73 @@ Centre2GsLoginRequest::Centre2GsLoginRequest(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE Centre2GsLoginRequest::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE GateLoginNotifyRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void Centre2GsLoginRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void GateLoginNotifyRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.enter_gs_type_ = {};
 }
-Centre2GsLoginRequest::~Centre2GsLoginRequest() {
-  // @@protoc_insertion_point(destructor:Centre2GsLoginRequest)
+GateLoginNotifyRequest::~GateLoginNotifyRequest() {
+  // @@protoc_insertion_point(destructor:GateLoginNotifyRequest)
   SharedDtor(*this);
 }
-inline void Centre2GsLoginRequest::SharedDtor(MessageLite& self) {
-  Centre2GsLoginRequest& this_ = static_cast<Centre2GsLoginRequest&>(self);
+inline void GateLoginNotifyRequest::SharedDtor(MessageLite& self) {
+  GateLoginNotifyRequest& this_ = static_cast<GateLoginNotifyRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL Centre2GsLoginRequest::PlacementNew_(
+inline void* PROTOBUF_NONNULL GateLoginNotifyRequest::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) Centre2GsLoginRequest(arena);
+  return ::new (mem) GateLoginNotifyRequest(arena);
 }
-constexpr auto Centre2GsLoginRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(Centre2GsLoginRequest),
-                                            alignof(Centre2GsLoginRequest));
+constexpr auto GateLoginNotifyRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GateLoginNotifyRequest),
+                                            alignof(GateLoginNotifyRequest));
 }
-constexpr auto Centre2GsLoginRequest::InternalGenerateClassData_() {
+constexpr auto GateLoginNotifyRequest::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_Centre2GsLoginRequest_default_instance_._instance,
+          &_GateLoginNotifyRequest_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &Centre2GsLoginRequest::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<Centre2GsLoginRequest>(),
+          &GateLoginNotifyRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GateLoginNotifyRequest>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &Centre2GsLoginRequest::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<Centre2GsLoginRequest>(), &Centre2GsLoginRequest::ByteSizeLong,
-              &Centre2GsLoginRequest::_InternalSerialize,
+          &GateLoginNotifyRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GateLoginNotifyRequest>(), &GateLoginNotifyRequest::ByteSizeLong,
+              &GateLoginNotifyRequest::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(Centre2GsLoginRequest, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(GateLoginNotifyRequest, _impl_._cached_size_),
           false,
       },
-      &Centre2GsLoginRequest::kDescriptorMethods,
+      &GateLoginNotifyRequest::kDescriptorMethods,
       &descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull Centre2GsLoginRequest_class_data_ =
-        Centre2GsLoginRequest::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull GateLoginNotifyRequest_class_data_ =
+        GateLoginNotifyRequest::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-Centre2GsLoginRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&Centre2GsLoginRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(Centre2GsLoginRequest_class_data_.tc_table);
-  return Centre2GsLoginRequest_class_data_.base();
+GateLoginNotifyRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GateLoginNotifyRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GateLoginNotifyRequest_class_data_.tc_table);
+  return GateLoginNotifyRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
-Centre2GsLoginRequest::_table_ = {
+GateLoginNotifyRequest::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(Centre2GsLoginRequest, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(GateLoginNotifyRequest, _impl_._has_bits_),
     0, // no _extensions_
     1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -230,29 +230,29 @@ Centre2GsLoginRequest::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    Centre2GsLoginRequest_class_data_.base(),
+    GateLoginNotifyRequest_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::Centre2GsLoginRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::GateLoginNotifyRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 enter_gs_type = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(Centre2GsLoginRequest, _impl_.enter_gs_type_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(Centre2GsLoginRequest, _impl_.enter_gs_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateLoginNotifyRequest, _impl_.enter_gs_type_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(GateLoginNotifyRequest, _impl_.enter_gs_type_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 enter_gs_type = 1;
-    {PROTOBUF_FIELD_OFFSET(Centre2GsLoginRequest, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(GateLoginNotifyRequest, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void Centre2GsLoginRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:Centre2GsLoginRequest)
+PROTOBUF_NOINLINE void GateLoginNotifyRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:GateLoginNotifyRequest)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -264,17 +264,17 @@ PROTOBUF_NOINLINE void Centre2GsLoginRequest::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL Centre2GsLoginRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL GateLoginNotifyRequest::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const Centre2GsLoginRequest& this_ = static_cast<const Centre2GsLoginRequest&>(base);
+  const GateLoginNotifyRequest& this_ = static_cast<const GateLoginNotifyRequest&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL Centre2GsLoginRequest::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL GateLoginNotifyRequest::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const Centre2GsLoginRequest& this_ = *this;
+  const GateLoginNotifyRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:Centre2GsLoginRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:GateLoginNotifyRequest)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -292,18 +292,18 @@ PROTOBUF_NOINLINE void Centre2GsLoginRequest::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:Centre2GsLoginRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:GateLoginNotifyRequest)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t Centre2GsLoginRequest::ByteSizeLong(const MessageLite& base) {
-  const Centre2GsLoginRequest& this_ = static_cast<const Centre2GsLoginRequest&>(base);
+::size_t GateLoginNotifyRequest::ByteSizeLong(const MessageLite& base) {
+  const GateLoginNotifyRequest& this_ = static_cast<const GateLoginNotifyRequest&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t Centre2GsLoginRequest::ByteSizeLong() const {
-  const Centre2GsLoginRequest& this_ = *this;
+::size_t GateLoginNotifyRequest::ByteSizeLong() const {
+  const GateLoginNotifyRequest& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:Centre2GsLoginRequest)
+  // @@protoc_insertion_point(message_byte_size_start:GateLoginNotifyRequest)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -324,10 +324,10 @@ PROTOBUF_NOINLINE void Centre2GsLoginRequest::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void Centre2GsLoginRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<Centre2GsLoginRequest*>(&to_msg);
-  auto& from = static_cast<const Centre2GsLoginRequest&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:Centre2GsLoginRequest)
+void GateLoginNotifyRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GateLoginNotifyRequest*>(&to_msg);
+  auto& from = static_cast<const GateLoginNotifyRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:GateLoginNotifyRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -342,22 +342,22 @@ void Centre2GsLoginRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void Centre2GsLoginRequest::CopyFrom(const Centre2GsLoginRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Centre2GsLoginRequest)
+void GateLoginNotifyRequest::CopyFrom(const GateLoginNotifyRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:GateLoginNotifyRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void Centre2GsLoginRequest::InternalSwap(Centre2GsLoginRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void GateLoginNotifyRequest::InternalSwap(GateLoginNotifyRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   swap(_impl_.enter_gs_type_, other->_impl_.enter_gs_type_);
 }
 
-::google::protobuf::Metadata Centre2GsLoginRequest::GetMetadata() const {
+::google::protobuf::Metadata GateLoginNotifyRequest::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -480,11 +480,11 @@ const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL ScenePlayer::GetDe
   return descriptor();
 }
 
-void ScenePlayer::Centre2GsLogin(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::Centre2GsLoginRequest* PROTOBUF_NONNULL,
+void ScenePlayer::GateLoginNotify(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                         const ::GateLoginNotifyRequest* PROTOBUF_NONNULL,
                          ::google::protobuf::Empty* PROTOBUF_NONNULL,
                          ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method Centre2GsLogin() not implemented.");
+  controller->SetFailed("Method GateLoginNotify() not implemented.");
   done->Run();
 }
 void ScenePlayer::ExitGame(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -503,7 +503,7 @@ void ScenePlayer::CallMethod(
   ABSL_DCHECK_EQ(method->service(), file_level_service_descriptors_proto_2fscene_2fgame_5fplayer_2eproto[0]);
   switch (method->index()) {
     case 0:
-      this->Centre2GsLogin(controller, ::google::protobuf::DownCastMessage<::Centre2GsLoginRequest>(request),
+      this->GateLoginNotify(controller, ::google::protobuf::DownCastMessage<::GateLoginNotifyRequest>(request),
                    ::google::protobuf::DownCastMessage<::google::protobuf::Empty>(response), done);
       break;
     case 1:
@@ -522,7 +522,7 @@ const ::google::protobuf::Message& ScenePlayer::GetRequestPrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
-      return ::Centre2GsLoginRequest::default_instance();
+      return ::GateLoginNotifyRequest::default_instance();
     case 1:
       return ::GameNodeExitGameRequest::default_instance();
 
@@ -562,9 +562,9 @@ ScenePlayer_Stub::~ScenePlayer_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void ScenePlayer_Stub::Centre2GsLogin(
+void ScenePlayer_Stub::GateLoginNotify(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::Centre2GsLoginRequest* PROTOBUF_NONNULL request, ::google::protobuf::Empty* PROTOBUF_NONNULL response,
+    const ::GateLoginNotifyRequest* PROTOBUF_NONNULL request, ::google::protobuf::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);

@@ -30,11 +30,11 @@ static void ForwardLoginToScene(uint64_t sessionId, uint32_t enterGsType, NodeId
         return;
     }
 
-    Centre2GsLoginRequest loginReq;
+    GateLoginNotifyRequest loginReq;
     loginReq.set_enter_gs_type(enterGsType);
 
     NodeRouteMessageRequest routeReq;
-    routeReq.mutable_message_content()->set_message_id(ScenePlayerCentre2GsLoginMessageId);
+    routeReq.mutable_message_content()->set_message_id(ScenePlayerGateLoginNotifyMessageId);
     routeReq.mutable_message_content()->set_serialized_message(loginReq.SerializeAsString());
     routeReq.mutable_header()->set_session_id(sessionId);
 

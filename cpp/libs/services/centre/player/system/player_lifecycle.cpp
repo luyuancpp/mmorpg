@@ -117,11 +117,11 @@ void PlayerLifecycleSystem::HandlePlayerLogin(entt::entity playerEntity)
 
 	LOG_INFO << "Handling player login for entity: " << static_cast<uint32_t>(playerEntity);
 
-	Centre2GsLoginRequest message;
+	GateLoginNotifyRequest message;
 	message.set_enter_gs_type(enterGameFlag->enter_gs_type());
 
-	SendMessageToPlayerOnSceneNode(ScenePlayerCentre2GsLoginMessageId, message, playerEntity);
-	LOG_DEBUG << "Sent Centre2GsLoginRequest to game scene";
+	SendMessageToPlayerOnSceneNode(ScenePlayerGateLoginNotifyMessageId, message, playerEntity);
+	LOG_DEBUG << "Sent GateLoginNotifyRequest to game scene";
 }
 
 void PlayerLifecycleSystem::HandlePlayerReconnection(entt::entity player)

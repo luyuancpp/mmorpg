@@ -11,8 +11,8 @@ class ScenePlayerHandler : public ::PlayerService
 public:
     using PlayerService::PlayerService;
 
-    static void Centre2GsLogin(entt::entity player,
-        const ::Centre2GsLoginRequest* request,
+    static void GateLoginNotify(entt::entity player,
+        const ::GateLoginNotifyRequest* request,
         ::google::protobuf::Empty* response);
     static void ExitGame(entt::entity player,
         const ::GameNodeExitGameRequest* request,
@@ -27,8 +27,8 @@ public:
         {
         case 0:
 			{
-            Centre2GsLogin(player,
-                static_cast<const ::Centre2GsLoginRequest*>(request),
+            GateLoginNotify(player,
+                static_cast<const ::GateLoginNotifyRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
 			}
             break;

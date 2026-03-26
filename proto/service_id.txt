@@ -48,7 +48,7 @@
 47=SceneSceneClientPlayerNotifyActorListCreate
 48=ClientPlayerLoginLogin
 49=SceneCurrencyClientPlayerGmDeductCurrency
-50=ScenePlayerCentre2GsLogin
+50=ScenePlayerGateLoginNotify
 51=SceneSceneClientPlayerNotifyActorDestroy
 52=GuildServiceGetGuildRankByGuild
 53=FriendServiceRemoveFriend

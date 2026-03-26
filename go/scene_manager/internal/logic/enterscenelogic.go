@@ -2,13 +2,13 @@ package logic
 
 import (
 	"context"
-	kafkacontracts "proto/contracts/kafka"
 	"fmt"
+	kafkacontracts "proto/contracts/kafka"
 	game "scene_manager/generated/pb/game"
 	"strconv"
 
-	"scene_manager/internal/svc"
 	"proto/scene_manager"
+	"scene_manager/internal/svc"
 
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -31,22 +31,32 @@ func NewEnterSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterS
 
 // EnterScene routes a player into a scene, managed by SceneManager.
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
-	// 1. Check if scene is on this node
-	key := fmt.Sprintf("scene:%d:node", in.SceneId)
-	nodeId, err := l.svcCtx.Redis.Get(key)
-	if err != nil {
-		l.Logger.Errorf("Scene lookup failed: %v", err)
-		return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Scene lookup failed"}, nil
-	}
-	if nodeId != l.svcCtx.Config.NodeID {
-		l.Logger.Errorf("Scene %d not on this node (expected %s, got %s)", in.SceneId, nodeId, l.svcCtx.Config.NodeID)
-		return &scene_manager.EnterSceneResponse{ErrorCode: 2, ErrorMessage: "Scene not on this node"}, nil
+	// 1. Resolve the target Scene node.
+	//    scene_id=0 means first login — pick a node via load balancing.
+	//    Otherwise, look up the node that owns the requested scene.
+	var nodeId string
+	if in.SceneId == 0 {
+		bestNode, err := GetBestNode(l.ctx, l.svcCtx)
+		if err != nil {
+			l.Logger.Errorf("Failed to select best node for first login: %v", err)
+			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "No available scene node"}, nil
+		}
+		nodeId = bestNode
+		l.Logger.Infof("First login: selected scene node %s for player %d", nodeId, in.PlayerId)
+	} else {
+		key := fmt.Sprintf("scene:%d:node", in.SceneId)
+		var err error
+		nodeId, err = l.svcCtx.Redis.Get(key)
+		if err != nil {
+			l.Logger.Errorf("Scene lookup failed: %v", err)
+			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Scene lookup failed"}, nil
+		}
 	}
 
 	// 2. IDEMPOTENCY CHECK: Is player already here?
 	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
 	if err == nil && currentLoc != nil {
-		if currentLoc.SceneId == in.SceneId && currentLoc.NodeId == l.svcCtx.Config.NodeID {
+		if currentLoc.SceneId == in.SceneId && currentLoc.NodeId == nodeId {
 			// Already in the correct scene. Treat as success.
 			l.Logger.Infof("Player %d already in scene %d, idempotent success", in.PlayerId, in.SceneId)
 			return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
@@ -54,7 +64,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	}
 
 	// 3. Update Player Location (Source of Truth)
-	err = UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, in.SceneId, l.svcCtx.Config.NodeID)
+	err = UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, in.SceneId, nodeId)
 	if err != nil {
 		l.Logger.Errorf("Failed to update player location: %v", err)
 		return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Failed to update location"}, nil
@@ -62,10 +72,10 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 
 	// 4. Send Route Command to Gate (via Kafka)
 	if in.GateId != "" {
-		targetNodeId, convErr := strconv.ParseUint(l.svcCtx.Config.NodeID, 10, 32)
+		targetNodeId, convErr := strconv.ParseUint(nodeId, 10, 32)
 		if convErr != nil {
-			l.Logger.Errorf("Invalid SceneManager node id %q: %v", l.svcCtx.Config.NodeID, convErr)
-			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Invalid scene manager node id"}, nil
+			l.Logger.Errorf("Invalid scene node id %q: %v", nodeId, convErr)
+			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Invalid scene node id"}, nil
 		}
 
 		targetGateId, convErr := strconv.ParseUint(in.GateId, 10, 32)
@@ -112,12 +122,12 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 			l.Logger.Errorf("Failed to push to Kafka topic %s: %v", topic, err)
 			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Failed to route player to gate"}, nil
 		}
-		l.Logger.Infof("Pushed RoutePlayer to Kafka topic %s for player %d -> node %s", topic, in.PlayerId, l.svcCtx.Config.NodeID)
+		l.Logger.Infof("Pushed RoutePlayer to Kafka topic %s for player %d -> node %s", topic, in.PlayerId, nodeId)
 	} else {
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
 
-	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, in.SceneId, l.svcCtx.Config.NodeID)
+	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, in.SceneId, nodeId)
 
 	return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
 }

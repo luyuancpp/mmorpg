@@ -13,6 +13,7 @@ import (
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/svc"
+	smpb "login/proto/scene_manager"
 	login_proto_common "proto/common/base"
 	login_proto_database "proto/common/database"
 	login_proto "proto/login"
@@ -194,6 +195,30 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	); err != nil {
 		logx.Errorf("Failed to send BindSessionToGate for player %d: %v", state.playerID, err)
 		return decision, err
+	}
+
+	// Route player to Scene node via SceneManager.
+	// For reconnect/replace: use existing scene_id so player returns to same scene.
+	// For first login: scene_id=0 tells SceneManager to pick a node via load balancing.
+	var sceneID uint64
+	if existing != nil {
+		sceneID = existing.SceneID
+	}
+	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(ctx, &smpb.EnterSceneRequest{
+		PlayerId:       state.playerID,
+		SceneId:        sceneID,
+		SessionId:      state.sessionID,
+		RequestId:      state.requestID,
+		GateId:         state.gateID,
+		GateInstanceId: state.gateInstanceID,
+	})
+	if err != nil {
+		logx.Errorf("SceneManager.EnterScene failed for player %d: %v", state.playerID, err)
+		return decision, err
+	}
+	if enterResp.ErrorCode != 0 {
+		logx.Errorf("SceneManager.EnterScene returned error for player %d: code=%d msg=%s",
+			state.playerID, enterResp.ErrorCode, enterResp.ErrorMessage)
 	}
 
 	if err := sessionmanager.SetIdempotency(ctx, l.svcCtx.RedisClient, state.playerID, state.requestID); err != nil {
