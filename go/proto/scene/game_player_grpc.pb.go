@@ -20,15 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ScenePlayer_Centre2GsLogin_FullMethodName = "/ScenePlayer/Centre2GsLogin"
-	ScenePlayer_ExitGame_FullMethodName       = "/ScenePlayer/ExitGame"
+	ScenePlayer_GateLoginNotify_FullMethodName = "/ScenePlayer/GateLoginNotify"
+	ScenePlayer_ExitGame_FullMethodName        = "/ScenePlayer/ExitGame"
 )
 
 // ScenePlayerClient is the client API for ScenePlayer service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ScenePlayerClient interface {
-	Centre2GsLogin(ctx context.Context, in *Centre2GsLoginRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GateLoginNotify(ctx context.Context, in *GateLoginNotifyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ExitGame(ctx context.Context, in *GameNodeExitGameRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -40,10 +40,10 @@ func NewScenePlayerClient(cc grpc.ClientConnInterface) ScenePlayerClient {
 	return &scenePlayerClient{cc}
 }
 
-func (c *scenePlayerClient) Centre2GsLogin(ctx context.Context, in *Centre2GsLoginRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *scenePlayerClient) GateLoginNotify(ctx context.Context, in *GateLoginNotifyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, ScenePlayer_Centre2GsLogin_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, ScenePlayer_GateLoginNotify_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (c *scenePlayerClient) ExitGame(ctx context.Context, in *GameNodeExitGameRe
 // All implementations must embed UnimplementedScenePlayerServer
 // for forward compatibility.
 type ScenePlayerServer interface {
-	Centre2GsLogin(context.Context, *Centre2GsLoginRequest) (*emptypb.Empty, error)
+	GateLoginNotify(context.Context, *GateLoginNotifyRequest) (*emptypb.Empty, error)
 	ExitGame(context.Context, *GameNodeExitGameRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedScenePlayerServer()
 }
@@ -76,8 +76,8 @@ type ScenePlayerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedScenePlayerServer struct{}
 
-func (UnimplementedScenePlayerServer) Centre2GsLogin(context.Context, *Centre2GsLoginRequest) (*emptypb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method Centre2GsLogin not implemented")
+func (UnimplementedScenePlayerServer) GateLoginNotify(context.Context, *GateLoginNotifyRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method GateLoginNotify not implemented")
 }
 func (UnimplementedScenePlayerServer) ExitGame(context.Context, *GameNodeExitGameRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ExitGame not implemented")
@@ -103,20 +103,20 @@ func RegisterScenePlayerServer(s grpc.ServiceRegistrar, srv ScenePlayerServer) {
 	s.RegisterService(&ScenePlayer_ServiceDesc, srv)
 }
 
-func _ScenePlayer_Centre2GsLogin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Centre2GsLoginRequest)
+func _ScenePlayer_GateLoginNotify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GateLoginNotifyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ScenePlayerServer).Centre2GsLogin(ctx, in)
+		return srv.(ScenePlayerServer).GateLoginNotify(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ScenePlayer_Centre2GsLogin_FullMethodName,
+		FullMethod: ScenePlayer_GateLoginNotify_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ScenePlayerServer).Centre2GsLogin(ctx, req.(*Centre2GsLoginRequest))
+		return srv.(ScenePlayerServer).GateLoginNotify(ctx, req.(*GateLoginNotifyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -147,8 +147,8 @@ var ScenePlayer_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ScenePlayerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Centre2GsLogin",
-			Handler:    _ScenePlayer_Centre2GsLogin_Handler,
+			MethodName: "GateLoginNotify",
+			Handler:    _ScenePlayer_GateLoginNotify_Handler,
 		},
 		{
 			MethodName: "ExitGame",

@@ -11,12 +11,13 @@ import (
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/protobuf/proto"
 
-	kafkapb "proto/contracts/kafka"
 	game "login/generated/pb/game"
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/taskmanager"
+	smpb "login/proto/scene_manager"
 	login_proto "proto/common/base"
+	kafkapb "proto/contracts/kafka"
 	plpb "proto/player_locator"
 	"time"
 )
@@ -29,6 +30,7 @@ type ServiceContext struct {
 	TaskExecutor        *taskmanager.TaskExecutor
 	ExpandMonitor       *kafka.ExpandMonitor
 	PlayerLocatorClient plpb.PlayerLocatorClient
+	SceneManagerClient  smpb.SceneManagerClient
 }
 
 func NewServiceContext() *ServiceContext {
@@ -79,12 +81,17 @@ func NewServiceContext() *ServiceContext {
 	plConn := zrpc.MustNewClient(config.AppConfig.PlayerLocatorRpc)
 	plClient := plpb.NewPlayerLocatorClient(plConn.Conn())
 
+	// Initialize scene_manager gRPC client (discovered via etcd)
+	smConn := zrpc.MustNewClient(config.AppConfig.SceneManagerRpc)
+	smClient := smpb.NewSceneManagerClient(smConn.Conn())
+
 	return &ServiceContext{
 		RedisClient:         redisClient,
 		KafkaClient:         kafkaClient,
 		TaskExecutor:        taskExecutor,
 		ExpandMonitor:       monitor,
 		PlayerLocatorClient: plClient,
+		SceneManagerClient:  smClient,
 	}
 }
 

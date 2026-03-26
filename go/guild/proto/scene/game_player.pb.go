@@ -23,27 +23,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Centre2GsLoginRequest struct {
+type GateLoginNotifyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EnterGsType   uint32                 `protobuf:"varint,1,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Centre2GsLoginRequest) Reset() {
-	*x = Centre2GsLoginRequest{}
+func (x *GateLoginNotifyRequest) Reset() {
+	*x = GateLoginNotifyRequest{}
 	mi := &file_proto_scene_game_player_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Centre2GsLoginRequest) String() string {
+func (x *GateLoginNotifyRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Centre2GsLoginRequest) ProtoMessage() {}
+func (*GateLoginNotifyRequest) ProtoMessage() {}
 
-func (x *Centre2GsLoginRequest) ProtoReflect() protoreflect.Message {
+func (x *GateLoginNotifyRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_scene_game_player_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,12 +55,12 @@ func (x *Centre2GsLoginRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Centre2GsLoginRequest.ProtoReflect.Descriptor instead.
-func (*Centre2GsLoginRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GateLoginNotifyRequest.ProtoReflect.Descriptor instead.
+func (*GateLoginNotifyRequest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_game_player_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Centre2GsLoginRequest) GetEnterGsType() uint32 {
+func (x *GateLoginNotifyRequest) GetEnterGsType() uint32 {
 	if x != nil {
 		return x.EnterGsType
 	}
@@ -107,12 +107,12 @@ var File_proto_scene_game_player_proto protoreflect.FileDescriptor
 
 const file_proto_scene_game_player_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/scene/game_player.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\";\n" +
-	"\x15Centre2GsLoginRequest\x12\"\n" +
+	"\x1dproto/scene/game_player.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bgoogle/protobuf/empty.proto\"<\n" +
+	"\x16GateLoginNotifyRequest\x12\"\n" +
 	"\renter_gs_type\x18\x01 \x01(\rR\venterGsType\"\x19\n" +
-	"\x17GameNodeExitGameRequest2\x94\x01\n" +
-	"\vScenePlayer\x12@\n" +
-	"\x0eCentre2GsLogin\x12\x16.Centre2GsLoginRequest\x1a\x16.google.protobuf.Empty\x12<\n" +
+	"\x17GameNodeExitGameRequest2\x96\x01\n" +
+	"\vScenePlayer\x12B\n" +
+	"\x0fGateLoginNotify\x12\x17.GateLoginNotifyRequest\x1a\x16.google.protobuf.Empty\x12<\n" +
 	"\bExitGame\x12\x18.GameNodeExitGameRequest\x1a\x16.google.protobuf.Empty\x1a\x05\x80\xa8\xc3\x01\x01B\x1a\x98\xd4a\x03Z\x11guild/proto/scene\x80\x01\x01b\x06proto3"
 
 var (
@@ -129,14 +129,14 @@ func file_proto_scene_game_player_proto_rawDescGZIP() []byte {
 
 var file_proto_scene_game_player_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_scene_game_player_proto_goTypes = []any{
-	(*Centre2GsLoginRequest)(nil),   // 0: Centre2GsLoginRequest
+	(*GateLoginNotifyRequest)(nil),  // 0: GateLoginNotifyRequest
 	(*GameNodeExitGameRequest)(nil), // 1: GameNodeExitGameRequest
 	(*emptypb.Empty)(nil),           // 2: google.protobuf.Empty
 }
 var file_proto_scene_game_player_proto_depIdxs = []int32{
-	0, // 0: ScenePlayer.Centre2GsLogin:input_type -> Centre2GsLoginRequest
+	0, // 0: ScenePlayer.GateLoginNotify:input_type -> GateLoginNotifyRequest
 	1, // 1: ScenePlayer.ExitGame:input_type -> GameNodeExitGameRequest
-	2, // 2: ScenePlayer.Centre2GsLogin:output_type -> google.protobuf.Empty
+	2, // 2: ScenePlayer.GateLoginNotify:output_type -> google.protobuf.Empty
 	2, // 3: ScenePlayer.ExitGame:output_type -> google.protobuf.Empty
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type

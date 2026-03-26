@@ -9,20 +9,19 @@
 #include "proto/common/component/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
-void ScenePlayerHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
+void ScenePlayerHandler::GateLoginNotify(entt::entity player,const ::GateLoginNotifyRequest* request,
 	::google::protobuf::Empty* response)
 {
-	///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Handling Centre2GsLoginRequest for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
+///<<< BEGIN WRITING YOUR CODE
+	LOG_INFO << "GateLoginNotify for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
 
-	if (request->enter_gs_type() == LOGIN_NONE) // Initial login, not a scene transfer
+	if (request->enter_gs_type() == LOGIN_NONE)
 	{
 		return;
 	}
 
 	PlayerLifecycleSystem::OnPlayerLogin(player, request->enter_gs_type());
-	///<<< END WRITING YOUR CODE
-
+///<<< END WRITING YOUR CODE
 }
 
 void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,

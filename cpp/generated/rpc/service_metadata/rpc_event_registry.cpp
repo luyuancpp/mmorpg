@@ -406,9 +406,9 @@ void InitMessageInfo()
         std::make_unique<SceneClientPlayerCommonImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- ScenePlayer ---
-    gRpcMethodRegistry[ScenePlayerCentre2GsLoginMessageId] = RpcMethodMeta{
-        "ScenePlayer", "Centre2GsLogin",
-        std::make_unique<::Centre2GsLoginRequest>(),
+    gRpcMethodRegistry[ScenePlayerGateLoginNotifyMessageId] = RpcMethodMeta{
+        "ScenePlayer", "GateLoginNotify",
+        std::make_unique<::GateLoginNotifyRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
         std::make_unique<ScenePlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePlayerExitGameMessageId] = RpcMethodMeta{

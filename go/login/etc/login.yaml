@@ -68,6 +68,14 @@ PlayerLocatorRpc:
     Key: playerlocator.rpc
   Timeout: 5000
 
+# SceneManager gRPC client (discovered via etcd)
+SceneManagerRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: scenemanagerservice.rpc
+  Timeout: 5000
+
 # Kafka config
 Kafka:
   Brokers:

@@ -56,14 +56,14 @@ struct TableStruct_proto_2fscene_2fgame_5fplayer_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fscene_2fgame_5fplayer_2eproto;
 }  // extern "C"
-class Centre2GsLoginRequest;
-struct Centre2GsLoginRequestDefaultTypeInternal;
-extern Centre2GsLoginRequestDefaultTypeInternal _Centre2GsLoginRequest_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull Centre2GsLoginRequest_class_data_;
 class GameNodeExitGameRequest;
 struct GameNodeExitGameRequestDefaultTypeInternal;
 extern GameNodeExitGameRequestDefaultTypeInternal _GameNodeExitGameRequest_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull GameNodeExitGameRequest_class_data_;
+class GateLoginNotifyRequest;
+struct GateLoginNotifyRequestDefaultTypeInternal;
+extern GateLoginNotifyRequestDefaultTypeInternal _GateLoginNotifyRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GateLoginNotifyRequest_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -73,6 +73,197 @@ namespace protobuf {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class GateLoginNotifyRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:GateLoginNotifyRequest) */ {
+ public:
+  inline GateLoginNotifyRequest() : GateLoginNotifyRequest(nullptr) {}
+  ~GateLoginNotifyRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GateLoginNotifyRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GateLoginNotifyRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GateLoginNotifyRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline GateLoginNotifyRequest(const GateLoginNotifyRequest& from) : GateLoginNotifyRequest(nullptr, from) {}
+  inline GateLoginNotifyRequest(GateLoginNotifyRequest&& from) noexcept
+      : GateLoginNotifyRequest(nullptr, ::std::move(from)) {}
+  inline GateLoginNotifyRequest& operator=(const GateLoginNotifyRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GateLoginNotifyRequest& operator=(GateLoginNotifyRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GateLoginNotifyRequest& default_instance() {
+    return *reinterpret_cast<const GateLoginNotifyRequest*>(
+        &_GateLoginNotifyRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 0;
+  friend void swap(GateLoginNotifyRequest& a, GateLoginNotifyRequest& b) { a.Swap(&b); }
+  inline void Swap(GateLoginNotifyRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GateLoginNotifyRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GateLoginNotifyRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GateLoginNotifyRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GateLoginNotifyRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GateLoginNotifyRequest& from) { GateLoginNotifyRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GateLoginNotifyRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "GateLoginNotifyRequest"; }
+
+ protected:
+  explicit GateLoginNotifyRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GateLoginNotifyRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GateLoginNotifyRequest& from);
+  GateLoginNotifyRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GateLoginNotifyRequest&& from) noexcept
+      : GateLoginNotifyRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kEnterGsTypeFieldNumber = 1,
+  };
+  // uint32 enter_gs_type = 1;
+  void clear_enter_gs_type() ;
+  ::uint32_t enter_gs_type() const;
+  void set_enter_gs_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_enter_gs_type() const;
+  void _internal_set_enter_gs_type(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:GateLoginNotifyRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GateLoginNotifyRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint32_t enter_gs_type_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_2fgame_5fplayer_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GateLoginNotifyRequest_class_data_;
 // -------------------------------------------------------------------
 
 class GameNodeExitGameRequest final : public ::google::protobuf::internal::ZeroFieldsBase
@@ -219,197 +410,6 @@ class GameNodeExitGameRequest final : public ::google::protobuf::internal::ZeroF
 };
 
 extern const ::google::protobuf::internal::ClassDataFull GameNodeExitGameRequest_class_data_;
-// -------------------------------------------------------------------
-
-class Centre2GsLoginRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:Centre2GsLoginRequest) */ {
- public:
-  inline Centre2GsLoginRequest() : Centre2GsLoginRequest(nullptr) {}
-  ~Centre2GsLoginRequest() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(Centre2GsLoginRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(Centre2GsLoginRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR Centre2GsLoginRequest(::google::protobuf::internal::ConstantInitialized);
-
-  inline Centre2GsLoginRequest(const Centre2GsLoginRequest& from) : Centre2GsLoginRequest(nullptr, from) {}
-  inline Centre2GsLoginRequest(Centre2GsLoginRequest&& from) noexcept
-      : Centre2GsLoginRequest(nullptr, ::std::move(from)) {}
-  inline Centre2GsLoginRequest& operator=(const Centre2GsLoginRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Centre2GsLoginRequest& operator=(Centre2GsLoginRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Centre2GsLoginRequest& default_instance() {
-    return *reinterpret_cast<const Centre2GsLoginRequest*>(
-        &_Centre2GsLoginRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 0;
-  friend void swap(Centre2GsLoginRequest& a, Centre2GsLoginRequest& b) { a.Swap(&b); }
-  inline void Swap(Centre2GsLoginRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Centre2GsLoginRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Centre2GsLoginRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<Centre2GsLoginRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const Centre2GsLoginRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const Centre2GsLoginRequest& from) { Centre2GsLoginRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(Centre2GsLoginRequest* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "Centre2GsLoginRequest"; }
-
- protected:
-  explicit Centre2GsLoginRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  Centre2GsLoginRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Centre2GsLoginRequest& from);
-  Centre2GsLoginRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, Centre2GsLoginRequest&& from) noexcept
-      : Centre2GsLoginRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kEnterGsTypeFieldNumber = 1,
-  };
-  // uint32 enter_gs_type = 1;
-  void clear_enter_gs_type() ;
-  ::uint32_t enter_gs_type() const;
-  void set_enter_gs_type(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_enter_gs_type() const;
-  void _internal_set_enter_gs_type(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:Centre2GsLoginRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<0, 1,
-                                   0, 0,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const Centre2GsLoginRequest& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint32_t enter_gs_type_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fscene_2fgame_5fplayer_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull Centre2GsLoginRequest_class_data_;
 
 // ===================================================================
 
@@ -430,8 +430,8 @@ class ScenePlayer : public ::google::protobuf::Service {
 
   static const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL descriptor();
 
-  virtual void Centre2GsLogin(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::Centre2GsLoginRequest* PROTOBUF_NONNULL request,
+  virtual void GateLoginNotify(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::GateLoginNotifyRequest* PROTOBUF_NONNULL request,
                         ::google::protobuf::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void ExitGame(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -470,8 +470,8 @@ class ScenePlayer_Stub final : public ScenePlayer {
   inline ::google::protobuf::RpcChannel* PROTOBUF_NULLABLE channel() { return channel_; }
 
   // implements ScenePlayer ------------------------------------------
-  void Centre2GsLogin(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::Centre2GsLoginRequest* PROTOBUF_NONNULL request,
+  void GateLoginNotify(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::GateLoginNotifyRequest* PROTOBUF_NONNULL request,
                         ::google::protobuf::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void ExitGame(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -496,28 +496,28 @@ class ScenePlayer_Stub final : public ScenePlayer {
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// Centre2GsLoginRequest
+// GateLoginNotifyRequest
 
 // uint32 enter_gs_type = 1;
-inline void Centre2GsLoginRequest::clear_enter_gs_type() {
+inline void GateLoginNotifyRequest::clear_enter_gs_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint32_t Centre2GsLoginRequest::enter_gs_type() const {
-  // @@protoc_insertion_point(field_get:Centre2GsLoginRequest.enter_gs_type)
+inline ::uint32_t GateLoginNotifyRequest::enter_gs_type() const {
+  // @@protoc_insertion_point(field_get:GateLoginNotifyRequest.enter_gs_type)
   return _internal_enter_gs_type();
 }
-inline void Centre2GsLoginRequest::set_enter_gs_type(::uint32_t value) {
+inline void GateLoginNotifyRequest::set_enter_gs_type(::uint32_t value) {
   _internal_set_enter_gs_type(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:Centre2GsLoginRequest.enter_gs_type)
+  // @@protoc_insertion_point(field_set:GateLoginNotifyRequest.enter_gs_type)
 }
-inline ::uint32_t Centre2GsLoginRequest::_internal_enter_gs_type() const {
+inline ::uint32_t GateLoginNotifyRequest::_internal_enter_gs_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.enter_gs_type_;
 }
-inline void Centre2GsLoginRequest::_internal_set_enter_gs_type(::uint32_t value) {
+inline void GateLoginNotifyRequest::_internal_set_enter_gs_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = value;
 }

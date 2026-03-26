@@ -4,12 +4,11 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-void ScenePlayerReply::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
+void ScenePlayerReply::GateLoginNotify(entt::entity player,const ::GateLoginNotifyRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 }
 
 void ScenePlayerReply::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,

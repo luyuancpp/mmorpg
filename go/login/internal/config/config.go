@@ -17,7 +17,8 @@ type Config struct {
 	Registry           RegistryConf       `json:"Registry"`
 	Timeouts           TimeoutConf        `json:"Timeouts"`
 	Kafka              KafkaConfig        `json:"Kafka"`
-	PlayerLocatorRpc   zrpc.RpcClientConf `json:"PlayerLocatorRpc"` // player_locator gRPC client
+	PlayerLocatorRpc   zrpc.RpcClientConf `json:"PlayerLocatorRpc"`   // player_locator gRPC client
+	SceneManagerRpc    zrpc.RpcClientConf `json:"SceneManagerRpc"`    // scene_manager gRPC client
 }
 
 // NodeConfig holds node-level settings including login duration limits.
