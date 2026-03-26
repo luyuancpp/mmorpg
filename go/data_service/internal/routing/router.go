@@ -151,6 +151,18 @@ func (r *Router) ClientForZone(zoneID uint32) (goredis.Cmdable, error) {
 	return client, nil
 }
 
+// AllZoneIDs returns all configured zone IDs (for server-wide operations).
+func (r *Router) AllZoneIDs() []uint32 {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	ids := make([]uint32, 0, len(r.zoneToClient))
+	for zoneID := range r.zoneToClient {
+		ids = append(ids, zoneID)
+	}
+	return ids
+}
+
 // ── Player lock (distributed) ──────────────────────────────────
 
 func playerLockKey(playerID uint64) string {

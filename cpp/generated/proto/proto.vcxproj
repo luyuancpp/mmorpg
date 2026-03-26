@@ -82,6 +82,10 @@
     <ClCompile Include="contracts\kafka\scene_command.pb.cc" />
     <ClCompile Include="data_service\data_service.pb.cc" />
     <ClCompile Include="data_service\data_service.grpc.pb.cc" />
+    <ClCompile Include="db\db.pb.cc" />
+    <ClCompile Include="db\db.grpc.pb.cc" />
+    <ClCompile Include="db\db_task.pb.cc" />
+    <ClCompile Include="db\db_task.grpc.pb.cc" />
     <ClCompile Include="db\proto_option.pb.cc" />
     <ClCompile Include="etcd\etcd.grpc.pb.cc" />
     <ClCompile Include="etcd\etcd.pb.cc" />
@@ -175,6 +179,10 @@
     <ClInclude Include="contracts\kafka\scene_command.pb.h" />
     <ClInclude Include="data_service\data_service.pb.h" />
     <ClInclude Include="data_service\data_service.grpc.pb.h" />
+    <ClInclude Include="db\db.pb.h" />
+    <ClInclude Include="db\db.grpc.pb.h" />
+    <ClInclude Include="db\db_task.pb.h" />
+    <ClInclude Include="db\db_task.grpc.pb.h" />
     <ClInclude Include="db\proto_option.pb.h" />
     <ClInclude Include="etcd\etcd.grpc.pb.h" />
     <ClInclude Include="etcd\etcd.pb.h" />

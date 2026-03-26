@@ -94,3 +94,9 @@
 93=DataServiceGetPlayerHomeZone
 94=SceneCurrencyClientPlayerGmBlockCurrency
 95=SceneCurrencyClientPlayerGmUnblockCurrency
+96=DataServiceCreatePlayerSnapshot
+97=DataServiceListPlayerSnapshots
+98=DataServiceGetPlayerSnapshotDiff
+99=DataServiceRollbackPlayer
+100=DataServiceRollbackZone
+101=DataServiceRollbackAll
