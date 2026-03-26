@@ -37,6 +37,17 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
 
+	// Defensive check: after zone rollback, orphan characters have no Redis data.
+	// The protobuf will be empty (player_id=0). Reject early to prevent creating
+	// a broken entity with id=0 in the ECS.
+	if (message.player_database_data().player_id() == 0)
+	{
+		LOG_ERROR << "HandlePlayerAsyncLoaded: empty player data for player " << playerId
+				  << " (likely orphan after zone rollback). Rejecting load.";
+		// TODO: send error response to gate so client shows "character not found"
+		return;
+	}
+
 	if (extra.type() == typeid(PlayerSceneEnterContext))
 	{
 		const auto &context = std::any_cast<PlayerSceneEnterContext>(extra);
@@ -264,6 +275,12 @@ void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent &
 entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &playerAllData, const PlayerGameNodeEntryInfoComp &enterInfo)
 {
 	auto playerId = playerAllData.player_database_data().player_id();
+
+	if (playerId == 0)
+	{
+		LOG_ERROR << "[InitPlayerFromAllData] Rejecting player with id=0 (empty data)";
+		return entt::null;
+	}
 
 	LOG_INFO << "[InitPlayerFromAllData] Init player: " << playerId;
 

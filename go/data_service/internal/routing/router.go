@@ -163,6 +163,43 @@ func (r *Router) AllZoneIDs() []uint32 {
 	return ids
 }
 
+// GetAllPlayerIDsInZone scans the global mapping Redis to find all players
+// whose home zone matches the given zoneID. This is O(N) over all players
+// and should only be used for admin operations (e.g., zone rollback).
+func (r *Router) GetAllPlayerIDsInZone(ctx context.Context, zoneID uint32) ([]uint64, error) {
+	target := strconv.FormatUint(uint64(zoneID), 10)
+	var playerIDs []uint64
+	var cursor uint64
+
+	for {
+		keys, nextCursor, err := r.mappingRedis.ScanCtx(ctx, cursor, mappingKeyPrefix+"*", 500)
+		if err != nil {
+			return nil, fmt.Errorf("scan mapping keys: %w", err)
+		}
+
+		for _, key := range keys {
+			val, err := r.mappingRedis.GetCtx(ctx, key)
+			if err != nil || val != target {
+				continue
+			}
+			// Extract player ID from key "player:zone:{ID}"
+			idStr := key[len(mappingKeyPrefix):]
+			pid, err := strconv.ParseUint(idStr, 10, 64)
+			if err != nil {
+				continue
+			}
+			playerIDs = append(playerIDs, pid)
+		}
+
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return playerIDs, nil
+}
+
 // ── Player lock (distributed) ──────────────────────────────────
 
 func playerLockKey(playerID uint64) string {

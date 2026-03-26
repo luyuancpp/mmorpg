@@ -12,6 +12,7 @@ type ServiceContext struct {
 	Config        config.Config
 	Router        *routing.Router
 	SnapshotStore *store.SnapshotStore
+	TxLogStore    *store.TransactionLogStore
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -27,9 +28,22 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		logx.Errorf("[ServiceContext] snapshot store init failed (rollback disabled): %v", err)
 	}
 
+	txLog, err := store.NewTransactionLogStore(store.MySQLConfig{
+		Host:        c.SnapshotMySQL.Host,
+		User:        c.SnapshotMySQL.User,
+		Password:    c.SnapshotMySQL.Password,
+		DBName:      c.SnapshotMySQL.DBName,
+		MaxOpenConn: c.SnapshotMySQL.MaxOpenConn,
+		MaxIdleConn: c.SnapshotMySQL.MaxIdleConn,
+	})
+	if err != nil {
+		logx.Errorf("[ServiceContext] transaction log store init failed (recall/query disabled): %v", err)
+	}
+
 	return &ServiceContext{
 		Config:        c,
 		Router:        routing.NewRouter(c),
 		SnapshotStore: ss,
+		TxLogStore:    txLog,
 	}
 }

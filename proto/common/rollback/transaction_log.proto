@@ -24,6 +24,7 @@ enum TransactionType
   TX_ROLLBACK_RESTORE = 16; // Item/currency restored via rollback
   TX_CLAWBACK = 17;         // Precision clawback (Bug exploit recovery)
   TX_DEFERRED_CLAWBACK = 18;// Deferred clawback (补缴) auto-deduction
+  TX_BATCH_RECALL = 19;     // Batch recall (批量回收) by GM
 }
 
 // A single transaction log entry.  Written to Kafka → Go DB → MySQL.

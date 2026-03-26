@@ -9,6 +9,8 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "core/utils/registry/game_registry.h"
 #include "modules/currency/comp/player_currency_comp.h"
+#include "modules/gain_block/gain_block_service.h"
+#include "modules/transaction_log/anomaly_detector.h"
 #include "modules/transaction_log/transaction_log_system.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include <registry_manager.h>
@@ -63,7 +65,16 @@ uint32_t CurrencySystem::AddCurrency(entt::entity player, CurrencyType type, int
         return PrintStackAndReturnError(kInvalidParameter);
     }
 
-    // ── GM block check ───────────────────────────────────────────────────
+    // ── Global (server-wide) block check ────────────────────────────────
+    if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kCurrency,
+                                        static_cast<uint32_t>(type)))
+    {
+        LOG_WARN << "CurrencySystem::AddCurrency: currency GLOBALLY blocked. CurrencyType="
+                 << static_cast<uint32_t>(type) << " entity=" << entt::to_integral(player);
+        return PrintStackAndReturnError(kInvalidParameter);
+    }
+
+    // ── Per-player GM block check ────────────────────────────────────────
     if (IsCurrencyBlocked(player, type))
     {
         LOG_WARN << "CurrencySystem::AddCurrency: currency blocked by GM. CurrencyType="
@@ -127,6 +138,9 @@ uint32_t CurrencySystem::AddCurrency(entt::entity player, CurrencyType type, int
     // ── Transaction log ──────────────────────────────────────────────────
     TransactionLogSystem::LogCurrencyAdd(player, type,
                                          static_cast<uint64_t>(amount), balanceBefore, *balance);
+
+    // ── Anomaly detection ────────────────────────────────────────────────
+    AnomalyDetector::RecordCurrencyGain(player, type, static_cast<uint64_t>(amount));
 
     return kSuccess;
 }

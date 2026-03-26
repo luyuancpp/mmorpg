@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 
-	"proto/data_service"
 	"data_service/internal/constants"
 	"data_service/internal/logic"
 	"data_service/internal/svc"
+	"proto/data_service"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -254,5 +254,152 @@ func (s *DataServiceServer) RollbackAll(ctx context.Context, req *data_service.R
 		ZonesProcessed:  resp.ZonesProcessed,
 		PlayersAffected: resp.PlayersAffected,
 		PlayersFailed:   resp.PlayersFailed,
+	}, nil
+}
+
+func (s *DataServiceServer) CreateZoneSnapshot(ctx context.Context, req *data_service.CreateZoneSnapshotRequest) (*data_service.CreateZoneSnapshotResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.CreateZoneSnapshotResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.CreateZoneSnapshot(ctx, s.svcCtx, &logic.CreateZoneSnapshotReq{
+		ZoneID:   req.ZoneId,
+		Reason:   req.Reason,
+		Operator: req.Operator,
+	})
+	if err != nil {
+		return &data_service.CreateZoneSnapshotResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+	return &data_service.CreateZoneSnapshotResponse{
+		ErrorCode:  resp.ErrorCode,
+		SnapshotId: resp.SnapshotID,
+		CreatedAt:  resp.CreatedAt,
+	}, nil
+}
+
+func (s *DataServiceServer) ListZoneSnapshots(ctx context.Context, req *data_service.ListZoneSnapshotsRequest) (*data_service.ListZoneSnapshotsResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.ListZoneSnapshotsResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.ListZoneSnapshots(ctx, s.svcCtx, &logic.ListZoneSnapshotsReq{
+		ZoneID: req.ZoneId,
+		Limit:  req.Limit,
+	})
+	if err != nil {
+		return &data_service.ListZoneSnapshotsResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+
+	infos := make([]*data_service.ZoneSnapshotInfo, 0, len(resp.Snapshots))
+	for _, item := range resp.Snapshots {
+		infos = append(infos, &data_service.ZoneSnapshotInfo{
+			SnapshotId:    item.SnapshotID,
+			ZoneId:        item.ZoneID,
+			CreatedAt:     item.CreatedAt,
+			Reason:        item.Reason,
+			Operator:      item.Operator,
+			DataSizeBytes: item.DataSizeBytes,
+		})
+	}
+	return &data_service.ListZoneSnapshotsResponse{
+		ErrorCode: resp.ErrorCode,
+		Snapshots: infos,
+	}, nil
+}
+
+// ── Batch Recall / Transaction Log Query / Event Snapshot ──────
+
+func (s *DataServiceServer) BatchRecallItems(ctx context.Context, req *data_service.BatchRecallItemsRequest) (*data_service.BatchRecallItemsResponse, error) {
+	resp, err := logic.BatchRecallItems(ctx, s.svcCtx, &logic.BatchRecallReq{
+		PlayerIDs:    req.PlayerIds,
+		ItemConfigID: req.ItemConfigId,
+		CurrencyType: req.CurrencyType,
+		TimeStart:    req.TimeStart,
+		TimeEnd:      req.TimeEnd,
+		TxTypes:      req.TxTypes,
+		Reason:       req.Reason,
+		Operator:     req.Operator,
+		DryRun:       req.DryRun,
+	})
+	if err != nil {
+		return &data_service.BatchRecallItemsResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+
+	results := make([]*data_service.RecallResult, 0, len(resp.Results))
+	for _, r := range resp.Results {
+		results = append(results, &data_service.RecallResult{
+			PlayerId:     r.PlayerID,
+			ItemUuid:     r.ItemUUID,
+			ItemConfigId: r.ItemConfigID,
+			Amount:       r.Amount,
+			Success:      r.Success,
+			ErrorDetail:  r.ErrorDetail,
+		})
+	}
+	return &data_service.BatchRecallItemsResponse{
+		ErrorCode:     resp.ErrorCode,
+		TotalMatched:  resp.TotalMatched,
+		TotalRecalled: resp.TotalRecalled,
+		TotalFailed:   resp.TotalFailed,
+		Results:       results,
+	}, nil
+}
+
+func (s *DataServiceServer) QueryTransactionLog(ctx context.Context, req *data_service.QueryTransactionLogRequest) (*data_service.QueryTransactionLogResponse, error) {
+	resp, err := logic.QueryTransactionLog(ctx, s.svcCtx, &logic.QueryTxLogReq{
+		PlayerID:     req.PlayerId,
+		TimeStart:    req.TimeStart,
+		TimeEnd:      req.TimeEnd,
+		TxTypes:      req.TxTypes,
+		ItemConfigID: req.ItemConfigId,
+		CurrencyType: req.CurrencyType,
+		Limit:        req.Limit,
+		Offset:       req.Offset,
+	})
+	if err != nil {
+		return &data_service.QueryTransactionLogResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+
+	rows := make([]*data_service.TransactionLogRow, 0, len(resp.Rows))
+	for _, r := range resp.Rows {
+		rows = append(rows, &data_service.TransactionLogRow{
+			TxId:          r.TxID,
+			Timestamp:     r.Timestamp,
+			TxType:        r.TxType,
+			FromPlayer:    r.FromPlayer,
+			ToPlayer:      r.ToPlayer,
+			ItemUuid:      r.ItemUUID,
+			ItemConfigId:  r.ItemConfigID,
+			ItemQuantity:  r.ItemQuantity,
+			CurrencyType:  r.CurrencyType,
+			CurrencyDelta: r.CurrencyDelta,
+			BalanceBefore: r.BalanceBefore,
+			BalanceAfter:  r.BalanceAfter,
+			CorrelationId: r.CorrelationID,
+			Extra:         r.Extra,
+		})
+	}
+	return &data_service.QueryTransactionLogResponse{
+		ErrorCode:  resp.ErrorCode,
+		Rows:       rows,
+		TotalCount: resp.TotalCount,
+	}, nil
+}
+
+func (s *DataServiceServer) CreateEventSnapshot(ctx context.Context, req *data_service.CreateEventSnapshotRequest) (*data_service.CreateEventSnapshotResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.CreateEventSnapshotResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.CreateEventSnapshot(ctx, s.svcCtx, &logic.CreateEventSnapshotReq{
+		PlayerID:    req.PlayerId,
+		EventType:   uint32(req.EventType),
+		EventDetail: req.EventDetail,
+		Operator:    req.Operator,
+	})
+	if err != nil {
+		return &data_service.CreateEventSnapshotResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+	return &data_service.CreateEventSnapshotResponse{
+		ErrorCode:  resp.ErrorCode,
+		SnapshotId: resp.SnapshotID,
+		CreatedAt:  resp.CreatedAt,
 	}, nil
 }
