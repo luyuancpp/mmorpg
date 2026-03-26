@@ -25,6 +25,9 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 	svcCtx := svc.NewServiceContext(c)
 	defer svcCtx.Router.Close()
+	if svcCtx.SnapshotStore != nil {
+		defer svcCtx.SnapshotStore.Close()
+	}
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		data_service.RegisterDataServiceServer(grpcServer, server.NewDataServiceServer(svcCtx))

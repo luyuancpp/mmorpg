@@ -106,3 +106,153 @@ func (s *DataServiceServer) DeletePlayerData(ctx context.Context, req *data_serv
 		KeysDeleted: resp.KeysDeleted,
 	}, nil
 }
+
+// ── Snapshot / Rollback Handlers ───────────────────────────────
+
+func (s *DataServiceServer) CreatePlayerSnapshot(ctx context.Context, req *data_service.CreatePlayerSnapshotRequest) (*data_service.CreatePlayerSnapshotResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.CreatePlayerSnapshotResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.CreatePlayerSnapshot(ctx, s.svcCtx, &logic.CreateSnapshotReq{
+		PlayerID:     req.PlayerId,
+		SnapshotType: uint32(req.Type),
+		Reason:       req.Reason,
+		Operator:     req.Operator,
+	})
+	if err != nil {
+		return &data_service.CreatePlayerSnapshotResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+	return &data_service.CreatePlayerSnapshotResponse{
+		ErrorCode:  resp.ErrorCode,
+		SnapshotId: resp.SnapshotID,
+		CreatedAt:  resp.CreatedAt,
+	}, nil
+}
+
+func (s *DataServiceServer) ListPlayerSnapshots(ctx context.Context, req *data_service.ListPlayerSnapshotsRequest) (*data_service.ListPlayerSnapshotsResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.ListPlayerSnapshotsResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.ListPlayerSnapshots(ctx, s.svcCtx, &logic.ListSnapshotsReq{
+		PlayerID:   req.PlayerId,
+		BeforeTime: req.BeforeTime,
+		Limit:      req.Limit,
+	})
+	if err != nil {
+		return &data_service.ListPlayerSnapshotsResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+
+	infos := make([]*data_service.SnapshotInfo, 0, len(resp.Snapshots))
+	for _, item := range resp.Snapshots {
+		infos = append(infos, &data_service.SnapshotInfo{
+			SnapshotId:    item.SnapshotID,
+			PlayerId:      item.PlayerID,
+			ZoneId:        item.ZoneID,
+			Type:          data_service.SnapshotType(item.SnapshotType),
+			CreatedAt:     item.CreatedAt,
+			Reason:        item.Reason,
+			Operator:      item.Operator,
+			DataSizeBytes: item.DataSizeBytes,
+		})
+	}
+	return &data_service.ListPlayerSnapshotsResponse{
+		ErrorCode: resp.ErrorCode,
+		Snapshots: infos,
+	}, nil
+}
+
+func (s *DataServiceServer) GetPlayerSnapshotDiff(ctx context.Context, req *data_service.GetPlayerSnapshotDiffRequest) (*data_service.GetPlayerSnapshotDiffResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.GetPlayerSnapshotDiffResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.GetPlayerSnapshotDiff(ctx, s.svcCtx, &logic.SnapshotDiffReq{
+		PlayerID:   req.PlayerId,
+		SnapshotID: req.SnapshotId,
+		TargetTime: req.TargetTime,
+	})
+	if err != nil {
+		return &data_service.GetPlayerSnapshotDiffResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+
+	diffs := make([]*data_service.FieldDiff, 0, len(resp.Diffs))
+	for _, d := range resp.Diffs {
+		diffs = append(diffs, &data_service.FieldDiff{
+			Field:          d.Field,
+			SnapshotValue:  d.SnapshotValue,
+			CurrentValue:   d.CurrentValue,
+			OnlyInSnapshot: d.OnlyInSnapshot,
+			OnlyInCurrent:  d.OnlyInCurrent,
+		})
+	}
+	return &data_service.GetPlayerSnapshotDiffResponse{
+		ErrorCode:      resp.ErrorCode,
+		SnapshotIdUsed: resp.SnapshotIDUsed,
+		SnapshotTime:   resp.SnapshotTime,
+		Diffs:          diffs,
+	}, nil
+}
+
+func (s *DataServiceServer) RollbackPlayer(ctx context.Context, req *data_service.RollbackPlayerRequest) (*data_service.RollbackPlayerResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.RollbackPlayerResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.RollbackPlayer(ctx, s.svcCtx, &logic.RollbackPlayerReq{
+		PlayerID:   req.PlayerId,
+		SnapshotID: req.SnapshotId,
+		TargetTime: req.TargetTime,
+		Scope:      uint32(req.Scope),
+		Fields:     req.Fields,
+		Reason:     req.Reason,
+		Operator:   req.Operator,
+	})
+	if err != nil {
+		return &data_service.RollbackPlayerResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+	return &data_service.RollbackPlayerResponse{
+		ErrorCode:             resp.ErrorCode,
+		SnapshotIdUsed:        resp.SnapshotIDUsed,
+		PreRollbackSnapshotId: resp.PreRollbackSnapshotID,
+		FieldsRestored:        resp.FieldsRestored,
+	}, nil
+}
+
+func (s *DataServiceServer) RollbackZone(ctx context.Context, req *data_service.RollbackZoneRequest) (*data_service.RollbackZoneResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.RollbackZoneResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.RollbackZone(ctx, s.svcCtx, &logic.RollbackZoneReq{
+		ZoneID:     req.ZoneId,
+		TargetTime: req.TargetTime,
+		Reason:     req.Reason,
+		Operator:   req.Operator,
+	})
+	if err != nil {
+		return &data_service.RollbackZoneResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+	return &data_service.RollbackZoneResponse{
+		ErrorCode:       resp.ErrorCode,
+		PlayersAffected: resp.PlayersAffected,
+		PlayersFailed:   resp.PlayersFailed,
+		FailedPlayerIds: resp.FailedPlayerIDs,
+	}, nil
+}
+
+func (s *DataServiceServer) RollbackAll(ctx context.Context, req *data_service.RollbackAllRequest) (*data_service.RollbackAllResponse, error) {
+	if s.svcCtx.SnapshotStore == nil {
+		return &data_service.RollbackAllResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
+	}
+	resp, err := logic.RollbackAll(ctx, s.svcCtx, &logic.RollbackAllReq{
+		TargetTime: req.TargetTime,
+		Reason:     req.Reason,
+		Operator:   req.Operator,
+	})
+	if err != nil {
+		return &data_service.RollbackAllResponse{ErrorCode: resp.ErrorCode}, nil
+	}
+	return &data_service.RollbackAllResponse{
+		ErrorCode:       resp.ErrorCode,
+		ZonesProcessed:  resp.ZonesProcessed,
+		PlayersAffected: resp.PlayersAffected,
+		PlayersFailed:   resp.PlayersFailed,
+	}, nil
+}

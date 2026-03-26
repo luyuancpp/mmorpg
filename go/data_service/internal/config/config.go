@@ -11,6 +11,9 @@ type Config struct {
 	Regions          []RegionConfig
 	DevRedis         DevRedisConfig `json:",optional"`
 	PlayerLockTTLSec int            `json:",default=3"`
+
+	// Snapshot MySQL (for rollback persistence)
+	SnapshotMySQL SnapshotMySQLConfig `json:",optional"`
 }
 
 type DevRedisConfig struct {
@@ -28,4 +31,13 @@ type RegionConfig struct {
 type RedisClusterConfig struct {
 	Addrs    []string
 	Password string `json:",optional"`
+}
+
+type SnapshotMySQLConfig struct {
+	Host        string `json:",default=127.0.0.1:3306"`
+	User        string `json:",default=appuser"`
+	Password    string `json:",default=apppass123"`
+	DBName      string `json:",default=testdb"`
+	MaxOpenConn int    `json:",default=5"`
+	MaxIdleConn int    `json:",default=2"`
 }

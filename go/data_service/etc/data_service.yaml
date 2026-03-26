@@ -36,3 +36,12 @@ DevRedis:
 
 # Player lock TTL in seconds
 PlayerLockTTLSec: 3
+
+# Snapshot MySQL (for rollback persistence)
+SnapshotMySQL:
+  Host: "127.0.0.1:3306"
+  User: "appuser"
+  Password: "apppass123"
+  DBName: "testdb"
+  MaxOpenConn: 5
+  MaxIdleConn: 2

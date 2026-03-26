@@ -25,6 +25,7 @@
 #include "player_scene.h"
 #include "player/constants/player.h"
 #include "proto/db/db_task.pb.h"
+#include "modules/snapshot/snapshot_system.h"
 
 struct PlayerSceneEnterContext
 {
@@ -199,6 +200,9 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 
 	tlsRegistryManager.actorRegistry.emplace<UnregisterPlayer>(player);
 
+	// Capture a logout snapshot before persisting (safety net for rollback).
+	SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGOUT);
+
 	PlayerLifecycleSystem::SavePlayerToRedis(player);
 
 	// TODO: Only allow re-login after save completes
@@ -304,6 +308,9 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 
 	EnterScene(player, enterInfo);
 
+	// Capture a login snapshot for rollback safety net.
+	SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGIN);
+
 	return player;
 }
 
@@ -331,7 +338,8 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 	// Send each sub-table as a separate DBTask (matching how login reads per-table)
 	const std::string playerIdStr = std::to_string(playerId);
 
-	auto sendSubTableTask = [&](const google::protobuf::Message& subMsg) {
+	auto sendSubTableTask = [&](const google::protobuf::Message &subMsg)
+	{
 		const std::string tableName(subMsg.GetDescriptor()->full_name());
 
 		std::string bodyBytes;
@@ -347,8 +355,7 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 		dbTask.set_op("write");
 		dbTask.set_msg_type(tableName);
 		dbTask.set_body(std::move(bodyBytes));
-		dbTask.set_task_id(playerIdStr + ":" + tableName
-						   + ":" + std::to_string(TimeSystem::NowMillisecondsUTC()));
+		dbTask.set_task_id(playerIdStr + ":" + tableName + ":" + std::to_string(TimeSystem::NowMillisecondsUTC()));
 
 		std::string dbTaskBytes;
 		if (!dbTask.SerializeToString(&dbTaskBytes))
