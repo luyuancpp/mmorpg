@@ -132,6 +132,13 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
+	// 8b. Write reverse mapping: player_id → account (for rollback orphan cleanup)
+	reverseKey := constants.PlayerToAccountKey(newPlayerId)
+	if err := l.svcCtx.RedisClient.Set(l.ctx, reverseKey, account, 0).Err(); err != nil {
+		logx.Errorf("Failed to set player-to-account reverse mapping, playerId: %d, account: %s, err: %v", newPlayerId, account, err)
+		// Non-fatal: player can still play, only rollback cleanup is affected
+	}
+
 	// 9. Save FSM state (by sessionId)
 	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); err != nil {
 		logx.Errorf("Failed to save FSM state, sessionId: %s, err: %v", sessionIdStr, err)

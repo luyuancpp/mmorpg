@@ -10,6 +10,8 @@
 #include "table/code/item_table.h"
 #include "core/utils/defer/defer.h"
 #include <thread_context/snow_flake_manager.h>
+#include "modules/gain_block/gain_block_service.h"
+#include "modules/transaction_log/anomaly_detector.h"
 #include "modules/transaction_log/transaction_log_system.h"
 
 Bag::Bag()
@@ -509,6 +511,23 @@ uint32_t Bag::AddItem(const InitItemParam &initItemParam)
 		return PrintStackAndReturnError(kBagAddItemInvalidParam);
 	}
 
+	// ── Global (server-wide) block check ─────────────────────────────────────
+	if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kItem,
+										itemPBCompCopy.config_id()))
+	{
+		LOG_WARN << "Bag::AddItem: item GLOBALLY blocked. config_id="
+				 << itemPBCompCopy.config_id() << " player=" << PlayerGuid();
+		return PrintStackAndReturnError(kInvalidParameter);
+	}
+
+	// ── Per-player GM block check ────────────────────────────────────────────
+	if (IsItemBlocked(itemPBCompCopy.config_id()))
+	{
+		LOG_WARN << "Bag::AddItem: item blocked by GM. config_id="
+				 << itemPBCompCopy.config_id() << " player=" << PlayerGuid();
+		return PrintStackAndReturnError(kInvalidParameter);
+	}
+
 	FetchAndValidateItemTable(itemPBCompCopy.config_id());
 
 	if (itemTable->max_statck_size() <= 0)
@@ -527,6 +546,11 @@ uint32_t Bag::AddItem(const InitItemParam &initItemParam)
 				initItemParam.itemPBComp.config_id(),
 				initItemParam.itemPBComp.size(),
 				TX_SYSTEM_GRANT);
+
+			// ── Anomaly detection ─────────────────────────────────────────
+			AnomalyDetector::RecordItemGain(
+				entity_, initItemParam.itemPBComp.config_id(),
+				initItemParam.itemPBComp.size());
 		}
 		return result;
 	}
@@ -539,6 +563,11 @@ uint32_t Bag::AddItem(const InitItemParam &initItemParam)
 			initItemParam.itemPBComp.config_id(),
 			initItemParam.itemPBComp.size(),
 			TX_SYSTEM_GRANT);
+
+		// ── Anomaly detection ─────────────────────────────────────────
+		AnomalyDetector::RecordItemGain(
+			entity_, initItemParam.itemPBComp.config_id(),
+			initItemParam.itemPBComp.size());
 	}
 	return result;
 }
@@ -621,4 +650,27 @@ uint32_t Bag::OnNewGrid(Guid guid)
 bool Bag::CanStack(const ItemComp &litem, const ItemComp &ritem)
 {
 	return litem.config_id() == ritem.config_id();
+}
+
+// ---------------------------------------------------------------------------
+// BlockItem / UnblockItem / IsItemBlocked — GM禁止/解禁获取特定道具
+// ---------------------------------------------------------------------------
+
+void Bag::BlockItem(uint32_t configId)
+{
+	blocked_config_ids_.insert(configId);
+	LOG_INFO << "Bag: GM blocked item config_id=" << configId
+			 << " player=" << PlayerGuid();
+}
+
+void Bag::UnblockItem(uint32_t configId)
+{
+	blocked_config_ids_.erase(configId);
+	LOG_INFO << "Bag: GM unblocked item config_id=" << configId
+			 << " player=" << PlayerGuid();
+}
+
+bool Bag::IsItemBlocked(uint32_t configId) const
+{
+	return blocked_config_ids_.contains(configId);
 }

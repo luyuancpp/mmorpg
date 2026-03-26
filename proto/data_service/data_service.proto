@@ -32,6 +32,15 @@ service DataService {
   rpc RollbackPlayer(RollbackPlayerRequest) returns (RollbackPlayerResponse) {}
   rpc RollbackZone(RollbackZoneRequest) returns (RollbackZoneResponse) {}
   rpc RollbackAll(RollbackAllRequest) returns (RollbackAllResponse) {}
+
+  // ── Zone Snapshot (guild/friend consistency) ─────────────────
+  rpc CreateZoneSnapshot(CreateZoneSnapshotRequest) returns (CreateZoneSnapshotResponse) {}
+  rpc ListZoneSnapshots(ListZoneSnapshotsRequest) returns (ListZoneSnapshotsResponse) {}
+
+  // ── Batch Recall / Anomaly / Event Snapshot ──────────────────
+  rpc BatchRecallItems(BatchRecallItemsRequest) returns (BatchRecallItemsResponse) {}
+  rpc QueryTransactionLog(QueryTransactionLogRequest) returns (QueryTransactionLogResponse) {}
+  rpc CreateEventSnapshot(CreateEventSnapshotRequest) returns (CreateEventSnapshotResponse) {}
 }
 
 // ── Load / Save ────────────────────────────────────────────────
@@ -241,4 +250,127 @@ message RollbackAllResponse {
   uint32 zones_processed = 2;
   uint32 players_affected = 3;
   uint32 players_failed = 4;
+}
+
+// ── Zone Snapshot (guild/friend state for cross-service consistency) ──
+
+message CreateZoneSnapshotRequest {
+  uint32 zone_id = 1;
+  string reason = 2;
+  string operator = 3;
+}
+
+message CreateZoneSnapshotResponse {
+  uint32 error_code = 1;
+  uint64 snapshot_id = 2;
+  uint64 created_at = 3;
+}
+
+message ListZoneSnapshotsRequest {
+  uint32 zone_id = 1;
+  uint32 limit = 2;       // max results (0 = default 20)
+}
+
+message ZoneSnapshotInfo {
+  uint64 snapshot_id = 1;
+  uint32 zone_id = 2;
+  uint64 created_at = 3;
+  string reason = 4;
+  string operator = 5;
+  uint32 data_size_bytes = 6;
+}
+
+message ListZoneSnapshotsResponse {
+  uint32 error_code = 1;
+  repeated ZoneSnapshotInfo snapshots = 2;
+}
+
+// ── Batch Recall ───────────────────────────────────────────────
+
+message BatchRecallItemsRequest {
+  repeated uint64 player_ids = 1;      // target players (empty = use query filter)
+  uint32 item_config_id = 2;           // 0 = currency recall, >0 = item recall
+  uint32 currency_type = 3;            // only when item_config_id == 0
+  uint64 time_start = 4;               // transaction time range start (unix sec)
+  uint64 time_end = 5;                 // transaction time range end (unix sec)
+  repeated uint32 tx_types = 6;        // filter by TransactionType (e.g. TX_SYSTEM_GRANT)
+  string reason = 7;
+  string operator = 8;
+  bool dry_run = 9;                    // true = report only, don't modify
+}
+
+message RecallResult {
+  uint64 player_id = 1;
+  uint64 item_uuid = 2;                // 0 for currency recalls
+  uint32 item_config_id = 3;
+  uint64 amount = 4;                   // quantity or currency amount recalled
+  bool   success = 5;
+  string error_detail = 6;
+}
+
+message BatchRecallItemsResponse {
+  uint32 error_code = 1;
+  uint32 total_matched = 2;            // transactions matching the filter
+  uint32 total_recalled = 3;           // actually recalled (0 if dry_run)
+  uint32 total_failed = 4;
+  repeated RecallResult results = 5;
+}
+
+// ── Transaction Log Query ──────────────────────────────────────
+
+message QueryTransactionLogRequest {
+  uint64 player_id = 1;                // 0 = query all players
+  uint64 time_start = 2;
+  uint64 time_end = 3;
+  repeated uint32 tx_types = 4;        // empty = all types
+  uint32 item_config_id = 5;           // 0 = no item filter
+  uint32 currency_type = 6;            // 0 = no currency filter
+  uint32 limit = 7;                    // max results (default 100)
+  uint64 offset = 8;                   // pagination offset
+}
+
+message TransactionLogRow {
+  uint64 tx_id = 1;
+  uint64 timestamp = 2;
+  uint32 tx_type = 3;
+  uint64 from_player = 4;
+  uint64 to_player = 5;
+  uint64 item_uuid = 6;
+  uint32 item_config_id = 7;
+  uint32 item_quantity = 8;
+  uint32 currency_type = 9;
+  int64  currency_delta = 10;
+  uint64 balance_before = 11;
+  uint64 balance_after = 12;
+  uint64 correlation_id = 13;
+  string extra = 14;
+}
+
+message QueryTransactionLogResponse {
+  uint32 error_code = 1;
+  repeated TransactionLogRow rows = 2;
+  uint32 total_count = 3;              // total matching rows (for pagination)
+}
+
+// ── Event-Triggered Snapshot ───────────────────────────────────
+
+enum SnapshotEventType {
+  EVENT_LARGE_TRANSACTION  = 0;  // Currency/item above threshold
+  EVENT_RECHARGE           = 1;  // Real-money purchase
+  EVENT_PRE_MAINTENANCE    = 2;  // Scheduled maintenance
+  EVENT_LEVEL_UP           = 3;  // Milestone level-up
+  EVENT_FIRST_LOGIN        = 4;  // First login of the day
+}
+
+message CreateEventSnapshotRequest {
+  uint64 player_id = 1;
+  SnapshotEventType event_type = 2;
+  string event_detail = 3;             // human-readable context
+  string operator = 4;
+}
+
+message CreateEventSnapshotResponse {
+  uint32 error_code = 1;
+  uint64 snapshot_id = 2;
+  uint64 created_at = 3;
 }

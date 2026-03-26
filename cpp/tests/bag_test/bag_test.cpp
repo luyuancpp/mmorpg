@@ -4,6 +4,7 @@
 
 #include "table/code/item_table.h"
 #include "modules/bag/bag_system.h"
+#include "modules/gain_block/gain_block_service.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/bag_error_tip.pb.h"
 #include <node_config_manager.h>
@@ -533,6 +534,174 @@ TEST(BagTest, NeatenCanNotStack)
     }
     EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kStack10));
     EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kNonStack1));
+}
+
+// ---------------------------------------------------------------------------
+// BlockItem / UnblockItem tests
+// ---------------------------------------------------------------------------
+
+TEST(BagTest, BlockItemPreventsAdd)
+{
+    Bag bag;
+    bag.Unlock(kBagMaxCapacity);
+
+    // Block the non-stackable item config
+    bag.BlockItem(kNonStack1);
+    EXPECT_TRUE(bag.IsItemBlocked(kNonStack1));
+
+    // AddItem should fail for blocked config
+    EXPECT_NE(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+    EXPECT_EQ(0, bag.ItemGridSize());
+
+    // Other items unaffected
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, 1)));
+    EXPECT_EQ(1, bag.ItemGridSize());
+}
+
+TEST(BagTest, UnblockItemAllowsAdd)
+{
+    Bag bag;
+    bag.Unlock(kBagMaxCapacity);
+
+    bag.BlockItem(kNonStack1);
+    EXPECT_NE(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+
+    bag.UnblockItem(kNonStack1);
+    EXPECT_FALSE(bag.IsItemBlocked(kNonStack1));
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+    EXPECT_EQ(1, bag.ItemGridSize());
+}
+
+TEST(BagTest, BlockItemIdempotent)
+{
+    Bag bag;
+    bag.BlockItem(kNonStack1);
+    bag.BlockItem(kNonStack1); // duplicate — should not crash
+    EXPECT_TRUE(bag.IsItemBlocked(kNonStack1));
+
+    bag.UnblockItem(kNonStack1);
+    EXPECT_FALSE(bag.IsItemBlocked(kNonStack1));
+}
+
+TEST(BagTest, BlockedItemsQuery)
+{
+    Bag bag;
+    EXPECT_TRUE(bag.BlockedItems().empty());
+
+    bag.BlockItem(kNonStack1);
+    bag.BlockItem(kStack10);
+    EXPECT_EQ(2, bag.BlockedItems().size());
+    EXPECT_TRUE(bag.BlockedItems().contains(kNonStack1));
+    EXPECT_TRUE(bag.BlockedItems().contains(kStack10));
+}
+
+// ===========================================================================
+// GainBlockService — server-wide (global) block tests
+// ===========================================================================
+
+TEST(GainBlockServiceTest, GlobalItemBlockPreventsAdd)
+{
+    GainBlockService::ClearAllGlobalBlocks();
+    Bag bag;
+    bag.Unlock(kBagMaxCapacity);
+
+    // Before global block, item can be added
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+    EXPECT_EQ(1, bag.ItemGridSize());
+
+    // Global block on kStack10
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kStack10);
+    EXPECT_TRUE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, kStack10));
+
+    // AddItem should fail for globally blocked item
+    EXPECT_NE(kSuccess, bag.AddItem(MakeItem(kStack10, 1)));
+    EXPECT_EQ(1, bag.ItemGridSize()); // unchanged
+
+    // Non-blocked items still work
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack2)));
+    EXPECT_EQ(2, bag.ItemGridSize());
+
+    GainBlockService::ClearAllGlobalBlocks();
+}
+
+TEST(GainBlockServiceTest, GlobalUnblockAllowsAdd)
+{
+    GainBlockService::ClearAllGlobalBlocks();
+    Bag bag;
+    bag.Unlock(kBagMaxCapacity);
+
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kNonStack1);
+    EXPECT_NE(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+
+    GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, kNonStack1);
+    EXPECT_FALSE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, kNonStack1));
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+
+    GainBlockService::ClearAllGlobalBlocks();
+}
+
+TEST(GainBlockServiceTest, GlobalBlockIdempotent)
+{
+    GainBlockService::ClearAllGlobalBlocks();
+
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kNonStack1);
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kNonStack1);
+    EXPECT_TRUE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, kNonStack1));
+    EXPECT_EQ(1, GainBlockService::GlobalBlockedIds(GainBlockService::GainType::kItem).size());
+
+    GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, kNonStack1);
+    EXPECT_FALSE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, kNonStack1));
+
+    GainBlockService::ClearAllGlobalBlocks();
+}
+
+TEST(GainBlockServiceTest, ClearAllGlobalBlocks)
+{
+    GainBlockService::ClearAllGlobalBlocks();
+
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kNonStack1);
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kStack10);
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kCurrency, 0);
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kCurrency, 1);
+
+    EXPECT_EQ(2, GainBlockService::GlobalBlockedIds(GainBlockService::GainType::kItem).size());
+    EXPECT_EQ(2, GainBlockService::GlobalBlockedIds(GainBlockService::GainType::kCurrency).size());
+
+    GainBlockService::ClearAllGlobalBlocks();
+
+    EXPECT_TRUE(GainBlockService::GlobalBlockedIds(GainBlockService::GainType::kItem).empty());
+    EXPECT_TRUE(GainBlockService::GlobalBlockedIds(GainBlockService::GainType::kCurrency).empty());
+}
+
+TEST(GainBlockServiceTest, GlobalCurrencyBlockCheck)
+{
+    GainBlockService::ClearAllGlobalBlocks();
+
+    EXPECT_FALSE(GainBlockService::IsGainBlocked(GainBlockService::GainType::kCurrency, 0));
+
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kCurrency, 0);
+    EXPECT_TRUE(GainBlockService::IsGainBlocked(GainBlockService::GainType::kCurrency, 0));
+    EXPECT_FALSE(GainBlockService::IsGainBlocked(GainBlockService::GainType::kCurrency, 1));
+
+    GainBlockService::ClearAllGlobalBlocks();
+}
+
+TEST(GainBlockServiceTest, GlobalAndPerPlayerBlockCombo)
+{
+    GainBlockService::ClearAllGlobalBlocks();
+    Bag bag;
+    bag.Unlock(kBagMaxCapacity);
+
+    // Per-player block on kNonStack1, global block on kStack10
+    bag.BlockItem(kNonStack1);
+    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kStack10);
+
+    EXPECT_NE(kSuccess, bag.AddItem(MakeItem(kNonStack1)));       // per-player blocked
+    EXPECT_NE(kSuccess, bag.AddItem(MakeItem(kStack10, 1)));      // globally blocked
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack2)));       // neither blocked
+    EXPECT_EQ(1, bag.ItemGridSize());
+
+    GainBlockService::ClearAllGlobalBlocks();
 }
 
 int main(int argc, char** argv)

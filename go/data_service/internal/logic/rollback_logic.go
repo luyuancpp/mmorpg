@@ -163,10 +163,12 @@ type RollbackZoneReq struct {
 }
 
 type RollbackZoneResp struct {
-	ErrorCode       uint32
-	PlayersAffected uint32
-	PlayersFailed   uint32
-	FailedPlayerIDs []uint64
+	ErrorCode        uint32
+	PlayersAffected  uint32
+	PlayersFailed    uint32
+	FailedPlayerIDs  []uint64
+	OrphanPlayerIDs  []uint64 // characters created after target_time, cleaned up
+	OrphansCleaned   uint32
 }
 
 func RollbackZone(ctx context.Context, svcCtx *svc.ServiceContext, req *RollbackZoneReq) (*RollbackZoneResp, error) {
@@ -177,6 +179,13 @@ func RollbackZone(ctx context.Context, svcCtx *svc.ServiceContext, req *Rollback
 	logx.Infof("[Rollback] zone=%d target_time=%d operator=%s reason=%s",
 		req.ZoneID, req.TargetTime, req.Operator, req.Reason)
 
+	// NOTE: Guild/friend data is NOT rolled back.
+	// Player Redis blob does not contain guild_id or friend references;
+	// guild/friend state is owned by separate Go services and queried via gRPC.
+	// Any minor inconsistencies (e.g. stale guild membership) are self-healing
+	// through normal guild/friend operations.
+
+	// ── Phase 1: Rollback player data from individual snapshots ─
 	// 1. Get all players in this zone that have snapshots
 	playerIDs, err := svcCtx.SnapshotStore.GetSnapshotPlayerIDsByZone(ctx, req.ZoneID, req.TargetTime)
 	if err != nil {
@@ -189,6 +198,12 @@ func RollbackZone(ctx context.Context, svcCtx *svc.ServiceContext, req *Rollback
 	}
 
 	logx.Infof("[Rollback] zone %d: found %d players to rollback", req.ZoneID, len(playerIDs))
+
+	// Build set for fast lookup
+	snapshotPlayerSet := make(map[uint64]bool, len(playerIDs))
+	for _, pid := range playerIDs {
+		snapshotPlayerSet[pid] = true
+	}
 
 	// 2. Rollback each player
 	var affected, failed uint32
@@ -211,6 +226,11 @@ func RollbackZone(ctx context.Context, svcCtx *svc.ServiceContext, req *Rollback
 		affected++
 	}
 
+	// ── Phase 2: Clean up orphan characters ────────────────────
+	// Characters created after target_time have no snapshot.
+	// Delete their zone mapping so login doesn't route to empty data.
+	orphanIDs, orphansCleaned := cleanupOrphanCharacters(ctx, svcCtx, req.ZoneID, snapshotPlayerSet)
+
 	// 3. Audit log
 	now := uint64(time.Now().Unix())
 	_ = svcCtx.SnapshotStore.InsertAuditLog(ctx, &store.AuditLogRow{
@@ -224,13 +244,58 @@ func RollbackZone(ctx context.Context, svcCtx *svc.ServiceContext, req *Rollback
 		CreatedAt:       now,
 	})
 
-	logx.Infof("[Rollback] zone %d complete: affected=%d failed=%d", req.ZoneID, affected, failed)
+	logx.Infof("[Rollback] zone %d complete: affected=%d failed=%d orphans_cleaned=%d",
+		req.ZoneID, affected, failed, orphansCleaned)
 
 	return &RollbackZoneResp{
-		PlayersAffected: affected,
-		PlayersFailed:   failed,
-		FailedPlayerIDs: failedIDs,
+		PlayersAffected:  affected,
+		PlayersFailed:    failed,
+		FailedPlayerIDs:  failedIDs,
+		OrphanPlayerIDs:  orphanIDs,
+		OrphansCleaned:   orphansCleaned,
 	}, nil
+}
+
+// cleanupOrphanCharacters removes Redis data and zone mappings for characters
+// that were created after the rollback target time (they have no snapshot).
+// Returns the list of orphan player IDs and the count of successfully cleaned.
+// The orphan list is needed for cross-service cleanup (e.g. login account removal).
+func cleanupOrphanCharacters(ctx context.Context, svcCtx *svc.ServiceContext, zoneID uint32, snapshotPlayerSet map[uint64]bool) ([]uint64, uint32) {
+	currentPlayers, err := svcCtx.Router.GetAllPlayerIDsInZone(ctx, zoneID)
+	if err != nil {
+		logx.Errorf("[Rollback] zone %d: failed to scan current players for orphan cleanup: %v", zoneID, err)
+		return nil, 0
+	}
+
+	var orphanIDs []uint64
+	var cleaned uint32
+	for _, pid := range currentPlayers {
+		if snapshotPlayerSet[pid] {
+			continue // existed at snapshot time — not an orphan
+		}
+
+		orphanIDs = append(orphanIDs, pid)
+
+		// This player was created after the snapshot time → orphan
+		logx.Infof("[Rollback] zone %d: cleaning up orphan character %d", zoneID, pid)
+
+		// Delete player Redis data + zone mapping
+		delResp, err := DeletePlayerData(ctx, svcCtx, &DeletePlayerDataReq{
+			PlayerID:          pid,
+			DeleteZoneMapping: true,
+		})
+		if err != nil {
+			logx.Errorf("[Rollback] zone %d: failed to delete orphan %d: %v", zoneID, pid, err)
+			continue
+		}
+		logx.Infof("[Rollback] zone %d: orphan %d cleaned — keys_deleted=%d", zoneID, pid, delResp.KeysDeleted)
+		cleaned++
+	}
+
+	if cleaned > 0 {
+		logx.Infof("[Rollback] zone %d: cleaned %d orphan characters (total orphans=%d)", zoneID, cleaned, len(orphanIDs))
+	}
+	return orphanIDs, cleaned
 }
 
 // ── RollbackAll (full server) ──────────────────────────────────
