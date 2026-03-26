@@ -47,6 +47,28 @@ const (
 	idempotencyTTL       = 5 * time.Minute
 )
 
+// EnterGsType values matching proto EnterGsType enum (player_login_comp.proto).
+const (
+	EnterGsTypeNone      uint32 = 0
+	EnterGsTypeFirst     uint32 = 1
+	EnterGsTypeReplace   uint32 = 2
+	EnterGsTypeReconnect uint32 = 3
+)
+
+// DecisionToEnterGsType maps a login decision to the corresponding proto enter_gs_type value.
+func DecisionToEnterGsType(d EnterGameDecision) uint32 {
+	switch d {
+	case FirstLogin:
+		return EnterGsTypeFirst
+	case ShortReconnect:
+		return EnterGsTypeReconnect
+	case ReplaceLogin:
+		return EnterGsTypeReplace
+	default:
+		return EnterGsTypeNone
+	}
+}
+
 type OnlineSessionInput struct {
 	PlayerID       uint64
 	SessionID      uint64

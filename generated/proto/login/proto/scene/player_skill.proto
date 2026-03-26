@@ -1,7 +1,6 @@
 syntax = "proto3";
 option go_package = "login/proto/scene";
 
-
 import "proto/db/proto_option.proto";
 import "proto/common/base/tip.proto";
 import "proto/common/component/comp.proto";

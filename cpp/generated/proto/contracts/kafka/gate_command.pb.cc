@@ -40,7 +40,8 @@ inline constexpr GateCommand::Impl_::Impl_(
         session_id_{::uint64_t{0u}},
         target_node_id_{0u},
         target_gate_id_{0u},
-        event_id_{0u} {}
+        event_id_{0u},
+        enter_gs_type_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR GateCommand::GateCommand(::_pbi::ConstantInitialized)
@@ -72,7 +73,7 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_._has_bits_),
-        10, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.target_node_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.session_id_),
@@ -80,6 +81,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.target_gate_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.target_instance_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.event_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.enter_gs_type_),
         2,
         4,
         3,
@@ -87,6 +89,7 @@ const ::uint32_t
         5,
         1,
         6,
+        7,
 };
 
 static const ::_pbi::MigrationSchema
@@ -99,18 +102,19 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n(proto/contracts/kafka/gate_command.pro"
-    "to\022\017contracts.kafka\"\251\001\n\013GateCommand\022\021\n\tp"
+    "to\022\017contracts.kafka\"\300\001\n\013GateCommand\022\021\n\tp"
     "layer_id\030\002 \001(\004\022\026\n\016target_node_id\030\003 \001(\r\022\022"
     "\n\nsession_id\030\004 \001(\004\022\017\n\007payload\030\005 \001(\014\022\026\n\016t"
     "arget_gate_id\030\006 \001(\r\022\032\n\022target_instance_i"
-    "d\030\007 \001(\t\022\020\n\010event_id\030\010 \001(\rJ\004\010\001\020\002B\021Z\017contr"
-    "acts/kafkab\006proto3"
+    "d\030\007 \001(\t\022\020\n\010event_id\030\010 \001(\r\022\025\n\renter_gs_ty"
+    "pe\030\t \001(\rJ\004\010\001\020\002B\021Z\017contracts/kafkab\006proto"
+    "3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto = {
     false,
     false,
-    258,
+    281,
     descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto,
     "proto/contracts/kafka/gate_command.proto",
     &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fcommand_2eproto_once,
@@ -170,9 +174,9 @@ GateCommand::GateCommand(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, event_id_) -
+           offsetof(Impl_, enter_gs_type_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::event_id_));
+               sizeof(Impl_::enter_gs_type_));
 
   // @@protoc_insertion_point(copy_constructor:contracts.kafka.GateCommand)
 }
@@ -188,9 +192,9 @@ inline void GateCommand::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, event_id_) -
+           offsetof(Impl_, enter_gs_type_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::event_id_));
+               sizeof(Impl_::enter_gs_type_));
 }
 GateCommand::~GateCommand() {
   // @@protoc_insertion_point(destructor:contracts.kafka.GateCommand)
@@ -248,16 +252,16 @@ GateCommand::GetClassData() const {
   return GateCommand_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 7, 0, 54, 2>
+const ::_pbi::TcParseTable<3, 8, 0, 62, 2>
 GateCommand::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(GateCommand, _impl_._has_bits_),
     0, // no _extensions_
-    8, 56,  // max_field_number, fast_idx_mask
+    9, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967041,  // skipmap
+    4294966785,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    7,  // num_field_entries
+    8,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     GateCommand_class_data_.base(),
@@ -270,7 +274,9 @@ GateCommand::_table_ = {
     // uint32 event_id = 8;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.event_id_), 6>(),
      {64, 6, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.event_id_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 enter_gs_type = 9;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.enter_gs_type_), 7>(),
+     {72, 7, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.enter_gs_type_)}},
     // uint64 player_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateCommand, _impl_.player_id_), 2>(),
      {16, 2, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.player_id_)}},
@@ -313,10 +319,13 @@ GateCommand::_table_ = {
     // uint32 event_id = 8;
     {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.event_id_), _Internal::kHasBitsOffset + 6, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 enter_gs_type = 9;
+    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 7, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
-    "\33\0\0\0\0\0\22\0"
+    "\33\0\0\0\0\0\22\0\0\0\0\0\0\0\0\0"
     "contracts.kafka.GateCommand"
     "target_instance_id"
   }},
@@ -337,10 +346,10 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
       _impl_.target_instance_id_.ClearNonDefaultToEmpty();
     }
   }
-  if ((cached_has_bits & 0x0000007cu) != 0) {
+  if ((cached_has_bits & 0x000000fcu) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.event_id_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.event_id_));
+        reinterpret_cast<char*>(&_impl_.enter_gs_type_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.enter_gs_type_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -424,6 +433,15 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
     }
   }
 
+  // uint32 enter_gs_type = 9;
+  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
+    if (this_._internal_enter_gs_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          9, this_._internal_enter_gs_type(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -449,7 +467,7 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000007fu) != 0) {
+  if ((cached_has_bits & 0x000000ffu) != 0) {
     // bytes payload = 5;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_payload().empty()) {
@@ -499,6 +517,13 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
             this_._internal_event_id());
       }
     }
+    // uint32 enter_gs_type = 9;
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (this_._internal_enter_gs_type() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_enter_gs_type());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -513,7 +538,7 @@ void GateCommand::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000007fu) != 0) {
+  if ((cached_has_bits & 0x000000ffu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_payload().empty()) {
         _this->_internal_set_payload(from._internal_payload());
@@ -557,6 +582,11 @@ void GateCommand::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
         _this->_impl_.event_id_ = from._impl_.event_id_;
       }
     }
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (from._internal_enter_gs_type() != 0) {
+        _this->_impl_.enter_gs_type_ = from._impl_.enter_gs_type_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -579,8 +609,8 @@ void GateCommand::InternalSwap(GateCommand* PROTOBUF_RESTRICT PROTOBUF_NONNULL o
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.payload_, &other->_impl_.payload_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_instance_id_, &other->_impl_.target_instance_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.event_id_)
-      + sizeof(GateCommand::_impl_.event_id_)
+      PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.enter_gs_type_)
+      + sizeof(GateCommand::_impl_.enter_gs_type_)
       - PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));

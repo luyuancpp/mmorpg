@@ -23,21 +23,22 @@
 #include "core/system/redis.h"
 #include "thread_context/dispatcher_manager.h"
 #include "player_scene.h"
+#include "player/constants/player.h"
+#include "proto/db/db_task.pb.h"
 
 struct PlayerSceneEnterContext
 {
 	PlayerGameNodeEntryInfoComp enterInfo;
-	uint64_t sceneId{ 0 };
+	uint64_t sceneId{0};
 };
 
-
-void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData& message, const std::any& extra)
+void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData &message, const std::any &extra)
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
-	
+
 	if (extra.type() == typeid(PlayerSceneEnterContext))
 	{
-		const auto& context = std::any_cast<PlayerSceneEnterContext>(extra);
+		const auto &context = std::any_cast<PlayerSceneEnterContext>(extra);
 		auto player = InitPlayerFromAllData(message, context.enterInfo);
 		if (tlsRegistryManager.actorRegistry.valid(player))
 		{
@@ -46,7 +47,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 	}
 	else if (extra.type() == typeid(PlayerGameNodeEntryInfoComp))
 	{
-		const auto& enterInfo = std::any_cast<PlayerGameNodeEntryInfoComp>(extra);
+		const auto &enterInfo = std::any_cast<PlayerGameNodeEntryInfoComp>(extra);
 		InitPlayerFromAllData(message, enterInfo);
 	}
 	else
@@ -55,7 +56,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 	}
 }
 
-void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData& message)
+void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData &message)
 {
 	LOG_INFO << "HandlePlayerAsyncSaved: Saving complete for player: " << playerId;
 
@@ -80,7 +81,8 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData&
 }
 
 // CONSIDER: handle reentry into a different scene node while load is still in progress
-void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp& enterInfo){
+void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp &enterInfo)
+{
 	LOG_INFO << "EnterScene: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering scene node";
 
 	// Centre decommissioned: no longer track centre_node_id or send CentreEnterGsSucceed.
@@ -101,14 +103,14 @@ void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsT
 	}
 
 	const auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
-	auto& enterState = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(player);
+	auto &enterState = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(player);
 	enterState.set_enter_gs_type(enterGsType);
 
-	auto* sceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player);
+	auto *sceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player);
 	if (sceneEntity == nullptr || !tlsRegistryManager.sceneRegistry.valid(sceneEntity->sceneEntity))
 	{
 		LOG_WARN << "OnPlayerLogin: player has no valid scene binding yet, player=" << playerId
-			<< " enter_gs_type=" << enterGsType;
+				 << " enter_gs_type=" << enterGsType;
 		return;
 	}
 
@@ -148,7 +150,7 @@ void PlayerLifecycleSystem::RemovePlayerSession(const Guid playerId)
 
 void PlayerLifecycleSystem::RemovePlayerSession(entt::entity player)
 {
-	auto* const playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	auto *const playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "RemovePlayerSession: PlayerSessionSnapshotComp not found for player: " << entt::to_integral(player);
@@ -200,7 +202,6 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 	PlayerLifecycleSystem::SavePlayerToRedis(player);
 
 	// TODO: Only allow re-login after save completes
-
 }
 
 void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
@@ -215,7 +216,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	{
 		return;
 	}
-	
+
 	auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
 
 	PlayerAllData playerAllDataMessage;
@@ -240,9 +241,11 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	tlsRegistryManager.actorRegistry.remove<ChangeSceneInfoComp>(playerEntity);
 }
 
-void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& msg) {
+void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent &msg)
+{
 	PlayerAllData playerAllDataMessage;
-	if (!playerAllDataMessage.ParseFromString(msg.serialized_player_data())) {
+	if (!playerAllDataMessage.ParseFromString(msg.serialized_player_data()))
+	{
 		LOG_ERROR << "Parse failed for player migration data";
 		return;
 	}
@@ -254,7 +257,7 @@ void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent& 
 	SavePlayerToRedis(player);
 }
 
-entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEntryInfoComp& enterInfo)
+entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &playerAllData, const PlayerGameNodeEntryInfoComp &enterInfo)
 {
 	auto playerId = playerAllData.player_database_data().player_id();
 
@@ -321,6 +324,50 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 
 	tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
 
-	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis";
-}
+	// Set player_id on each sub-table (not set by generated marshal code)
+	message->mutable_player_database_data()->set_player_id(playerId);
+	message->mutable_player_database_1_data()->set_player_id(playerId);
 
+	// Send each sub-table as a separate DBTask (matching how login reads per-table)
+	const std::string playerIdStr = std::to_string(playerId);
+
+	auto sendSubTableTask = [&](const google::protobuf::Message& subMsg) {
+		const std::string tableName(subMsg.GetDescriptor()->full_name());
+
+		std::string bodyBytes;
+		if (!subMsg.SerializeToString(&bodyBytes))
+		{
+			LOG_ERROR << "[SavePlayerToRedis] Serialize failed: table=" << tableName
+					  << " player=" << playerId;
+			return;
+		}
+
+		taskpb::DBTask dbTask;
+		dbTask.set_key(playerId);
+		dbTask.set_op("write");
+		dbTask.set_msg_type(tableName);
+		dbTask.set_body(std::move(bodyBytes));
+		dbTask.set_task_id(playerIdStr + ":" + tableName
+						   + ":" + std::to_string(TimeSystem::NowMillisecondsUTC()));
+
+		std::string dbTaskBytes;
+		if (!dbTask.SerializeToString(&dbTaskBytes))
+		{
+			LOG_ERROR << "[SavePlayerToRedis] DBTask serialize failed: table=" << tableName
+					  << " player=" << playerId;
+			return;
+		}
+
+		auto err = KafkaProducer::Instance().send(kDbTaskTopic, dbTaskBytes, playerIdStr);
+		if (err != RdKafka::ERR_NO_ERROR)
+		{
+			LOG_ERROR << "[SavePlayerToRedis] Kafka send failed: table=" << tableName
+					  << " player=" << playerId << " err=" << RdKafka::err2str(err);
+		}
+	};
+
+	sendSubTableTask(message->player_database_data());
+	sendSubTableTask(message->player_database_1_data());
+
+	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis, DB write tasks enqueued";
+}

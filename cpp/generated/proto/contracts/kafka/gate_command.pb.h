@@ -223,6 +223,7 @@ class GateCommand final : public ::google::protobuf::Message
     kTargetNodeIdFieldNumber = 3,
     kTargetGateIdFieldNumber = 6,
     kEventIdFieldNumber = 8,
+    kEnterGsTypeFieldNumber = 9,
   };
   // bytes payload = 5;
   void clear_payload() ;
@@ -304,12 +305,22 @@ class GateCommand final : public ::google::protobuf::Message
   void _internal_set_event_id(::uint32_t value);
 
   public:
+  // uint32 enter_gs_type = 9;
+  void clear_enter_gs_type() ;
+  ::uint32_t enter_gs_type() const;
+  void set_enter_gs_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_enter_gs_type() const;
+  void _internal_set_enter_gs_type(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.GateCommand)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 7,
-                                   0, 54,
+  static const ::google::protobuf::internal::TcParseTable<3, 8,
+                                   0, 62,
                                    2>
       _table_;
 
@@ -337,6 +348,7 @@ class GateCommand final : public ::google::protobuf::Message
     ::uint32_t target_node_id_;
     ::uint32_t target_gate_id_;
     ::uint32_t event_id_;
+    ::uint32_t enter_gs_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -609,6 +621,30 @@ inline ::uint32_t GateCommand::_internal_event_id() const {
 inline void GateCommand::_internal_set_event_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.event_id_ = value;
+}
+
+// uint32 enter_gs_type = 9;
+inline void GateCommand::clear_enter_gs_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enter_gs_type_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000080u;
+}
+inline ::uint32_t GateCommand::enter_gs_type() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.GateCommand.enter_gs_type)
+  return _internal_enter_gs_type();
+}
+inline void GateCommand::set_enter_gs_type(::uint32_t value) {
+  _internal_set_enter_gs_type(value);
+  _impl_._has_bits_[0] |= 0x00000080u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.GateCommand.enter_gs_type)
+}
+inline ::uint32_t GateCommand::_internal_enter_gs_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enter_gs_type_;
+}
+inline void GateCommand::_internal_set_enter_gs_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enter_gs_type_ = value;
 }
 
 #ifdef __GNUC__

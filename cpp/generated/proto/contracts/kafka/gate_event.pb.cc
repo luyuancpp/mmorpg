@@ -151,7 +151,8 @@ inline constexpr BindSessionEvent::Impl_::Impl_(
       : _cached_size_{0},
         session_id_{::uint64_t{0u}},
         player_id_{::uint64_t{0u}},
-        session_version_{::uint64_t{0u}} {}
+        session_version_{::uint64_t{0u}},
+        enter_gs_type_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR BindSessionEvent::BindSessionEvent(::_pbi::ConstantInitialized)
@@ -221,13 +222,15 @@ const ::uint32_t
         2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.session_version_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.enter_gs_type_),
         0,
         1,
         2,
+        3,
 };
 
 static const ::_pbi::MigrationSchema
@@ -257,16 +260,16 @@ const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2e
     "LeaseExpiredEvent\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\n"
     "session_id\030\002 \001(\004\022\025\n\rscene_node_id\030\003 \001(\t\022"
     "\020\n\010scene_id\030\004 \001(\004\022\017\n\007gate_id\030\005 \001(\t\022\030\n\020ga"
-    "te_instance_id\030\006 \001(\t\"R\n\020BindSessionEvent"
+    "te_instance_id\030\006 \001(\t\"i\n\020BindSessionEvent"
     "\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022"
-    "\027\n\017session_version\030\003 \001(\004B\021Z\017contracts/ka"
-    "fkab\006proto3"
+    "\027\n\017session_version\030\003 \001(\004\022\025\n\renter_gs_typ"
+    "e\030\004 \001(\rB\021Z\017contracts/kafkab\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto = {
     false,
     false,
-    531,
+    554,
     descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
     "proto/contracts/kafka/gate_event.proto",
     &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once,
@@ -1675,9 +1678,9 @@ inline void BindSessionEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) 
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, session_id_),
            0,
-           offsetof(Impl_, session_version_) -
+           offsetof(Impl_, enter_gs_type_) -
                offsetof(Impl_, session_id_) +
-               sizeof(Impl_::session_version_));
+               sizeof(Impl_::enter_gs_type_));
 }
 BindSessionEvent::~BindSessionEvent() {
   // @@protoc_insertion_point(destructor:contracts.kafka.BindSessionEvent)
@@ -1733,16 +1736,16 @@ BindSessionEvent::GetClassData() const {
   return BindSessionEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+const ::_pbi::TcParseTable<2, 4, 0, 0, 2>
 BindSessionEvent::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
+    4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     BindSessionEvent_class_data_.base(),
@@ -1752,7 +1755,9 @@ BindSessionEvent::_table_ = {
     ::_pbi::TcParser::GetTable<::contracts::kafka::BindSessionEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 enter_gs_type = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionEvent, _impl_.enter_gs_type_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.enter_gs_type_)}},
     // uint64 session_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionEvent, _impl_.session_id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_id_)}},
@@ -1774,6 +1779,9 @@ BindSessionEvent::_table_ = {
     // uint64 session_version = 3;
     {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_version_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 enter_gs_type = 4;
+    {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -1787,10 +1795,10 @@ PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.session_version_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.session_version_));
+        reinterpret_cast<char*>(&_impl_.enter_gs_type_) -
+        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.enter_gs_type_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1838,6 +1846,15 @@ PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
     }
   }
 
+  // uint32 enter_gs_type = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_enter_gs_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          4, this_._internal_enter_gs_type(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1863,7 +1880,7 @@ PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     // uint64 session_id = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_session_id() != 0) {
@@ -1885,6 +1902,13 @@ PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
             this_._internal_session_version());
       }
     }
+    // uint32 enter_gs_type = 4;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_enter_gs_type() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_enter_gs_type());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -1899,7 +1923,7 @@ void BindSessionEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (from._internal_session_id() != 0) {
         _this->_impl_.session_id_ = from._impl_.session_id_;
@@ -1913,6 +1937,11 @@ void BindSessionEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
     if ((cached_has_bits & 0x00000004u) != 0) {
       if (from._internal_session_version() != 0) {
         _this->_impl_.session_version_ = from._impl_.session_version_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_enter_gs_type() != 0) {
+        _this->_impl_.enter_gs_type_ = from._impl_.enter_gs_type_;
       }
     }
   }
@@ -1933,8 +1962,8 @@ void BindSessionEvent::InternalSwap(BindSessionEvent* PROTOBUF_RESTRICT PROTOBUF
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_version_)
-      + sizeof(BindSessionEvent::_impl_.session_version_)
+      PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.enter_gs_type_)
+      + sizeof(BindSessionEvent::_impl_.enter_gs_type_)
       - PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_id_)>(
           reinterpret_cast<char*>(&_impl_.session_id_),
           reinterpret_cast<char*>(&other->_impl_.session_id_));

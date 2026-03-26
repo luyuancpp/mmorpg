@@ -101,6 +101,40 @@ func (c *ServiceContext) SetNodeId(nodeId int64) {
 	c.SnowFlake = node
 }
 
+// SendBindSessionToGate sends a BindSession command to the target Gate via Kafka.
+// This replaces Centre's BindSessionToGate RPC.
+func (s *ServiceContext) SendBindSessionToGate(gateID string, gateInstanceID string,
+	sessionID uint64, playerID uint64, sessionVersion uint64, enterGsType uint32) error {
+
+	eventId := uint32(game.ContractsKafkaBindSessionEventEventId)
+
+	cmd := &kafkapb.GateCommand{
+		SessionId:        sessionID,
+		PlayerId:         playerID,
+		TargetInstanceId: gateInstanceID,
+		EventId:          eventId,
+		EnterGsType:      enterGsType,
+	}
+
+	gateNodeID, err := strconv.ParseUint(gateID, 10, 32)
+	if err != nil {
+		return fmt.Errorf("parse gate id %q: %w", gateID, err)
+	}
+	cmd.TargetGateId = uint32(gateNodeID)
+
+	data, err := proto.Marshal(cmd)
+	if err != nil {
+		return fmt.Errorf("marshal gate bind session command: %w", err)
+	}
+
+	topic := fmt.Sprintf("gate-%s", gateID)
+	if err := s.KafkaClient.SendToTopic(topic, data); err != nil {
+		return fmt.Errorf("send gate bind session command to %s: %w", topic, err)
+	}
+
+	return nil
+}
+
 // KickSessionOnGate sends a KickPlayer command to the target Gate via Kafka.
 func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint64) error {
 	eventId := uint32(game.ContractsKafkaKickPlayerEventEventId)

@@ -1132,6 +1132,7 @@ class BindSessionEvent final : public ::google::protobuf::Message
     kSessionIdFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
     kSessionVersionFieldNumber = 3,
+    kEnterGsTypeFieldNumber = 4,
   };
   // uint64 session_id = 1;
   void clear_session_id() ;
@@ -1163,11 +1164,21 @@ class BindSessionEvent final : public ::google::protobuf::Message
   void _internal_set_session_version(::uint64_t value);
 
   public:
+  // uint32 enter_gs_type = 4;
+  void clear_enter_gs_type() ;
+  ::uint32_t enter_gs_type() const;
+  void set_enter_gs_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_enter_gs_type() const;
+  void _internal_set_enter_gs_type(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.BindSessionEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 0,
                                    2>
       _table_;
@@ -1192,6 +1203,7 @@ class BindSessionEvent final : public ::google::protobuf::Message
     ::uint64_t session_id_;
     ::uint64_t player_id_;
     ::uint64_t session_version_;
+    ::uint32_t enter_gs_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1819,6 +1831,30 @@ inline ::uint64_t BindSessionEvent::_internal_session_version() const {
 inline void BindSessionEvent::_internal_set_session_version(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_version_ = value;
+}
+
+// uint32 enter_gs_type = 4;
+inline void BindSessionEvent::clear_enter_gs_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enter_gs_type_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t BindSessionEvent::enter_gs_type() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.BindSessionEvent.enter_gs_type)
+  return _internal_enter_gs_type();
+}
+inline void BindSessionEvent::set_enter_gs_type(::uint32_t value) {
+  _internal_set_enter_gs_type(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.BindSessionEvent.enter_gs_type)
+}
+inline ::uint32_t BindSessionEvent::_internal_enter_gs_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enter_gs_type_;
+}
+inline void BindSessionEvent::_internal_set_enter_gs_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enter_gs_type_ = value;
 }
 
 #ifdef __GNUC__

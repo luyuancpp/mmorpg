@@ -40,4 +40,5 @@ message BindSessionEvent {
   uint64 session_id = 1;
   uint64 player_id = 2;
   uint64 session_version = 3;
+  uint32 enter_gs_type = 4;  // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
 }
