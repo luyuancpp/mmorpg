@@ -165,6 +165,177 @@ void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity node
 void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+#pragma region DataServiceCreatePlayerSnapshot
+
+struct AsyncDataServiceCreatePlayerSnapshotGrpcClient {
+    uint32_t messageId{ DataServiceCreatePlayerSnapshotMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::CreatePlayerSnapshotResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::CreatePlayerSnapshotResponse>> response_reader;
+};
+
+class ::data_service::CreatePlayerSnapshotRequest;
+using AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::CreatePlayerSnapshotResponse&)>;
+extern AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType AsyncDataServiceCreatePlayerSnapshotHandler;
+
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request);
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region DataServiceListPlayerSnapshots
+
+struct AsyncDataServiceListPlayerSnapshotsGrpcClient {
+    uint32_t messageId{ DataServiceListPlayerSnapshotsMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::ListPlayerSnapshotsResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::ListPlayerSnapshotsResponse>> response_reader;
+};
+
+class ::data_service::ListPlayerSnapshotsRequest;
+using AsyncDataServiceListPlayerSnapshotsHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::ListPlayerSnapshotsResponse&)>;
+extern AsyncDataServiceListPlayerSnapshotsHandlerFunctionType AsyncDataServiceListPlayerSnapshotsHandler;
+
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request);
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region DataServiceGetPlayerSnapshotDiff
+
+struct AsyncDataServiceGetPlayerSnapshotDiffGrpcClient {
+    uint32_t messageId{ DataServiceGetPlayerSnapshotDiffMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::GetPlayerSnapshotDiffResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerSnapshotDiffResponse>> response_reader;
+};
+
+class ::data_service::GetPlayerSnapshotDiffRequest;
+using AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::GetPlayerSnapshotDiffResponse&)>;
+extern AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType AsyncDataServiceGetPlayerSnapshotDiffHandler;
+
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request);
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region DataServiceRollbackPlayer
+
+struct AsyncDataServiceRollbackPlayerGrpcClient {
+    uint32_t messageId{ DataServiceRollbackPlayerMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::RollbackPlayerResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::RollbackPlayerResponse>> response_reader;
+};
+
+class ::data_service::RollbackPlayerRequest;
+using AsyncDataServiceRollbackPlayerHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::RollbackPlayerResponse&)>;
+extern AsyncDataServiceRollbackPlayerHandlerFunctionType AsyncDataServiceRollbackPlayerHandler;
+
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request);
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region DataServiceRollbackZone
+
+struct AsyncDataServiceRollbackZoneGrpcClient {
+    uint32_t messageId{ DataServiceRollbackZoneMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::RollbackZoneResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::RollbackZoneResponse>> response_reader;
+};
+
+class ::data_service::RollbackZoneRequest;
+using AsyncDataServiceRollbackZoneHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::RollbackZoneResponse&)>;
+extern AsyncDataServiceRollbackZoneHandlerFunctionType AsyncDataServiceRollbackZoneHandler;
+
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request);
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region DataServiceRollbackAll
+
+struct AsyncDataServiceRollbackAllGrpcClient {
+    uint32_t messageId{ DataServiceRollbackAllMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::RollbackAllResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::RollbackAllResponse>> response_reader;
+};
+
+class ::data_service::RollbackAllRequest;
+using AsyncDataServiceRollbackAllHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::RollbackAllResponse&)>;
+extern AsyncDataServiceRollbackAllHandlerFunctionType AsyncDataServiceRollbackAllHandler;
+
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request);
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region DataServiceBatchRecallItems
+
+struct AsyncDataServiceBatchRecallItemsGrpcClient {
+    uint32_t messageId{ DataServiceBatchRecallItemsMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::BatchRecallItemsResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::BatchRecallItemsResponse>> response_reader;
+};
+
+class ::data_service::BatchRecallItemsRequest;
+using AsyncDataServiceBatchRecallItemsHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::BatchRecallItemsResponse&)>;
+extern AsyncDataServiceBatchRecallItemsHandlerFunctionType AsyncDataServiceBatchRecallItemsHandler;
+
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request);
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region DataServiceQueryTransactionLog
+
+struct AsyncDataServiceQueryTransactionLogGrpcClient {
+    uint32_t messageId{ DataServiceQueryTransactionLogMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::QueryTransactionLogResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::QueryTransactionLogResponse>> response_reader;
+};
+
+class ::data_service::QueryTransactionLogRequest;
+using AsyncDataServiceQueryTransactionLogHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::QueryTransactionLogResponse&)>;
+extern AsyncDataServiceQueryTransactionLogHandlerFunctionType AsyncDataServiceQueryTransactionLogHandler;
+
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request);
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region DataServiceCreateEventSnapshot
+
+struct AsyncDataServiceCreateEventSnapshotGrpcClient {
+    uint32_t messageId{ DataServiceCreateEventSnapshotMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::CreateEventSnapshotResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::CreateEventSnapshotResponse>> response_reader;
+};
+
+class ::data_service::CreateEventSnapshotRequest;
+using AsyncDataServiceCreateEventSnapshotHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::CreateEventSnapshotResponse&)>;
+extern AsyncDataServiceCreateEventSnapshotHandlerFunctionType AsyncDataServiceCreateEventSnapshotHandler;
+
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request);
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 void SetDataServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);

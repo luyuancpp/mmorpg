@@ -32,6 +32,7 @@ type AuditLogRow struct {
 	TargetTime            uint64
 	PlayersAffected       uint32
 	PlayersFailed         uint32
+	OrphansCleaned        uint32
 	Reason                string
 	Operator              string
 	CreatedAt             uint64
@@ -114,6 +115,7 @@ func (s *SnapshotStore) ensureTables() error {
 			target_time BIGINT UNSIGNED NOT NULL DEFAULT 0,
 			players_affected INT UNSIGNED NOT NULL DEFAULT 0,
 			players_failed INT UNSIGNED NOT NULL DEFAULT 0,
+			orphans_cleaned INT UNSIGNED NOT NULL DEFAULT 0,
 			reason VARCHAR(512) NOT NULL DEFAULT '',
 			operator VARCHAR(128) NOT NULL DEFAULT '',
 			created_at BIGINT UNSIGNED NOT NULL
@@ -296,11 +298,11 @@ func (s *SnapshotStore) InsertAuditLog(ctx context.Context, row *AuditLogRow) er
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO rollback_audit_log
 		 (player_id, zone_id, rollback_type, snapshot_id_used, pre_rollback_snapshot_id,
-		  target_time, players_affected, players_failed, reason, operator, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		  target_time, players_affected, players_failed, orphans_cleaned, reason, operator, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		row.PlayerID, row.ZoneID, row.RollbackType, row.SnapshotIDUsed,
 		row.PreRollbackSnapshotID, row.TargetTime, row.PlayersAffected,
-		row.PlayersFailed, row.Reason, row.Operator, row.CreatedAt,
+		row.PlayersFailed, row.OrphansCleaned, row.Reason, row.Operator, row.CreatedAt,
 	)
 	return err
 }

@@ -307,6 +307,65 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
     SendClientPlayerLoginDisconnect(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
+#pragma region LoginAdminRemovePlayersFromAccounts
+boost::object_pool<AsyncLoginAdminRemovePlayersFromAccountsGrpcClient> LoginAdminRemovePlayersFromAccountsPool;
+using AsyncLoginAdminRemovePlayersFromAccountsHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::loginpb::RemovePlayersFromAccountsResponse&)>;
+AsyncLoginAdminRemovePlayersFromAccountsHandlerFunctionType AsyncLoginAdminRemovePlayersFromAccountsHandler;
+
+void AsyncCompleteGrpcLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncLoginAdminRemovePlayersFromAccountsGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncLoginAdminRemovePlayersFromAccountsHandler) {
+            AsyncLoginAdminRemovePlayersFromAccountsHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	LoginAdminRemovePlayersFromAccountsPool.destroy(call);
+}
+
+void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RemovePlayersFromAccountsRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(LoginAdminRemovePlayersFromAccountsPool.construct());
+    call->response_reader = registry
+        .get<LoginAdminStubPtr>(nodeEntity)
+        ->PrepareAsyncRemovePlayersFromAccounts(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(LoginAdminRemovePlayersFromAccountsMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RemovePlayersFromAccountsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(LoginAdminRemovePlayersFromAccountsPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<LoginAdminStubPtr>(nodeEntity)
+        ->PrepareAsyncRemovePlayersFromAccounts(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(LoginAdminRemovePlayersFromAccountsMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::loginpb::RemovePlayersFromAccountsRequest& derived = static_cast<const ::loginpb::RemovePlayersFromAccountsRequest&>(message);
+    SendLoginAdminRemovePlayersFromAccounts(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
 
 void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
@@ -330,6 +389,10 @@ void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nod
             AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
+        case LoginAdminRemovePlayersFromAccountsMessageId:
+            AsyncCompleteGrpcLoginAdminRemovePlayersFromAccounts(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
         default:
             break;
         }
@@ -342,6 +405,7 @@ void SetLoginHandler(const std::function<void(const ClientContext&, const ::goog
     AsyncClientPlayerLoginEnterGameHandler = handler;
     AsyncClientPlayerLoginLeaveGameHandler = handler;
     AsyncClientPlayerLoginDisconnectHandler = handler;
+    AsyncLoginAdminRemovePlayersFromAccountsHandler = handler;
 }
 
 void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
@@ -361,11 +425,15 @@ void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const
     if (!AsyncClientPlayerLoginDisconnectHandler) {
         AsyncClientPlayerLoginDisconnectHandler = handler;
     }
+    if (!AsyncLoginAdminRemovePlayersFromAccountsHandler) {
+        AsyncLoginAdminRemovePlayersFromAccountsHandler = handler;
+    }
 }
 
 void InitLoginGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
 
     registry.emplace<ClientPlayerLoginStubPtr>(nodeEntity, ClientPlayerLogin::NewStub(channel));
+    registry.emplace<LoginAdminStubPtr>(nodeEntity, LoginAdmin::NewStub(channel));
 
 }
 

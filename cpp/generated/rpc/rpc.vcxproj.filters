@@ -21,18 +21,6 @@
     <ClInclude Include="service_metadata\player_state_attribute_sync_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="service_metadata\centre_player_scene_service_metadata.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service_metadata\centre_player_service_metadata.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service_metadata\centre_scene_service_metadata.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="service_metadata\centre_service_service_metadata.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="service_metadata\db_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -124,6 +112,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="service_metadata\guild_service_metadata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service_metadata\player_currency_service_metadata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="service_metadata\player_rollback_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

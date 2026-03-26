@@ -31,24 +31,9 @@ message transaction_log
 }
 
 // ============================================================================
-// Player Snapshot — point-in-time full player state for rollback.
-// Isolated from live data; retention managed by a background job.
+// Player Snapshot — defined in mysql_database_table.proto (player_snapshot).
+// Do NOT duplicate here; C++ protoc compiles both files together.
 // ============================================================================
-message player_snapshot
-{
-  option(OptionTableName) = "player_snapshot";
-  option(OptionPrimaryKey) = "snapshot_id";
-  option(OptionIndex) = "player_id,snapshot_time";
-
-  uint64 snapshot_id = 1;
-  uint64 player_id = 2;
-  uint64 snapshot_time = 3;
-  uint32 trigger = 4;           // SnapshotTrigger enum
-  bytes player_database_blob = 5;
-  bytes player_database_1_blob = 6;
-  string schema_version = 7;
-  uint64 total_bytes = 8;
-}
 
 // ============================================================================
 // Player Debt — deferred-clawback (补缴) records; separate from CurrencyComp

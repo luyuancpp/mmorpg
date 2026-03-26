@@ -25,12 +25,49 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
+inline constexpr CurrencyDebtEntry::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        reason_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        gm_operator_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        owed_{::uint64_t{0u}},
+        paid_{::uint64_t{0u}},
+        currency_type_{0u},
+        frozen_{false},
+        created_at_{::uint64_t{0u}},
+        expires_at_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR CurrencyDebtEntry::CurrencyDebtEntry(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(CurrencyDebtEntry_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct CurrencyDebtEntryDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CurrencyDebtEntryDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CurrencyDebtEntryDefaultTypeInternal() {}
+  union {
+    CurrencyDebtEntry _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CurrencyDebtEntryDefaultTypeInternal _CurrencyDebtEntry_default_instance_;
+
 inline constexpr CurrencyComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : values_{},
         _values_cached_byte_size_{0},
         blocked_types_{},
         _blocked_types_cached_byte_size_{0},
+        debts_{},
         _cached_size_{0} {}
 
 template <typename>
@@ -59,42 +96,561 @@ static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULL
 const ::uint32_t
     TableStruct_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_._has_bits_),
+        11, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_.currency_type_),
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_.owed_),
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_.paid_),
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_.reason_),
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_.gm_operator_),
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_.created_at_),
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_.expires_at_),
+        PROTOBUF_FIELD_OFFSET(::CurrencyDebtEntry, _impl_.frozen_),
+        4,
+        2,
+        3,
+        0,
+        1,
+        6,
+        7,
+        5,
         0x000, // bitmap
         PROTOBUF_FIELD_OFFSET(::CurrencyComp, _impl_.values_),
         PROTOBUF_FIELD_OFFSET(::CurrencyComp, _impl_.blocked_types_),
+        PROTOBUF_FIELD_OFFSET(::CurrencyComp, _impl_.debts_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::CurrencyComp)},
+        {0, sizeof(::CurrencyDebtEntry)},
+        {19, sizeof(::CurrencyComp)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
+    &::_CurrencyDebtEntry_default_instance_._instance,
     &::_CurrencyComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n*proto/common/component/currency_comp.p"
-    "roto\"5\n\014CurrencyComp\022\016\n\006values\030\001 \003(\004\022\025\n\r"
-    "blocked_types\030\002 \003(\rB\022Z\020common/componentb"
-    "\006proto3"
+    "roto\"\243\001\n\021CurrencyDebtEntry\022\025\n\rcurrency_t"
+    "ype\030\001 \001(\r\022\014\n\004owed\030\002 \001(\004\022\014\n\004paid\030\003 \001(\004\022\016\n"
+    "\006reason\030\004 \001(\t\022\023\n\013gm_operator\030\005 \001(\t\022\022\n\ncr"
+    "eated_at\030\006 \001(\004\022\022\n\nexpires_at\030\007 \001(\004\022\016\n\006fr"
+    "ozen\030\010 \001(\010\"X\n\014CurrencyComp\022\016\n\006values\030\001 \003"
+    "(\004\022\025\n\rblocked_types\030\002 \003(\r\022!\n\005debts\030\003 \003(\013"
+    "2\022.CurrencyDebtEntryB\022Z\020common/component"
+    "b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto = {
     false,
     false,
-    127,
+    328,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto,
     "proto/common/component/currency_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto_once,
     nullptr,
     0,
-    1,
+    2,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto::offsets,
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto,
     file_level_service_descriptors_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto,
 };
+// ===================================================================
+
+class CurrencyDebtEntry::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<CurrencyDebtEntry>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_._has_bits_);
+};
+
+CurrencyDebtEntry::CurrencyDebtEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, CurrencyDebtEntry_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:CurrencyDebtEntry)
+}
+PROTOBUF_NDEBUG_INLINE CurrencyDebtEntry::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::CurrencyDebtEntry& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        reason_(arena, from.reason_),
+        gm_operator_(arena, from.gm_operator_) {}
+
+CurrencyDebtEntry::CurrencyDebtEntry(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const CurrencyDebtEntry& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, CurrencyDebtEntry_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  CurrencyDebtEntry* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, owed_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, owed_),
+           offsetof(Impl_, expires_at_) -
+               offsetof(Impl_, owed_) +
+               sizeof(Impl_::expires_at_));
+
+  // @@protoc_insertion_point(copy_constructor:CurrencyDebtEntry)
+}
+PROTOBUF_NDEBUG_INLINE CurrencyDebtEntry::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        reason_(arena),
+        gm_operator_(arena) {}
+
+inline void CurrencyDebtEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, owed_),
+           0,
+           offsetof(Impl_, expires_at_) -
+               offsetof(Impl_, owed_) +
+               sizeof(Impl_::expires_at_));
+}
+CurrencyDebtEntry::~CurrencyDebtEntry() {
+  // @@protoc_insertion_point(destructor:CurrencyDebtEntry)
+  SharedDtor(*this);
+}
+inline void CurrencyDebtEntry::SharedDtor(MessageLite& self) {
+  CurrencyDebtEntry& this_ = static_cast<CurrencyDebtEntry&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.reason_.Destroy();
+  this_._impl_.gm_operator_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL CurrencyDebtEntry::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) CurrencyDebtEntry(arena);
+}
+constexpr auto CurrencyDebtEntry::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(CurrencyDebtEntry),
+                                            alignof(CurrencyDebtEntry));
+}
+constexpr auto CurrencyDebtEntry::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_CurrencyDebtEntry_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &CurrencyDebtEntry::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CurrencyDebtEntry>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &CurrencyDebtEntry::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CurrencyDebtEntry>(), &CurrencyDebtEntry::ByteSizeLong,
+              &CurrencyDebtEntry::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_._cached_size_),
+          false,
+      },
+      &CurrencyDebtEntry::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fcomponent_2fcurrency_5fcomp_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull CurrencyDebtEntry_class_data_ =
+        CurrencyDebtEntry::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+CurrencyDebtEntry::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CurrencyDebtEntry_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CurrencyDebtEntry_class_data_.tc_table);
+  return CurrencyDebtEntry_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 8, 0, 51, 2>
+CurrencyDebtEntry::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_._has_bits_),
+    0, // no _extensions_
+    8, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967040,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    8,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    CurrencyDebtEntry_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::CurrencyDebtEntry>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bool frozen = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CurrencyDebtEntry, _impl_.frozen_), 5>(),
+     {64, 5, 0, PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.frozen_)}},
+    // uint32 currency_type = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CurrencyDebtEntry, _impl_.currency_type_), 4>(),
+     {8, 4, 0, PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.currency_type_)}},
+    // uint64 owed = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CurrencyDebtEntry, _impl_.owed_), 2>(),
+     {16, 2, 0, PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.owed_)}},
+    // uint64 paid = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CurrencyDebtEntry, _impl_.paid_), 3>(),
+     {24, 3, 0, PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.paid_)}},
+    // string reason = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 0, 0, PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.reason_)}},
+    // string gm_operator = 5;
+    {::_pbi::TcParser::FastUS1,
+     {42, 1, 0, PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.gm_operator_)}},
+    // uint64 created_at = 6;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CurrencyDebtEntry, _impl_.created_at_), 6>(),
+     {48, 6, 0, PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.created_at_)}},
+    // uint64 expires_at = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CurrencyDebtEntry, _impl_.expires_at_), 7>(),
+     {56, 7, 0, PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.expires_at_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 currency_type = 1;
+    {PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.currency_type_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint64 owed = 2;
+    {PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.owed_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 paid = 3;
+    {PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.paid_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // string reason = 4;
+    {PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.reason_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string gm_operator = 5;
+    {PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.gm_operator_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint64 created_at = 6;
+    {PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.created_at_), _Internal::kHasBitsOffset + 6, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 expires_at = 7;
+    {PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.expires_at_), _Internal::kHasBitsOffset + 7, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // bool frozen = 8;
+    {PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.frozen_), _Internal::kHasBitsOffset + 5, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+    "\21\0\0\0\6\13\0\0\0\0\0\0\0\0\0\0"
+    "CurrencyDebtEntry"
+    "reason"
+    "gm_operator"
+  }},
+};
+PROTOBUF_NOINLINE void CurrencyDebtEntry::Clear() {
+// @@protoc_insertion_point(message_clear_start:CurrencyDebtEntry)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.reason_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.gm_operator_.ClearNonDefaultToEmpty();
+    }
+  }
+  if ((cached_has_bits & 0x000000fcu) != 0) {
+    ::memset(&_impl_.owed_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.expires_at_) -
+        reinterpret_cast<char*>(&_impl_.owed_)) + sizeof(_impl_.expires_at_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL CurrencyDebtEntry::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const CurrencyDebtEntry& this_ = static_cast<const CurrencyDebtEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL CurrencyDebtEntry::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const CurrencyDebtEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:CurrencyDebtEntry)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 currency_type = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (this_._internal_currency_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          1, this_._internal_currency_type(), target);
+    }
+  }
+
+  // uint64 owed = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_owed() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_owed(), target);
+    }
+  }
+
+  // uint64 paid = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_paid() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_paid(), target);
+    }
+  }
+
+  // string reason = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_reason().empty()) {
+      const ::std::string& _s = this_._internal_reason();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "CurrencyDebtEntry.reason");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // string gm_operator = 5;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_gm_operator().empty()) {
+      const ::std::string& _s = this_._internal_gm_operator();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "CurrencyDebtEntry.gm_operator");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
+    }
+  }
+
+  // uint64 created_at = 6;
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+    if (this_._internal_created_at() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          6, this_._internal_created_at(), target);
+    }
+  }
+
+  // uint64 expires_at = 7;
+  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
+    if (this_._internal_expires_at() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          7, this_._internal_expires_at(), target);
+    }
+  }
+
+  // bool frozen = 8;
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+    if (this_._internal_frozen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          8, this_._internal_frozen(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:CurrencyDebtEntry)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t CurrencyDebtEntry::ByteSizeLong(const MessageLite& base) {
+  const CurrencyDebtEntry& this_ = static_cast<const CurrencyDebtEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t CurrencyDebtEntry::ByteSizeLong() const {
+  const CurrencyDebtEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:CurrencyDebtEntry)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x000000ffu) != 0) {
+    // string reason = 4;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_reason().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_reason());
+      }
+    }
+    // string gm_operator = 5;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_gm_operator().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_gm_operator());
+      }
+    }
+    // uint64 owed = 2;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_owed() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_owed());
+      }
+    }
+    // uint64 paid = 3;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_paid() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_paid());
+      }
+    }
+    // uint32 currency_type = 1;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_currency_type() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_currency_type());
+      }
+    }
+    // bool frozen = 8;
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (this_._internal_frozen() != 0) {
+        total_size += 2;
+      }
+    }
+    // uint64 created_at = 6;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (this_._internal_created_at() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_created_at());
+      }
+    }
+    // uint64 expires_at = 7;
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (this_._internal_expires_at() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_expires_at());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void CurrencyDebtEntry::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CurrencyDebtEntry*>(&to_msg);
+  auto& from = static_cast<const CurrencyDebtEntry&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CurrencyDebtEntry)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x000000ffu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_reason().empty()) {
+        _this->_internal_set_reason(from._internal_reason());
+      } else {
+        if (_this->_impl_.reason_.IsDefault()) {
+          _this->_internal_set_reason("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_gm_operator().empty()) {
+        _this->_internal_set_gm_operator(from._internal_gm_operator());
+      } else {
+        if (_this->_impl_.gm_operator_.IsDefault()) {
+          _this->_internal_set_gm_operator("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_owed() != 0) {
+        _this->_impl_.owed_ = from._impl_.owed_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_paid() != 0) {
+        _this->_impl_.paid_ = from._impl_.paid_;
+      }
+    }
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (from._internal_currency_type() != 0) {
+        _this->_impl_.currency_type_ = from._impl_.currency_type_;
+      }
+    }
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (from._internal_frozen() != 0) {
+        _this->_impl_.frozen_ = from._impl_.frozen_;
+      }
+    }
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (from._internal_created_at() != 0) {
+        _this->_impl_.created_at_ = from._impl_.created_at_;
+      }
+    }
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (from._internal_expires_at() != 0) {
+        _this->_impl_.expires_at_ = from._impl_.expires_at_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void CurrencyDebtEntry::CopyFrom(const CurrencyDebtEntry& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CurrencyDebtEntry)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void CurrencyDebtEntry::InternalSwap(CurrencyDebtEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.reason_, &other->_impl_.reason_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gm_operator_, &other->_impl_.gm_operator_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.expires_at_)
+      + sizeof(CurrencyDebtEntry::_impl_.expires_at_)
+      - PROTOBUF_FIELD_OFFSET(CurrencyDebtEntry, _impl_.owed_)>(
+          reinterpret_cast<char*>(&_impl_.owed_),
+          reinterpret_cast<char*>(&other->_impl_.owed_));
+}
+
+::google::protobuf::Metadata CurrencyDebtEntry::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
 // ===================================================================
 
 class CurrencyComp::_Internal {
@@ -118,6 +674,7 @@ PROTOBUF_NDEBUG_INLINE CurrencyComp::Impl_::Impl_(
         _values_cached_byte_size_{0},
         blocked_types_{visibility, arena, from.blocked_types_},
         _blocked_types_cached_byte_size_{0},
+        debts_{visibility, arena, from.debts_},
         _cached_size_{0} {}
 
 CurrencyComp::CurrencyComp(
@@ -143,6 +700,7 @@ PROTOBUF_NDEBUG_INLINE CurrencyComp::Impl_::Impl_(
         _values_cached_byte_size_{0},
         blocked_types_{visibility, arena},
         _blocked_types_cached_byte_size_{0},
+        debts_{visibility, arena},
         _cached_size_{0} {}
 
 inline void CurrencyComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
@@ -172,6 +730,10 @@ constexpr auto CurrencyComp::InternalNewImpl_() {
                   ::google::protobuf::Message::internal_visibility()),
       PROTOBUF_FIELD_OFFSET(CurrencyComp, _impl_.blocked_types_) +
           decltype(CurrencyComp::_impl_.blocked_types_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+      PROTOBUF_FIELD_OFFSET(CurrencyComp, _impl_.debts_) +
+          decltype(CurrencyComp::_impl_.debts_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
@@ -218,18 +780,18 @@ CurrencyComp::GetClassData() const {
   return CurrencyComp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+const ::_pbi::TcParseTable<2, 3, 1, 0, 2>
 CurrencyComp::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
+    3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
+    4294967288,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
+    3,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
     CurrencyComp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -237,12 +799,16 @@ CurrencyComp::_table_ = {
     ::_pbi::TcParser::GetTable<::CurrencyComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // repeated uint32 blocked_types = 2;
-    {::_pbi::TcParser::FastV32P1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(CurrencyComp, _impl_.blocked_types_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // repeated uint64 values = 1;
     {::_pbi::TcParser::FastV64P1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(CurrencyComp, _impl_.values_)}},
+    // repeated uint32 blocked_types = 2;
+    {::_pbi::TcParser::FastV32P1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(CurrencyComp, _impl_.blocked_types_)}},
+    // repeated .CurrencyDebtEntry debts = 3;
+    {::_pbi::TcParser::FastMtR1,
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(CurrencyComp, _impl_.debts_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -252,8 +818,13 @@ CurrencyComp::_table_ = {
     // repeated uint32 blocked_types = 2;
     {PROTOBUF_FIELD_OFFSET(CurrencyComp, _impl_.blocked_types_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
+    // repeated .CurrencyDebtEntry debts = 3;
+    {PROTOBUF_FIELD_OFFSET(CurrencyComp, _impl_.debts_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
-  // no aux_entries
+  {{
+      {::_pbi::TcParser::GetTable<::CurrencyDebtEntry>()},
+  }},
   {{
   }},
 };
@@ -266,6 +837,7 @@ PROTOBUF_NOINLINE void CurrencyComp::Clear() {
 
   _impl_.values_.Clear();
   _impl_.blocked_types_.Clear();
+  _impl_.debts_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -300,6 +872,17 @@ PROTOBUF_NOINLINE void CurrencyComp::Clear() {
       target = stream->WriteUInt32Packed(
           2, this_._internal_blocked_types(), byte_size, target);
     }
+  }
+
+  // repeated .CurrencyDebtEntry debts = 3;
+  for (unsigned i = 0, n = static_cast<unsigned>(
+                           this_._internal_debts_size());
+       i < n; i++) {
+    const auto& repfield = this_._internal_debts().Get(i);
+    target =
+        ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+            3, repfield, repfield.GetCachedSize(),
+            target, stream);
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -341,6 +924,13 @@ PROTOBUF_NOINLINE void CurrencyComp::Clear() {
               this_._internal_blocked_types(), 1,
               this_._impl_._blocked_types_cached_byte_size_);
     }
+    // repeated .CurrencyDebtEntry debts = 3;
+    {
+      total_size += 1UL * this_._internal_debts_size();
+      for (const auto& msg : this_._internal_debts()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -356,6 +946,8 @@ void CurrencyComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::go
 
   _this->_internal_mutable_values()->MergeFrom(from._internal_values());
   _this->_internal_mutable_blocked_types()->MergeFrom(from._internal_blocked_types());
+  _this->_internal_mutable_debts()->MergeFrom(
+      from._internal_debts());
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -372,6 +964,7 @@ void CurrencyComp::InternalSwap(CurrencyComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.values_.InternalSwap(&other->_impl_.values_);
   _impl_.blocked_types_.InternalSwap(&other->_impl_.blocked_types_);
+  _impl_.debts_.InternalSwap(&other->_impl_.debts_);
 }
 
 ::google::protobuf::Metadata CurrencyComp::GetMetadata() const {

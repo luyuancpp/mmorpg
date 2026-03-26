@@ -24,8 +24,11 @@
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
 #include "google/protobuf/generated_message_reflection.h"
+#include "google/protobuf/message.h"
+#include "google/protobuf/message_lite.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
+#include "google/protobuf/unknown_field_set.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -49,6 +52,10 @@ struct TableStruct_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto;
 }  // extern "C"
+class PlayerItemBlockComp;
+struct PlayerItemBlockCompDefaultTypeInternal;
+extern PlayerItemBlockCompDefaultTypeInternal _PlayerItemBlockComp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerItemBlockComp_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -58,6 +65,205 @@ namespace protobuf {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class PlayerItemBlockComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerItemBlockComp) */ {
+ public:
+  inline PlayerItemBlockComp() : PlayerItemBlockComp(nullptr) {}
+  ~PlayerItemBlockComp() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PlayerItemBlockComp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerItemBlockComp));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PlayerItemBlockComp(::google::protobuf::internal::ConstantInitialized);
+
+  inline PlayerItemBlockComp(const PlayerItemBlockComp& from) : PlayerItemBlockComp(nullptr, from) {}
+  inline PlayerItemBlockComp(PlayerItemBlockComp&& from) noexcept
+      : PlayerItemBlockComp(nullptr, ::std::move(from)) {}
+  inline PlayerItemBlockComp& operator=(const PlayerItemBlockComp& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PlayerItemBlockComp& operator=(PlayerItemBlockComp&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PlayerItemBlockComp& default_instance() {
+    return *reinterpret_cast<const PlayerItemBlockComp*>(
+        &_PlayerItemBlockComp_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 0;
+  friend void swap(PlayerItemBlockComp& a, PlayerItemBlockComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerItemBlockComp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PlayerItemBlockComp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PlayerItemBlockComp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerItemBlockComp>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const PlayerItemBlockComp& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const PlayerItemBlockComp& from) { PlayerItemBlockComp::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PlayerItemBlockComp* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "PlayerItemBlockComp"; }
+
+ protected:
+  explicit PlayerItemBlockComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PlayerItemBlockComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerItemBlockComp& from);
+  PlayerItemBlockComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerItemBlockComp&& from) noexcept
+      : PlayerItemBlockComp(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kBlockedItemConfigIdsFieldNumber = 1,
+  };
+  // repeated uint32 blocked_item_config_ids = 1;
+  int blocked_item_config_ids_size() const;
+  private:
+  int _internal_blocked_item_config_ids_size() const;
+
+  public:
+  void clear_blocked_item_config_ids() ;
+  ::uint32_t blocked_item_config_ids(int index) const;
+  void set_blocked_item_config_ids(int index, ::uint32_t value);
+  void add_blocked_item_config_ids(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& blocked_item_config_ids() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_blocked_item_config_ids();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_blocked_item_config_ids() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_blocked_item_config_ids();
+
+  public:
+  // @@protoc_insertion_point(class_scope:PlayerItemBlockComp)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PlayerItemBlockComp& from_msg);
+    ::google::protobuf::RepeatedField<::uint32_t> blocked_item_config_ids_;
+    ::google::protobuf::internal::CachedSize _blocked_item_config_ids_cached_byte_size_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull PlayerItemBlockComp_class_data_;
 
 // ===================================================================
 
@@ -71,6 +277,56 @@ namespace protobuf {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// PlayerItemBlockComp
+
+// repeated uint32 blocked_item_config_ids = 1;
+inline int PlayerItemBlockComp::_internal_blocked_item_config_ids_size() const {
+  return _internal_blocked_item_config_ids().size();
+}
+inline int PlayerItemBlockComp::blocked_item_config_ids_size() const {
+  return _internal_blocked_item_config_ids_size();
+}
+inline void PlayerItemBlockComp::clear_blocked_item_config_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.blocked_item_config_ids_.Clear();
+}
+inline ::uint32_t PlayerItemBlockComp::blocked_item_config_ids(int index) const {
+  // @@protoc_insertion_point(field_get:PlayerItemBlockComp.blocked_item_config_ids)
+  return _internal_blocked_item_config_ids().Get(index);
+}
+inline void PlayerItemBlockComp::set_blocked_item_config_ids(int index, ::uint32_t value) {
+  _internal_mutable_blocked_item_config_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:PlayerItemBlockComp.blocked_item_config_ids)
+}
+inline void PlayerItemBlockComp::add_blocked_item_config_ids(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_blocked_item_config_ids()->Add(value);
+  // @@protoc_insertion_point(field_add:PlayerItemBlockComp.blocked_item_config_ids)
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>& PlayerItemBlockComp::blocked_item_config_ids() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:PlayerItemBlockComp.blocked_item_config_ids)
+  return _internal_blocked_item_config_ids();
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL PlayerItemBlockComp::mutable_blocked_item_config_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:PlayerItemBlockComp.blocked_item_config_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_blocked_item_config_ids();
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>&
+PlayerItemBlockComp::_internal_blocked_item_config_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.blocked_item_config_ids_;
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
+PlayerItemBlockComp::_internal_mutable_blocked_item_config_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.blocked_item_config_ids_;
+}
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__

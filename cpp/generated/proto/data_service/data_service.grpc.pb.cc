@@ -31,6 +31,15 @@ static const char* DataService_method_names[] = {
   "/data_service.DataService/GetPlayerHomeZone",
   "/data_service.DataService/BatchGetPlayerHomeZone",
   "/data_service.DataService/DeletePlayerData",
+  "/data_service.DataService/CreatePlayerSnapshot",
+  "/data_service.DataService/ListPlayerSnapshots",
+  "/data_service.DataService/GetPlayerSnapshotDiff",
+  "/data_service.DataService/RollbackPlayer",
+  "/data_service.DataService/RollbackZone",
+  "/data_service.DataService/RollbackAll",
+  "/data_service.DataService/BatchRecallItems",
+  "/data_service.DataService/QueryTransactionLog",
+  "/data_service.DataService/CreateEventSnapshot",
 };
 
 std::unique_ptr< DataService::Stub> DataService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -48,6 +57,15 @@ DataService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channe
   , rpcmethod_GetPlayerHomeZone_(DataService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_BatchGetPlayerHomeZone_(DataService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_DeletePlayerData_(DataService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreatePlayerSnapshot_(DataService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListPlayerSnapshots_(DataService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetPlayerSnapshotDiff_(DataService_method_names[10], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackPlayer_(DataService_method_names[11], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackZone_(DataService_method_names[12], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackAll_(DataService_method_names[13], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BatchRecallItems_(DataService_method_names[14], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_QueryTransactionLog_(DataService_method_names[15], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreateEventSnapshot_(DataService_method_names[16], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status DataService::Stub::LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::data_service::LoadPlayerDataResponse* response) {
@@ -234,6 +252,213 @@ void DataService::Stub::async::DeletePlayerData(::grpc::ClientContext* context, 
   return result;
 }
 
+::grpc::Status DataService::Stub::CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::data_service::CreatePlayerSnapshotResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreatePlayerSnapshot_, context, request, response);
+}
+
+void DataService::Stub::async::CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreatePlayerSnapshot_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreatePlayerSnapshot_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::CreatePlayerSnapshotResponse>* DataService::Stub::PrepareAsyncCreatePlayerSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::CreatePlayerSnapshotResponse, ::data_service::CreatePlayerSnapshotRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CreatePlayerSnapshot_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::CreatePlayerSnapshotResponse>* DataService::Stub::AsyncCreatePlayerSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCreatePlayerSnapshotRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::data_service::ListPlayerSnapshotsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListPlayerSnapshots_, context, request, response);
+}
+
+void DataService::Stub::async::ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListPlayerSnapshots_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListPlayerSnapshots_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::ListPlayerSnapshotsResponse>* DataService::Stub::PrepareAsyncListPlayerSnapshotsRaw(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::ListPlayerSnapshotsResponse, ::data_service::ListPlayerSnapshotsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListPlayerSnapshots_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::ListPlayerSnapshotsResponse>* DataService::Stub::AsyncListPlayerSnapshotsRaw(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListPlayerSnapshotsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::data_service::GetPlayerSnapshotDiffResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetPlayerSnapshotDiff_, context, request, response);
+}
+
+void DataService::Stub::async::GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetPlayerSnapshotDiff_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetPlayerSnapshotDiff_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerSnapshotDiffResponse>* DataService::Stub::PrepareAsyncGetPlayerSnapshotDiffRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::GetPlayerSnapshotDiffResponse, ::data_service::GetPlayerSnapshotDiffRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetPlayerSnapshotDiff_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerSnapshotDiffResponse>* DataService::Stub::AsyncGetPlayerSnapshotDiffRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetPlayerSnapshotDiffRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::data_service::RollbackPlayerResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RollbackPlayer_, context, request, response);
+}
+
+void DataService::Stub::async::RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RollbackPlayer_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RollbackPlayer_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RollbackPlayerResponse>* DataService::Stub::PrepareAsyncRollbackPlayerRaw(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::RollbackPlayerResponse, ::data_service::RollbackPlayerRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RollbackPlayer_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RollbackPlayerResponse>* DataService::Stub::AsyncRollbackPlayerRaw(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRollbackPlayerRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::data_service::RollbackZoneResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RollbackZone_, context, request, response);
+}
+
+void DataService::Stub::async::RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RollbackZone_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RollbackZone_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RollbackZoneResponse>* DataService::Stub::PrepareAsyncRollbackZoneRaw(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::RollbackZoneResponse, ::data_service::RollbackZoneRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RollbackZone_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RollbackZoneResponse>* DataService::Stub::AsyncRollbackZoneRaw(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRollbackZoneRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::data_service::RollbackAllResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RollbackAll_, context, request, response);
+}
+
+void DataService::Stub::async::RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RollbackAll_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RollbackAll_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RollbackAllResponse>* DataService::Stub::PrepareAsyncRollbackAllRaw(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::RollbackAllResponse, ::data_service::RollbackAllRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RollbackAll_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RollbackAllResponse>* DataService::Stub::AsyncRollbackAllRaw(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRollbackAllRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::data_service::BatchRecallItemsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_BatchRecallItems_, context, request, response);
+}
+
+void DataService::Stub::async::BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BatchRecallItems_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BatchRecallItems_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::BatchRecallItemsResponse>* DataService::Stub::PrepareAsyncBatchRecallItemsRaw(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::BatchRecallItemsResponse, ::data_service::BatchRecallItemsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_BatchRecallItems_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::BatchRecallItemsResponse>* DataService::Stub::AsyncBatchRecallItemsRaw(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncBatchRecallItemsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::data_service::QueryTransactionLogResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_QueryTransactionLog_, context, request, response);
+}
+
+void DataService::Stub::async::QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_QueryTransactionLog_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_QueryTransactionLog_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::QueryTransactionLogResponse>* DataService::Stub::PrepareAsyncQueryTransactionLogRaw(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::QueryTransactionLogResponse, ::data_service::QueryTransactionLogRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_QueryTransactionLog_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::QueryTransactionLogResponse>* DataService::Stub::AsyncQueryTransactionLogRaw(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncQueryTransactionLogRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::data_service::CreateEventSnapshotResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreateEventSnapshot_, context, request, response);
+}
+
+void DataService::Stub::async::CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateEventSnapshot_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateEventSnapshot_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::CreateEventSnapshotResponse>* DataService::Stub::PrepareAsyncCreateEventSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::CreateEventSnapshotResponse, ::data_service::CreateEventSnapshotRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CreateEventSnapshot_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::CreateEventSnapshotResponse>* DataService::Stub::AsyncCreateEventSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCreateEventSnapshotRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 DataService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       DataService_method_names[0],
@@ -315,6 +540,96 @@ DataService::Service::Service() {
              ::data_service::DeletePlayerDataResponse* resp) {
                return service->DeletePlayerData(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[8],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::CreatePlayerSnapshotRequest* req,
+             ::data_service::CreatePlayerSnapshotResponse* resp) {
+               return service->CreatePlayerSnapshot(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[9],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::ListPlayerSnapshotsRequest* req,
+             ::data_service::ListPlayerSnapshotsResponse* resp) {
+               return service->ListPlayerSnapshots(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[10],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::GetPlayerSnapshotDiffRequest* req,
+             ::data_service::GetPlayerSnapshotDiffResponse* resp) {
+               return service->GetPlayerSnapshotDiff(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[11],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::RollbackPlayerRequest* req,
+             ::data_service::RollbackPlayerResponse* resp) {
+               return service->RollbackPlayer(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[12],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::RollbackZoneRequest* req,
+             ::data_service::RollbackZoneResponse* resp) {
+               return service->RollbackZone(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[13],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::RollbackAllRequest* req,
+             ::data_service::RollbackAllResponse* resp) {
+               return service->RollbackAll(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[14],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::BatchRecallItemsRequest* req,
+             ::data_service::BatchRecallItemsResponse* resp) {
+               return service->BatchRecallItems(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[15],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::QueryTransactionLogRequest* req,
+             ::data_service::QueryTransactionLogResponse* resp) {
+               return service->QueryTransactionLog(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[16],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::CreateEventSnapshotRequest* req,
+             ::data_service::CreateEventSnapshotResponse* resp) {
+               return service->CreateEventSnapshot(ctx, req, resp);
+             }, this)));
 }
 
 DataService::Service::~Service() {
@@ -370,6 +685,69 @@ DataService::Service::~Service() {
 }
 
 ::grpc::Status DataService::Service::DeletePlayerData(::grpc::ServerContext* context, const ::data_service::DeletePlayerDataRequest* request, ::data_service::DeletePlayerDataResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::CreatePlayerSnapshot(::grpc::ServerContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::ListPlayerSnapshots(::grpc::ServerContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::GetPlayerSnapshotDiff(::grpc::ServerContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::RollbackPlayer(::grpc::ServerContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::RollbackZone(::grpc::ServerContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::RollbackAll(::grpc::ServerContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::BatchRecallItems(::grpc::ServerContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::QueryTransactionLog(::grpc::ServerContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::CreateEventSnapshot(::grpc::ServerContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response) {
   (void) context;
   (void) request;
   (void) response;

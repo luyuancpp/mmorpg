@@ -1,3 +1,11 @@
 syntax = "proto3";
 option go_package = "login/proto/common/component";
 
+// Player-level item acquisition block list.
+// Persisted per player — survives logout/login.
+// Runtime check: Bag::IsItemBlocked() reads from this.
+message PlayerItemBlockComp
+{
+  // Item config IDs that are blocked from acquisition.
+  repeated uint32 blocked_item_config_ids = 1;
+}

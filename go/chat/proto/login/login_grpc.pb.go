@@ -271,3 +271,111 @@ var ClientPlayerLogin_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/login/login.proto",
 }
+
+const (
+	LoginAdmin_RemovePlayersFromAccounts_FullMethodName = "/loginpb.LoginAdmin/RemovePlayersFromAccounts"
+)
+
+// LoginAdminClient is the client API for LoginAdmin service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type LoginAdminClient interface {
+	// Remove orphan characters from their accounts' SimplePlayers lists.
+	// Called by admin tools after zone rollback to clean up orphan characters.
+	// Uses player_to_account:{player_id} reverse mapping to find the owning account.
+	RemovePlayersFromAccounts(ctx context.Context, in *RemovePlayersFromAccountsRequest, opts ...grpc.CallOption) (*RemovePlayersFromAccountsResponse, error)
+}
+
+type loginAdminClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewLoginAdminClient(cc grpc.ClientConnInterface) LoginAdminClient {
+	return &loginAdminClient{cc}
+}
+
+func (c *loginAdminClient) RemovePlayersFromAccounts(ctx context.Context, in *RemovePlayersFromAccountsRequest, opts ...grpc.CallOption) (*RemovePlayersFromAccountsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemovePlayersFromAccountsResponse)
+	err := c.cc.Invoke(ctx, LoginAdmin_RemovePlayersFromAccounts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// LoginAdminServer is the server API for LoginAdmin service.
+// All implementations must embed UnimplementedLoginAdminServer
+// for forward compatibility.
+type LoginAdminServer interface {
+	// Remove orphan characters from their accounts' SimplePlayers lists.
+	// Called by admin tools after zone rollback to clean up orphan characters.
+	// Uses player_to_account:{player_id} reverse mapping to find the owning account.
+	RemovePlayersFromAccounts(context.Context, *RemovePlayersFromAccountsRequest) (*RemovePlayersFromAccountsResponse, error)
+	mustEmbedUnimplementedLoginAdminServer()
+}
+
+// UnimplementedLoginAdminServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedLoginAdminServer struct{}
+
+func (UnimplementedLoginAdminServer) RemovePlayersFromAccounts(context.Context, *RemovePlayersFromAccountsRequest) (*RemovePlayersFromAccountsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemovePlayersFromAccounts not implemented")
+}
+func (UnimplementedLoginAdminServer) mustEmbedUnimplementedLoginAdminServer() {}
+func (UnimplementedLoginAdminServer) testEmbeddedByValue()                    {}
+
+// UnsafeLoginAdminServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to LoginAdminServer will
+// result in compilation errors.
+type UnsafeLoginAdminServer interface {
+	mustEmbedUnimplementedLoginAdminServer()
+}
+
+func RegisterLoginAdminServer(s grpc.ServiceRegistrar, srv LoginAdminServer) {
+	// If the following call panics, it indicates UnimplementedLoginAdminServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&LoginAdmin_ServiceDesc, srv)
+}
+
+func _LoginAdmin_RemovePlayersFromAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemovePlayersFromAccountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginAdminServer).RemovePlayersFromAccounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginAdmin_RemovePlayersFromAccounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginAdminServer).RemovePlayersFromAccounts(ctx, req.(*RemovePlayersFromAccountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// LoginAdmin_ServiceDesc is the grpc.ServiceDesc for LoginAdmin service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var LoginAdmin_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loginpb.LoginAdmin",
+	HandlerType: (*LoginAdminServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RemovePlayersFromAccounts",
+			Handler:    _LoginAdmin_RemovePlayersFromAccounts_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/login/login.proto",
+}

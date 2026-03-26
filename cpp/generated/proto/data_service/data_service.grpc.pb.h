@@ -99,6 +99,71 @@ class DataService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::DeletePlayerDataResponse>> PrepareAsyncDeletePlayerData(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::DeletePlayerDataResponse>>(PrepareAsyncDeletePlayerDataRaw(context, request, cq));
     }
+    // ── Snapshot / Rollback ──────────────────────────────────────
+    virtual ::grpc::Status CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::data_service::CreatePlayerSnapshotResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreatePlayerSnapshotResponse>> AsyncCreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreatePlayerSnapshotResponse>>(AsyncCreatePlayerSnapshotRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreatePlayerSnapshotResponse>> PrepareAsyncCreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreatePlayerSnapshotResponse>>(PrepareAsyncCreatePlayerSnapshotRaw(context, request, cq));
+    }
+    virtual ::grpc::Status ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::data_service::ListPlayerSnapshotsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::ListPlayerSnapshotsResponse>> AsyncListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::ListPlayerSnapshotsResponse>>(AsyncListPlayerSnapshotsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::ListPlayerSnapshotsResponse>> PrepareAsyncListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::ListPlayerSnapshotsResponse>>(PrepareAsyncListPlayerSnapshotsRaw(context, request, cq));
+    }
+    virtual ::grpc::Status GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::data_service::GetPlayerSnapshotDiffResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerSnapshotDiffResponse>> AsyncGetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerSnapshotDiffResponse>>(AsyncGetPlayerSnapshotDiffRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerSnapshotDiffResponse>> PrepareAsyncGetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerSnapshotDiffResponse>>(PrepareAsyncGetPlayerSnapshotDiffRaw(context, request, cq));
+    }
+    virtual ::grpc::Status RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::data_service::RollbackPlayerResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackPlayerResponse>> AsyncRollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackPlayerResponse>>(AsyncRollbackPlayerRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackPlayerResponse>> PrepareAsyncRollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackPlayerResponse>>(PrepareAsyncRollbackPlayerRaw(context, request, cq));
+    }
+    virtual ::grpc::Status RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::data_service::RollbackZoneResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackZoneResponse>> AsyncRollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackZoneResponse>>(AsyncRollbackZoneRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackZoneResponse>> PrepareAsyncRollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackZoneResponse>>(PrepareAsyncRollbackZoneRaw(context, request, cq));
+    }
+    virtual ::grpc::Status RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::data_service::RollbackAllResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackAllResponse>> AsyncRollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackAllResponse>>(AsyncRollbackAllRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackAllResponse>> PrepareAsyncRollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackAllResponse>>(PrepareAsyncRollbackAllRaw(context, request, cq));
+    }
+    // ── Batch Recall / Anomaly / Event Snapshot ──────────────────
+    virtual ::grpc::Status BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::data_service::BatchRecallItemsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::BatchRecallItemsResponse>> AsyncBatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::BatchRecallItemsResponse>>(AsyncBatchRecallItemsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::BatchRecallItemsResponse>> PrepareAsyncBatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::BatchRecallItemsResponse>>(PrepareAsyncBatchRecallItemsRaw(context, request, cq));
+    }
+    virtual ::grpc::Status QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::data_service::QueryTransactionLogResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::QueryTransactionLogResponse>> AsyncQueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::QueryTransactionLogResponse>>(AsyncQueryTransactionLogRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::QueryTransactionLogResponse>> PrepareAsyncQueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::QueryTransactionLogResponse>>(PrepareAsyncQueryTransactionLogRaw(context, request, cq));
+    }
+    virtual ::grpc::Status CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::data_service::CreateEventSnapshotResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreateEventSnapshotResponse>> AsyncCreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreateEventSnapshotResponse>>(AsyncCreateEventSnapshotRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreateEventSnapshotResponse>> PrepareAsyncCreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreateEventSnapshotResponse>>(PrepareAsyncCreateEventSnapshotRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -122,6 +187,26 @@ class DataService final {
       // ── Cleanup / merge ──────────────────────────────────────────
       virtual void DeletePlayerData(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest* request, ::data_service::DeletePlayerDataResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void DeletePlayerData(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest* request, ::data_service::DeletePlayerDataResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // ── Snapshot / Rollback ──────────────────────────────────────
+      virtual void CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // ── Batch Recall / Anomaly / Event Snapshot ──────────────────
+      virtual void BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -143,6 +228,24 @@ class DataService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::BatchGetPlayerHomeZoneResponse>* PrepareAsyncBatchGetPlayerHomeZoneRaw(::grpc::ClientContext* context, const ::data_service::BatchGetPlayerHomeZoneRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::DeletePlayerDataResponse>* AsyncDeletePlayerDataRaw(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::DeletePlayerDataResponse>* PrepareAsyncDeletePlayerDataRaw(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreatePlayerSnapshotResponse>* AsyncCreatePlayerSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreatePlayerSnapshotResponse>* PrepareAsyncCreatePlayerSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::ListPlayerSnapshotsResponse>* AsyncListPlayerSnapshotsRaw(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::ListPlayerSnapshotsResponse>* PrepareAsyncListPlayerSnapshotsRaw(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerSnapshotDiffResponse>* AsyncGetPlayerSnapshotDiffRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerSnapshotDiffResponse>* PrepareAsyncGetPlayerSnapshotDiffRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackPlayerResponse>* AsyncRollbackPlayerRaw(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackPlayerResponse>* PrepareAsyncRollbackPlayerRaw(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackZoneResponse>* AsyncRollbackZoneRaw(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackZoneResponse>* PrepareAsyncRollbackZoneRaw(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackAllResponse>* AsyncRollbackAllRaw(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::RollbackAllResponse>* PrepareAsyncRollbackAllRaw(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::BatchRecallItemsResponse>* AsyncBatchRecallItemsRaw(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::BatchRecallItemsResponse>* PrepareAsyncBatchRecallItemsRaw(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::QueryTransactionLogResponse>* AsyncQueryTransactionLogRaw(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::QueryTransactionLogResponse>* PrepareAsyncQueryTransactionLogRaw(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreateEventSnapshotResponse>* AsyncCreateEventSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::CreateEventSnapshotResponse>* PrepareAsyncCreateEventSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -203,6 +306,69 @@ class DataService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::DeletePlayerDataResponse>> PrepareAsyncDeletePlayerData(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::DeletePlayerDataResponse>>(PrepareAsyncDeletePlayerDataRaw(context, request, cq));
     }
+    ::grpc::Status CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::data_service::CreatePlayerSnapshotResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CreatePlayerSnapshotResponse>> AsyncCreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CreatePlayerSnapshotResponse>>(AsyncCreatePlayerSnapshotRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CreatePlayerSnapshotResponse>> PrepareAsyncCreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CreatePlayerSnapshotResponse>>(PrepareAsyncCreatePlayerSnapshotRaw(context, request, cq));
+    }
+    ::grpc::Status ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::data_service::ListPlayerSnapshotsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::ListPlayerSnapshotsResponse>> AsyncListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::ListPlayerSnapshotsResponse>>(AsyncListPlayerSnapshotsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::ListPlayerSnapshotsResponse>> PrepareAsyncListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::ListPlayerSnapshotsResponse>>(PrepareAsyncListPlayerSnapshotsRaw(context, request, cq));
+    }
+    ::grpc::Status GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::data_service::GetPlayerSnapshotDiffResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerSnapshotDiffResponse>> AsyncGetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerSnapshotDiffResponse>>(AsyncGetPlayerSnapshotDiffRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerSnapshotDiffResponse>> PrepareAsyncGetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerSnapshotDiffResponse>>(PrepareAsyncGetPlayerSnapshotDiffRaw(context, request, cq));
+    }
+    ::grpc::Status RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::data_service::RollbackPlayerResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackPlayerResponse>> AsyncRollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackPlayerResponse>>(AsyncRollbackPlayerRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackPlayerResponse>> PrepareAsyncRollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackPlayerResponse>>(PrepareAsyncRollbackPlayerRaw(context, request, cq));
+    }
+    ::grpc::Status RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::data_service::RollbackZoneResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackZoneResponse>> AsyncRollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackZoneResponse>>(AsyncRollbackZoneRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackZoneResponse>> PrepareAsyncRollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackZoneResponse>>(PrepareAsyncRollbackZoneRaw(context, request, cq));
+    }
+    ::grpc::Status RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::data_service::RollbackAllResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackAllResponse>> AsyncRollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackAllResponse>>(AsyncRollbackAllRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackAllResponse>> PrepareAsyncRollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::RollbackAllResponse>>(PrepareAsyncRollbackAllRaw(context, request, cq));
+    }
+    ::grpc::Status BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::data_service::BatchRecallItemsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::BatchRecallItemsResponse>> AsyncBatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::BatchRecallItemsResponse>>(AsyncBatchRecallItemsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::BatchRecallItemsResponse>> PrepareAsyncBatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::BatchRecallItemsResponse>>(PrepareAsyncBatchRecallItemsRaw(context, request, cq));
+    }
+    ::grpc::Status QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::data_service::QueryTransactionLogResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::QueryTransactionLogResponse>> AsyncQueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::QueryTransactionLogResponse>>(AsyncQueryTransactionLogRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::QueryTransactionLogResponse>> PrepareAsyncQueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::QueryTransactionLogResponse>>(PrepareAsyncQueryTransactionLogRaw(context, request, cq));
+    }
+    ::grpc::Status CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::data_service::CreateEventSnapshotResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CreateEventSnapshotResponse>> AsyncCreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CreateEventSnapshotResponse>>(AsyncCreateEventSnapshotRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CreateEventSnapshotResponse>> PrepareAsyncCreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::CreateEventSnapshotResponse>>(PrepareAsyncCreateEventSnapshotRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -222,6 +388,24 @@ class DataService final {
       void BatchGetPlayerHomeZone(::grpc::ClientContext* context, const ::data_service::BatchGetPlayerHomeZoneRequest* request, ::data_service::BatchGetPlayerHomeZoneResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void DeletePlayerData(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest* request, ::data_service::DeletePlayerDataResponse* response, std::function<void(::grpc::Status)>) override;
       void DeletePlayerData(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest* request, ::data_service::DeletePlayerDataResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response, std::function<void(::grpc::Status)>) override;
+      void CreatePlayerSnapshot(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response, std::function<void(::grpc::Status)>) override;
+      void ListPlayerSnapshots(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetPlayerSnapshotDiff(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response, std::function<void(::grpc::Status)>) override;
+      void RollbackPlayer(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response, std::function<void(::grpc::Status)>) override;
+      void RollbackZone(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response, std::function<void(::grpc::Status)>) override;
+      void RollbackAll(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response, std::function<void(::grpc::Status)>) override;
+      void BatchRecallItems(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response, std::function<void(::grpc::Status)>) override;
+      void QueryTransactionLog(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response, std::function<void(::grpc::Status)>) override;
+      void CreateEventSnapshot(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -249,6 +433,24 @@ class DataService final {
     ::grpc::ClientAsyncResponseReader< ::data_service::BatchGetPlayerHomeZoneResponse>* PrepareAsyncBatchGetPlayerHomeZoneRaw(::grpc::ClientContext* context, const ::data_service::BatchGetPlayerHomeZoneRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::DeletePlayerDataResponse>* AsyncDeletePlayerDataRaw(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::DeletePlayerDataResponse>* PrepareAsyncDeletePlayerDataRaw(::grpc::ClientContext* context, const ::data_service::DeletePlayerDataRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::CreatePlayerSnapshotResponse>* AsyncCreatePlayerSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::CreatePlayerSnapshotResponse>* PrepareAsyncCreatePlayerSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreatePlayerSnapshotRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::ListPlayerSnapshotsResponse>* AsyncListPlayerSnapshotsRaw(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::ListPlayerSnapshotsResponse>* PrepareAsyncListPlayerSnapshotsRaw(::grpc::ClientContext* context, const ::data_service::ListPlayerSnapshotsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerSnapshotDiffResponse>* AsyncGetPlayerSnapshotDiffRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerSnapshotDiffResponse>* PrepareAsyncGetPlayerSnapshotDiffRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerSnapshotDiffRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::RollbackPlayerResponse>* AsyncRollbackPlayerRaw(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::RollbackPlayerResponse>* PrepareAsyncRollbackPlayerRaw(::grpc::ClientContext* context, const ::data_service::RollbackPlayerRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::RollbackZoneResponse>* AsyncRollbackZoneRaw(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::RollbackZoneResponse>* PrepareAsyncRollbackZoneRaw(::grpc::ClientContext* context, const ::data_service::RollbackZoneRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::RollbackAllResponse>* AsyncRollbackAllRaw(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::RollbackAllResponse>* PrepareAsyncRollbackAllRaw(::grpc::ClientContext* context, const ::data_service::RollbackAllRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::BatchRecallItemsResponse>* AsyncBatchRecallItemsRaw(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::BatchRecallItemsResponse>* PrepareAsyncBatchRecallItemsRaw(::grpc::ClientContext* context, const ::data_service::BatchRecallItemsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::QueryTransactionLogResponse>* AsyncQueryTransactionLogRaw(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::QueryTransactionLogResponse>* PrepareAsyncQueryTransactionLogRaw(::grpc::ClientContext* context, const ::data_service::QueryTransactionLogRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::CreateEventSnapshotResponse>* AsyncCreateEventSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::CreateEventSnapshotResponse>* PrepareAsyncCreateEventSnapshotRaw(::grpc::ClientContext* context, const ::data_service::CreateEventSnapshotRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_LoadPlayerData_;
     const ::grpc::internal::RpcMethod rpcmethod_SavePlayerData_;
     const ::grpc::internal::RpcMethod rpcmethod_GetPlayerField_;
@@ -257,6 +459,15 @@ class DataService final {
     const ::grpc::internal::RpcMethod rpcmethod_GetPlayerHomeZone_;
     const ::grpc::internal::RpcMethod rpcmethod_BatchGetPlayerHomeZone_;
     const ::grpc::internal::RpcMethod rpcmethod_DeletePlayerData_;
+    const ::grpc::internal::RpcMethod rpcmethod_CreatePlayerSnapshot_;
+    const ::grpc::internal::RpcMethod rpcmethod_ListPlayerSnapshots_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetPlayerSnapshotDiff_;
+    const ::grpc::internal::RpcMethod rpcmethod_RollbackPlayer_;
+    const ::grpc::internal::RpcMethod rpcmethod_RollbackZone_;
+    const ::grpc::internal::RpcMethod rpcmethod_RollbackAll_;
+    const ::grpc::internal::RpcMethod rpcmethod_BatchRecallItems_;
+    const ::grpc::internal::RpcMethod rpcmethod_QueryTransactionLog_;
+    const ::grpc::internal::RpcMethod rpcmethod_CreateEventSnapshot_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -276,6 +487,17 @@ class DataService final {
     virtual ::grpc::Status BatchGetPlayerHomeZone(::grpc::ServerContext* context, const ::data_service::BatchGetPlayerHomeZoneRequest* request, ::data_service::BatchGetPlayerHomeZoneResponse* response);
     // ── Cleanup / merge ──────────────────────────────────────────
     virtual ::grpc::Status DeletePlayerData(::grpc::ServerContext* context, const ::data_service::DeletePlayerDataRequest* request, ::data_service::DeletePlayerDataResponse* response);
+    // ── Snapshot / Rollback ──────────────────────────────────────
+    virtual ::grpc::Status CreatePlayerSnapshot(::grpc::ServerContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response);
+    virtual ::grpc::Status ListPlayerSnapshots(::grpc::ServerContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response);
+    virtual ::grpc::Status GetPlayerSnapshotDiff(::grpc::ServerContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response);
+    virtual ::grpc::Status RollbackPlayer(::grpc::ServerContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response);
+    virtual ::grpc::Status RollbackZone(::grpc::ServerContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response);
+    virtual ::grpc::Status RollbackAll(::grpc::ServerContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response);
+    // ── Batch Recall / Anomaly / Event Snapshot ──────────────────
+    virtual ::grpc::Status BatchRecallItems(::grpc::ServerContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response);
+    virtual ::grpc::Status QueryTransactionLog(::grpc::ServerContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response);
+    virtual ::grpc::Status CreateEventSnapshot(::grpc::ServerContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_LoadPlayerData : public BaseClass {
@@ -437,7 +659,187 @@ class DataService final {
       ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_LoadPlayerData<WithAsyncMethod_SavePlayerData<WithAsyncMethod_GetPlayerField<WithAsyncMethod_SetPlayerField<WithAsyncMethod_RegisterPlayerZone<WithAsyncMethod_GetPlayerHomeZone<WithAsyncMethod_BatchGetPlayerHomeZone<WithAsyncMethod_DeletePlayerData<Service > > > > > > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_CreatePlayerSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CreatePlayerSnapshot() {
+      ::grpc::Service::MarkMethodAsync(8);
+    }
+    ~WithAsyncMethod_CreatePlayerSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreatePlayerSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreatePlayerSnapshotRequest* /*request*/, ::data_service::CreatePlayerSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreatePlayerSnapshot(::grpc::ServerContext* context, ::data_service::CreatePlayerSnapshotRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::CreatePlayerSnapshotResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_ListPlayerSnapshots : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ListPlayerSnapshots() {
+      ::grpc::Service::MarkMethodAsync(9);
+    }
+    ~WithAsyncMethod_ListPlayerSnapshots() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListPlayerSnapshots(::grpc::ServerContext* /*context*/, const ::data_service::ListPlayerSnapshotsRequest* /*request*/, ::data_service::ListPlayerSnapshotsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestListPlayerSnapshots(::grpc::ServerContext* context, ::data_service::ListPlayerSnapshotsRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::ListPlayerSnapshotsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_GetPlayerSnapshotDiff : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetPlayerSnapshotDiff() {
+      ::grpc::Service::MarkMethodAsync(10);
+    }
+    ~WithAsyncMethod_GetPlayerSnapshotDiff() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerSnapshotDiff(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerSnapshotDiffRequest* /*request*/, ::data_service::GetPlayerSnapshotDiffResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetPlayerSnapshotDiff(::grpc::ServerContext* context, ::data_service::GetPlayerSnapshotDiffRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::GetPlayerSnapshotDiffResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_RollbackPlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RollbackPlayer() {
+      ::grpc::Service::MarkMethodAsync(11);
+    }
+    ~WithAsyncMethod_RollbackPlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackPlayer(::grpc::ServerContext* /*context*/, const ::data_service::RollbackPlayerRequest* /*request*/, ::data_service::RollbackPlayerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRollbackPlayer(::grpc::ServerContext* context, ::data_service::RollbackPlayerRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::RollbackPlayerResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_RollbackZone : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RollbackZone() {
+      ::grpc::Service::MarkMethodAsync(12);
+    }
+    ~WithAsyncMethod_RollbackZone() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackZone(::grpc::ServerContext* /*context*/, const ::data_service::RollbackZoneRequest* /*request*/, ::data_service::RollbackZoneResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRollbackZone(::grpc::ServerContext* context, ::data_service::RollbackZoneRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::RollbackZoneResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(12, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_RollbackAll : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RollbackAll() {
+      ::grpc::Service::MarkMethodAsync(13);
+    }
+    ~WithAsyncMethod_RollbackAll() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackAll(::grpc::ServerContext* /*context*/, const ::data_service::RollbackAllRequest* /*request*/, ::data_service::RollbackAllResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRollbackAll(::grpc::ServerContext* context, ::data_service::RollbackAllRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::RollbackAllResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(13, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_BatchRecallItems : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_BatchRecallItems() {
+      ::grpc::Service::MarkMethodAsync(14);
+    }
+    ~WithAsyncMethod_BatchRecallItems() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BatchRecallItems(::grpc::ServerContext* /*context*/, const ::data_service::BatchRecallItemsRequest* /*request*/, ::data_service::BatchRecallItemsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestBatchRecallItems(::grpc::ServerContext* context, ::data_service::BatchRecallItemsRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::BatchRecallItemsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(14, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_QueryTransactionLog : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_QueryTransactionLog() {
+      ::grpc::Service::MarkMethodAsync(15);
+    }
+    ~WithAsyncMethod_QueryTransactionLog() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryTransactionLog(::grpc::ServerContext* /*context*/, const ::data_service::QueryTransactionLogRequest* /*request*/, ::data_service::QueryTransactionLogResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestQueryTransactionLog(::grpc::ServerContext* context, ::data_service::QueryTransactionLogRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::QueryTransactionLogResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(15, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_CreateEventSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_CreateEventSnapshot() {
+      ::grpc::Service::MarkMethodAsync(16);
+    }
+    ~WithAsyncMethod_CreateEventSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateEventSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreateEventSnapshotRequest* /*request*/, ::data_service::CreateEventSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreateEventSnapshot(::grpc::ServerContext* context, ::data_service::CreateEventSnapshotRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::CreateEventSnapshotResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(16, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_LoadPlayerData<WithAsyncMethod_SavePlayerData<WithAsyncMethod_GetPlayerField<WithAsyncMethod_SetPlayerField<WithAsyncMethod_RegisterPlayerZone<WithAsyncMethod_GetPlayerHomeZone<WithAsyncMethod_BatchGetPlayerHomeZone<WithAsyncMethod_DeletePlayerData<WithAsyncMethod_CreatePlayerSnapshot<WithAsyncMethod_ListPlayerSnapshots<WithAsyncMethod_GetPlayerSnapshotDiff<WithAsyncMethod_RollbackPlayer<WithAsyncMethod_RollbackZone<WithAsyncMethod_RollbackAll<WithAsyncMethod_BatchRecallItems<WithAsyncMethod_QueryTransactionLog<WithAsyncMethod_CreateEventSnapshot<Service > > > > > > > > > > > > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_LoadPlayerData : public BaseClass {
    private:
@@ -654,7 +1056,250 @@ class DataService final {
     virtual ::grpc::ServerUnaryReactor* DeletePlayerData(
       ::grpc::CallbackServerContext* /*context*/, const ::data_service::DeletePlayerDataRequest* /*request*/, ::data_service::DeletePlayerDataResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_LoadPlayerData<WithCallbackMethod_SavePlayerData<WithCallbackMethod_GetPlayerField<WithCallbackMethod_SetPlayerField<WithCallbackMethod_RegisterPlayerZone<WithCallbackMethod_GetPlayerHomeZone<WithCallbackMethod_BatchGetPlayerHomeZone<WithCallbackMethod_DeletePlayerData<Service > > > > > > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_CreatePlayerSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CreatePlayerSnapshot() {
+      ::grpc::Service::MarkMethodCallback(8,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::CreatePlayerSnapshotRequest* request, ::data_service::CreatePlayerSnapshotResponse* response) { return this->CreatePlayerSnapshot(context, request, response); }));}
+    void SetMessageAllocatorFor_CreatePlayerSnapshot(
+        ::grpc::MessageAllocator< ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CreatePlayerSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreatePlayerSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreatePlayerSnapshotRequest* /*request*/, ::data_service::CreatePlayerSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreatePlayerSnapshot(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::CreatePlayerSnapshotRequest* /*request*/, ::data_service::CreatePlayerSnapshotResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_ListPlayerSnapshots : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ListPlayerSnapshots() {
+      ::grpc::Service::MarkMethodCallback(9,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::ListPlayerSnapshotsRequest* request, ::data_service::ListPlayerSnapshotsResponse* response) { return this->ListPlayerSnapshots(context, request, response); }));}
+    void SetMessageAllocatorFor_ListPlayerSnapshots(
+        ::grpc::MessageAllocator< ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(9);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ListPlayerSnapshots() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListPlayerSnapshots(::grpc::ServerContext* /*context*/, const ::data_service::ListPlayerSnapshotsRequest* /*request*/, ::data_service::ListPlayerSnapshotsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ListPlayerSnapshots(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::ListPlayerSnapshotsRequest* /*request*/, ::data_service::ListPlayerSnapshotsResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_GetPlayerSnapshotDiff : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetPlayerSnapshotDiff() {
+      ::grpc::Service::MarkMethodCallback(10,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::GetPlayerSnapshotDiffRequest* request, ::data_service::GetPlayerSnapshotDiffResponse* response) { return this->GetPlayerSnapshotDiff(context, request, response); }));}
+    void SetMessageAllocatorFor_GetPlayerSnapshotDiff(
+        ::grpc::MessageAllocator< ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(10);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetPlayerSnapshotDiff() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerSnapshotDiff(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerSnapshotDiffRequest* /*request*/, ::data_service::GetPlayerSnapshotDiffResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetPlayerSnapshotDiff(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::GetPlayerSnapshotDiffRequest* /*request*/, ::data_service::GetPlayerSnapshotDiffResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_RollbackPlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RollbackPlayer() {
+      ::grpc::Service::MarkMethodCallback(11,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::RollbackPlayerRequest* request, ::data_service::RollbackPlayerResponse* response) { return this->RollbackPlayer(context, request, response); }));}
+    void SetMessageAllocatorFor_RollbackPlayer(
+        ::grpc::MessageAllocator< ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(11);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RollbackPlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackPlayer(::grpc::ServerContext* /*context*/, const ::data_service::RollbackPlayerRequest* /*request*/, ::data_service::RollbackPlayerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RollbackPlayer(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::RollbackPlayerRequest* /*request*/, ::data_service::RollbackPlayerResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_RollbackZone : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RollbackZone() {
+      ::grpc::Service::MarkMethodCallback(12,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::RollbackZoneRequest* request, ::data_service::RollbackZoneResponse* response) { return this->RollbackZone(context, request, response); }));}
+    void SetMessageAllocatorFor_RollbackZone(
+        ::grpc::MessageAllocator< ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(12);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RollbackZone() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackZone(::grpc::ServerContext* /*context*/, const ::data_service::RollbackZoneRequest* /*request*/, ::data_service::RollbackZoneResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RollbackZone(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::RollbackZoneRequest* /*request*/, ::data_service::RollbackZoneResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_RollbackAll : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RollbackAll() {
+      ::grpc::Service::MarkMethodCallback(13,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::RollbackAllRequest* request, ::data_service::RollbackAllResponse* response) { return this->RollbackAll(context, request, response); }));}
+    void SetMessageAllocatorFor_RollbackAll(
+        ::grpc::MessageAllocator< ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(13);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RollbackAll() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackAll(::grpc::ServerContext* /*context*/, const ::data_service::RollbackAllRequest* /*request*/, ::data_service::RollbackAllResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RollbackAll(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::RollbackAllRequest* /*request*/, ::data_service::RollbackAllResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_BatchRecallItems : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_BatchRecallItems() {
+      ::grpc::Service::MarkMethodCallback(14,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::BatchRecallItemsRequest* request, ::data_service::BatchRecallItemsResponse* response) { return this->BatchRecallItems(context, request, response); }));}
+    void SetMessageAllocatorFor_BatchRecallItems(
+        ::grpc::MessageAllocator< ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(14);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_BatchRecallItems() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BatchRecallItems(::grpc::ServerContext* /*context*/, const ::data_service::BatchRecallItemsRequest* /*request*/, ::data_service::BatchRecallItemsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* BatchRecallItems(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::BatchRecallItemsRequest* /*request*/, ::data_service::BatchRecallItemsResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_QueryTransactionLog : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_QueryTransactionLog() {
+      ::grpc::Service::MarkMethodCallback(15,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::QueryTransactionLogRequest* request, ::data_service::QueryTransactionLogResponse* response) { return this->QueryTransactionLog(context, request, response); }));}
+    void SetMessageAllocatorFor_QueryTransactionLog(
+        ::grpc::MessageAllocator< ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(15);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_QueryTransactionLog() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryTransactionLog(::grpc::ServerContext* /*context*/, const ::data_service::QueryTransactionLogRequest* /*request*/, ::data_service::QueryTransactionLogResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* QueryTransactionLog(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::QueryTransactionLogRequest* /*request*/, ::data_service::QueryTransactionLogResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_CreateEventSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_CreateEventSnapshot() {
+      ::grpc::Service::MarkMethodCallback(16,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::CreateEventSnapshotRequest* request, ::data_service::CreateEventSnapshotResponse* response) { return this->CreateEventSnapshot(context, request, response); }));}
+    void SetMessageAllocatorFor_CreateEventSnapshot(
+        ::grpc::MessageAllocator< ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(16);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_CreateEventSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateEventSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreateEventSnapshotRequest* /*request*/, ::data_service::CreateEventSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreateEventSnapshot(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::CreateEventSnapshotRequest* /*request*/, ::data_service::CreateEventSnapshotResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_LoadPlayerData<WithCallbackMethod_SavePlayerData<WithCallbackMethod_GetPlayerField<WithCallbackMethod_SetPlayerField<WithCallbackMethod_RegisterPlayerZone<WithCallbackMethod_GetPlayerHomeZone<WithCallbackMethod_BatchGetPlayerHomeZone<WithCallbackMethod_DeletePlayerData<WithCallbackMethod_CreatePlayerSnapshot<WithCallbackMethod_ListPlayerSnapshots<WithCallbackMethod_GetPlayerSnapshotDiff<WithCallbackMethod_RollbackPlayer<WithCallbackMethod_RollbackZone<WithCallbackMethod_RollbackAll<WithCallbackMethod_BatchRecallItems<WithCallbackMethod_QueryTransactionLog<WithCallbackMethod_CreateEventSnapshot<Service > > > > > > > > > > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_LoadPlayerData : public BaseClass {
@@ -788,6 +1433,159 @@ class DataService final {
     }
     // disable synchronous version of this method
     ::grpc::Status DeletePlayerData(::grpc::ServerContext* /*context*/, const ::data_service::DeletePlayerDataRequest* /*request*/, ::data_service::DeletePlayerDataResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CreatePlayerSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CreatePlayerSnapshot() {
+      ::grpc::Service::MarkMethodGeneric(8);
+    }
+    ~WithGenericMethod_CreatePlayerSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreatePlayerSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreatePlayerSnapshotRequest* /*request*/, ::data_service::CreatePlayerSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ListPlayerSnapshots : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ListPlayerSnapshots() {
+      ::grpc::Service::MarkMethodGeneric(9);
+    }
+    ~WithGenericMethod_ListPlayerSnapshots() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListPlayerSnapshots(::grpc::ServerContext* /*context*/, const ::data_service::ListPlayerSnapshotsRequest* /*request*/, ::data_service::ListPlayerSnapshotsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetPlayerSnapshotDiff : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetPlayerSnapshotDiff() {
+      ::grpc::Service::MarkMethodGeneric(10);
+    }
+    ~WithGenericMethod_GetPlayerSnapshotDiff() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerSnapshotDiff(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerSnapshotDiffRequest* /*request*/, ::data_service::GetPlayerSnapshotDiffResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_RollbackPlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RollbackPlayer() {
+      ::grpc::Service::MarkMethodGeneric(11);
+    }
+    ~WithGenericMethod_RollbackPlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackPlayer(::grpc::ServerContext* /*context*/, const ::data_service::RollbackPlayerRequest* /*request*/, ::data_service::RollbackPlayerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_RollbackZone : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RollbackZone() {
+      ::grpc::Service::MarkMethodGeneric(12);
+    }
+    ~WithGenericMethod_RollbackZone() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackZone(::grpc::ServerContext* /*context*/, const ::data_service::RollbackZoneRequest* /*request*/, ::data_service::RollbackZoneResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_RollbackAll : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RollbackAll() {
+      ::grpc::Service::MarkMethodGeneric(13);
+    }
+    ~WithGenericMethod_RollbackAll() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackAll(::grpc::ServerContext* /*context*/, const ::data_service::RollbackAllRequest* /*request*/, ::data_service::RollbackAllResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_BatchRecallItems : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_BatchRecallItems() {
+      ::grpc::Service::MarkMethodGeneric(14);
+    }
+    ~WithGenericMethod_BatchRecallItems() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BatchRecallItems(::grpc::ServerContext* /*context*/, const ::data_service::BatchRecallItemsRequest* /*request*/, ::data_service::BatchRecallItemsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_QueryTransactionLog : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_QueryTransactionLog() {
+      ::grpc::Service::MarkMethodGeneric(15);
+    }
+    ~WithGenericMethod_QueryTransactionLog() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryTransactionLog(::grpc::ServerContext* /*context*/, const ::data_service::QueryTransactionLogRequest* /*request*/, ::data_service::QueryTransactionLogResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_CreateEventSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_CreateEventSnapshot() {
+      ::grpc::Service::MarkMethodGeneric(16);
+    }
+    ~WithGenericMethod_CreateEventSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateEventSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreateEventSnapshotRequest* /*request*/, ::data_service::CreateEventSnapshotResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -950,6 +1748,186 @@ class DataService final {
     }
     void RequestDeletePlayerData(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CreatePlayerSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CreatePlayerSnapshot() {
+      ::grpc::Service::MarkMethodRaw(8);
+    }
+    ~WithRawMethod_CreatePlayerSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreatePlayerSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreatePlayerSnapshotRequest* /*request*/, ::data_service::CreatePlayerSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreatePlayerSnapshot(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_ListPlayerSnapshots : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ListPlayerSnapshots() {
+      ::grpc::Service::MarkMethodRaw(9);
+    }
+    ~WithRawMethod_ListPlayerSnapshots() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListPlayerSnapshots(::grpc::ServerContext* /*context*/, const ::data_service::ListPlayerSnapshotsRequest* /*request*/, ::data_service::ListPlayerSnapshotsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestListPlayerSnapshots(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_GetPlayerSnapshotDiff : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetPlayerSnapshotDiff() {
+      ::grpc::Service::MarkMethodRaw(10);
+    }
+    ~WithRawMethod_GetPlayerSnapshotDiff() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerSnapshotDiff(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerSnapshotDiffRequest* /*request*/, ::data_service::GetPlayerSnapshotDiffResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetPlayerSnapshotDiff(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RollbackPlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RollbackPlayer() {
+      ::grpc::Service::MarkMethodRaw(11);
+    }
+    ~WithRawMethod_RollbackPlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackPlayer(::grpc::ServerContext* /*context*/, const ::data_service::RollbackPlayerRequest* /*request*/, ::data_service::RollbackPlayerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRollbackPlayer(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RollbackZone : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RollbackZone() {
+      ::grpc::Service::MarkMethodRaw(12);
+    }
+    ~WithRawMethod_RollbackZone() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackZone(::grpc::ServerContext* /*context*/, const ::data_service::RollbackZoneRequest* /*request*/, ::data_service::RollbackZoneResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRollbackZone(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(12, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RollbackAll : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RollbackAll() {
+      ::grpc::Service::MarkMethodRaw(13);
+    }
+    ~WithRawMethod_RollbackAll() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackAll(::grpc::ServerContext* /*context*/, const ::data_service::RollbackAllRequest* /*request*/, ::data_service::RollbackAllResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRollbackAll(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(13, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_BatchRecallItems : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_BatchRecallItems() {
+      ::grpc::Service::MarkMethodRaw(14);
+    }
+    ~WithRawMethod_BatchRecallItems() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BatchRecallItems(::grpc::ServerContext* /*context*/, const ::data_service::BatchRecallItemsRequest* /*request*/, ::data_service::BatchRecallItemsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestBatchRecallItems(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(14, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_QueryTransactionLog : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_QueryTransactionLog() {
+      ::grpc::Service::MarkMethodRaw(15);
+    }
+    ~WithRawMethod_QueryTransactionLog() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryTransactionLog(::grpc::ServerContext* /*context*/, const ::data_service::QueryTransactionLogRequest* /*request*/, ::data_service::QueryTransactionLogResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestQueryTransactionLog(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(15, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_CreateEventSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_CreateEventSnapshot() {
+      ::grpc::Service::MarkMethodRaw(16);
+    }
+    ~WithRawMethod_CreateEventSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateEventSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreateEventSnapshotRequest* /*request*/, ::data_service::CreateEventSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestCreateEventSnapshot(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(16, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1126,6 +2104,204 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* DeletePlayerData(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CreatePlayerSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CreatePlayerSnapshot() {
+      ::grpc::Service::MarkMethodRawCallback(8,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CreatePlayerSnapshot(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CreatePlayerSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreatePlayerSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreatePlayerSnapshotRequest* /*request*/, ::data_service::CreatePlayerSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreatePlayerSnapshot(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ListPlayerSnapshots : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ListPlayerSnapshots() {
+      ::grpc::Service::MarkMethodRawCallback(9,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ListPlayerSnapshots(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ListPlayerSnapshots() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ListPlayerSnapshots(::grpc::ServerContext* /*context*/, const ::data_service::ListPlayerSnapshotsRequest* /*request*/, ::data_service::ListPlayerSnapshotsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ListPlayerSnapshots(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetPlayerSnapshotDiff : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetPlayerSnapshotDiff() {
+      ::grpc::Service::MarkMethodRawCallback(10,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetPlayerSnapshotDiff(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetPlayerSnapshotDiff() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerSnapshotDiff(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerSnapshotDiffRequest* /*request*/, ::data_service::GetPlayerSnapshotDiffResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetPlayerSnapshotDiff(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RollbackPlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RollbackPlayer() {
+      ::grpc::Service::MarkMethodRawCallback(11,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RollbackPlayer(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RollbackPlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackPlayer(::grpc::ServerContext* /*context*/, const ::data_service::RollbackPlayerRequest* /*request*/, ::data_service::RollbackPlayerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RollbackPlayer(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RollbackZone : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RollbackZone() {
+      ::grpc::Service::MarkMethodRawCallback(12,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RollbackZone(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RollbackZone() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackZone(::grpc::ServerContext* /*context*/, const ::data_service::RollbackZoneRequest* /*request*/, ::data_service::RollbackZoneResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RollbackZone(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RollbackAll : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RollbackAll() {
+      ::grpc::Service::MarkMethodRawCallback(13,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RollbackAll(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RollbackAll() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RollbackAll(::grpc::ServerContext* /*context*/, const ::data_service::RollbackAllRequest* /*request*/, ::data_service::RollbackAllResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RollbackAll(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_BatchRecallItems : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_BatchRecallItems() {
+      ::grpc::Service::MarkMethodRawCallback(14,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->BatchRecallItems(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_BatchRecallItems() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status BatchRecallItems(::grpc::ServerContext* /*context*/, const ::data_service::BatchRecallItemsRequest* /*request*/, ::data_service::BatchRecallItemsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* BatchRecallItems(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_QueryTransactionLog : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_QueryTransactionLog() {
+      ::grpc::Service::MarkMethodRawCallback(15,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->QueryTransactionLog(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_QueryTransactionLog() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryTransactionLog(::grpc::ServerContext* /*context*/, const ::data_service::QueryTransactionLogRequest* /*request*/, ::data_service::QueryTransactionLogResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* QueryTransactionLog(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_CreateEventSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_CreateEventSnapshot() {
+      ::grpc::Service::MarkMethodRawCallback(16,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CreateEventSnapshot(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_CreateEventSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status CreateEventSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreateEventSnapshotRequest* /*request*/, ::data_service::CreateEventSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* CreateEventSnapshot(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -1344,9 +2520,252 @@ class DataService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedDeletePlayerData(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::DeletePlayerDataRequest,::data_service::DeletePlayerDataResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_DeletePlayerData<Service > > > > > > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CreatePlayerSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CreatePlayerSnapshot() {
+      ::grpc::Service::MarkMethodStreamed(8,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse>* streamer) {
+                       return this->StreamedCreatePlayerSnapshot(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CreatePlayerSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CreatePlayerSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreatePlayerSnapshotRequest* /*request*/, ::data_service::CreatePlayerSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCreatePlayerSnapshot(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::CreatePlayerSnapshotRequest,::data_service::CreatePlayerSnapshotResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ListPlayerSnapshots : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ListPlayerSnapshots() {
+      ::grpc::Service::MarkMethodStreamed(9,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse>* streamer) {
+                       return this->StreamedListPlayerSnapshots(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ListPlayerSnapshots() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ListPlayerSnapshots(::grpc::ServerContext* /*context*/, const ::data_service::ListPlayerSnapshotsRequest* /*request*/, ::data_service::ListPlayerSnapshotsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedListPlayerSnapshots(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::ListPlayerSnapshotsRequest,::data_service::ListPlayerSnapshotsResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetPlayerSnapshotDiff : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetPlayerSnapshotDiff() {
+      ::grpc::Service::MarkMethodStreamed(10,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse>* streamer) {
+                       return this->StreamedGetPlayerSnapshotDiff(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetPlayerSnapshotDiff() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetPlayerSnapshotDiff(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerSnapshotDiffRequest* /*request*/, ::data_service::GetPlayerSnapshotDiffResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetPlayerSnapshotDiff(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::GetPlayerSnapshotDiffRequest,::data_service::GetPlayerSnapshotDiffResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RollbackPlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RollbackPlayer() {
+      ::grpc::Service::MarkMethodStreamed(11,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse>* streamer) {
+                       return this->StreamedRollbackPlayer(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RollbackPlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RollbackPlayer(::grpc::ServerContext* /*context*/, const ::data_service::RollbackPlayerRequest* /*request*/, ::data_service::RollbackPlayerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRollbackPlayer(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::RollbackPlayerRequest,::data_service::RollbackPlayerResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RollbackZone : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RollbackZone() {
+      ::grpc::Service::MarkMethodStreamed(12,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse>* streamer) {
+                       return this->StreamedRollbackZone(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RollbackZone() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RollbackZone(::grpc::ServerContext* /*context*/, const ::data_service::RollbackZoneRequest* /*request*/, ::data_service::RollbackZoneResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRollbackZone(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::RollbackZoneRequest,::data_service::RollbackZoneResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RollbackAll : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RollbackAll() {
+      ::grpc::Service::MarkMethodStreamed(13,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse>* streamer) {
+                       return this->StreamedRollbackAll(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RollbackAll() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RollbackAll(::grpc::ServerContext* /*context*/, const ::data_service::RollbackAllRequest* /*request*/, ::data_service::RollbackAllResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRollbackAll(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::RollbackAllRequest,::data_service::RollbackAllResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_BatchRecallItems : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_BatchRecallItems() {
+      ::grpc::Service::MarkMethodStreamed(14,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse>* streamer) {
+                       return this->StreamedBatchRecallItems(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_BatchRecallItems() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status BatchRecallItems(::grpc::ServerContext* /*context*/, const ::data_service::BatchRecallItemsRequest* /*request*/, ::data_service::BatchRecallItemsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedBatchRecallItems(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::BatchRecallItemsRequest,::data_service::BatchRecallItemsResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_QueryTransactionLog : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_QueryTransactionLog() {
+      ::grpc::Service::MarkMethodStreamed(15,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse>* streamer) {
+                       return this->StreamedQueryTransactionLog(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_QueryTransactionLog() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status QueryTransactionLog(::grpc::ServerContext* /*context*/, const ::data_service::QueryTransactionLogRequest* /*request*/, ::data_service::QueryTransactionLogResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedQueryTransactionLog(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::QueryTransactionLogRequest,::data_service::QueryTransactionLogResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_CreateEventSnapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_CreateEventSnapshot() {
+      ::grpc::Service::MarkMethodStreamed(16,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse>* streamer) {
+                       return this->StreamedCreateEventSnapshot(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_CreateEventSnapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status CreateEventSnapshot(::grpc::ServerContext* /*context*/, const ::data_service::CreateEventSnapshotRequest* /*request*/, ::data_service::CreateEventSnapshotResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedCreateEventSnapshot(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::CreateEventSnapshotRequest,::data_service::CreateEventSnapshotResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<Service > > > > > > > > > > > > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_DeletePlayerData<Service > > > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<Service > > > > > > > > > > > > > > > > > StreamedService;
 };
 
 }  // namespace data_service

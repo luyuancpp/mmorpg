@@ -89,3 +89,22 @@ service ClientPlayerLogin  {
   rpc LeaveGame (LeaveGameRequest) returns (LoginEmptyResponse);
   rpc Disconnect (LoginNodeDisconnectRequest) returns (LoginEmptyResponse);
 }
+
+// ── Admin-only RPCs (internal, not client-facing) ──────────────
+
+message RemovePlayersFromAccountsRequest {
+  repeated uint64 player_ids = 1; // orphan player IDs to remove from their accounts
+}
+
+message RemovePlayersFromAccountsResponse {
+  uint32 removed_count = 1;    // players successfully removed from accounts
+  uint32 not_found_count = 2;  // players whose reverse mapping was missing
+  uint32 failed_count = 3;     // players that failed to remove
+}
+
+service LoginAdmin {
+  // Remove orphan characters from their accounts' SimplePlayers lists.
+  // Called by admin tools after zone rollback to clean up orphan characters.
+  // Uses player_to_account:{player_id} reverse mapping to find the owning account.
+  rpc RemovePlayersFromAccounts (RemovePlayersFromAccountsRequest) returns (RemovePlayersFromAccountsResponse);
+}

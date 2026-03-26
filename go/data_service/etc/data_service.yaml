@@ -45,3 +45,10 @@ SnapshotMySQL:
   DBName: "testdb"
   MaxOpenConn: 5
   MaxIdleConn: 2
+
+# Login admin gRPC client (for orphan account cleanup during rollback)
+LoginAdminRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: login.rpc

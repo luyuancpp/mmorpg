@@ -14,6 +14,9 @@ type Config struct {
 
 	// Snapshot MySQL (for rollback persistence)
 	SnapshotMySQL SnapshotMySQLConfig `json:",optional"`
+
+	// Login admin gRPC client (for orphan account cleanup during rollback)
+	LoginAdminRpc zrpc.RpcClientConf `json:",optional"`
 }
 
 type DevRedisConfig struct {

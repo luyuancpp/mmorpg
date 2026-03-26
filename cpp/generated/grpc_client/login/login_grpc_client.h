@@ -108,6 +108,26 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+using LoginAdminStubPtr = std::unique_ptr<LoginAdmin::Stub>;
+#pragma region LoginAdminRemovePlayersFromAccounts
+
+struct AsyncLoginAdminRemovePlayersFromAccountsGrpcClient {
+    uint32_t messageId{ LoginAdminRemovePlayersFromAccountsMessageId };
+    ClientContext context;
+    Status status;
+    ::loginpb::RemovePlayersFromAccountsResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::loginpb::RemovePlayersFromAccountsResponse>> response_reader;
+};
+
+class ::loginpb::RemovePlayersFromAccountsRequest;
+using AsyncLoginAdminRemovePlayersFromAccountsHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::loginpb::RemovePlayersFromAccountsResponse&)>;
+extern AsyncLoginAdminRemovePlayersFromAccountsHandlerFunctionType AsyncLoginAdminRemovePlayersFromAccountsHandler;
+
+void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RemovePlayersFromAccountsRequest& request);
+void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RemovePlayersFromAccountsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 void SetLoginHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);

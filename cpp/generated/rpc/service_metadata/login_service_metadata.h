@@ -22,3 +22,7 @@ constexpr uint32_t ClientPlayerLoginLeaveGameIndex = 3;
 constexpr uint32_t ClientPlayerLoginDisconnectMessageId = 58;
 constexpr uint32_t ClientPlayerLoginDisconnectIndex = 4;
 #define ClientPlayerLoginDisconnectMethod  ::ClientPlayerLogin_Stub::descriptor()->method(4)
+
+constexpr uint32_t LoginAdminRemovePlayersFromAccountsMessageId = 111;
+constexpr uint32_t LoginAdminRemovePlayersFromAccountsIndex = 0;
+#define LoginAdminRemovePlayersFromAccountsMethod  ::LoginAdmin_Stub::descriptor()->method(0)

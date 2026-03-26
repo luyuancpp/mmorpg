@@ -34,6 +34,8 @@
     <ClCompile Include="handler\event\scene_kafka_command_router.cpp" />
     <ClCompile Include="handler\rpc\player\player_currency_handler.cpp" />
     <ClCompile Include="rpc_replies\player\player_currency_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\player\player_rollback_response_handler.cpp" />
+    <ClCompile Include="handler\rpc\player\player_rollback_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="handler\event\actor_combat_state_event_handler.h" />
@@ -64,5 +66,7 @@
     <ClInclude Include="handler\event\scene_kafka_command_router.h" />
     <ClInclude Include="handler\rpc\player\player_currency_handler.h" />
     <ClInclude Include="rpc_replies\player\player_currency_response_handler.h" />
+    <ClInclude Include="rpc_replies\player\player_rollback_response_handler.h" />
+    <ClInclude Include="handler\rpc\player\player_rollback_handler.h" />
   </ItemGroup>
 </Project>

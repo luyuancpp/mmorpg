@@ -24,36 +24,323 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
+
+inline constexpr PlayerItemBlockComp::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : blocked_item_config_ids_{},
+        _blocked_item_config_ids_cached_byte_size_{0},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerItemBlockComp::PlayerItemBlockComp(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PlayerItemBlockComp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerItemBlockCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerItemBlockCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerItemBlockCompDefaultTypeInternal() {}
+  union {
+    PlayerItemBlockComp _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerItemBlockCompDefaultTypeInternal _PlayerItemBlockComp_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_service_descriptors_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto = nullptr;
-const ::uint32_t TableStruct_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto::offsets[1] = {};
-static constexpr ::_pbi::MigrationSchema* PROTOBUF_NULLABLE schemas = nullptr;
-static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
-    file_default_instances = nullptr;
+const ::uint32_t
+    TableStruct_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
+        protodesc_cold) = {
+        0x000, // bitmap
+        PROTOBUF_FIELD_OFFSET(::PlayerItemBlockComp, _impl_.blocked_item_config_ids_),
+};
+
+static const ::_pbi::MigrationSchema
+    schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
+        {0, sizeof(::PlayerItemBlockComp)},
+};
+static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
+    &::_PlayerItemBlockComp_default_instance_._instance,
+};
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n&proto/common/component/item_comp.proto"
-    "B\022Z\020common/componentb\006proto3"
+    "\"6\n\023PlayerItemBlockComp\022\037\n\027blocked_item_"
+    "config_ids\030\001 \003(\rB\022Z\020common/componentb\006pr"
+    "oto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto = {
     false,
     false,
-    68,
+    124,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto,
     "proto/common/component/item_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto_once,
     nullptr,
     0,
-    0,
+    1,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto::offsets,
     file_level_enum_descriptors_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto,
     file_level_service_descriptors_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto,
 };
+// ===================================================================
+
+class PlayerItemBlockComp::_Internal {
+ public:
+};
+
+PlayerItemBlockComp::PlayerItemBlockComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerItemBlockComp_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:PlayerItemBlockComp)
+}
+PROTOBUF_NDEBUG_INLINE PlayerItemBlockComp::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::PlayerItemBlockComp& from_msg)
+      : blocked_item_config_ids_{visibility, arena, from.blocked_item_config_ids_},
+        _blocked_item_config_ids_cached_byte_size_{0},
+        _cached_size_{0} {}
+
+PlayerItemBlockComp::PlayerItemBlockComp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PlayerItemBlockComp& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerItemBlockComp_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PlayerItemBlockComp* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:PlayerItemBlockComp)
+}
+PROTOBUF_NDEBUG_INLINE PlayerItemBlockComp::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : blocked_item_config_ids_{visibility, arena},
+        _blocked_item_config_ids_cached_byte_size_{0},
+        _cached_size_{0} {}
+
+inline void PlayerItemBlockComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+PlayerItemBlockComp::~PlayerItemBlockComp() {
+  // @@protoc_insertion_point(destructor:PlayerItemBlockComp)
+  SharedDtor(*this);
+}
+inline void PlayerItemBlockComp::SharedDtor(MessageLite& self) {
+  PlayerItemBlockComp& this_ = static_cast<PlayerItemBlockComp&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PlayerItemBlockComp::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PlayerItemBlockComp(arena);
+}
+constexpr auto PlayerItemBlockComp::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(PlayerItemBlockComp, _impl_.blocked_item_config_ids_) +
+          decltype(PlayerItemBlockComp::_impl_.blocked_item_config_ids_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(PlayerItemBlockComp), alignof(PlayerItemBlockComp), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&PlayerItemBlockComp::PlacementNew_,
+                                 sizeof(PlayerItemBlockComp),
+                                 alignof(PlayerItemBlockComp));
+  }
+}
+constexpr auto PlayerItemBlockComp::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PlayerItemBlockComp_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PlayerItemBlockComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PlayerItemBlockComp>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PlayerItemBlockComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PlayerItemBlockComp>(), &PlayerItemBlockComp::ByteSizeLong,
+              &PlayerItemBlockComp::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PlayerItemBlockComp, _impl_._cached_size_),
+          false,
+      },
+      &PlayerItemBlockComp::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fcomp_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PlayerItemBlockComp_class_data_ =
+        PlayerItemBlockComp::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerItemBlockComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerItemBlockComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PlayerItemBlockComp_class_data_.tc_table);
+  return PlayerItemBlockComp_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+PlayerItemBlockComp::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PlayerItemBlockComp_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::PlayerItemBlockComp>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated uint32 blocked_item_config_ids = 1;
+    {::_pbi::TcParser::FastV32P1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerItemBlockComp, _impl_.blocked_item_config_ids_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated uint32 blocked_item_config_ids = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerItemBlockComp, _impl_.blocked_item_config_ids_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void PlayerItemBlockComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerItemBlockComp)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.blocked_item_config_ids_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PlayerItemBlockComp::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PlayerItemBlockComp& this_ = static_cast<const PlayerItemBlockComp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PlayerItemBlockComp::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PlayerItemBlockComp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerItemBlockComp)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // repeated uint32 blocked_item_config_ids = 1;
+  {
+    int byte_size = this_._impl_._blocked_item_config_ids_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteUInt32Packed(
+          1, this_._internal_blocked_item_config_ids(), byte_size, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerItemBlockComp)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PlayerItemBlockComp::ByteSizeLong(const MessageLite& base) {
+  const PlayerItemBlockComp& this_ = static_cast<const PlayerItemBlockComp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PlayerItemBlockComp::ByteSizeLong() const {
+  const PlayerItemBlockComp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:PlayerItemBlockComp)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+   {
+    // repeated uint32 blocked_item_config_ids = 1;
+    {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt32SizeWithPackedTagSize(
+              this_._internal_blocked_item_config_ids(), 1,
+              this_._impl_._blocked_item_config_ids_cached_byte_size_);
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PlayerItemBlockComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerItemBlockComp*>(&to_msg);
+  auto& from = static_cast<const PlayerItemBlockComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerItemBlockComp)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_blocked_item_config_ids()->MergeFrom(from._internal_blocked_item_config_ids());
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerItemBlockComp::CopyFrom(const PlayerItemBlockComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerItemBlockComp)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PlayerItemBlockComp::InternalSwap(PlayerItemBlockComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.blocked_item_config_ids_.InternalSwap(&other->_impl_.blocked_item_config_ids_);
+}
+
+::google::protobuf::Metadata PlayerItemBlockComp::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

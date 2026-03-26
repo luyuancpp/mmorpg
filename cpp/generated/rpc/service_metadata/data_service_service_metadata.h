@@ -34,3 +34,39 @@ constexpr uint32_t DataServiceBatchGetPlayerHomeZoneIndex = 6;
 constexpr uint32_t DataServiceDeletePlayerDataMessageId = 88;
 constexpr uint32_t DataServiceDeletePlayerDataIndex = 7;
 #define DataServiceDeletePlayerDataMethod  ::DataService_Stub::descriptor()->method(7)
+
+constexpr uint32_t DataServiceCreatePlayerSnapshotMessageId = 96;
+constexpr uint32_t DataServiceCreatePlayerSnapshotIndex = 8;
+#define DataServiceCreatePlayerSnapshotMethod  ::DataService_Stub::descriptor()->method(8)
+
+constexpr uint32_t DataServiceListPlayerSnapshotsMessageId = 97;
+constexpr uint32_t DataServiceListPlayerSnapshotsIndex = 9;
+#define DataServiceListPlayerSnapshotsMethod  ::DataService_Stub::descriptor()->method(9)
+
+constexpr uint32_t DataServiceGetPlayerSnapshotDiffMessageId = 98;
+constexpr uint32_t DataServiceGetPlayerSnapshotDiffIndex = 10;
+#define DataServiceGetPlayerSnapshotDiffMethod  ::DataService_Stub::descriptor()->method(10)
+
+constexpr uint32_t DataServiceRollbackPlayerMessageId = 99;
+constexpr uint32_t DataServiceRollbackPlayerIndex = 11;
+#define DataServiceRollbackPlayerMethod  ::DataService_Stub::descriptor()->method(11)
+
+constexpr uint32_t DataServiceRollbackZoneMessageId = 100;
+constexpr uint32_t DataServiceRollbackZoneIndex = 12;
+#define DataServiceRollbackZoneMethod  ::DataService_Stub::descriptor()->method(12)
+
+constexpr uint32_t DataServiceRollbackAllMessageId = 101;
+constexpr uint32_t DataServiceRollbackAllIndex = 13;
+#define DataServiceRollbackAllMethod  ::DataService_Stub::descriptor()->method(13)
+
+constexpr uint32_t DataServiceBatchRecallItemsMessageId = 108;
+constexpr uint32_t DataServiceBatchRecallItemsIndex = 14;
+#define DataServiceBatchRecallItemsMethod  ::DataService_Stub::descriptor()->method(14)
+
+constexpr uint32_t DataServiceQueryTransactionLogMessageId = 114;
+constexpr uint32_t DataServiceQueryTransactionLogIndex = 15;
+#define DataServiceQueryTransactionLogMethod  ::DataService_Stub::descriptor()->method(15)
+
+constexpr uint32_t DataServiceCreateEventSnapshotMessageId = 105;
+constexpr uint32_t DataServiceCreateEventSnapshotIndex = 16;
+#define DataServiceCreateEventSnapshotMethod  ::DataService_Stub::descriptor()->method(16)

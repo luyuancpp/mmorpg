@@ -251,6 +251,67 @@ ClientPlayerLogin::Service::~Service() {
 }
 
 
+static const char* LoginAdmin_method_names[] = {
+  "/loginpb.LoginAdmin/RemovePlayersFromAccounts",
+};
+
+std::unique_ptr< LoginAdmin::Stub> LoginAdmin::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
+  (void)options;
+  std::unique_ptr< LoginAdmin::Stub> stub(new LoginAdmin::Stub(channel, options));
+  return stub;
+}
+
+LoginAdmin::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
+  : channel_(channel), rpcmethod_RemovePlayersFromAccounts_(LoginAdmin_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  {}
+
+::grpc::Status LoginAdmin::Stub::RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::loginpb::RemovePlayersFromAccountsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::loginpb::RemovePlayersFromAccountsRequest, ::loginpb::RemovePlayersFromAccountsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RemovePlayersFromAccounts_, context, request, response);
+}
+
+void LoginAdmin::Stub::async::RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::loginpb::RemovePlayersFromAccountsRequest, ::loginpb::RemovePlayersFromAccountsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RemovePlayersFromAccounts_, context, request, response, std::move(f));
+}
+
+void LoginAdmin::Stub::async::RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RemovePlayersFromAccounts_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::loginpb::RemovePlayersFromAccountsResponse>* LoginAdmin::Stub::PrepareAsyncRemovePlayersFromAccountsRaw(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::RemovePlayersFromAccountsResponse, ::loginpb::RemovePlayersFromAccountsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RemovePlayersFromAccounts_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::loginpb::RemovePlayersFromAccountsResponse>* LoginAdmin::Stub::AsyncRemovePlayersFromAccountsRaw(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRemovePlayersFromAccountsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+LoginAdmin::Service::Service() {
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      LoginAdmin_method_names[0],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< LoginAdmin::Service, ::loginpb::RemovePlayersFromAccountsRequest, ::loginpb::RemovePlayersFromAccountsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](LoginAdmin::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::loginpb::RemovePlayersFromAccountsRequest* req,
+             ::loginpb::RemovePlayersFromAccountsResponse* resp) {
+               return service->RemovePlayersFromAccounts(ctx, req, resp);
+             }, this)));
+}
+
+LoginAdmin::Service::~Service() {
+}
+
+::grpc::Status LoginAdmin::Service::RemovePlayersFromAccounts(::grpc::ServerContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+
 }  // namespace loginpb
 #include <grpcpp/ports_undef.inc>
 

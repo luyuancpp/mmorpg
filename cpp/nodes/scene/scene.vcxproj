@@ -154,6 +154,7 @@
     <ClCompile Include="handler\event\skill_event_handler.cpp" />
     <ClCompile Include="handler\rpc\game_scene_handler.cpp" />
     <ClCompile Include="handler\rpc\player\player_currency_handler.cpp" />
+    <ClCompile Include="handler\rpc\player\player_rollback_handler.cpp" />
     <ClCompile Include="handler\rpc\scene_handler.cpp" />
     <ClCompile Include="handler\rpc\player\game_client_player_handler.cpp" />
     <ClCompile Include="handler\rpc\player\game_player_handler.cpp" />
@@ -168,6 +169,7 @@
     <ClCompile Include="rpc_replies\player\game_player_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\game_player_scene_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\player_currency_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\player\player_rollback_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\player_rpc_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\player_state_attribute_sync_response_handler.cpp" />
     <ClCompile Include="rpc_replies\register_response_handler.cpp" />
@@ -189,6 +191,7 @@
     <ClInclude Include="handler\event\skill_event_handler.h" />
     <ClInclude Include="handler\rpc\game_scene_handler.h" />
     <ClInclude Include="handler\rpc\player\player_currency_handler.h" />
+    <ClInclude Include="handler\rpc\player\player_rollback_handler.h" />
     <ClInclude Include="handler\rpc\scene_handler.h" />
     <ClInclude Include="handler\rpc\player\game_client_player_handler.h" />
     <ClInclude Include="handler\rpc\player\game_player_handler.h" />
@@ -200,6 +203,7 @@
     <ClInclude Include="rpc_replies\player\game_player_response_handler.h" />
     <ClInclude Include="rpc_replies\player\game_player_scene_response_handler.h" />
     <ClInclude Include="rpc_replies\player\player_currency_response_handler.h" />
+    <ClInclude Include="rpc_replies\player\player_rollback_response_handler.h" />
     <ClInclude Include="rpc_replies\player\player_state_attribute_sync_response_handler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

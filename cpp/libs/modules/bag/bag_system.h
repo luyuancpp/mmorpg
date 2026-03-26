@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unordered_set>
-
 #include "entt/src/entt/entity/registry.hpp"
 #include "engine/core/type_define/type_define.h"
 
@@ -84,21 +82,6 @@ public:
 
     static std::size_t CalculateStackGridSize(std::size_t itemStackSize, std::size_t stackSize);
 
-    // ── GM block/unblock item acquisition ─────────────────────────────
-
-    // Block a specific item config_id — all future AddItem calls for this
-    // config will be rejected.
-    void BlockItem(uint32_t configId);
-
-    // Unblock a previously blocked item config_id.
-    void UnblockItem(uint32_t configId);
-
-    // Query whether an item config_id is currently blocked.
-    bool IsItemBlocked(uint32_t configId) const;
-
-    // Return all currently blocked config IDs (for GM query / serialisation).
-    const std::unordered_set<uint32_t> &BlockedItems() const { return blocked_config_ids_; }
-
 private:
     Guid GeneratorItemGuid();
     bool IsInvalidItemGuid(const ItemComp &item) const;
@@ -123,5 +106,4 @@ private:
     std::size_t capacity_{kDefaultCapacity};
     entt::registry itemRegistry_{};
     Guid player_guid_{kInvalidGuid};
-    std::unordered_set<uint32_t> blocked_config_ids_;
 };
