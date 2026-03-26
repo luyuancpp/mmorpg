@@ -9,6 +9,7 @@ void ScenePlayerReply::GateLoginNotify(entt::entity player,const ::GateLoginNoti
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void ScenePlayerReply::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,

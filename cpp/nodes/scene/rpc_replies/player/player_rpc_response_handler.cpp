@@ -4,10 +4,12 @@
 #include "game_player_response_handler.h"
 #include "game_player_scene_response_handler.h"
 #include "player_currency_response_handler.h"
+#include "player_rollback_response_handler.h"
 #include "player_state_attribute_sync_response_handler.h"
 class ScenePlayerImpl : public ScenePlayer {};
 class SceneScenePlayerImpl : public SceneScenePlayer {};
 class SceneCurrencyClientPlayerImpl : public SceneCurrencyClientPlayer {};
+class SceneRollbackClientPlayerImpl : public SceneRollbackClientPlayer {};
 class ScenePlayerSyncImpl : public ScenePlayerSync {};
 
 std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> gPlayerServiceReplied;
@@ -17,5 +19,6 @@ void InitPlayerServiceReplied()
     gPlayerServiceReplied.emplace("ScenePlayer", std::make_unique<ScenePlayerReply>(std::make_unique<ScenePlayerImpl>()));
     gPlayerServiceReplied.emplace("SceneScenePlayer", std::make_unique<SceneScenePlayerReply>(std::make_unique<SceneScenePlayerImpl>()));
     gPlayerServiceReplied.emplace("SceneCurrencyClientPlayer", std::make_unique<SceneCurrencyClientPlayerReply>(std::make_unique<SceneCurrencyClientPlayerImpl>()));
+    gPlayerServiceReplied.emplace("SceneRollbackClientPlayer", std::make_unique<SceneRollbackClientPlayerReply>(std::make_unique<SceneRollbackClientPlayerImpl>()));
     gPlayerServiceReplied.emplace("ScenePlayerSync", std::make_unique<ScenePlayerSyncReply>(std::make_unique<ScenePlayerSyncImpl>()));
 }

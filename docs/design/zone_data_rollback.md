@@ -75,10 +75,30 @@ SCAN mapping Redis, 找到该 zone 下所有有 zone mapping 的 player
 
 | 文件 | 作用 |
 |------|------|
-| `go/data_service/internal/logic/rollback_logic.go` | RollbackZone（player 回档 + 孤儿清理） |
+| `go/data_service/internal/logic/rollback_logic.go` | RollbackZone（player 回档 + 孤儿清理 + 调用 login 清理账号） |
 | `go/data_service/internal/routing/router.go` | GetAllPlayerIDsInZone（SCAN mapping Redis） |
 | `go/data_service/internal/store/snapshot_store.go` | player_snapshot + rollback_audit_log CRUD |
+| `go/data_service/internal/svc/servicecontext.go` | LoginAdminClient gRPC（通过 etcd 发现 login 服务） |
 | `proto/data_service/data_service.proto` | RollbackZone RPC 定义 |
+| `go/login/internal/logic/admin/remove_players_from_accounts.go` | 从账号记录中批量移除孤儿 player ID |
+| `go/login/internal/server/loginadmin/loginadminserver.go` | LoginAdmin gRPC server handler |
+| `go/login/internal/constants/login_constants.go` | player→account 反向索引 key |
+| `proto/login/login.proto` | LoginAdmin / RemovePlayersFromAccounts RPC 定义 |
+
+### 跨服务调用链
+
+```
+RollbackZone (data_service)
+  ├── Phase 1: 恢复每个 player 的 Redis 数据（从 snapshot）
+  ├── Phase 2: 删除孤儿角色的 Redis 数据 + zone mapping
+  └── Phase 2b: gRPC → login.RemovePlayersFromAccounts
+                  ├── 查 player_to_account:{pid} 反向索引 → 获取 account name
+                  ├── 从 account:{name} 的 SimplePlayers 列表中移除孤儿 pid
+                  └── 删除 player_to_account:{pid} 反向索引
+```
+
+> **容错设计**：Phase 2b 为 non-fatal。如果 LoginAdminClient 未配置或 RPC 失败，
+> 孤儿 ID 仍会在 RollbackZoneResponse.orphan_player_ids 中返回，供外部工具手动重试。
 
 ---
 

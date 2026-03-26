@@ -1,0 +1,82 @@
+syntax = "proto3";
+option go_package = "guild/proto/common/database";
+
+import "proto/db/proto_option.proto";
+import "proto/common/rollback/transaction_log.proto";
+import "proto/common/rollback/player_snapshot.proto";
+
+// ============================================================================
+// Transaction Log — append-only audit trail for all bidirectional operations.
+// ============================================================================
+message transaction_log
+{
+  option(OptionTableName) = "transaction_log";
+  option(OptionPrimaryKey) = "tx_id";
+  option(OptionIndex) = "from_player,to_player,item_uuid,timestamp";
+
+  uint64 tx_id = 1;
+  uint64 timestamp = 2;
+  uint32 tx_type = 3;           // TransactionType enum
+  uint64 from_player = 4;
+  uint64 to_player = 5;
+  uint64 item_uuid = 6;
+  uint32 item_config_id = 7;
+  uint32 item_quantity = 8;
+  uint32 currency_type = 9;
+  int64 currency_delta = 10;
+  uint64 balance_before = 11;
+  uint64 balance_after = 12;
+  uint64 correlation_id = 13;
+  string extra = 14;
+}
+
+// ============================================================================
+// Player Snapshot — defined in mysql_database_table.proto (player_snapshot).
+// Do NOT duplicate here; C++ protoc compiles both files together.
+// ============================================================================
+
+// ============================================================================
+// Player Debt — deferred-clawback (补缴) records; separate from CurrencyComp
+// so GM tool can query/manage offline.
+// ============================================================================
+message player_debt
+{
+  option(OptionTableName) = "player_debt";
+  option(OptionPrimaryKey) = "player_id,currency_type";
+  option(OptionIndex) = "player_id";
+
+  uint64 player_id = 1;
+  uint32 currency_type = 2;
+  uint64 owed_amount = 3;
+  uint64 paid_amount = 4;
+  bool frozen = 5;              // GM freeze — pauses auto-deduction
+  string reason = 6;
+  string gm_operator = 7;
+  uint64 created_at = 8;
+  uint64 expires_at = 9;        // 0 = never
+  uint64 completed_at = 10;     // 0 = not yet completed
+}
+
+// ============================================================================
+// Rollback Audit — every rollback operation is logged for accountability.
+// ============================================================================
+message rollback_audit
+{
+  option(OptionTableName) = "rollback_audit";
+  option(OptionPrimaryKey) = "audit_id";
+  option(OptionIndex) = "player_id";
+
+  uint64 audit_id = 1;
+  uint64 player_id = 2;
+  uint64 snapshot_id = 3;       // Which snapshot was used
+  uint64 target_time = 4;       // The time the player was rolled back to
+  uint64 executed_at = 5;       // When the rollback was executed
+  string gm_operator = 6;
+  string reason = 7;
+  string scope = 8;             // "full" or comma-separated service names (e.g. "currency,bag")
+  uint32 items_restored = 9;
+  uint32 items_skipped = 10;    // Skipped due to transfer records
+  uint32 currencies_restored = 11;
+  uint32 currencies_skipped = 12;
+  string diff_json = 13;        // Serialized SnapshotDiff for human review
+}

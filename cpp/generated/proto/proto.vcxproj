@@ -63,6 +63,7 @@
     <ClCompile Include="common\constants\test_switch.pb.cc" />
     <ClCompile Include="common\database\mysql_database_table.pb.cc" />
     <ClCompile Include="common\database\player_cache.pb.cc" />
+    <ClCompile Include="common\database\rollback_database_table.pb.cc" />
     <ClCompile Include="common\event\actor_combat_state_event.pb.cc" />
     <ClCompile Include="common\event\actor_event.pb.cc" />
     <ClCompile Include="common\event\buff_event.pb.cc" />
@@ -106,6 +107,7 @@
     <ClCompile Include="scene\game_player_scene.pb.cc" />
     <ClCompile Include="scene\game_scene.pb.cc" />
     <ClCompile Include="scene\player_currency.pb.cc" />
+    <ClCompile Include="scene\player_rollback.pb.cc" />
     <ClCompile Include="scene\player_scene.pb.cc" />
     <ClCompile Include="scene\player_skill.pb.cc" />
     <ClCompile Include="scene\player_state_attribute_sync.pb.cc" />
@@ -160,6 +162,7 @@
     <ClInclude Include="common\constants\test_switch.pb.h" />
     <ClInclude Include="common\database\mysql_database_table.pb.h" />
     <ClInclude Include="common\database\player_cache.pb.h" />
+    <ClInclude Include="common\database\rollback_database_table.pb.h" />
     <ClInclude Include="common\event\actor_combat_state_event.pb.h" />
     <ClInclude Include="common\event\actor_event.pb.h" />
     <ClInclude Include="common\event\buff_event.pb.h" />
@@ -203,6 +206,7 @@
     <ClInclude Include="scene\game_player_scene.pb.h" />
     <ClInclude Include="scene\game_scene.pb.h" />
     <ClInclude Include="scene\player_currency.pb.h" />
+    <ClInclude Include="scene\player_rollback.pb.h" />
     <ClInclude Include="scene\player_scene.pb.h" />
     <ClInclude Include="scene\player_skill.pb.h" />
     <ClInclude Include="scene\player_state_attribute_sync.pb.h" />

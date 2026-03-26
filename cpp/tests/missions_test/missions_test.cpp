@@ -17,6 +17,11 @@
 #include <thread_context/dispatcher_manager.h>
 #include <config.h>
 #include <node_config_manager.h>
+#include <filesystem>
+#include <iostream>
+#include <vector>
+
+namespace fs = std::filesystem;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -458,8 +463,54 @@ TEST(MissionsComp, MissionTimeOut)
 
 int main(int argc, char** argv)
 {
-	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig());
-	readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig());
+	const auto addCandidate = [](std::vector<fs::path>& candidates, const fs::path& path) {
+		if (path.empty()) {
+			return;
+		}
+		for (const auto& existing : candidates) {
+			if (existing == path) {
+				return;
+			}
+		}
+		candidates.emplace_back(path);
+	};
+
+	std::vector<fs::path> runtimeCandidates;
+	addCandidate(runtimeCandidates, fs::current_path());
+	addCandidate(runtimeCandidates, fs::current_path() / "bin");
+
+	if (argc > 0 && argv[0] != nullptr) {
+		const fs::path exeDir = fs::absolute(argv[0]).parent_path();
+		addCandidate(runtimeCandidates, exeDir);
+		addCandidate(runtimeCandidates, exeDir / "bin");
+		addCandidate(runtimeCandidates, exeDir.parent_path());
+		addCandidate(runtimeCandidates, exeDir.parent_path() / "bin");
+	}
+
+	bool configLoaded = false;
+	for (const auto& runtimeDir : runtimeCandidates) {
+		const auto baseCfg = runtimeDir / "etc" / "base_deploy_config.yaml";
+		const auto gameCfg = runtimeDir / "etc" / "game_config.yaml";
+		if (!fs::exists(baseCfg) || !fs::exists(gameCfg)) {
+			continue;
+		}
+
+		fs::current_path(runtimeDir);
+		if (readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig())
+			&& readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig())) {
+			configLoaded = true;
+			break;
+		}
+	}
+
+	if (!configLoaded) {
+		std::cerr << "Failed to locate/load configs. Tried runtime dirs:" << std::endl;
+		for (const auto& candidate : runtimeCandidates) {
+			std::cerr << "  " << candidate.string() << std::endl;
+		}
+		return 1;
+	}
+
 	ConditionTableManager::Instance().Load();
 	MissionTableManager::Instance().Load();
 	testing::InitGoogleTest(&argc, argv);

@@ -9,6 +9,7 @@ import (
 	"data_service/internal/constants"
 	"data_service/internal/store"
 	"data_service/internal/svc"
+	loginpb "data_service/proto/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -231,6 +232,15 @@ func RollbackZone(ctx context.Context, svcCtx *svc.ServiceContext, req *Rollback
 	// Delete their zone mapping so login doesn't route to empty data.
 	orphanIDs, orphansCleaned := cleanupOrphanCharacters(ctx, svcCtx, req.ZoneID, snapshotPlayerSet)
 
+	// ── Phase 2b: Remove orphans from login accounts ───────────
+	// Call login admin to strip orphan player IDs from account records.
+	if len(orphanIDs) > 0 && svcCtx.LoginAdminClient != nil {
+		removeOrphansFromLoginAccounts(ctx, svcCtx, req.ZoneID, orphanIDs)
+	} else if len(orphanIDs) > 0 {
+		logx.Infof("[Rollback] zone %d: %d orphans found but LoginAdminClient not configured — account cleanup skipped (orphan IDs returned in response for external handling)",
+			req.ZoneID, len(orphanIDs))
+	}
+
 	// 3. Audit log
 	now := uint64(time.Now().Unix())
 	_ = svcCtx.SnapshotStore.InsertAuditLog(ctx, &store.AuditLogRow{
@@ -239,6 +249,7 @@ func RollbackZone(ctx context.Context, svcCtx *svc.ServiceContext, req *Rollback
 		TargetTime:      req.TargetTime,
 		PlayersAffected: affected,
 		PlayersFailed:   failed,
+		OrphansCleaned:  orphansCleaned,
 		Reason:          req.Reason,
 		Operator:        req.Operator,
 		CreatedAt:       now,
@@ -296,6 +307,24 @@ func cleanupOrphanCharacters(ctx context.Context, svcCtx *svc.ServiceContext, zo
 		logx.Infof("[Rollback] zone %d: cleaned %d orphan characters (total orphans=%d)", zoneID, cleaned, len(orphanIDs))
 	}
 	return orphanIDs, cleaned
+}
+
+// removeOrphansFromLoginAccounts calls the login admin RPC to remove orphan
+// player IDs from their parent account records. This is non-fatal — if it fails,
+// the orphan IDs are still returned in the response for external retry.
+func removeOrphansFromLoginAccounts(ctx context.Context, svcCtx *svc.ServiceContext, zoneID uint32, orphanIDs []uint64) {
+	logx.Infof("[Rollback] zone %d: calling login RemovePlayersFromAccounts for %d orphans", zoneID, len(orphanIDs))
+
+	resp, err := svcCtx.LoginAdminClient.RemovePlayersFromAccounts(ctx, &loginpb.RemovePlayersFromAccountsRequest{
+		PlayerIds: orphanIDs,
+	})
+	if err != nil {
+		logx.Errorf("[Rollback] zone %d: login RemovePlayersFromAccounts RPC failed: %v (orphan IDs returned in response for manual retry)", zoneID, err)
+		return
+	}
+
+	logx.Infof("[Rollback] zone %d: login orphan account cleanup: removed=%d not_found=%d failed=%d",
+		zoneID, resp.RemovedCount, resp.NotFoundCount, resp.FailedCount)
 }
 
 // ── RollbackAll (full server) ──────────────────────────────────

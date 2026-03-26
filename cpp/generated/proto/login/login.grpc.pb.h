@@ -863,6 +863,222 @@ class ClientPlayerLogin final {
   typedef WithStreamedUnaryMethod_Login<WithStreamedUnaryMethod_CreatePlayer<WithStreamedUnaryMethod_EnterGame<WithStreamedUnaryMethod_LeaveGame<WithStreamedUnaryMethod_Disconnect<Service > > > > > StreamedService;
 };
 
+class LoginAdmin final {
+ public:
+  static constexpr char const* service_full_name() {
+    return "loginpb.LoginAdmin";
+  }
+  class StubInterface {
+   public:
+    virtual ~StubInterface() {}
+    // Remove orphan characters from their accounts' SimplePlayers lists.
+    // Called by admin tools after zone rollback to clean up orphan characters.
+    // Uses player_to_account:{player_id} reverse mapping to find the owning account.
+    virtual ::grpc::Status RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::loginpb::RemovePlayersFromAccountsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RemovePlayersFromAccountsResponse>> AsyncRemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RemovePlayersFromAccountsResponse>>(AsyncRemovePlayersFromAccountsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RemovePlayersFromAccountsResponse>> PrepareAsyncRemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RemovePlayersFromAccountsResponse>>(PrepareAsyncRemovePlayersFromAccountsRaw(context, request, cq));
+    }
+    class async_interface {
+     public:
+      virtual ~async_interface() {}
+      // Remove orphan characters from their accounts' SimplePlayers lists.
+      // Called by admin tools after zone rollback to clean up orphan characters.
+      // Uses player_to_account:{player_id} reverse mapping to find the owning account.
+      virtual void RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+    };
+    typedef class async_interface experimental_async_interface;
+    virtual class async_interface* async() { return nullptr; }
+    class async_interface* experimental_async() { return async(); }
+   private:
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RemovePlayersFromAccountsResponse>* AsyncRemovePlayersFromAccountsRaw(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RemovePlayersFromAccountsResponse>* PrepareAsyncRemovePlayersFromAccountsRaw(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+  };
+  class Stub final : public StubInterface {
+   public:
+    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+    ::grpc::Status RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::loginpb::RemovePlayersFromAccountsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::RemovePlayersFromAccountsResponse>> AsyncRemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::RemovePlayersFromAccountsResponse>>(AsyncRemovePlayersFromAccountsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::RemovePlayersFromAccountsResponse>> PrepareAsyncRemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::RemovePlayersFromAccountsResponse>>(PrepareAsyncRemovePlayersFromAccountsRaw(context, request, cq));
+    }
+    class async final :
+      public StubInterface::async_interface {
+     public:
+      void RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response, std::function<void(::grpc::Status)>) override;
+      void RemovePlayersFromAccounts(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+     private:
+      friend class Stub;
+      explicit async(Stub* stub): stub_(stub) { }
+      Stub* stub() { return stub_; }
+      Stub* stub_;
+    };
+    class async* async() override { return &async_stub_; }
+
+   private:
+    std::shared_ptr< ::grpc::ChannelInterface> channel_;
+    class async async_stub_{this};
+    ::grpc::ClientAsyncResponseReader< ::loginpb::RemovePlayersFromAccountsResponse>* AsyncRemovePlayersFromAccountsRaw(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::RemovePlayersFromAccountsResponse>* PrepareAsyncRemovePlayersFromAccountsRaw(::grpc::ClientContext* context, const ::loginpb::RemovePlayersFromAccountsRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_RemovePlayersFromAccounts_;
+  };
+  static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+
+  class Service : public ::grpc::Service {
+   public:
+    Service();
+    virtual ~Service();
+    // Remove orphan characters from their accounts' SimplePlayers lists.
+    // Called by admin tools after zone rollback to clean up orphan characters.
+    // Uses player_to_account:{player_id} reverse mapping to find the owning account.
+    virtual ::grpc::Status RemovePlayersFromAccounts(::grpc::ServerContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response);
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_RemovePlayersFromAccounts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RemovePlayersFromAccounts() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_RemovePlayersFromAccounts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemovePlayersFromAccounts(::grpc::ServerContext* /*context*/, const ::loginpb::RemovePlayersFromAccountsRequest* /*request*/, ::loginpb::RemovePlayersFromAccountsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRemovePlayersFromAccounts(::grpc::ServerContext* context, ::loginpb::RemovePlayersFromAccountsRequest* request, ::grpc::ServerAsyncResponseWriter< ::loginpb::RemovePlayersFromAccountsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_RemovePlayersFromAccounts<Service > AsyncService;
+  template <class BaseClass>
+  class WithCallbackMethod_RemovePlayersFromAccounts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RemovePlayersFromAccounts() {
+      ::grpc::Service::MarkMethodCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::RemovePlayersFromAccountsRequest, ::loginpb::RemovePlayersFromAccountsResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::loginpb::RemovePlayersFromAccountsRequest* request, ::loginpb::RemovePlayersFromAccountsResponse* response) { return this->RemovePlayersFromAccounts(context, request, response); }));}
+    void SetMessageAllocatorFor_RemovePlayersFromAccounts(
+        ::grpc::MessageAllocator< ::loginpb::RemovePlayersFromAccountsRequest, ::loginpb::RemovePlayersFromAccountsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::RemovePlayersFromAccountsRequest, ::loginpb::RemovePlayersFromAccountsResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RemovePlayersFromAccounts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemovePlayersFromAccounts(::grpc::ServerContext* /*context*/, const ::loginpb::RemovePlayersFromAccountsRequest* /*request*/, ::loginpb::RemovePlayersFromAccountsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RemovePlayersFromAccounts(
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::RemovePlayersFromAccountsRequest* /*request*/, ::loginpb::RemovePlayersFromAccountsResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_RemovePlayersFromAccounts<Service > CallbackService;
+  typedef CallbackService ExperimentalCallbackService;
+  template <class BaseClass>
+  class WithGenericMethod_RemovePlayersFromAccounts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RemovePlayersFromAccounts() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_RemovePlayersFromAccounts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemovePlayersFromAccounts(::grpc::ServerContext* /*context*/, const ::loginpb::RemovePlayersFromAccountsRequest* /*request*/, ::loginpb::RemovePlayersFromAccountsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RemovePlayersFromAccounts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RemovePlayersFromAccounts() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_RemovePlayersFromAccounts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemovePlayersFromAccounts(::grpc::ServerContext* /*context*/, const ::loginpb::RemovePlayersFromAccountsRequest* /*request*/, ::loginpb::RemovePlayersFromAccountsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRemovePlayersFromAccounts(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RemovePlayersFromAccounts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RemovePlayersFromAccounts() {
+      ::grpc::Service::MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RemovePlayersFromAccounts(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RemovePlayersFromAccounts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RemovePlayersFromAccounts(::grpc::ServerContext* /*context*/, const ::loginpb::RemovePlayersFromAccountsRequest* /*request*/, ::loginpb::RemovePlayersFromAccountsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RemovePlayersFromAccounts(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RemovePlayersFromAccounts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RemovePlayersFromAccounts() {
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::loginpb::RemovePlayersFromAccountsRequest, ::loginpb::RemovePlayersFromAccountsResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::loginpb::RemovePlayersFromAccountsRequest, ::loginpb::RemovePlayersFromAccountsResponse>* streamer) {
+                       return this->StreamedRemovePlayersFromAccounts(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RemovePlayersFromAccounts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RemovePlayersFromAccounts(::grpc::ServerContext* /*context*/, const ::loginpb::RemovePlayersFromAccountsRequest* /*request*/, ::loginpb::RemovePlayersFromAccountsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRemovePlayersFromAccounts(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::RemovePlayersFromAccountsRequest,::loginpb::RemovePlayersFromAccountsResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_RemovePlayersFromAccounts<Service > StreamedUnaryService;
+  typedef Service SplitStreamedService;
+  typedef WithStreamedUnaryMethod_RemovePlayersFromAccounts<Service > StreamedService;
+};
+
 }  // namespace loginpb
 
 

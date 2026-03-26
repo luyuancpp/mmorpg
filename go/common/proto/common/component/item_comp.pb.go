@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -20,13 +21,78 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Player-level item acquisition block list.
+// Persisted per player — survives logout/login.
+// Runtime check: Bag::IsItemBlocked() reads from this.
+type PlayerItemBlockComp struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Item config IDs that are blocked from acquisition.
+	BlockedItemConfigIds []uint32 `protobuf:"varint,1,rep,packed,name=blocked_item_config_ids,json=blockedItemConfigIds,proto3" json:"blocked_item_config_ids,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *PlayerItemBlockComp) Reset() {
+	*x = PlayerItemBlockComp{}
+	mi := &file_proto_common_component_item_comp_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerItemBlockComp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerItemBlockComp) ProtoMessage() {}
+
+func (x *PlayerItemBlockComp) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_component_item_comp_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerItemBlockComp.ProtoReflect.Descriptor instead.
+func (*PlayerItemBlockComp) Descriptor() ([]byte, []int) {
+	return file_proto_common_component_item_comp_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *PlayerItemBlockComp) GetBlockedItemConfigIds() []uint32 {
+	if x != nil {
+		return x.BlockedItemConfigIds
+	}
+	return nil
+}
+
 var File_proto_common_component_item_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_item_comp_proto_rawDesc = "" +
 	"\n" +
-	"&proto/common/component/item_comp.protoB\x1fZ\x1dcommon/proto/common/componentb\x06proto3"
+	"&proto/common/component/item_comp.proto\"L\n" +
+	"\x13PlayerItemBlockComp\x125\n" +
+	"\x17blocked_item_config_ids\x18\x01 \x03(\rR\x14blockedItemConfigIdsB\x1fZ\x1dcommon/proto/common/componentb\x06proto3"
 
-var file_proto_common_component_item_comp_proto_goTypes = []any{}
+var (
+	file_proto_common_component_item_comp_proto_rawDescOnce sync.Once
+	file_proto_common_component_item_comp_proto_rawDescData []byte
+)
+
+func file_proto_common_component_item_comp_proto_rawDescGZIP() []byte {
+	file_proto_common_component_item_comp_proto_rawDescOnce.Do(func() {
+		file_proto_common_component_item_comp_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_common_component_item_comp_proto_rawDesc), len(file_proto_common_component_item_comp_proto_rawDesc)))
+	})
+	return file_proto_common_component_item_comp_proto_rawDescData
+}
+
+var file_proto_common_component_item_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_common_component_item_comp_proto_goTypes = []any{
+	(*PlayerItemBlockComp)(nil), // 0: PlayerItemBlockComp
+}
 var file_proto_common_component_item_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
@@ -46,12 +112,13 @@ func file_proto_common_component_item_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_component_item_comp_proto_rawDesc), len(file_proto_common_component_item_comp_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   0,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_proto_common_component_item_comp_proto_goTypes,
 		DependencyIndexes: file_proto_common_component_item_comp_proto_depIdxs,
+		MessageInfos:      file_proto_common_component_item_comp_proto_msgTypes,
 	}.Build()
 	File_proto_common_component_item_comp_proto = out.File
 	file_proto_common_component_item_comp_proto_goTypes = nil

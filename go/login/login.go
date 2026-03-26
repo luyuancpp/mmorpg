@@ -9,6 +9,7 @@ import (
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/node"
 	loginserver "login/internal/server/clientplayerlogin"
+	loginadminserver "login/internal/server/loginadmin"
 	"login/internal/svc"
 	login_proto "proto/common/base"
 	login_proto_login "proto/login"
@@ -132,6 +133,7 @@ func SessionInterceptor(
 func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
 		login_proto_login.RegisterClientPlayerLoginServer(grpcServer, loginserver.NewClientPlayerLoginServer(ctx))
+		login_proto_login.RegisterLoginAdminServer(grpcServer, loginadminserver.NewLoginAdminServer(ctx))
 
 		if cfg.Mode == service.DevMode || cfg.Mode == service.TestMode {
 			reflection.Register(grpcServer)

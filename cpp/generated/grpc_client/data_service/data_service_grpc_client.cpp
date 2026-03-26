@@ -484,6 +484,537 @@ void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity node
     SendDataServiceDeletePlayerData(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
+#pragma region DataServiceCreatePlayerSnapshot
+boost::object_pool<AsyncDataServiceCreatePlayerSnapshotGrpcClient> DataServiceCreatePlayerSnapshotPool;
+using AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::CreatePlayerSnapshotResponse&)>;
+AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType AsyncDataServiceCreatePlayerSnapshotHandler;
+
+void AsyncCompleteGrpcDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceCreatePlayerSnapshotGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceCreatePlayerSnapshotHandler) {
+            AsyncDataServiceCreatePlayerSnapshotHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceCreatePlayerSnapshotPool.destroy(call);
+}
+
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceCreatePlayerSnapshotPool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncCreatePlayerSnapshot(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceCreatePlayerSnapshotMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceCreatePlayerSnapshotPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncCreatePlayerSnapshot(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceCreatePlayerSnapshotMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::CreatePlayerSnapshotRequest& derived = static_cast<const ::data_service::CreatePlayerSnapshotRequest&>(message);
+    SendDataServiceCreatePlayerSnapshot(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region DataServiceListPlayerSnapshots
+boost::object_pool<AsyncDataServiceListPlayerSnapshotsGrpcClient> DataServiceListPlayerSnapshotsPool;
+using AsyncDataServiceListPlayerSnapshotsHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::ListPlayerSnapshotsResponse&)>;
+AsyncDataServiceListPlayerSnapshotsHandlerFunctionType AsyncDataServiceListPlayerSnapshotsHandler;
+
+void AsyncCompleteGrpcDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceListPlayerSnapshotsGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceListPlayerSnapshotsHandler) {
+            AsyncDataServiceListPlayerSnapshotsHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceListPlayerSnapshotsPool.destroy(call);
+}
+
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceListPlayerSnapshotsPool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncListPlayerSnapshots(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceListPlayerSnapshotsMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceListPlayerSnapshotsPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncListPlayerSnapshots(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceListPlayerSnapshotsMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::ListPlayerSnapshotsRequest& derived = static_cast<const ::data_service::ListPlayerSnapshotsRequest&>(message);
+    SendDataServiceListPlayerSnapshots(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region DataServiceGetPlayerSnapshotDiff
+boost::object_pool<AsyncDataServiceGetPlayerSnapshotDiffGrpcClient> DataServiceGetPlayerSnapshotDiffPool;
+using AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::GetPlayerSnapshotDiffResponse&)>;
+AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType AsyncDataServiceGetPlayerSnapshotDiffHandler;
+
+void AsyncCompleteGrpcDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceGetPlayerSnapshotDiffGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceGetPlayerSnapshotDiffHandler) {
+            AsyncDataServiceGetPlayerSnapshotDiffHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceGetPlayerSnapshotDiffPool.destroy(call);
+}
+
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceGetPlayerSnapshotDiffPool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncGetPlayerSnapshotDiff(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceGetPlayerSnapshotDiffMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceGetPlayerSnapshotDiffPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncGetPlayerSnapshotDiff(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceGetPlayerSnapshotDiffMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::GetPlayerSnapshotDiffRequest& derived = static_cast<const ::data_service::GetPlayerSnapshotDiffRequest&>(message);
+    SendDataServiceGetPlayerSnapshotDiff(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region DataServiceRollbackPlayer
+boost::object_pool<AsyncDataServiceRollbackPlayerGrpcClient> DataServiceRollbackPlayerPool;
+using AsyncDataServiceRollbackPlayerHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::RollbackPlayerResponse&)>;
+AsyncDataServiceRollbackPlayerHandlerFunctionType AsyncDataServiceRollbackPlayerHandler;
+
+void AsyncCompleteGrpcDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceRollbackPlayerGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceRollbackPlayerHandler) {
+            AsyncDataServiceRollbackPlayerHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceRollbackPlayerPool.destroy(call);
+}
+
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceRollbackPlayerPool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRollbackPlayer(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackPlayerMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceRollbackPlayerPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRollbackPlayer(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackPlayerMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::RollbackPlayerRequest& derived = static_cast<const ::data_service::RollbackPlayerRequest&>(message);
+    SendDataServiceRollbackPlayer(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region DataServiceRollbackZone
+boost::object_pool<AsyncDataServiceRollbackZoneGrpcClient> DataServiceRollbackZonePool;
+using AsyncDataServiceRollbackZoneHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::RollbackZoneResponse&)>;
+AsyncDataServiceRollbackZoneHandlerFunctionType AsyncDataServiceRollbackZoneHandler;
+
+void AsyncCompleteGrpcDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceRollbackZoneGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceRollbackZoneHandler) {
+            AsyncDataServiceRollbackZoneHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceRollbackZonePool.destroy(call);
+}
+
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceRollbackZonePool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRollbackZone(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackZoneMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceRollbackZonePool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRollbackZone(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackZoneMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::RollbackZoneRequest& derived = static_cast<const ::data_service::RollbackZoneRequest&>(message);
+    SendDataServiceRollbackZone(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region DataServiceRollbackAll
+boost::object_pool<AsyncDataServiceRollbackAllGrpcClient> DataServiceRollbackAllPool;
+using AsyncDataServiceRollbackAllHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::RollbackAllResponse&)>;
+AsyncDataServiceRollbackAllHandlerFunctionType AsyncDataServiceRollbackAllHandler;
+
+void AsyncCompleteGrpcDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceRollbackAllGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceRollbackAllHandler) {
+            AsyncDataServiceRollbackAllHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceRollbackAllPool.destroy(call);
+}
+
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceRollbackAllPool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRollbackAll(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackAllMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceRollbackAllPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRollbackAll(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackAllMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::RollbackAllRequest& derived = static_cast<const ::data_service::RollbackAllRequest&>(message);
+    SendDataServiceRollbackAll(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region DataServiceBatchRecallItems
+boost::object_pool<AsyncDataServiceBatchRecallItemsGrpcClient> DataServiceBatchRecallItemsPool;
+using AsyncDataServiceBatchRecallItemsHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::BatchRecallItemsResponse&)>;
+AsyncDataServiceBatchRecallItemsHandlerFunctionType AsyncDataServiceBatchRecallItemsHandler;
+
+void AsyncCompleteGrpcDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceBatchRecallItemsGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceBatchRecallItemsHandler) {
+            AsyncDataServiceBatchRecallItemsHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceBatchRecallItemsPool.destroy(call);
+}
+
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceBatchRecallItemsPool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncBatchRecallItems(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceBatchRecallItemsMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceBatchRecallItemsPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncBatchRecallItems(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceBatchRecallItemsMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::BatchRecallItemsRequest& derived = static_cast<const ::data_service::BatchRecallItemsRequest&>(message);
+    SendDataServiceBatchRecallItems(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region DataServiceQueryTransactionLog
+boost::object_pool<AsyncDataServiceQueryTransactionLogGrpcClient> DataServiceQueryTransactionLogPool;
+using AsyncDataServiceQueryTransactionLogHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::QueryTransactionLogResponse&)>;
+AsyncDataServiceQueryTransactionLogHandlerFunctionType AsyncDataServiceQueryTransactionLogHandler;
+
+void AsyncCompleteGrpcDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceQueryTransactionLogGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceQueryTransactionLogHandler) {
+            AsyncDataServiceQueryTransactionLogHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceQueryTransactionLogPool.destroy(call);
+}
+
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceQueryTransactionLogPool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncQueryTransactionLog(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceQueryTransactionLogMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceQueryTransactionLogPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncQueryTransactionLog(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceQueryTransactionLogMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::QueryTransactionLogRequest& derived = static_cast<const ::data_service::QueryTransactionLogRequest&>(message);
+    SendDataServiceQueryTransactionLog(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region DataServiceCreateEventSnapshot
+boost::object_pool<AsyncDataServiceCreateEventSnapshotGrpcClient> DataServiceCreateEventSnapshotPool;
+using AsyncDataServiceCreateEventSnapshotHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::CreateEventSnapshotResponse&)>;
+AsyncDataServiceCreateEventSnapshotHandlerFunctionType AsyncDataServiceCreateEventSnapshotHandler;
+
+void AsyncCompleteGrpcDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceCreateEventSnapshotGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceCreateEventSnapshotHandler) {
+            AsyncDataServiceCreateEventSnapshotHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceCreateEventSnapshotPool.destroy(call);
+}
+
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceCreateEventSnapshotPool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncCreateEventSnapshot(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceCreateEventSnapshotMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceCreateEventSnapshotPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncCreateEventSnapshot(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceCreateEventSnapshotMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::CreateEventSnapshotRequest& derived = static_cast<const ::data_service::CreateEventSnapshotRequest&>(message);
+    SendDataServiceCreateEventSnapshot(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
 
 void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
@@ -519,6 +1050,42 @@ void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::enti
             AsyncCompleteGrpcDataServiceDeletePlayerData(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
+        case DataServiceCreatePlayerSnapshotMessageId:
+            AsyncCompleteGrpcDataServiceCreatePlayerSnapshot(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case DataServiceListPlayerSnapshotsMessageId:
+            AsyncCompleteGrpcDataServiceListPlayerSnapshots(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case DataServiceGetPlayerSnapshotDiffMessageId:
+            AsyncCompleteGrpcDataServiceGetPlayerSnapshotDiff(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case DataServiceRollbackPlayerMessageId:
+            AsyncCompleteGrpcDataServiceRollbackPlayer(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case DataServiceRollbackZoneMessageId:
+            AsyncCompleteGrpcDataServiceRollbackZone(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case DataServiceRollbackAllMessageId:
+            AsyncCompleteGrpcDataServiceRollbackAll(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case DataServiceBatchRecallItemsMessageId:
+            AsyncCompleteGrpcDataServiceBatchRecallItems(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case DataServiceQueryTransactionLogMessageId:
+            AsyncCompleteGrpcDataServiceQueryTransactionLog(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case DataServiceCreateEventSnapshotMessageId:
+            AsyncCompleteGrpcDataServiceCreateEventSnapshot(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
         default:
             break;
         }
@@ -534,6 +1101,15 @@ void SetDataServiceHandler(const std::function<void(const ClientContext&, const 
     AsyncDataServiceGetPlayerHomeZoneHandler = handler;
     AsyncDataServiceBatchGetPlayerHomeZoneHandler = handler;
     AsyncDataServiceDeletePlayerDataHandler = handler;
+    AsyncDataServiceCreatePlayerSnapshotHandler = handler;
+    AsyncDataServiceListPlayerSnapshotsHandler = handler;
+    AsyncDataServiceGetPlayerSnapshotDiffHandler = handler;
+    AsyncDataServiceRollbackPlayerHandler = handler;
+    AsyncDataServiceRollbackZoneHandler = handler;
+    AsyncDataServiceRollbackAllHandler = handler;
+    AsyncDataServiceBatchRecallItemsHandler = handler;
+    AsyncDataServiceQueryTransactionLogHandler = handler;
+    AsyncDataServiceCreateEventSnapshotHandler = handler;
 }
 
 void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
@@ -561,6 +1137,33 @@ void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&,
     }
     if (!AsyncDataServiceDeletePlayerDataHandler) {
         AsyncDataServiceDeletePlayerDataHandler = handler;
+    }
+    if (!AsyncDataServiceCreatePlayerSnapshotHandler) {
+        AsyncDataServiceCreatePlayerSnapshotHandler = handler;
+    }
+    if (!AsyncDataServiceListPlayerSnapshotsHandler) {
+        AsyncDataServiceListPlayerSnapshotsHandler = handler;
+    }
+    if (!AsyncDataServiceGetPlayerSnapshotDiffHandler) {
+        AsyncDataServiceGetPlayerSnapshotDiffHandler = handler;
+    }
+    if (!AsyncDataServiceRollbackPlayerHandler) {
+        AsyncDataServiceRollbackPlayerHandler = handler;
+    }
+    if (!AsyncDataServiceRollbackZoneHandler) {
+        AsyncDataServiceRollbackZoneHandler = handler;
+    }
+    if (!AsyncDataServiceRollbackAllHandler) {
+        AsyncDataServiceRollbackAllHandler = handler;
+    }
+    if (!AsyncDataServiceBatchRecallItemsHandler) {
+        AsyncDataServiceBatchRecallItemsHandler = handler;
+    }
+    if (!AsyncDataServiceQueryTransactionLogHandler) {
+        AsyncDataServiceQueryTransactionLogHandler = handler;
+    }
+    if (!AsyncDataServiceCreateEventSnapshotHandler) {
+        AsyncDataServiceCreateEventSnapshotHandler = handler;
     }
 }
 

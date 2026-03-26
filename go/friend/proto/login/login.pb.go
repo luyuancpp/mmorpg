@@ -640,6 +640,110 @@ func (*LoginEmptyResponse) Descriptor() ([]byte, []int) {
 	return file_proto_login_login_proto_rawDescGZIP(), []int{11}
 }
 
+type RemovePlayersFromAccountsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerIds     []uint64               `protobuf:"varint,1,rep,packed,name=player_ids,json=playerIds,proto3" json:"player_ids,omitempty"` // orphan player IDs to remove from their accounts
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemovePlayersFromAccountsRequest) Reset() {
+	*x = RemovePlayersFromAccountsRequest{}
+	mi := &file_proto_login_login_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemovePlayersFromAccountsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemovePlayersFromAccountsRequest) ProtoMessage() {}
+
+func (x *RemovePlayersFromAccountsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_login_login_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemovePlayersFromAccountsRequest.ProtoReflect.Descriptor instead.
+func (*RemovePlayersFromAccountsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_login_login_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *RemovePlayersFromAccountsRequest) GetPlayerIds() []uint64 {
+	if x != nil {
+		return x.PlayerIds
+	}
+	return nil
+}
+
+type RemovePlayersFromAccountsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RemovedCount  uint32                 `protobuf:"varint,1,opt,name=removed_count,json=removedCount,proto3" json:"removed_count,omitempty"`      // players successfully removed from accounts
+	NotFoundCount uint32                 `protobuf:"varint,2,opt,name=not_found_count,json=notFoundCount,proto3" json:"not_found_count,omitempty"` // players whose reverse mapping was missing
+	FailedCount   uint32                 `protobuf:"varint,3,opt,name=failed_count,json=failedCount,proto3" json:"failed_count,omitempty"`         // players that failed to remove
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemovePlayersFromAccountsResponse) Reset() {
+	*x = RemovePlayersFromAccountsResponse{}
+	mi := &file_proto_login_login_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemovePlayersFromAccountsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemovePlayersFromAccountsResponse) ProtoMessage() {}
+
+func (x *RemovePlayersFromAccountsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_login_login_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemovePlayersFromAccountsResponse.ProtoReflect.Descriptor instead.
+func (*RemovePlayersFromAccountsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_login_login_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *RemovePlayersFromAccountsResponse) GetRemovedCount() uint32 {
+	if x != nil {
+		return x.RemovedCount
+	}
+	return 0
+}
+
+func (x *RemovePlayersFromAccountsResponse) GetNotFoundCount() uint32 {
+	if x != nil {
+		return x.NotFoundCount
+	}
+	return 0
+}
+
+func (x *RemovePlayersFromAccountsResponse) GetFailedCount() uint32 {
+	if x != nil {
+		return x.FailedCount
+	}
+	return 0
+}
+
 var File_proto_login_login_proto protoreflect.FileDescriptor
 
 const file_proto_login_login_proto_rawDesc = "" +
@@ -685,14 +789,24 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"\x1aLoginNodeDisconnectRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\"\x14\n" +
-	"\x12LoginEmptyResponse2\xf8\x02\n" +
+	"\x12LoginEmptyResponse\"A\n" +
+	" RemovePlayersFromAccountsRequest\x12\x1d\n" +
+	"\n" +
+	"player_ids\x18\x01 \x03(\x04R\tplayerIds\"\x93\x01\n" +
+	"!RemovePlayersFromAccountsResponse\x12#\n" +
+	"\rremoved_count\x18\x01 \x01(\rR\fremovedCount\x12&\n" +
+	"\x0fnot_found_count\x18\x02 \x01(\rR\rnotFoundCount\x12!\n" +
+	"\ffailed_count\x18\x03 \x01(\rR\vfailedCount2\xf8\x02\n" +
 	"\x11ClientPlayerLogin\x126\n" +
 	"\x05Login\x12\x15.loginpb.LoginRequest\x1a\x16.loginpb.LoginResponse\x12K\n" +
 	"\fCreatePlayer\x12\x1c.loginpb.CreatePlayerRequest\x1a\x1d.loginpb.CreatePlayerResponse\x12B\n" +
 	"\tEnterGame\x12\x19.loginpb.EnterGameRequest\x1a\x1a.loginpb.EnterGameResponse\x12C\n" +
 	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x1b.loginpb.LoginEmptyResponse\x12N\n" +
 	"\n" +
-	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponse\x1a\x05\x88\xa8\xc3\x01\x01B\x14Z\x12friend/proto/loginb\x06proto3"
+	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponse\x1a\x05\x88\xa8\xc3\x01\x012\x80\x01\n" +
+	"\n" +
+	"LoginAdmin\x12r\n" +
+	"\x19RemovePlayersFromAccounts\x12).loginpb.RemovePlayersFromAccountsRequest\x1a*.loginpb.RemovePlayersFromAccountsResponseB\x14Z\x12friend/proto/loginb\x06proto3"
 
 var (
 	file_proto_login_login_proto_rawDescOnce sync.Once
@@ -706,44 +820,48 @@ func file_proto_login_login_proto_rawDescGZIP() []byte {
 	return file_proto_login_login_proto_rawDescData
 }
 
-var file_proto_login_login_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_proto_login_login_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_proto_login_login_proto_goTypes = []any{
-	(*LoginSessionInfo)(nil),           // 0: loginpb.LoginSessionInfo
-	(*AccountSimplePlayerWrapper)(nil), // 1: loginpb.AccountSimplePlayerWrapper
-	(*LoginRequest)(nil),               // 2: loginpb.LoginRequest
-	(*LoginResponse)(nil),              // 3: loginpb.LoginResponse
-	(*TestResponse)(nil),               // 4: loginpb.TestResponse
-	(*CreatePlayerRequest)(nil),        // 5: loginpb.CreatePlayerRequest
-	(*CreatePlayerResponse)(nil),       // 6: loginpb.CreatePlayerResponse
-	(*EnterGameRequest)(nil),           // 7: loginpb.EnterGameRequest
-	(*EnterGameResponse)(nil),          // 8: loginpb.EnterGameResponse
-	(*LeaveGameRequest)(nil),           // 9: loginpb.LeaveGameRequest
-	(*LoginNodeDisconnectRequest)(nil), // 10: loginpb.LoginNodeDisconnectRequest
-	(*LoginEmptyResponse)(nil),         // 11: loginpb.LoginEmptyResponse
-	(*base.AccountSimplePlayer)(nil),   // 12: AccountSimplePlayer
-	(*base.TipInfoMessage)(nil),        // 13: TipInfoMessage
+	(*LoginSessionInfo)(nil),                  // 0: loginpb.LoginSessionInfo
+	(*AccountSimplePlayerWrapper)(nil),        // 1: loginpb.AccountSimplePlayerWrapper
+	(*LoginRequest)(nil),                      // 2: loginpb.LoginRequest
+	(*LoginResponse)(nil),                     // 3: loginpb.LoginResponse
+	(*TestResponse)(nil),                      // 4: loginpb.TestResponse
+	(*CreatePlayerRequest)(nil),               // 5: loginpb.CreatePlayerRequest
+	(*CreatePlayerResponse)(nil),              // 6: loginpb.CreatePlayerResponse
+	(*EnterGameRequest)(nil),                  // 7: loginpb.EnterGameRequest
+	(*EnterGameResponse)(nil),                 // 8: loginpb.EnterGameResponse
+	(*LeaveGameRequest)(nil),                  // 9: loginpb.LeaveGameRequest
+	(*LoginNodeDisconnectRequest)(nil),        // 10: loginpb.LoginNodeDisconnectRequest
+	(*LoginEmptyResponse)(nil),                // 11: loginpb.LoginEmptyResponse
+	(*RemovePlayersFromAccountsRequest)(nil),  // 12: loginpb.RemovePlayersFromAccountsRequest
+	(*RemovePlayersFromAccountsResponse)(nil), // 13: loginpb.RemovePlayersFromAccountsResponse
+	(*base.AccountSimplePlayer)(nil),          // 14: AccountSimplePlayer
+	(*base.TipInfoMessage)(nil),               // 15: TipInfoMessage
 }
 var file_proto_login_login_proto_depIdxs = []int32{
-	12, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer
-	13, // 1: loginpb.LoginResponse.error_message:type_name -> TipInfoMessage
+	14, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer
+	15, // 1: loginpb.LoginResponse.error_message:type_name -> TipInfoMessage
 	1,  // 2: loginpb.LoginResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	13, // 3: loginpb.TestResponse.error_message:type_name -> TipInfoMessage
+	15, // 3: loginpb.TestResponse.error_message:type_name -> TipInfoMessage
 	1,  // 4: loginpb.TestResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	13, // 5: loginpb.CreatePlayerResponse.error_message:type_name -> TipInfoMessage
+	15, // 5: loginpb.CreatePlayerResponse.error_message:type_name -> TipInfoMessage
 	1,  // 6: loginpb.CreatePlayerResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	13, // 7: loginpb.EnterGameResponse.error_message:type_name -> TipInfoMessage
+	15, // 7: loginpb.EnterGameResponse.error_message:type_name -> TipInfoMessage
 	2,  // 8: loginpb.ClientPlayerLogin.Login:input_type -> loginpb.LoginRequest
 	5,  // 9: loginpb.ClientPlayerLogin.CreatePlayer:input_type -> loginpb.CreatePlayerRequest
 	7,  // 10: loginpb.ClientPlayerLogin.EnterGame:input_type -> loginpb.EnterGameRequest
 	9,  // 11: loginpb.ClientPlayerLogin.LeaveGame:input_type -> loginpb.LeaveGameRequest
 	10, // 12: loginpb.ClientPlayerLogin.Disconnect:input_type -> loginpb.LoginNodeDisconnectRequest
-	3,  // 13: loginpb.ClientPlayerLogin.Login:output_type -> loginpb.LoginResponse
-	6,  // 14: loginpb.ClientPlayerLogin.CreatePlayer:output_type -> loginpb.CreatePlayerResponse
-	8,  // 15: loginpb.ClientPlayerLogin.EnterGame:output_type -> loginpb.EnterGameResponse
-	11, // 16: loginpb.ClientPlayerLogin.LeaveGame:output_type -> loginpb.LoginEmptyResponse
-	11, // 17: loginpb.ClientPlayerLogin.Disconnect:output_type -> loginpb.LoginEmptyResponse
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
+	12, // 13: loginpb.LoginAdmin.RemovePlayersFromAccounts:input_type -> loginpb.RemovePlayersFromAccountsRequest
+	3,  // 14: loginpb.ClientPlayerLogin.Login:output_type -> loginpb.LoginResponse
+	6,  // 15: loginpb.ClientPlayerLogin.CreatePlayer:output_type -> loginpb.CreatePlayerResponse
+	8,  // 16: loginpb.ClientPlayerLogin.EnterGame:output_type -> loginpb.EnterGameResponse
+	11, // 17: loginpb.ClientPlayerLogin.LeaveGame:output_type -> loginpb.LoginEmptyResponse
+	11, // 18: loginpb.ClientPlayerLogin.Disconnect:output_type -> loginpb.LoginEmptyResponse
+	13, // 19: loginpb.LoginAdmin.RemovePlayersFromAccounts:output_type -> loginpb.RemovePlayersFromAccountsResponse
+	14, // [14:20] is the sub-list for method output_type
+	8,  // [8:14] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name
@@ -760,9 +878,9 @@ func file_proto_login_login_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_login_login_proto_rawDesc), len(file_proto_login_login_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_proto_login_login_proto_goTypes,
 		DependencyIndexes: file_proto_login_login_proto_depIdxs,

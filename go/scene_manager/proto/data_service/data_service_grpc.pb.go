@@ -28,6 +28,15 @@ const (
 	DataService_GetPlayerHomeZone_FullMethodName      = "/data_service.DataService/GetPlayerHomeZone"
 	DataService_BatchGetPlayerHomeZone_FullMethodName = "/data_service.DataService/BatchGetPlayerHomeZone"
 	DataService_DeletePlayerData_FullMethodName       = "/data_service.DataService/DeletePlayerData"
+	DataService_CreatePlayerSnapshot_FullMethodName   = "/data_service.DataService/CreatePlayerSnapshot"
+	DataService_ListPlayerSnapshots_FullMethodName    = "/data_service.DataService/ListPlayerSnapshots"
+	DataService_GetPlayerSnapshotDiff_FullMethodName  = "/data_service.DataService/GetPlayerSnapshotDiff"
+	DataService_RollbackPlayer_FullMethodName         = "/data_service.DataService/RollbackPlayer"
+	DataService_RollbackZone_FullMethodName           = "/data_service.DataService/RollbackZone"
+	DataService_RollbackAll_FullMethodName            = "/data_service.DataService/RollbackAll"
+	DataService_BatchRecallItems_FullMethodName       = "/data_service.DataService/BatchRecallItems"
+	DataService_QueryTransactionLog_FullMethodName    = "/data_service.DataService/QueryTransactionLog"
+	DataService_CreateEventSnapshot_FullMethodName    = "/data_service.DataService/CreateEventSnapshot"
 )
 
 // DataServiceClient is the client API for DataService service.
@@ -50,6 +59,17 @@ type DataServiceClient interface {
 	BatchGetPlayerHomeZone(ctx context.Context, in *BatchGetPlayerHomeZoneRequest, opts ...grpc.CallOption) (*BatchGetPlayerHomeZoneResponse, error)
 	// ── Cleanup / merge ──────────────────────────────────────────
 	DeletePlayerData(ctx context.Context, in *DeletePlayerDataRequest, opts ...grpc.CallOption) (*DeletePlayerDataResponse, error)
+	// ── Snapshot / Rollback ──────────────────────────────────────
+	CreatePlayerSnapshot(ctx context.Context, in *CreatePlayerSnapshotRequest, opts ...grpc.CallOption) (*CreatePlayerSnapshotResponse, error)
+	ListPlayerSnapshots(ctx context.Context, in *ListPlayerSnapshotsRequest, opts ...grpc.CallOption) (*ListPlayerSnapshotsResponse, error)
+	GetPlayerSnapshotDiff(ctx context.Context, in *GetPlayerSnapshotDiffRequest, opts ...grpc.CallOption) (*GetPlayerSnapshotDiffResponse, error)
+	RollbackPlayer(ctx context.Context, in *RollbackPlayerRequest, opts ...grpc.CallOption) (*RollbackPlayerResponse, error)
+	RollbackZone(ctx context.Context, in *RollbackZoneRequest, opts ...grpc.CallOption) (*RollbackZoneResponse, error)
+	RollbackAll(ctx context.Context, in *RollbackAllRequest, opts ...grpc.CallOption) (*RollbackAllResponse, error)
+	// ── Batch Recall / Anomaly / Event Snapshot ──────────────────
+	BatchRecallItems(ctx context.Context, in *BatchRecallItemsRequest, opts ...grpc.CallOption) (*BatchRecallItemsResponse, error)
+	QueryTransactionLog(ctx context.Context, in *QueryTransactionLogRequest, opts ...grpc.CallOption) (*QueryTransactionLogResponse, error)
+	CreateEventSnapshot(ctx context.Context, in *CreateEventSnapshotRequest, opts ...grpc.CallOption) (*CreateEventSnapshotResponse, error)
 }
 
 type dataServiceClient struct {
@@ -140,6 +160,96 @@ func (c *dataServiceClient) DeletePlayerData(ctx context.Context, in *DeletePlay
 	return out, nil
 }
 
+func (c *dataServiceClient) CreatePlayerSnapshot(ctx context.Context, in *CreatePlayerSnapshotRequest, opts ...grpc.CallOption) (*CreatePlayerSnapshotResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreatePlayerSnapshotResponse)
+	err := c.cc.Invoke(ctx, DataService_CreatePlayerSnapshot_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) ListPlayerSnapshots(ctx context.Context, in *ListPlayerSnapshotsRequest, opts ...grpc.CallOption) (*ListPlayerSnapshotsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPlayerSnapshotsResponse)
+	err := c.cc.Invoke(ctx, DataService_ListPlayerSnapshots_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) GetPlayerSnapshotDiff(ctx context.Context, in *GetPlayerSnapshotDiffRequest, opts ...grpc.CallOption) (*GetPlayerSnapshotDiffResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPlayerSnapshotDiffResponse)
+	err := c.cc.Invoke(ctx, DataService_GetPlayerSnapshotDiff_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) RollbackPlayer(ctx context.Context, in *RollbackPlayerRequest, opts ...grpc.CallOption) (*RollbackPlayerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RollbackPlayerResponse)
+	err := c.cc.Invoke(ctx, DataService_RollbackPlayer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) RollbackZone(ctx context.Context, in *RollbackZoneRequest, opts ...grpc.CallOption) (*RollbackZoneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RollbackZoneResponse)
+	err := c.cc.Invoke(ctx, DataService_RollbackZone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) RollbackAll(ctx context.Context, in *RollbackAllRequest, opts ...grpc.CallOption) (*RollbackAllResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RollbackAllResponse)
+	err := c.cc.Invoke(ctx, DataService_RollbackAll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) BatchRecallItems(ctx context.Context, in *BatchRecallItemsRequest, opts ...grpc.CallOption) (*BatchRecallItemsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchRecallItemsResponse)
+	err := c.cc.Invoke(ctx, DataService_BatchRecallItems_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) QueryTransactionLog(ctx context.Context, in *QueryTransactionLogRequest, opts ...grpc.CallOption) (*QueryTransactionLogResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryTransactionLogResponse)
+	err := c.cc.Invoke(ctx, DataService_QueryTransactionLog_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) CreateEventSnapshot(ctx context.Context, in *CreateEventSnapshotRequest, opts ...grpc.CallOption) (*CreateEventSnapshotResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateEventSnapshotResponse)
+	err := c.cc.Invoke(ctx, DataService_CreateEventSnapshot_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DataServiceServer is the server API for DataService service.
 // All implementations must embed UnimplementedDataServiceServer
 // for forward compatibility.
@@ -160,6 +270,17 @@ type DataServiceServer interface {
 	BatchGetPlayerHomeZone(context.Context, *BatchGetPlayerHomeZoneRequest) (*BatchGetPlayerHomeZoneResponse, error)
 	// ── Cleanup / merge ──────────────────────────────────────────
 	DeletePlayerData(context.Context, *DeletePlayerDataRequest) (*DeletePlayerDataResponse, error)
+	// ── Snapshot / Rollback ──────────────────────────────────────
+	CreatePlayerSnapshot(context.Context, *CreatePlayerSnapshotRequest) (*CreatePlayerSnapshotResponse, error)
+	ListPlayerSnapshots(context.Context, *ListPlayerSnapshotsRequest) (*ListPlayerSnapshotsResponse, error)
+	GetPlayerSnapshotDiff(context.Context, *GetPlayerSnapshotDiffRequest) (*GetPlayerSnapshotDiffResponse, error)
+	RollbackPlayer(context.Context, *RollbackPlayerRequest) (*RollbackPlayerResponse, error)
+	RollbackZone(context.Context, *RollbackZoneRequest) (*RollbackZoneResponse, error)
+	RollbackAll(context.Context, *RollbackAllRequest) (*RollbackAllResponse, error)
+	// ── Batch Recall / Anomaly / Event Snapshot ──────────────────
+	BatchRecallItems(context.Context, *BatchRecallItemsRequest) (*BatchRecallItemsResponse, error)
+	QueryTransactionLog(context.Context, *QueryTransactionLogRequest) (*QueryTransactionLogResponse, error)
+	CreateEventSnapshot(context.Context, *CreateEventSnapshotRequest) (*CreateEventSnapshotResponse, error)
 	mustEmbedUnimplementedDataServiceServer()
 }
 
@@ -193,6 +314,33 @@ func (UnimplementedDataServiceServer) BatchGetPlayerHomeZone(context.Context, *B
 }
 func (UnimplementedDataServiceServer) DeletePlayerData(context.Context, *DeletePlayerDataRequest) (*DeletePlayerDataResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeletePlayerData not implemented")
+}
+func (UnimplementedDataServiceServer) CreatePlayerSnapshot(context.Context, *CreatePlayerSnapshotRequest) (*CreatePlayerSnapshotResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreatePlayerSnapshot not implemented")
+}
+func (UnimplementedDataServiceServer) ListPlayerSnapshots(context.Context, *ListPlayerSnapshotsRequest) (*ListPlayerSnapshotsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPlayerSnapshots not implemented")
+}
+func (UnimplementedDataServiceServer) GetPlayerSnapshotDiff(context.Context, *GetPlayerSnapshotDiffRequest) (*GetPlayerSnapshotDiffResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPlayerSnapshotDiff not implemented")
+}
+func (UnimplementedDataServiceServer) RollbackPlayer(context.Context, *RollbackPlayerRequest) (*RollbackPlayerResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RollbackPlayer not implemented")
+}
+func (UnimplementedDataServiceServer) RollbackZone(context.Context, *RollbackZoneRequest) (*RollbackZoneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RollbackZone not implemented")
+}
+func (UnimplementedDataServiceServer) RollbackAll(context.Context, *RollbackAllRequest) (*RollbackAllResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RollbackAll not implemented")
+}
+func (UnimplementedDataServiceServer) BatchRecallItems(context.Context, *BatchRecallItemsRequest) (*BatchRecallItemsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BatchRecallItems not implemented")
+}
+func (UnimplementedDataServiceServer) QueryTransactionLog(context.Context, *QueryTransactionLogRequest) (*QueryTransactionLogResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method QueryTransactionLog not implemented")
+}
+func (UnimplementedDataServiceServer) CreateEventSnapshot(context.Context, *CreateEventSnapshotRequest) (*CreateEventSnapshotResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateEventSnapshot not implemented")
 }
 func (UnimplementedDataServiceServer) mustEmbedUnimplementedDataServiceServer() {}
 func (UnimplementedDataServiceServer) testEmbeddedByValue()                     {}
@@ -359,6 +507,168 @@ func _DataService_DeletePlayerData_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DataService_CreatePlayerSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePlayerSnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).CreatePlayerSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_CreatePlayerSnapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).CreatePlayerSnapshot(ctx, req.(*CreatePlayerSnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_ListPlayerSnapshots_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPlayerSnapshotsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).ListPlayerSnapshots(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_ListPlayerSnapshots_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).ListPlayerSnapshots(ctx, req.(*ListPlayerSnapshotsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_GetPlayerSnapshotDiff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPlayerSnapshotDiffRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).GetPlayerSnapshotDiff(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_GetPlayerSnapshotDiff_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).GetPlayerSnapshotDiff(ctx, req.(*GetPlayerSnapshotDiffRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_RollbackPlayer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RollbackPlayerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).RollbackPlayer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_RollbackPlayer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).RollbackPlayer(ctx, req.(*RollbackPlayerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_RollbackZone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RollbackZoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).RollbackZone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_RollbackZone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).RollbackZone(ctx, req.(*RollbackZoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_RollbackAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RollbackAllRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).RollbackAll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_RollbackAll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).RollbackAll(ctx, req.(*RollbackAllRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_BatchRecallItems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchRecallItemsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).BatchRecallItems(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_BatchRecallItems_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).BatchRecallItems(ctx, req.(*BatchRecallItemsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_QueryTransactionLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTransactionLogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).QueryTransactionLog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_QueryTransactionLog_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).QueryTransactionLog(ctx, req.(*QueryTransactionLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_CreateEventSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateEventSnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).CreateEventSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_CreateEventSnapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).CreateEventSnapshot(ctx, req.(*CreateEventSnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DataService_ServiceDesc is the grpc.ServiceDesc for DataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -397,6 +707,42 @@ var DataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeletePlayerData",
 			Handler:    _DataService_DeletePlayerData_Handler,
+		},
+		{
+			MethodName: "CreatePlayerSnapshot",
+			Handler:    _DataService_CreatePlayerSnapshot_Handler,
+		},
+		{
+			MethodName: "ListPlayerSnapshots",
+			Handler:    _DataService_ListPlayerSnapshots_Handler,
+		},
+		{
+			MethodName: "GetPlayerSnapshotDiff",
+			Handler:    _DataService_GetPlayerSnapshotDiff_Handler,
+		},
+		{
+			MethodName: "RollbackPlayer",
+			Handler:    _DataService_RollbackPlayer_Handler,
+		},
+		{
+			MethodName: "RollbackZone",
+			Handler:    _DataService_RollbackZone_Handler,
+		},
+		{
+			MethodName: "RollbackAll",
+			Handler:    _DataService_RollbackAll_Handler,
+		},
+		{
+			MethodName: "BatchRecallItems",
+			Handler:    _DataService_BatchRecallItems_Handler,
+		},
+		{
+			MethodName: "QueryTransactionLog",
+			Handler:    _DataService_QueryTransactionLog_Handler,
+		},
+		{
+			MethodName: "CreateEventSnapshot",
+			Handler:    _DataService_CreateEventSnapshot_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -15,6 +15,7 @@
 #include "proto/scene/game_player_scene.pb.h"
 #include "proto/scene/game_scene.pb.h"
 #include "proto/scene/player_currency.pb.h"
+#include "proto/scene/player_rollback.pb.h"
 #include "proto/scene/player_scene.pb.h"
 #include "proto/scene/player_skill.pb.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
@@ -33,6 +34,7 @@
 #include "rpc/service_metadata/game_player_scene_service_metadata.h"
 #include "rpc/service_metadata/game_scene_service_metadata.h"
 #include "rpc/service_metadata/player_currency_service_metadata.h"
+#include "rpc/service_metadata/player_rollback_service_metadata.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "rpc/service_metadata/player_skill_service_metadata.h"
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"
@@ -74,6 +76,7 @@ class ScenePlayerImpl final : public ScenePlayer {};
 class SceneScenePlayerImpl final : public SceneScenePlayer {};
 class SceneSceneImpl final : public SceneScene {};
 class SceneCurrencyClientPlayerImpl final : public SceneCurrencyClientPlayer {};
+class SceneRollbackClientPlayerImpl final : public SceneRollbackClientPlayer {};
 class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer {};
 class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
 class ScenePlayerSyncImpl final : public ScenePlayerSync {};
@@ -89,6 +92,15 @@ namespace data_service{void SendDataServiceRegisterPlayerZone(entt::registry& , 
 namespace data_service{void SendDataServiceGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceBatchGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceDeletePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceCreatePlayerSnapshot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceListPlayerSnapshots(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceGetPlayerSnapshotDiff(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceRollbackPlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceRollbackZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceRollbackAll(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceBatchRecallItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceQueryTransactionLog(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceCreateEventSnapshot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -121,12 +133,13 @@ namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt:
 namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 96> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 102> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -183,6 +196,51 @@ void InitMessageInfo()
         std::make_unique<::data_service::DeletePlayerDataRequest>(),
         std::make_unique<::data_service::DeletePlayerDataResponse>(),
         nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceDeletePlayerData};
+    gRpcMethodRegistry[DataServiceCreatePlayerSnapshotMessageId] = RpcMethodMeta{
+        "DataService", "CreatePlayerSnapshot",
+        std::make_unique<::data_service::CreatePlayerSnapshotRequest>(),
+        std::make_unique<::data_service::CreatePlayerSnapshotResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreatePlayerSnapshot};
+    gRpcMethodRegistry[DataServiceListPlayerSnapshotsMessageId] = RpcMethodMeta{
+        "DataService", "ListPlayerSnapshots",
+        std::make_unique<::data_service::ListPlayerSnapshotsRequest>(),
+        std::make_unique<::data_service::ListPlayerSnapshotsResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceListPlayerSnapshots};
+    gRpcMethodRegistry[DataServiceGetPlayerSnapshotDiffMessageId] = RpcMethodMeta{
+        "DataService", "GetPlayerSnapshotDiff",
+        std::make_unique<::data_service::GetPlayerSnapshotDiffRequest>(),
+        std::make_unique<::data_service::GetPlayerSnapshotDiffResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerSnapshotDiff};
+    gRpcMethodRegistry[DataServiceRollbackPlayerMessageId] = RpcMethodMeta{
+        "DataService", "RollbackPlayer",
+        std::make_unique<::data_service::RollbackPlayerRequest>(),
+        std::make_unique<::data_service::RollbackPlayerResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackPlayer};
+    gRpcMethodRegistry[DataServiceRollbackZoneMessageId] = RpcMethodMeta{
+        "DataService", "RollbackZone",
+        std::make_unique<::data_service::RollbackZoneRequest>(),
+        std::make_unique<::data_service::RollbackZoneResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackZone};
+    gRpcMethodRegistry[DataServiceRollbackAllMessageId] = RpcMethodMeta{
+        "DataService", "RollbackAll",
+        std::make_unique<::data_service::RollbackAllRequest>(),
+        std::make_unique<::data_service::RollbackAllResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackAll};
+    gRpcMethodRegistry[DataServiceBatchRecallItemsMessageId] = RpcMethodMeta{
+        "DataService", "BatchRecallItems",
+        std::make_unique<::data_service::BatchRecallItemsRequest>(),
+        std::make_unique<::data_service::BatchRecallItemsResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchRecallItems};
+    gRpcMethodRegistry[DataServiceQueryTransactionLogMessageId] = RpcMethodMeta{
+        "DataService", "QueryTransactionLog",
+        std::make_unique<::data_service::QueryTransactionLogRequest>(),
+        std::make_unique<::data_service::QueryTransactionLogResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceQueryTransactionLog};
+    gRpcMethodRegistry[DataServiceCreateEventSnapshotMessageId] = RpcMethodMeta{
+        "DataService", "CreateEventSnapshot",
+        std::make_unique<::data_service::CreateEventSnapshotRequest>(),
+        std::make_unique<::data_service::CreateEventSnapshotResponse>(),
+        nullptr, 0, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreateEventSnapshot};
 
     // --- KV ---
     gRpcMethodRegistry[KVRangeMessageId] = RpcMethodMeta{
@@ -393,6 +451,13 @@ void InitMessageInfo()
         std::make_unique<::loginpb::LoginEmptyResponse>(),
         nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
 
+    // --- LoginAdmin ---
+    gRpcMethodRegistry[LoginAdminRemovePlayersFromAccountsMessageId] = RpcMethodMeta{
+        "LoginAdmin", "RemovePlayersFromAccounts",
+        std::make_unique<::loginpb::RemovePlayersFromAccountsRequest>(),
+        std::make_unique<::loginpb::RemovePlayersFromAccountsResponse>(),
+        nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendLoginAdminRemovePlayersFromAccounts};
+
     // --- SceneClientPlayerCommon ---
     gRpcMethodRegistry[SceneClientPlayerCommonSendTipToClientMessageId] = RpcMethodMeta{
         "SceneClientPlayerCommon", "SendTipToClient",
@@ -467,6 +532,68 @@ void InitMessageInfo()
         std::make_unique<::GmUnblockCurrencyRequest>(),
         std::make_unique<::GmUnblockCurrencyResponse>(),
         std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+
+    // --- SceneRollbackClientPlayer ---
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmAttachDebtMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmAttachDebt",
+        std::make_unique<::GmAttachDebtRequest>(),
+        std::make_unique<::GmAttachDebtResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmWaiveDebtMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmWaiveDebt",
+        std::make_unique<::GmWaiveDebtRequest>(),
+        std::make_unique<::GmWaiveDebtResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmAdjustDebtMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmAdjustDebt",
+        std::make_unique<::GmAdjustDebtRequest>(),
+        std::make_unique<::GmAdjustDebtResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmFreezeDebtMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmFreezeDebt",
+        std::make_unique<::GmFreezeDebtRequest>(),
+        std::make_unique<::GmFreezeDebtResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmQueryDebtMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmQueryDebt",
+        std::make_unique<::GmQueryDebtRequest>(),
+        std::make_unique<::GmQueryDebtResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmCreateSnapshotMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmCreateSnapshot",
+        std::make_unique<::GmCreateSnapshotRequest>(),
+        std::make_unique<::GmCreateSnapshotResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmListSnapshotsMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmListSnapshots",
+        std::make_unique<::GmListSnapshotsRequest>(),
+        std::make_unique<::GmListSnapshotsResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmPreviewRollbackMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmPreviewRollback",
+        std::make_unique<::GmPreviewRollbackRequest>(),
+        std::make_unique<::GmPreviewRollbackResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmExecuteRollbackMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmExecuteRollback",
+        std::make_unique<::GmExecuteRollbackRequest>(),
+        std::make_unique<::GmExecuteRollbackResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmQueryTransactionLogMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmQueryTransactionLog",
+        std::make_unique<::GmQueryTransactionLogRequest>(),
+        std::make_unique<::GmQueryTransactionLogResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmTraceItemMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmTraceItem",
+        std::make_unique<::GmTraceItemRequest>(),
+        std::make_unique<::GmTraceItemResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneRollbackClientPlayerGmClawbackItemMessageId] = RpcMethodMeta{
+        "SceneRollbackClientPlayer", "GmClawbackItem",
+        std::make_unique<::GmClawbackItemRequest>(),
+        std::make_unique<::GmClawbackItemResponse>(),
+        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneSceneClientPlayer ---
     gRpcMethodRegistry[SceneSceneClientPlayerEnterSceneMessageId] = RpcMethodMeta{

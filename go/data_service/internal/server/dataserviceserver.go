@@ -234,6 +234,8 @@ func (s *DataServiceServer) RollbackZone(ctx context.Context, req *data_service.
 		PlayersAffected: resp.PlayersAffected,
 		PlayersFailed:   resp.PlayersFailed,
 		FailedPlayerIds: resp.FailedPlayerIDs,
+		OrphanPlayerIds: resp.OrphanPlayerIDs,
+		OrphansCleaned:  resp.OrphansCleaned,
 	}, nil
 }
 
@@ -257,53 +259,7 @@ func (s *DataServiceServer) RollbackAll(ctx context.Context, req *data_service.R
 	}, nil
 }
 
-func (s *DataServiceServer) CreateZoneSnapshot(ctx context.Context, req *data_service.CreateZoneSnapshotRequest) (*data_service.CreateZoneSnapshotResponse, error) {
-	if s.svcCtx.SnapshotStore == nil {
-		return &data_service.CreateZoneSnapshotResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
-	}
-	resp, err := logic.CreateZoneSnapshot(ctx, s.svcCtx, &logic.CreateZoneSnapshotReq{
-		ZoneID:   req.ZoneId,
-		Reason:   req.Reason,
-		Operator: req.Operator,
-	})
-	if err != nil {
-		return &data_service.CreateZoneSnapshotResponse{ErrorCode: resp.ErrorCode}, nil
-	}
-	return &data_service.CreateZoneSnapshotResponse{
-		ErrorCode:  resp.ErrorCode,
-		SnapshotId: resp.SnapshotID,
-		CreatedAt:  resp.CreatedAt,
-	}, nil
-}
 
-func (s *DataServiceServer) ListZoneSnapshots(ctx context.Context, req *data_service.ListZoneSnapshotsRequest) (*data_service.ListZoneSnapshotsResponse, error) {
-	if s.svcCtx.SnapshotStore == nil {
-		return &data_service.ListZoneSnapshotsResponse{ErrorCode: constants.ErrCodeSnapshotDBError}, nil
-	}
-	resp, err := logic.ListZoneSnapshots(ctx, s.svcCtx, &logic.ListZoneSnapshotsReq{
-		ZoneID: req.ZoneId,
-		Limit:  req.Limit,
-	})
-	if err != nil {
-		return &data_service.ListZoneSnapshotsResponse{ErrorCode: resp.ErrorCode}, nil
-	}
-
-	infos := make([]*data_service.ZoneSnapshotInfo, 0, len(resp.Snapshots))
-	for _, item := range resp.Snapshots {
-		infos = append(infos, &data_service.ZoneSnapshotInfo{
-			SnapshotId:    item.SnapshotID,
-			ZoneId:        item.ZoneID,
-			CreatedAt:     item.CreatedAt,
-			Reason:        item.Reason,
-			Operator:      item.Operator,
-			DataSizeBytes: item.DataSizeBytes,
-		})
-	}
-	return &data_service.ListZoneSnapshotsResponse{
-		ErrorCode: resp.ErrorCode,
-		Snapshots: infos,
-	}, nil
-}
 
 // ── Batch Recall / Transaction Log Query / Event Snapshot ──────
 

@@ -22,6 +22,7 @@ void ScenePlayerHandler::GateLoginNotify(entt::entity player,const ::GateLoginNo
 
 	PlayerLifecycleSystem::OnPlayerLogin(player, request->enter_gs_type());
 ///<<< END WRITING YOUR CODE
+
 }
 
 void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRequest* request,

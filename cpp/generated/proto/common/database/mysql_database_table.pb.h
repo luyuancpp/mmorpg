@@ -75,6 +75,14 @@ class player_database_1;
 struct player_database_1DefaultTypeInternal;
 extern player_database_1DefaultTypeInternal _player_database_1_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull player_database_1_class_data_;
+class player_snapshot;
+struct player_snapshotDefaultTypeInternal;
+extern player_snapshotDefaultTypeInternal _player_snapshot_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull player_snapshot_class_data_;
+class rollback_audit_log;
+struct rollback_audit_logDefaultTypeInternal;
+extern rollback_audit_logDefaultTypeInternal _rollback_audit_log_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull rollback_audit_log_class_data_;
 class user;
 struct userDefaultTypeInternal;
 extern userDefaultTypeInternal _user_default_instance_;
@@ -1025,6 +1033,629 @@ class user final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull user_class_data_;
+// -------------------------------------------------------------------
+
+class rollback_audit_log final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:rollback_audit_log) */ {
+ public:
+  inline rollback_audit_log() : rollback_audit_log(nullptr) {}
+  ~rollback_audit_log() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(rollback_audit_log* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(rollback_audit_log));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR rollback_audit_log(::google::protobuf::internal::ConstantInitialized);
+
+  inline rollback_audit_log(const rollback_audit_log& from) : rollback_audit_log(nullptr, from) {}
+  inline rollback_audit_log(rollback_audit_log&& from) noexcept
+      : rollback_audit_log(nullptr, ::std::move(from)) {}
+  inline rollback_audit_log& operator=(const rollback_audit_log& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline rollback_audit_log& operator=(rollback_audit_log&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const rollback_audit_log& default_instance() {
+    return *reinterpret_cast<const rollback_audit_log*>(
+        &_rollback_audit_log_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 10;
+  friend void swap(rollback_audit_log& a, rollback_audit_log& b) { a.Swap(&b); }
+  inline void Swap(rollback_audit_log* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(rollback_audit_log* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  rollback_audit_log* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<rollback_audit_log>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const rollback_audit_log& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const rollback_audit_log& from) { rollback_audit_log::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(rollback_audit_log* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "rollback_audit_log"; }
+
+ protected:
+  explicit rollback_audit_log(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  rollback_audit_log(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const rollback_audit_log& from);
+  rollback_audit_log(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, rollback_audit_log&& from) noexcept
+      : rollback_audit_log(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kReasonFieldNumber = 10,
+    kOperatorFieldNumber = 11,
+    kIdFieldNumber = 1,
+    kPlayerIdFieldNumber = 2,
+    kZoneIdFieldNumber = 3,
+    kRollbackTypeFieldNumber = 4,
+    kSnapshotIdUsedFieldNumber = 5,
+    kPreRollbackSnapshotIdFieldNumber = 6,
+    kTargetTimeFieldNumber = 7,
+    kPlayersAffectedFieldNumber = 8,
+    kPlayersFailedFieldNumber = 9,
+    kCreatedAtFieldNumber = 12,
+  };
+  // string reason = 10;
+  void clear_reason() ;
+  const ::std::string& reason() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_reason(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_reason();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_reason();
+  void set_allocated_reason(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_reason() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_reason(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_reason();
+
+  public:
+  // string operator = 11;
+  void clear_operator_() ;
+  const ::std::string& operator_() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_operator_(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_operator_();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_operator_();
+  void set_allocated_operator_(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_operator_() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_operator_(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_operator_();
+
+  public:
+  // uint64 id = 1;
+  void clear_id() ;
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
+
+  public:
+  // uint64 player_id = 2;
+  void clear_player_id() ;
+  ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint32 zone_id = 3;
+  void clear_zone_id() ;
+  ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
+  // uint32 rollback_type = 4;
+  void clear_rollback_type() ;
+  ::uint32_t rollback_type() const;
+  void set_rollback_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_rollback_type() const;
+  void _internal_set_rollback_type(::uint32_t value);
+
+  public:
+  // uint64 snapshot_id_used = 5;
+  void clear_snapshot_id_used() ;
+  ::uint64_t snapshot_id_used() const;
+  void set_snapshot_id_used(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_snapshot_id_used() const;
+  void _internal_set_snapshot_id_used(::uint64_t value);
+
+  public:
+  // uint64 pre_rollback_snapshot_id = 6;
+  void clear_pre_rollback_snapshot_id() ;
+  ::uint64_t pre_rollback_snapshot_id() const;
+  void set_pre_rollback_snapshot_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_pre_rollback_snapshot_id() const;
+  void _internal_set_pre_rollback_snapshot_id(::uint64_t value);
+
+  public:
+  // uint64 target_time = 7;
+  void clear_target_time() ;
+  ::uint64_t target_time() const;
+  void set_target_time(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_target_time() const;
+  void _internal_set_target_time(::uint64_t value);
+
+  public:
+  // uint32 players_affected = 8;
+  void clear_players_affected() ;
+  ::uint32_t players_affected() const;
+  void set_players_affected(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_players_affected() const;
+  void _internal_set_players_affected(::uint32_t value);
+
+  public:
+  // uint32 players_failed = 9;
+  void clear_players_failed() ;
+  ::uint32_t players_failed() const;
+  void set_players_failed(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_players_failed() const;
+  void _internal_set_players_failed(::uint32_t value);
+
+  public:
+  // uint64 created_at = 12;
+  void clear_created_at() ;
+  ::uint64_t created_at() const;
+  void set_created_at(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_created_at() const;
+  void _internal_set_created_at(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:rollback_audit_log)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<4, 12,
+                                   0, 49,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const rollback_audit_log& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr reason_;
+    ::google::protobuf::internal::ArenaStringPtr operator__;
+    ::uint64_t id_;
+    ::uint64_t player_id_;
+    ::uint32_t zone_id_;
+    ::uint32_t rollback_type_;
+    ::uint64_t snapshot_id_used_;
+    ::uint64_t pre_rollback_snapshot_id_;
+    ::uint64_t target_time_;
+    ::uint32_t players_affected_;
+    ::uint32_t players_failed_;
+    ::uint64_t created_at_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull rollback_audit_log_class_data_;
+// -------------------------------------------------------------------
+
+class player_snapshot final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:player_snapshot) */ {
+ public:
+  inline player_snapshot() : player_snapshot(nullptr) {}
+  ~player_snapshot() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(player_snapshot* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(player_snapshot));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR player_snapshot(::google::protobuf::internal::ConstantInitialized);
+
+  inline player_snapshot(const player_snapshot& from) : player_snapshot(nullptr, from) {}
+  inline player_snapshot(player_snapshot&& from) noexcept
+      : player_snapshot(nullptr, ::std::move(from)) {}
+  inline player_snapshot& operator=(const player_snapshot& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline player_snapshot& operator=(player_snapshot&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const player_snapshot& default_instance() {
+    return *reinterpret_cast<const player_snapshot*>(
+        &_player_snapshot_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 9;
+  friend void swap(player_snapshot& a, player_snapshot& b) { a.Swap(&b); }
+  inline void Swap(player_snapshot* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(player_snapshot* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  player_snapshot* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<player_snapshot>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const player_snapshot& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const player_snapshot& from) { player_snapshot::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(player_snapshot* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "player_snapshot"; }
+
+ protected:
+  explicit player_snapshot(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  player_snapshot(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const player_snapshot& from);
+  player_snapshot(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, player_snapshot&& from) noexcept
+      : player_snapshot(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kReasonFieldNumber = 6,
+    kOperatorFieldNumber = 7,
+    kDataFieldNumber = 8,
+    kIdFieldNumber = 1,
+    kPlayerIdFieldNumber = 2,
+    kZoneIdFieldNumber = 3,
+    kSnapshotTypeFieldNumber = 4,
+    kCreatedAtFieldNumber = 5,
+  };
+  // string reason = 6;
+  void clear_reason() ;
+  const ::std::string& reason() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_reason(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_reason();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_reason();
+  void set_allocated_reason(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_reason() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_reason(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_reason();
+
+  public:
+  // string operator = 7;
+  void clear_operator_() ;
+  const ::std::string& operator_() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_operator_(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_operator_();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_operator_();
+  void set_allocated_operator_(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_operator_() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_operator_(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_operator_();
+
+  public:
+  // bytes data = 8;
+  void clear_data() ;
+  const ::std::string& data() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_data(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_data();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_data();
+  void set_allocated_data(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_data() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_data(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_data();
+
+  public:
+  // uint64 id = 1;
+  void clear_id() ;
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
+
+  public:
+  // uint64 player_id = 2;
+  void clear_player_id() ;
+  ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint32 zone_id = 3;
+  void clear_zone_id() ;
+  ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
+  // uint32 snapshot_type = 4;
+  void clear_snapshot_type() ;
+  ::uint32_t snapshot_type() const;
+  void set_snapshot_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_snapshot_type() const;
+  void _internal_set_snapshot_type(::uint32_t value);
+
+  public:
+  // uint64 created_at = 5;
+  void clear_created_at() ;
+  ::uint64_t created_at() const;
+  void set_created_at(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_created_at() const;
+  void _internal_set_created_at(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:player_snapshot)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 8,
+                                   0, 46,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const player_snapshot& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr reason_;
+    ::google::protobuf::internal::ArenaStringPtr operator__;
+    ::google::protobuf::internal::ArenaStringPtr data_;
+    ::uint64_t id_;
+    ::uint64_t player_id_;
+    ::uint32_t zone_id_;
+    ::uint32_t snapshot_type_;
+    ::uint64_t created_at_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull player_snapshot_class_data_;
 // -------------------------------------------------------------------
 
 class player_database_1 final : public ::google::protobuf::Message
@@ -3876,6 +4507,699 @@ inline ::uint64_t player_database_1::_internal_player_id() const {
 inline void player_database_1::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// player_snapshot
+
+// uint64 id = 1;
+inline void player_snapshot::clear_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint64_t player_snapshot::id() const {
+  // @@protoc_insertion_point(field_get:player_snapshot.id)
+  return _internal_id();
+}
+inline void player_snapshot::set_id(::uint64_t value) {
+  _internal_set_id(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:player_snapshot.id)
+}
+inline ::uint64_t player_snapshot::_internal_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.id_;
+}
+inline void player_snapshot::_internal_set_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.id_ = value;
+}
+
+// uint64 player_id = 2;
+inline void player_snapshot::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::uint64_t player_snapshot::player_id() const {
+  // @@protoc_insertion_point(field_get:player_snapshot.player_id)
+  return _internal_player_id();
+}
+inline void player_snapshot::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:player_snapshot.player_id)
+}
+inline ::uint64_t player_snapshot::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void player_snapshot::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint32 zone_id = 3;
+inline void player_snapshot::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
+}
+inline ::uint32_t player_snapshot::zone_id() const {
+  // @@protoc_insertion_point(field_get:player_snapshot.zone_id)
+  return _internal_zone_id();
+}
+inline void player_snapshot::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000020u;
+  // @@protoc_insertion_point(field_set:player_snapshot.zone_id)
+}
+inline ::uint32_t player_snapshot::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void player_snapshot::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
+}
+
+// uint32 snapshot_type = 4;
+inline void player_snapshot::clear_snapshot_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.snapshot_type_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
+}
+inline ::uint32_t player_snapshot::snapshot_type() const {
+  // @@protoc_insertion_point(field_get:player_snapshot.snapshot_type)
+  return _internal_snapshot_type();
+}
+inline void player_snapshot::set_snapshot_type(::uint32_t value) {
+  _internal_set_snapshot_type(value);
+  _impl_._has_bits_[0] |= 0x00000040u;
+  // @@protoc_insertion_point(field_set:player_snapshot.snapshot_type)
+}
+inline ::uint32_t player_snapshot::_internal_snapshot_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.snapshot_type_;
+}
+inline void player_snapshot::_internal_set_snapshot_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.snapshot_type_ = value;
+}
+
+// uint64 created_at = 5;
+inline void player_snapshot::clear_created_at() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_at_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000080u;
+}
+inline ::uint64_t player_snapshot::created_at() const {
+  // @@protoc_insertion_point(field_get:player_snapshot.created_at)
+  return _internal_created_at();
+}
+inline void player_snapshot::set_created_at(::uint64_t value) {
+  _internal_set_created_at(value);
+  _impl_._has_bits_[0] |= 0x00000080u;
+  // @@protoc_insertion_point(field_set:player_snapshot.created_at)
+}
+inline ::uint64_t player_snapshot::_internal_created_at() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.created_at_;
+}
+inline void player_snapshot::_internal_set_created_at(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_at_ = value;
+}
+
+// string reason = 6;
+inline void player_snapshot::clear_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reason_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& player_snapshot::reason() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_snapshot.reason)
+  return _internal_reason();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void player_snapshot::set_reason(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.reason_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:player_snapshot.reason)
+}
+inline ::std::string* PROTOBUF_NONNULL player_snapshot::mutable_reason()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_reason();
+  // @@protoc_insertion_point(field_mutable:player_snapshot.reason)
+  return _s;
+}
+inline const ::std::string& player_snapshot::_internal_reason() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.reason_.Get();
+}
+inline void player_snapshot::_internal_set_reason(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.reason_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL player_snapshot::_internal_mutable_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.reason_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE player_snapshot::release_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_snapshot.reason)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.reason_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.reason_.Set("", GetArena());
+  }
+  return released;
+}
+inline void player_snapshot::set_allocated_reason(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.reason_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.reason_.IsDefault()) {
+    _impl_.reason_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:player_snapshot.reason)
+}
+
+// string operator = 7;
+inline void player_snapshot::clear_operator_() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.operator__.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::std::string& player_snapshot::operator_() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_snapshot.operator)
+  return _internal_operator_();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void player_snapshot::set_operator_(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.operator__.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:player_snapshot.operator)
+}
+inline ::std::string* PROTOBUF_NONNULL player_snapshot::mutable_operator_()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_operator_();
+  // @@protoc_insertion_point(field_mutable:player_snapshot.operator)
+  return _s;
+}
+inline const ::std::string& player_snapshot::_internal_operator_() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.operator__.Get();
+}
+inline void player_snapshot::_internal_set_operator_(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.operator__.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL player_snapshot::_internal_mutable_operator_() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  return _impl_.operator__.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE player_snapshot::release_operator_() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_snapshot.operator)
+  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  auto* released = _impl_.operator__.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.operator__.Set("", GetArena());
+  }
+  return released;
+}
+inline void player_snapshot::set_allocated_operator_(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.operator__.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.operator__.IsDefault()) {
+    _impl_.operator__.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:player_snapshot.operator)
+}
+
+// bytes data = 8;
+inline void player_snapshot::clear_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.data_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline const ::std::string& player_snapshot::data() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_snapshot.data)
+  return _internal_data();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void player_snapshot::set_data(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_.data_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:player_snapshot.data)
+}
+inline ::std::string* PROTOBUF_NONNULL player_snapshot::mutable_data()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_data();
+  // @@protoc_insertion_point(field_mutable:player_snapshot.data)
+  return _s;
+}
+inline const ::std::string& player_snapshot::_internal_data() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.data_.Get();
+}
+inline void player_snapshot::_internal_set_data(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_.data_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL player_snapshot::_internal_mutable_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  return _impl_.data_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE player_snapshot::release_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_snapshot.data)
+  if ((_impl_._has_bits_[0] & 0x00000004u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  auto* released = _impl_.data_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.data_.Set("", GetArena());
+  }
+  return released;
+}
+inline void player_snapshot::set_allocated_data(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+  _impl_.data_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.data_.IsDefault()) {
+    _impl_.data_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:player_snapshot.data)
+}
+
+// -------------------------------------------------------------------
+
+// rollback_audit_log
+
+// uint64 id = 1;
+inline void rollback_audit_log::clear_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint64_t rollback_audit_log::id() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.id)
+  return _internal_id();
+}
+inline void rollback_audit_log::set_id(::uint64_t value) {
+  _internal_set_id(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.id)
+}
+inline ::uint64_t rollback_audit_log::_internal_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.id_;
+}
+inline void rollback_audit_log::_internal_set_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.id_ = value;
+}
+
+// uint64 player_id = 2;
+inline void rollback_audit_log::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint64_t rollback_audit_log::player_id() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.player_id)
+  return _internal_player_id();
+}
+inline void rollback_audit_log::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.player_id)
+}
+inline ::uint64_t rollback_audit_log::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void rollback_audit_log::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint32 zone_id = 3;
+inline void rollback_audit_log::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::uint32_t rollback_audit_log::zone_id() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.zone_id)
+  return _internal_zone_id();
+}
+inline void rollback_audit_log::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.zone_id)
+}
+inline ::uint32_t rollback_audit_log::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void rollback_audit_log::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
+}
+
+// uint32 rollback_type = 4;
+inline void rollback_audit_log::clear_rollback_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rollback_type_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
+}
+inline ::uint32_t rollback_audit_log::rollback_type() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.rollback_type)
+  return _internal_rollback_type();
+}
+inline void rollback_audit_log::set_rollback_type(::uint32_t value) {
+  _internal_set_rollback_type(value);
+  _impl_._has_bits_[0] |= 0x00000020u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.rollback_type)
+}
+inline ::uint32_t rollback_audit_log::_internal_rollback_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.rollback_type_;
+}
+inline void rollback_audit_log::_internal_set_rollback_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rollback_type_ = value;
+}
+
+// uint64 snapshot_id_used = 5;
+inline void rollback_audit_log::clear_snapshot_id_used() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.snapshot_id_used_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000040u;
+}
+inline ::uint64_t rollback_audit_log::snapshot_id_used() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.snapshot_id_used)
+  return _internal_snapshot_id_used();
+}
+inline void rollback_audit_log::set_snapshot_id_used(::uint64_t value) {
+  _internal_set_snapshot_id_used(value);
+  _impl_._has_bits_[0] |= 0x00000040u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.snapshot_id_used)
+}
+inline ::uint64_t rollback_audit_log::_internal_snapshot_id_used() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.snapshot_id_used_;
+}
+inline void rollback_audit_log::_internal_set_snapshot_id_used(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.snapshot_id_used_ = value;
+}
+
+// uint64 pre_rollback_snapshot_id = 6;
+inline void rollback_audit_log::clear_pre_rollback_snapshot_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pre_rollback_snapshot_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000080u;
+}
+inline ::uint64_t rollback_audit_log::pre_rollback_snapshot_id() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.pre_rollback_snapshot_id)
+  return _internal_pre_rollback_snapshot_id();
+}
+inline void rollback_audit_log::set_pre_rollback_snapshot_id(::uint64_t value) {
+  _internal_set_pre_rollback_snapshot_id(value);
+  _impl_._has_bits_[0] |= 0x00000080u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.pre_rollback_snapshot_id)
+}
+inline ::uint64_t rollback_audit_log::_internal_pre_rollback_snapshot_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.pre_rollback_snapshot_id_;
+}
+inline void rollback_audit_log::_internal_set_pre_rollback_snapshot_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pre_rollback_snapshot_id_ = value;
+}
+
+// uint64 target_time = 7;
+inline void rollback_audit_log::clear_target_time() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_time_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000100u;
+}
+inline ::uint64_t rollback_audit_log::target_time() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.target_time)
+  return _internal_target_time();
+}
+inline void rollback_audit_log::set_target_time(::uint64_t value) {
+  _internal_set_target_time(value);
+  _impl_._has_bits_[0] |= 0x00000100u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.target_time)
+}
+inline ::uint64_t rollback_audit_log::_internal_target_time() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_time_;
+}
+inline void rollback_audit_log::_internal_set_target_time(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_time_ = value;
+}
+
+// uint32 players_affected = 8;
+inline void rollback_audit_log::clear_players_affected() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.players_affected_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000200u;
+}
+inline ::uint32_t rollback_audit_log::players_affected() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.players_affected)
+  return _internal_players_affected();
+}
+inline void rollback_audit_log::set_players_affected(::uint32_t value) {
+  _internal_set_players_affected(value);
+  _impl_._has_bits_[0] |= 0x00000200u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.players_affected)
+}
+inline ::uint32_t rollback_audit_log::_internal_players_affected() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.players_affected_;
+}
+inline void rollback_audit_log::_internal_set_players_affected(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.players_affected_ = value;
+}
+
+// uint32 players_failed = 9;
+inline void rollback_audit_log::clear_players_failed() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.players_failed_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000400u;
+}
+inline ::uint32_t rollback_audit_log::players_failed() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.players_failed)
+  return _internal_players_failed();
+}
+inline void rollback_audit_log::set_players_failed(::uint32_t value) {
+  _internal_set_players_failed(value);
+  _impl_._has_bits_[0] |= 0x00000400u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.players_failed)
+}
+inline ::uint32_t rollback_audit_log::_internal_players_failed() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.players_failed_;
+}
+inline void rollback_audit_log::_internal_set_players_failed(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.players_failed_ = value;
+}
+
+// string reason = 10;
+inline void rollback_audit_log::clear_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reason_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& rollback_audit_log::reason() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.reason)
+  return _internal_reason();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void rollback_audit_log::set_reason(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.reason_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:rollback_audit_log.reason)
+}
+inline ::std::string* PROTOBUF_NONNULL rollback_audit_log::mutable_reason()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_reason();
+  // @@protoc_insertion_point(field_mutable:rollback_audit_log.reason)
+  return _s;
+}
+inline const ::std::string& rollback_audit_log::_internal_reason() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.reason_.Get();
+}
+inline void rollback_audit_log::_internal_set_reason(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.reason_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL rollback_audit_log::_internal_mutable_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.reason_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE rollback_audit_log::release_reason() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rollback_audit_log.reason)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.reason_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.reason_.Set("", GetArena());
+  }
+  return released;
+}
+inline void rollback_audit_log::set_allocated_reason(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.reason_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.reason_.IsDefault()) {
+    _impl_.reason_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:rollback_audit_log.reason)
+}
+
+// string operator = 11;
+inline void rollback_audit_log::clear_operator_() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.operator__.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::std::string& rollback_audit_log::operator_() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.operator)
+  return _internal_operator_();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void rollback_audit_log::set_operator_(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.operator__.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:rollback_audit_log.operator)
+}
+inline ::std::string* PROTOBUF_NONNULL rollback_audit_log::mutable_operator_()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_operator_();
+  // @@protoc_insertion_point(field_mutable:rollback_audit_log.operator)
+  return _s;
+}
+inline const ::std::string& rollback_audit_log::_internal_operator_() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.operator__.Get();
+}
+inline void rollback_audit_log::_internal_set_operator_(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.operator__.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL rollback_audit_log::_internal_mutable_operator_() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  return _impl_.operator__.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE rollback_audit_log::release_operator_() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:rollback_audit_log.operator)
+  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  auto* released = _impl_.operator__.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.operator__.Set("", GetArena());
+  }
+  return released;
+}
+inline void rollback_audit_log::set_allocated_operator_(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.operator__.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.operator__.IsDefault()) {
+    _impl_.operator__.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:rollback_audit_log.operator)
+}
+
+// uint64 created_at = 12;
+inline void rollback_audit_log::clear_created_at() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_at_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000800u;
+}
+inline ::uint64_t rollback_audit_log::created_at() const {
+  // @@protoc_insertion_point(field_get:rollback_audit_log.created_at)
+  return _internal_created_at();
+}
+inline void rollback_audit_log::set_created_at(::uint64_t value) {
+  _internal_set_created_at(value);
+  _impl_._has_bits_[0] |= 0x00000800u;
+  // @@protoc_insertion_point(field_set:rollback_audit_log.created_at)
+}
+inline ::uint64_t rollback_audit_log::_internal_created_at() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.created_at_;
+}
+inline void rollback_audit_log::_internal_set_created_at(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_at_ = value;
 }
 
 #ifdef __GNUC__

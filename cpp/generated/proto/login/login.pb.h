@@ -101,6 +101,14 @@ class LoginSessionInfo;
 struct LoginSessionInfoDefaultTypeInternal;
 extern LoginSessionInfoDefaultTypeInternal _LoginSessionInfo_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull LoginSessionInfo_class_data_;
+class RemovePlayersFromAccountsRequest;
+struct RemovePlayersFromAccountsRequestDefaultTypeInternal;
+extern RemovePlayersFromAccountsRequestDefaultTypeInternal _RemovePlayersFromAccountsRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RemovePlayersFromAccountsRequest_class_data_;
+class RemovePlayersFromAccountsResponse;
+struct RemovePlayersFromAccountsResponseDefaultTypeInternal;
+extern RemovePlayersFromAccountsResponseDefaultTypeInternal _RemovePlayersFromAccountsResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RemovePlayersFromAccountsResponse_class_data_;
 class TestResponse;
 struct TestResponseDefaultTypeInternal;
 extern TestResponseDefaultTypeInternal _TestResponse_default_instance_;
@@ -116,6 +124,420 @@ namespace loginpb {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class RemovePlayersFromAccountsResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:loginpb.RemovePlayersFromAccountsResponse) */ {
+ public:
+  inline RemovePlayersFromAccountsResponse() : RemovePlayersFromAccountsResponse(nullptr) {}
+  ~RemovePlayersFromAccountsResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RemovePlayersFromAccountsResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RemovePlayersFromAccountsResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RemovePlayersFromAccountsResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline RemovePlayersFromAccountsResponse(const RemovePlayersFromAccountsResponse& from) : RemovePlayersFromAccountsResponse(nullptr, from) {}
+  inline RemovePlayersFromAccountsResponse(RemovePlayersFromAccountsResponse&& from) noexcept
+      : RemovePlayersFromAccountsResponse(nullptr, ::std::move(from)) {}
+  inline RemovePlayersFromAccountsResponse& operator=(const RemovePlayersFromAccountsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RemovePlayersFromAccountsResponse& operator=(RemovePlayersFromAccountsResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RemovePlayersFromAccountsResponse& default_instance() {
+    return *reinterpret_cast<const RemovePlayersFromAccountsResponse*>(
+        &_RemovePlayersFromAccountsResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 13;
+  friend void swap(RemovePlayersFromAccountsResponse& a, RemovePlayersFromAccountsResponse& b) { a.Swap(&b); }
+  inline void Swap(RemovePlayersFromAccountsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RemovePlayersFromAccountsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RemovePlayersFromAccountsResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RemovePlayersFromAccountsResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RemovePlayersFromAccountsResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RemovePlayersFromAccountsResponse& from) { RemovePlayersFromAccountsResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RemovePlayersFromAccountsResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "loginpb.RemovePlayersFromAccountsResponse"; }
+
+ protected:
+  explicit RemovePlayersFromAccountsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RemovePlayersFromAccountsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RemovePlayersFromAccountsResponse& from);
+  RemovePlayersFromAccountsResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RemovePlayersFromAccountsResponse&& from) noexcept
+      : RemovePlayersFromAccountsResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRemovedCountFieldNumber = 1,
+    kNotFoundCountFieldNumber = 2,
+    kFailedCountFieldNumber = 3,
+  };
+  // uint32 removed_count = 1;
+  void clear_removed_count() ;
+  ::uint32_t removed_count() const;
+  void set_removed_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_removed_count() const;
+  void _internal_set_removed_count(::uint32_t value);
+
+  public:
+  // uint32 not_found_count = 2;
+  void clear_not_found_count() ;
+  ::uint32_t not_found_count() const;
+  void set_not_found_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_not_found_count() const;
+  void _internal_set_not_found_count(::uint32_t value);
+
+  public:
+  // uint32 failed_count = 3;
+  void clear_failed_count() ;
+  ::uint32_t failed_count() const;
+  void set_failed_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_failed_count() const;
+  void _internal_set_failed_count(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:loginpb.RemovePlayersFromAccountsResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RemovePlayersFromAccountsResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint32_t removed_count_;
+    ::uint32_t not_found_count_;
+    ::uint32_t failed_count_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogin_2flogin_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull RemovePlayersFromAccountsResponse_class_data_;
+// -------------------------------------------------------------------
+
+class RemovePlayersFromAccountsRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:loginpb.RemovePlayersFromAccountsRequest) */ {
+ public:
+  inline RemovePlayersFromAccountsRequest() : RemovePlayersFromAccountsRequest(nullptr) {}
+  ~RemovePlayersFromAccountsRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RemovePlayersFromAccountsRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RemovePlayersFromAccountsRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RemovePlayersFromAccountsRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline RemovePlayersFromAccountsRequest(const RemovePlayersFromAccountsRequest& from) : RemovePlayersFromAccountsRequest(nullptr, from) {}
+  inline RemovePlayersFromAccountsRequest(RemovePlayersFromAccountsRequest&& from) noexcept
+      : RemovePlayersFromAccountsRequest(nullptr, ::std::move(from)) {}
+  inline RemovePlayersFromAccountsRequest& operator=(const RemovePlayersFromAccountsRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RemovePlayersFromAccountsRequest& operator=(RemovePlayersFromAccountsRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RemovePlayersFromAccountsRequest& default_instance() {
+    return *reinterpret_cast<const RemovePlayersFromAccountsRequest*>(
+        &_RemovePlayersFromAccountsRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 12;
+  friend void swap(RemovePlayersFromAccountsRequest& a, RemovePlayersFromAccountsRequest& b) { a.Swap(&b); }
+  inline void Swap(RemovePlayersFromAccountsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RemovePlayersFromAccountsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RemovePlayersFromAccountsRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RemovePlayersFromAccountsRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RemovePlayersFromAccountsRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RemovePlayersFromAccountsRequest& from) { RemovePlayersFromAccountsRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RemovePlayersFromAccountsRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "loginpb.RemovePlayersFromAccountsRequest"; }
+
+ protected:
+  explicit RemovePlayersFromAccountsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RemovePlayersFromAccountsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RemovePlayersFromAccountsRequest& from);
+  RemovePlayersFromAccountsRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RemovePlayersFromAccountsRequest&& from) noexcept
+      : RemovePlayersFromAccountsRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPlayerIdsFieldNumber = 1,
+  };
+  // repeated uint64 player_ids = 1;
+  int player_ids_size() const;
+  private:
+  int _internal_player_ids_size() const;
+
+  public:
+  void clear_player_ids() ;
+  ::uint64_t player_ids(int index) const;
+  void set_player_ids(int index, ::uint64_t value);
+  void add_player_ids(::uint64_t value);
+  const ::google::protobuf::RepeatedField<::uint64_t>& player_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_player_ids();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_player_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_player_ids();
+
+  public:
+  // @@protoc_insertion_point(class_scope:loginpb.RemovePlayersFromAccountsRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RemovePlayersFromAccountsRequest& from_msg);
+    ::google::protobuf::RepeatedField<::uint64_t> player_ids_;
+    ::google::protobuf::internal::CachedSize _player_ids_cached_byte_size_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogin_2flogin_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull RemovePlayersFromAccountsRequest_class_data_;
 // -------------------------------------------------------------------
 
 class LoginSessionInfo final : public ::google::protobuf::Message
@@ -3881,6 +4303,132 @@ inline void LoginNodeDisconnectRequest::_internal_set_session_id(::uint64_t valu
 // -------------------------------------------------------------------
 
 // LoginEmptyResponse
+
+// -------------------------------------------------------------------
+
+// RemovePlayersFromAccountsRequest
+
+// repeated uint64 player_ids = 1;
+inline int RemovePlayersFromAccountsRequest::_internal_player_ids_size() const {
+  return _internal_player_ids().size();
+}
+inline int RemovePlayersFromAccountsRequest::player_ids_size() const {
+  return _internal_player_ids_size();
+}
+inline void RemovePlayersFromAccountsRequest::clear_player_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_ids_.Clear();
+}
+inline ::uint64_t RemovePlayersFromAccountsRequest::player_ids(int index) const {
+  // @@protoc_insertion_point(field_get:loginpb.RemovePlayersFromAccountsRequest.player_ids)
+  return _internal_player_ids().Get(index);
+}
+inline void RemovePlayersFromAccountsRequest::set_player_ids(int index, ::uint64_t value) {
+  _internal_mutable_player_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:loginpb.RemovePlayersFromAccountsRequest.player_ids)
+}
+inline void RemovePlayersFromAccountsRequest::add_player_ids(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_player_ids()->Add(value);
+  // @@protoc_insertion_point(field_add:loginpb.RemovePlayersFromAccountsRequest.player_ids)
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>& RemovePlayersFromAccountsRequest::player_ids() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:loginpb.RemovePlayersFromAccountsRequest.player_ids)
+  return _internal_player_ids();
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL RemovePlayersFromAccountsRequest::mutable_player_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:loginpb.RemovePlayersFromAccountsRequest.player_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_player_ids();
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>&
+RemovePlayersFromAccountsRequest::_internal_player_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_ids_;
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+RemovePlayersFromAccountsRequest::_internal_mutable_player_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.player_ids_;
+}
+
+// -------------------------------------------------------------------
+
+// RemovePlayersFromAccountsResponse
+
+// uint32 removed_count = 1;
+inline void RemovePlayersFromAccountsResponse::clear_removed_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.removed_count_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint32_t RemovePlayersFromAccountsResponse::removed_count() const {
+  // @@protoc_insertion_point(field_get:loginpb.RemovePlayersFromAccountsResponse.removed_count)
+  return _internal_removed_count();
+}
+inline void RemovePlayersFromAccountsResponse::set_removed_count(::uint32_t value) {
+  _internal_set_removed_count(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:loginpb.RemovePlayersFromAccountsResponse.removed_count)
+}
+inline ::uint32_t RemovePlayersFromAccountsResponse::_internal_removed_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.removed_count_;
+}
+inline void RemovePlayersFromAccountsResponse::_internal_set_removed_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.removed_count_ = value;
+}
+
+// uint32 not_found_count = 2;
+inline void RemovePlayersFromAccountsResponse::clear_not_found_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.not_found_count_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint32_t RemovePlayersFromAccountsResponse::not_found_count() const {
+  // @@protoc_insertion_point(field_get:loginpb.RemovePlayersFromAccountsResponse.not_found_count)
+  return _internal_not_found_count();
+}
+inline void RemovePlayersFromAccountsResponse::set_not_found_count(::uint32_t value) {
+  _internal_set_not_found_count(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:loginpb.RemovePlayersFromAccountsResponse.not_found_count)
+}
+inline ::uint32_t RemovePlayersFromAccountsResponse::_internal_not_found_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.not_found_count_;
+}
+inline void RemovePlayersFromAccountsResponse::_internal_set_not_found_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.not_found_count_ = value;
+}
+
+// uint32 failed_count = 3;
+inline void RemovePlayersFromAccountsResponse::clear_failed_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.failed_count_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint32_t RemovePlayersFromAccountsResponse::failed_count() const {
+  // @@protoc_insertion_point(field_get:loginpb.RemovePlayersFromAccountsResponse.failed_count)
+  return _internal_failed_count();
+}
+inline void RemovePlayersFromAccountsResponse::set_failed_count(::uint32_t value) {
+  _internal_set_failed_count(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:loginpb.RemovePlayersFromAccountsResponse.failed_count)
+}
+inline ::uint32_t RemovePlayersFromAccountsResponse::_internal_failed_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.failed_count_;
+}
+inline void RemovePlayersFromAccountsResponse::_internal_set_failed_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.failed_count_ = value;
+}
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
