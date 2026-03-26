@@ -33,6 +33,7 @@ type GateCommand struct {
 	TargetGateId     uint32                 `protobuf:"varint,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`            // Target Gate ID
 	TargetInstanceId string                 `protobuf:"bytes,7,opt,name=target_instance_id,json=targetInstanceId,proto3" json:"target_instance_id,omitempty"` // Target Gate instance UUID to avoid stale commands
 	EventId          uint32                 `protobuf:"varint,8,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`                             // Global event ID — identifies payload type
+	EnterGsType      uint32                 `protobuf:"varint,9,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"`               // Login decision: LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -116,11 +117,18 @@ func (x *GateCommand) GetEventId() uint32 {
 	return 0
 }
 
+func (x *GateCommand) GetEnterGsType() uint32 {
+	if x != nil {
+		return x.EnterGsType
+	}
+	return 0
+}
+
 var File_proto_contracts_kafka_gate_command_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_gate_command_proto_rawDesc = "" +
 	"\n" +
-	"(proto/contracts/kafka/gate_command.proto\x12\x0fcontracts.kafka\"\xfe\x01\n" +
+	"(proto/contracts/kafka/gate_command.proto\x12\x0fcontracts.kafka\"\xa2\x02\n" +
 	"\vGateCommand\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12$\n" +
 	"\x0etarget_node_id\x18\x03 \x01(\rR\ftargetNodeId\x12\x1d\n" +
@@ -129,7 +137,8 @@ const file_proto_contracts_kafka_gate_command_proto_rawDesc = "" +
 	"\apayload\x18\x05 \x01(\fR\apayload\x12$\n" +
 	"\x0etarget_gate_id\x18\x06 \x01(\rR\ftargetGateId\x12,\n" +
 	"\x12target_instance_id\x18\a \x01(\tR\x10targetInstanceId\x12\x19\n" +
-	"\bevent_id\x18\b \x01(\rR\aeventIdJ\x04\b\x01\x10\x02B\x1cZ\x1achat/proto/contracts/kafkab\x06proto3"
+	"\bevent_id\x18\b \x01(\rR\aeventId\x12\"\n" +
+	"\renter_gs_type\x18\t \x01(\rR\venterGsTypeJ\x04\b\x01\x10\x02B\x1cZ\x1achat/proto/contracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_gate_command_proto_rawDescOnce sync.Once

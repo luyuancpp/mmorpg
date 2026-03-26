@@ -282,6 +282,7 @@ type BindSessionEvent struct {
 	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SessionVersion uint64                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
+	EnterGsType    uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -337,6 +338,13 @@ func (x *BindSessionEvent) GetSessionVersion() uint64 {
 	return 0
 }
 
+func (x *BindSessionEvent) GetEnterGsType() uint32 {
+	if x != nil {
+		return x.EnterGsType
+	}
+	return 0
+}
+
 var File_proto_contracts_kafka_gate_event_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
@@ -362,12 +370,13 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\rscene_node_id\x18\x03 \x01(\tR\vsceneNodeId\x12\x19\n" +
 	"\bscene_id\x18\x04 \x01(\x04R\asceneId\x12\x17\n" +
 	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +
-	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\"w\n" +
+	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\"\x9b\x01\n" +
 	"\x10BindSessionEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
-	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersionB!Z\x1fcontracts/proto/contracts/kafkab\x06proto3"
+	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersion\x12\"\n" +
+	"\renter_gs_type\x18\x04 \x01(\rR\venterGsTypeB!Z\x1fcontracts/proto/contracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_gate_event_proto_rawDescOnce sync.Once

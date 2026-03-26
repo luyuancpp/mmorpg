@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include "entt/src/entt/entity/registry.hpp"
 #include <grpcpp/grpcpp.h>
 #include <google/protobuf/message.h>
 #include "muduo/base/Logging.h"

@@ -181,7 +181,18 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	}
 
 	decision := sessionmanager.DecideEnterGame(existing, state.account)
-	if err := l.persistEnterGameSession(ctx, decision, existing, state); err != nil {
+	version, err := l.persistEnterGameSession(ctx, decision, existing, state)
+	if err != nil {
+		return decision, err
+	}
+
+	// Notify Gate: bind the session and carry the login decision so Gate can forward to Scene.
+	enterGsType := sessionmanager.DecisionToEnterGsType(decision)
+	if err := l.svcCtx.SendBindSessionToGate(
+		state.gateID, state.gateInstanceID,
+		state.sessionID, state.playerID, version, enterGsType,
+	); err != nil {
+		logx.Errorf("Failed to send BindSessionToGate for player %d: %v", state.playerID, err)
 		return decision, err
 	}
 
@@ -192,12 +203,13 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	return decision, nil
 }
 
+// persistEnterGameSession persists the session and returns the new session version.
 func (l *EnterGameLogic) persistEnterGameSession(
 	ctx context.Context,
 	decision sessionmanager.EnterGameDecision,
 	existing *sessionmanager.PlayerSession,
 	state enterGameSessionState,
-) error {
+) (uint64, error) {
 	switch decision {
 	case sessionmanager.FirstLogin, sessionmanager.ReplaceLogin:
 		if decision == sessionmanager.ReplaceLogin {
@@ -215,9 +227,12 @@ func (l *EnterGameLogic) persistEnterGameSession(
 			RequestID:      state.requestID,
 			Now:            time.Now(),
 		})
-		return sessionmanager.SetSession(ctx, l.svcCtx.PlayerLocatorClient, newSession)
+		if err := sessionmanager.SetSession(ctx, l.svcCtx.PlayerLocatorClient, newSession); err != nil {
+			return 0, err
+		}
+		return newSession.SessionVersion, nil
 	case sessionmanager.ShortReconnect:
-		_, err := sessionmanager.Reconnect(
+		updated, err := sessionmanager.Reconnect(
 			ctx,
 			l.svcCtx.PlayerLocatorClient,
 			state.playerID,
@@ -227,9 +242,12 @@ func (l *EnterGameLogic) persistEnterGameSession(
 			state.account,
 			state.requestID,
 		)
-		return err
+		if err != nil {
+			return 0, err
+		}
+		return updated.SessionVersion, nil
 	default:
-		return nil
+		return 0, nil
 	}
 }
 

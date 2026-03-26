@@ -7,14 +7,13 @@
 package scene_manager
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	base "proto/common/base"
 	_ "proto/contracts/kafka"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -429,7 +428,7 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\n" +
 	"EnterScene\x12 .scene_manager.EnterSceneRequest\x1a!.scene_manager.EnterSceneResponse\"\x00\x128\n" +
 	"\n" +
-	"LeaveScene\x12 .scene_manager.LeaveSceneRequest\x1a\x06.Empty\"\x00B#Z!scene_manager/proto/scene_managerb\x06proto3"
+	"LeaveScene\x12 .scene_manager.LeaveSceneRequest\x1a\x06.Empty\"\x00B\x15Z\x13proto/scene_managerb\x06proto3"
 
 var (
 	file_proto_scene_manager_scene_manager_service_proto_rawDescOnce sync.Once

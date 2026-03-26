@@ -37,6 +37,7 @@ struct SessionInfo {
 	muduo::net::TcpConnectionPtr conn;
 	MessageLimiter messageLimiter;
 	uint64_t sessionVersion{ kInvalidGuid };
+	uint32_t pendingEnterGsType{ 0 }; // Pending login type to forward to Scene once scene node is assigned
 private:
 	NodeMap nodeIds; // Sparse map, only stores assigned nodes
 };

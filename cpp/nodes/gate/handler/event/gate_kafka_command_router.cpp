@@ -31,6 +31,7 @@ bool DispatchGateEventFallback(const contracts::kafka::GateCommand& command)
         contracts::kafka::BindSessionEvent event;
         event.set_session_id(command.session_id());
         event.set_player_id(command.player_id());
+        event.set_enter_gs_type(command.enter_gs_type());
         dispatcher.enqueue(event);
         return true;
     }
