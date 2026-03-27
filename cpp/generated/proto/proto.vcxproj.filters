@@ -15,18 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="centre\centre_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="centre\centre_player_scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="centre\centre_scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="centre\centre_service.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="etcd\etcd.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -306,20 +294,14 @@
     <ClCompile Include="common\database\rollback_database_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="common\rollback\player_snapshot.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\rollback\transaction_log.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="centre\centre_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="centre\centre_player_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="centre\centre_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="centre\centre_service.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="etcd\etcd.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -597,6 +579,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\database\rollback_database_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\rollback\player_snapshot.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\rollback\transaction_log.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

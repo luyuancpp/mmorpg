@@ -47,7 +47,7 @@ uint64_t *CurrencySystem::ResolveCurrencyField(entt::entity player, CurrencyType
 
     EnsureCurrencySlots(*currency);
     auto *values = currency->mutable_values();
-    return &(*values)[static_cast<int>(type)];
+    return &(*values)[static_cast<uint32_t>(type)];
 }
 
 // ---------------------------------------------------------------------------

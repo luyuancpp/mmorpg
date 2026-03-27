@@ -8,7 +8,6 @@
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "proto/common/base/node.pb.h"
-#include "proto/centre/centre_player_scene.pb.h"
 ///<<< END WRITING YOUR CODE
 
 void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,
@@ -46,8 +45,6 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		}
 	}
 
-	CentreEnterSceneRequest enterSceneReq;
-	enterSceneReq.mutable_scene_info()->CopyFrom(scene_info);
 	// TODO(centre-decommission): Route scene change request via Kafka to SceneManager
 	// instead of SendToCentrePlayerByClientNode.
 	LOG_WARN << "EnterSceneC2S: Centre decommissioned, scene change via SceneManager not yet wired. player="
