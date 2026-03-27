@@ -7,7 +7,6 @@ This directory is the staging root for the production runtime image used by Kube
 ```text
 runtime/linux/
   bin/
-    centre
     gate
     scene
     zoneinfo/

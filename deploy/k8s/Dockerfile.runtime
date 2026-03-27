@@ -14,4 +14,4 @@ WORKDIR /app
 COPY ${RUNTIME_ROOT}/ /app/
 
 RUN mkdir -p /app/bin/etc /app/bin/logs \
-    && chmod +x /app/bin/centre /app/bin/gate /app/bin/scene
+    && chmod +x /app/bin/gate /app/bin/scene
