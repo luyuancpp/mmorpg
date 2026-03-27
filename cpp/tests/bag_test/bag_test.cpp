@@ -14,38 +14,43 @@
 // Helpers
 // ---------------------------------------------------------------------------
 
-uint32_t MaxStack(uint32_t configId) {
+uint32_t MaxStack(uint32_t configId)
+{
     return ItemTableManager::Instance().GetTable(configId).first->max_statck_size();
 }
 
-InitItemParam MakeItem(uint32_t configId, uint32_t size) {
+InitItemParam MakeItem(uint32_t configId, uint32_t size)
+{
     InitItemParam p;
     p.itemPBComp.set_config_id(configId);
     p.itemPBComp.set_size(size);
     return p;
 }
 
-InitItemParam MakeItem(uint32_t configId) {
+InitItemParam MakeItem(uint32_t configId)
+{
     return MakeItem(configId, MaxStack(configId));
 }
 
 /// Verify the last added item is at `pos` with expected config and size.
-void VerifyLastAdded(Bag& bag, uint32_t pos, uint32_t configId, uint32_t size) {
+void VerifyLastAdded(Bag &bag, uint32_t pos, uint32_t configId, uint32_t size)
+{
     const auto guid = Bag::LastGeneratorItemGuid();
-    auto* byPos  = bag.GetItemBaseByPos(pos);
-    auto* byGuid = bag.GetItemBaseByGuid(guid);
+    auto *byPos = bag.GetItemBaseByPos(pos);
+    auto *byGuid = bag.GetItemBaseByGuid(guid);
     ASSERT_NE(nullptr, byPos);
     ASSERT_NE(nullptr, byGuid);
     EXPECT_EQ(configId, byPos->config_id());
-    EXPECT_EQ(size,     byPos->size());
+    EXPECT_EQ(size, byPos->size());
     EXPECT_EQ(configId, byGuid->config_id());
-    EXPECT_EQ(size,     byGuid->size());
-    EXPECT_EQ(guid,     byPos->item_id());
-    EXPECT_EQ(guid,     byGuid->item_id());
-    EXPECT_EQ(pos,      bag.GetItemPos(guid));
+    EXPECT_EQ(size, byGuid->size());
+    EXPECT_EQ(guid, byPos->item_id());
+    EXPECT_EQ(guid, byGuid->item_id());
+    EXPECT_EQ(pos, bag.GetItemPos(guid));
 }
 
-RemoveItemByPosParam MakeRemoveParam(Bag& bag, uint32_t pos, uint32_t configId, uint32_t removeSize = 1) {
+RemoveItemByPosParam MakeRemoveParam(Bag &bag, uint32_t pos, uint32_t configId, uint32_t removeSize = 1)
+{
     RemoveItemByPosParam dp;
     dp.pos_ = pos;
     dp.item_guid_ = bag.GetItemBaseByPos(pos)->item_id();
@@ -55,11 +60,11 @@ RemoveItemByPosParam MakeRemoveParam(Bag& bag, uint32_t pos, uint32_t configId, 
 }
 
 // Config IDs (matches item_table.json)
-constexpr uint32_t kNonStack1  = 1;   // non-stackable
-constexpr uint32_t kNonStack2  = 2;   // non-stackable
-constexpr uint32_t kStack9     = 9;   // stackable
-constexpr uint32_t kStack10    = 10;  // stackable
-constexpr uint32_t kStack11    = 11;  // stackable
+constexpr uint32_t kNonStack1 = 1; // non-stackable
+constexpr uint32_t kNonStack2 = 2; // non-stackable
+constexpr uint32_t kStack9 = 9;    // stackable
+constexpr uint32_t kStack10 = 10;  // stackable
+constexpr uint32_t kStack11 = 11;  // stackable
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -145,7 +150,8 @@ TEST(BagTest, AddStackItem12121212)
         totalSize += addSize;
 
         auto ret = bag.AddItem(item);
-        if (ret != kSuccess) break;
+        if (ret != kSuccess)
+            break;
         EXPECT_EQ(kSuccess, ret);
 
         auto gridSize = Bag::CalculateStackGridSize(totalSize, maxStack);
@@ -221,8 +227,7 @@ TEST(BagTest, AdequateSizeAddItemmixtureFull)
     auto maxStack10 = MaxStack(kStack10);
     ItemCountMap needed{
         {kNonStack1, 1},
-        {kStack10, maxStack10 * (uint32_t)kDefaultCapacity}
-    };
+        {kStack10, maxStack10 * (uint32_t)kDefaultCapacity}};
 
     // 1 non-stackable + 10 full stacks > capacity
     EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(needed));
@@ -331,10 +336,10 @@ TEST(BagTest, DelItem)
     EXPECT_EQ(maxStack11, bag.GetItemStackSize(kStack11));
 
     // Remove everything remaining
-    toRemove[kStack10]  = maxStack10 * 2 - 1;
+    toRemove[kStack10] = maxStack10 * 2 - 1;
     toRemove[kNonStack1] = MaxStack(kNonStack1);
     toRemove[kNonStack2] = MaxStack(kNonStack2);
-    toRemove[kStack11]  = maxStack11;
+    toRemove[kStack11] = maxStack11;
     EXPECT_EQ(kSuccess, bag.RemoveItems(toRemove));
     EXPECT_EQ(0, bag.GetItemStackSize(kStack10));
     EXPECT_EQ(0, bag.GetItemStackSize(kNonStack1));
@@ -396,7 +401,8 @@ TEST(BagTest, RemoveItemByPos)
 }
 
 /// Helper: fill `count` slots of `configId`, then reduce each to 1 unit.
-void FillAndReduceToOne(Bag& bag, uint32_t configId, uint32_t startPos, uint32_t count) {
+void FillAndReduceToOne(Bag &bag, uint32_t configId, uint32_t startPos, uint32_t count)
+{
     auto maxStack = MaxStack(configId);
     for (uint32_t i = startPos; i < startPos + count; ++i)
     {
@@ -426,7 +432,7 @@ TEST(BagTest, Neaten1)
     // 10 units of each config → 1 slot each
     EXPECT_EQ(2, bag.ItemGridSize());
     EXPECT_EQ(2, bag.PosSize());
-    for (auto& [pos, guid] : bag.pos())
+    for (auto &[pos, guid] : bag.pos())
         EXPECT_EQ(1, (std::size_t)bag.GetItemBaseByPos(bag.GetItemPos(guid))->size());
     EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kStack10));
     EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kStack11));
@@ -452,7 +458,7 @@ TEST(BagTest, Neaten400)
 
     EXPECT_EQ(2, bag.ItemGridSize());
     EXPECT_EQ(2, bag.PosSize());
-    for (auto& [pos, guid] : bag.pos())
+    for (auto &[pos, guid] : bag.pos())
         EXPECT_EQ(1, (std::size_t)bag.GetItemBaseByPos(bag.GetItemPos(guid))->size());
     EXPECT_EQ(kHalf, bag.GetItemStackSize(kStack10));
     EXPECT_EQ(kHalf, bag.GetItemStackSize(kStack11));
@@ -498,8 +504,10 @@ TEST(BagTest, Neaten400_1)
     for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         auto sz = bag.GetItemBaseByPos(i)->size();
-        if (sz == kMaxStack) pos999.emplace(i);
-        else if (sz == 1) pos1.emplace(i);
+        if (sz == kMaxStack)
+            pos999.emplace(i);
+        else if (sz == 1)
+            pos1.emplace(i);
     }
     EXPECT_EQ(kHalf, pos999.size());
     EXPECT_EQ(2, pos1.size());
@@ -527,7 +535,7 @@ TEST(BagTest, NeatenCanNotStack)
     // 1 consolidated stack + kDefaultCapacity non-stackable slots
     EXPECT_EQ(kDefaultCapacity + 1, bag.ItemGridSize());
     EXPECT_EQ(kDefaultCapacity + 1, bag.PosSize());
-    for (auto& [pos, guid] : bag.pos())
+    for (auto &[pos, guid] : bag.pos())
     {
         auto sz = (std::size_t)bag.GetItemBaseByPos(bag.GetItemPos(guid))->size();
         if (sz != kDefaultCapacity)
@@ -702,18 +710,19 @@ TEST(GainBlockServiceTest, GlobalAndPerPlayerBlockCombo)
     blockList.Block(kNonStack1);
     GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kStack10);
 
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));       // per-player blocked
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kStack10, 1)));      // globally blocked
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack2)));       // neither blocked
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));  // per-player blocked
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kStack10, 1))); // globally blocked
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack2)));  // neither blocked
     EXPECT_EQ(1, bag.ItemGridSize());
 
     GainBlockService::ClearAllGlobalBlocks();
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-    if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
+    if (!test_config::FindAndLoadTestConfig(argc, argv))
+        return 1;
     ItemTableManager::Instance().Load();
-    testing::InitGoogleTest(&argc, &argv);
+    testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

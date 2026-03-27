@@ -1,4 +1,4 @@
-#include "game_logic/scene/system/view_system.h"
+#include "spatial/system/view.h"
 
 void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
 	const google::protobuf::Message& message)

@@ -15,7 +15,7 @@ void LoadTables();
 
 TEST(ConfigTableTest, IterateSkillTable)
 {
-	for (auto& row : GetSkillAllTable().data())
+	for (auto &row : GetSkillAllTable().data())
 	{
 		LOG_INFO << row.DebugString();
 	}
@@ -23,7 +23,7 @@ TEST(ConfigTableTest, IterateSkillTable)
 
 TEST(ConfigTableTest, IterateBuffTable)
 {
-	for (auto& row : GetBuffAllTable().data())
+	for (auto &row : GetBuffAllTable().data())
 	{
 		LOG_INFO << row.DebugString();
 	}
@@ -31,7 +31,7 @@ TEST(ConfigTableTest, IterateBuffTable)
 
 TEST(ConfigTableTest, IterateTestTable)
 {
-	for (auto& row : GetTestAllTable().data())
+	for (auto &row : GetTestAllTable().data())
 	{
 		LOG_INFO << row.DebugString();
 	}
@@ -39,7 +39,7 @@ TEST(ConfigTableTest, IterateTestTable)
 
 TEST(ConfigTableTest, IterateTestMultiKeyTable)
 {
-	for (auto& row : GetTestMultiKeyAllTable().data())
+	for (auto &row : GetTestMultiKeyAllTable().data())
 	{
 		LOG_INFO << row.DebugString();
 	}
@@ -51,7 +51,7 @@ TEST(ConfigTableTest, IterateTestMultiKeyTable)
 
 TEST(ConfigTableTest, MultiKeyUint32RangeQuery)
 {
-	auto& data = TestMultiKeyTableManager::Instance().GetMuint32keyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetMuint32keyData();
 	auto range = data.equal_range(17);
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -61,7 +61,7 @@ TEST(ConfigTableTest, MultiKeyUint32RangeQuery)
 
 TEST(ConfigTableTest, MultiKeyInt32RangeQuery)
 {
-	auto& data = TestMultiKeyTableManager::Instance().GetMin32keyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetMin32keyData();
 	auto range = data.equal_range(10);
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -71,7 +71,7 @@ TEST(ConfigTableTest, MultiKeyInt32RangeQuery)
 
 TEST(ConfigTableTest, MultiKeyStringRangeQuery)
 {
-	auto& data = TestMultiKeyTableManager::Instance().GetMstringkeyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetMstringkeyData();
 	auto range = data.equal_range("aa");
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -101,10 +101,11 @@ TEST(ConfigTableTest, FindByStringKey)
 	EXPECT_EQ(result.first->id(), 1);
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	::testing::InitGoogleTest(&argc, argv);
-	if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
+	if (!test_config::FindAndLoadTestConfig(argc, argv))
+		return 1;
 	LoadTables();
 	return RUN_ALL_TESTS();
 }
