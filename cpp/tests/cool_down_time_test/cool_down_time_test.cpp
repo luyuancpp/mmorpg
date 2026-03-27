@@ -6,15 +6,18 @@
 // 技能冷却时间（毫秒级）工具测试
 // ---------------------------------------------------------------------------
 
-class CoolDownTimeMillisecondUtilTest : public ::testing::Test {
+class CoolDownTimeMillisecondUtilTest : public ::testing::Test
+{
 protected:
-	uint64_t current_time_in_milliseconds() {
+	uint64_t current_time_in_milliseconds()
+	{
 		return CoolDownTimeMillisecondSystem::NowMilliseconds();
 	}
 };
 
 // 剩余冷却时间
-TEST_F(CoolDownTimeMillisecondUtilTest, RemainingTime) {
+TEST_F(CoolDownTimeMillisecondUtilTest, RemainingTime)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(2); // 5 秒冷却
@@ -28,7 +31,8 @@ TEST_F(CoolDownTimeMillisecondUtilTest, RemainingTime) {
 }
 
 // 是否已过期
-TEST_F(CoolDownTimeMillisecondUtilTest, IsExpired) {
+TEST_F(CoolDownTimeMillisecondUtilTest, IsExpired)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(1); // 1 秒冷却
@@ -40,16 +44,18 @@ TEST_F(CoolDownTimeMillisecondUtilTest, IsExpired) {
 }
 
 // 开始时间在未来，判断为“未开始”
-TEST_F(CoolDownTimeMillisecondUtilTest, IsBeforeStart) {
+TEST_F(CoolDownTimeMillisecondUtilTest, IsBeforeStart)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds() + 5000); // 开始时间在 5 秒后
-	comp.set_cooldown_table_id(3); // 10 秒冷却
+	comp.set_cooldown_table_id(3);						   // 10 秒冷却
 
 	EXPECT_TRUE(CoolDownTimeMillisecondSystem::IsBeforeStart(comp));
 }
 
 // 判断是否未开始
-TEST_F(CoolDownTimeMillisecondUtilTest, IsNotStarted) {
+TEST_F(CoolDownTimeMillisecondUtilTest, IsNotStarted)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds() + 5000);
 	comp.set_cooldown_table_id(3);
@@ -58,7 +64,8 @@ TEST_F(CoolDownTimeMillisecondUtilTest, IsNotStarted) {
 }
 
 // 重置冷却后剩余时间应恢复到满值
-TEST_F(CoolDownTimeMillisecondUtilTest, Reset) {
+TEST_F(CoolDownTimeMillisecondUtilTest, Reset)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(2); // 5 秒冷却
@@ -72,7 +79,8 @@ TEST_F(CoolDownTimeMillisecondUtilTest, Reset) {
 }
 
 // 设置/获取冷却时长
-TEST_F(CoolDownTimeMillisecondUtilTest, SetAndGetDuration) {
+TEST_F(CoolDownTimeMillisecondUtilTest, SetAndGetDuration)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(3); // 初始 10 秒
@@ -83,7 +91,8 @@ TEST_F(CoolDownTimeMillisecondUtilTest, SetAndGetDuration) {
 }
 
 // 设置/获取开始时间
-TEST_F(CoolDownTimeMillisecondUtilTest, SetAndGetStartTime) {
+TEST_F(CoolDownTimeMillisecondUtilTest, SetAndGetStartTime)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(3);
@@ -95,7 +104,8 @@ TEST_F(CoolDownTimeMillisecondUtilTest, SetAndGetStartTime) {
 }
 
 // 冷却完成判断
-TEST_F(CoolDownTimeMillisecondUtilTest, IsCooldownComplete) {
+TEST_F(CoolDownTimeMillisecondUtilTest, IsCooldownComplete)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(1); // 1 秒冷却
@@ -106,7 +116,8 @@ TEST_F(CoolDownTimeMillisecondUtilTest, IsCooldownComplete) {
 }
 
 // 冷却中判断
-TEST_F(CoolDownTimeMillisecondUtilTest, IsInCooldown) {
+TEST_F(CoolDownTimeMillisecondUtilTest, IsInCooldown)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(2); // 5 秒冷却
@@ -117,7 +128,8 @@ TEST_F(CoolDownTimeMillisecondUtilTest, IsInCooldown) {
 }
 
 // 调用 ResetCooldown 后剩余时间应恢复满值
-TEST_F(CoolDownTimeMillisecondUtilTest, ResetCooldown) {
+TEST_F(CoolDownTimeMillisecondUtilTest, ResetCooldown)
+{
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(2); // 5 秒冷却
@@ -130,9 +142,10 @@ TEST_F(CoolDownTimeMillisecondUtilTest, ResetCooldown) {
 	EXPECT_GE(remaining_time, 5000); // 重置后应返回完整冷却时间
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-	if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
+	if (!test_config::FindAndLoadTestConfig(argc, argv))
+		return 1;
 	CooldownTableManager::Instance().Load();
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

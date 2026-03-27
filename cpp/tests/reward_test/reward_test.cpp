@@ -8,7 +8,8 @@
 #include <thread_context/registry_manager.h>
 #include "../test_config_helper.h"
 
-decltype(auto) CreatePlayerEntityWithRewardComponent(){
+decltype(auto) CreatePlayerEntityWithRewardComponent()
+{
     const auto playerEntity = tlsEcs.actorRegistry.create();
     tlsEcs.actorRegistry.emplace<Guid>(playerEntity);
 
@@ -16,91 +17,88 @@ decltype(auto) CreatePlayerEntityWithRewardComponent(){
 }
 
 // Test: all rewards unclaimed at initialization
-TEST(RewardClaimSystemTest, InitializationTest) {
+TEST(RewardClaimSystemTest, InitializationTest)
+{
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
-
-    RewardClaimSystem RewardClaimSystem;
+    auto &claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).claimedRewards;
 
     // verify all rewards are unclaimed
-    for (int i = 0; i < kRewardMaxBitIndex; ++i) {
-        EXPECT_FALSE(RewardClaimSystem.IsRewardClaimedByIndex(i, claimedRewards));
+    for (int i = 0; i < kRewardMaxBitIndex; ++i)
+    {
+        EXPECT_FALSE(RewardClaimSystem::IsClaimedByIndex(i, claimedRewards));
     }
 }
 
 // Test: claim a single reward
-TEST(RewardClaimSystemTest, ClaimRewardTest) {
+TEST(RewardClaimSystemTest, ClaimRewardTest)
+{
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
+    auto &claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).claimedRewards;
 
-    RewardClaimSystem RewardClaimSystem;
-
-    RewardClaimSystem.ClaimRewardByIndex(5, claimedRewards);  // claim reward 5
+    RewardClaimSystem::ClaimByIndex(5, claimedRewards); // claim reward 5
 
     // verify reward 5 is claimed
-    EXPECT_TRUE(RewardClaimSystem.IsRewardClaimedByIndex(5, claimedRewards));
+    EXPECT_TRUE(RewardClaimSystem::IsClaimedByIndex(5, claimedRewards));
 
     // verify other rewards remain unclaimed
-    for (int i = 0; i < kRewardMaxBitIndex; ++i) {
-        if (i != 5) {
-            EXPECT_FALSE(RewardClaimSystem.IsRewardClaimedByIndex(i, claimedRewards));
+    for (int i = 0; i < kRewardMaxBitIndex; ++i)
+    {
+        if (i != 5)
+        {
+            EXPECT_FALSE(RewardClaimSystem::IsClaimedByIndex(i, claimedRewards));
         }
     }
 }
 
 // Test: claim the same reward twice
-TEST(RewardClaimSystemTest, ClaimAlreadyClaimedRewardTest) {
+TEST(RewardClaimSystemTest, ClaimAlreadyClaimedRewardTest)
+{
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
+    auto &claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).claimedRewards;
 
-    RewardClaimSystem RewardClaimSystem;
-
-    RewardClaimSystem.ClaimRewardByIndex(3, claimedRewards);  // claim reward 3
-    RewardClaimSystem.ClaimRewardByIndex(3, claimedRewards);  // claim reward 3 again
+    RewardClaimSystem::ClaimByIndex(3, claimedRewards); // claim reward 3
+    RewardClaimSystem::ClaimByIndex(3, claimedRewards); // claim reward 3 again
 
     // verify reward 3 is claimed
-    EXPECT_TRUE(RewardClaimSystem.IsRewardClaimedByIndex(3, claimedRewards));
+    EXPECT_TRUE(RewardClaimSystem::IsClaimedByIndex(3, claimedRewards));
 }
 
 // Test: invalid reward index
-TEST(RewardClaimSystemTest, InvalidRewardIndexTest) {
+TEST(RewardClaimSystemTest, InvalidRewardIndexTest)
+{
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
-
-    RewardClaimSystem RewardClaimSystem;
+    auto &claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).claimedRewards;
 
     // pass invalid reward index
-    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem.ClaimRewardByIndex(-1, claimedRewards));  // invalid index
-    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem.ClaimRewardByIndex(kRewardMaxBitIndex, claimedRewards));  // exceeds max index
+    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem::ClaimByIndex(static_cast<uint32_t>(-1), claimedRewards));       // invalid index
+    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem::ClaimByIndex(kRewardMaxBitIndex, claimedRewards)); // exceeds max index
 }
 
 // Test: display reward status
-TEST(RewardClaimSystemTest, ShowRewardStatusTest) {
+TEST(RewardClaimSystemTest, ShowRewardStatusTest)
+{
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
+    auto &claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).claimedRewards;
 
-    RewardClaimSystem RewardClaimSystem;
-
-    RewardClaimSystem.ClaimRewardByIndex(0, claimedRewards);  // claim reward 0
-    RewardClaimSystem.ClaimRewardByIndex(4, claimedRewards);  // claim reward 4
+    RewardClaimSystem::ClaimByIndex(0, claimedRewards); // claim reward 0
+    RewardClaimSystem::ClaimByIndex(4, claimedRewards); // claim reward 4
 
     // verify status
-    EXPECT_TRUE(RewardClaimSystem.IsRewardClaimedByIndex(0, claimedRewards));
-    EXPECT_TRUE(RewardClaimSystem.IsRewardClaimedByIndex(4, claimedRewards));
-    EXPECT_FALSE(RewardClaimSystem.IsRewardClaimedByIndex(1, claimedRewards));
+    EXPECT_TRUE(RewardClaimSystem::IsClaimedByIndex(0, claimedRewards));
+    EXPECT_TRUE(RewardClaimSystem::IsClaimedByIndex(4, claimedRewards));
+    EXPECT_FALSE(RewardClaimSystem::IsClaimedByIndex(1, claimedRewards));
 }
 
-
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-	if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
-	RewardTableManager::Instance().Load();
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
+    if (!test_config::FindAndLoadTestConfig(argc, argv))
+        return 1;
+    RewardTableManager::Instance().Load();
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
-

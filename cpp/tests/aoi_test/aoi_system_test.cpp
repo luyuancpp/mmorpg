@@ -1,4 +1,4 @@
-// aoi_system_test.cpp — AOI（兴趣区域）系统测试
+﻿// aoi_system_test.cpp — AOI（兴趣区域）系统测试
 
 #include "spatial/system/aoi.h"
 #include <gtest/gtest.h>
@@ -22,21 +22,24 @@ extern const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 // 基础测试夹具：使用 MockAoiSystem 暴露内部方法
 // ---------------------------------------------------------------------------
 
-class MockAoiSystem : public AoiSystem {
+class MockAoiSystem : public AoiSystem
+{
 public:
-    using AoiSystem::Update;
     using AoiSystem::BeforeLeaveSceneHandler;
+    using AoiSystem::Update;
 };
 
 // ---------------------------------------------------------------------------
 // AoiSystemTest —— 网格分配、邻居查找、玩家移动
 // ---------------------------------------------------------------------------
 
-class AoiSystemTest : public ::testing::Test {
+class AoiSystemTest : public ::testing::Test
+{
 protected:
     MockAoiSystem aoi_system;
 
-    void SetUp() override {
+    void SetUp() override
+    {
         tlsEcs.globalRegistry.emplace<ActorCreateS2C>(tlsEcs.GlobalEntity());
         tlsEcs.globalRegistry.emplace<ActorDestroyS2C>(tlsEcs.GlobalEntity());
 
@@ -44,7 +47,8 @@ protected:
         tlsEcs.globalRegistry.emplace<ActorListDestroyS2C>(tlsEcs.GlobalEntity());
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         tlsEcs.globalRegistry.remove<ActorCreateS2C>(tlsEcs.GlobalEntity());
         tlsEcs.globalRegistry.remove<ActorDestroyS2C>(tlsEcs.GlobalEntity());
         tlsEcs.globalRegistry.remove<ActorListCreateS2C>(tlsEcs.GlobalEntity());
@@ -56,7 +60,8 @@ protected:
 };
 
 // 坐标→网格 ID
-TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
+TEST_F(AoiSystemTest, TestGetGridIdForLocation)
+{
     Vector3 location;
     location.set_x(10);
     location.set_y(20);
@@ -68,8 +73,9 @@ TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
 }
 
 // 扫描邻居网格（六边形 6 个邻居）
-TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
-    Hex hex{ 0, 0, 0 };
+TEST_F(AoiSystemTest, TestScanNeighborGridIds)
+{
+    Hex hex{0, 0, 0};
     GridSet neighbor_grid_set;
     GridSystem::GetNeighborGridIds(hex, neighbor_grid_set);
 
@@ -77,25 +83,28 @@ TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
     EXPECT_EQ(neighbor_grid_set.size(), 6);
 
     // Check if specific neighbors are present
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 6; ++i)
+    {
         EXPECT_NE(neighbor_grid_set.find(GridSystem::GetGridId(hex_neighbor(hex, i))), neighbor_grid_set.end());
     }
 }
 
 // 玩家随机移动后网格分配正确性
-TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
+TEST_F(AoiSystemTest, TestUpdatePlayerMovement)
+{
     // Mock data setup
     auto scene_entity = tlsEcs.sceneRegistry.create();
-    auto& scene_grid_list = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(scene_entity);
+    auto &scene_grid_list = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(scene_entity);
 
-    SceneEntityComp scene_entity_comp{ scene_entity };
+    SceneEntityComp scene_entity_comp{scene_entity};
 
     std::unordered_map<absl::uint128, uint32_t, absl::Hash<absl::uint128>> expected_entity_count;
 
-    for (uint32_t i = 0; i < 10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i)
+    {
         auto player_entity = tlsEcs.actorRegistry.create();
 
-        Transform& transform = tlsEcs.actorRegistry.get_or_emplace<Transform>(player_entity);
+        Transform &transform = tlsEcs.actorRegistry.get_or_emplace<Transform>(player_entity);
         transform.mutable_location()->set_x(tlsRandom.RandReal<double>(0, 1000));
         transform.mutable_location()->set_y(tlsRandom.RandReal<double>(0, 1000));
 
@@ -110,8 +119,10 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         EXPECT_EQ(scene_grid_list[grid_id].entities.size(), expected_entity_count[grid_id]);
     }
 
-    for (auto&& [scene, grid_list] : tlsEcs.sceneRegistry.view<SceneGridListComp>().each()) {
-        for (const auto& [_, entity_list] : grid_list) {
+    for (auto &&[scene, grid_list] : tlsEcs.sceneRegistry.view<SceneGridListComp>().each())
+    {
+        for (const auto &[_, entity_list] : grid_list)
+        {
             EXPECT_FALSE(entity_list.entities.empty());
         }
     }
@@ -120,18 +131,19 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
 }
 
 // 玩家在六个相邻六边形之间往返移动
-TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
+TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes)
+{
     // Mock data setup
     auto scene_entity = tlsEcs.sceneRegistry.create();
-    auto& scene_grid_list = tlsEcs.sceneRegistry.emplace<SceneGridListComp>(scene_entity);
+    auto &scene_grid_list = tlsEcs.sceneRegistry.emplace<SceneGridListComp>(scene_entity);
 
     auto player_entity = tlsEcs.actorRegistry.create();
 
-    Transform& transform = tlsEcs.actorRegistry.emplace<Transform>(player_entity);
+    Transform &transform = tlsEcs.actorRegistry.emplace<Transform>(player_entity);
     transform.mutable_location()->set_x(0);
     transform.mutable_location()->set_y(0);
 
-    SceneEntityComp scene_entity_comp{ scene_entity };
+    SceneEntityComp scene_entity_comp{scene_entity};
     tlsEcs.actorRegistry.emplace<SceneEntityComp>(player_entity, scene_entity_comp);
 
     // Initial position
@@ -141,7 +153,8 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     EXPECT_TRUE(scene_grid_list[initial_grid_id].entities.contains(player_entity));
 
     // Move the player to each neighboring hex
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 6; ++i)
+    {
         Hex neighbor_hex = hex_neighbor(initial_hex, i);
         Point neighbor_point = hex_to_pixel(kHexLayout, neighbor_hex);
         transform.mutable_location()->set_x(neighbor_point.x);
@@ -163,9 +176,12 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     }
 
     std::size_t expected_size = 0;
-    for (auto&& [scene, grid_list] : tlsEcs.sceneRegistry.view<SceneGridListComp>().each()) {
-        for (const auto& [_, entity_list] : grid_list) {
-            if (entity_list.entities.empty()) {
+    for (auto &&[scene, grid_list] : tlsEcs.sceneRegistry.view<SceneGridListComp>().each())
+    {
+        for (const auto &[_, entity_list] : grid_list)
+        {
+            if (entity_list.entities.empty())
+            {
                 continue;
             }
             EXPECT_EQ(entity_list.entities.size(), 1);
@@ -176,8 +192,6 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     EXPECT_EQ(expected_size, 1);
 }
 
-
-
 // ---------------------------------------------------------------------------
 // AoiEntityVisibilityTest —— 实体进入/离开视野通知
 // ---------------------------------------------------------------------------
@@ -185,7 +199,8 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
 EntityUnorderedMap entitiesToNotifyEntry;
 EntityUnorderedMap entitiesToNotifyExit;
 
-class AoiEntityVisibilityTest : public ::testing::Test {
+class AoiEntityVisibilityTest : public ::testing::Test
+{
 protected:
     AoiSystem aoiSystem;
     entt::entity entity1;
@@ -193,8 +208,8 @@ protected:
     SceneEntityComp sceneEntityComp1;
     SceneEntityComp sceneEntityComp2;
 
-
-    void SetUp() override {
+    void SetUp() override
+    {
         tlsEcs.globalRegistry.emplace<ActorCreateS2C>(tlsEcs.GlobalEntity());
         tlsEcs.globalRegistry.emplace<ActorDestroyS2C>(tlsEcs.GlobalEntity());
         tlsEcs.globalRegistry.emplace<ActorListCreateS2C>(tlsEcs.GlobalEntity());
@@ -211,18 +226,18 @@ protected:
         tlsEcs.actorRegistry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
 
         // entity1 在原点，entity2 在 (100,100)
-        auto& transform1 = tlsEcs.actorRegistry.emplace<Transform>(entity1);
+        auto &transform1 = tlsEcs.actorRegistry.emplace<Transform>(entity1);
 
-        auto& transform2 = tlsEcs.actorRegistry.emplace<Transform>(entity2);
+        auto &transform2 = tlsEcs.actorRegistry.emplace<Transform>(entity2);
         transform2.mutable_location()->set_x(100);
         transform2.mutable_location()->set_y(100);
-
 
         // 创建场景网格
         tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntityComp1.sceneEntity);
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         tlsEcs.globalRegistry.remove<ActorCreateS2C>(tlsEcs.GlobalEntity());
         tlsEcs.globalRegistry.remove<ActorDestroyS2C>(tlsEcs.GlobalEntity());
         tlsEcs.globalRegistry.remove<ActorListCreateS2C>(tlsEcs.GlobalEntity());
@@ -237,9 +252,10 @@ protected:
 };
 
 // 实体进入视野
-TEST_F(AoiEntityVisibilityTest, TestEntityEnterView) {
+TEST_F(AoiEntityVisibilityTest, TestEntityEnterView)
+{
     // 将 entity2 移到 entity1 附近
-    auto& location = *tlsEcs.actorRegistry.get_or_emplace<Transform>(entity2).mutable_location();
+    auto &location = *tlsEcs.actorRegistry.get_or_emplace<Transform>(entity2).mutable_location();
     location.set_x(20);
     location.set_y(20);
 
@@ -256,9 +272,10 @@ TEST_F(AoiEntityVisibilityTest, TestEntityEnterView) {
 }
 
 // 实体离开视野
-TEST_F(AoiEntityVisibilityTest, TestEntityLeaveView) {
+TEST_F(AoiEntityVisibilityTest, TestEntityLeaveView)
+{
     // 先将 entity2 移到 entity1 附近触发进入
-    auto& location = *tlsEcs.actorRegistry.get_or_emplace<Transform>(entity2).mutable_location();
+    auto &location = *tlsEcs.actorRegistry.get_or_emplace<Transform>(entity2).mutable_location();
     location.set_x(0);
     location.set_y(0);
 
@@ -291,8 +308,8 @@ TEST_F(AoiEntityVisibilityTest, TestEntityLeaveView) {
     }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-
