@@ -109,8 +109,8 @@ private:
                           const AnomalyThreshold &threshold);
 
     // Storage — thread-local via TLS, no mutex needed.
-    static std::unordered_map<BucketKey, PlayerAnomalyBucket, BucketKeyHash> buckets_;
-    static std::unordered_map<uint32_t, AnomalyThreshold> currencyThresholds_;
-    static std::unordered_map<uint32_t, AnomalyThreshold> itemThresholds_;
-    static AnomalyThreshold defaultThreshold_;
+    static thread_local std::unordered_map<BucketKey, PlayerAnomalyBucket, BucketKeyHash> buckets_;
+    static thread_local std::unordered_map<uint32_t, AnomalyThreshold> currencyThresholds_;
+    static thread_local std::unordered_map<uint32_t, AnomalyThreshold> itemThresholds_;
+    static thread_local AnomalyThreshold defaultThreshold_;
 };
