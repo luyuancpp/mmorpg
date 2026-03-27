@@ -40,6 +40,23 @@ This directory contains Kubernetes-only deployment assets for opening game zones
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-image-preflight
 ```
 
+### Build C++ Nodes (Docker multi-stage — recommended)
+
+```bash
+# Build everything from repo root — outputs gate + scene Linux binaries
+docker build -f deploy/k8s/Dockerfile.cpp -t mmorpg-nodes:latest .
+```
+
+Or build on a Linux host directly:
+
+```bash
+# 1. Build gRPC dependencies (one-time)
+bash tools/scripts/build_grpc_linux.sh
+
+# 2. Build gate + scene
+bash tools/scripts/build_linux.sh --release
+```
+
 ### Stage Runtime Files
 
 ```powershell
@@ -49,7 +66,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-stage-runtime `
   -TableSource generated/tables
 ```
 
-This copies Linux `centre` / `gate` / `scene` binaries plus local `zoneinfo` and generated tables into `deploy/k8s/runtime/linux`.
+This copies Linux `gate` / `scene` binaries plus local `zoneinfo` and generated tables into `deploy/k8s/runtime/linux`.
 
 ### Build Runtime Image
 
