@@ -26,6 +26,8 @@
     <ClCompile Include="gain_block\gain_block_service.cpp" />
     <ClCompile Include="mission\comp\mission_comp.cpp" />
     <ClCompile Include="mission\system\mission.cpp" />
+    <ClCompile Include="transaction_log\anomaly_detector.cpp" />
+    <ClCompile Include="transaction_log\transaction_log_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bag\bag_system.h" />
@@ -47,6 +49,8 @@
     <ClInclude Include="scene\comp\player_scene_comp.h" />
     <ClInclude Include="scene\comp\scene_comp.h" />
     <ClInclude Include="scene\system\scene_param.h" />
+    <ClInclude Include="transaction_log\anomaly_detector.h" />
+    <ClInclude Include="transaction_log\transaction_log_system.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
