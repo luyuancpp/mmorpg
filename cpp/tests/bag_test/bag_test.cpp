@@ -8,7 +8,7 @@
 #include "modules/gain_block/gain_block_service.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/bag_error_tip.pb.h"
-#include <node_config_manager.h>
+#include "../test_config_helper.h"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -712,9 +712,8 @@ TEST(GainBlockServiceTest, GlobalAndPerPlayerBlockCombo)
 
 int main(int argc, char** argv)
 {
-    readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig());
-    readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig());
+    if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
     ItemTableManager::Instance().Load();
-    testing::InitGoogleTest();
+    testing::InitGoogleTest(&argc, &argv);
     return RUN_ALL_TESTS();
 }

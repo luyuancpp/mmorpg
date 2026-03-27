@@ -1,5 +1,6 @@
 ﻿#include <gtest/gtest.h>
 #include "time/system/time_cooldown.h"
+#include "../test_config_helper.h"
 
 // ---------------------------------------------------------------------------
 // 技能冷却时间（毫秒级）工具测试
@@ -131,6 +132,7 @@ TEST_F(CoolDownTimeMillisecondUtilTest, ResetCooldown) {
 
 int main(int argc, char** argv)
 {
+	if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
 	CooldownTableManager::Instance().Load();
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
