@@ -6,8 +6,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/reward_error_tip.pb.h"
 #include <thread_context/registry_manager.h>
-#include <config.h>
-#include <node_config_manager.h>
+#include "../test_config_helper.h"
 
 decltype(auto) CreatePlayerEntityWithRewardComponent(){
     const auto playerEntity = tlsEcs.actorRegistry.create();
@@ -99,8 +98,7 @@ TEST(RewardClaimSystemTest, ShowRewardStatusTest) {
 
 int main(int argc, char** argv)
 {
-	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig());
-	readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig());
+	if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
 	RewardTableManager::Instance().Load();
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

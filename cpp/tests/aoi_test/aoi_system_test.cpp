@@ -246,8 +246,13 @@ TEST_F(AoiEntityVisibilityTest, TestEntityEnterView) {
     aoiSystem.Update(0.0);
 
     // 双方都应收到进入通知
-    EXPECT_TRUE(entitiesToNotifyEntry.find(entity2)->second == entity1);
-    EXPECT_TRUE(entitiesToNotifyEntry.find(entity1)->second == entity2);
+    auto it2 = entitiesToNotifyEntry.find(entity2);
+    ASSERT_NE(it2, entitiesToNotifyEntry.end()) << "entity2 not found in entitiesToNotifyEntry";
+    EXPECT_EQ(it2->second, entity1);
+
+    auto it1 = entitiesToNotifyEntry.find(entity1);
+    ASSERT_NE(it1, entitiesToNotifyEntry.end()) << "entity1 not found in entitiesToNotifyEntry";
+    EXPECT_EQ(it1->second, entity2);
 }
 
 // 实体离开视野
@@ -259,8 +264,15 @@ TEST_F(AoiEntityVisibilityTest, TestEntityLeaveView) {
 
     aoiSystem.Update(0.0);
 
-    EXPECT_TRUE(entitiesToNotifyEntry.find(entity2)->second == entity1);
-    EXPECT_TRUE(entitiesToNotifyEntry.find(entity1)->second == entity2);
+    {
+        auto it2 = entitiesToNotifyEntry.find(entity2);
+        ASSERT_NE(it2, entitiesToNotifyEntry.end()) << "entity2 not found in entitiesToNotifyEntry (enter)";
+        EXPECT_EQ(it2->second, entity1);
+
+        auto it1 = entitiesToNotifyEntry.find(entity1);
+        ASSERT_NE(it1, entitiesToNotifyEntry.end()) << "entity1 not found in entitiesToNotifyEntry (enter)";
+        EXPECT_EQ(it1->second, entity2);
+    }
 
     // 然后将 entity2 移远，验证离开通知
     location.set_x(50);
@@ -268,8 +280,15 @@ TEST_F(AoiEntityVisibilityTest, TestEntityLeaveView) {
 
     aoiSystem.Update(0.0);
 
-    EXPECT_TRUE(entitiesToNotifyExit.find(entity2)->second == entity1);
-    EXPECT_TRUE(entitiesToNotifyExit.find(entity1)->second == entity2);
+    {
+        auto it2 = entitiesToNotifyExit.find(entity2);
+        ASSERT_NE(it2, entitiesToNotifyExit.end()) << "entity2 not found in entitiesToNotifyExit (leave)";
+        EXPECT_EQ(it2->second, entity1);
+
+        auto it1 = entitiesToNotifyExit.find(entity1);
+        ASSERT_NE(it1, entitiesToNotifyExit.end()) << "entity1 not found in entitiesToNotifyExit (leave)";
+        EXPECT_EQ(it1->second, entity2);
+    }
 }
 
 int main(int argc, char** argv) {

@@ -5,6 +5,7 @@
 #include "table/code/testmultikey_table.h"
 #include "table/code/skill_table.h"
 #include "table/code/buff_table.h"
+#include "../test_config_helper.h"
 
 void LoadTables();
 
@@ -103,6 +104,7 @@ TEST(ConfigTableTest, FindByStringKey)
 int main(int argc, char** argv)
 {
 	::testing::InitGoogleTest(&argc, argv);
+	if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
 	LoadTables();
 	return RUN_ALL_TESTS();
 }
