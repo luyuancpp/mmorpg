@@ -35,9 +35,9 @@ entt::entity CreateTestPlayer()
 	return player;
 }
 
-MissionsComp& GetPlayerMissionsComp(entt::entity player)
+MissionsComp &GetPlayerMissionsComp(entt::entity player)
 {
-	auto& container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(player);
+	auto &container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(player);
 	return container.GetOrCreate(MissionListComp::kPlayerMission);
 }
 
@@ -65,10 +65,10 @@ MissionConditionEvent MakeConditionEvent(entt::entity player, eConditionType typ
 TEST(MissionsComp, AcceptMission)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 	missions.SetMissionTypeNotRepeated(false);
 
-	auto& allMissions = GetMissionAllTable();
+	auto &allMissions = GetMissionAllTable();
 	std::size_t acceptedCount = 0;
 
 	for (int32_t i = 0; i < allMissions.data_size(); ++i)
@@ -89,7 +89,7 @@ TEST(MissionsComp, AcceptMission)
 TEST(MissionsComp, RepeatedMissionId)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	auto ev = MakeAcceptEvent(player, 1);
 
@@ -100,7 +100,7 @@ TEST(MissionsComp, RepeatedMissionId)
 TEST(MissionsComp, RepeatedMissionType)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	// Mission 3 accepted OK
 	auto ev3 = MakeAcceptEvent(player, 3);
@@ -117,7 +117,7 @@ TEST(MissionsComp, RepeatedMissionType)
 TEST(MissionsComp, TriggerMissionCondition)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	auto acceptEv = MakeAcceptEvent(player, 1);
 	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptEv, missions, MissionConfig::GetSingleton()));
@@ -147,7 +147,7 @@ TEST(MissionsComp, TriggerMissionCondition)
 TEST(MissionsComp, ConditionTypeSize)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	dispatcher.update<AcceptMissionEvent>();
 
@@ -219,11 +219,10 @@ TEST(MissionsComp, ConditionTypeSize)
 	}
 }
 
-
 TEST(MissionsComp, CompleteAcceptMission)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	constexpr uint32_t missionId = 4;
 	auto acceptEv = MakeAcceptEvent(player, missionId);
@@ -245,7 +244,7 @@ TEST(MissionsComp, CompleteAcceptMission)
 TEST(MissionsComp, EventTriggerMutableMission)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	constexpr uint32_t missionId1 = 1;
 	constexpr uint32_t missionId2 = 2;
@@ -272,7 +271,7 @@ TEST(MissionsComp, EventTriggerMutableMission)
 TEST(MissionsComp, OnCompleteMission)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	uint32_t missionId = 7;
 	auto acceptEv = MakeAcceptEvent(player, missionId);
@@ -315,7 +314,7 @@ TEST(MissionsComp, OnCompleteMission)
 TEST(MissionsComp, AcceptNextMirroMission)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	uint32_t missionId = 7;
 	auto acceptEv = MakeAcceptEvent(player, missionId);
@@ -341,9 +340,9 @@ TEST(MissionsComp, AcceptNextMirroMission)
 TEST(MissionsComp, MissionCondition)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
-	constexpr uint32_t missionId  = 14;
+	constexpr uint32_t missionId = 14;
 	constexpr uint32_t missionId1 = 15;
 	constexpr uint32_t missionId2 = 16;
 
@@ -373,7 +372,7 @@ TEST(MissionsComp, MissionCondition)
 TEST(MissionsComp, ConditionAmount)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	constexpr uint32_t missionId = 13;
 	auto acceptEv = MakeAcceptEvent(player, missionId);
@@ -397,7 +396,7 @@ TEST(MissionsComp, ConditionAmount)
 TEST(MissionsComp, MissionRewardList)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	constexpr uint32_t missionId = 12;
 	auto acceptEv = MakeAcceptEvent(player, missionId);
@@ -426,7 +425,7 @@ TEST(MissionsComp, MissionRewardList)
 TEST(MissionsComp, AbandonMission)
 {
 	const auto player = CreateTestPlayer();
-	auto& missions = GetPlayerMissionsComp(player);
+	auto &missions = GetPlayerMissionsComp(player);
 
 	constexpr uint32_t missionId = 12;
 	auto acceptEv = MakeAcceptEvent(player, missionId);
@@ -436,7 +435,7 @@ TEST(MissionsComp, AbandonMission)
 	EXPECT_EQ(0, missions.CanGetRewardSize());
 	EXPECT_EQ(1, missions.TypeSetSize());
 
-	auto& classifyMap = missions.GetEventMissionsClassifyForUnitTest();
+	auto &classifyMap = missions.GetEventMissionsClassifyForUnitTest();
 	EXPECT_EQ(1, classifyMap.find(static_cast<uint32_t>(eConditionType::kConditionKillMonster))->second.size());
 
 	// Manually mark claimable, then abandon
@@ -461,14 +460,18 @@ TEST(MissionsComp, MissionTimeOut)
 {
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-	const auto addCandidate = [](std::vector<fs::path>& candidates, const fs::path& path) {
-		if (path.empty()) {
+	const auto addCandidate = [](std::vector<fs::path> &candidates, const fs::path &path)
+	{
+		if (path.empty())
+		{
 			return;
 		}
-		for (const auto& existing : candidates) {
-			if (existing == path) {
+		for (const auto &existing : candidates)
+		{
+			if (existing == path)
+			{
 				return;
 			}
 		}
@@ -479,7 +482,8 @@ int main(int argc, char** argv)
 	addCandidate(runtimeCandidates, fs::current_path());
 	addCandidate(runtimeCandidates, fs::current_path() / "bin");
 
-	if (argc > 0 && argv[0] != nullptr) {
+	if (argc > 0 && argv[0] != nullptr)
+	{
 		const fs::path exeDir = fs::absolute(argv[0]).parent_path();
 		addCandidate(runtimeCandidates, exeDir);
 		addCandidate(runtimeCandidates, exeDir / "bin");
@@ -488,24 +492,28 @@ int main(int argc, char** argv)
 	}
 
 	bool configLoaded = false;
-	for (const auto& runtimeDir : runtimeCandidates) {
+	for (const auto &runtimeDir : runtimeCandidates)
+	{
 		const auto baseCfg = runtimeDir / "etc" / "base_deploy_config.yaml";
 		const auto gameCfg = runtimeDir / "etc" / "game_config.yaml";
-		if (!fs::exists(baseCfg) || !fs::exists(gameCfg)) {
+		if (!fs::exists(baseCfg) || !fs::exists(gameCfg))
+		{
 			continue;
 		}
 
 		fs::current_path(runtimeDir);
-		if (readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig())
-			&& readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig())) {
+		if (readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig()) && readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig()))
+		{
 			configLoaded = true;
 			break;
 		}
 	}
 
-	if (!configLoaded) {
+	if (!configLoaded)
+	{
 		std::cerr << "Failed to locate/load configs. Tried runtime dirs:" << std::endl;
-		for (const auto& candidate : runtimeCandidates) {
+		for (const auto &candidate : runtimeCandidates)
+		{
 			std::cerr << "  " << candidate.string() << std::endl;
 		}
 		return 1;
