@@ -127,7 +127,7 @@ void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& messa
 
 void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId, uint32_t nodeType, uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendMessageToPlayerViaClientNode(wrappedMessageId, nodeType, messageId, message, GetPlayer(playerId));
+	SendMessageToPlayerViaClientNode(wrappedMessageId, nodeType, messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
 
@@ -137,12 +137,12 @@ void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	entt::entity playerEntity)
 {
-	if (!tlsRegistryManager.actorRegistry.valid(playerEntity)) {
+	if (!tlsEcs.actorRegistry.valid(playerEntity)) {
 		LOG_ERROR << "Invalid player entity";
 		return;
 	}
 
-	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	const auto* sessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB) {
 		LOG_ERROR << "Player session info not found for entity";
 		return;
@@ -195,7 +195,7 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	Guid playerId)
 {
-	SendMessageToPlayerViaSessionNode(wrappedMessageId, nodeType, messageId, message, GetPlayer(playerId));
+	SendMessageToPlayerViaSessionNode(wrappedMessageId, nodeType, messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
 
@@ -205,12 +205,12 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	entt::entity playerEntity)
 {
-	if (!tlsRegistryManager.actorRegistry.valid(playerEntity)) {
+	if (!tlsEcs.actorRegistry.valid(playerEntity)) {
 		LOG_ERROR << "Invalid player entity";
 		return;
 	}
 
-	const auto* sessionPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	const auto* sessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!sessionPB) {
 		LOG_ERROR << "Player session info not found for entity";
 		return;

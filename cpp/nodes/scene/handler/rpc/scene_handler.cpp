@@ -98,12 +98,12 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 1. Clear existing player session (handles rapid reconnect / account takeover)
 	PlayerLifecycleSystem::RemovePlayerSessionSilently(request->player_id());
 
-	auto playerIt = tlsPlayerList.find(request->player_id());
+	auto playerIt = tlsEcs.playerList.find(request->player_id());
 
 	PlayerGameNodeEntryInfoComp enterInfo;
 
 	// 2. If player is already online, enter scene directly
-	if (playerIt != tlsPlayerList.end())
+	if (playerIt != tlsEcs.playerList.end())
 	{
 		PlayerLifecycleSystem::EnterScene(playerIt->second, enterInfo);
 		return;
@@ -131,8 +131,8 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
         return;
     }
 
-    const auto playerIt = tlsPlayerList.find(it->second);
-    if (playerIt == tlsPlayerList.end())
+    const auto playerIt = tlsEcs.playerList.find(it->second);
+    if (playerIt == tlsEcs.playerList.end())
     {
         LOG_ERROR << "Player ID not found in common logic: " << it->second;
         return;
@@ -238,7 +238,7 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 			return;
 		}
 
-		const auto player = GetPlayer(it->second);
+		const auto player = tlsEcs.GetPlayer(it->second);
 		if (player == entt::null)
 		{
 			LOG_ERROR << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
@@ -305,7 +305,7 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 		return;
 	}
 
-	const auto player = GetPlayer(it->second);
+	const auto player = tlsEcs.GetPlayer(it->second);
 	if (player == entt::null)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
@@ -330,7 +330,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto player = GetPlayer(it->second);
+	const auto player = tlsEcs.GetPlayer(it->second);
 	if (player == entt::null)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
@@ -399,7 +399,7 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
         return;
     }
 
-	auto& tipInfoMessage = tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity());
+	auto& tipInfoMessage = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity());
 	response->mutable_message_content()->mutable_error_message()->CopyFrom(tipInfoMessage);
 	tipInfoMessage.Clear();
 
@@ -443,7 +443,7 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 	const MessagePriority routedPriority = ResolveRoutedMessagePriority(*request);
 	const bool importantRoute = IsImportantPriority(routedPriority);
 	if (playerId != kInvalidGuid) {
-		const auto localPlayer = GetPlayer(playerId);
+		const auto localPlayer = tlsEcs.GetPlayer(playerId);
 		if (localPlayer != entt::null && request->node_list_size() == 0) {
 			LOG_TRACE << "RoutePlayerStringMsg local hit, player_id=" << playerId;
 			return;
@@ -510,8 +510,8 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto player = GetPlayer(request->player_id());
-	if (!tlsRegistryManager.actorRegistry.valid(player))
+	const auto player = tlsEcs.GetPlayer(request->player_id());
+	if (!tlsEcs.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "Player not found " << request->player_id();
 		return;
@@ -519,7 +519,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	SessionMap().emplace(request->session_id(), request->player_id());
 
-	tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
+	tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
 
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
 ///<<< END WRITING YOUR CODE
@@ -531,7 +531,7 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 {
 	///<<< BEGIN WRITING YOUR CODE
 
-    auto player = GetPlayer(request->player_id());
+    auto player = tlsEcs.GetPlayer(request->player_id());
     if (player == entt::null)
     {
         LOG_ERROR << "EnterScene: Player entity not found for player_id " << request->player_id();
@@ -542,7 +542,7 @@ void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, con
 
     entt::entity sceneEntity{ request->scene_id() };
     // Optional: validate scene entity (SceneCommon usually also checks internally)
-    if (!tlsRegistryManager.actorRegistry.valid(sceneEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(sceneEntity)) {
+    if (!tlsEcs.actorRegistry.valid(sceneEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(sceneEntity)) {
         LOG_ERROR << "EnterScene: invalid scene entity " << request->scene_id();
         return;
     }

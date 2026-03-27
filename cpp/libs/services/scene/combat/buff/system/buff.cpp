@@ -59,7 +59,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     const uint32_t buffTableId,
     const SkillContextPtrComp& abilityContext)
 {
-    if (!tlsRegistryManager.actorRegistry.valid(parent))
+    if (!tlsEcs.actorRegistry.valid(parent))
     {
         return {kThisEntityIsInvalid, UINT64_MAX};
     }
@@ -71,7 +71,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
         return {result, UINT64_MAX};
     }
 
-    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
+    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
 
     BuffEntry newBuff;
     if (abilityContext != nullptr)
@@ -99,7 +99,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 
     if (buffTable->duration() > 0) {
         fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
-            if (!tlsRegistryManager.actorRegistry.valid(parent))
+            if (!tlsEcs.actorRegistry.valid(parent))
             {
                 return;
             }
@@ -145,13 +145,13 @@ void BuffSystem::RemoveSubBuff(BuffEntry& buffComp, UInt64Set& buffsToRemove)
 }
 
 void BuffSystem::MarkBuffForRemoval(const entt::entity parent, uint64_t buffId) {
-    auto& pendingRemoveBuffs = tlsRegistryManager.actorRegistry.get_or_emplace<BuffPendingRemoveBuffs>(parent);
+    auto& pendingRemoveBuffs = tlsEcs.actorRegistry.get_or_emplace<BuffPendingRemoveBuffs>(parent);
     pendingRemoveBuffs.emplace(buffId);
 }
 
 // Remove pending buffs at end of frame
 void BuffSystem::RemovePendingBuffs(const entt::entity parent, BuffListComp& buffListComp) {
-    auto& pendingRemoveBuffs = tlsRegistryManager.actorRegistry.get_or_emplace<BuffPendingRemoveBuffs>(parent);
+    auto& pendingRemoveBuffs = tlsEcs.actorRegistry.get_or_emplace<BuffPendingRemoveBuffs>(parent);
 
     for (const auto& buffId : pendingRemoveBuffs) {
         buffListComp.erase(buffId);
@@ -164,7 +164,7 @@ void BuffSystem::RemovePendingBuffs(const entt::entity parent, BuffListComp& buf
 // Buff expiry handler
 void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 {
-    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
+    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
     const auto buffIt = buffList.find(buffId);
 
     if (buffIt == buffList.end()) {
@@ -185,7 +185,7 @@ uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32
 {
     FetchAndValidateBuffTable(buffTableId);
 
-    const auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
+    const auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
     if (const bool isImmune = IsTargetImmune(buffList, buffTable)) {
         return MAKE_ERROR_MSG(kBuffTargetImmuneToBuff,
             "entity=" << entt::to_integral(parentEntity)
@@ -206,7 +206,7 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
         return false;
     }
 
-    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
+    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
     for (auto& buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
             if (buffComp.buffPb.layer() < buffTable->maxlayer()) {
@@ -225,7 +225,7 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     FetchAndValidateCustomBuffTable(add, buffTableId);
 
     UInt64Vector dispelBuffIdList;
-    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
+    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
     for (auto& [buffId, buffPbComp] : buffList) {
         FetchBuffTableOrContinue(buffTableId);
         for (const auto& removeTag : addBuffTable->dispeltag() | std::views::keys) {
@@ -285,7 +285,7 @@ void BuffSystem::OnBuffDestroy(entt::entity parent, const uint64_t buffId, const
 // Buff periodic interval handler
 void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
 {
-    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(parent);
+    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
     const auto buffIt = buffList.find(buffId);
 
     if (buffIt == buffList.end()) {
@@ -447,7 +447,7 @@ void ProcessBuffs(const entt::entity target, BuffListComp& buffListComp, const d
 }
 
 void BuffSystem::Update(const double delta) {
-    for (auto&& [target, buffListComp] : tlsRegistryManager.actorRegistry.view<BuffListComp>().each()) {
+    for (auto&& [target, buffListComp] : tlsEcs.actorRegistry.view<BuffListComp>().each()) {
         ProcessBuffs(target, buffListComp, delta);
         BuffSystem::RemovePendingBuffs(target, buffListComp);
     }

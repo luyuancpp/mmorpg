@@ -1,3 +1,2 @@
+// DEPRECATED — see ecs_context.cpp.
 #include "dispatcher_manager.h"
-
-thread_local entt::dispatcher dispatcher;

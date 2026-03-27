@@ -37,7 +37,7 @@ uint64_t *CurrencySystem::ResolveCurrencyField(entt::entity player, CurrencyType
         return nullptr;
     }
 
-    auto *currency = tlsRegistryManager.actorRegistry.try_get<CurrencyComp>(player);
+    auto *currency = tlsEcs.actorRegistry.try_get<CurrencyComp>(player);
     if (currency == nullptr)
     {
         LOG_ERROR << "CurrencySystem: CurrencyComp missing on entity "
@@ -93,10 +93,10 @@ uint32_t CurrencySystem::AddCurrency(entt::entity player, CurrencyType type, int
     const uint64_t balanceBefore = *balance;
 
     // ── Deferred-clawback / 补缴 deduction ──────────────────────────────
-    auto *comp = tlsRegistryManager.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
     if (comp == nullptr)
     {
-        comp = &tlsRegistryManager.actorRegistry.get_or_emplace<PlayerCurrencyComp>(player);
+        comp = &tlsEcs.actorRegistry.get_or_emplace<PlayerCurrencyComp>(player);
     }
     auto it = comp->debts.find(static_cast<uint32_t>(type));
     if (it != comp->debts.end())
@@ -180,10 +180,10 @@ uint32_t CurrencySystem::DeductCurrency(entt::entity player, CurrencyType type, 
     const uint64_t balanceBefore = *balance;
     *balance -= cost;
 
-    auto *comp = tlsRegistryManager.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
     if (comp == nullptr)
     {
-        comp = &tlsRegistryManager.actorRegistry.get_or_emplace<PlayerCurrencyComp>(player);
+        comp = &tlsEcs.actorRegistry.get_or_emplace<PlayerCurrencyComp>(player);
     }
     comp->dirty = true;
 
@@ -238,7 +238,7 @@ void CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int64_t 
 
     uint64_t debtToAdd = static_cast<uint64_t>(oweAmount);
 
-    auto *comp = tlsRegistryManager.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
     if (comp == nullptr)
     {
         LOG_ERROR << "CurrencySystem::AttachDebt: PlayerCurrencyComp missing on entity "
@@ -272,7 +272,7 @@ uint64_t CurrencySystem::WaiveDebt(entt::entity player, CurrencyType type,
                                    const std::string &gmOperator,
                                    const std::string &reason)
 {
-    auto *comp = tlsRegistryManager.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
     if (comp == nullptr)
     {
         return 0;
@@ -304,7 +304,7 @@ void CurrencySystem::AdjustDebt(entt::entity player, CurrencyType type, int64_t 
                                 const std::string &gmOperator,
                                 const std::string &reason)
 {
-    auto *comp = tlsRegistryManager.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
     if (comp == nullptr)
     {
         LOG_ERROR << "CurrencySystem::AdjustDebt: PlayerCurrencyComp missing on entity "
@@ -374,7 +374,7 @@ void CurrencySystem::AdjustDebt(entt::entity player, CurrencyType type, int64_t 
 void CurrencySystem::FreezeDebt(entt::entity player, CurrencyType type, bool freeze,
                                 const std::string &gmOperator)
 {
-    auto *comp = tlsRegistryManager.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
     if (comp == nullptr)
     {
         return;
@@ -406,7 +406,7 @@ void CurrencySystem::FreezeDebt(entt::entity player, CurrencyType type, bool fre
 std::vector<CurrencyDebtEntry> CurrencySystem::QueryDebts(entt::entity player)
 {
     std::vector<CurrencyDebtEntry> result;
-    const auto *comp = tlsRegistryManager.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    const auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
     if (comp == nullptr)
     {
         return result;
@@ -442,7 +442,7 @@ uint32_t CurrencySystem::BlockCurrency(entt::entity player, CurrencyType type)
         return PrintStackAndReturnError(kInvalidParameter);
     }
 
-    auto *currency = tlsRegistryManager.actorRegistry.try_get<CurrencyComp>(player);
+    auto *currency = tlsEcs.actorRegistry.try_get<CurrencyComp>(player);
     if (currency == nullptr)
     {
         LOG_ERROR << "CurrencySystem::BlockCurrency: CurrencyComp missing on entity "
@@ -479,7 +479,7 @@ uint32_t CurrencySystem::UnblockCurrency(entt::entity player, CurrencyType type)
         return PrintStackAndReturnError(kInvalidParameter);
     }
 
-    auto *currency = tlsRegistryManager.actorRegistry.try_get<CurrencyComp>(player);
+    auto *currency = tlsEcs.actorRegistry.try_get<CurrencyComp>(player);
     if (currency == nullptr)
     {
         LOG_ERROR << "CurrencySystem::UnblockCurrency: CurrencyComp missing on entity "
@@ -509,7 +509,7 @@ uint32_t CurrencySystem::UnblockCurrency(entt::entity player, CurrencyType type)
 
 bool CurrencySystem::IsCurrencyBlocked(entt::entity player, CurrencyType type)
 {
-    const auto *currency = tlsRegistryManager.actorRegistry.try_get<CurrencyComp>(player);
+    const auto *currency = tlsEcs.actorRegistry.try_get<CurrencyComp>(player);
     if (currency == nullptr)
     {
         return false;

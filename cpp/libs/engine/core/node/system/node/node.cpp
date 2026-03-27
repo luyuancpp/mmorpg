@@ -1,4 +1,4 @@
-﻿#include "node.h"
+#include "node.h"
 #include <regex>
 #include <grpcpp/create_channel.h>
 #include <boost/uuid/uuid_io.hpp>
@@ -126,7 +126,7 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 
 	gNode = this;
 	gNodeAtomic.store(this, std::memory_order_release);
-	tlsRegistryManager.nodeGlobalRegistry.emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	tlsEcs.nodeGlobalRegistry.emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 }
 
 Node::~Node() {
@@ -143,7 +143,7 @@ int64_t Node::GetLeaseId() const
 }
 
 NodeInfo& Node::GetNodeInfo() const {
-	return tlsRegistryManager.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
+	return tlsEcs.globalRegistry.get_or_emplace<NodeInfo>(tlsEcs.GlobalEntity());
 }
 
 void Node::Initialize() {
@@ -282,7 +282,7 @@ void Node::StartRpcServer() {
 
 	StartNodeRegistrationHealthMonitor();
 
-	dispatcher.trigger<OnServerStart>();
+	tlsEcs.dispatcher.trigger<OnServerStart>();
 
 	auto nodeTypeName = boost::to_upper_copy(eNodeType_Name(GetNodeInfo().node_type()));
 	LOG_INFO << "\n\n"
@@ -331,8 +331,8 @@ void Node::ShutdownInLoop() {
 	ReleaseNodeId();
 	serviceDiscoveryManager.Shutdown();
 	kafkaManager.Shutdown();
-	tlsThreadLocalEntityContainer.Clear();
-	tlsRegistryManager.Clear();
+	// Cleared by tlsEcs.Clear() below.
+	tlsEcs.Clear();
 	muduo::Logger::setOutput(StdoutOutput);
 	logSystem.stop();
 	LOG_DEBUG << "Node shutdown complete.";
@@ -348,7 +348,7 @@ void Node::InitLogSystem() {
 }
 
 void Node::RegisterEventHandlers() {
-	dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnServerConnected>(*this);
+	tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnServerConnected>(*this);
 }
 
 void Node::LoadConfigs() {
@@ -441,7 +441,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		return;
 	}
 
-	auto& serviceNodesByType = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 	auto& nodesOfStoppedType = *serviceNodesByType[stoppedNode.node_type()].mutable_node_list();
 
 	// Remove stale node snapshot first so service discovery state stays consistent.
@@ -488,7 +488,7 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		OnNodeRemovePbEvent nodeRemovedEvent;
 		nodeRemovedEvent.set_entity(entt::to_integral(stoppedNodeEntity));
 		nodeRemovedEvent.set_node_type(stoppedNodeType);
-		dispatcher.trigger(nodeRemovedEvent);
+		tlsEcs.dispatcher.trigger(nodeRemovedEvent);
 
 		DestroyEntity(nodeRegistry, stoppedNodeEntity);
 	});
@@ -535,7 +535,7 @@ void Node::StartNodeRegistrationHealthMonitor() {
 
 		auto& currentNode = GetNodeInfo();
 
-		auto& serviceNodesByType = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		auto& serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 		auto& registeredNodesForType = *serviceNodesByType[currentNode.node_type()].mutable_node_list();
 		for (const auto& registeredNode : registeredNodesForType) {
 			if (IsCurrentNode(registeredNode)) {

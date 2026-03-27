@@ -13,13 +13,13 @@
 
 uint64_t SnapshotSystem::CaptureAndSend(entt::entity player, SnapshotTrigger trigger)
 {
-    if (!tlsRegistryManager.actorRegistry.valid(player))
+    if (!tlsEcs.actorRegistry.valid(player))
     {
         LOG_ERROR << "[SnapshotSystem] Invalid player entity";
         return 0;
     }
 
-    const auto *guidPtr = tlsRegistryManager.actorRegistry.try_get<Guid>(player);
+    const auto *guidPtr = tlsEcs.actorRegistry.try_get<Guid>(player);
     if (guidPtr == nullptr || *guidPtr == kInvalidGuid)
     {
         LOG_ERROR << "[SnapshotSystem] Player entity has no valid Guid";

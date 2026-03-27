@@ -12,13 +12,13 @@
 #include <thread_context/snow_flake_manager.h>
 
 Bag::Bag()
-	: entity_(tlsRegistryManager.itemRegistry.create())
+	: entity_(tlsEcs.itemRegistry.create())
 {
 }
 
 Bag::~Bag()
 {
-	DestroyEntity(tlsRegistryManager.itemRegistry, entity_);
+	DestroyEntity(tlsEcs.itemRegistry, entity_);
 }
 
 std::size_t Bag::GetItemStackSize(uint32_t config_id) const

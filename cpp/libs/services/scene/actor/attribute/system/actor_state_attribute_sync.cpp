@@ -72,9 +72,9 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 {
 	EntityVector nearbyEntityList;
 
-	for (auto [entity, transform] : tlsRegistryManager.actorRegistry.view<Transform>().each())
+	for (auto [entity, transform] : tlsEcs.actorRegistry.view<Transform>().each())
 	{
-		auto& actorRegistry = tlsRegistryManager.actorRegistry;
+		auto& actorRegistry = tlsEcs.actorRegistry;
 		const auto& aoiListComp = actorRegistry.get_or_emplace<AoiListComp>(entity);
 
 		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, aoiListComp.aoiList);
@@ -86,7 +86,7 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 }
 
 void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
+	const auto& aoiList = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
 	for (const auto& nearbyEntity : aoiList) {
 		constexpr double viewRadiusFactor = 0.333;
@@ -101,7 +101,7 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity e
 }
 
 void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
+	const auto& aoiList = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
 	for (const auto& nearbyEntity : aoiList) {
 		constexpr double viewRadiusFactor = 0.666;
@@ -116,7 +116,7 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity e
 }
 
 void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
+	const auto& aoiList = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
 
 	for (const auto& nearbyEntity : aoiList) {
 		const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity);

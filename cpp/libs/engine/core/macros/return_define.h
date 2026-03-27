@@ -2,9 +2,7 @@
 
 #include <cstdint>
 
-#include <thread_context/registry_manager.h>
-
-entt::entity GlobalEntity();
+#include <thread_context/ecs_context.h>
 
 // Early-return when a result code signals failure.
 // Wrapped in do-while(0) to behave as a single statement in all contexts.
@@ -39,8 +37,8 @@ entt::entity GlobalEntity();
     do {                                                                                        \
         auto* _resp = (response);                                                               \
         if (_resp) {                                                                            \
-            auto& _tip = tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(      \
-                GlobalEntity());                                                                \
+            auto& _tip = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(      \
+                tlsEcs.GlobalEntity());                                                                \
             *(_resp->mutable_error_message()) = std::move(_tip);                                \
             _tip.Clear();                                                                       \
         }                                                                                       \
@@ -51,7 +49,7 @@ entt::entity GlobalEntity();
     do {                                                                                        \
         const auto _err = fn(request);                                                          \
         if (_err != kSuccess) {                                                                 \
-            tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity())    \
+            tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity())    \
                 .set_id(_err);                                                                  \
             return;                                                                             \
         }                                                                                       \
@@ -62,7 +60,7 @@ entt::entity GlobalEntity();
     do {                                                                                        \
         const auto _err = fn(player, request);                                                  \
         if (_err != kSuccess) {                                                                 \
-            tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity())    \
+            tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity())    \
                 .set_id(_err);                                                                  \
             return;                                                                             \
         }                                                                                       \

@@ -7,7 +7,7 @@
 
 void MovementAccelerationSystem::Update(const double delta)
 {
-	auto view = tlsRegistryManager.actorRegistry.view<Transform, Velocity, Acceleration>();
+	auto view = tlsEcs.actorRegistry.view<Transform, Velocity, Acceleration>();
 	for (auto&& [entity, transform, velocity, acceleration] : view.each())
 	{
 		auto& location = *transform.mutable_location();

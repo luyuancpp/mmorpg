@@ -29,15 +29,15 @@ namespace fs = std::filesystem;
 
 entt::entity CreateTestPlayer()
 {
-	const auto player = tlsRegistryManager.actorRegistry.create();
-	(void)tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
+	const auto player = tlsEcs.actorRegistry.create();
+	(void)tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
 	MissionEventHandler::Register();
 	return player;
 }
 
 MissionsComp &GetPlayerMissionsComp(entt::entity player)
 {
-	auto &container = tlsRegistryManager.actorRegistry.get_or_emplace<MissionsContainerComp>(player);
+	auto &container = tlsEcs.actorRegistry.get_or_emplace<MissionsContainerComp>(player);
 	return container.GetOrCreate(MissionListComp::kPlayerMission);
 }
 
@@ -149,7 +149,7 @@ TEST(MissionsComp, ConditionTypeSize)
 	const auto player = CreateTestPlayer();
 	auto &missions = GetPlayerMissionsComp(player);
 
-	dispatcher.update<AcceptMissionEvent>();
+	tlsEcs.dispatcher.update<AcceptMissionEvent>();
 
 	constexpr uint32_t missionId = 6;
 	auto acceptEv = MakeAcceptEvent(player, missionId);
@@ -203,7 +203,7 @@ TEST(MissionsComp, ConditionTypeSize)
 	condEv.add_condtion_ids(2);
 	MissionSystem::HandleMissionConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
-	dispatcher.update<MissionConditionEvent>();
+	tlsEcs.dispatcher.update<MissionConditionEvent>();
 
 	EXPECT_EQ(0, missions.MissionSize());
 	EXPECT_EQ(1, missions.CompleteSize());
@@ -283,7 +283,7 @@ TEST(MissionsComp, OnCompleteMission)
 	condEv.add_condtion_ids(1);
 	MissionSystem::HandleMissionConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
-	dispatcher.update<AcceptMissionEvent>();
+	tlsEcs.dispatcher.update<AcceptMissionEvent>();
 	EXPECT_FALSE(missions.IsAccepted(missionId));
 	EXPECT_TRUE(missions.IsComplete(missionId));
 
@@ -303,8 +303,8 @@ TEST(MissionsComp, OnCompleteMission)
 		EXPECT_FALSE(missions.IsAccepted(missionId));
 		EXPECT_TRUE(missions.IsComplete(missionId));
 
-		dispatcher.update<AcceptMissionEvent>();
-		EXPECT_EQ(0, dispatcher.size<AcceptMissionEvent>());
+		tlsEcs.dispatcher.update<AcceptMissionEvent>();
+		EXPECT_EQ(0, tlsEcs.dispatcher.size<AcceptMissionEvent>());
 
 		EXPECT_TRUE(missions.IsAccepted(++missionId));
 		EXPECT_FALSE(missions.IsComplete(missionId));
@@ -326,13 +326,13 @@ TEST(MissionsComp, AcceptNextMirroMission)
 	condEv.add_condtion_ids(1);
 	MissionSystem::HandleMissionConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
-	dispatcher.update<AcceptMissionEvent>();
+	tlsEcs.dispatcher.update<AcceptMissionEvent>();
 	EXPECT_FALSE(missions.IsAccepted(missionId));
 	EXPECT_TRUE(missions.IsComplete(missionId));
 
 	// Next mission in chain auto-accepted
 	const auto nextMissionId = ++missionId;
-	dispatcher.update<AcceptMissionEvent>();
+	tlsEcs.dispatcher.update<AcceptMissionEvent>();
 	EXPECT_TRUE(missions.IsAccepted(nextMissionId));
 	EXPECT_FALSE(missions.IsComplete(nextMissionId));
 }
@@ -359,8 +359,8 @@ TEST(MissionsComp, MissionCondition)
 	condEv.add_condtion_ids(1);
 	MissionSystem::HandleMissionConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
-	dispatcher.update<AcceptMissionEvent>();
-	dispatcher.update<MissionConditionEvent>();
+	tlsEcs.dispatcher.update<AcceptMissionEvent>();
+	tlsEcs.dispatcher.update<MissionConditionEvent>();
 
 	for (uint32_t id : {missionId, missionId1, missionId2})
 	{

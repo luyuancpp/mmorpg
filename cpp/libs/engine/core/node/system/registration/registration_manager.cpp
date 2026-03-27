@@ -45,7 +45,7 @@ void NodeHandshakeManager::OnNodeHandshake(
 	const NodeHandshakeRequest& request,
 	NodeHandshakeResponse& response
 ) const {
-	if (!RpcThreadContext::tls_current_conn)
+	if (!tlsRpc.conn)
 	{
 		response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
 		LOG_ERROR << "No current connection in thread-local storage.";
@@ -58,7 +58,7 @@ void NodeHandshakeManager::OnNodeHandshake(
 
 	auto tryRegister = [&, this](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
 		entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
-		const auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+		const auto& nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
 			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
@@ -75,7 +75,7 @@ void NodeHandshakeManager::OnNodeHandshake(
 		return false;
 		};
 
-	auto& conn = RpcThreadContext::tls_current_conn;
+	auto& conn = tlsRpc.conn;
 	if (!IsTcpNodeType(peerNode.node_type()))
 	{
 		response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
@@ -125,7 +125,7 @@ void NodeHandshakeManager::TriggerNodeConnectionEvent(entt::registry& registry, 
 		ConnectToNodePbEvent connectEvent;
 		connectEvent.set_entity(entt::to_integral(entity));
 		connectEvent.set_node_type(nodeInfo.node_type());
-		dispatcher.trigger(connectEvent);
+		tlsEcs.dispatcher.trigger(connectEvent);
 		registry.remove<TimerTaskComp>(entity);
 		break;
 	}

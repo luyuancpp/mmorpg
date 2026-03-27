@@ -45,7 +45,7 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string& nodeJson, uint32
 		return;
 	}
 
-	auto& serviceNodesByType = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 	auto& cachedNodesOfType = *serviceNodesByType[nodeType].mutable_node_list();
 
 	bool hasExistingSnapshot = false;

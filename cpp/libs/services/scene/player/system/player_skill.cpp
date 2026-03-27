@@ -11,7 +11,7 @@ void PlayerSkillSystem::RegisterPlayer(entt::entity player)
 	{
 		for (auto& skillId : tableClass.skill())
 		{
-			auto pbSkill = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSkillListComp>(player).add_skill_list();
+			auto pbSkill = tlsEcs.actorRegistry.get_or_emplace<PlayerSkillListComp>(player).add_skill_list();
 			pbSkill->set_skill_table_id(skillId);
 		}
 	}

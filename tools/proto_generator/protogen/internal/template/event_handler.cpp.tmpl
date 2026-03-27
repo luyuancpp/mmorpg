@@ -5,14 +5,14 @@
 void {{ .ClassName }}::Register()
 {
 {{- range .EventMessages }}
-    dispatcher.sink<{{ .QualifiedName }}>().connect<&{{ $.ClassName }}::{{ .Name }}Handler>();
+    tlsEcs.dispatcher.sink<{{ .QualifiedName }}>().connect<&{{ $.ClassName }}::{{ .Name }}Handler>();
 {{- end }}
 }
 
 void {{ .ClassName }}::UnRegister()
 {
 {{- range .EventMessages }}
-    dispatcher.sink<{{ .QualifiedName }}>().disconnect<&{{ $.ClassName }}::{{ .Name }}Handler>();
+    tlsEcs.dispatcher.sink<{{ .QualifiedName }}>().disconnect<&{{ $.ClassName }}::{{ .Name }}Handler>();
 {{- end }}
 }
 

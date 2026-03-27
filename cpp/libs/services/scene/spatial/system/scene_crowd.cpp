@@ -14,22 +14,22 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 {
 	const auto playerEntity = entt::to_entity(message.entity());
 
-	if (!tlsRegistryManager.actorRegistry.valid(playerEntity))
+	if (!tlsEcs.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity not found";
 		return;
 	}
 
-	auto dtCrowd = tlsRegistryManager.sceneRegistry.try_get<DtCrowdPtr>(playerEntity);
+	auto dtCrowd = tlsEcs.sceneRegistry.try_get<DtCrowdPtr>(playerEntity);
 	if (dtCrowd == nullptr)
 	{
 		return;
 	}
 
-	auto transform = tlsRegistryManager.actorRegistry.try_get<Transform>(playerEntity);
+	auto transform = tlsEcs.actorRegistry.try_get<Transform>(playerEntity);
 	if (transform == nullptr)
 	{
-		LOG_ERROR << "Transform component not found for player with GUID: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
+		LOG_ERROR << "Transform component not found for player with GUID: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(playerEntity);
 		return;
 	}
 

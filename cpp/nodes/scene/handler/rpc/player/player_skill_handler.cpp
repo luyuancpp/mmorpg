@@ -39,7 +39,7 @@ void SceneSkillClientPlayerHandler::GetSkillList(entt::entity player,const ::Get
 	::GetSkillListResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->mutable_skill_list()->CopyFrom(tlsRegistryManager.actorRegistry.get_or_emplace<PlayerSkillListComp>(player));
+	response->mutable_skill_list()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerSkillListComp>(player));
 ///<<< END WRITING YOUR CODE
 
 }

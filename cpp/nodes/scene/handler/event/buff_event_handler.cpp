@@ -5,12 +5,12 @@
 ///<<< END WRITING YOUR CODE
 void BuffEventHandler::Register()
 {
-    dispatcher.sink<BuffTestEvent>().connect<&BuffEventHandler::BuffTestEventHandler>();
+    tlsEcs.dispatcher.sink<BuffTestEvent>().connect<&BuffEventHandler::BuffTestEventHandler>();
 }
 
 void BuffEventHandler::UnRegister()
 {
-    dispatcher.sink<BuffTestEvent>().disconnect<&BuffEventHandler::BuffTestEventHandler>();
+    tlsEcs.dispatcher.sink<BuffTestEvent>().disconnect<&BuffEventHandler::BuffTestEventHandler>();
 }
 void BuffEventHandler::BuffTestEventHandler(const BuffTestEvent& event)
 {

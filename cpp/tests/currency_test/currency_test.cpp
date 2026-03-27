@@ -13,15 +13,15 @@
 
 entt::entity CreateTestPlayer()
 {
-    const auto player = tlsRegistryManager.actorRegistry.create();
-    tlsRegistryManager.actorRegistry.emplace<CurrencyComp>(player);
-    tlsRegistryManager.actorRegistry.emplace<PlayerCurrencyComp>(player);
+    const auto player = tlsEcs.actorRegistry.create();
+    tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
     return player;
 }
 
 void DestroyTestPlayer(entt::entity player)
 {
-    tlsRegistryManager.actorRegistry.destroy(player);
+    tlsEcs.actorRegistry.destroy(player);
 }
 
 // ---------------------------------------------------------------------------

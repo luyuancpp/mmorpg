@@ -56,7 +56,7 @@ void BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::entity casterEntity, e
 
     defer(BuffSystem::RemoveBuff(targetEntity, buffsToRemoveTarget));
 
-    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(targetEntity);
+    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(targetEntity);
     for (auto& buffComp : buffList | std::views::values) {
         FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
@@ -76,7 +76,7 @@ bool BuffImplSystem::HandleBuffStartSilence(entt::entity parent, const BuffEntry
     event.set_source_buff_id(buffComp.buffPb.buff_id());
     event.set_state_type(kActorCombatStateSilence);
 
-    dispatcher.trigger(event);
+    tlsEcs.dispatcher.trigger(event);
     return true;
 }
 
@@ -86,7 +86,7 @@ bool BuffImplSystem::HandleBuffDestroySilence(entt::entity parent, uint64_t buff
     event.set_source_buff_id(buffId);
     event.set_state_type(kActorCombatStateSilence);
 
-    dispatcher.trigger(event);
+    tlsEcs.dispatcher.trigger(event);
     return true;
 }
 
@@ -110,7 +110,7 @@ void BuffImplSystem::HandleBuffEffectsOnDamage(entt::entity casterEntity, entt::
 
     defer(BuffSystem::RemoveBuff(casterEntity, buffsToRemoveCaster));
 
-    auto& buffList = tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(casterEntity);
+    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(casterEntity);
     for (auto& buffComp : buffList | std::views::values) {
         FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
