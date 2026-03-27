@@ -1,193 +1,349 @@
-#!/usr/bin python
-#-*- encoding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
 
-# Generate CMakeLists.txt from *.vcxproj
+"""
+vcxproj2cmake.py — Generate per-project CMakeLists.txt from *.vcxproj
+
+Run from repo root:
+    python3 tools/archived/vcxproj2cmake.py
+
+Current project structure (active nodes: gate + scene only):
+  - third_party/         → navmesh/hexagon static lib
+  - cpp/generated/       → proto, rpc, table, grpc_client, proto_helpers
+  - cpp/libs/engine/     → core, config, session, infra, thread_context
+  - cpp/libs/modules/    → bag, mission, currency, etc.
+  - cpp/libs/services/   → scene, gate, player (header-only)
+  - cpp/nodes/gate/      → gate executable
+  - cpp/nodes/scene/     → scene executable
+
+On Linux, muduo comes from third_party/muduo-linux (NOT muduo_windows).
+gRPC/protobuf/abseil are installed to /usr/local via setup_dependencies.sh.
+"""
 
 import xml.dom.minidom
+import os
+import sys
 
-includeDirs = []
-sourceFiles = []
-linkDirs = []
-libs = []
-projectName = ""
-outDir = ""
-link_mysql = ""
+# Accumulated library names (libs built earlier are linked by later exes)
+built_libs = []
 
-abseil_libs = "absl::absl_check \
-absl::absl_log \
-absl::algorithm \
-absl::base \
-absl::bind_front \
-absl::bits \
-absl::btree \
-absl::cleanup \
-absl::cord \
-absl::core_headers \
-absl::debugging \
-absl::die_if_null \
-absl::dynamic_annotations \
-absl::flags \
-absl::flat_hash_map \
-absl::flat_hash_set \
-absl::function_ref \
-absl::hash \
-absl::layout \
-absl::log_initialize \
-absl::log_severity \
-absl::memory \
-absl::node_hash_map \
-absl::node_hash_set \
-absl::optional \
-absl::span \
-absl::status \
-absl::statusor \
-absl::strings \
-absl::synchronization \
-absl::time \
-absl::type_traits \
-absl::utility \
-absl::variant "
+# ── Include path transforms (Windows → Linux) ──────────────────────────────
+# Paths containing these substrings are removed from Linux builds
+EXCLUDE_INCLUDE_PATTERNS = [
+    "muduo/contrib/windows",       # Windows-only muduo adapter headers
+    "contrib/windows/include",
+]
 
-# parse vcxproj file
-def parseVCProjFile(vcxprojFile):
-    xmldoc= xml.dom.minidom.parse(vcxprojFile)
-    for rootNode in xmldoc.childNodes:
-        for subNode in rootNode.childNodes:
-            if subNode.nodeName == "ItemGroup":
-                for itemNode in subNode.childNodes:
-                    if itemNode.nodeName == "ClCompile":
-                        path = itemNode._attrs["Include"].value
-                        sourceFiles.append(path.replace("\\", "/"))
-                    if itemNode.nodeName == "ClInclude":
-                        path = itemNode._attrs["Include"].value
-                        index = path.rfind("\\")
-                        includeDirs.append(path[:index+1].replace("\\", "/"))
-            if subNode.nodeName == "PropertyGroup":
-                for propertyNode in subNode.childNodes:
-                    if propertyNode.nodeName == "RootNamespace":
-                        global projectName
-                        projectName = propertyNode.firstChild.data
-                    if propertyNode.nodeName == "OutDir":
-                        global outDir
-                        outDir = propertyNode.firstChild.data    
-            if subNode.nodeName == "ItemDefinitionGroup":
-                for defineGroup in subNode.childNodes:
-                    for defineNode in defineGroup.childNodes:
-                        if defineNode.nodeName == "AdditionalIncludeDirectories":
-                            for additionInc in defineNode.firstChild.data.split(";"):
-                                if not additionInc.startswith("%"):
-                                    includeDirs.append(additionInc)
-                        if defineNode.nodeName == "AdditionalLibraryDirectories":
-                            for additionLib in defineNode.firstChild.data.split(";"):
-                                if not additionLib.startswith("%"):
-                                    linkDirs.append(additionLib)
+# Substring replacements applied to each include path
+INCLUDE_REPLACEMENTS = [
+    # On Linux use muduo-linux tree, not the Windows port
+    ("third_party/muduo/", "third_party/muduo-linux/"),
+    ("third_party/muduo;", "third_party/muduo-linux;"),
+]
 
-# write cmake file
-def writeCMakeLists(vcxprojDir, target_type):
-    # mini version
-    fileLines = "cmake_minimum_required(VERSION 3.28)\n"
+# Include paths containing these will be dropped (headers come from /usr/local
+# on Linux after gRPC cmake install)
+SKIP_INCLUDE_PATTERNS = [
+    "third_party/grpc/include",
+    "third_party/grpc/third_party/protobuf/src",
+    "third_party/grpc/third_party/abseil-cpp",
+    "third_party/grpc/third_party/re2",
+    "third_party/grpc/third_party/utf8_range",
+]
 
-    # set flags
-    fileLines += "set(CMAKE_VERBOSE_MAKEFILE on)\n"
-    fileLines += "set(CMAKE_CXX_STANDARD  23)\n"
-    fileLines += "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++23")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread ")\n\n'
-    if link_mysql:
-        fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MYSQL_INCLUDE}")\n\n'
+# ── External link libraries (installed by setup_dependencies.sh) ────────────
+# Libraries that have CMake find_package support use CMake target names.
+# Others use plain names (resolved via link_directories).
+EXTERNAL_LIBS = [
+    # gRPC + protobuf (CMake imported targets from find_package)
+    "gRPC::grpc++", "gRPC::grpc++_reflection", "gRPC::grpc", "gRPC::gpr",
+    "protobuf::libprotobuf",
+    # muduo (from muduo-linux cmake build, no find_package)
+    "muduo_net", "muduo_base",
+    # other third-party (installed to /usr/local/lib)
+    "rdkafka++", "rdkafka",
+    "yaml-cpp", "hiredis",
+    "z", "ssl", "crypto",
+    # system
+    "pthread", "dl",
+]
 
-    fileLines += ('set(EXECUTABLE_OUTPUT_PATH %s)\n' % outDir)
-    fileLines += ('set(LIBRARY_OUTPUT_PATH %s)\n' % outDir)
-    if link_mysql:
-        fileLines += 'execute_process(COMMAND mysql_config --cflags OUTPUT_VARIABLE MYSQL_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
-        fileLines += 'execute_process(COMMAND mysql_config --libs OUTPUT_VARIABLE MYSQL_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
-        fileLines += 'execute_process(COMMAND mysql_config --include OUTPUT_VARIABLE MYSQL_INCLUDE OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
-
-    fileLines += ("project(%s)\n\n" % projectName)
-
-    # add define
-    fileLines += 'add_definitions(-D__LINUX__)\n'
-    fileLines += 'add_definitions(-D__linux__)\n'
-    fileLines += "add_definitions(-DNOMINMAX)\n"
-    fileLines += "add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)\n"
-    fileLines += "add_definitions(-DGOOGLE_LOG=ABSL_DLOG)\n"
-    fileLines += "add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)\n"
-    fileLines += "add_definitions(-DENTT_ID_TYPE=uint64_t)\n\n"
-    fileLines += "add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)\n\n"
-
-    
-    # include directory
-    fileLines += "include_directories("
-    uniqIncludeDir = list(set(includeDirs))
-    for incUnit in uniqIncludeDir:
-        fileLines += (incUnit + " ")
-    fileLines += ")\n\n"
-
-    # link directory
-    fileLines += "link_directories("
-    uniqLinkDir = list(set(linkDirs))
-    for linkUnit in uniqLinkDir:
-        fileLines += (linkUnit + " ")
-    fileLines += " /usr/lib/x86_64-linux-gnu /usr/local/lib/ )\n\n"
-
-    # source file
-    fileLines += "set(SOURCE_FILE "
-    for sourceUnit in sourceFiles:
-        fileLines += (sourceUnit + " ")
-    fileLines += ")\n\n"
+# Abseil cmake imported targets
+ABSEIL_TARGETS = [
+    "absl::absl_check", "absl::absl_log",
+    "absl::algorithm", "absl::base", "absl::bind_front", "absl::bits",
+    "absl::btree", "absl::cleanup", "absl::cord", "absl::core_headers",
+    "absl::debugging", "absl::die_if_null", "absl::dynamic_annotations",
+    "absl::flags", "absl::flags_parse",
+    "absl::flat_hash_map", "absl::flat_hash_set",
+    "absl::function_ref", "absl::hash", "absl::layout",
+    "absl::log_initialize", "absl::log_severity", "absl::memory",
+    "absl::node_hash_map", "absl::node_hash_set",
+    "absl::optional", "absl::span",
+    "absl::status", "absl::statusor", "absl::strings",
+    "absl::synchronization", "absl::time",
+    "absl::type_traits", "absl::utility", "absl::variant",
+]
 
 
+# ── Helpers ─────────────────────────────────────────────────────────────────
 
-    # add exec or lib
+def _relpath_to_root(vcxproj_dir):
+    """Compute relative path from vcxproj_dir back to repo root.
+
+    For example, './cpp/libs/engine/core/' → '../../../../'
+    """
+    clean = vcxproj_dir.strip("./").rstrip("/")
+    if not clean:
+        return "./"
+    depth = len(clean.split("/"))
+    return "/".join([".."] * depth) + "/"
+
+
+def _project_name_from_file(vcxproj_file):
+    """Derive project/target name from vcxproj filename (matches MSBuild TargetName)."""
+    return os.path.splitext(os.path.basename(vcxproj_file))[0]
+
+
+# ── Parse ───────────────────────────────────────────────────────────────────
+
+def parse_vcxproj(vcxproj_file):
+    """Parse a .vcxproj file, return (source_files, include_dirs)."""
+    source_files = []
+    include_dirs = []
+
+    xmldoc = xml.dom.minidom.parse(vcxproj_file)
+    for root_node in xmldoc.childNodes:
+        for sub_node in root_node.childNodes:
+            # Source files
+            if sub_node.nodeName == "ItemGroup":
+                for item in sub_node.childNodes:
+                    if item.nodeName == "ClCompile":
+                        attrs = item.attributes
+                        if "Include" in attrs.keys():
+                            path = attrs["Include"].value.replace("\\", "/")
+                            source_files.append(path)
+
+            # Include directories — take from first ItemDefinitionGroup encountered
+            if sub_node.nodeName == "ItemDefinitionGroup" and not include_dirs:
+                for group in sub_node.childNodes:
+                    for node in group.childNodes:
+                        if node.nodeName == "AdditionalIncludeDirectories" and node.firstChild:
+                            for inc in node.firstChild.data.split(";"):
+                                inc = inc.strip().replace("\\", "/")
+                                if inc and not inc.startswith("%"):
+                                    include_dirs.append(inc)
+
+    return source_files, include_dirs
+
+
+def transform_include_for_linux(inc):
+    """Transform a Windows include path for Linux. Returns None to exclude."""
+    for pattern in EXCLUDE_INCLUDE_PATTERNS:
+        if pattern in inc:
+            return None
+    for pattern in SKIP_INCLUDE_PATTERNS:
+        if pattern in inc:
+            return None
+    for old, new in INCLUDE_REPLACEMENTS:
+        inc = inc.replace(old, new)
+    return inc
+
+
+# ── Generate ────────────────────────────────────────────────────────────────
+
+def write_cmake(vcxproj_dir, project_name, source_files, include_dirs, target_type):
+    """Write a CMakeLists.txt for the given project."""
+    root_rel = _relpath_to_root(vcxproj_dir)
+    lib_dir = root_rel + "lib"
+    bin_dir = root_rel + "bin"
+
+    lines = []
+    lines.append("cmake_minimum_required(VERSION 3.22)")
+    lines.append("project(%s)" % project_name)
+    lines.append("")
+    lines.append("set(CMAKE_VERBOSE_MAKEFILE ON)")
+    lines.append("set(CMAKE_CXX_STANDARD 23)")
+    lines.append("set(CMAKE_CXX_STANDARD_REQUIRED ON)")
+    lines.append("")
+
+    # Compile flags
+    lines.append('set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -ggdb")')
+    lines.append('set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")')
+    lines.append('set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Wno-sign-conversion")')
+    lines.append('set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fPIC")')
+    lines.append("")
+
+    # Output paths (use CMAKE_CURRENT_SOURCE_DIR so both in-source and
+    # out-of-source builds resolve correctly)
     if target_type == "lib":
-        fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
+        lines.append('set(LIBRARY_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/%s")' % lib_dir)
     else:
-        fileLines += ("add_subdirectory(../../third_party/protobuf/third_party/abseil-cpp/ ../../build)\n\n")
-        fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
+        lines.append('set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/%s")' % bin_dir)
+    lines.append("")
 
-    # link lib
-    fileLines += ("target_link_libraries(%s " % projectName)
-    for lib in libs:
-        fileLines += ("%s " % lib)
-    fileLines += " muduo_base  muduo_net muduo_protobuf_codec muduo_protorpc_wire mrediscli "
-    fileLines += " ${MYSQL_LIBS} protobuf hiredis lua z utf8_validity "
-    fileLines += abseil_libs
-    fileLines += " )"
+    # Definitions
+    lines.append("add_definitions(-D__LINUX__)")
+    lines.append("add_definitions(-D__linux__)")
+    lines.append("add_definitions(-DNOMINMAX)")
+    lines.append("add_definitions(-DENTT_ID_TYPE=uint64_t)")
+    lines.append("add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)")
+    lines.append("")
 
+    # Include directories (transformed for Linux)
+    linux_includes = []
+    for inc in include_dirs:
+        transformed = transform_include_for_linux(inc)
+        if transformed:
+            linux_includes.append(transformed)
+    # Always include /usr/local/include for installed gRPC/protobuf headers
+    linux_includes.append("/usr/local/include")
+    if linux_includes:
+        lines.append("include_directories(")
+        for inc in sorted(set(linux_includes)):
+            lines.append("    %s" % inc)
+        lines.append(")")
+    lines.append("")
+
+    # Source files
+    if source_files:
+        lines.append("set(SOURCE_FILES")
+        for src in source_files:
+            lines.append("    %s" % src)
+        lines.append(")")
+        lines.append("")
+
+    # Target
     if target_type == "lib":
-        libs.append((("%s") %projectName))
+        if source_files:
+            lines.append("add_library(%s STATIC ${SOURCE_FILES})" % project_name)
+        else:
+            lines.append("# Header-only — no sources")
+            lines.append("add_library(%s INTERFACE)" % project_name)
+    else:
+        # Executable
+        # find_package for installed deps (gRPC cmake install provides these)
+        lines.append("find_package(absl CONFIG REQUIRED)")
+        lines.append("find_package(protobuf CONFIG REQUIRED)")
+        lines.append("find_package(gRPC CONFIG REQUIRED)")
+        lines.append("")
 
-    # write file
-    file = open(vcxprojDir + "CMakeLists.txt", "w")
-    file.writelines(fileLines)
-    file.close()
+        # link_directories must come before add_executable
+        lines.append('link_directories(')
+        lines.append('    "${CMAKE_CURRENT_SOURCE_DIR}/%s"' % lib_dir)
+        lines.append('    /usr/local/lib')
+        lines.append('    /usr/lib/x86_64-linux-gnu')
+        lines.append(')')
+        lines.append("")
 
-# CMakeList.txt
-def generate(vcxprojfile, vcxprojDir, target_type):
-    global includeDirs
-    global sourceFiles
-    global linkDirs
-    includeDirs = []
-    sourceFiles = []
-    linkDirs = []
-    if not vcxprojfile.endswith(".vcxproj"):
-        raise NameError("vcxproj file name error")
-    parseVCProjFile(vcxprojfile)
-    writeCMakeLists(vcxprojDir, target_type)
-    return projectName
+        lines.append("add_executable(%s ${SOURCE_FILES})" % project_name)
+        lines.append("")
 
-#link_mysql = "mysqlclient"
-generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
-generate("./pkg/config/config.vcxproj", "./pkg/config/", "lib")
-generate("./pkg/common/common.vcxproj", "./pkg/common/", "lib")
-generate("./pkg/logic/logic.vcxproj", "./pkg/logic/", "lib")
-generate("./pkg/pbc/pbc.vcxproj", "./pkg/pbc/", "lib")
-generate("./node/controller_server/centre.vcxproj", "./node/center/", "")
-generate("./node/gate/gate.vcxproj", "./node/gate/", "")
-generate("./node/game/game.vcxproj", "./node/game/", "")
-generate("./client/client.vcxproj", "./client/", "")
+        # Link libraries: use -l for internal libs to avoid CMake target
+        # self-reference (e.g. gate exe linking gate service lib).
+        # Reverse order: GCC linker needs dependents before dependencies.
+        # Wrap internal libs in --start-group/--end-group for circular deps.
+        link_items = []
+        reversed_libs = list(reversed(built_libs))
+        link_items.append("-Wl,--start-group")
+        for lib in reversed_libs:
+            link_items.append("-l%s" % lib)
+        link_items.append("-Wl,--end-group")
+        link_items += EXTERNAL_LIBS
+        link_items += ABSEIL_TARGETS
+
+        lines.append("target_link_libraries(%s" % project_name)
+        for item in link_items:
+            lines.append("    %s" % item)
+        lines.append(")")
+
+    lines.append("")
+
+    # Track library for later exe linking
+    if target_type == "lib" and source_files:
+        built_libs.append(project_name)
+
+    # Write
+    cmake_path = os.path.join(vcxproj_dir, "CMakeLists.txt")
+    with open(cmake_path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+    print("  Generated: %s  (%d sources)" % (cmake_path, len(source_files)))
+
+
+def generate(vcxproj_file, vcxproj_dir, target_type):
+    """Parse vcxproj and generate CMakeLists.txt."""
+    if not os.path.exists(vcxproj_file):
+        print("  SKIP (not found): %s" % vcxproj_file)
+        return None
+
+    project_name = _project_name_from_file(vcxproj_file)
+    source_files, include_dirs = parse_vcxproj(vcxproj_file)
+    write_cmake(vcxproj_dir, project_name, source_files, include_dirs, target_type)
+    return project_name
+
+
+# ── Main ────────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    print("=== vcxproj2cmake: generating Linux CMakeLists.txt ===")
+    print()
+
+    # ── Static libraries (build order matters) ──
+
+    print("[1/15] third_party (navmesh/hexagon)")
+    generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
+
+    print("[2/15] generated/proto")
+    generate("./cpp/generated/proto/proto.vcxproj", "./cpp/generated/proto/", "lib")
+
+    print("[3/15] generated/rpc")
+    generate("./cpp/generated/rpc/rpc.vcxproj", "./cpp/generated/rpc/", "lib")
+
+    print("[4/15] generated/proto_helpers")
+    generate("./cpp/generated/proto_helpers/proto_helpers.vcxproj", "./cpp/generated/proto_helpers/", "lib")
+
+    print("[5/15] generated/table")
+    generate("./cpp/generated/table/table.vcxproj", "./cpp/generated/table/", "lib")
+
+    print("[6/15] generated/grpc_client")
+    generate("./cpp/generated/grpc_client/grpc_client.vcxproj", "./cpp/generated/grpc_client/", "lib")
+
+    print("[7/15] engine/core")
+    generate("./cpp/libs/engine/core/core.vcxproj", "./cpp/libs/engine/core/", "lib")
+
+    print("[8/15] engine/config")
+    generate("./cpp/libs/engine/config/config.vcxproj", "./cpp/libs/engine/config/", "lib")
+
+    print("[9/15] engine/session")
+    generate("./cpp/libs/engine/session/session.vcxproj", "./cpp/libs/engine/session/", "lib")
+
+    print("[10/15] engine/infra")
+    generate("./cpp/libs/engine/infra/infra.vcxproj", "./cpp/libs/engine/infra/", "lib")
+
+    print("[11/15] engine/thread_context")
+    generate("./cpp/libs/engine/thread_context/thread_context.vcxproj", "./cpp/libs/engine/thread_context/", "lib")
+
+    print("[12/15] modules")
+    generate("./cpp/libs/modules/modules.vcxproj", "./cpp/libs/modules/", "lib")
+
+    print("[13/15] services/scene")
+    generate("./cpp/libs/services/scene/scene.vcxproj", "./cpp/libs/services/scene/", "lib")
+
+    print("[14/15] services/gate")
+    generate("./cpp/libs/services/gate/gate.vcxproj", "./cpp/libs/services/gate/", "lib")
+
+    # NOTE: services/player is header-only (0 .cpp files) — no CMake needed
+    # NOTE: engine/muduo_windows is NOT used on Linux — use muduo-linux instead
+
+    print()
+
+    # ── Executables ──
+
+    print("[exe] nodes/gate")
+    generate("./cpp/nodes/gate/gate.vcxproj", "./cpp/nodes/gate/", "exe")
+
+    print("[exe] nodes/scene")
+    generate("./cpp/nodes/scene/scene.vcxproj", "./cpp/nodes/scene/", "exe")
+
+    print()
+    print("=== Done. Run autogen.sh to build. ===")

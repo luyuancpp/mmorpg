@@ -1,76 +1,100 @@
 #!/bin/bash
+#
+# autogen.sh — Full Linux build for C++ game nodes (gate + scene)
+#
+# Run from repo root:  ./tools/archived/autogen.sh
+#
+# Flow:
+#   1. git submodule update
+#   2. Build third-party dependencies (setup_dependencies.sh)
+#   3. Generate CMakeLists.txt from vcxproj (vcxproj2cmake.py)
+#   4. Build all libraries in dependency order
+#   5. Build gate + scene executables → bin/
+#
+set -euo pipefail
 
-git submodule update --init --recursive
-
-# Run from repo root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.."
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
 
-./scripts/setup-dependencies.sh
+CPU=$(nproc 2>/dev/null || echo 4)
+echo "=== autogen.sh: Linux build for MMORPG C++ nodes ==="
+echo "  Repo root : $REPO_ROOT"
+echo "  Parallel  : $CPU"
+echo ""
 
-python tools/vcxproj2cmake.py
+# ── 0. Submodules ───────────────────────────────────────────────────────────
 
-cpu=$(cat /proc/cpuinfo | grep processor | wc -l)
-echo $cpu
+echo "[0] Checking submodules..."
+git submodule update --init --recursive
+echo ""
 
-cd bin/config 
-python gen.py
-if test $? -ne 0; then 
-   exit 
-fi
-cd ../../
+# ── 1. Dependencies ─────────────────────────────────────────────────────────
 
-cd  proto/generator/src 
-go build -o genproto 
-./genproto
-if test $? -ne 0; then 
-    echo "generator go failed"
-   exit 
-fi
-cd ../../../
-echo "generator go ok"
+echo "[1] Building third-party dependencies..."
+bash "$SCRIPT_DIR/setup_dependencies.sh"
+echo ""
 
-cd pkg/common/src/network && ./autogen.sh
-if test $? -ne 0; then 
-    echo "pkg/common/src/network failed"
-    exit 
-fi
-cd ../../../../
-echo "pkg/common/src/network ok"
+# ── 2. Generate CMakeLists.txt from vcxproj ─────────────────────────────────
 
-buildcmakeproject(){
-    echo "$1 build begin"
-    cd $1
-    cmake . 
-    make -j$cpu
-    if test $? -ne 0; then 
-        echo "$1 build failed"
-        exit 
-    fi
-    cd $2
-    echo "$1  build ok"
+echo "[2] Generating CMakeLists.txt from vcxproj files..."
+python3 "$SCRIPT_DIR/vcxproj2cmake.py"
+echo ""
+
+# ── 3. Build libraries + executables ────────────────────────────────────────
+
+buildproject() {
+    local dir="$1"
+    local name="$(basename "$dir")"
+    echo "--- Building: $dir ($name) ---"
+    cd "$REPO_ROOT/$dir"
+    cmake -S . -B .build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_PREFIX_PATH="/usr/local"
+    cmake --build .build -j "$CPU"
+    cd "$REPO_ROOT"
+    echo "--- $name ok ---"
+    echo ""
 }
 
-buildcmakeproject pkg/pbc ../../
+echo "[3] Building libraries (dependency order)..."
 
-buildcmakeproject pkg/config ../../
+# Third-party (navmesh/hexagon)
+buildproject "third_party"
 
-buildcmakeproject pkg/common ../../
+# Generated code
+buildproject "cpp/generated/proto"
+buildproject "cpp/generated/rpc"
+buildproject "cpp/generated/proto_helpers"
+buildproject "cpp/generated/table"
+buildproject "cpp/generated/grpc_client"
 
-cd third_party
-sed -i '9d' CMakeLists.txt
-cd ..
-buildcmakeproject third_party ../
+# Engine
+buildproject "cpp/libs/engine/core"
+buildproject "cpp/libs/engine/config"
+buildproject "cpp/libs/engine/session"
+buildproject "cpp/libs/engine/infra"
+buildproject "cpp/libs/engine/thread_context"
 
+# Modules
+buildproject "cpp/libs/modules"
 
-buildcmakeproject server/gate_server ../../
+# Services
+buildproject "cpp/libs/services/scene"
+buildproject "cpp/libs/services/gate"
 
-buildcmakeproject server/database_server ../../
+echo "[4] Building executables..."
 
-buildcmakeproject server/login_server ../../
+# Gate node
+buildproject "cpp/nodes/gate"
 
-buildcmakeproject server/controller_server ../../
+# Scene node
+buildproject "cpp/nodes/scene"
 
-buildcmakeproject server/game_server ../../
+# ── Done ────────────────────────────────────────────────────────────────────
 
-echo " go go go !"
+echo "========================================"
+echo "  BUILD COMPLETE"
+echo "  gate  : $REPO_ROOT/bin/gate"
+echo "  scene : $REPO_ROOT/bin/scene"
+echo "========================================"
