@@ -14,7 +14,7 @@
 
 uint64_t TransactionLogSystem::ResolvePlayerId(entt::entity player)
 {
-    const auto *guid = tlsRegistryManager.actorRegistry.try_get<Guid>(player);
+    const auto *guid = tlsEcs.actorRegistry.try_get<Guid>(player);
     return (guid != nullptr && *guid != kInvalidGuid) ? *guid : 0;
 }
 

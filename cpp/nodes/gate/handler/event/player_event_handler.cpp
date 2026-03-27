@@ -5,12 +5,12 @@
 ///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
 {
-    dispatcher.sink<contracts::kafka::PlayerLifecycleCommand>().connect<&PlayerEventHandler::PlayerLifecycleCommandHandler>();
+    tlsEcs.dispatcher.sink<contracts::kafka::PlayerLifecycleCommand>().connect<&PlayerEventHandler::PlayerLifecycleCommandHandler>();
 }
 
 void PlayerEventHandler::UnRegister()
 {
-    dispatcher.sink<contracts::kafka::PlayerLifecycleCommand>().disconnect<&PlayerEventHandler::PlayerLifecycleCommandHandler>();
+    tlsEcs.dispatcher.sink<contracts::kafka::PlayerLifecycleCommand>().disconnect<&PlayerEventHandler::PlayerLifecycleCommandHandler>();
 }
 void PlayerEventHandler::PlayerLifecycleCommandHandler(const contracts::kafka::PlayerLifecycleCommand& event)
 {

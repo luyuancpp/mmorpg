@@ -24,7 +24,7 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
     }
 
     // Get thread-local actor registry (core data container)
-    auto& actorRegistry = tlsRegistryManager.actorRegistry;
+    auto& actorRegistry = tlsEcs.actorRegistry;
 
     // 2. Get dirty mask component
     auto& dirtyMaskComp = actorRegistry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
@@ -165,7 +165,7 @@ void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_
 void SetActorBaseAttributesS2CAttrDirtyBit(entt::entity entity, std::size_t bitIdx)
 {
     // Get thread-local actor registry
-    auto& actorRegistry = tlsRegistryManager.actorRegistry;
+    auto& actorRegistry = tlsEcs.actorRegistry;
 
     // Get or create dirty mask component
     auto& dirtyMaskComp = actorRegistry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);

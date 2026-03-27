@@ -7,19 +7,19 @@
 ///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
 {
-    dispatcher.sink<InitializeNpcComponentsEvent>().connect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
+    tlsEcs.dispatcher.sink<InitializeNpcComponentsEvent>().connect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
 }
 
 void NpcEventHandler::UnRegister()
 {
-    dispatcher.sink<InitializeNpcComponentsEvent>().disconnect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
+    tlsEcs.dispatcher.sink<InitializeNpcComponentsEvent>().disconnect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
 }
 void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	auto npc = entt::to_entity(event.actor_entity());
 
-	if (!tlsRegistryManager.actorRegistry.valid(npc))
+	if (!tlsEcs.actorRegistry.valid(npc))
 	{
 		LOG_ERROR << "Npc Not Found :" << event.actor_entity();
 		return;

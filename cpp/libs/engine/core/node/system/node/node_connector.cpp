@@ -130,7 +130,7 @@ void NodeConnector::ConnectToHttpNode(const NodeInfo&) {
 }
 
 void NodeConnector::ConnectAllNodes() {
-	auto& serviceNodesByType = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 
 	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
 	{

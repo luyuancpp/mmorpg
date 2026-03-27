@@ -14,7 +14,7 @@
 
 void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) {
     const auto entityId = entt::to_entity(addEvent.actor_entity());
-    auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
+    auto& combatStateCollection = tlsEcs.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
 
     if (addEvent.state_type() >= kActorMaxCombatStateType) {
         return;
@@ -37,7 +37,7 @@ void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) 
 
 void CombatStateSystem::RemoveCombatState(const CombatStateRemovedPbEvent& removeEvent) {
     const auto entityId = entt::to_entity(removeEvent.actor_entity());
-    auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
+    auto& combatStateCollection = tlsEcs.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
 
     if (removeEvent.state_type() >= kActorMaxCombatStateType) {
         return;
@@ -59,7 +59,7 @@ void CombatStateSystem::RemoveCombatState(const CombatStateRemovedPbEvent& remov
 
 uint32_t CombatStateSystem::ValidateSkillUsage(const entt::entity entityId, const uint32_t combatAction)
 {
-    const auto& combatStateCollection = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
+    const auto& combatStateCollection = tlsEcs.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
 
     if (combatStateCollection.states().empty()) {
         return kSuccess;

@@ -14,7 +14,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	::EnterSceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_TRACE << "EnterSceneC2S request received for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player)
+	LOG_TRACE << "EnterSceneC2S request received for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
 		<< ", scene_info: " << request->scene_info().DebugString();
 
 	auto game_node_type = gNode->GetNodeInfo().scene_node_type();
@@ -34,12 +34,12 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		return;
 	}
 
-	if (auto current_scene_comp = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player))
+	if (auto current_scene_comp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player))
 	{
-		const auto current_scene_info = tlsRegistryManager.actorRegistry.try_get<SceneInfoComp>(current_scene_comp->sceneEntity);
+		const auto current_scene_info = tlsEcs.actorRegistry.try_get<SceneInfoComp>(current_scene_comp->sceneEntity);
 		if (current_scene_info && current_scene_info->guid() == scene_info.guid() && scene_info.guid() > 0)
 		{
-			LOG_WARN << "Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " is already in the requested scene: " << scene_info.guid();
+			LOG_WARN << "Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " is already in the requested scene: " << scene_info.guid();
 			response->mutable_error_message()->set_id(kEnterSceneYouInCurrentScene);
 			return;
 		}
@@ -48,9 +48,9 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	// TODO(centre-decommission): Route scene change request via Kafka to SceneManager
 	// instead of SendToCentrePlayerByClientNode.
 	LOG_WARN << "EnterSceneC2S: Centre decommissioned, scene change via SceneManager not yet wired. player="
-			 << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
+			 << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
 
-	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
+	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
 ///<<< END WRITING YOUR CODE
 
 }

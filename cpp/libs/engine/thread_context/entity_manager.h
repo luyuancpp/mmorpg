@@ -1,8 +1,4 @@
+// DEPRECATED — include <ecs_context.h> directly.
+// Use tlsEcs.GlobalEntity(), tlsEcs.ErrorEntity(), etc.
 #pragma once
-
-#include "entt/src/entt/entity/entity.hpp"
-
-entt::entity ErrorEntity();
-entt::entity OperatorEntity();
-entt::entity GlobalEntity();
-entt::entity GetGlobalGrpcNodeEntity();
+#include "ecs_context.h"

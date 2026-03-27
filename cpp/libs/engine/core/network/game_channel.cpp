@@ -1,4 +1,4 @@
-﻿#include "game_channel.h"
+#include "game_channel.h"
 #include <boost/get_pointer.hpp>
 #include <google/protobuf/descriptor.h>
 #include "muduo/base/Logging.h"
@@ -212,7 +212,7 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessag
 
     LOG_TRACE << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
 
-    RpcThreadContext::tls_current_conn = conn;
+    tlsRpc.conn = conn;
 
     switch (rpcMessage.type()) {
     case GameMessageType::RESPONSE:

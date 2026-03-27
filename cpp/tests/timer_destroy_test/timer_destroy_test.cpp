@@ -159,17 +159,17 @@ struct CastingTimerCompTest
 // 场景: entity 在定时器回调中被销毁，接着重新创建 → 验证不崩溃
 void TestScenario() {
 
-    auto entity = tlsRegistryManager.actorRegistry.create();
+    auto entity = tlsEcs.actorRegistry.create();
 
-    auto& t = tlsRegistryManager.actorRegistry.emplace<CastingTimerCompTest>(entity);
+    auto& t = tlsEcs.actorRegistry.emplace<CastingTimerCompTest>(entity);
 
     auto fn = [entity]() {
         std::cout << "CastingTimerCompTest: callback — destroy entity and recreate." << std::endl;
 
-        tlsRegistryManager.actorRegistry.destroy(entity);
+        tlsEcs.actorRegistry.destroy(entity);
 
-        auto newEntity = tlsRegistryManager.actorRegistry.create();
-        tlsRegistryManager.actorRegistry.get_or_emplace<CastingTimerCompTest>(newEntity);
+        auto newEntity = tlsEcs.actorRegistry.create();
+        tlsEcs.actorRegistry.get_or_emplace<CastingTimerCompTest>(newEntity);
     };
 
     t.timer.RunEvery(0.1, fn);

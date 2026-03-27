@@ -37,7 +37,7 @@ namespace {
             InterruptCurrentStatePbEvent interruptEvent;
             interruptEvent.set_actor_entity(entt::to_integral(actorEntity));
             interruptEvent.set_actor_state(actorState);
-            dispatcher.trigger(interruptEvent);
+            tlsEcs.dispatcher.trigger(interruptEvent);
 
             RETURN_FALSE_ON_ERROR(ActorActionStateSystem::RemoveState(actorEntity, actorState));
             
@@ -51,7 +51,7 @@ namespace {
 uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
     FetchAndValidateActorActionStateTable(actorAction);
 
-    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
+    const auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         RETURN_ON_ERROR(CheckForStateConflict(actorActionStateTable, actorState));
     }
@@ -71,7 +71,7 @@ uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint
 uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
     FetchAndValidateActorActionStateTable(actorAction);
     
-    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
+    const auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         RETURN_ON_ERROR(CheckForStateConflict(actorActionStateTable, actorState));
     }
@@ -80,7 +80,7 @@ uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity
 }
 
 bool ActorActionStateSystem::HasState(const entt::entity actorEntity, const uint32_t state) {
-    const auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
+    const auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     if (state >= kActorStateActorStateMax) {
         return false;
     }
@@ -89,7 +89,7 @@ bool ActorActionStateSystem::HasState(const entt::entity actorEntity, const uint
 }
 
 uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32_t actorState) {
-    auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
+    auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     if (actorState >= kActorStateActorStateMax){
         return MAKE_ERROR_MSG(kInvalidParameter,
             "entity=" << entt::to_integral(actorEntity)
@@ -105,7 +105,7 @@ uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32
 }
 
 uint32_t ActorActionStateSystem::RemoveState(entt::entity actorEntity, uint32_t actorState) {
-    auto& actorStatePbComponent = tlsRegistryManager.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
+    auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     if (actorState >= kActorStateActorStateMax ||
         !actorStatePbComponent.state_list().contains(actorState)) {
         return MAKE_ERROR_MSG(kInvalidParameter,

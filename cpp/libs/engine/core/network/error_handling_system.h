@@ -1,8 +1,6 @@
 #pragma once
 
-#include <thread_context/registry_manager.h>
-
-entt::entity GlobalEntity();
+#include <thread_context/ecs_context.h>
 
 // Send error response to client
 template <typename Request, typename Response>
@@ -14,7 +12,7 @@ void SendErrorToClient(const Request& request, Response& response, uint32_t err)
 
     response.mutable_message_content()->set_message_id(request.message_content().message_id());
 
-    auto& tip = tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity());
+    auto& tip = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity());
     response.mutable_message_content()->mutable_error_message()->CopyFrom(tip);
     response.mutable_message_content()->mutable_error_message()->set_id(err);
     // Decide whether to clear based on semantics (avoid unconditionally clearing global state)

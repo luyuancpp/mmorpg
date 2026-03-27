@@ -1,5 +1,4 @@
+// DEPRECATED — include <ecs_context.h> directly.
+// The dispatcher is now tlsEcs.dispatcher.
 #pragma once
-
-#include "entt/src/entt/signal/dispatcher.hpp"
-
-extern thread_local entt::dispatcher dispatcher;
+#include "ecs_context.h"

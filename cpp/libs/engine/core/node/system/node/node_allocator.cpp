@@ -35,7 +35,7 @@ void NodeAllocator::AcquireNode() {
 
 	// Startup path B: non-singleton services pick next free ID in local snapshot,
 	// then rely on etcd PutIfAbsent CAS to enforce same-type uniqueness.
-	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity())[nodeType];
+	auto& nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[nodeType];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedIds;
@@ -130,7 +130,7 @@ uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 }
 
 void NodeAllocator::AcquireNodePort() {
-	auto& nodeList = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity())[gNode->GetNodeType()];
+	auto& nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[gNode->GetNodeType()];
 	auto& existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedPorts;

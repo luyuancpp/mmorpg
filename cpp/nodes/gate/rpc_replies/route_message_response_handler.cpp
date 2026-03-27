@@ -19,11 +19,11 @@ extern ProtobufDispatcher gRpcResponseDispatcher;
 void OnServiceRouteNodeStringMsgReply(const TcpConnectionPtr& conn, const std::shared_ptr<::RouteMessageResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	defer(tlsMessageContext.SetNextRouteNodeType(UINT32_MAX));
-	defer(tlsMessageContext.SetNextRouteNodeId(UINT32_MAX));
-	defer(tlsMessageContext.SetCurrentSessionId(kInvalidSessionId));
+	defer(tlsRpc.SetNextRouteNodeType(UINT32_MAX));
+	defer(tlsRpc.SetNextRouteNodeId(UINT32_MAX));
+	defer(tlsRpc.SetCurrentSessionId(kInvalidSessionId));
 
-	tlsMessageContext.SetCurrentSessionId(replied->session_id());
+	tlsRpc.SetCurrentSessionId(replied->session_id());
 
 	if (replied->route_nodes_size() <= 0)
 	{

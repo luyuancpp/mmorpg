@@ -39,22 +39,22 @@ void GridSystem::GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet) 
 
 void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entities, bool excludingSelf)
 {
-    if (!tlsRegistryManager.actorRegistry.valid(entity)) {
+    if (!tlsEcs.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
         return;
     }
   
-    const auto hexPosition = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
+    const auto hexPosition = tlsEcs.actorRegistry.try_get<Hex>(entity);
     if (!hexPosition) {
         return;
     }
 
-    const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(entity);
+    const auto sceneComponent = tlsEcs.actorRegistry.try_get<SceneEntityComp>(entity);
     if (!sceneComponent) {
         return;
     }
 
-    auto& gridList = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->sceneEntity);
+    auto& gridList = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->sceneEntity);
     
     GridSet grids;
     GetCurrentAndNeighborGridIds(*hexPosition, grids);
@@ -81,22 +81,22 @@ void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorde
 
 void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entities)
 {
-    if (!tlsRegistryManager.actorRegistry.valid(entity)) {
+    if (!tlsEcs.actorRegistry.valid(entity)) {
         LOG_ERROR << "Entity not found in scene";
         return;
     }
   
-    const auto hexPosition = tlsRegistryManager.actorRegistry.try_get<Hex>(entity);
+    const auto hexPosition = tlsEcs.actorRegistry.try_get<Hex>(entity);
     if (!hexPosition) {
         return;
     }
 
-    const auto sceneComponent = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(entity);
+    const auto sceneComponent = tlsEcs.actorRegistry.try_get<SceneEntityComp>(entity);
     if (!sceneComponent) {
         return;
     }
 
-    auto& gridList = tlsRegistryManager.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->sceneEntity);
+    auto& gridList = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->sceneEntity);
     
     GridSet inViewGrids;
     GetCurrentAndNeighborGridIds(*hexPosition, inViewGrids);
@@ -129,7 +129,7 @@ void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnordered
 }
 
 void GridSystem::UpdateLogGridSize() {
-    for (auto&& [sceneEntity, gridList] : tlsRegistryManager.sceneRegistry.view<SceneGridListComp>().each()) {
+    for (auto&& [sceneEntity, gridList] : tlsEcs.sceneRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [gridId, entityList] : gridList) {
             if (entityList.entities.empty()) {
                 LOG_ERROR << "Grid is empty but not removed";

@@ -9,5 +9,5 @@
 using CentrePlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
 
 inline CentrePlayerDataRedis& GetGlobalPlayerRedis() {
-	return tlsRegistryManager.globalRegistry.get<CentrePlayerDataRedis>(GlobalEntity());
+	return tlsEcs.globalRegistry.get<CentrePlayerDataRedis>(tlsEcs.GlobalEntity());
 }

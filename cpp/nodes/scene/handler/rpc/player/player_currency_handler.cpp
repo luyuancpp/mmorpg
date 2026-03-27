@@ -16,7 +16,7 @@ void SceneCurrencyClientPlayerHandler::GmAddCurrency(entt::entity player,const :
 	const auto err = CurrencySystem::AddCurrency(player, type, request->amount());
 	if (err != kSuccess)
 	{
-		tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err);
+		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
 		return;
 	}
 	response->set_balance_after(CurrencySystem::GetBalance(player, type));
@@ -32,7 +32,7 @@ void SceneCurrencyClientPlayerHandler::GmDeductCurrency(entt::entity player,cons
 	const auto err = CurrencySystem::DeductCurrency(player, type, request->amount());
 	if (err != kSuccess)
 	{
-		tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err);
+		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
 		return;
 	}
 	response->set_balance_after(CurrencySystem::GetBalance(player, type));
@@ -44,7 +44,7 @@ void SceneCurrencyClientPlayerHandler::GetCurrencyList(entt::entity player,const
 	::GetCurrencyListResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto* currency = tlsRegistryManager.actorRegistry.try_get<CurrencyComp>(player);
+	const auto* currency = tlsEcs.actorRegistry.try_get<CurrencyComp>(player);
 	if (currency != nullptr)
 	{
 		response->mutable_currency()->CopyFrom(*currency);
@@ -61,7 +61,7 @@ void SceneCurrencyClientPlayerHandler::GmBlockCurrency(entt::entity player,const
 	const auto err = CurrencySystem::BlockCurrency(player, type);
 	if (err != kSuccess)
 	{
-		tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err);
+		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
 		return;
 	}
 ///<<< END WRITING YOUR CODE
@@ -76,7 +76,7 @@ void SceneCurrencyClientPlayerHandler::GmUnblockCurrency(entt::entity player,con
 	const auto err = CurrencySystem::UnblockCurrency(player, type);
 	if (err != kSuccess)
 	{
-		tlsRegistryManager.globalRegistry.get_or_emplace<TipInfoMessage>(GlobalEntity()).set_id(err);
+		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
 		return;
 	}
 ///<<< END WRITING YOUR CODE

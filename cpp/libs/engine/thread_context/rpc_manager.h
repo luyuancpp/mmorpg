@@ -1,7 +1,4 @@
+// DEPRECATED — include <rpc_request_context.h> directly.
+// The RPC connection is now tlsRpc.conn.
 #pragma once
-#include <memory>
-#include <muduo/net/TcpConnection.h>
-
-namespace RpcThreadContext {
-	inline thread_local std::shared_ptr<muduo::net::TcpConnection> tls_current_conn = nullptr;
-}
+#include "rpc_request_context.h"

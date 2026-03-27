@@ -1,17 +1,2 @@
+// DEPRECATED — see ecs_context.cpp.
 #include "registry_manager.h"
-
-thread_local RegistryManager tlsRegistryManager;
-
-RegistryManager::RegistryManager()
-{
-	Clear();
-}
-
-void RegistryManager::Clear()
-{
-	globalRegistry.clear();
-	actorRegistry.clear();
-	sceneRegistry.clear();
-	itemRegistry.clear();
-	nodeGlobalRegistry.clear();
-}

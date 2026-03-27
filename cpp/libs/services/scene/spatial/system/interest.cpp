@@ -10,14 +10,14 @@ void InterestSystem::AddAoiEntity(const entt::entity watcher, const entt::entity
 {
     if (watcher == entt::null || target == entt::null) return;
 
-    tlsRegistryManager.actorRegistry.get_or_emplace<AoiListComp>(watcher).aoiList.insert(target);
+    tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(watcher).aoiList.insert(target);
 }
 
 void InterestSystem::RemoveAoiEntity(const entt::entity watcher, const entt::entity target)
 {
     if (watcher == entt::null || target == entt::null) return;
 
-    auto* aoiList = tlsRegistryManager.actorRegistry.try_get<AoiListComp>(watcher);
+    auto* aoiList = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
     if (aoiList == nullptr) return;
     aoiList->aoiList.erase(target);
 }

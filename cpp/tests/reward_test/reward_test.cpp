@@ -10,8 +10,8 @@
 #include <node_config_manager.h>
 
 decltype(auto) CreatePlayerEntityWithRewardComponent(){
-    const auto playerEntity = tlsRegistryManager.actorRegistry.create();
-    tlsRegistryManager.actorRegistry.emplace<Guid>(playerEntity);
+    const auto playerEntity = tlsEcs.actorRegistry.create();
+    tlsEcs.actorRegistry.emplace<Guid>(playerEntity);
 
     return playerEntity;
 }
@@ -20,7 +20,7 @@ decltype(auto) CreatePlayerEntityWithRewardComponent(){
 TEST(RewardClaimSystemTest, InitializationTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsRegistryManager.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
+	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
 
     RewardClaimSystem RewardClaimSystem;
 
@@ -34,7 +34,7 @@ TEST(RewardClaimSystemTest, InitializationTest) {
 TEST(RewardClaimSystemTest, ClaimRewardTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsRegistryManager.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
+	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
 
     RewardClaimSystem RewardClaimSystem;
 
@@ -55,7 +55,7 @@ TEST(RewardClaimSystemTest, ClaimRewardTest) {
 TEST(RewardClaimSystemTest, ClaimAlreadyClaimedRewardTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsRegistryManager.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
+	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
 
     RewardClaimSystem RewardClaimSystem;
 
@@ -70,7 +70,7 @@ TEST(RewardClaimSystemTest, ClaimAlreadyClaimedRewardTest) {
 TEST(RewardClaimSystemTest, InvalidRewardIndexTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsRegistryManager.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
+	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
 
     RewardClaimSystem RewardClaimSystem;
 
@@ -83,7 +83,7 @@ TEST(RewardClaimSystemTest, InvalidRewardIndexTest) {
 TEST(RewardClaimSystemTest, ShowRewardStatusTest) {
     auto playerEntity = CreatePlayerEntityWithRewardComponent();
 
-	auto& claimedRewards = tlsRegistryManager.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
+	auto& claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).GlobalRewards();
 
     RewardClaimSystem RewardClaimSystem;
 

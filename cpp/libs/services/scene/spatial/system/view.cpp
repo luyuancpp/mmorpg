@@ -20,14 +20,14 @@ bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity e
 
 bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
 {
-	return tlsRegistryManager.actorRegistry.any_of<Npc>(observer) && tlsRegistryManager.actorRegistry.any_of<Npc>(entrant);
+	return tlsEcs.actorRegistry.any_of<Npc>(observer) && tlsEcs.actorRegistry.any_of<Npc>(entrant);
 }
 
 double ViewSystem::GetMaxViewRadius(entt::entity observer)
 {
 	double viewRadius = kMaxViewRadius;
 
-	if (const auto observerViewRadius = tlsRegistryManager.actorRegistry.try_get<ViewRadius>(observer)) {
+	if (const auto observerViewRadius = tlsEcs.actorRegistry.try_get<ViewRadius>(observer)) {
 		viewRadius = observerViewRadius->radius();
 	}
 
@@ -36,8 +36,8 @@ double ViewSystem::GetMaxViewRadius(entt::entity observer)
 
 bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
 {
-	const auto& viewerTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(viewer);
-	const auto& targetTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(targetEntity);
+	const auto& viewerTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(viewer);
+	const auto& targetTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(targetEntity);
 
 	const dtReal viewerLocation[] = {
 		viewerTransform.location().x(),
@@ -63,8 +63,8 @@ bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 
 double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
 {
-	auto& transform1 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity1);
-	auto& transform2 = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity2);
+	auto& transform1 = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity1);
+	auto& transform2 = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity2);
 
 	const dtReal location1[] = {
 		transform1.location().x(),
@@ -84,7 +84,7 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 {
 	createMessage.set_entity(entt::to_integral(entrant));
 
-	auto& entrantTransform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entrant);
+	auto& entrantTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(entrant);
 	createMessage.mutable_transform()->CopyFrom(entrantTransform);
 }
 
@@ -97,7 +97,7 @@ void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uin
 }
 
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
-    auto& transform = tlsRegistryManager.actorRegistry.get_or_emplace<Transform>(entity);
+    auto& transform = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity);
 
     // Compute direction towards target
     dtReal targetLocation[] = { pos.x(), pos.y(), pos.z() };

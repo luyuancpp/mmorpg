@@ -21,14 +21,14 @@ namespace
             contracts::kafka::RoutePlayerEvent event;
             event.set_session_id(command.session_id());
             event.set_target_node_id(command.target_node_id());
-            dispatcher.enqueue(event);
+            tlsEcs.dispatcher.enqueue(event);
             return true;
         }
         case ContractsKafkaKickPlayerEventEventId:
         {
             contracts::kafka::KickPlayerEvent event;
             event.set_session_id(command.session_id());
-            dispatcher.enqueue(event);
+            tlsEcs.dispatcher.enqueue(event);
             return true;
         }
         case ContractsKafkaBindSessionEventEventId:
@@ -37,7 +37,7 @@ namespace
             event.set_session_id(command.session_id());
             event.set_player_id(command.player_id());
             event.set_enter_gs_type(command.enter_gs_type());
-            dispatcher.enqueue(event);
+            tlsEcs.dispatcher.enqueue(event);
             return true;
         }
         case ContractsKafkaPlayerLeaseExpiredEventEventId:
@@ -45,7 +45,7 @@ namespace
             contracts::kafka::PlayerLeaseExpiredEvent event;
             event.set_player_id(command.player_id());
             event.set_session_id(command.session_id());
-            dispatcher.enqueue(event);
+            tlsEcs.dispatcher.enqueue(event);
             return true;
         }
         default:

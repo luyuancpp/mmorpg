@@ -13,7 +13,7 @@ void ScenePlayerHandler::GateLoginNotify(entt::entity player,const ::GateLoginNo
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "GateLoginNotify for player: " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
+	LOG_INFO << "GateLoginNotify for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
 
 	if (request->enter_gs_type() == LOGIN_NONE)
 	{
@@ -30,7 +30,7 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "ExitGame: Received player exit request. Player entity = " << entt::to_integral(player)
-		<< ", playerId = " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
+		<< ", playerId = " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
 
 	PlayerLifecycleSystem::HandleExitGameNode(player);
 

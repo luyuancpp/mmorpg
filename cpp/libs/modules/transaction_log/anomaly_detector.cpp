@@ -106,7 +106,7 @@ void AnomalyDetector::EmitAlert(entt::entity player, const std::string &category
                                 uint32_t subKey, uint64_t count, uint64_t totalAmount,
                                 const AnomalyThreshold &threshold)
 {
-    const auto *guid = tlsRegistryManager.actorRegistry.try_get<Guid>(player);
+    const auto *guid = tlsEcs.actorRegistry.try_get<Guid>(player);
     const uint64_t playerId = (guid != nullptr) ? *guid : 0;
 
     LOG_WARN << "AnomalyDetector: ALERT player=" << playerId

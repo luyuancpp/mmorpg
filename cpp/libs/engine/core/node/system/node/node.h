@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <memory>
 #include <muduo/base/AsyncLogging.h>
@@ -61,7 +61,7 @@ public:
 	EtcdManager& GetEtcdManager() { return etcdManager; }
 	grpc_channel_cache::GrpcChannelCache& GetGrpcChannelCache() { return grpcChannelCache; }
     bool HasDiscoveredServiceNode(uint32_t nodeType) const {
-        auto& allNodes = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+        auto& allNodes = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
         if (nodeType >= allNodes.size()) {
             return false;
         }

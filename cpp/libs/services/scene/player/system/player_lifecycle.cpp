@@ -52,7 +52,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 	{
 		const auto &context = std::any_cast<PlayerSceneEnterContext>(extra);
 		auto player = InitPlayerFromAllData(message, context.enterInfo);
-		if (tlsRegistryManager.actorRegistry.valid(player))
+		if (tlsEcs.actorRegistry.valid(player))
 		{
 			PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(context.sceneId));
 		}
@@ -74,10 +74,10 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 
 	// TODO: When should session be deleted?
 
-	auto playerEntity = GetPlayer(playerId);
+	auto playerEntity = tlsEcs.GetPlayer(playerId);
 	HandleCrossZoneTransfer(playerEntity);
 
-	if (tlsRegistryManager.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
+	if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
 	{
 		LOG_INFO << "Player marked for unregistration: " << playerId;
 
@@ -95,7 +95,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 // CONSIDER: handle reentry into a different scene node while load is still in progress
 void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp &enterInfo)
 {
-	LOG_INFO << "EnterScene: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " entering scene node";
+	LOG_INFO << "EnterScene: Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " entering scene node";
 
 	// Centre decommissioned: no longer track centre_node_id or send CentreEnterGsSucceed.
 	// player_locator (Go service) owns session/location truth via Redis.
@@ -108,18 +108,18 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 
 void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 {
-	if (!tlsRegistryManager.actorRegistry.valid(player))
+	if (!tlsEcs.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "OnPlayerLogin: invalid player entity";
 		return;
 	}
 
-	const auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
-	auto &enterState = tlsRegistryManager.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(player);
+	const auto playerId = tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+	auto &enterState = tlsEcs.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(player);
 	enterState.set_enter_gs_type(enterGsType);
 
-	auto *sceneEntity = tlsRegistryManager.actorRegistry.try_get<SceneEntityComp>(player);
-	if (sceneEntity == nullptr || !tlsRegistryManager.sceneRegistry.valid(sceneEntity->sceneEntity))
+	auto *sceneEntity = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
+	if (sceneEntity == nullptr || !tlsEcs.sceneRegistry.valid(sceneEntity->sceneEntity))
 	{
 		LOG_WARN << "OnPlayerLogin: player has no valid scene binding yet, player=" << playerId
 				 << " enter_gs_type=" << enterGsType;
@@ -151,8 +151,8 @@ void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity player)
 // TODO: Validate session before removal
 void PlayerLifecycleSystem::RemovePlayerSession(const Guid playerId)
 {
-	auto playerIt = tlsPlayerList.find(playerId);
-	if (playerIt == tlsPlayerList.end())
+	auto playerIt = tlsEcs.playerList.find(playerId);
+	if (playerIt == tlsEcs.playerList.end())
 	{
 		LOG_ERROR << "RemovePlayerSession: player entity not found in session map for player: " << playerId;
 		return;
@@ -162,7 +162,7 @@ void PlayerLifecycleSystem::RemovePlayerSession(const Guid playerId)
 
 void PlayerLifecycleSystem::RemovePlayerSession(entt::entity player)
 {
-	auto *const playerSessionSnapshotPB = tlsRegistryManager.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	auto *const playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (playerSessionSnapshotPB == nullptr)
 	{
 		LOG_ERROR << "RemovePlayerSession: PlayerSessionSnapshotComp not found for player: " << entt::to_integral(player);
@@ -177,8 +177,8 @@ void PlayerLifecycleSystem::RemovePlayerSession(entt::entity player)
 
 void PlayerLifecycleSystem::RemovePlayerSessionSilently(Guid playerId)
 {
-	auto playerIt = tlsPlayerList.find(playerId);
-	if (playerIt == tlsPlayerList.end())
+	auto playerIt = tlsEcs.playerList.find(playerId);
+	if (playerIt == tlsEcs.playerList.end())
 	{
 		return;
 	}
@@ -189,27 +189,27 @@ void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 {
 	LOG_INFO << "Destroying player: " << playerId;
 
-	defer(tlsPlayerList.erase(playerId));
-	DestroyEntity(tlsRegistryManager.actorRegistry, GetPlayer(playerId));
+	defer(tlsEcs.playerList.erase(playerId));
+	DestroyEntity(tlsEcs.actorRegistry, tlsEcs.GetPlayer(playerId));
 }
 
 void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 {
-	LOG_INFO << "HandleExitGameNode: Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " is exiting the scene node";
+	LOG_INFO << "HandleExitGameNode: Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " is exiting the scene node";
 
-	if (!tlsRegistryManager.actorRegistry.valid(player))
+	if (!tlsEcs.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "HandleExitGameNode: Player entity is not valid";
 		return;
 	}
 
-	if (tlsRegistryManager.actorRegistry.all_of<UnregisterPlayer>(player))
+	if (tlsEcs.actorRegistry.all_of<UnregisterPlayer>(player))
 	{
-		LOG_INFO << "Player " << tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player) << " is already marked for unregistration";
+		LOG_INFO << "Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " is already marked for unregistration";
 		return;
 	}
 
-	tlsRegistryManager.actorRegistry.emplace<UnregisterPlayer>(player);
+	tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
 
 	// Capture a logout snapshot before persisting (safety net for rollback).
 	SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGOUT);
@@ -221,7 +221,7 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 
 void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 {
-	auto changeInfo = tlsRegistryManager.actorRegistry.try_get<ChangeSceneInfoComp>(playerEntity);
+	auto changeInfo = tlsEcs.actorRegistry.try_get<ChangeSceneInfoComp>(playerEntity);
 	if (!changeInfo)
 	{
 		return;
@@ -232,7 +232,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 		return;
 	}
 
-	auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(playerEntity);
+	auto playerId = tlsEcs.actorRegistry.get_or_emplace<Guid>(playerEntity);
 
 	PlayerAllData playerAllDataMessage;
 	PlayerAllDataMessageFieldsMarshal(playerEntity, playerAllDataMessage);
@@ -253,7 +253,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 
 	PlayerTipSystem::SendToPlayer(playerEntity, kSceneTransferInProgress, {});
 
-	tlsRegistryManager.actorRegistry.remove<ChangeSceneInfoComp>(playerEntity);
+	tlsEcs.actorRegistry.remove<ChangeSceneInfoComp>(playerEntity);
 }
 
 void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent &msg)
@@ -284,32 +284,32 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 
 	LOG_INFO << "[InitPlayerFromAllData] Init player: " << playerId;
 
-	auto player = tlsRegistryManager.actorRegistry.create();
+	auto player = tlsEcs.actorRegistry.create();
 
 	// Register in global player-entity map
-	if (const auto [it, inserted] = tlsPlayerList.emplace(playerId, player); !inserted)
+	if (const auto [it, inserted] = tlsEcs.playerList.emplace(playerId, player); !inserted)
 	{
 		LOG_ERROR << "[InitPlayerFromAllData] Player already exists in GlobalPlayerList: " << playerId;
 		return entt::null;
 	}
 
-	tlsRegistryManager.actorRegistry.emplace<Player>(player);
-	tlsRegistryManager.actorRegistry.emplace<Guid>(player, playerId);
+	tlsEcs.actorRegistry.emplace<Player>(player);
+	tlsEcs.actorRegistry.emplace<Guid>(player, playerId);
 
 	PlayerAllDataMessageFieldsUnMarshal(player, playerAllData);
 
 	// First-time registration: initialize defaults
 	if (playerAllData.player_database_data().uint64_pb_component().registration_timestamp() <= 0)
 	{
-		tlsRegistryManager.actorRegistry.get_or_emplace<PlayerUint64Comp>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
-		tlsRegistryManager.actorRegistry.get_or_emplace<LevelComp>(player).set_level(1);
+		tlsEcs.actorRegistry.get_or_emplace<PlayerUint64Comp>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
+		tlsEcs.actorRegistry.get_or_emplace<LevelComp>(player).set_level(1);
 
 		RegisterPlayerEvent registerPlayer;
 		registerPlayer.set_actor_entity(entt::to_integral(player));
-		dispatcher.trigger(registerPlayer);
+		tlsEcs.dispatcher.trigger(registerPlayer);
 	}
 
-	tlsRegistryManager.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
+	tlsEcs.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
 
 	// Centre decommissioned: centre_node_id no longer tracked in session snapshot.
 	// player_locator (Go) owns the canonical session/location record.
@@ -317,11 +317,11 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 	// Fire component initialization events
 	InitializeActorComponentsEvent initActorEvent;
 	initActorEvent.set_actor_entity(entt::to_integral(player));
-	dispatcher.trigger(initActorEvent);
+	tlsEcs.dispatcher.trigger(initActorEvent);
 
 	InitializePlayerComponentsEvent initPlayerEvent;
 	initPlayerEvent.set_actor_entity(entt::to_integral(player));
-	dispatcher.trigger(initPlayerEvent);
+	tlsEcs.dispatcher.trigger(initPlayerEvent);
 
 	EnterScene(player, enterInfo);
 
@@ -333,13 +333,13 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 
 void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 {
-	if (!tlsRegistryManager.actorRegistry.valid(player))
+	if (!tlsEcs.actorRegistry.valid(player))
 	{
 		LOG_ERROR << "[SavePlayerToRedis] Invalid player entity";
 		return;
 	}
 
-	auto playerId = tlsRegistryManager.actorRegistry.get_or_emplace<Guid>(player);
+	auto playerId = tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
 
 	using SaveMessage = PlayerDataRedis::element_type::MessageValuePtr;
 	SaveMessage message = std::make_shared<SaveMessage::element_type>();

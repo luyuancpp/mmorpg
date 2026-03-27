@@ -4,7 +4,7 @@
 #include <thread_context/entity_manager.h>
 
 NodeInfo* FindZoneUniqueNodeInfo(uint32_t zoneId, uint32_t nodeType) {
-	auto& nodeRegistry = tlsRegistryManager.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(GetGlobalGrpcNodeEntity());
+	auto& nodeRegistry = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 	auto& nodeList = *nodeRegistry[nodeType].mutable_node_list();
 	for (auto& node : nodeList)
 	{
@@ -18,7 +18,7 @@ NodeInfo* FindZoneUniqueNodeInfo(uint32_t zoneId, uint32_t nodeType) {
 
 NodeInfo& GetNodeInfo()
 {
-	return tlsRegistryManager.globalRegistry.get_or_emplace<NodeInfo>(GlobalEntity());
+	return tlsEcs.globalRegistry.get_or_emplace<NodeInfo>(tlsEcs.GlobalEntity());
 }
 
 uint32_t GetZoneId()

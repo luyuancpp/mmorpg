@@ -3,12 +3,12 @@
 
 void SkillEventHandler::Register()
 {
-    dispatcher.sink<SkillExecutedEvent>().connect<&SkillEventHandler::SkillExecutedEventHandler>();
+    tlsEcs.dispatcher.sink<SkillExecutedEvent>().connect<&SkillEventHandler::SkillExecutedEventHandler>();
 }
 
 void SkillEventHandler::UnRegister()
 {
-    dispatcher.sink<SkillExecutedEvent>().disconnect<&SkillEventHandler::SkillExecutedEventHandler>();
+    tlsEcs.dispatcher.sink<SkillExecutedEvent>().disconnect<&SkillEventHandler::SkillExecutedEventHandler>();
 }
 void SkillEventHandler::SkillExecutedEventHandler(const SkillExecutedEvent& event)
 {

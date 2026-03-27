@@ -5,12 +5,12 @@
 ///<<< END WRITING YOUR CODE
 void CombatEventHandler::Register()
 {
-    dispatcher.sink<BeKillEvent>().connect<&CombatEventHandler::BeKillEventHandler>();
+    tlsEcs.dispatcher.sink<BeKillEvent>().connect<&CombatEventHandler::BeKillEventHandler>();
 }
 
 void CombatEventHandler::UnRegister()
 {
-    dispatcher.sink<BeKillEvent>().disconnect<&CombatEventHandler::BeKillEventHandler>();
+    tlsEcs.dispatcher.sink<BeKillEvent>().disconnect<&CombatEventHandler::BeKillEventHandler>();
 }
 void CombatEventHandler::BeKillEventHandler(const BeKillEvent& event)
 {

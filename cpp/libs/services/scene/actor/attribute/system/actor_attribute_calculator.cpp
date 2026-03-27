@@ -14,10 +14,10 @@
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 
 void UpdateVelocity(entt::entity entity) {
-    auto& velocity = tlsRegistryManager.actorRegistry.get_or_emplace<Velocity>(entity);
+    auto& velocity = tlsEcs.actorRegistry.get_or_emplace<Velocity>(entity);
     velocity.Clear();
 
-    for (const auto& buffCompPb : tlsRegistryManager.actorRegistry.get_or_emplace<BuffListComp>(entity) | std::views::values) {
+    for (const auto& buffCompPb : tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(entity) | std::views::values) {
         FetchBuffTableOrContinue(buffCompPb.buffPb.buff_table_id());
 
         velocity.set_x(velocity.x() + buffTable->movement_speed_boost());
@@ -42,8 +42,8 @@ void UpdateEnergy(entt::entity actorEntity) {
 }
 
 void ResetCombatStateFlags(entt::entity actorEntity) {
-    const auto& combatStates = tlsRegistryManager.actorRegistry.get_or_emplace<CombatStateCollectionComp>(actorEntity);
-    auto& syncData = tlsRegistryManager.actorRegistry.get_or_emplace<ActorBaseAttributesS2C>(actorEntity);
+    const auto& combatStates = tlsEcs.actorRegistry.get_or_emplace<CombatStateCollectionComp>(actorEntity);
+    auto& syncData = tlsEcs.actorRegistry.get_or_emplace<ActorBaseAttributesS2C>(actorEntity);
     auto* stateFlags = syncData.mutable_combat_state_flags()->mutable_state_flags();
 
     stateFlags->clear();
@@ -61,13 +61,13 @@ std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs
 } };
 
 void ActorAttributeCalculatorSystem::MarkAttributeForUpdate(const entt::entity actorEntity, const uint32_t attributeBit) {
-    auto& attributeBits = tlsRegistryManager.actorRegistry.get_or_emplace<AttributeDirtyFlagsComp>(actorEntity).attributeBits;
+    auto& attributeBits = tlsEcs.actorRegistry.get_or_emplace<AttributeDirtyFlagsComp>(actorEntity).attributeBits;
     attributeBits.set(attributeBit);
 }
 
 void ActorAttributeCalculatorSystem::Update()
 {
-    for (auto&& [entity, dirtyFlags] : tlsRegistryManager.actorRegistry.view<AttributeDirtyFlagsComp>().each())
+    for (auto&& [entity, dirtyFlags] : tlsEcs.actorRegistry.view<AttributeDirtyFlagsComp>().each())
     {
         auto& attributeBits = dirtyFlags.attributeBits;
         for (const auto& [attributeIndex, updateFunction] : kAttributeConfigs) {
