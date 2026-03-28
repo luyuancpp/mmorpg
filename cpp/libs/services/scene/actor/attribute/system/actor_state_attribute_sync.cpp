@@ -77,7 +77,7 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 		auto& actorRegistry = tlsEcs.actorRegistry;
 		const auto& aoiListComp = actorRegistry.get_or_emplace<AoiListComp>(entity);
 
-		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, aoiListComp.aoiList);
+		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, aoiListComp.GetEntitySet());
 
 		for (const auto& distanceSyncConfig : kDistanceSyncConfigs) {
 			SyncAttributesForDistanceLevel(entity, nearbyEntityList, distanceSyncConfig);
@@ -86,9 +86,9 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 }
 
 void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
+	const auto& aoiEntries = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).entries;
 
-	for (const auto& nearbyEntity : aoiList) {
+	for (const auto& [nearbyEntity, _] : aoiEntries) {
 		constexpr double viewRadiusFactor = 0.333;
 		const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity) * viewRadiusFactor;
 
@@ -101,9 +101,9 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity e
 }
 
 void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
+	const auto& aoiEntries = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).entries;
 
-	for (const auto& nearbyEntity : aoiList) {
+	for (const auto& [nearbyEntity, _] : aoiEntries) {
 		constexpr double viewRadiusFactor = 0.666;
 		const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity) * viewRadiusFactor;
 
@@ -116,9 +116,9 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity e
 }
 
 void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiList = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).aoiList;
+	const auto& aoiEntries = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).entries;
 
-	for (const auto& nearbyEntity : aoiList) {
+	for (const auto& [nearbyEntity, _] : aoiEntries) {
 		const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity);
 
 		if (!ViewSystem::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {

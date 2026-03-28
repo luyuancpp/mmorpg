@@ -5,6 +5,9 @@
 //   2. Entity-to-grid assignment after random movement
 //   3. Round-trip movement across all six hex neighbors
 //   4. Entity enter/leave visibility via AoiListComp
+//   5. Priority tags, capacity limits, pin/unpin
+//   6. Dynamic capacity (client-reported + server pressure)
+//   7. Per-scene priority policies (open-world, dungeon, PvP)
 
 #include "spatial/system/aoi.h"
 #include <gtest/gtest.h>
@@ -12,8 +15,11 @@
 #include "core/network/message_system.h"
 #include "spatial/comp/grid_comp.h"
 #include "spatial/comp/scene_node_scene_comp.h"
+#include "spatial/constants/aoi_priority.h"
 #include "spatial/system/grid.h"
+#include "spatial/system/interest.h"
 #include "proto/common/component/actor_comp.pb.h"
+#include "proto/common/component/team_comp.pb.h"
 #include "proto/common/event/scene_event.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 
@@ -44,6 +50,13 @@ static void UnregisterGlobalMessageComponents()
     tlsEcs.globalRegistry.remove<ActorDestroyS2C>(tlsEcs.GlobalEntity());
     tlsEcs.globalRegistry.remove<ActorListCreateS2C>(tlsEcs.GlobalEntity());
     tlsEcs.globalRegistry.remove<ActorListDestroyS2C>(tlsEcs.GlobalEntity());
+}
+
+// Free helper: check whether |observer| has |target| in its AoiListComp.
+static bool IsInAoiList(entt::entity observer, entt::entity target)
+{
+    const auto* aoiList = tlsEcs.actorRegistry.try_get<AoiListComp>(observer);
+    return aoiList && aoiList->Contains(target);
 }
 
 // ---------------------------------------------------------------------------
@@ -222,13 +235,6 @@ protected:
         tlsEcs.actorRegistry.clear();
         tlsEcs.sceneRegistry.clear();
     }
-
-    // Convenience: check whether |observer| has |target| in its AoiListComp.
-    static bool IsInAoiList(entt::entity observer, entt::entity target)
-    {
-        const auto* aoiList = tlsEcs.actorRegistry.try_get<AoiListComp>(observer);
-        return aoiList && aoiList->aoiList.contains(target);
-    }
 };
 
 // When two entities are within kMaxViewRadius (10 units) after Update,
@@ -284,6 +290,441 @@ TEST_F(AoiVisibilityTest, EntitiesOutOfRangeAreNotVisible)
         << "entity2 should NOT be in entity1's AoiList when out of range";
     EXPECT_FALSE(IsInAoiList(entity2, entity1))
         << "entity1 should NOT be in entity2's AoiList when out of range";
+}
+
+// ---------------------------------------------------------------------------
+// Fixture: Priority, capacity, pin/unpin, stealth
+// ---------------------------------------------------------------------------
+
+class AoiPriorityTest : public ::testing::Test
+{
+protected:
+    entt::entity sceneEntity = entt::null;
+
+    void SetUp() override
+    {
+        RegisterGlobalMessageComponents();
+        sceneEntity = tlsEcs.sceneRegistry.create();
+        tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
+    }
+
+    void TearDown() override
+    {
+        UnregisterGlobalMessageComponents();
+        tlsEcs.actorRegistry.clear();
+        tlsEcs.sceneRegistry.clear();
+    }
+
+    // Create an entity at a given position in the scene.
+    entt::entity SpawnAt(double x, double y)
+    {
+        auto e = tlsEcs.actorRegistry.create();
+        auto& t = tlsEcs.actorRegistry.emplace<Transform>(e);
+        t.mutable_location()->set_x(x);
+        t.mutable_location()->set_y(y);
+        tlsEcs.actorRegistry.emplace<SceneEntityComp>(e, SceneEntityComp{sceneEntity});
+        return e;
+    }
+};
+
+// InterestSystem::AddAoiEntity with priority upgrades existing entries.
+TEST_F(AoiPriorityTest, PriorityUpgradeOnDuplicateAdd)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(5, 0);
+
+    InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kNormal);
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kNormal);
+
+    // Re-add with higher priority — should upgrade.
+    InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kTeammate);
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kTeammate);
+}
+
+// When the interest list is at capacity, a lower-priority entity is evicted
+// to make room for a higher-priority one.
+TEST_F(AoiPriorityTest, CapacityEvictsLowestPriority)
+{
+    auto watcher = SpawnAt(0, 0);
+
+    // Fill to default capacity with kNormal entities.
+    for (std::size_t i = 0; i < kAoiListCapacityDefault; ++i) {
+        auto filler = tlsEcs.actorRegistry.create();
+        InterestSystem::AddAoiEntity(watcher, filler, AoiPriority::kNormal);
+    }
+
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    EXPECT_EQ(comp->Size(), kAoiListCapacityDefault);
+
+    // Try to add another kNormal entity — should fail (same priority, no eviction).
+    auto lowEntity = tlsEcs.actorRegistry.create();
+    EXPECT_FALSE(InterestSystem::AddAoiEntity(watcher, lowEntity, AoiPriority::kNormal));
+    EXPECT_EQ(comp->Size(), kAoiListCapacityDefault);
+
+    // Add a kTeammate entity — should succeed by evicting a kNormal one.
+    auto teammateEntity = tlsEcs.actorRegistry.create();
+    EXPECT_TRUE(InterestSystem::AddAoiEntity(watcher, teammateEntity, AoiPriority::kTeammate));
+    EXPECT_EQ(comp->Size(), kAoiListCapacityDefault);
+    EXPECT_TRUE(comp->Contains(teammateEntity));
+}
+
+// PinAoiEntity adds at kPinned priority.
+TEST_F(AoiPriorityTest, PinAddsAtPinnedPriority)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(100, 100);  // Far away — would not be added by grid scan.
+
+    EXPECT_TRUE(InterestSystem::PinAoiEntity(watcher, target));
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    EXPECT_TRUE(comp->Contains(target));
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kPinned);
+}
+
+// UnpinAoiEntity downgrades pinned entry to kNormal.
+TEST_F(AoiPriorityTest, UnpinDowngradesToNormal)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(100, 100);
+
+    InterestSystem::PinAoiEntity(watcher, target);
+    InterestSystem::UnpinAoiEntity(watcher, target);
+
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    // Still present (not removed yet), but priority downgraded.
+    EXPECT_TRUE(comp->Contains(target));
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kNormal);
+}
+
+// Pinned entries are NOT removed when the observer moves to a different grid.
+TEST_F(AoiPriorityTest, PinnedEntitySurvivesGridLeave)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(5, 0);  // Close — will enter via grid.
+
+    AoiSystem::Update(0.0);
+
+    // Now pin the target.
+    InterestSystem::PinAoiEntity(watcher, target);
+
+    // Move watcher far away so target falls out of grid range.
+    auto& t = tlsEcs.actorRegistry.get<Transform>(watcher);
+    t.mutable_location()->set_x(500);
+    t.mutable_location()->set_y(500);
+    AoiSystem::Update(0.0);
+
+    // Target should still be in watcher's list because it's pinned.
+    EXPECT_TRUE(IsInAoiList(watcher, target));
+}
+
+// Teammates get kTeammate priority when both have the same TeamId.
+TEST_F(AoiPriorityTest, TeammatesGetHigherPriority)
+{
+    auto player1 = SpawnAt(0, 0);
+    auto player2 = SpawnAt(5, 0);
+
+    // Assign same team.
+    auto& team1 = tlsEcs.actorRegistry.emplace<TeamId>(player1);
+    team1.set_team_id(42);
+    auto& team2 = tlsEcs.actorRegistry.emplace<TeamId>(player2);
+    team2.set_team_id(42);
+
+    AoiSystem::Update(0.0);
+
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(player1);
+    ASSERT_NE(comp, nullptr);
+    ASSERT_TRUE(comp->Contains(player2));
+    EXPECT_EQ(comp->entries.at(player2).priority, AoiPriority::kTeammate);
+}
+
+// ---------------------------------------------------------------------------
+// Fixture: Dynamic capacity (client-reported + server pressure)
+// ---------------------------------------------------------------------------
+
+class AoiDynamicCapacityTest : public ::testing::Test
+{
+protected:
+    entt::entity sceneEntity = entt::null;
+
+    void SetUp() override
+    {
+        RegisterGlobalMessageComponents();
+        sceneEntity = tlsEcs.sceneRegistry.create();
+        tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
+    }
+
+    void TearDown() override
+    {
+        UnregisterGlobalMessageComponents();
+        tlsEcs.actorRegistry.clear();
+        tlsEcs.sceneRegistry.clear();
+    }
+
+    entt::entity SpawnAt(double x, double y)
+    {
+        auto e = tlsEcs.actorRegistry.create();
+        auto& t = tlsEcs.actorRegistry.emplace<Transform>(e);
+        t.mutable_location()->set_x(x);
+        t.mutable_location()->set_y(y);
+        tlsEcs.actorRegistry.emplace<SceneEntityComp>(e, SceneEntityComp{sceneEntity});
+        return e;
+    }
+};
+
+// Without any capacity components, GetEffectiveCapacity returns the default.
+TEST_F(AoiDynamicCapacityTest, DefaultCapacityWhenNoComponents)
+{
+    auto watcher = SpawnAt(0, 0);
+    EXPECT_EQ(InterestSystem::GetEffectiveCapacity(watcher), kAoiListCapacityDefault);
+}
+
+// Client-reported capacity is clamped and respected.
+TEST_F(AoiDynamicCapacityTest, ClientReportedCapacityIsRespected)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto& clientCap = tlsEcs.actorRegistry.emplace<AoiClientCapacityComp>(watcher);
+    clientCap.clientDesiredCount = 50;
+
+    EXPECT_EQ(InterestSystem::GetEffectiveCapacity(watcher), 50u);
+}
+
+// Client capacity below minimum is clamped to kAoiListCapacityMin.
+TEST_F(AoiDynamicCapacityTest, ClientCapacityClampedToMin)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto& clientCap = tlsEcs.actorRegistry.emplace<AoiClientCapacityComp>(watcher);
+    clientCap.clientDesiredCount = 5; // below kAoiListCapacityMin (20)
+
+    EXPECT_EQ(InterestSystem::GetEffectiveCapacity(watcher), kAoiListCapacityMin);
+}
+
+// Client capacity above maximum is clamped to kAoiListCapacityMax.
+TEST_F(AoiDynamicCapacityTest, ClientCapacityClampedToMax)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto& clientCap = tlsEcs.actorRegistry.emplace<AoiClientCapacityComp>(watcher);
+    clientCap.clientDesiredCount = 999;
+
+    EXPECT_EQ(InterestSystem::GetEffectiveCapacity(watcher), kAoiListCapacityMax);
+}
+
+// Server pressure reduces the effective capacity.
+TEST_F(AoiDynamicCapacityTest, ServerPressureReducesCapacity)
+{
+    auto watcher = SpawnAt(0, 0);
+
+    auto& pressure = tlsEcs.sceneRegistry.emplace<ScenePressureComp>(sceneEntity);
+    pressure.pressureFactor = 0.5; // half pressure → midpoint between max and min
+
+    const auto cap = InterestSystem::GetEffectiveCapacity(watcher);
+    // Expected: max - 0.5 * (max - min) = 200 - 0.5 * 180 = 110
+    EXPECT_EQ(cap, 110u);
+}
+
+// Full pressure yields minimum capacity.
+TEST_F(AoiDynamicCapacityTest, FullPressureYieldsMinCapacity)
+{
+    auto watcher = SpawnAt(0, 0);
+
+    auto& pressure = tlsEcs.sceneRegistry.emplace<ScenePressureComp>(sceneEntity);
+    pressure.pressureFactor = 1.0;
+
+    EXPECT_EQ(InterestSystem::GetEffectiveCapacity(watcher), kAoiListCapacityMin);
+}
+
+// Effective capacity = min(client, server-pressure-adjusted).
+TEST_F(AoiDynamicCapacityTest, EffectiveCapacityIsMinOfClientAndServer)
+{
+    auto watcher = SpawnAt(0, 0);
+
+    // Client wants 80, server pressure yields ~110 → effective = 80
+    auto& clientCap = tlsEcs.actorRegistry.emplace<AoiClientCapacityComp>(watcher);
+    clientCap.clientDesiredCount = 80;
+    auto& pressure = tlsEcs.sceneRegistry.emplace<ScenePressureComp>(sceneEntity);
+    pressure.pressureFactor = 0.5; // server cap = 110
+
+    EXPECT_EQ(InterestSystem::GetEffectiveCapacity(watcher), 80u);
+
+    // Now client wants 150, server still 110 → effective = 110
+    clientCap.clientDesiredCount = 150;
+    EXPECT_EQ(InterestSystem::GetEffectiveCapacity(watcher), 110u);
+}
+
+// Dynamic capacity limits how many entities AddAoiEntity accepts.
+TEST_F(AoiDynamicCapacityTest, AddAoiEntityRespectsReducedCapacity)
+{
+    auto watcher = SpawnAt(0, 0);
+
+    // Set client capacity to 30.
+    auto& clientCap = tlsEcs.actorRegistry.emplace<AoiClientCapacityComp>(watcher);
+    clientCap.clientDesiredCount = 30;
+
+    for (std::size_t i = 0; i < 30; ++i)
+    {
+        auto filler = tlsEcs.actorRegistry.create();
+        EXPECT_TRUE(InterestSystem::AddAoiEntity(watcher, filler, AoiPriority::kNormal));
+    }
+
+    // 31st entity should be rejected.
+    auto overflow = tlsEcs.actorRegistry.create();
+    EXPECT_FALSE(InterestSystem::AddAoiEntity(watcher, overflow, AoiPriority::kNormal));
+
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    EXPECT_EQ(comp->Size(), 30u);
+}
+
+// ScenePressureComp default (no pressure) returns max capacity.
+TEST_F(AoiDynamicCapacityTest, ZeroPressureYieldsMaxCapacity)
+{
+    ScenePressureComp comp;
+    comp.pressureFactor = 0.0;
+    EXPECT_EQ(comp.GetServerCapacity(), kAoiListCapacityMax);
+}
+
+// ---------------------------------------------------------------------------
+// Fixture: Per-scene priority policy
+// ---------------------------------------------------------------------------
+
+class AoiPriorityPolicyTest : public ::testing::Test
+{
+protected:
+    entt::entity sceneEntity = entt::null;
+
+    void SetUp() override
+    {
+        RegisterGlobalMessageComponents();
+        sceneEntity = tlsEcs.sceneRegistry.create();
+        tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
+    }
+
+    void TearDown() override
+    {
+        UnregisterGlobalMessageComponents();
+        tlsEcs.actorRegistry.clear();
+        tlsEcs.sceneRegistry.clear();
+    }
+
+    entt::entity SpawnAt(double x, double y)
+    {
+        auto e = tlsEcs.actorRegistry.create();
+        auto& t = tlsEcs.actorRegistry.emplace<Transform>(e);
+        t.mutable_location()->set_x(x);
+        t.mutable_location()->set_y(y);
+        tlsEcs.actorRegistry.emplace<SceneEntityComp>(e, SceneEntityComp{sceneEntity});
+        return e;
+    }
+
+    void SetPolicy(const AoiPriorityPolicy* policy)
+    {
+        tlsEcs.sceneRegistry.emplace_or_replace<ScenePriorityPolicyComp>(sceneEntity,
+            ScenePriorityPolicyComp{policy});
+    }
+};
+
+// Default policy is kPolicyOpenWorld when no ScenePriorityPolicyComp exists.
+TEST_F(AoiPriorityPolicyTest, DefaultPolicyIsOpenWorld)
+{
+    auto watcher = SpawnAt(0, 0);
+    const auto& policy = InterestSystem::GetPriorityPolicy(watcher);
+    EXPECT_EQ(policy.GetWeight(AoiPriority::kQuestNpc),
+              kPolicyOpenWorld.GetWeight(AoiPriority::kQuestNpc));
+}
+
+// Open-world policy: quest NPC weight (3) > attacker weight (2).
+TEST_F(AoiPriorityPolicyTest, OpenWorldQuestNpcOutranksAttacker)
+{
+    SetPolicy(&kPolicyOpenWorld);
+    EXPECT_GT(kPolicyOpenWorld.GetWeight(AoiPriority::kQuestNpc),
+              kPolicyOpenWorld.GetWeight(AoiPriority::kAttacker));
+}
+
+// Dungeon policy: attacker weight (3) > quest NPC weight (1).
+TEST_F(AoiPriorityPolicyTest, DungeonAttackerOutranksQuestNpc)
+{
+    SetPolicy(&kPolicyDungeon);
+    EXPECT_GT(kPolicyDungeon.GetWeight(AoiPriority::kAttacker),
+              kPolicyDungeon.GetWeight(AoiPriority::kQuestNpc));
+}
+
+// Dungeon policy: boss weight (4) > attacker weight (3).
+TEST_F(AoiPriorityPolicyTest, DungeonBossOutranksAttacker)
+{
+    SetPolicy(&kPolicyDungeon);
+    EXPECT_GT(kPolicyDungeon.GetWeight(AoiPriority::kBoss),
+              kPolicyDungeon.GetWeight(AoiPriority::kAttacker));
+}
+
+// PvP arena policy: attacker weight (4) > boss weight (3).
+TEST_F(AoiPriorityPolicyTest, PvpAttackerOutranksBoss)
+{
+    SetPolicy(&kPolicyPvpArena);
+    EXPECT_GT(kPolicyPvpArena.GetWeight(AoiPriority::kAttacker),
+              kPolicyPvpArena.GetWeight(AoiPriority::kBoss));
+}
+
+// kPinned always has max weight (255) regardless of policy.
+TEST_F(AoiPriorityPolicyTest, PinnedAlwaysMaxWeight)
+{
+    EXPECT_EQ(kPolicyOpenWorld.GetWeight(AoiPriority::kPinned), 255);
+    EXPECT_EQ(kPolicyDungeon.GetWeight(AoiPriority::kPinned), 255);
+    EXPECT_EQ(kPolicyPvpArena.GetWeight(AoiPriority::kPinned), 255);
+}
+
+// Under dungeon policy, adding a kBoss entry upgrades over a kQuestNpc
+// via AddAoiEntity (priority upgrade path).
+TEST_F(AoiPriorityPolicyTest, PolicyAffectsUpgradeDecision)
+{
+    SetPolicy(&kPolicyDungeon);
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(5, 0);
+
+    InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kQuestNpc);
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kQuestNpc);
+
+    // kBoss has higher weight than kQuestNpc in dungeon policy → upgrade succeeds.
+    InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kBoss);
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kBoss);
+}
+
+// Under PvP policy, kAttacker outranks kBoss, so UpgradePriority from boss
+// to attacker should succeed.
+TEST_F(AoiPriorityPolicyTest, UpgradePriorityUsesPolicy)
+{
+    SetPolicy(&kPolicyPvpArena);
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(5, 0);
+
+    InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kBoss);
+    InterestSystem::UpgradePriority(watcher, target, AoiPriority::kAttacker);
+
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    // In PvP: attacker weight (4) > boss weight (3) → upgrade should happen.
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kAttacker);
+}
+
+// Under open-world policy, kAttacker (weight 2) < kQuestNpc (weight 3),
+// so upgrading from kQuestNpc to kAttacker should be a no-op.
+TEST_F(AoiPriorityPolicyTest, UpgradePriorityNoOpWhenWeightIsLower)
+{
+    SetPolicy(&kPolicyOpenWorld);
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(5, 0);
+
+    InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kQuestNpc);
+    InterestSystem::UpgradePriority(watcher, target, AoiPriority::kAttacker);
+
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    // Attacker weight (2) < quest NPC weight (3) in open-world → no change.
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kQuestNpc);
 }
 
 int main(int argc, char** argv)

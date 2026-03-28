@@ -24,6 +24,13 @@ public:
     static bool IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
     static bool IsWithinViewRadius(entt::entity observer, entt::entity entrant);
 
+    // Full visibility check: distance + stealth/buff state.
+    // Returns false if the target is stealthed and the observer cannot see through stealth.
+    static bool CanSee(entt::entity observer, entt::entity target);
+
+    // Check whether the target entity has an active stealth buff.
+    static bool IsStealthed(entt::entity entity);
+
     static double GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2);
     
     static double GetMaxViewRadius(entt::entity observer);
