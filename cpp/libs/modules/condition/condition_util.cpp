@@ -30,6 +30,13 @@ bool IsFulfilled(uint32_t conditionId, uint32_t progressValue) {
 	return kComparisonFunctions[cmpIndex](progressValue, conditionTable->target_count());
 }
 
+bool IsFulfilled(uint32_t conditionId, uint32_t progressValue, uint32_t targetCount) {
+	FetchConditionTableOrReturnFalse(conditionId);
+	const auto cmpIndex = static_cast<size_t>(conditionTable->comparison_op());
+	if (cmpIndex >= kComparisonFunctionCount) return false;
+	return kComparisonFunctions[cmpIndex](progressValue, targetCount);
+}
+
 bool MatchesEventSlots(const ConditionTable* conditionRow,
                        const MissionConditionEvent& conditionEvent) {
 	size_t configSlotCount = 0;
@@ -64,6 +71,13 @@ uint32_t ClampIfFulfilled(uint32_t conditionId, uint32_t progress) {
 	FetchConditionTableOrReturnCustom(conditionId, progress);
 	if (IsFulfilled(conditionId, progress)) {
 		return std::min(progress, conditionTable->target_count());
+	}
+	return progress;
+}
+
+uint32_t ClampIfFulfilled(uint32_t conditionId, uint32_t progress, uint32_t targetCount) {
+	if (IsFulfilled(conditionId, progress, targetCount)) {
+		return std::min(progress, targetCount);
 	}
 	return progress;
 }

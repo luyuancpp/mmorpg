@@ -133,9 +133,14 @@ void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t oper
 bool MissionSystem::AreAllConditionsFulfilled(const MissionComp &mission, uint32_t missionId, MissionsComp &missionComp, const IMissionConfig &config)
 {
 	const auto &conditions = config.GetConditionIds(missionId);
+	const auto &targetCounts = config.GetTargetCounts(missionId);
 	for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
 	{
-		if (!condition_util::IsFulfilled(conditions.at(i), mission.progress(i)))
+		const uint32_t tc = (i < targetCounts.size() && targetCounts.at(i) > 0) ? targetCounts.at(i) : 0;
+		const bool fulfilled = (tc > 0)
+			? condition_util::IsFulfilled(conditions.at(i), mission.progress(i), tc)
+			: condition_util::IsFulfilled(conditions.at(i), mission.progress(i));
+		if (!fulfilled)
 		{
 			return false;
 		}
@@ -216,11 +221,13 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent &condition
 
 	bool updated = false;
 	const auto &missionConditions = config.GetConditionIds(mission.id());
+	const auto &targetCounts = config.GetTargetCounts(mission.id());
 
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i)
 	{
 		FetchConditionTableOrContinue(missionConditions.at(i));
-		if (UpdateProgressIfConditionMatches(conditionEvent, mission, i, conditionTable))
+		const uint32_t tc = (i < targetCounts.size() && targetCounts.at(i) > 0) ? targetCounts.at(i) : 0;
+		if (UpdateProgressIfConditionMatches(conditionEvent, mission, i, conditionTable, tc))
 		{
 			updated = true;
 		}
@@ -228,15 +235,18 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent &condition
 
 	if (updated)
 	{
-		UpdateMissionStatus(mission, missionConditions);
+		UpdateMissionStatus(mission, missionConditions, targetCounts);
 	}
 	return updated;
 }
 
-bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent &conditionEvent, MissionComp &mission, int index, const ConditionTable *conditionTable)
+bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent &conditionEvent, MissionComp &mission, int index, const ConditionTable *conditionTable, uint32_t targetCount)
 {
 	const auto oldProgress = mission.progress(index);
-	if (condition_util::IsFulfilled(conditionTable->id(), oldProgress))
+	const bool alreadyFulfilled = (targetCount > 0)
+		? condition_util::IsFulfilled(conditionTable->id(), oldProgress, targetCount)
+		: condition_util::IsFulfilled(conditionTable->id(), oldProgress);
+	if (alreadyFulfilled)
 	{
 		return false;
 	}
@@ -253,11 +263,15 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 	return true;
 }
 
-void MissionSystem::UpdateMissionStatus(MissionComp &mission, const google::protobuf::RepeatedField<uint32_t> &missionConditions)
+void MissionSystem::UpdateMissionStatus(MissionComp &mission, const google::protobuf::RepeatedField<uint32_t> &missionConditions, const google::protobuf::RepeatedField<uint32_t> &targetCounts)
 {
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i)
 	{
-		mission.set_progress(i, condition_util::ClampIfFulfilled(missionConditions.at(i), mission.progress(i)));
+		const uint32_t tc = (i < targetCounts.size() && targetCounts.at(i) > 0) ? targetCounts.at(i) : 0;
+		const auto clamped = (tc > 0)
+			? condition_util::ClampIfFulfilled(missionConditions.at(i), mission.progress(i), tc)
+			: condition_util::ClampIfFulfilled(missionConditions.at(i), mission.progress(i));
+		mission.set_progress(i, clamped);
 	}
 }
 

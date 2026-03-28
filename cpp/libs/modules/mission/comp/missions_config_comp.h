@@ -13,6 +13,7 @@ struct IMissionConfig
     virtual uint32_t GetRewardId(uint32_t id) const = 0;
     virtual bool AutoReward(uint32_t missionTableId) const = 0;
     virtual const ::google::protobuf::RepeatedField<uint32_t>& GetConditionIds(uint32_t missionTableId) const = 0;
+    virtual const ::google::protobuf::RepeatedField<uint32_t>& GetTargetCounts(uint32_t missionTableId) const = 0;
     virtual const ::google::protobuf::RepeatedField<uint32_t>& GetNextMissionTableIds(uint32_t missionTableId) const = 0;
     virtual bool CheckTypeRepeated() const = 0;
     virtual bool HasKey(uint32_t id) const = 0;
@@ -50,6 +51,12 @@ struct MissionConfig : public IMissionConfig
     {
         FetchMissionTableOrReturnCustom(missionTableId, EmptyRepeatedField());
         return missionTable->condition_id();
+    }
+
+    const ::google::protobuf::RepeatedField<uint32_t>& GetTargetCounts(uint32_t missionTableId) const override
+    {
+        FetchMissionTableOrReturnCustom(missionTableId, EmptyRepeatedField());
+        return missionTable->target_count();
     }
 
     const ::google::protobuf::RepeatedField<uint32_t>& GetNextMissionTableIds(uint32_t missionTableId) const override

@@ -32,6 +32,8 @@ inline constexpr MissionTable::Impl_::Impl_(
         _condition_id_cached_byte_size_{0},
         next_mission_id_{},
         _next_mission_id_cached_byte_size_{0},
+        target_count_{},
+        _target_count_cached_byte_size_{0},
         id_{0u},
         mission_type_{0u},
         mission_sub_type_{0u},
@@ -92,7 +94,7 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::MissionTable, _impl_._has_bits_),
-        11, // hasbit index offset
+        12, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::MissionTable, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::MissionTable, _impl_.condition_id_),
         PROTOBUF_FIELD_OFFSET(::MissionTable, _impl_.mission_type_),
@@ -101,6 +103,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::MissionTable, _impl_.auto_reward_),
         PROTOBUF_FIELD_OFFSET(::MissionTable, _impl_.reward_id_),
         PROTOBUF_FIELD_OFFSET(::MissionTable, _impl_.next_mission_id_),
+        PROTOBUF_FIELD_OFFSET(::MissionTable, _impl_.target_count_),
         0,
         ~0u,
         1,
@@ -109,6 +112,7 @@ const ::uint32_t
         4,
         5,
         ~0u,
+        ~0u,
         0x000, // bitmap
         PROTOBUF_FIELD_OFFSET(::MissionTableData, _impl_.data_),
 };
@@ -116,7 +120,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::MissionTable)},
-        {19, sizeof(::MissionTableData)},
+        {21, sizeof(::MissionTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_MissionTable_default_instance_._instance,
@@ -124,21 +128,21 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_mission_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\023mission_table.proto\"\272\001\n\014MissionTable\022\n"
+    "\n\023mission_table.proto\"\320\001\n\014MissionTable\022\n"
     "\n\002id\030\001 \001(\r\022\024\n\014condition_id\030\002 \003(\r\022\024\n\014miss"
     "ion_type\030\003 \001(\r\022\030\n\020mission_sub_type\030\004 \001(\r"
     "\022\027\n\017condition_order\030\005 \001(\r\022\023\n\013auto_reward"
     "\030\006 \001(\r\022\021\n\treward_id\030\007 \001(\r\022\027\n\017next_missio"
-    "n_id\030\010 \003(\r\"/\n\020MissionTableData\022\033\n\004data\030\001"
-    " \003(\0132\r.MissionTableB>\n\016com.game.tableB\026M"
-    "issionTableOuterClassP\001Z\022generated/pb/ta"
-    "bleb\006proto3"
+    "n_id\030\010 \003(\r\022\024\n\014target_count\030\t \003(\r\"/\n\020Miss"
+    "ionTableData\022\033\n\004data\030\001 \003(\0132\r.MissionTabl"
+    "eB>\n\016com.game.tableB\026MissionTableOuterCl"
+    "assP\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mission_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_mission_5ftable_2eproto = {
     false,
     false,
-    331,
+    353,
     descriptor_table_protodef_mission_5ftable_2eproto,
     "mission_table.proto",
     &descriptor_table_mission_5ftable_2eproto_once,
@@ -179,7 +183,9 @@ PROTOBUF_NDEBUG_INLINE MissionTable::Impl_::Impl_(
         condition_id_{visibility, arena, from.condition_id_},
         _condition_id_cached_byte_size_{0},
         next_mission_id_{visibility, arena, from.next_mission_id_},
-        _next_mission_id_cached_byte_size_{0} {}
+        _next_mission_id_cached_byte_size_{0},
+        target_count_{visibility, arena, from.target_count_},
+        _target_count_cached_byte_size_{0} {}
 
 MissionTable::MissionTable(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -211,7 +217,9 @@ PROTOBUF_NDEBUG_INLINE MissionTable::Impl_::Impl_(
         condition_id_{visibility, arena},
         _condition_id_cached_byte_size_{0},
         next_mission_id_{visibility, arena},
-        _next_mission_id_cached_byte_size_{0} {}
+        _next_mission_id_cached_byte_size_{0},
+        target_count_{visibility, arena},
+        _target_count_cached_byte_size_{0} {}
 
 inline void MissionTable::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -246,6 +254,10 @@ constexpr auto MissionTable::InternalNewImpl_() {
                   ::google::protobuf::Message::internal_visibility()),
       PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.next_mission_id_) +
           decltype(MissionTable::_impl_.next_mission_id_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+      PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.target_count_) +
+          decltype(MissionTable::_impl_.target_count_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
@@ -292,16 +304,16 @@ MissionTable::GetClassData() const {
   return MissionTable_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 8, 0, 0, 2>
+const ::_pbi::TcParseTable<4, 9, 0, 0, 2>
 MissionTable::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(MissionTable, _impl_._has_bits_),
     0, // no _extensions_
-    8, 56,  // max_field_number, fast_idx_mask
+    9, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967040,  // skipmap
+    4294966784,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    8,  // num_field_entries
+    9,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     MissionTable_class_data_.base(),
@@ -311,9 +323,7 @@ MissionTable::_table_ = {
     ::_pbi::TcParser::GetTable<::MissionTable>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // repeated uint32 next_mission_id = 8;
-    {::_pbi::TcParser::FastV32P1,
-     {66, 63, 0, PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.next_mission_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint32 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionTable, _impl_.id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.id_)}},
@@ -335,6 +345,18 @@ MissionTable::_table_ = {
     // uint32 reward_id = 7;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionTable, _impl_.reward_id_), 5>(),
      {56, 5, 0, PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.reward_id_)}},
+    // repeated uint32 next_mission_id = 8;
+    {::_pbi::TcParser::FastV32P1,
+     {66, 63, 0, PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.next_mission_id_)}},
+    // repeated uint32 target_count = 9;
+    {::_pbi::TcParser::FastV32P1,
+     {74, 63, 0, PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.target_count_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -362,6 +384,9 @@ MissionTable::_table_ = {
     // repeated uint32 next_mission_id = 8;
     {PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.next_mission_id_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
+    // repeated uint32 target_count = 9;
+    {PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.target_count_), -1, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
   }},
   // no aux_entries
   {{
@@ -376,6 +401,7 @@ PROTOBUF_NOINLINE void MissionTable::Clear() {
 
   _impl_.condition_id_.Clear();
   _impl_.next_mission_id_.Clear();
+  _impl_.target_count_.Clear();
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x0000003fu) != 0) {
     ::memset(&_impl_.id_, 0, static_cast<::size_t>(
@@ -473,6 +499,15 @@ PROTOBUF_NOINLINE void MissionTable::Clear() {
     }
   }
 
+  // repeated uint32 target_count = 9;
+  {
+    int byte_size = this_._impl_._target_count_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteUInt32Packed(
+          9, this_._internal_target_count(), byte_size, target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -511,6 +546,13 @@ PROTOBUF_NOINLINE void MissionTable::Clear() {
           ::_pbi::WireFormatLite::UInt32SizeWithPackedTagSize(
               this_._internal_next_mission_id(), 1,
               this_._impl_._next_mission_id_cached_byte_size_);
+    }
+    // repeated uint32 target_count = 9;
+    {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt32SizeWithPackedTagSize(
+              this_._internal_target_count(), 1,
+              this_._impl_._target_count_cached_byte_size_);
     }
   }
   cached_has_bits = this_._impl_._has_bits_[0];
@@ -572,6 +614,7 @@ void MissionTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::go
 
   _this->_internal_mutable_condition_id()->MergeFrom(from._internal_condition_id());
   _this->_internal_mutable_next_mission_id()->MergeFrom(from._internal_next_mission_id());
+  _this->_internal_mutable_target_count()->MergeFrom(from._internal_target_count());
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x0000003fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
@@ -623,6 +666,7 @@ void MissionTable::InternalSwap(MissionTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.condition_id_.InternalSwap(&other->_impl_.condition_id_);
   _impl_.next_mission_id_.InternalSwap(&other->_impl_.next_mission_id_);
+  _impl_.target_count_.InternalSwap(&other->_impl_.target_count_);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MissionTable, _impl_.reward_id_)
       + sizeof(MissionTable::_impl_.reward_id_)
