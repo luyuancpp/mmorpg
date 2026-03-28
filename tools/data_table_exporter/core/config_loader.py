@@ -40,9 +40,8 @@ class ExporterConfig:
     data_dir: Path = field(default_factory=Path)
     operator_file: Path = field(default_factory=Path)
     tip_file: Path = field(default_factory=Path)
-    data_begin_row: int = 20
+    data_begin_row: int = 7
     metadata_rows: dict[str, int] = field(default_factory=dict)
-    field_info_end_row: int = 18
     server_owner_types: list[str] = field(default_factory=lambda: ["server", "common"])
 
     # Output
@@ -113,9 +112,8 @@ def load_config(config_path: str | Path | None = None) -> ExporterConfig:
         data_dir=_resolve(base, excel.get("data_dir")),
         operator_file=_resolve(base, excel.get("operator_file")),
         tip_file=_resolve(base, excel.get("tip_file")),
-        data_begin_row=excel.get("data_begin_row", 20),
+        data_begin_row=excel.get("data_begin_row", 7),
         metadata_rows=excel.get("metadata_rows", {}),
-        field_info_end_row=excel.get("field_info_end_row", 18),
         server_owner_types=excel.get("server_owner_types", ["server", "common"]),
 
         generated_dir=_resolve(base, output.get("generated_dir")),

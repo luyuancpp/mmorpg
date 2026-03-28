@@ -30,6 +30,7 @@ spec:
       containers:
         - name: etcd
           image: bitnami/etcd:latest
+          imagePullPolicy: IfNotPresent
           env:
             - name: ALLOW_NONE_AUTHENTICATION
               value: "yes"
@@ -40,9 +41,9 @@ spec:
             - name: ETCD_LISTEN_PEER_URLS
               value: "http://0.0.0.0:2380"
             - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
-              value: "http://localhost:2380"
+              value: "http://0.0.0.0:2380"
             - name: ETCD_INITIAL_CLUSTER
-              value: "default=http://localhost:2380"
+              value: "default=http://0.0.0.0:2380"
           ports:
             - containerPort: 2379
               name: client

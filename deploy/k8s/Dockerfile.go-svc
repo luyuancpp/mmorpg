@@ -48,6 +48,10 @@ COPY --from=builder /app/service /app/service
 ARG SERVICE
 COPY ${SERVICE}/etc/ /app/etc/
 
+# Optional data directory (e.g., db/data/ with table JSON definitions)
+# The wildcard pattern avoids build failure if the dir doesn't exist.
+COPY ${SERVICE}/data*/ /app/data/
+
 EXPOSE 8080
 
 ENTRYPOINT ["/app/service"]

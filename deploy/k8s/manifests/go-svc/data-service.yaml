@@ -35,6 +35,9 @@ spec:
         - name: data-service
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: IfNotPresent
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
           args: ["-f", "/app/etc/data_service.yaml"]
           ports:
             - containerPort: 9000

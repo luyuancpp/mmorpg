@@ -2,6 +2,15 @@
 
 Also provides data-access helpers so that generators never need to
 re-open or re-parse workbooks themselves.
+
+Excel header format (6 rows):
+    Row 1: field names
+    Row 2: proto types
+    Row 3: struct — repeated | set | map_key | map_value | message:Name
+    Row 4: owner
+    Row 5: options (space-separated tokens)
+    Row 6: comment
+    Row 7+: data
 """
 
 from __future__ import annotations
@@ -18,9 +27,8 @@ from core.file_utils import list_xlsx
 from core.schema import (
     ArrayField,
     ColumnDef,
-    ForeignKeyRef,
-    GroupForeignKeyRef,
     GroupField,
+    MapField,
     TableSchema,
 )
 
@@ -51,10 +59,10 @@ def read_table(file_path: Path, cfg: ExporterConfig) -> Optional[TableSchema]:
         return None
 
     columns = _parse_columns(ws, cfg)
-    arrays, groups = _detect_layout(columns)
+    arrays, groups, maps = _detect_layout(columns)
 
-    multi_cell = ws.cell(row=5, column=1).value
-    use_flat_multimap = isinstance(multi_cell, str) and multi_cell.strip().lower() == "multi"
+    first_col = columns[0] if columns else None
+    use_flat_multimap = first_col is not None and first_col.is_multi_key
 
     constants_idx = next(
         (c.excel_index for c in columns if c.name == "constants_name"), None
@@ -66,6 +74,7 @@ def read_table(file_path: Path, cfg: ExporterConfig) -> Optional[TableSchema]:
         columns=columns,
         arrays=arrays,
         groups=groups,
+        maps=maps,
         use_flat_multimap=use_flat_multimap,
         has_constants_name=constants_idx is not None,
         constants_name_index=constants_idx,
@@ -112,12 +121,12 @@ def read_data_rows(schema: TableSchema, cfg: ExporterConfig) -> list[dict]:
     server_names = {c.name for c in schema.columns if c.is_server}
     col_names = [c.name for c in schema.columns]
     col_types = {c.name: c.data_type for c in schema.columns}
-    grouped_names = _grouped_column_names(schema)
+    col_to_group = schema.col_to_group
 
     rows: list[dict] = []
     for excel_row in ws.iter_rows(min_row=cfg.data_begin_row, values_only=False):
         row_data = _build_row(excel_row, schema, col_names, col_types,
-                              server_names, grouped_names)
+                              server_names, col_to_group)
         if row_data:
             rows.append(row_data)
     return rows
@@ -144,33 +153,20 @@ def _parse_columns(ws, cfg: ExporterConfig) -> list[ColumnDef]:
             continue
 
         data_type = _cell_str(ws, meta.get("data_type", 2), col_1based) or "int32"
+        struct = _cell_str(ws, meta.get("struct", 3), col_1based).lower()
         owner = _cell_str(ws, meta.get("owner", 4), col_1based).lower()
-        map_role = _cell_str(ws, meta.get("map_type", 3), col_1based).lower()
-        multi_val = _cell_str(ws, meta.get("multi_key", 5), col_1based).lower()
-        tkey_val = _cell_str(ws, meta.get("table_key", 6), col_1based).lower()
-        expr_type = _cell_str(ws, meta.get("expression_type", 7), col_1based)
-        expr_params_raw = _cell_str(ws, meta.get("expression_params", 8), col_1based)
-        fk_raw = _cell_str(ws, meta.get("foreign_key", 9), col_1based)
-        gfk_raw = _cell_str(ws, meta.get("group_foreign_key", 10), col_1based)
-        bit_val = _cell_str(ws, meta.get("bit_index_marker_row", 6), col_1based).lower()
+        options_raw = _cell_str(ws, meta.get("options", 5), col_1based)
+        comment = _cell_str(ws, meta.get("comment", 6), col_1based)
 
-        expr_params = (
-            [p.strip() for p in expr_params_raw.split(",") if p.strip()]
-            if expr_params_raw else []
-        )
+        options = options_raw.split() if options_raw else []
 
         columns.append(ColumnDef(
             name=name,
             data_type=data_type,
             owner=owner,
-            map_role=map_role,
-            is_table_key=(tkey_val == "table_key"),
-            is_multi_key=(multi_val == "multi"),
-            expression_type=expr_type,
-            expression_params=expr_params,
-            has_bit_index=(bit_val == "bit_index"),
-            foreign_key=ForeignKeyRef.parse(fk_raw),
-            group_foreign_key=GroupForeignKeyRef.parse(gfk_raw),
+            struct=struct,
+            options=options,
+            comment=comment,
             excel_index=idx,
         ))
 
@@ -178,62 +174,57 @@ def _parse_columns(ws, cfg: ExporterConfig) -> list[ColumnDef]:
 
 
 # ---------------------------------------------------------------------------
-# Internal — layout detection
+# Internal — layout detection (driven by struct row)
 # ---------------------------------------------------------------------------
 
 def _detect_layout(
     columns: list[ColumnDef],
-) -> tuple[dict[str, ArrayField], dict[str, GroupField]]:
-    """Detect array columns (consecutive same-name) and group columns
-    (non-consecutive same-name pattern)."""
-    names = [c.name for c in columns]
-    n = len(names)
+) -> tuple[dict[str, ArrayField], dict[str, GroupField], dict[str, MapField]]:
+    """Detect arrays, message groups, and maps from the struct row."""
 
-    # --- arrays: consecutive runs of the same name ---
+    # --- repeated fields ---
     arrays: dict[str, ArrayField] = {}
-    i = 0
-    while i < n:
-        j = i + 1
-        while j < n and names[j] == names[i]:
-            j += 1
-        if j - i > 1:
-            arrays[names[i]] = ArrayField(
-                name=names[i],
-                data_type=columns[i].data_type,
-                indices=list(range(i, j)),
-            )
-        i = j
+    repeated_cols: dict[str, list[ColumnDef]] = {}
+    for col in columns:
+        if col.struct == "repeated":
+            repeated_cols.setdefault(col.name, []).append(col)
+    for name, cols in repeated_cols.items():
+        arrays[name] = ArrayField(
+            name=name,
+            data_type=cols[0].data_type,
+            indices=[c.excel_index for c in cols],
+        )
 
-    # --- groups: same name appears non-consecutively ---
+    # --- message groups ---
     groups: dict[str, GroupField] = {}
-    grouped: set[str] = set()
-    seen: dict[str, int] = {}
-    for i, name in enumerate(names):
-        if name in arrays or name in grouped:
-            continue
-        if name in seen:
-            first = seen[name]
-            indices = list(range(first, i + 1))
-            prefix = _common_prefix(names[first], names[first + 1] if first + 1 < n else "")
-            gname = prefix or name
-            groups[gname] = GroupField(
-                name=gname,
-                columns=[columns[gi] for gi in indices],
-                indices=indices,
-            )
-            grouped.update(names[gi] for gi in indices)
+    for col in columns:
+        if col.struct.startswith("message:"):
+            msg_name = col.struct.split(":", 1)[1]
+            if msg_name not in groups:
+                groups[msg_name] = GroupField(name=msg_name, columns=[], indices=[])
+            # Only add unique column names to columns (for sub-message definition)
+            existing = {c.name for c in groups[msg_name].columns}
+            if col.name not in existing:
+                groups[msg_name].columns.append(col)
+            groups[msg_name].indices.append(col.excel_index)
+
+    # --- maps (consecutive map_key + map_value pairs) ---
+    maps: dict[str, MapField] = {}
+    i = 0
+    while i < len(columns):
+        if columns[i].struct == "map_key" and i + 1 < len(columns) and columns[i + 1].struct == "map_value":
+            prefix = _common_prefix(columns[i].name, columns[i + 1].name)
+            if prefix and prefix not in maps:
+                maps[prefix] = MapField(
+                    name=prefix,
+                    key_type=columns[i].data_type,
+                    value_type=columns[i + 1].data_type,
+                )
+            i += 2
         else:
-            seen[name] = i
+            i += 1
 
-    # Auto-assign map_value role to second column of map groups.
-    for gf in groups.values():
-        if len(gf.indices) >= 2:
-            first_col = columns[gf.indices[0]]
-            second_col = columns[gf.indices[1]]
-            if first_col.map_role == "map_key" and not second_col.map_role:
-                second_col.map_role = "map_value"
-
-    return arrays, groups
+    return arrays, groups, maps
 
 
 def _common_prefix(a: str, b: str) -> str:
@@ -252,73 +243,63 @@ def _common_prefix(a: str, b: str) -> str:
 # Internal — data row building
 # ---------------------------------------------------------------------------
 
-def _grouped_column_names(schema: TableSchema) -> set[str]:
-    """Return column names that belong to any group."""
-    col_names = [c.name for c in schema.columns]
-    result: set[str] = set()
-    for g in schema.groups.values():
-        result.update(col_names[i] for i in g.indices)
-    return result
-
-
 def _build_row(
     excel_row,
     schema: TableSchema,
     col_names: list[str],
     col_types: dict[str, str],
     server_names: set[str],
-    grouped_names: set[str],
+    col_to_group: dict[int, str],
 ) -> dict:
     """Convert one Excel data row into a structured dict."""
     row_data: dict = {}
-    prev_value = None
+    pending_map_key = None
 
     for idx, cell in enumerate(excel_row):
         if idx >= len(col_names):
             break
         name = col_names[idx]
         if not name or name not in server_names:
-            prev_value = cell.value
             continue
 
         value = _convert_cell(cell.value, col_types.get(name, ""))
         if value is None:
-            prev_value = cell.value
+            pending_map_key = None
             continue
 
         col = schema.columns[idx]
 
-        if name in schema.arrays:
+        if col.map_role == "set":
+            row_data.setdefault(name, {})[value] = True
+        elif col.map_role == "map_key":
+            pending_map_key = value
+        elif col.map_role == "map_value" and pending_map_key is not None:
+            prefix = _common_prefix(col_names[idx - 1], name) if idx > 0 else name
+            row_data.setdefault(prefix, {})[pending_map_key] = value
+            pending_map_key = None
+        elif name in schema.arrays:
             if value not in (0, -1, ""):
                 row_data.setdefault(name, []).append(value)
-        elif col.map_role == "set":
-            row_data.setdefault(name, {})[value] = True
-        elif col.map_role == "map_value" and prev_value is not None:
-            group_key = name.split("_")[0]
-            row_data.setdefault(group_key, {})[prev_value] = value
-        elif name in grouped_names:
-            if value not in (0, -1, ""):
-                _append_to_group(row_data, name, value)
+        elif idx in col_to_group:
+            group_name = col_to_group[idx]
+            _append_to_group(row_data, group_name, name, value)
         else:
             row_data[name] = value
-
-        prev_value = cell.value
 
     return row_data
 
 
-def _append_to_group(row_data: dict, name: str, value) -> None:
+def _append_to_group(row_data: dict, group_name: str, col_name: str, value) -> None:
     """Append a value into the correct group sub-list."""
-    group_key = name.split("_")[0]
-    member = {name: value}
-    if group_key in row_data:
-        last = row_data[group_key][-1]
-        if name in last:
-            row_data[group_key].append(member)
+    member = {col_name: value}
+    if group_name in row_data:
+        last = row_data[group_name][-1]
+        if col_name in last:
+            row_data[group_name].append(member)
         else:
-            last[name] = value
+            last[col_name] = value
     else:
-        row_data[group_key] = [member]
+        row_data[group_name] = [member]
 
 
 def _convert_cell(value, data_type: str):

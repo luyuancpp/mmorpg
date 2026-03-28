@@ -380,7 +380,8 @@ Etcd:
 ServerConfig:
   JsonPath: "/app/data/mysql_database_table_list.json"
   Kafka:
-    Brokers: "kafka:9092"
+    Brokers:
+      - "kafka:9092"
     GroupID: "db_rpc_consumer_group"
     Topic: "db_task_topic"
     PartitionCnt: 5
@@ -481,7 +482,8 @@ PlayerLocatorRpc:
     Key: playerlocator.rpc
   Timeout: 5000
 Kafka:
-  Brokers: "kafka:9092"
+  Brokers:
+    - "kafka:9092"
   GroupID: "db_rpc_consumer_group"
   Topic: "db_task_topic"
   PartitionCnt: 5
@@ -489,6 +491,14 @@ Kafka:
   DialTimeout: 10s
   ReadTimeout: 30s
   WriteTimeout: 10s
+  RetryMax: 3
+  RetryBackoff: 100ms
+  ChannelBuffer: 1024
+  SyncInterval: 30s
+  StatsInterval: 5m
+  CompressionType: 0
+  Idempotent: true
+  MaxOpenRequests: 1
 "@
 		}
 		"player-locator" {
@@ -500,7 +510,7 @@ Etcd:
   Hosts:
     - "etcd:2379"
   Key: playerlocator.rpc
-Redis:
+RedisClient:
   Host: redis:6379
   Password: ""
   DB: 0
