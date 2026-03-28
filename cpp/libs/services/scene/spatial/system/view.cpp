@@ -8,6 +8,10 @@
 #include "proto/scene/player_scene.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/npc_comp.pb.h"
+#include "combat/buff/comp/buff_comp.h"
+#include "combat/buff/constants/buff.h"
+#include "spatial/comp/scene_node_scene_comp.h"
+#include "table/buff_table.h"
 
 #include "engine/core/type_define/type_define.h"
 #include "network/player_message_utils.h"
@@ -120,5 +124,44 @@ void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
     transform.mutable_rotation()->set_x(pitch);
     transform.mutable_rotation()->set_y(yaw);
     transform.mutable_rotation()->set_z(0); // Keep Z rotation at 0
+}
+
+bool ViewSystem::IsStealthed(entt::entity entity)
+{
+    const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(entity);
+    if (buffList == nullptr) return false;
+
+    for (const auto& [_, buffEntry] : *buffList)
+    {
+        const auto [table, result] = BuffTableManager::Instance().GetTable(buffEntry.buffPb.buff_table_id());
+        if (table && table->buff_type() == kBuffTypeStealth)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ViewSystem::CanSee(entt::entity observer, entt::entity target)
+{
+    // Distance check first (cheapest).
+    if (!IsWithinViewRadius(observer, target)) return false;
+
+    // Stealth check: stealthed targets are invisible unless observer
+    // has a pinned interest in them (e.g. skill/buff forced visibility).
+    if (IsStealthed(target))
+    {
+        // Check if observer has the target pinned in its interest list.
+        const auto* aoiList = tlsEcs.actorRegistry.try_get<AoiListComp>(observer);
+        if (aoiList == nullptr) return false;
+
+        auto it = aoiList->entries.find(target);
+        if (it == aoiList->entries.end() || it->second.priority < AoiPriority::kPinned)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 

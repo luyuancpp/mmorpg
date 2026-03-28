@@ -3,11 +3,14 @@
 #include "hexagons_grid.h"
 #include "core/network/message_system.h"
 #include "spatial/comp/grid_comp.h"
+#include "spatial/comp/scene_node_scene_comp.h"
+#include "spatial/constants/aoi_priority.h"
 #include "spatial/system/grid.h"
 #include "spatial/system/interest.h"
 #include "spatial/system/view.h"
 #include "muduo/base/Logging.h"
 #include "proto/common/component/actor_comp.pb.h"
+#include "proto/common/component/team_comp.pb.h"
 #include "proto/common/event/scene_event.pb.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "core/utils/stat/stat.h"
@@ -15,6 +18,24 @@
 #include "network/player_message_utils.h"
 #include <thread_context/registry_manager.h>
 #include <modules/scene/comp/scene_comp.h>
+
+// Determine the interest priority tag that |observer| should assign to |target|.
+// The tag is a semantic category; the active AoiPriorityPolicy turns it into a
+// numeric weight for eviction decisions.
+static AoiPriority DetermineAoiPriority(entt::entity observer, entt::entity target)
+{
+    // Same team → kTeammate
+    const auto* observerTeam = tlsEcs.actorRegistry.try_get<TeamId>(observer);
+    const auto* targetTeam   = tlsEcs.actorRegistry.try_get<TeamId>(target);
+    if (observerTeam && targetTeam &&
+        observerTeam->team_id() != 0 &&
+        observerTeam->team_id() == targetTeam->team_id())
+    {
+        return AoiPriority::kTeammate;
+    }
+
+    return AoiPriority::kNormal;
+}
 
 
 void AoiSystem::Update(double delta) {
@@ -77,7 +98,7 @@ void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& g
                                        const GridSet& gridsToEnter, const GridSet& gridsToLeave) {
     EntityUnorderedSet entitiesEnteringView, entitiesLeavingView;
 
-    // Entities entering grids
+    // Entities in grids the observer is entering
     for (const auto& gridId : gridsToEnter) {
         auto gridIt = gridList.find(gridId);
         if (gridIt == gridList.end()) continue;
@@ -85,30 +106,45 @@ void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& g
         for (const auto& otherEntity : gridIt->second.entities) {
             if (otherEntity == entity) continue;
 
-            if (ViewSystem::IsWithinViewRadius(entity, otherEntity)) {
-                entitiesEnteringView.insert(otherEntity);
-                InterestSystem::AddAoiEntity(entity, otherEntity);
+            if (ViewSystem::CanSee(entity, otherEntity)) {
+                const auto priority = DetermineAoiPriority(entity, otherEntity);
+                if (InterestSystem::AddAoiEntity(entity, otherEntity, priority)) {
+                    entitiesEnteringView.insert(otherEntity);
+                }
             }
 
-            if (ViewSystem::IsWithinViewRadius(otherEntity, entity)) {
-                InterestSystem::AddAoiEntity(otherEntity, entity);
+            if (ViewSystem::CanSee(otherEntity, entity)) {
+                const auto priority = DetermineAoiPriority(otherEntity, entity);
+                InterestSystem::AddAoiEntity(otherEntity, entity, priority);
             }
         }
     }
 
-    // Entities leaving grids
+    // Entities in grids the observer is leaving
     for (const auto& gridId : gridsToLeave) {
         auto gridIt = gridList.find(gridId);
         if (gridIt == gridList.end()) continue;
 
         for (const auto& otherEntity : gridIt->second.entities) {
-            if (ViewSystem::IsWithinViewRadius(entity, otherEntity)) {
-                entitiesLeavingView.insert(otherEntity);
-                InterestSystem::RemoveAoiEntity(entity, otherEntity);
+            // Skip removal of pinned entities — they are managed by buff/skill lifecycle.
+            auto* entityAoi = tlsEcs.actorRegistry.try_get<AoiListComp>(entity);
+            if (entityAoi) {
+                auto it = entityAoi->entries.find(otherEntity);
+                if (it != entityAoi->entries.end() && it->second.priority == AoiPriority::kPinned) {
+                    // Pinned — do not remove.
+                } else if (it != entityAoi->entries.end()) {
+                    entitiesLeavingView.insert(otherEntity);
+                    InterestSystem::RemoveAoiEntity(entity, otherEntity);
+                }
             }
 
-            if (ViewSystem::IsWithinViewRadius(otherEntity, entity)) {
-                InterestSystem::RemoveAoiEntity(otherEntity, entity);
+            // Reverse direction: remove entity from other's list (unless pinned there).
+            auto* otherAoi = tlsEcs.actorRegistry.try_get<AoiListComp>(otherEntity);
+            if (otherAoi) {
+                auto it = otherAoi->entries.find(entity);
+                if (it != otherAoi->entries.end() && it->second.priority != AoiPriority::kPinned) {
+                    InterestSystem::RemoveAoiEntity(otherEntity, entity);
+                }
             }
         }
     }
