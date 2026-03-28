@@ -144,14 +144,15 @@ const char descriptor_table_protodef_actoractionstate_5ftable_2eproto[] ABSL_ATT
     "tate_tip\030\002 \001(\r\"J\n\025ActorActionStateTable\022"
     "\n\n\002id\030\001 \001(\r\022%\n\005state\030\002 \003(\0132\026.ActorAction"
     "Statestate\"A\n\031ActorActionStateTableData\022"
-    "$\n\004data\030\001 \003(\0132\026.ActorActionStateTableB\024Z"
-    "\022generated/pb/tableb\006proto3"
+    "$\n\004data\030\001 \003(\0132\026.ActorActionStateTableBG\n"
+    "\016com.game.tableB\037ActorActionStateTableOu"
+    "terClassP\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_actoractionstate_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_actoractionstate_5ftable_2eproto = {
     false,
     false,
-    267,
+    318,
     descriptor_table_protodef_actoractionstate_5ftable_2eproto,
     "actoractionstate_table.proto",
     &descriptor_table_actoractionstate_5ftable_2eproto_once,

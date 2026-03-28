@@ -319,7 +319,8 @@ const file_buff_table_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"/\n" +
 	"\rBuffTableData\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
-	".BuffTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	".BuffTableR\x04dataB;\n" +
+	"\x0ecom.game.tableB\x13BuffTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_buff_table_proto_rawDescOnce sync.Once

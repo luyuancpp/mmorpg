@@ -52,4 +52,17 @@ public class AllTable {
     public static void onTablesLoadSuccess(Runnable callback) {
         loadSuccessCallback = callback;
     }
+
+    /**
+     * Reload all config tables (hot-reload safe).
+     * Each table manager's load() replaces its internal data atomically.
+     */
+    public static void reloadTables(String configDir) throws Exception {
+{% for item in sheetnames %}
+        {{ item }}TableManager.getInstance().load(configDir);
+{% endfor %}
+        if (loadSuccessCallback != null) {
+            loadSuccessCallback.run();
+        }
+    }
 }

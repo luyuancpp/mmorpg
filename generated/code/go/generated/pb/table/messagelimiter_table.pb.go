@@ -146,7 +146,8 @@ const file_messagelimiter_table_proto_rawDesc = "" +
 	"\vtip_message\x18\x04 \x01(\rR\n" +
 	"tipMessage\"C\n" +
 	"\x17MessageLimiterTableData\x12(\n" +
-	"\x04data\x18\x01 \x03(\v2\x14.MessageLimiterTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\x14.MessageLimiterTableR\x04dataBE\n" +
+	"\x0ecom.game.tableB\x1dMessageLimiterTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_messagelimiter_table_proto_rawDescOnce sync.Once

@@ -18,6 +18,7 @@ from core.generators.json_gen import generate_json
 from core.generators.proto_gen import (
     compile_proto_cpp,
     compile_proto_go,
+    compile_proto_java,
     generate_proto_files,
 )
 from core.generators.table_id_gen import generate_table_ids
@@ -49,6 +50,7 @@ def run(cfg: ExporterConfig) -> None:
     generate_tip_enums(cfg)
     compile_proto_cpp(cfg)
     compile_proto_go(cfg)
+    compile_proto_java(cfg)
     generate_config_classes(cfg, tables)
     generate_comp_headers(cfg, tables)
     generate_table_ids(cfg, tables)
@@ -90,6 +92,9 @@ def _deploy(cfg: ExporterConfig) -> None:
             for svc in scan.iterdir():
                 if svc.is_dir():
                     tasks.append((cfg.go.code_dir.parent, base / svc.name / "generated"))
+
+    if cfg.java.enabled:
+        tasks.extend((d["src"], d["dst"]) for d in cfg.java.deploy)
 
     ok, fail = 0, 0
     for src, dst in tasks:

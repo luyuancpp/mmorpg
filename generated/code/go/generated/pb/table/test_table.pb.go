@@ -226,7 +226,8 @@ const file_test_table_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"/\n" +
 	"\rTestTableData\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
-	".TestTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	".TestTableR\x04dataB;\n" +
+	"\x0ecom.game.tableB\x13TestTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_test_table_proto_rawDescOnce sync.Once

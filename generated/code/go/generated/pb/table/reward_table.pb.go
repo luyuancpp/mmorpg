@@ -182,7 +182,8 @@ const file_reward_table_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12%\n" +
 	"\x06reward\x18\x02 \x03(\v2\r.RewardrewardR\x06reward\"3\n" +
 	"\x0fRewardTableData\x12 \n" +
-	"\x04data\x18\x01 \x03(\v2\f.RewardTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\f.RewardTableR\x04dataB=\n" +
+	"\x0ecom.game.tableB\x15RewardTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_reward_table_proto_rawDescOnce sync.Once

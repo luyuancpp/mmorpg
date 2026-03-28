@@ -282,3 +282,14 @@ void LoadTablesAsync() {
 void OnTablesLoadSuccess(const LoadSuccessCallback& callback) {
     loadSuccessCallback = callback;
 }
+
+static uint64_t tableLoadVersion = 0;
+
+void ReloadTables() {
+    LoadTables();
+    ++tableLoadVersion;
+}
+
+uint64_t GetTableLoadVersion() {
+    return tableLoadVersion;
+}

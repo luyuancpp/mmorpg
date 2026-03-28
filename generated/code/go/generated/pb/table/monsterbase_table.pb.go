@@ -117,7 +117,8 @@ const file_monsterbase_table_proto_rawDesc = "" +
 	"\x10MonsterBaseTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\"=\n" +
 	"\x14MonsterBaseTableData\x12%\n" +
-	"\x04data\x18\x01 \x03(\v2\x11.MonsterBaseTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\x11.MonsterBaseTableR\x04dataBB\n" +
+	"\x0ecom.game.tableB\x1aMonsterBaseTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_monsterbase_table_proto_rawDescOnce sync.Once

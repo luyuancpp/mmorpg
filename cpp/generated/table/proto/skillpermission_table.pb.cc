@@ -108,14 +108,15 @@ const char descriptor_table_protodef_skillpermission_5ftable_2eproto[] ABSL_ATTR
     "\n\033skillpermission_table.proto\"6\n\024SkillPe"
     "rmissionTable\022\n\n\002id\030\001 \001(\r\022\022\n\nskill_type\030"
     "\002 \003(\r\"\?\n\030SkillPermissionTableData\022#\n\004dat"
-    "a\030\001 \003(\0132\025.SkillPermissionTableB\024Z\022genera"
-    "ted/pb/tableb\006proto3"
+    "a\030\001 \003(\0132\025.SkillPermissionTableBF\n\016com.ga"
+    "me.tableB\036SkillPermissionTableOuterClass"
+    "P\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skillpermission_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_skillpermission_5ftable_2eproto = {
     false,
     false,
-    180,
+    230,
     descriptor_table_protodef_skillpermission_5ftable_2eproto,
     "skillpermission_table.proto",
     &descriptor_table_skillpermission_5ftable_2eproto_once,

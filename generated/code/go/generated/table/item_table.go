@@ -12,14 +12,14 @@ import (
 
 type ItemTableManager struct {
     data   []*pb.ItemTable
-    kvData map[int32]*pb.ItemTable
+    kvData map[uint32]*pb.ItemTable
 }
 
 var ItemTableManagerInstance = NewItemTableManager()
 
 func NewItemTableManager() *ItemTableManager {
     return &ItemTableManager{
-        kvData: make(map[int32]*pb.ItemTable),
+        kvData: make(map[uint32]*pb.ItemTable),
     }
 }
 
@@ -43,7 +43,7 @@ func (m *ItemTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *ItemTableManager) GetById(id int32) (*pb.ItemTable, bool) {
+func (m *ItemTableManager) GetById(id uint32) (*pb.ItemTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

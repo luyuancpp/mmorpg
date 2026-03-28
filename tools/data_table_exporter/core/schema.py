@@ -189,6 +189,15 @@ class TableSchema:
         return [c for c in self.columns if c.is_server]
 
     @property
+    def id_column(self) -> ColumnDef:
+        """The ``id`` column (always first server column named 'id')."""
+        for c in self.columns:
+            if c.name == "id" and c.is_server:
+                return c
+        # fallback: first server column
+        return self.server_columns[0]
+
+    @property
     def table_keys(self) -> list[ColumnDef]:
         return [c for c in self.columns if c.is_table_key]
 

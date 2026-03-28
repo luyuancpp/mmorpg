@@ -12,14 +12,20 @@ import (
 
 type SkillTableManager struct {
     data   []*pb.SkillTable
-    kvData map[int32]*pb.SkillTable
+    kvData map[uint32]*pb.SkillTable
+    idxSkill_type map[uint32][]*pb.SkillTable
+    idxTargeting_mode map[uint32][]*pb.SkillTable
+    idxEffect map[uint32][]*pb.SkillTable
 }
 
 var SkillTableManagerInstance = NewSkillTableManager()
 
 func NewSkillTableManager() *SkillTableManager {
     return &SkillTableManager{
-        kvData: make(map[int32]*pb.SkillTable),
+        kvData: make(map[uint32]*pb.SkillTable),
+        idxSkill_type: make(map[uint32][]*pb.SkillTable),
+        idxTargeting_mode: make(map[uint32][]*pb.SkillTable),
+        idxEffect: make(map[uint32][]*pb.SkillTable),
     }
 }
 
@@ -37,14 +43,38 @@ func (m *SkillTableManager) Load(configDir string) error {
 
     for _, row := range container.Data {
         m.kvData[row.Id] = row
+        for _, elem := range row.SkillType {
+            m.idxSkill_type[elem] = append(m.idxSkill_type[elem], row)
+        }
+        for _, elem := range row.TargetingMode {
+            m.idxTargeting_mode[elem] = append(m.idxTargeting_mode[elem], row)
+        }
+        for _, elem := range row.Effect {
+            m.idxEffect[elem] = append(m.idxEffect[elem], row)
+        }
     }
 
     m.data = container.Data
     return nil
 }
 
-func (m *SkillTableManager) GetById(id int32) (*pb.SkillTable, bool) {
+func (m *SkillTableManager) GetById(id uint32) (*pb.SkillTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
+}
+
+
+func (m *SkillTableManager) GetBySkill_typeIndex(key uint32) []*pb.SkillTable {
+    return m.idxSkill_type[key]
+}
+
+
+func (m *SkillTableManager) GetByTargeting_modeIndex(key uint32) []*pb.SkillTable {
+    return m.idxTargeting_mode[key]
+}
+
+
+func (m *SkillTableManager) GetByEffectIndex(key uint32) []*pb.SkillTable {
+    return m.idxEffect[key]
 }
 

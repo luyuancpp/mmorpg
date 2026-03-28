@@ -283,7 +283,8 @@ const file_testmultikey_table_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"?\n" +
 	"\x15TestMultiKeyTableData\x12&\n" +
-	"\x04data\x18\x01 \x03(\v2\x12.TestMultiKeyTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\x12.TestMultiKeyTableR\x04dataBC\n" +
+	"\x0ecom.game.tableB\x1bTestMultiKeyTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_testmultikey_table_proto_rawDescOnce sync.Once

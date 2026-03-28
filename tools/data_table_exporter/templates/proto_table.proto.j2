@@ -2,6 +2,11 @@
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
+{% if java_package %}
+option java_package = "{{ java_package }}";
+option java_outer_classname = "{{ table.name }}TableOuterClass";
+option java_multiple_files = true;
+{% endif %}
 
 {% for group in table.groups.values() -%}
 message {{ table.name }}{{ group.name }} {

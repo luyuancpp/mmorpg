@@ -107,14 +107,15 @@ const char descriptor_table_protodef_class_5ftable_2eproto[] ABSL_ATTRIBUTE_SECT
     protodesc_cold) = {
     "\n\021class_table.proto\"\'\n\nClassTable\022\n\n\002id\030"
     "\001 \001(\r\022\r\n\005skill\030\002 \003(\r\"+\n\016ClassTableData\022\031"
-    "\n\004data\030\001 \003(\0132\013.ClassTableB\024Z\022generated/p"
+    "\n\004data\030\001 \003(\0132\013.ClassTableB<\n\016com.game.ta"
+    "bleB\024ClassTableOuterClassP\001Z\022generated/p"
     "b/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_class_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_class_5ftable_2eproto = {
     false,
     false,
-    135,
+    175,
     descriptor_table_protodef_class_5ftable_2eproto,
     "class_table.proto",
     &descriptor_table_class_5ftable_2eproto_once,

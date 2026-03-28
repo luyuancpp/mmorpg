@@ -89,6 +89,7 @@ def _go_ctx(table: TableSchema, cfg: ExporterConfig) -> dict:
         table=table,
         sheetname=table.name,
         to_go_type=type_mapping.to_go_type,
+        to_go_proto_field=type_mapping.to_go_proto_field,
         proto_import_path=cfg.go.proto_import_path,
     )
 
@@ -118,5 +119,7 @@ def _java_ctx(table: TableSchema, cfg: ExporterConfig) -> dict:
         sheetname=table.name,
         to_java_type=type_mapping.to_java_type,
         to_java_boxed=type_mapping.to_java_boxed,
+        to_java_proto_getter=type_mapping.to_java_proto_getter,
+        to_java_repeated_elem_type=type_mapping.to_java_repeated_elem_type,
         package=cfg.java.package,
     )

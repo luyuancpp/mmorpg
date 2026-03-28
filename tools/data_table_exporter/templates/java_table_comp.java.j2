@@ -1,0 +1,33 @@
+{# java_table_comp.java.j2 — per-column component records for one data table #}
+package {{ package }};
+
+import java.util.List;
+
+/**
+ * Auto-generated per-column component records for {{ sheetname }}Table.
+ * DO NOT EDIT — regenerate from Excel via Data Table Exporter.
+ */
+public final class {{ sheetname }}TableComp {
+
+    private {{ sheetname }}TableComp() {}
+
+    // ============================================================
+    // Scalar columns → value records
+    // Repeated columns → list records
+    // ============================================================
+
+{% for col in table.scalar_comp_columns %}
+    public record {{ col.name | title }}({{ to_java_type(col.data_type) }} value) {
+        public static {{ col.name | title }} from({{ sheetname }}Table row) {
+            return new {{ col.name | title }}(row.{{ to_java_proto_getter(col.name) }}());
+        }
+    }
+{% endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+    public record {{ arr.name | title }}(List<{{ to_java_repeated_elem_type(arr.data_type) }}> values) {
+        public static {{ arr.name | title }} from({{ sheetname }}Table row) {
+            return new {{ arr.name | title }}(row.{{ to_java_proto_getter(arr.name) }}List());
+        }
+    }
+{% endfor %}
+}

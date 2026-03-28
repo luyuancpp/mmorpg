@@ -270,13 +270,14 @@ const char descriptor_table_protodef_buff_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTI
     "ntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\0320\n\016"
     "DispelTagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001"
     "(\010:\0028\001\")\n\rBuffTableData\022\030\n\004data\030\001 \003(\0132\n."
-    "BuffTableB\024Z\022generated/pb/tableb\006proto3"
+    "BuffTableB;\n\016com.game.tableB\023BuffTableOu"
+    "terClassP\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_buff_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_buff_5ftable_2eproto = {
     false,
     false,
-    799,
+    838,
     descriptor_table_protodef_buff_5ftable_2eproto,
     "buff_table.proto",
     &descriptor_table_buff_5ftable_2eproto_once,

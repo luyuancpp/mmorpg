@@ -181,7 +181,8 @@ const file_mission_table_proto_rawDesc = "" +
 	"\treward_id\x18\a \x01(\rR\brewardId\x12&\n" +
 	"\x0fnext_mission_id\x18\b \x03(\rR\rnextMissionId\"5\n" +
 	"\x10MissionTableData\x12!\n" +
-	"\x04data\x18\x01 \x03(\v2\r.MissionTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\r.MissionTableR\x04dataB>\n" +
+	"\x0ecom.game.tableB\x16MissionTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_mission_table_proto_rawDescOnce sync.Once

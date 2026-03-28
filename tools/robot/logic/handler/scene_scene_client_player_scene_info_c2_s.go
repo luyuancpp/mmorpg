@@ -1,0 +1,9 @@
+package handler
+
+import (
+	"robot/logic/gameobject"
+	"robot/proto/scene"
+)
+
+func SceneSceneClientPlayerSceneInfoC2SHandler(player *gameobject.Player, response *scene.SceneInfoRequest) {
+}

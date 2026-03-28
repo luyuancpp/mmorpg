@@ -106,14 +106,15 @@ const char descriptor_table_protodef_item_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTI
     protodesc_cold) = {
     "\n\020item_table.proto\"/\n\tItemTable\022\n\n\002id\030\001 "
     "\001(\r\022\026\n\016max_stack_size\030\002 \001(\r\")\n\rItemTable"
-    "Data\022\030\n\004data\030\001 \003(\0132\n.ItemTableB\024Z\022genera"
-    "ted/pb/tableb\006proto3"
+    "Data\022\030\n\004data\030\001 \003(\0132\n.ItemTableB;\n\016com.ga"
+    "me.tableB\023ItemTableOuterClassP\001Z\022generat"
+    "ed/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_item_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_item_5ftable_2eproto = {
     false,
     false,
-    140,
+    179,
     descriptor_table_protodef_item_5ftable_2eproto,
     "item_table.proto",
     &descriptor_table_item_5ftable_2eproto_once,

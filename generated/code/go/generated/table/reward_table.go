@@ -12,14 +12,14 @@ import (
 
 type RewardTableManager struct {
     data   []*pb.RewardTable
-    kvData map[int32]*pb.RewardTable
+    kvData map[uint32]*pb.RewardTable
 }
 
 var RewardTableManagerInstance = NewRewardTableManager()
 
 func NewRewardTableManager() *RewardTableManager {
     return &RewardTableManager{
-        kvData: make(map[int32]*pb.RewardTable),
+        kvData: make(map[uint32]*pb.RewardTable),
     }
 }
 
@@ -43,7 +43,7 @@ func (m *RewardTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *RewardTableManager) GetById(id int32) (*pb.RewardTable, bool) {
+func (m *RewardTableManager) GetById(id uint32) (*pb.RewardTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

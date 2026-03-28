@@ -103,14 +103,15 @@ const char descriptor_table_protodef_monsterbase_5ftable_2eproto[] ABSL_ATTRIBUT
     protodesc_cold) = {
     "\n\027monsterbase_table.proto\"\036\n\020MonsterBase"
     "Table\022\n\n\002id\030\001 \001(\r\"7\n\024MonsterBaseTableDat"
-    "a\022\037\n\004data\030\001 \003(\0132\021.MonsterBaseTableB\024Z\022ge"
-    "nerated/pb/tableb\006proto3"
+    "a\022\037\n\004data\030\001 \003(\0132\021.MonsterBaseTableBB\n\016co"
+    "m.game.tableB\032MonsterBaseTableOuterClass"
+    "P\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_monsterbase_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_monsterbase_5ftable_2eproto = {
     false,
     false,
-    144,
+    190,
     descriptor_table_protodef_monsterbase_5ftable_2eproto,
     "monsterbase_table.proto",
     &descriptor_table_monsterbase_5ftable_2eproto_once,

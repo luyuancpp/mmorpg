@@ -117,7 +117,8 @@ const file_globalvariable_table_proto_rawDesc = "" +
 	"\x13GlobalVariableTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\"C\n" +
 	"\x17GlobalVariableTableData\x12(\n" +
-	"\x04data\x18\x01 \x03(\v2\x14.GlobalVariableTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\x14.GlobalVariableTableR\x04dataBE\n" +
+	"\x0ecom.game.tableB\x1dGlobalVariableTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_globalvariable_table_proto_rawDescOnce sync.Once

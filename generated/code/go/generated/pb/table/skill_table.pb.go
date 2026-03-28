@@ -486,7 +486,8 @@ const file_skill_table_proto_rawDesc = "" +
 	"\x11required_resource\x18\x16 \x03(\v2\x17.Skillrequired_resourceR\x10requiredResource\x12A\n" +
 	"\x10request_resource\x18\x17 \x03(\v2\x16.Skillrequest_resourceR\x0frequestResource\"1\n" +
 	"\x0eSkillTableData\x12\x1f\n" +
-	"\x04data\x18\x01 \x03(\v2\v.SkillTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\v.SkillTableR\x04dataB<\n" +
+	"\x0ecom.game.tableB\x14SkillTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_skill_table_proto_rawDescOnce sync.Once
