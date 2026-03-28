@@ -3,14 +3,14 @@
 Defines the data structures that represent parsed Excel table metadata.
 All generators consume these models instead of raw Excel data.
 
-Excel header format (6 rows):
-    Row 1: field names
-    Row 2: proto types (int32, string, uint32, double, …)
-    Row 3: struct — "repeated", "set", "map_key", "map_value", "message:Name", or empty
-    Row 4: owner — "server", "client", "common", "design", or "constants_name"
-    Row 5: options — space-separated tokens: bit_index, key, multi, fk:T, gfk:T, expr:type, expr_params:a,b
-    Row 6: comment
-    Row 7+: data
+Excel header format (5 rows):
+    Row 1: field name — one name per logical field span (first col of span)
+    Row 2: type declaration — ``uint32``, ``map<K,V>``, ``set<T>``,
+           ``repeated uint32``, ``repeated { uint32 f1; uint32 f2 }``
+    Row 3: owner — "server", "client", "common", "design", or "constants_name"
+    Row 4: options — space-separated tokens: bit_index, key, multi, fk:T, gfk:T, expr:type, expr_params:a,b
+    Row 5: comment
+    Row 6+: data
 """
 
 from __future__ import annotations

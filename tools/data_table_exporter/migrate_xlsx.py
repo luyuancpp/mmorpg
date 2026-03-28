@@ -1,19 +1,16 @@
-"""Migrate all .xlsx files from old 19-row header to new 6-row compact header.
+"""Migrate all .xlsx files from proto-style 4-row header to 5-row header.
 
-Old format (rows 1–19):
-    1: column_name   2: data_type   3: map_type (set|map_key|map_value)
-    4: owner   5: multi_key   6: table_key / bit_index
-    7: expression_type   8: expression_params   9: foreign_key
-    10: group_foreign_key   11–18: (empty)   19: comment
-    20+: data
+Old format (rows 1–4):
+    1: field declarations — proto-like (type + name combined, e.g. "uint32 id")
+    2: owner   3: options   4: comment
+    5+: data
 
-New format (rows 1–6):
-    1: column_name   2: data_type
-    3: struct (repeated|set|map_key|map_value|message:Name)
-    4: owner
-    5: options (space-separated: bit_index key multi fk:T gfk:T expr:type expr_params:a,b)
-    6: comment
-    7+: data
+New format (rows 1–5):
+    1: field name only (e.g. "id")
+    2: type declaration only (e.g. "uint32", "map<string,string>",
+       "repeated { uint32 item; uint32 count }")
+    3: owner   4: options   5: comment
+    6+: data
 
 Usage:
     python migrate_xlsx.py [--dry-run]
@@ -21,14 +18,15 @@ Usage:
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
 import openpyxl
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
-OLD_DATA_BEGIN = 20
-NEW_DATA_BEGIN = 7
+OLD_DATA_BEGIN = 5
+NEW_DATA_BEGIN = 6
 
 
 def cell_str(ws, row: int, col: int) -> str:
@@ -36,177 +34,50 @@ def cell_str(ws, row: int, col: int) -> str:
     return str(v).strip() if v is not None else ""
 
 
-def compute_structs(names: list[str], map_types: list[str]) -> list[str]:
-    """Compute the new struct row from old map_type markers + pattern detection."""
-    n = len(names)
-    structs = [""] * n
+# ---------------------------------------------------------------------------
+# Split "type name" declarations into separate name and type parts
+# ---------------------------------------------------------------------------
 
-    # Step 1: copy explicit markers
-    for i in range(n):
-        mt = map_types[i].lower()
-        if mt in ("set", "map_key", "map_value"):
-            structs[i] = mt
-
-    # Step 2: propagate "set" to ALL columns with the same name
-    set_names = {names[i] for i in range(n) if structs[i] == "set" and names[i]}
-    for i in range(n):
-        if names[i] in set_names and not structs[i]:
-            structs[i] = "set"
-
-    # Step 3: propagate map_key/map_value to all matching name-pairs
-    map_pairs: set[tuple[str, str]] = set()
-    for i in range(n - 1):
-        if structs[i] == "map_key" and structs[i + 1] == "map_value":
-            map_pairs.add((names[i], names[i + 1]))
-    for i in range(n - 1):
-        if not structs[i] and not structs[i + 1]:
-            if (names[i], names[i + 1]) in map_pairs:
-                structs[i] = "map_key"
-                structs[i + 1] = "map_value"
-
-    # Step 4: detect repeated (consecutive same-name) and message groups
-    # First, find all columns still untagged
-    untagged = {i for i in range(n) if not structs[i] and names[i]}
-
-    # Find consecutive same-name runs among untagged columns
-    i = 0
-    while i < n:
-        if i not in untagged:
-            i += 1
-            continue
-        j = i + 1
-        while j < n and j in untagged and names[j] == names[i]:
-            j += 1
-        if j - i > 1:
-            for k in range(i, j):
-                structs[k] = "repeated"
-                untagged.discard(k)
-        i = j
-
-    # Find non-consecutive same-name patterns (message groups)
-    # Collect untagged names that appear more than once
-    name_positions: dict[str, list[int]] = {}
-    for i in sorted(untagged):
-        name_positions.setdefault(names[i], []).append(i)
-
-    repeated_names = {nm for nm, positions in name_positions.items() if len(positions) > 1}
-    if repeated_names:
-        # Find contiguous ranges that contain repeated names
-        groups = _find_message_groups(names, structs, repeated_names, untagged)
-        for group_name, indices in groups.items():
-            for idx in indices:
-                structs[idx] = f"message:{group_name}"
-
-    return structs
+_RE_MAP_DECL = re.compile(r'^(map\s*<\s*\w+\s*,\s*\w+\s*>)\s+(\w+)$')
+_RE_SET_DECL = re.compile(r'^(set\s*<\s*\w+\s*>)\s+(\w+)$')
+_RE_REPEATED_MSG_DECL = re.compile(r'^repeated\s+(\w+)\s*(\{.+\})$')
+_RE_REPEATED_DECL = re.compile(r'^(repeated\s+\w+)\s+(\w+)$')
+_RE_SCALAR_DECL = re.compile(r'^(\w+)\s+(\w+)$')
 
 
-def _find_message_groups(
-    names: list[str],
-    structs: list[str],
-    repeated_names: set[str],
-    untagged: set[int],
-) -> dict[str, list[int]]:
-    """Find message groups from non-consecutive same-name columns.
+def split_declaration(decl: str) -> tuple[str, str]:
+    """Split a combined 'type name' declaration into (name, type_only)."""
+    decl = decl.strip()
 
-    Uses range-merging: each repeated name defines a [min, max] range of
-    its positions.  Overlapping ranges are merged into one message group.
-    """
-    n = len(names)
+    m = _RE_MAP_DECL.match(decl)
+    if m:
+        return m.group(2), m.group(1)
 
-    # Step 1: find [min, max] range for each repeated name
-    name_ranges: dict[str, tuple[int, int]] = {}
-    for target_name in repeated_names:
-        positions = [i for i in range(n) if names[i] == target_name and i in untagged]
-        if len(positions) >= 2:
-            name_ranges[target_name] = (min(positions), max(positions))
+    m = _RE_SET_DECL.match(decl)
+    if m:
+        return m.group(2), m.group(1)
 
-    if not name_ranges:
-        return {}
+    m = _RE_REPEATED_MSG_DECL.match(decl)
+    if m:
+        return m.group(1), f"repeated {m.group(2)}"
 
-    # Step 2: merge overlapping ranges (strict overlap, not adjacent)
-    sorted_ranges = sorted(name_ranges.values())
-    merged: list[tuple[int, int]] = []
-    cur_start, cur_end = sorted_ranges[0]
-    for start, end in sorted_ranges[1:]:
-        if start <= cur_end:          # overlapping
-            cur_end = max(cur_end, end)
-        else:
-            merged.append((cur_start, cur_end))
-            cur_start, cur_end = start, end
-    merged.append((cur_start, cur_end))
+    m = _RE_REPEATED_DECL.match(decl)
+    if m:
+        return m.group(2), m.group(1)
 
-    # Step 3: for each merged range, collect untagged columns → one group
-    groups: dict[str, list[int]] = {}
-    for rng_start, rng_end in merged:
-        indices = [i for i in range(rng_start, rng_end + 1) if i in untagged]
-        col_names = [names[i] for i in indices]
-        prefix = _common_prefix_multi(col_names)
-        if not prefix:
-            prefix = col_names[0]
-        # Avoid duplicate group names
-        final_name = prefix
-        counter = 2
-        while final_name in groups:
-            final_name = f"{prefix}{counter}"
-            counter += 1
-        groups[final_name] = indices
+    m = _RE_SCALAR_DECL.match(decl)
+    if m:
+        return m.group(2), m.group(1)
 
-    return groups
+    raise ValueError(f"Cannot split declaration: '{decl}'")
 
 
-def _common_prefix_multi(names: list[str]) -> str:
-    """Find common underscore-delimited prefix across multiple names."""
-    if not names:
-        return ""
-    parts_list = [n.split("_") for n in names]
-    min_len = min(len(p) for p in parts_list)
-    common = []
-    for i in range(min_len):
-        vals = {p[i] for p in parts_list}
-        if len(vals) == 1:
-            common.append(vals.pop())
-        else:
-            break
-    return "_".join(common)
-
-
-def compute_options(
-    multi_keys: list[str],
-    table_keys: list[str],
-    expr_types: list[str],
-    expr_params: list[str],
-    fk_vals: list[str],
-    gfk_vals: list[str],
-) -> list[str]:
-    """Compute the new options row from old scattered metadata rows."""
-    n = len(multi_keys)
-    options = [""] * n
-
-    for i in range(n):
-        tokens: list[str] = []
-
-        if multi_keys[i].lower() == "multi":
-            tokens.append("multi")
-        if table_keys[i].lower() == "table_key":
-            tokens.append("key")
-        if table_keys[i].lower() == "bit_index":
-            tokens.append("bit_index")
-        if expr_types[i]:
-            tokens.append(f"expr:{expr_types[i]}")
-        if expr_params[i]:
-            tokens.append(f"expr_params:{expr_params[i]}")
-        if fk_vals[i]:
-            tokens.append(fk_vals[i])        # already "fk:Table" format
-        if gfk_vals[i]:
-            tokens.append(gfk_vals[i])      # already "gfk:Table" format
-
-        options[i] = " ".join(tokens)
-
-    return options
-
+# ---------------------------------------------------------------------------
+# Migration
+# ---------------------------------------------------------------------------
 
 def migrate_file(path: Path, dry_run: bool = False) -> None:
-    """Migrate a single .xlsx file from old to new header format."""
+    """Migrate a single .xlsx from 4-row (combined declaration) to 5-row (name + type)."""
     wb = openpyxl.load_workbook(path)
     ws = wb[wb.sheetnames[0]]
     max_col = ws.max_column or 0
@@ -215,60 +86,56 @@ def migrate_file(path: Path, dry_run: bool = False) -> None:
         print(f"  SKIP (empty): {path.name}")
         return
 
-    # Read old header rows
-    names = [cell_str(ws, 1, c + 1) for c in range(max_col)]
-    types = [cell_str(ws, 2, c + 1) for c in range(max_col)]
-    map_types = [cell_str(ws, 3, c + 1) for c in range(max_col)]
-    owners = [cell_str(ws, 4, c + 1) for c in range(max_col)]
-    multi_keys = [cell_str(ws, 5, c + 1) for c in range(max_col)]
-    table_keys = [cell_str(ws, 6, c + 1) for c in range(max_col)]
-    expr_types = [cell_str(ws, 7, c + 1) for c in range(max_col)]
-    expr_params = [cell_str(ws, 8, c + 1) for c in range(max_col)]
-    fk_vals = [cell_str(ws, 9, c + 1) for c in range(max_col)]
-    gfk_vals = [cell_str(ws, 10, c + 1) for c in range(max_col)]
-    comments = [cell_str(ws, 19, c + 1) for c in range(max_col)]
+    # Guard: detect already-migrated files.
+    # Old format R1 cell 1 = "uint32 id" (has a space).
+    # New format R1 cell 1 = "id" (no space).
+    first_cell = str(ws.cell(row=1, column=1).value or "").strip()
+    if " " not in first_cell:
+        print(f"  SKIP (already split name+type): {path.name}")
+        return
 
-    # Read data rows (preserve raw cell values)
+    # Read old 4-row header
+    # R1 = declarations (combined type+name), R2 = owner, R3 = options, R4 = comment
+    old_decls = [cell_str(ws, 1, c + 1) for c in range(max_col)]
+    old_owners = [cell_str(ws, 2, c + 1) for c in range(max_col)]
+    old_opts = [cell_str(ws, 3, c + 1) for c in range(max_col)]
+    old_comments = [cell_str(ws, 4, c + 1) for c in range(max_col)]
+
+    # Split declarations into name + type (only on non-empty cells)
+    new_names = [''] * max_col
+    new_types = [''] * max_col
+    for c in range(max_col):
+        if old_decls[c]:
+            name, type_only = split_declaration(old_decls[c])
+            new_names[c] = name
+            new_types[c] = type_only
+
+    # Read data rows
     data_rows: list[list] = []
     for row in ws.iter_rows(min_row=OLD_DATA_BEGIN, max_col=max_col, values_only=True):
         data_rows.append(list(row))
-
-    # Remove trailing empty data rows
     while data_rows and all(v is None for v in data_rows[-1]):
         data_rows.pop()
 
-    # Compute new struct and options
-    structs = compute_structs(names, map_types)
-    options = compute_options(multi_keys, table_keys, expr_types, expr_params, fk_vals, gfk_vals)
-
     if dry_run:
-        print(f"\n  {path.name} ({len(data_rows)} data rows, {max_col} cols)")
-        for c in range(max_col):
-            if not names[c]:
-                continue
-            parts = [f"name={names[c]}", f"type={types[c]}"]
-            if structs[c]:
-                parts.append(f"struct={structs[c]}")
-            if options[c]:
-                parts.append(f"options={options[c]}")
-            if comments[c]:
-                parts.append(f"comment={comments[c][:30]}")
-            print(f"    col {c}: {', '.join(parts)}")
+        non_empty = [(c, new_names[c], new_types[c]) for c in range(max_col) if new_names[c]]
+        print(f"\n  {path.name} ({len(non_empty)} fields, {len(data_rows)} data rows)")
+        for c, name, typ in non_empty:
+            print(f"    col {c+1}: name={name}  type={typ}")
         return
 
-    # Write new workbook
+    # Write new workbook with 5-row header
     sheet_title = ws.title
     new_wb = openpyxl.Workbook()
     new_ws = new_wb.active
     new_ws.title = sheet_title
 
     for c in range(max_col):
-        new_ws.cell(row=1, column=c + 1, value=names[c] if names[c] else None)
-        new_ws.cell(row=2, column=c + 1, value=types[c] if types[c] else None)
-        new_ws.cell(row=3, column=c + 1, value=structs[c] if structs[c] else None)
-        new_ws.cell(row=4, column=c + 1, value=owners[c] if owners[c] else None)
-        new_ws.cell(row=5, column=c + 1, value=options[c] if options[c] else None)
-        new_ws.cell(row=6, column=c + 1, value=comments[c] if comments[c] else None)
+        new_ws.cell(row=1, column=c + 1, value=new_names[c] if new_names[c] else None)
+        new_ws.cell(row=2, column=c + 1, value=new_types[c] if new_types[c] else None)
+        new_ws.cell(row=3, column=c + 1, value=old_owners[c] if old_owners[c] else None)
+        new_ws.cell(row=4, column=c + 1, value=old_opts[c] if old_opts[c] else None)
+        new_ws.cell(row=5, column=c + 1, value=old_comments[c] if old_comments[c] else None)
 
     for r, row_data in enumerate(data_rows):
         for c, val in enumerate(row_data):
@@ -276,7 +143,7 @@ def migrate_file(path: Path, dry_run: bool = False) -> None:
                 new_ws.cell(row=NEW_DATA_BEGIN + r, column=c + 1, value=val)
 
     new_wb.save(path)
-    print(f"  OK: {path.name} ({len(data_rows)} data rows)")
+    print(f"  OK: {path.name} ({len([n for n in new_names if n])} fields, {len(data_rows)} data rows)")
 
 
 def main() -> None:
@@ -297,6 +164,8 @@ def main() -> None:
             migrate_file(f, dry_run=dry_run)
         except Exception as exc:
             print(f"  FAIL: {f.name}: {exc}")
+            import traceback
+            traceback.print_exc()
 
 
 if __name__ == "__main__":

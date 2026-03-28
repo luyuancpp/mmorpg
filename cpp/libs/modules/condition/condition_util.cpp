@@ -25,7 +25,7 @@ namespace condition_util {
 
 bool IsFulfilled(uint32_t conditionId, uint32_t progressValue) {
 	FetchConditionTableOrReturnFalse(conditionId);
-	const auto cmpIndex = static_cast<size_t>(conditionTable->comparison());
+	const auto cmpIndex = static_cast<size_t>(conditionTable->comparison_op());
 	if (cmpIndex >= kComparisonFunctionCount) return false;
 	return kComparisonFunctions[cmpIndex](progressValue, conditionTable->amount());
 }
