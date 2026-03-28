@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
@@ -26,21 +27,21 @@ message SkillTable {
 	double castpoint = 6;
 	double recoverytime = 7;
 	uint32 immediately = 8;
-	repeated Skillrequireditem requireditem = 9;
-	repeated Skillrequiredresource requiredresource = 10;
-	repeated uint32 effect = 11;
-	uint32 channelthink = 12;
-	uint32 channelfinish = 13;
-	uint32 thinkinterval = 14;
-	uint32 channeltime = 15;
-	repeated Skillrequestresource requestresource = 16;
-	double range = 17;
-	double max_range = 18;
-	double min_range = 19;
-	uint32 self_status = 20;
-	uint32 required_status = 21;
-	uint32 cooldown_id = 22;
-	string damage = 23;
+	repeated uint32 effect = 9;
+	uint32 channelthink = 10;
+	uint32 channelfinish = 11;
+	uint32 thinkinterval = 12;
+	uint32 channeltime = 13;
+	double range = 14;
+	double max_range = 15;
+	double min_range = 16;
+	uint32 self_status = 17;
+	uint32 required_status = 18;
+	uint32 cooldown_id = 19;
+	string damage = 20;
+	repeated Skillrequireditem requireditem = 21;
+	repeated Skillrequiredresource requiredresource = 22;
+	repeated Skillrequestresource requestresource = 23;
 }
 
 message SkillTableData {

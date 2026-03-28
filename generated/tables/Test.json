@@ -9,7 +9,25 @@
    "level": 0,
    "tag": {
     "Metal": "Control"
-   }
+   },
+   "testobj": [
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
+    }
+   ]
   },
   {
    "effect": [
@@ -33,6 +51,14 @@
     {
      "testobj_key": 1,
      "testobj_value": 1
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
     }
    ]
   },
@@ -62,6 +88,14 @@
     {
      "testobj_key": 1,
      "testobj_value": 1
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
     }
    ]
   },
@@ -90,6 +124,10 @@
     {
      "testobj_key": 1,
      "testobj_value": 1
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
     }
    ]
   },
@@ -116,6 +154,14 @@
     {
      "testobj_key": 100,
      "testobj_value": 100
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
     }
    ]
   },
@@ -145,6 +191,14 @@
     {
      "testobj_key": 100,
      "testobj_value": 100
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
+    },
+    {
+     "testobj_key": 0,
+     "testobj_value": 0
     }
    ]
   }

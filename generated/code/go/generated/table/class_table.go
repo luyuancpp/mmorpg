@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type ClassTableManager struct {
-    data []*pb.ClassTable
+    data   []*pb.ClassTable
     kvData map[int32]*pb.ClassTable
 }
+
+var ClassTableManagerInstance = NewClassTableManager()
 
 func NewClassTableManager() *ClassTableManager {
     return &ClassTableManager{
@@ -24,12 +27,12 @@ func (m *ClassTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "class.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.ClassTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *ClassTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *ClassTableManager) GetById(id int32) (*pb.Class, bool) {
+func (m *ClassTableManager) GetById(id int32) (*pb.ClassTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

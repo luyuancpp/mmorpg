@@ -36,12 +36,12 @@ const char descriptor_table_protodef_skill_5ferror_5ftip_2eproto[] ABSL_ATTRIBUT
     protodesc_cold) = {
     "\n\025skill_error_tip.proto*\203\002\n\013skill_error\022"
     "\022\n\016kSkill_errorOK\020\000\022\031\n\025kSkillUnInterrupt"
-    "ible\020s\022\031\n\025kSkillInvalidTargetId\020t\022\027\n\023kSk"
-    "illInvalidTarget\020u\022\032\n\026kSkillCooldownNotR"
-    "eady\020v\022$\n kSkillCannotBeCastInCurrentSta"
-    "te\020w\022(\n$kSkillCannotBeCastSilenceRestric"
-    "tion\020x\022%\n!kSkillCannotBeCastStunRestrict"
-    "ion\020yB\024Z\022generated/pb/tableb\006proto3"
+    "ible\020t\022\031\n\025kSkillInvalidTargetId\020u\022\027\n\023kSk"
+    "illInvalidTarget\020v\022\032\n\026kSkillCooldownNotR"
+    "eady\020w\022$\n kSkillCannotBeCastInCurrentSta"
+    "te\020x\022(\n$kSkillCannotBeCastSilenceRestric"
+    "tion\020y\022%\n!kSkillCannotBeCastStunRestrict"
+    "ion\020zB\024Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_skill_5ferror_5ftip_2eproto = {
@@ -65,7 +65,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL skill_error_descripto
   return file_level_enum_descriptors_skill_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t skill_error_internal_data_[] = {
-    65536u, 128u, 0u, 0u, 0u, 33292288u, };
+    65536u, 128u, 0u, 0u, 0u, 66584576u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

@@ -1,23 +1,23 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum mission_error {
-
   kMission_errorOK = 0;
 
-  kMissionTypeAlreadyExists = 93;
+  kMissionTypeAlreadyExists = 94;
 
-  kMissionAlreadyCompleted = 94;
+  kMissionAlreadyCompleted = 95;
 
-  kMissionIdNotInRewardList = 95;
+  kMissionIdNotInRewardList = 96;
 
-  kPlayerMissionComponentNotFound = 96;
+  kPlayerMissionComponentNotFound = 97;
 
-  kMissionIdRepeated = 97;
+  kMissionIdRepeated = 98;
 
-  kConditionIdOutOfRange = 98;
+  kConditionIdOutOfRange = 99;
 
-  kMissionNotInProgress = 99;
+  kMissionNotInProgress = 100;
 
 };

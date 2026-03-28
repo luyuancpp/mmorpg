@@ -1,9 +1,9 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum common_error {
-
   kCommon_errorOK = 0;
 
   kSuccess = 1;
@@ -18,7 +18,7 @@ enum common_error {
 
   kInvalidParameter = 6;
 
-  kServerCrashed = 7;
+  kFeatureUnavailable = 7;
 
   kIndexOutOfRange = 8;
 

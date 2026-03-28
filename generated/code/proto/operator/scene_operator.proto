@@ -1,8 +1,11 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum scene {
   kSceneOK = 0;
+
   kEnterSceneC2S = 1;
+
 };

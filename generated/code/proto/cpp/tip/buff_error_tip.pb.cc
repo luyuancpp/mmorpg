@@ -35,8 +35,8 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
 const char descriptor_table_protodef_buff_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\024buff_error_tip.proto*S\n\nbuff_error\022\021\n\r"
-    "kBuff_errorOK\020\000\022\025\n\021kBuffMaxBuffStack\020z\022\033"
-    "\n\027kBuffTargetImmuneToBuff\020{B\024Z\022generated"
+    "kBuff_errorOK\020\000\022\025\n\021kBuffMaxBuffStack\020{\022\033"
+    "\n\027kBuffTargetImmuneToBuff\020|B\024Z\022generated"
     "/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_buff_5ferror_5ftip_2eproto_once;
@@ -61,7 +61,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL buff_error_descriptor
   return file_level_enum_descriptors_buff_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t buff_error_internal_data_[] = {
-    65536u, 131072u, 123u, 122u, };
+    65536u, 131072u, 124u, 123u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

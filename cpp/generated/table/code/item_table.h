@@ -1,5 +1,7 @@
+
 #pragma once
 #include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
@@ -8,8 +10,6 @@
 class ItemTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ItemTable*>;
-
-    // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
     static ItemTableManager& Instance() {
@@ -25,20 +25,24 @@ public:
 
     void Load();
 
-    // Setter for the success callback
     void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
-        loadSuccessCallback_ = callback;//multi thread
+        loadSuccessCallback_ = callback;
     }
 
-    void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
+    void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    
+
+
+
+
+
 
 private:
-    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
+    LoadSuccessCallback loadSuccessCallback_;
     ItemTableData data_;
     KeyValueDataType kv_data_;
-    
+
+
 };
 
 inline const ItemTableData& GetItemAllTable() {
@@ -47,7 +51,7 @@ inline const ItemTableData& GetItemAllTable() {
 
 #define FetchAndValidateItemTable(tableId) \
     const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
-    do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; return fetchResult; } } while(0)
+    do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomItemTable(prefix, tableId) \
     const auto [prefix##ItemTable, prefix##fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
@@ -55,16 +59,16 @@ inline const ItemTableData& GetItemAllTable() {
 
 #define FetchItemTableOrReturnCustom(tableId, customReturnValue) \
     const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
-    do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchItemTableOrReturnVoid(tableId) \
     const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
-    do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; return; } } while(0)
+    do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchItemTableOrContinue(tableId) \
     const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
-    do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; continue; } } while(0)
+    do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchItemTableOrReturnFalse(tableId) \
     const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
-    do { if (!( itemTable )) { LOG_ERROR << "Item table not found for ID: " << tableId; return false; } } while(0)
+    do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return false; } } while(0)

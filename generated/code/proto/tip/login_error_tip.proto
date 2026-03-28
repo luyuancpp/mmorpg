@@ -1,9 +1,9 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum login_error {
-
   kLogin_errorOK = 0;
 
   kLoginAccountNotFound = 20;
@@ -68,6 +68,6 @@ enum login_error {
 
   kLoginFsmInvalidEvent = 50;
 
-  kLoginTimeout = 129;
+  kLoginTimeout = 51;
 
 };

@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type MainSceneTableManager struct {
-    data []*pb.MainSceneTable
+    data   []*pb.MainSceneTable
     kvData map[int32]*pb.MainSceneTable
 }
+
+var MainSceneTableManagerInstance = NewMainSceneTableManager()
 
 func NewMainSceneTableManager() *MainSceneTableManager {
     return &MainSceneTableManager{
@@ -24,12 +27,12 @@ func (m *MainSceneTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "mainscene.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.MainSceneTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *MainSceneTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *MainSceneTableManager) GetById(id int32) (*pb.MainScene, bool) {
+func (m *MainSceneTableManager) GetById(id int32) (*pb.MainSceneTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type RewardTableManager struct {
-    data []*pb.RewardTable
+    data   []*pb.RewardTable
     kvData map[int32]*pb.RewardTable
 }
+
+var RewardTableManagerInstance = NewRewardTableManager()
 
 func NewRewardTableManager() *RewardTableManager {
     return &RewardTableManager{
@@ -24,12 +27,12 @@ func (m *RewardTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "reward.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.RewardTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *RewardTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *RewardTableManager) GetById(id int32) (*pb.Reward, bool) {
+func (m *RewardTableManager) GetById(id int32) (*pb.RewardTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

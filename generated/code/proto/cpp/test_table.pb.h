@@ -72,14 +72,6 @@ class TestTable_TagEntry_DoNotUse;
 struct TestTable_TagEntry_DoNotUseDefaultTypeInternal;
 extern TestTable_TagEntry_DoNotUseDefaultTypeInternal _TestTable_TagEntry_DoNotUse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull TestTable_TagEntry_DoNotUse_class_data_;
-class Testimmunetag;
-struct TestimmunetagDefaultTypeInternal;
-extern TestimmunetagDefaultTypeInternal _Testimmunetag_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull Testimmunetag_class_data_;
-class Testtag;
-struct TesttagDefaultTypeInternal;
-extern TesttagDefaultTypeInternal _Testtag_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull Testtag_class_data_;
 class Testtestobj;
 struct TesttestobjDefaultTypeInternal;
 extern TesttestobjDefaultTypeInternal _Testtestobj_default_instance_;
@@ -150,7 +142,7 @@ class Testtestobj final : public ::google::protobuf::Message
     return *reinterpret_cast<const Testtestobj*>(
         &_Testtestobj_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 0;
   friend void swap(Testtestobj& a, Testtestobj& b) { a.Swap(&b); }
   inline void Swap(Testtestobj* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -298,432 +290,6 @@ class Testtestobj final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull Testtestobj_class_data_;
 // -------------------------------------------------------------------
 
-class Testtag final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:Testtag) */ {
- public:
-  inline Testtag() : Testtag(nullptr) {}
-  ~Testtag() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(Testtag* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(Testtag));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR Testtag(::google::protobuf::internal::ConstantInitialized);
-
-  inline Testtag(const Testtag& from) : Testtag(nullptr, from) {}
-  inline Testtag(Testtag&& from) noexcept
-      : Testtag(nullptr, ::std::move(from)) {}
-  inline Testtag& operator=(const Testtag& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Testtag& operator=(Testtag&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Testtag& default_instance() {
-    return *reinterpret_cast<const Testtag*>(
-        &_Testtag_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 0;
-  friend void swap(Testtag& a, Testtag& b) { a.Swap(&b); }
-  inline void Swap(Testtag* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Testtag* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Testtag* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<Testtag>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const Testtag& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const Testtag& from) { Testtag::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(Testtag* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "Testtag"; }
-
- protected:
-  explicit Testtag(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  Testtag(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Testtag& from);
-  Testtag(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, Testtag&& from) noexcept
-      : Testtag(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kTagKeyFieldNumber = 1,
-    kTagValueFieldNumber = 2,
-  };
-  // string tag_key = 1;
-  void clear_tag_key() ;
-  const ::std::string& tag_key() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_tag_key(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_tag_key();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_tag_key();
-  void set_allocated_tag_key(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_tag_key() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_tag_key(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_tag_key();
-
-  public:
-  // string tag_value = 2;
-  void clear_tag_value() ;
-  const ::std::string& tag_value() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_tag_value(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_tag_value();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_tag_value();
-  void set_allocated_tag_value(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_tag_value() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_tag_value(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_tag_value();
-
-  public:
-  // @@protoc_insertion_point(class_scope:Testtag)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 32,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const Testtag& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr tag_key_;
-    ::google::protobuf::internal::ArenaStringPtr tag_value_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_test_5ftable_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull Testtag_class_data_;
-// -------------------------------------------------------------------
-
-class Testimmunetag final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:Testimmunetag) */ {
- public:
-  inline Testimmunetag() : Testimmunetag(nullptr) {}
-  ~Testimmunetag() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(Testimmunetag* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(Testimmunetag));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR Testimmunetag(::google::protobuf::internal::ConstantInitialized);
-
-  inline Testimmunetag(const Testimmunetag& from) : Testimmunetag(nullptr, from) {}
-  inline Testimmunetag(Testimmunetag&& from) noexcept
-      : Testimmunetag(nullptr, ::std::move(from)) {}
-  inline Testimmunetag& operator=(const Testimmunetag& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Testimmunetag& operator=(Testimmunetag&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Testimmunetag& default_instance() {
-    return *reinterpret_cast<const Testimmunetag*>(
-        &_Testimmunetag_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(Testimmunetag& a, Testimmunetag& b) { a.Swap(&b); }
-  inline void Swap(Testimmunetag* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Testimmunetag* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Testimmunetag* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<Testimmunetag>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const Testimmunetag& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const Testimmunetag& from) { Testimmunetag::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(Testimmunetag* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "Testimmunetag"; }
-
- protected:
-  explicit Testimmunetag(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  Testimmunetag(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Testimmunetag& from);
-  Testimmunetag(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, Testimmunetag&& from) noexcept
-      : Testimmunetag(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kImmunetagKeyFieldNumber = 1,
-    kImmunetagValueFieldNumber = 2,
-  };
-  // string immunetag_key = 1;
-  void clear_immunetag_key() ;
-  const ::std::string& immunetag_key() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_immunetag_key(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_immunetag_key();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_immunetag_key();
-  void set_allocated_immunetag_key(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_immunetag_key() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_immunetag_key(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_immunetag_key();
-
-  public:
-  // string immunetag_value = 2;
-  void clear_immunetag_value() ;
-  const ::std::string& immunetag_value() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_immunetag_value(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_immunetag_value();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_immunetag_value();
-  void set_allocated_immunetag_value(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_immunetag_value() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_immunetag_value(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_immunetag_value();
-
-  public:
-  // @@protoc_insertion_point(class_scope:Testimmunetag)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 50,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const Testimmunetag& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr immunetag_key_;
-    ::google::protobuf::internal::ArenaStringPtr immunetag_value_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_test_5ftable_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull Testimmunetag_class_data_;
-// -------------------------------------------------------------------
-
 class TestTable_TagEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<std::string, std::string,
                              ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
@@ -857,7 +423,7 @@ class TestTable final : public ::google::protobuf::Message
     return *reinterpret_cast<const TestTable*>(
         &_TestTable_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(TestTable& a, TestTable& b) { a.Swap(&b); }
   inline void Swap(TestTable* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -945,61 +511,14 @@ class TestTable final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kTagFieldNumber = 2,
-    kImmunetagFieldNumber = 3,
-    kTestobjFieldNumber = 5,
-    kEffectFieldNumber = 6,
+    kEffectFieldNumber = 3,
+    kTagFieldNumber = 4,
+    kImmunetagFieldNumber = 5,
+    kTestobjFieldNumber = 6,
     kIdFieldNumber = 1,
-    kLevelFieldNumber = 4,
+    kLevelFieldNumber = 2,
   };
-  // map<string, string> tag = 2;
-  int tag_size() const;
-  private:
-  int _internal_tag_size() const;
-
-  public:
-  void clear_tag() ;
-  const ::google::protobuf::Map<std::string, std::string>& tag() const;
-  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL mutable_tag();
-
-  private:
-  const ::google::protobuf::Map<std::string, std::string>& _internal_tag() const;
-  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_tag();
-
-  public:
-  // map<string, string> immunetag = 3;
-  int immunetag_size() const;
-  private:
-  int _internal_immunetag_size() const;
-
-  public:
-  void clear_immunetag() ;
-  const ::google::protobuf::Map<std::string, std::string>& immunetag() const;
-  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL mutable_immunetag();
-
-  private:
-  const ::google::protobuf::Map<std::string, std::string>& _internal_immunetag() const;
-  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_immunetag();
-
-  public:
-  // repeated .Testtestobj testobj = 5;
-  int testobj_size() const;
-  private:
-  int _internal_testobj_size() const;
-
-  public:
-  void clear_testobj() ;
-  ::Testtestobj* PROTOBUF_NONNULL mutable_testobj(int index);
-  ::google::protobuf::RepeatedPtrField<::Testtestobj>* PROTOBUF_NONNULL mutable_testobj();
-
-  private:
-  const ::google::protobuf::RepeatedPtrField<::Testtestobj>& _internal_testobj() const;
-  ::google::protobuf::RepeatedPtrField<::Testtestobj>* PROTOBUF_NONNULL _internal_mutable_testobj();
-  public:
-  const ::Testtestobj& testobj(int index) const;
-  ::Testtestobj* PROTOBUF_NONNULL add_testobj();
-  const ::google::protobuf::RepeatedPtrField<::Testtestobj>& testobj() const;
-  // repeated uint32 effect = 6;
+  // repeated uint32 effect = 3;
   int effect_size() const;
   private:
   int _internal_effect_size() const;
@@ -1017,6 +536,53 @@ class TestTable final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_effect();
 
   public:
+  // map<string, string> tag = 4;
+  int tag_size() const;
+  private:
+  int _internal_tag_size() const;
+
+  public:
+  void clear_tag() ;
+  const ::google::protobuf::Map<std::string, std::string>& tag() const;
+  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL mutable_tag();
+
+  private:
+  const ::google::protobuf::Map<std::string, std::string>& _internal_tag() const;
+  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_tag();
+
+  public:
+  // map<string, string> immunetag = 5;
+  int immunetag_size() const;
+  private:
+  int _internal_immunetag_size() const;
+
+  public:
+  void clear_immunetag() ;
+  const ::google::protobuf::Map<std::string, std::string>& immunetag() const;
+  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL mutable_immunetag();
+
+  private:
+  const ::google::protobuf::Map<std::string, std::string>& _internal_immunetag() const;
+  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_immunetag();
+
+  public:
+  // repeated .Testtestobj testobj = 6;
+  int testobj_size() const;
+  private:
+  int _internal_testobj_size() const;
+
+  public:
+  void clear_testobj() ;
+  ::Testtestobj* PROTOBUF_NONNULL mutable_testobj(int index);
+  ::google::protobuf::RepeatedPtrField<::Testtestobj>* PROTOBUF_NONNULL mutable_testobj();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::Testtestobj>& _internal_testobj() const;
+  ::google::protobuf::RepeatedPtrField<::Testtestobj>* PROTOBUF_NONNULL _internal_mutable_testobj();
+  public:
+  const ::Testtestobj& testobj(int index) const;
+  ::Testtestobj* PROTOBUF_NONNULL add_testobj();
+  const ::google::protobuf::RepeatedPtrField<::Testtestobj>& testobj() const;
   // uint32 id = 1;
   void clear_id() ;
   ::uint32_t id() const;
@@ -1027,7 +593,7 @@ class TestTable final : public ::google::protobuf::Message
   void _internal_set_id(::uint32_t value);
 
   public:
-  // uint32 level = 4;
+  // uint32 level = 2;
   void clear_level() ;
   ::uint32_t level() const;
   void set_level(::uint32_t value);
@@ -1063,6 +629,8 @@ class TestTable final : public ::google::protobuf::Message
         const TestTable& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<::uint32_t> effect_;
+    ::google::protobuf::internal::CachedSize _effect_cached_byte_size_;
     ::google::protobuf::internal::MapField<TestTable_TagEntry_DoNotUse, std::string, std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
@@ -1072,8 +640,6 @@ class TestTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
         immunetag_;
     ::google::protobuf::RepeatedPtrField< ::Testtestobj > testobj_;
-    ::google::protobuf::RepeatedField<::uint32_t> effect_;
-    ::google::protobuf::internal::CachedSize _effect_cached_byte_size_;
     ::uint32_t id_;
     ::uint32_t level_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1140,7 +706,7 @@ class TestTableData final : public ::google::protobuf::Message
     return *reinterpret_cast<const TestTableData*>(
         &_TestTableData_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(TestTableData& a, TestTableData& b) { a.Swap(&b); }
   inline void Swap(TestTableData* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1295,274 +861,6 @@ extern const ::google::protobuf::internal::ClassDataFull TestTableData_class_dat
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// Testtag
-
-// string tag_key = 1;
-inline void Testtag::clear_tag_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.tag_key_.ClearToEmpty();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-inline const ::std::string& Testtag::tag_key() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:Testtag.tag_key)
-  return _internal_tag_key();
-}
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void Testtag::set_tag_key(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.tag_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:Testtag.tag_key)
-}
-inline ::std::string* PROTOBUF_NONNULL Testtag::mutable_tag_key()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_tag_key();
-  // @@protoc_insertion_point(field_mutable:Testtag.tag_key)
-  return _s;
-}
-inline const ::std::string& Testtag::_internal_tag_key() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.tag_key_.Get();
-}
-inline void Testtag::_internal_set_tag_key(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.tag_key_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL Testtag::_internal_mutable_tag_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  return _impl_.tag_key_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE Testtag::release_tag_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:Testtag.tag_key)
-  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
-    return nullptr;
-  }
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  auto* released = _impl_.tag_key_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.tag_key_.Set("", GetArena());
-  }
-  return released;
-}
-inline void Testtag::set_allocated_tag_key(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-  _impl_.tag_key_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.tag_key_.IsDefault()) {
-    _impl_.tag_key_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:Testtag.tag_key)
-}
-
-// string tag_value = 2;
-inline void Testtag::clear_tag_value() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.tag_value_.ClearToEmpty();
-  _impl_._has_bits_[0] &= ~0x00000002u;
-}
-inline const ::std::string& Testtag::tag_value() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:Testtag.tag_value)
-  return _internal_tag_value();
-}
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void Testtag::set_tag_value(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.tag_value_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:Testtag.tag_value)
-}
-inline ::std::string* PROTOBUF_NONNULL Testtag::mutable_tag_value()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_tag_value();
-  // @@protoc_insertion_point(field_mutable:Testtag.tag_value)
-  return _s;
-}
-inline const ::std::string& Testtag::_internal_tag_value() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.tag_value_.Get();
-}
-inline void Testtag::_internal_set_tag_value(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.tag_value_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL Testtag::_internal_mutable_tag_value() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  return _impl_.tag_value_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE Testtag::release_tag_value() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:Testtag.tag_value)
-  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
-    return nullptr;
-  }
-  _impl_._has_bits_[0] &= ~0x00000002u;
-  auto* released = _impl_.tag_value_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.tag_value_.Set("", GetArena());
-  }
-  return released;
-}
-inline void Testtag::set_allocated_tag_value(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000002u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
-  }
-  _impl_.tag_value_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.tag_value_.IsDefault()) {
-    _impl_.tag_value_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:Testtag.tag_value)
-}
-
-// -------------------------------------------------------------------
-
-// Testimmunetag
-
-// string immunetag_key = 1;
-inline void Testimmunetag::clear_immunetag_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.immunetag_key_.ClearToEmpty();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-inline const ::std::string& Testimmunetag::immunetag_key() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:Testimmunetag.immunetag_key)
-  return _internal_immunetag_key();
-}
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void Testimmunetag::set_immunetag_key(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.immunetag_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:Testimmunetag.immunetag_key)
-}
-inline ::std::string* PROTOBUF_NONNULL Testimmunetag::mutable_immunetag_key()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_immunetag_key();
-  // @@protoc_insertion_point(field_mutable:Testimmunetag.immunetag_key)
-  return _s;
-}
-inline const ::std::string& Testimmunetag::_internal_immunetag_key() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.immunetag_key_.Get();
-}
-inline void Testimmunetag::_internal_set_immunetag_key(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.immunetag_key_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL Testimmunetag::_internal_mutable_immunetag_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  return _impl_.immunetag_key_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE Testimmunetag::release_immunetag_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:Testimmunetag.immunetag_key)
-  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
-    return nullptr;
-  }
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  auto* released = _impl_.immunetag_key_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.immunetag_key_.Set("", GetArena());
-  }
-  return released;
-}
-inline void Testimmunetag::set_allocated_immunetag_key(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-  _impl_.immunetag_key_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.immunetag_key_.IsDefault()) {
-    _impl_.immunetag_key_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:Testimmunetag.immunetag_key)
-}
-
-// string immunetag_value = 2;
-inline void Testimmunetag::clear_immunetag_value() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.immunetag_value_.ClearToEmpty();
-  _impl_._has_bits_[0] &= ~0x00000002u;
-}
-inline const ::std::string& Testimmunetag::immunetag_value() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:Testimmunetag.immunetag_value)
-  return _internal_immunetag_value();
-}
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void Testimmunetag::set_immunetag_value(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.immunetag_value_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:Testimmunetag.immunetag_value)
-}
-inline ::std::string* PROTOBUF_NONNULL Testimmunetag::mutable_immunetag_value()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_immunetag_value();
-  // @@protoc_insertion_point(field_mutable:Testimmunetag.immunetag_value)
-  return _s;
-}
-inline const ::std::string& Testimmunetag::_internal_immunetag_value() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.immunetag_value_.Get();
-}
-inline void Testimmunetag::_internal_set_immunetag_value(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.immunetag_value_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL Testimmunetag::_internal_mutable_immunetag_value() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  return _impl_.immunetag_value_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE Testimmunetag::release_immunetag_value() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:Testimmunetag.immunetag_value)
-  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
-    return nullptr;
-  }
-  _impl_._has_bits_[0] &= ~0x00000002u;
-  auto* released = _impl_.immunetag_value_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.immunetag_value_.Set("", GetArena());
-  }
-  return released;
-}
-inline void Testimmunetag::set_allocated_immunetag_value(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000002u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
-  }
-  _impl_.immunetag_value_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.immunetag_value_.IsDefault()) {
-    _impl_.immunetag_value_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:Testimmunetag.immunetag_value)
-}
-
-// -------------------------------------------------------------------
-
 // Testtestobj
 
 // uint32 testobj_key = 1;
@@ -1645,7 +943,77 @@ inline void TestTable::_internal_set_id(::uint32_t value) {
   _impl_.id_ = value;
 }
 
-// map<string, string> tag = 2;
+// uint32 level = 2;
+inline void TestTable::clear_level() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint32_t TestTable::level() const {
+  // @@protoc_insertion_point(field_get:TestTable.level)
+  return _internal_level();
+}
+inline void TestTable::set_level(::uint32_t value) {
+  _internal_set_level(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:TestTable.level)
+}
+inline ::uint32_t TestTable::_internal_level() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.level_;
+}
+inline void TestTable::_internal_set_level(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = value;
+}
+
+// repeated uint32 effect = 3;
+inline int TestTable::_internal_effect_size() const {
+  return _internal_effect().size();
+}
+inline int TestTable::effect_size() const {
+  return _internal_effect_size();
+}
+inline void TestTable::clear_effect() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.effect_.Clear();
+}
+inline ::uint32_t TestTable::effect(int index) const {
+  // @@protoc_insertion_point(field_get:TestTable.effect)
+  return _internal_effect().Get(index);
+}
+inline void TestTable::set_effect(int index, ::uint32_t value) {
+  _internal_mutable_effect()->Set(index, value);
+  // @@protoc_insertion_point(field_set:TestTable.effect)
+}
+inline void TestTable::add_effect(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_effect()->Add(value);
+  // @@protoc_insertion_point(field_add:TestTable.effect)
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>& TestTable::effect() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:TestTable.effect)
+  return _internal_effect();
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL TestTable::mutable_effect()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:TestTable.effect)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_effect();
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>&
+TestTable::_internal_effect() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.effect_;
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
+TestTable::_internal_mutable_effect() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.effect_;
+}
+
+// map<string, string> tag = 4;
 inline int TestTable::_internal_tag_size() const {
   return _internal_tag().size();
 }
@@ -1674,7 +1042,7 @@ inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestT
   return _internal_mutable_tag();
 }
 
-// map<string, string> immunetag = 3;
+// map<string, string> immunetag = 5;
 inline int TestTable::_internal_immunetag_size() const {
   return _internal_immunetag().size();
 }
@@ -1703,31 +1071,7 @@ inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestT
   return _internal_mutable_immunetag();
 }
 
-// uint32 level = 4;
-inline void TestTable::clear_level() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.level_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000002u;
-}
-inline ::uint32_t TestTable::level() const {
-  // @@protoc_insertion_point(field_get:TestTable.level)
-  return _internal_level();
-}
-inline void TestTable::set_level(::uint32_t value) {
-  _internal_set_level(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:TestTable.level)
-}
-inline ::uint32_t TestTable::_internal_level() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.level_;
-}
-inline void TestTable::_internal_set_level(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.level_ = value;
-}
-
-// repeated .Testtestobj testobj = 5;
+// repeated .Testtestobj testobj = 6;
 inline int TestTable::_internal_testobj_size() const {
   return _internal_testobj().size();
 }
@@ -1775,52 +1119,6 @@ inline ::google::protobuf::RepeatedPtrField<::Testtestobj>* PROTOBUF_NONNULL
 TestTable::_internal_mutable_testobj() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.testobj_;
-}
-
-// repeated uint32 effect = 6;
-inline int TestTable::_internal_effect_size() const {
-  return _internal_effect().size();
-}
-inline int TestTable::effect_size() const {
-  return _internal_effect_size();
-}
-inline void TestTable::clear_effect() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.effect_.Clear();
-}
-inline ::uint32_t TestTable::effect(int index) const {
-  // @@protoc_insertion_point(field_get:TestTable.effect)
-  return _internal_effect().Get(index);
-}
-inline void TestTable::set_effect(int index, ::uint32_t value) {
-  _internal_mutable_effect()->Set(index, value);
-  // @@protoc_insertion_point(field_set:TestTable.effect)
-}
-inline void TestTable::add_effect(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _internal_mutable_effect()->Add(value);
-  // @@protoc_insertion_point(field_add:TestTable.effect)
-}
-inline const ::google::protobuf::RepeatedField<::uint32_t>& TestTable::effect() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:TestTable.effect)
-  return _internal_effect();
-}
-inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL TestTable::mutable_effect()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:TestTable.effect)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_effect();
-}
-inline const ::google::protobuf::RepeatedField<::uint32_t>&
-TestTable::_internal_effect() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.effect_;
-}
-inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
-TestTable::_internal_mutable_effect() {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.effect_;
 }
 
 // -------------------------------------------------------------------

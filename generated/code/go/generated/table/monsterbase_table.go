@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type MonsterBaseTableManager struct {
-    data []*pb.MonsterBaseTable
+    data   []*pb.MonsterBaseTable
     kvData map[int32]*pb.MonsterBaseTable
 }
+
+var MonsterBaseTableManagerInstance = NewMonsterBaseTableManager()
 
 func NewMonsterBaseTableManager() *MonsterBaseTableManager {
     return &MonsterBaseTableManager{
@@ -24,12 +27,12 @@ func (m *MonsterBaseTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "monsterbase.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.MonsterBaseTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *MonsterBaseTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *MonsterBaseTableManager) GetById(id int32) (*pb.MonsterBase, bool) {
+func (m *MonsterBaseTableManager) GetById(id int32) (*pb.MonsterBaseTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type CooldownTableManager struct {
-    data []*pb.CooldownTable
+    data   []*pb.CooldownTable
     kvData map[int32]*pb.CooldownTable
 }
+
+var CooldownTableManagerInstance = NewCooldownTableManager()
 
 func NewCooldownTableManager() *CooldownTableManager {
     return &CooldownTableManager{
@@ -24,12 +27,12 @@ func (m *CooldownTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "cooldown.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.CooldownTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *CooldownTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *CooldownTableManager) GetById(id int32) (*pb.Cooldown, bool) {
+func (m *CooldownTableManager) GetById(id int32) (*pb.CooldownTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

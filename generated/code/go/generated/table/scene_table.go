@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type SceneTableManager struct {
-    data []*pb.SceneTable
+    data   []*pb.SceneTable
     kvData map[int32]*pb.SceneTable
 }
+
+var SceneTableManagerInstance = NewSceneTableManager()
 
 func NewSceneTableManager() *SceneTableManager {
     return &SceneTableManager{
@@ -24,12 +27,12 @@ func (m *SceneTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "scene.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.SceneTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *SceneTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *SceneTableManager) GetById(id int32) (*pb.Scene, bool) {
+func (m *SceneTableManager) GetById(id int32) (*pb.SceneTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

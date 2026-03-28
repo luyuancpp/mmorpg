@@ -62,7 +62,7 @@ internal::EnumTraitsT<::mount_error_internal_data_>
 
 enum mount_error : int {
   kMount_errorOK = 0,
-  kMountNotMounted = 126,
+  kMountNotMounted = 127,
   mount_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   mount_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -73,11 +73,11 @@ extern const uint32_t mount_error_internal_data_[];
 inline constexpr mount_error mount_error_MIN =
     static_cast<mount_error>(0);
 inline constexpr mount_error mount_error_MAX =
-    static_cast<mount_error>(126);
+    static_cast<mount_error>(127);
 inline bool mount_error_IsValid(int value) {
   return ::google::protobuf::internal::ValidateEnum(value, mount_error_internal_data_);
 }
-inline constexpr int mount_error_ARRAYSIZE = 126 + 1;
+inline constexpr int mount_error_ARRAYSIZE = 127 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL mount_error_descriptor();
 template <typename T>
 const ::std::string& mount_error_Name(T value) {

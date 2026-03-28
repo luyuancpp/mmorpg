@@ -62,13 +62,13 @@ internal::EnumTraitsT<::mission_error_internal_data_>
 
 enum mission_error : int {
   kMission_errorOK = 0,
-  kMissionTypeAlreadyExists = 93,
-  kMissionAlreadyCompleted = 94,
-  kMissionIdNotInRewardList = 95,
-  kPlayerMissionComponentNotFound = 96,
-  kMissionIdRepeated = 97,
-  kConditionIdOutOfRange = 98,
-  kMissionNotInProgress = 99,
+  kMissionTypeAlreadyExists = 94,
+  kMissionAlreadyCompleted = 95,
+  kMissionIdNotInRewardList = 96,
+  kPlayerMissionComponentNotFound = 97,
+  kMissionIdRepeated = 98,
+  kConditionIdOutOfRange = 99,
+  kMissionNotInProgress = 100,
   mission_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   mission_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -79,11 +79,11 @@ extern const uint32_t mission_error_internal_data_[];
 inline constexpr mission_error mission_error_MIN =
     static_cast<mission_error>(0);
 inline constexpr mission_error mission_error_MAX =
-    static_cast<mission_error>(99);
+    static_cast<mission_error>(100);
 inline bool mission_error_IsValid(int value) {
   return ::google::protobuf::internal::ValidateEnum(value, mission_error_internal_data_);
 }
-inline constexpr int mission_error_ARRAYSIZE = 99 + 1;
+inline constexpr int mission_error_ARRAYSIZE = 100 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL mission_error_descriptor();
 template <typename T>
 const ::std::string& mission_error_Name(T value) {

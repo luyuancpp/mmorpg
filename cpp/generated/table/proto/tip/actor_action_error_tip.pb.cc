@@ -37,7 +37,7 @@ const char descriptor_table_protodef_actor_5faction_5ferror_5ftip_2eproto[] ABSL
     "\n\034actor_action_error_tip.proto*r\n\022actor_"
     "action_error\022\031\n\025kActor_action_errorOK\020\000\022"
     "A\n=kActorActionStateActionCannotBePerfor"
-    "medWhileInTeamFollowMode\020}B\024Z\022generated/"
+    "medWhileInTeamFollowMode\020~B\024Z\022generated/"
     "pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_actor_5faction_5ferror_5ftip_2eproto_once;
@@ -62,7 +62,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL actor_action_error_de
   return file_level_enum_descriptors_actor_5faction_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t actor_action_error_internal_data_[] = {
-    65536u, 65536u, 125u, };
+    65536u, 65536u, 126u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

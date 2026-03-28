@@ -1,16 +1,7 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
-
-message TestMultiKeytag1 {
-	string tag1_key = 1;
-	string tag1_value = 2;
-}
-
-message TestMultiKeyimmunetag1 {
-	string immunetag1_key = 1;
-	string immunetag1_value = 2;
-}
 
 message TestMultiKeytestobj1 {
 	uint32 testobj1_key = 1;
@@ -19,17 +10,17 @@ message TestMultiKeytestobj1 {
 
 message TestMultiKeyTable {
 	uint32 id = 1;
-	map <string, string> tag1 = 2;
-	map <string, string> immunetag1 = 3;
-	uint32 level = 4;
-	repeated TestMultiKeytestobj1 testobj1 = 5;
-	repeated uint32 effect = 6;
-	string stringkey = 7;
-	uint32 uint32key = 8;
-	int32 in32key = 9;
-	string mstringkey = 10;
-	uint32 muint32key = 11;
-	int32 min32key = 12;
+	uint32 level = 2;
+	repeated uint32 effect = 3;
+	string stringkey = 4;
+	uint32 uint32key = 5;
+	int32 in32key = 6;
+	string mstringkey = 7;
+	uint32 muint32key = 8;
+	int32 min32key = 9;
+	map <string, string> tag1 = 10;
+	map <string, string> immunetag1 = 11;
+	repeated TestMultiKeytestobj1 testobj1 = 12;
 }
 
 message TestMultiKeyTableData {

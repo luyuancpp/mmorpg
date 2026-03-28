@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type MissionTableManager struct {
-    data []*pb.MissionTable
+    data   []*pb.MissionTable
     kvData map[int32]*pb.MissionTable
 }
+
+var MissionTableManagerInstance = NewMissionTableManager()
 
 func NewMissionTableManager() *MissionTableManager {
     return &MissionTableManager{
@@ -24,12 +27,12 @@ func (m *MissionTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "mission.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.MissionTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *MissionTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *MissionTableManager) GetById(id int32) (*pb.Mission, bool) {
+func (m *MissionTableManager) GetById(id int32) (*pb.MissionTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

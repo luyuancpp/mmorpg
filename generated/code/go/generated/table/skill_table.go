@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type SkillTableManager struct {
-    data []*pb.SkillTable
+    data   []*pb.SkillTable
     kvData map[int32]*pb.SkillTable
 }
+
+var SkillTableManagerInstance = NewSkillTableManager()
 
 func NewSkillTableManager() *SkillTableManager {
     return &SkillTableManager{
@@ -24,12 +27,12 @@ func (m *SkillTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "skill.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.SkillTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *SkillTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *SkillTableManager) GetById(id int32) (*pb.Skill, bool) {
+func (m *SkillTableManager) GetById(id int32) (*pb.SkillTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

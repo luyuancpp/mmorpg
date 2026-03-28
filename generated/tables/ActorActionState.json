@@ -22,15 +22,51 @@
    "state": [
     {
      "state_mode": 1,
+     "state_tip": 0
+    },
+    {
+     "state_mode": 0,
+     "state_tip": 0
+    },
+    {
+     "state_mode": 0,
      "state_tip": 1
     }
    ]
   },
   {
-   "id": 2
+   "id": 2,
+   "state": [
+    {
+     "state_mode": 0,
+     "state_tip": 0
+    },
+    {
+     "state_mode": 0,
+     "state_tip": 0
+    },
+    {
+     "state_mode": 0,
+     "state_tip": 0
+    }
+   ]
   },
   {
-   "id": 3
+   "id": 3,
+   "state": [
+    {
+     "state_mode": 0,
+     "state_tip": 0
+    },
+    {
+     "state_mode": 0,
+     "state_tip": 0
+    },
+    {
+     "state_mode": 0,
+     "state_tip": 0
+    }
+   ]
   }
  ]
 }
