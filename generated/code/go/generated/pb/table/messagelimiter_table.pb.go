@@ -24,9 +24,9 @@ const (
 type MessageLimiterTable struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	MaxRequests   uint32                 `protobuf:"varint,2,opt,name=MaxRequests,proto3" json:"MaxRequests,omitempty"`
-	TimeWindow    uint32                 `protobuf:"varint,3,opt,name=TimeWindow,proto3" json:"TimeWindow,omitempty"`
-	TipMessage    uint32                 `protobuf:"varint,4,opt,name=TipMessage,proto3" json:"TipMessage,omitempty"`
+	MaxRequests   uint32                 `protobuf:"varint,2,opt,name=max_requests,json=maxRequests,proto3" json:"max_requests,omitempty"`
+	TimeWindow    uint32                 `protobuf:"varint,3,opt,name=time_window,json=timeWindow,proto3" json:"time_window,omitempty"`
+	TipMessage    uint32                 `protobuf:"varint,4,opt,name=tip_message,json=tipMessage,proto3" json:"tip_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -137,16 +137,14 @@ var File_messagelimiter_table_proto protoreflect.FileDescriptor
 
 const file_messagelimiter_table_proto_rawDesc = "" +
 	"\n" +
-	"\x1amessagelimiter_table.proto\"\x87\x01\n" +
+	"\x1amessagelimiter_table.proto\"\x8a\x01\n" +
 	"\x13MessageLimiterTable\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\x12 \n" +
-	"\vMaxRequests\x18\x02 \x01(\rR\vMaxRequests\x12\x1e\n" +
-	"\n" +
-	"TimeWindow\x18\x03 \x01(\rR\n" +
-	"TimeWindow\x12\x1e\n" +
-	"\n" +
-	"TipMessage\x18\x04 \x01(\rR\n" +
-	"TipMessage\"C\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12!\n" +
+	"\fmax_requests\x18\x02 \x01(\rR\vmaxRequests\x12\x1f\n" +
+	"\vtime_window\x18\x03 \x01(\rR\n" +
+	"timeWindow\x12\x1f\n" +
+	"\vtip_message\x18\x04 \x01(\rR\n" +
+	"tipMessage\"C\n" +
 	"\x17MessageLimiterTableData\x12(\n" +
 	"\x04data\x18\x01 \x03(\v2\x14.MessageLimiterTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
 

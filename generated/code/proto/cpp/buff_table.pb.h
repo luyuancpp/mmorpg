@@ -64,14 +64,14 @@ class BuffTableData;
 struct BuffTableDataDefaultTypeInternal;
 extern BuffTableDataDefaultTypeInternal _BuffTableData_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull BuffTableData_class_data_;
-class BuffTable_DispeltagEntry_DoNotUse;
-struct BuffTable_DispeltagEntry_DoNotUseDefaultTypeInternal;
-extern BuffTable_DispeltagEntry_DoNotUseDefaultTypeInternal _BuffTable_DispeltagEntry_DoNotUse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull BuffTable_DispeltagEntry_DoNotUse_class_data_;
-class BuffTable_ImmunetagEntry_DoNotUse;
-struct BuffTable_ImmunetagEntry_DoNotUseDefaultTypeInternal;
-extern BuffTable_ImmunetagEntry_DoNotUseDefaultTypeInternal _BuffTable_ImmunetagEntry_DoNotUse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull BuffTable_ImmunetagEntry_DoNotUse_class_data_;
+class BuffTable_DispelTagEntry_DoNotUse;
+struct BuffTable_DispelTagEntry_DoNotUseDefaultTypeInternal;
+extern BuffTable_DispelTagEntry_DoNotUseDefaultTypeInternal _BuffTable_DispelTagEntry_DoNotUse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull BuffTable_DispelTagEntry_DoNotUse_class_data_;
+class BuffTable_ImmuneTagEntry_DoNotUse;
+struct BuffTable_ImmuneTagEntry_DoNotUseDefaultTypeInternal;
+extern BuffTable_ImmuneTagEntry_DoNotUseDefaultTypeInternal _BuffTable_ImmuneTagEntry_DoNotUse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull BuffTable_ImmuneTagEntry_DoNotUse_class_data_;
 class BuffTable_TagEntry_DoNotUse;
 struct BuffTable_TagEntry_DoNotUseDefaultTypeInternal;
 extern BuffTable_TagEntry_DoNotUseDefaultTypeInternal _BuffTable_TagEntry_DoNotUse_default_instance_;
@@ -126,7 +126,7 @@ class BuffTable_TagEntry_DoNotUse final
 extern const ::google::protobuf::internal::ClassDataFull BuffTable_TagEntry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
-class BuffTable_ImmunetagEntry_DoNotUse final
+class BuffTable_ImmuneTagEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<std::string, bool,
                              ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                              ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
@@ -135,12 +135,12 @@ class BuffTable_ImmunetagEntry_DoNotUse final
       ::google::protobuf::internal::MapEntry<std::string, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
-  BuffTable_ImmunetagEntry_DoNotUse();
+  BuffTable_ImmuneTagEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BuffTable_ImmunetagEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
-  explicit BuffTable_ImmunetagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  explicit PROTOBUF_CONSTEXPR BuffTable_ImmuneTagEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
+  explicit BuffTable_ImmuneTagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr const void* PROTOBUF_NONNULL internal_default_instance() {
-    return &_BuffTable_ImmunetagEntry_DoNotUse_default_instance_;
+    return &_BuffTable_ImmuneTagEntry_DoNotUse_default_instance_;
   }
 
 
@@ -162,10 +162,10 @@ class BuffTable_ImmunetagEntry_DoNotUse final
       ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr auto InternalNewImpl_();
 };
-extern const ::google::protobuf::internal::ClassDataFull BuffTable_ImmunetagEntry_DoNotUse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull BuffTable_ImmuneTagEntry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
-class BuffTable_DispeltagEntry_DoNotUse final
+class BuffTable_DispelTagEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<std::string, bool,
                              ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                              ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
@@ -174,12 +174,12 @@ class BuffTable_DispeltagEntry_DoNotUse final
       ::google::protobuf::internal::MapEntry<std::string, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
-  BuffTable_DispeltagEntry_DoNotUse();
+  BuffTable_DispelTagEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BuffTable_DispeltagEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
-  explicit BuffTable_DispeltagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  explicit PROTOBUF_CONSTEXPR BuffTable_DispelTagEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
+  explicit BuffTable_DispelTagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr const void* PROTOBUF_NONNULL internal_default_instance() {
-    return &_BuffTable_DispeltagEntry_DoNotUse_default_instance_;
+    return &_BuffTable_DispelTagEntry_DoNotUse_default_instance_;
   }
 
 
@@ -201,7 +201,7 @@ class BuffTable_DispeltagEntry_DoNotUse final
       ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr auto InternalNewImpl_();
 };
-extern const ::google::protobuf::internal::ClassDataFull BuffTable_DispeltagEntry_DoNotUse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull BuffTable_DispelTagEntry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
 class BuffTable final : public ::google::protobuf::Message
@@ -348,26 +348,26 @@ class BuffTable final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kTagFieldNumber = 4,
-    kImmunetagFieldNumber = 5,
-    kDispeltagFieldNumber = 6,
-    kIntervaleffectFieldNumber = 14,
-    kSubbuffFieldNumber = 18,
-    kTargetsubbuffFieldNumber = 19,
-    kHealthregenerationFieldNumber = 17,
-    kBonusdamageFieldNumber = 22,
+    kImmuneTagFieldNumber = 5,
+    kDispelTagFieldNumber = 6,
+    kIntervalEffectFieldNumber = 14,
+    kSubBuffFieldNumber = 18,
+    kTargetSubBuffFieldNumber = 19,
+    kHealthRegenerationFieldNumber = 17,
+    kBonusDamageFieldNumber = 22,
     kIdFieldNumber = 1,
-    kNocasterFieldNumber = 2,
-    kBufftypeFieldNumber = 3,
+    kNoCasterFieldNumber = 2,
+    kBuffTypeFieldNumber = 3,
     kLevelFieldNumber = 7,
-    kMaxlayerFieldNumber = 8,
-    kInfinitedurationFieldNumber = 9,
+    kMaxLayerFieldNumber = 8,
+    kInfiniteDurationFieldNumber = 9,
     kDurationFieldNumber = 10,
     kIntervalFieldNumber = 12,
-    kForceinterruptFieldNumber = 11,
-    kIntervalcountFieldNumber = 13,
+    kForceInterruptFieldNumber = 11,
+    kIntervalCountFieldNumber = 13,
     kMovementSpeedBoostFieldNumber = 15,
     kMovementSpeedReductionFieldNumber = 16,
-    kNodamageorskillhitinlastsecondsFieldNumber = 20,
+    kCombatIdleSecondsFieldNumber = 20,
     kTimeFieldNumber = 21,
   };
   // map<string, bool> tag = 4;
@@ -385,118 +385,118 @@ class BuffTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL _internal_mutable_tag();
 
   public:
-  // map<string, bool> immunetag = 5;
-  int immunetag_size() const;
+  // map<string, bool> immune_tag = 5;
+  int immune_tag_size() const;
   private:
-  int _internal_immunetag_size() const;
+  int _internal_immune_tag_size() const;
 
   public:
-  void clear_immunetag() ;
-  const ::google::protobuf::Map<std::string, bool>& immunetag() const;
-  ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL mutable_immunetag();
+  void clear_immune_tag() ;
+  const ::google::protobuf::Map<std::string, bool>& immune_tag() const;
+  ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL mutable_immune_tag();
 
   private:
-  const ::google::protobuf::Map<std::string, bool>& _internal_immunetag() const;
-  ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL _internal_mutable_immunetag();
+  const ::google::protobuf::Map<std::string, bool>& _internal_immune_tag() const;
+  ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL _internal_mutable_immune_tag();
 
   public:
-  // map<string, bool> dispeltag = 6;
-  int dispeltag_size() const;
+  // map<string, bool> dispel_tag = 6;
+  int dispel_tag_size() const;
   private:
-  int _internal_dispeltag_size() const;
+  int _internal_dispel_tag_size() const;
 
   public:
-  void clear_dispeltag() ;
-  const ::google::protobuf::Map<std::string, bool>& dispeltag() const;
-  ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL mutable_dispeltag();
-
-  private:
-  const ::google::protobuf::Map<std::string, bool>& _internal_dispeltag() const;
-  ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL _internal_mutable_dispeltag();
-
-  public:
-  // repeated double intervaleffect = 14;
-  int intervaleffect_size() const;
-  private:
-  int _internal_intervaleffect_size() const;
-
-  public:
-  void clear_intervaleffect() ;
-  double intervaleffect(int index) const;
-  void set_intervaleffect(int index, double value);
-  void add_intervaleffect(double value);
-  const ::google::protobuf::RepeatedField<double>& intervaleffect() const;
-  ::google::protobuf::RepeatedField<double>* PROTOBUF_NONNULL mutable_intervaleffect();
+  void clear_dispel_tag() ;
+  const ::google::protobuf::Map<std::string, bool>& dispel_tag() const;
+  ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL mutable_dispel_tag();
 
   private:
-  const ::google::protobuf::RepeatedField<double>& _internal_intervaleffect() const;
-  ::google::protobuf::RepeatedField<double>* PROTOBUF_NONNULL _internal_mutable_intervaleffect();
+  const ::google::protobuf::Map<std::string, bool>& _internal_dispel_tag() const;
+  ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL _internal_mutable_dispel_tag();
 
   public:
-  // repeated uint32 subbuff = 18;
-  int subbuff_size() const;
+  // repeated double interval_effect = 14;
+  int interval_effect_size() const;
   private:
-  int _internal_subbuff_size() const;
+  int _internal_interval_effect_size() const;
 
   public:
-  void clear_subbuff() ;
-  ::uint32_t subbuff(int index) const;
-  void set_subbuff(int index, ::uint32_t value);
-  void add_subbuff(::uint32_t value);
-  const ::google::protobuf::RepeatedField<::uint32_t>& subbuff() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_subbuff();
-
-  private:
-  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_subbuff() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_subbuff();
-
-  public:
-  // repeated uint32 targetsubbuff = 19;
-  int targetsubbuff_size() const;
-  private:
-  int _internal_targetsubbuff_size() const;
-
-  public:
-  void clear_targetsubbuff() ;
-  ::uint32_t targetsubbuff(int index) const;
-  void set_targetsubbuff(int index, ::uint32_t value);
-  void add_targetsubbuff(::uint32_t value);
-  const ::google::protobuf::RepeatedField<::uint32_t>& targetsubbuff() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_targetsubbuff();
+  void clear_interval_effect() ;
+  double interval_effect(int index) const;
+  void set_interval_effect(int index, double value);
+  void add_interval_effect(double value);
+  const ::google::protobuf::RepeatedField<double>& interval_effect() const;
+  ::google::protobuf::RepeatedField<double>* PROTOBUF_NONNULL mutable_interval_effect();
 
   private:
-  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_targetsubbuff() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_targetsubbuff();
+  const ::google::protobuf::RepeatedField<double>& _internal_interval_effect() const;
+  ::google::protobuf::RepeatedField<double>* PROTOBUF_NONNULL _internal_mutable_interval_effect();
 
   public:
-  // string healthregeneration = 17;
-  void clear_healthregeneration() ;
-  const ::std::string& healthregeneration() const;
+  // repeated uint32 sub_buff = 18;
+  int sub_buff_size() const;
+  private:
+  int _internal_sub_buff_size() const;
+
+  public:
+  void clear_sub_buff() ;
+  ::uint32_t sub_buff(int index) const;
+  void set_sub_buff(int index, ::uint32_t value);
+  void add_sub_buff(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& sub_buff() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_sub_buff();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_sub_buff() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_sub_buff();
+
+  public:
+  // repeated uint32 target_sub_buff = 19;
+  int target_sub_buff_size() const;
+  private:
+  int _internal_target_sub_buff_size() const;
+
+  public:
+  void clear_target_sub_buff() ;
+  ::uint32_t target_sub_buff(int index) const;
+  void set_target_sub_buff(int index, ::uint32_t value);
+  void add_target_sub_buff(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& target_sub_buff() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_target_sub_buff();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_target_sub_buff() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_target_sub_buff();
+
+  public:
+  // string health_regeneration = 17;
+  void clear_health_regeneration() ;
+  const ::std::string& health_regeneration() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_healthregeneration(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_healthregeneration();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_healthregeneration();
-  void set_allocated_healthregeneration(::std::string* PROTOBUF_NULLABLE value);
+  void set_health_regeneration(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_health_regeneration();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_health_regeneration();
+  void set_allocated_health_regeneration(::std::string* PROTOBUF_NULLABLE value);
 
   private:
-  const ::std::string& _internal_healthregeneration() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_healthregeneration(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_healthregeneration();
+  const ::std::string& _internal_health_regeneration() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_health_regeneration(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_health_regeneration();
 
   public:
-  // string bonusdamage = 22;
-  void clear_bonusdamage() ;
-  const ::std::string& bonusdamage() const;
+  // string bonus_damage = 22;
+  void clear_bonus_damage() ;
+  const ::std::string& bonus_damage() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_bonusdamage(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_bonusdamage();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_bonusdamage();
-  void set_allocated_bonusdamage(::std::string* PROTOBUF_NULLABLE value);
+  void set_bonus_damage(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_bonus_damage();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_bonus_damage();
+  void set_allocated_bonus_damage(::std::string* PROTOBUF_NULLABLE value);
 
   private:
-  const ::std::string& _internal_bonusdamage() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_bonusdamage(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_bonusdamage();
+  const ::std::string& _internal_bonus_damage() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_bonus_damage(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_bonus_damage();
 
   public:
   // uint32 id = 1;
@@ -509,24 +509,24 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_id(::uint32_t value);
 
   public:
-  // uint32 nocaster = 2;
-  void clear_nocaster() ;
-  ::uint32_t nocaster() const;
-  void set_nocaster(::uint32_t value);
+  // uint32 no_caster = 2;
+  void clear_no_caster() ;
+  ::uint32_t no_caster() const;
+  void set_no_caster(::uint32_t value);
 
   private:
-  ::uint32_t _internal_nocaster() const;
-  void _internal_set_nocaster(::uint32_t value);
+  ::uint32_t _internal_no_caster() const;
+  void _internal_set_no_caster(::uint32_t value);
 
   public:
-  // uint32 bufftype = 3;
-  void clear_bufftype() ;
-  ::uint32_t bufftype() const;
-  void set_bufftype(::uint32_t value);
+  // uint32 buff_type = 3;
+  void clear_buff_type() ;
+  ::uint32_t buff_type() const;
+  void set_buff_type(::uint32_t value);
 
   private:
-  ::uint32_t _internal_bufftype() const;
-  void _internal_set_bufftype(::uint32_t value);
+  ::uint32_t _internal_buff_type() const;
+  void _internal_set_buff_type(::uint32_t value);
 
   public:
   // uint32 level = 7;
@@ -539,24 +539,24 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_level(::uint32_t value);
 
   public:
-  // uint32 maxlayer = 8;
-  void clear_maxlayer() ;
-  ::uint32_t maxlayer() const;
-  void set_maxlayer(::uint32_t value);
+  // uint32 max_layer = 8;
+  void clear_max_layer() ;
+  ::uint32_t max_layer() const;
+  void set_max_layer(::uint32_t value);
 
   private:
-  ::uint32_t _internal_maxlayer() const;
-  void _internal_set_maxlayer(::uint32_t value);
+  ::uint32_t _internal_max_layer() const;
+  void _internal_set_max_layer(::uint32_t value);
 
   public:
-  // uint32 infiniteduration = 9;
-  void clear_infiniteduration() ;
-  ::uint32_t infiniteduration() const;
-  void set_infiniteduration(::uint32_t value);
+  // uint32 infinite_duration = 9;
+  void clear_infinite_duration() ;
+  ::uint32_t infinite_duration() const;
+  void set_infinite_duration(::uint32_t value);
 
   private:
-  ::uint32_t _internal_infiniteduration() const;
-  void _internal_set_infiniteduration(::uint32_t value);
+  ::uint32_t _internal_infinite_duration() const;
+  void _internal_set_infinite_duration(::uint32_t value);
 
   public:
   // double duration = 10;
@@ -579,24 +579,24 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_interval(double value);
 
   public:
-  // uint32 forceinterrupt = 11;
-  void clear_forceinterrupt() ;
-  ::uint32_t forceinterrupt() const;
-  void set_forceinterrupt(::uint32_t value);
+  // uint32 force_interrupt = 11;
+  void clear_force_interrupt() ;
+  ::uint32_t force_interrupt() const;
+  void set_force_interrupt(::uint32_t value);
 
   private:
-  ::uint32_t _internal_forceinterrupt() const;
-  void _internal_set_forceinterrupt(::uint32_t value);
+  ::uint32_t _internal_force_interrupt() const;
+  void _internal_set_force_interrupt(::uint32_t value);
 
   public:
-  // uint32 intervalcount = 13;
-  void clear_intervalcount() ;
-  ::uint32_t intervalcount() const;
-  void set_intervalcount(::uint32_t value);
+  // uint32 interval_count = 13;
+  void clear_interval_count() ;
+  ::uint32_t interval_count() const;
+  void set_interval_count(::uint32_t value);
 
   private:
-  ::uint32_t _internal_intervalcount() const;
-  void _internal_set_intervalcount(::uint32_t value);
+  ::uint32_t _internal_interval_count() const;
+  void _internal_set_interval_count(::uint32_t value);
 
   public:
   // double movement_speed_boost = 15;
@@ -619,14 +619,14 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_movement_speed_reduction(double value);
 
   public:
-  // double nodamageorskillhitinlastseconds = 20;
-  void clear_nodamageorskillhitinlastseconds() ;
-  double nodamageorskillhitinlastseconds() const;
-  void set_nodamageorskillhitinlastseconds(double value);
+  // double combat_idle_seconds = 20;
+  void clear_combat_idle_seconds() ;
+  double combat_idle_seconds() const;
+  void set_combat_idle_seconds(double value);
 
   private:
-  double _internal_nodamageorskillhitinlastseconds() const;
-  void _internal_set_nodamageorskillhitinlastseconds(double value);
+  double _internal_combat_idle_seconds() const;
+  void _internal_set_combat_idle_seconds(double value);
 
   public:
   // uint32 time = 21;
@@ -644,7 +644,7 @@ class BuffTable final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<5, 22,
-                                   3, 84,
+                                   3, 88,
                                    2>
       _table_;
 
@@ -669,34 +669,34 @@ class BuffTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         tag_;
-    ::google::protobuf::internal::MapField<BuffTable_ImmunetagEntry_DoNotUse, std::string, bool,
+    ::google::protobuf::internal::MapField<BuffTable_ImmuneTagEntry_DoNotUse, std::string, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
-        immunetag_;
-    ::google::protobuf::internal::MapField<BuffTable_DispeltagEntry_DoNotUse, std::string, bool,
+        immune_tag_;
+    ::google::protobuf::internal::MapField<BuffTable_DispelTagEntry_DoNotUse, std::string, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
-        dispeltag_;
-    ::google::protobuf::RepeatedField<double> intervaleffect_;
-    ::google::protobuf::RepeatedField<::uint32_t> subbuff_;
-    ::google::protobuf::internal::CachedSize _subbuff_cached_byte_size_;
-    ::google::protobuf::RepeatedField<::uint32_t> targetsubbuff_;
-    ::google::protobuf::internal::CachedSize _targetsubbuff_cached_byte_size_;
-    ::google::protobuf::internal::ArenaStringPtr healthregeneration_;
-    ::google::protobuf::internal::ArenaStringPtr bonusdamage_;
+        dispel_tag_;
+    ::google::protobuf::RepeatedField<double> interval_effect_;
+    ::google::protobuf::RepeatedField<::uint32_t> sub_buff_;
+    ::google::protobuf::internal::CachedSize _sub_buff_cached_byte_size_;
+    ::google::protobuf::RepeatedField<::uint32_t> target_sub_buff_;
+    ::google::protobuf::internal::CachedSize _target_sub_buff_cached_byte_size_;
+    ::google::protobuf::internal::ArenaStringPtr health_regeneration_;
+    ::google::protobuf::internal::ArenaStringPtr bonus_damage_;
     ::uint32_t id_;
-    ::uint32_t nocaster_;
-    ::uint32_t bufftype_;
+    ::uint32_t no_caster_;
+    ::uint32_t buff_type_;
     ::uint32_t level_;
-    ::uint32_t maxlayer_;
-    ::uint32_t infiniteduration_;
+    ::uint32_t max_layer_;
+    ::uint32_t infinite_duration_;
     double duration_;
     double interval_;
-    ::uint32_t forceinterrupt_;
-    ::uint32_t intervalcount_;
+    ::uint32_t force_interrupt_;
+    ::uint32_t interval_count_;
     double movement_speed_boost_;
     double movement_speed_reduction_;
-    double nodamageorskillhitinlastseconds_;
+    double combat_idle_seconds_;
     ::uint32_t time_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -949,52 +949,52 @@ inline void BuffTable::_internal_set_id(::uint32_t value) {
   _impl_.id_ = value;
 }
 
-// uint32 nocaster = 2;
-inline void BuffTable::clear_nocaster() {
+// uint32 no_caster = 2;
+inline void BuffTable::clear_no_caster() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.nocaster_ = 0u;
+  _impl_.no_caster_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint32_t BuffTable::nocaster() const {
-  // @@protoc_insertion_point(field_get:BuffTable.nocaster)
-  return _internal_nocaster();
+inline ::uint32_t BuffTable::no_caster() const {
+  // @@protoc_insertion_point(field_get:BuffTable.no_caster)
+  return _internal_no_caster();
 }
-inline void BuffTable::set_nocaster(::uint32_t value) {
-  _internal_set_nocaster(value);
+inline void BuffTable::set_no_caster(::uint32_t value) {
+  _internal_set_no_caster(value);
   _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:BuffTable.nocaster)
+  // @@protoc_insertion_point(field_set:BuffTable.no_caster)
 }
-inline ::uint32_t BuffTable::_internal_nocaster() const {
+inline ::uint32_t BuffTable::_internal_no_caster() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.nocaster_;
+  return _impl_.no_caster_;
 }
-inline void BuffTable::_internal_set_nocaster(::uint32_t value) {
+inline void BuffTable::_internal_set_no_caster(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.nocaster_ = value;
+  _impl_.no_caster_ = value;
 }
 
-// uint32 bufftype = 3;
-inline void BuffTable::clear_bufftype() {
+// uint32 buff_type = 3;
+inline void BuffTable::clear_buff_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.bufftype_ = 0u;
+  _impl_.buff_type_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint32_t BuffTable::bufftype() const {
-  // @@protoc_insertion_point(field_get:BuffTable.bufftype)
-  return _internal_bufftype();
+inline ::uint32_t BuffTable::buff_type() const {
+  // @@protoc_insertion_point(field_get:BuffTable.buff_type)
+  return _internal_buff_type();
 }
-inline void BuffTable::set_bufftype(::uint32_t value) {
-  _internal_set_bufftype(value);
+inline void BuffTable::set_buff_type(::uint32_t value) {
+  _internal_set_buff_type(value);
   _impl_._has_bits_[0] |= 0x00000010u;
-  // @@protoc_insertion_point(field_set:BuffTable.bufftype)
+  // @@protoc_insertion_point(field_set:BuffTable.buff_type)
 }
-inline ::uint32_t BuffTable::_internal_bufftype() const {
+inline ::uint32_t BuffTable::_internal_buff_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.bufftype_;
+  return _impl_.buff_type_;
 }
-inline void BuffTable::_internal_set_bufftype(::uint32_t value) {
+inline void BuffTable::_internal_set_buff_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.bufftype_ = value;
+  _impl_.buff_type_ = value;
 }
 
 // map<string, bool> tag = 4;
@@ -1026,62 +1026,62 @@ inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::m
   return _internal_mutable_tag();
 }
 
-// map<string, bool> immunetag = 5;
-inline int BuffTable::_internal_immunetag_size() const {
-  return _internal_immunetag().size();
+// map<string, bool> immune_tag = 5;
+inline int BuffTable::_internal_immune_tag_size() const {
+  return _internal_immune_tag().size();
 }
-inline int BuffTable::immunetag_size() const {
-  return _internal_immunetag_size();
+inline int BuffTable::immune_tag_size() const {
+  return _internal_immune_tag_size();
 }
-inline void BuffTable::clear_immunetag() {
+inline void BuffTable::clear_immune_tag() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.immunetag_.Clear();
+  _impl_.immune_tag_.Clear();
 }
-inline const ::google::protobuf::Map<std::string, bool>& BuffTable::_internal_immunetag() const {
+inline const ::google::protobuf::Map<std::string, bool>& BuffTable::_internal_immune_tag() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.immunetag_.GetMap();
+  return _impl_.immune_tag_.GetMap();
 }
-inline const ::google::protobuf::Map<std::string, bool>& BuffTable::immunetag() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:BuffTable.immunetag)
-  return _internal_immunetag();
+inline const ::google::protobuf::Map<std::string, bool>& BuffTable::immune_tag() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:BuffTable.immune_tag)
+  return _internal_immune_tag();
 }
-inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::_internal_mutable_immunetag() {
+inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::_internal_mutable_immune_tag() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.immunetag_.MutableMap();
+  return _impl_.immune_tag_.MutableMap();
 }
-inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::mutable_immunetag()
+inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::mutable_immune_tag()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:BuffTable.immunetag)
-  return _internal_mutable_immunetag();
+  // @@protoc_insertion_point(field_mutable_map:BuffTable.immune_tag)
+  return _internal_mutable_immune_tag();
 }
 
-// map<string, bool> dispeltag = 6;
-inline int BuffTable::_internal_dispeltag_size() const {
-  return _internal_dispeltag().size();
+// map<string, bool> dispel_tag = 6;
+inline int BuffTable::_internal_dispel_tag_size() const {
+  return _internal_dispel_tag().size();
 }
-inline int BuffTable::dispeltag_size() const {
-  return _internal_dispeltag_size();
+inline int BuffTable::dispel_tag_size() const {
+  return _internal_dispel_tag_size();
 }
-inline void BuffTable::clear_dispeltag() {
+inline void BuffTable::clear_dispel_tag() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.dispeltag_.Clear();
+  _impl_.dispel_tag_.Clear();
 }
-inline const ::google::protobuf::Map<std::string, bool>& BuffTable::_internal_dispeltag() const {
+inline const ::google::protobuf::Map<std::string, bool>& BuffTable::_internal_dispel_tag() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.dispeltag_.GetMap();
+  return _impl_.dispel_tag_.GetMap();
 }
-inline const ::google::protobuf::Map<std::string, bool>& BuffTable::dispeltag() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:BuffTable.dispeltag)
-  return _internal_dispeltag();
+inline const ::google::protobuf::Map<std::string, bool>& BuffTable::dispel_tag() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:BuffTable.dispel_tag)
+  return _internal_dispel_tag();
 }
-inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::_internal_mutable_dispeltag() {
+inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::_internal_mutable_dispel_tag() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.dispeltag_.MutableMap();
+  return _impl_.dispel_tag_.MutableMap();
 }
-inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::mutable_dispeltag()
+inline ::google::protobuf::Map<std::string, bool>* PROTOBUF_NONNULL BuffTable::mutable_dispel_tag()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:BuffTable.dispeltag)
-  return _internal_mutable_dispeltag();
+  // @@protoc_insertion_point(field_mutable_map:BuffTable.dispel_tag)
+  return _internal_mutable_dispel_tag();
 }
 
 // uint32 level = 7;
@@ -1108,52 +1108,52 @@ inline void BuffTable::_internal_set_level(::uint32_t value) {
   _impl_.level_ = value;
 }
 
-// uint32 maxlayer = 8;
-inline void BuffTable::clear_maxlayer() {
+// uint32 max_layer = 8;
+inline void BuffTable::clear_max_layer() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.maxlayer_ = 0u;
+  _impl_.max_layer_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000040u;
 }
-inline ::uint32_t BuffTable::maxlayer() const {
-  // @@protoc_insertion_point(field_get:BuffTable.maxlayer)
-  return _internal_maxlayer();
+inline ::uint32_t BuffTable::max_layer() const {
+  // @@protoc_insertion_point(field_get:BuffTable.max_layer)
+  return _internal_max_layer();
 }
-inline void BuffTable::set_maxlayer(::uint32_t value) {
-  _internal_set_maxlayer(value);
+inline void BuffTable::set_max_layer(::uint32_t value) {
+  _internal_set_max_layer(value);
   _impl_._has_bits_[0] |= 0x00000040u;
-  // @@protoc_insertion_point(field_set:BuffTable.maxlayer)
+  // @@protoc_insertion_point(field_set:BuffTable.max_layer)
 }
-inline ::uint32_t BuffTable::_internal_maxlayer() const {
+inline ::uint32_t BuffTable::_internal_max_layer() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.maxlayer_;
+  return _impl_.max_layer_;
 }
-inline void BuffTable::_internal_set_maxlayer(::uint32_t value) {
+inline void BuffTable::_internal_set_max_layer(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.maxlayer_ = value;
+  _impl_.max_layer_ = value;
 }
 
-// uint32 infiniteduration = 9;
-inline void BuffTable::clear_infiniteduration() {
+// uint32 infinite_duration = 9;
+inline void BuffTable::clear_infinite_duration() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.infiniteduration_ = 0u;
+  _impl_.infinite_duration_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000080u;
 }
-inline ::uint32_t BuffTable::infiniteduration() const {
-  // @@protoc_insertion_point(field_get:BuffTable.infiniteduration)
-  return _internal_infiniteduration();
+inline ::uint32_t BuffTable::infinite_duration() const {
+  // @@protoc_insertion_point(field_get:BuffTable.infinite_duration)
+  return _internal_infinite_duration();
 }
-inline void BuffTable::set_infiniteduration(::uint32_t value) {
-  _internal_set_infiniteduration(value);
+inline void BuffTable::set_infinite_duration(::uint32_t value) {
+  _internal_set_infinite_duration(value);
   _impl_._has_bits_[0] |= 0x00000080u;
-  // @@protoc_insertion_point(field_set:BuffTable.infiniteduration)
+  // @@protoc_insertion_point(field_set:BuffTable.infinite_duration)
 }
-inline ::uint32_t BuffTable::_internal_infiniteduration() const {
+inline ::uint32_t BuffTable::_internal_infinite_duration() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.infiniteduration_;
+  return _impl_.infinite_duration_;
 }
-inline void BuffTable::_internal_set_infiniteduration(::uint32_t value) {
+inline void BuffTable::_internal_set_infinite_duration(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.infiniteduration_ = value;
+  _impl_.infinite_duration_ = value;
 }
 
 // double duration = 10;
@@ -1180,28 +1180,28 @@ inline void BuffTable::_internal_set_duration(double value) {
   _impl_.duration_ = value;
 }
 
-// uint32 forceinterrupt = 11;
-inline void BuffTable::clear_forceinterrupt() {
+// uint32 force_interrupt = 11;
+inline void BuffTable::clear_force_interrupt() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.forceinterrupt_ = 0u;
+  _impl_.force_interrupt_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000400u;
 }
-inline ::uint32_t BuffTable::forceinterrupt() const {
-  // @@protoc_insertion_point(field_get:BuffTable.forceinterrupt)
-  return _internal_forceinterrupt();
+inline ::uint32_t BuffTable::force_interrupt() const {
+  // @@protoc_insertion_point(field_get:BuffTable.force_interrupt)
+  return _internal_force_interrupt();
 }
-inline void BuffTable::set_forceinterrupt(::uint32_t value) {
-  _internal_set_forceinterrupt(value);
+inline void BuffTable::set_force_interrupt(::uint32_t value) {
+  _internal_set_force_interrupt(value);
   _impl_._has_bits_[0] |= 0x00000400u;
-  // @@protoc_insertion_point(field_set:BuffTable.forceinterrupt)
+  // @@protoc_insertion_point(field_set:BuffTable.force_interrupt)
 }
-inline ::uint32_t BuffTable::_internal_forceinterrupt() const {
+inline ::uint32_t BuffTable::_internal_force_interrupt() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.forceinterrupt_;
+  return _impl_.force_interrupt_;
 }
-inline void BuffTable::_internal_set_forceinterrupt(::uint32_t value) {
+inline void BuffTable::_internal_set_force_interrupt(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.forceinterrupt_ = value;
+  _impl_.force_interrupt_ = value;
 }
 
 // double interval = 12;
@@ -1228,74 +1228,74 @@ inline void BuffTable::_internal_set_interval(double value) {
   _impl_.interval_ = value;
 }
 
-// uint32 intervalcount = 13;
-inline void BuffTable::clear_intervalcount() {
+// uint32 interval_count = 13;
+inline void BuffTable::clear_interval_count() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.intervalcount_ = 0u;
+  _impl_.interval_count_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000800u;
 }
-inline ::uint32_t BuffTable::intervalcount() const {
-  // @@protoc_insertion_point(field_get:BuffTable.intervalcount)
-  return _internal_intervalcount();
+inline ::uint32_t BuffTable::interval_count() const {
+  // @@protoc_insertion_point(field_get:BuffTable.interval_count)
+  return _internal_interval_count();
 }
-inline void BuffTable::set_intervalcount(::uint32_t value) {
-  _internal_set_intervalcount(value);
+inline void BuffTable::set_interval_count(::uint32_t value) {
+  _internal_set_interval_count(value);
   _impl_._has_bits_[0] |= 0x00000800u;
-  // @@protoc_insertion_point(field_set:BuffTable.intervalcount)
+  // @@protoc_insertion_point(field_set:BuffTable.interval_count)
 }
-inline ::uint32_t BuffTable::_internal_intervalcount() const {
+inline ::uint32_t BuffTable::_internal_interval_count() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.intervalcount_;
+  return _impl_.interval_count_;
 }
-inline void BuffTable::_internal_set_intervalcount(::uint32_t value) {
+inline void BuffTable::_internal_set_interval_count(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.intervalcount_ = value;
+  _impl_.interval_count_ = value;
 }
 
-// repeated double intervaleffect = 14;
-inline int BuffTable::_internal_intervaleffect_size() const {
-  return _internal_intervaleffect().size();
+// repeated double interval_effect = 14;
+inline int BuffTable::_internal_interval_effect_size() const {
+  return _internal_interval_effect().size();
 }
-inline int BuffTable::intervaleffect_size() const {
-  return _internal_intervaleffect_size();
+inline int BuffTable::interval_effect_size() const {
+  return _internal_interval_effect_size();
 }
-inline void BuffTable::clear_intervaleffect() {
+inline void BuffTable::clear_interval_effect() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.intervaleffect_.Clear();
+  _impl_.interval_effect_.Clear();
 }
-inline double BuffTable::intervaleffect(int index) const {
-  // @@protoc_insertion_point(field_get:BuffTable.intervaleffect)
-  return _internal_intervaleffect().Get(index);
+inline double BuffTable::interval_effect(int index) const {
+  // @@protoc_insertion_point(field_get:BuffTable.interval_effect)
+  return _internal_interval_effect().Get(index);
 }
-inline void BuffTable::set_intervaleffect(int index, double value) {
-  _internal_mutable_intervaleffect()->Set(index, value);
-  // @@protoc_insertion_point(field_set:BuffTable.intervaleffect)
+inline void BuffTable::set_interval_effect(int index, double value) {
+  _internal_mutable_interval_effect()->Set(index, value);
+  // @@protoc_insertion_point(field_set:BuffTable.interval_effect)
 }
-inline void BuffTable::add_intervaleffect(double value) {
+inline void BuffTable::add_interval_effect(double value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _internal_mutable_intervaleffect()->Add(value);
-  // @@protoc_insertion_point(field_add:BuffTable.intervaleffect)
+  _internal_mutable_interval_effect()->Add(value);
+  // @@protoc_insertion_point(field_add:BuffTable.interval_effect)
 }
-inline const ::google::protobuf::RepeatedField<double>& BuffTable::intervaleffect() const
+inline const ::google::protobuf::RepeatedField<double>& BuffTable::interval_effect() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:BuffTable.intervaleffect)
-  return _internal_intervaleffect();
+  // @@protoc_insertion_point(field_list:BuffTable.interval_effect)
+  return _internal_interval_effect();
 }
-inline ::google::protobuf::RepeatedField<double>* PROTOBUF_NONNULL BuffTable::mutable_intervaleffect()
+inline ::google::protobuf::RepeatedField<double>* PROTOBUF_NONNULL BuffTable::mutable_interval_effect()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:BuffTable.intervaleffect)
+  // @@protoc_insertion_point(field_mutable_list:BuffTable.interval_effect)
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_intervaleffect();
+  return _internal_mutable_interval_effect();
 }
 inline const ::google::protobuf::RepeatedField<double>&
-BuffTable::_internal_intervaleffect() const {
+BuffTable::_internal_interval_effect() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.intervaleffect_;
+  return _impl_.interval_effect_;
 }
 inline ::google::protobuf::RepeatedField<double>* PROTOBUF_NONNULL
-BuffTable::_internal_mutable_intervaleffect() {
+BuffTable::_internal_mutable_interval_effect() {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.intervaleffect_;
+  return &_impl_.interval_effect_;
 }
 
 // double movement_speed_boost = 15;
@@ -1346,185 +1346,185 @@ inline void BuffTable::_internal_set_movement_speed_reduction(double value) {
   _impl_.movement_speed_reduction_ = value;
 }
 
-// string healthregeneration = 17;
-inline void BuffTable::clear_healthregeneration() {
+// string health_regeneration = 17;
+inline void BuffTable::clear_health_regeneration() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.healthregeneration_.ClearToEmpty();
+  _impl_.health_regeneration_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::std::string& BuffTable::healthregeneration() const
+inline const ::std::string& BuffTable::health_regeneration() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BuffTable.healthregeneration)
-  return _internal_healthregeneration();
+  // @@protoc_insertion_point(field_get:BuffTable.health_regeneration)
+  return _internal_health_regeneration();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void BuffTable::set_healthregeneration(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void BuffTable::set_health_regeneration(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.healthregeneration_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:BuffTable.healthregeneration)
+  _impl_.health_regeneration_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuffTable.health_regeneration)
 }
-inline ::std::string* PROTOBUF_NONNULL BuffTable::mutable_healthregeneration()
+inline ::std::string* PROTOBUF_NONNULL BuffTable::mutable_health_regeneration()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_healthregeneration();
-  // @@protoc_insertion_point(field_mutable:BuffTable.healthregeneration)
+  ::std::string* _s = _internal_mutable_health_regeneration();
+  // @@protoc_insertion_point(field_mutable:BuffTable.health_regeneration)
   return _s;
 }
-inline const ::std::string& BuffTable::_internal_healthregeneration() const {
+inline const ::std::string& BuffTable::_internal_health_regeneration() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.healthregeneration_.Get();
+  return _impl_.health_regeneration_.Get();
 }
-inline void BuffTable::_internal_set_healthregeneration(const ::std::string& value) {
+inline void BuffTable::_internal_set_health_regeneration(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.healthregeneration_.Set(value, GetArena());
+  _impl_.health_regeneration_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL BuffTable::_internal_mutable_healthregeneration() {
+inline ::std::string* PROTOBUF_NONNULL BuffTable::_internal_mutable_health_regeneration() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
-  return _impl_.healthregeneration_.Mutable( GetArena());
+  return _impl_.health_regeneration_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE BuffTable::release_healthregeneration() {
+inline ::std::string* PROTOBUF_NULLABLE BuffTable::release_health_regeneration() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:BuffTable.healthregeneration)
+  // @@protoc_insertion_point(field_release:BuffTable.health_regeneration)
   if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
     return nullptr;
   }
   _impl_._has_bits_[0] &= ~0x00000001u;
-  auto* released = _impl_.healthregeneration_.Release();
+  auto* released = _impl_.health_regeneration_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.healthregeneration_.Set("", GetArena());
+    _impl_.health_regeneration_.Set("", GetArena());
   }
   return released;
 }
-inline void BuffTable::set_allocated_healthregeneration(::std::string* PROTOBUF_NULLABLE value) {
+inline void BuffTable::set_allocated_health_regeneration(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  _impl_.healthregeneration_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.healthregeneration_.IsDefault()) {
-    _impl_.healthregeneration_.Set("", GetArena());
+  _impl_.health_regeneration_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.health_regeneration_.IsDefault()) {
+    _impl_.health_regeneration_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:BuffTable.healthregeneration)
+  // @@protoc_insertion_point(field_set_allocated:BuffTable.health_regeneration)
 }
 
-// repeated uint32 subbuff = 18;
-inline int BuffTable::_internal_subbuff_size() const {
-  return _internal_subbuff().size();
+// repeated uint32 sub_buff = 18;
+inline int BuffTable::_internal_sub_buff_size() const {
+  return _internal_sub_buff().size();
 }
-inline int BuffTable::subbuff_size() const {
-  return _internal_subbuff_size();
+inline int BuffTable::sub_buff_size() const {
+  return _internal_sub_buff_size();
 }
-inline void BuffTable::clear_subbuff() {
+inline void BuffTable::clear_sub_buff() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.subbuff_.Clear();
+  _impl_.sub_buff_.Clear();
 }
-inline ::uint32_t BuffTable::subbuff(int index) const {
-  // @@protoc_insertion_point(field_get:BuffTable.subbuff)
-  return _internal_subbuff().Get(index);
+inline ::uint32_t BuffTable::sub_buff(int index) const {
+  // @@protoc_insertion_point(field_get:BuffTable.sub_buff)
+  return _internal_sub_buff().Get(index);
 }
-inline void BuffTable::set_subbuff(int index, ::uint32_t value) {
-  _internal_mutable_subbuff()->Set(index, value);
-  // @@protoc_insertion_point(field_set:BuffTable.subbuff)
+inline void BuffTable::set_sub_buff(int index, ::uint32_t value) {
+  _internal_mutable_sub_buff()->Set(index, value);
+  // @@protoc_insertion_point(field_set:BuffTable.sub_buff)
 }
-inline void BuffTable::add_subbuff(::uint32_t value) {
+inline void BuffTable::add_sub_buff(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _internal_mutable_subbuff()->Add(value);
-  // @@protoc_insertion_point(field_add:BuffTable.subbuff)
+  _internal_mutable_sub_buff()->Add(value);
+  // @@protoc_insertion_point(field_add:BuffTable.sub_buff)
 }
-inline const ::google::protobuf::RepeatedField<::uint32_t>& BuffTable::subbuff() const
+inline const ::google::protobuf::RepeatedField<::uint32_t>& BuffTable::sub_buff() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:BuffTable.subbuff)
-  return _internal_subbuff();
+  // @@protoc_insertion_point(field_list:BuffTable.sub_buff)
+  return _internal_sub_buff();
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL BuffTable::mutable_subbuff()
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL BuffTable::mutable_sub_buff()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:BuffTable.subbuff)
+  // @@protoc_insertion_point(field_mutable_list:BuffTable.sub_buff)
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_subbuff();
+  return _internal_mutable_sub_buff();
 }
 inline const ::google::protobuf::RepeatedField<::uint32_t>&
-BuffTable::_internal_subbuff() const {
+BuffTable::_internal_sub_buff() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.subbuff_;
+  return _impl_.sub_buff_;
 }
 inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
-BuffTable::_internal_mutable_subbuff() {
+BuffTable::_internal_mutable_sub_buff() {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.subbuff_;
+  return &_impl_.sub_buff_;
 }
 
-// repeated uint32 targetsubbuff = 19;
-inline int BuffTable::_internal_targetsubbuff_size() const {
-  return _internal_targetsubbuff().size();
+// repeated uint32 target_sub_buff = 19;
+inline int BuffTable::_internal_target_sub_buff_size() const {
+  return _internal_target_sub_buff().size();
 }
-inline int BuffTable::targetsubbuff_size() const {
-  return _internal_targetsubbuff_size();
+inline int BuffTable::target_sub_buff_size() const {
+  return _internal_target_sub_buff_size();
 }
-inline void BuffTable::clear_targetsubbuff() {
+inline void BuffTable::clear_target_sub_buff() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.targetsubbuff_.Clear();
+  _impl_.target_sub_buff_.Clear();
 }
-inline ::uint32_t BuffTable::targetsubbuff(int index) const {
-  // @@protoc_insertion_point(field_get:BuffTable.targetsubbuff)
-  return _internal_targetsubbuff().Get(index);
+inline ::uint32_t BuffTable::target_sub_buff(int index) const {
+  // @@protoc_insertion_point(field_get:BuffTable.target_sub_buff)
+  return _internal_target_sub_buff().Get(index);
 }
-inline void BuffTable::set_targetsubbuff(int index, ::uint32_t value) {
-  _internal_mutable_targetsubbuff()->Set(index, value);
-  // @@protoc_insertion_point(field_set:BuffTable.targetsubbuff)
+inline void BuffTable::set_target_sub_buff(int index, ::uint32_t value) {
+  _internal_mutable_target_sub_buff()->Set(index, value);
+  // @@protoc_insertion_point(field_set:BuffTable.target_sub_buff)
 }
-inline void BuffTable::add_targetsubbuff(::uint32_t value) {
+inline void BuffTable::add_target_sub_buff(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _internal_mutable_targetsubbuff()->Add(value);
-  // @@protoc_insertion_point(field_add:BuffTable.targetsubbuff)
+  _internal_mutable_target_sub_buff()->Add(value);
+  // @@protoc_insertion_point(field_add:BuffTable.target_sub_buff)
 }
-inline const ::google::protobuf::RepeatedField<::uint32_t>& BuffTable::targetsubbuff() const
+inline const ::google::protobuf::RepeatedField<::uint32_t>& BuffTable::target_sub_buff() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:BuffTable.targetsubbuff)
-  return _internal_targetsubbuff();
+  // @@protoc_insertion_point(field_list:BuffTable.target_sub_buff)
+  return _internal_target_sub_buff();
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL BuffTable::mutable_targetsubbuff()
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL BuffTable::mutable_target_sub_buff()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:BuffTable.targetsubbuff)
+  // @@protoc_insertion_point(field_mutable_list:BuffTable.target_sub_buff)
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_targetsubbuff();
+  return _internal_mutable_target_sub_buff();
 }
 inline const ::google::protobuf::RepeatedField<::uint32_t>&
-BuffTable::_internal_targetsubbuff() const {
+BuffTable::_internal_target_sub_buff() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.targetsubbuff_;
+  return _impl_.target_sub_buff_;
 }
 inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
-BuffTable::_internal_mutable_targetsubbuff() {
+BuffTable::_internal_mutable_target_sub_buff() {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.targetsubbuff_;
+  return &_impl_.target_sub_buff_;
 }
 
-// double nodamageorskillhitinlastseconds = 20;
-inline void BuffTable::clear_nodamageorskillhitinlastseconds() {
+// double combat_idle_seconds = 20;
+inline void BuffTable::clear_combat_idle_seconds() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.nodamageorskillhitinlastseconds_ = 0;
+  _impl_.combat_idle_seconds_ = 0;
   _impl_._has_bits_[0] &= ~0x00004000u;
 }
-inline double BuffTable::nodamageorskillhitinlastseconds() const {
-  // @@protoc_insertion_point(field_get:BuffTable.nodamageorskillhitinlastseconds)
-  return _internal_nodamageorskillhitinlastseconds();
+inline double BuffTable::combat_idle_seconds() const {
+  // @@protoc_insertion_point(field_get:BuffTable.combat_idle_seconds)
+  return _internal_combat_idle_seconds();
 }
-inline void BuffTable::set_nodamageorskillhitinlastseconds(double value) {
-  _internal_set_nodamageorskillhitinlastseconds(value);
+inline void BuffTable::set_combat_idle_seconds(double value) {
+  _internal_set_combat_idle_seconds(value);
   _impl_._has_bits_[0] |= 0x00004000u;
-  // @@protoc_insertion_point(field_set:BuffTable.nodamageorskillhitinlastseconds)
+  // @@protoc_insertion_point(field_set:BuffTable.combat_idle_seconds)
 }
-inline double BuffTable::_internal_nodamageorskillhitinlastseconds() const {
+inline double BuffTable::_internal_combat_idle_seconds() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.nodamageorskillhitinlastseconds_;
+  return _impl_.combat_idle_seconds_;
 }
-inline void BuffTable::_internal_set_nodamageorskillhitinlastseconds(double value) {
+inline void BuffTable::_internal_set_combat_idle_seconds(double value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.nodamageorskillhitinlastseconds_ = value;
+  _impl_.combat_idle_seconds_ = value;
 }
 
 // uint32 time = 21;
@@ -1551,69 +1551,69 @@ inline void BuffTable::_internal_set_time(::uint32_t value) {
   _impl_.time_ = value;
 }
 
-// string bonusdamage = 22;
-inline void BuffTable::clear_bonusdamage() {
+// string bonus_damage = 22;
+inline void BuffTable::clear_bonus_damage() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.bonusdamage_.ClearToEmpty();
+  _impl_.bonus_damage_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline const ::std::string& BuffTable::bonusdamage() const
+inline const ::std::string& BuffTable::bonus_damage() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BuffTable.bonusdamage)
-  return _internal_bonusdamage();
+  // @@protoc_insertion_point(field_get:BuffTable.bonus_damage)
+  return _internal_bonus_damage();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void BuffTable::set_bonusdamage(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void BuffTable::set_bonus_damage(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.bonusdamage_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:BuffTable.bonusdamage)
+  _impl_.bonus_damage_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuffTable.bonus_damage)
 }
-inline ::std::string* PROTOBUF_NONNULL BuffTable::mutable_bonusdamage()
+inline ::std::string* PROTOBUF_NONNULL BuffTable::mutable_bonus_damage()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_bonusdamage();
-  // @@protoc_insertion_point(field_mutable:BuffTable.bonusdamage)
+  ::std::string* _s = _internal_mutable_bonus_damage();
+  // @@protoc_insertion_point(field_mutable:BuffTable.bonus_damage)
   return _s;
 }
-inline const ::std::string& BuffTable::_internal_bonusdamage() const {
+inline const ::std::string& BuffTable::_internal_bonus_damage() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.bonusdamage_.Get();
+  return _impl_.bonus_damage_.Get();
 }
-inline void BuffTable::_internal_set_bonusdamage(const ::std::string& value) {
+inline void BuffTable::_internal_set_bonus_damage(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.bonusdamage_.Set(value, GetArena());
+  _impl_.bonus_damage_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL BuffTable::_internal_mutable_bonusdamage() {
+inline ::std::string* PROTOBUF_NONNULL BuffTable::_internal_mutable_bonus_damage() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
-  return _impl_.bonusdamage_.Mutable( GetArena());
+  return _impl_.bonus_damage_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE BuffTable::release_bonusdamage() {
+inline ::std::string* PROTOBUF_NULLABLE BuffTable::release_bonus_damage() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:BuffTable.bonusdamage)
+  // @@protoc_insertion_point(field_release:BuffTable.bonus_damage)
   if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
     return nullptr;
   }
   _impl_._has_bits_[0] &= ~0x00000002u;
-  auto* released = _impl_.bonusdamage_.Release();
+  auto* released = _impl_.bonus_damage_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.bonusdamage_.Set("", GetArena());
+    _impl_.bonus_damage_.Set("", GetArena());
   }
   return released;
 }
-inline void BuffTable::set_allocated_bonusdamage(::std::string* PROTOBUF_NULLABLE value) {
+inline void BuffTable::set_allocated_bonus_damage(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  _impl_.bonusdamage_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.bonusdamage_.IsDefault()) {
-    _impl_.bonusdamage_.Set("", GetArena());
+  _impl_.bonus_damage_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.bonus_damage_.IsDefault()) {
+    _impl_.bonus_damage_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:BuffTable.bonusdamage)
+  // @@protoc_insertion_point(field_set_allocated:BuffTable.bonus_damage)
 }
 
 // -------------------------------------------------------------------

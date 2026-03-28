@@ -1,10 +1,10 @@
 {
  "data": [
   {
-   "castpoint": 1.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 1.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 1,
    "damage": "100*level",
    "effect": [
@@ -18,51 +18,51 @@
     1
    ],
    "id": 1,
-   "immediately": 1,
+   "immediate": 1,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 1.0,
-   "requestresource": [
+   "recovery_time": 1.0,
+   "request_resource": [
     {
-     "requestresource_cost": 10,
-     "requestresource_id": 1
+     "request_resource_cost": 10,
+     "request_resource_id": 1
     },
     {
-     "requestresource_cost": 20,
-     "requestresource_id": 2
+     "request_resource_cost": 20,
+     "request_resource_id": 2
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     1
@@ -72,13 +72,13 @@
     1,
     2
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "100*level",
    "effect": [
@@ -92,51 +92,51 @@
     1
    ],
    "id": 2,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     1
@@ -146,13 +146,13 @@
     2,
     2
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "1000*level",
    "effect": [
@@ -166,51 +166,51 @@
     1
    ],
    "id": 3,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     2
@@ -219,13 +219,13 @@
    "targeting_mode": [
     3
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "10000*level",
    "effect": [
@@ -239,51 +239,51 @@
     1
    ],
    "id": 4,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     3
@@ -293,13 +293,13 @@
     1,
     1
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "10000*level",
    "effect": [
@@ -313,51 +313,51 @@
     1
    ],
    "id": 5,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     4
@@ -367,13 +367,13 @@
     2,
     2
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "100*level",
    "effect": [
@@ -387,51 +387,51 @@
     1
    ],
    "id": 6,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     5,
@@ -441,13 +441,13 @@
    "targeting_mode": [
     3
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "1000*level",
    "effect": [
@@ -461,51 +461,51 @@
     1
    ],
    "id": 7,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     6
@@ -515,13 +515,13 @@
     1,
     1
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "10000*level",
    "effect": [
@@ -535,51 +535,51 @@
     1
    ],
    "id": 8,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     7
@@ -589,13 +589,13 @@
     2,
     2
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "100*level",
    "effect": [
@@ -609,51 +609,51 @@
     1
    ],
    "id": 9,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     8
@@ -662,13 +662,13 @@
    "targeting_mode": [
     3
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "1000*level",
    "effect": [
@@ -682,63 +682,63 @@
     1
    ],
    "id": 10,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     9
    ],
    "target_status": 0,
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "10000*level",
    "effect": [
@@ -752,51 +752,51 @@
     1
    ],
    "id": 11,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     10
@@ -806,13 +806,13 @@
     2,
     2
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.0,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.0,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 0,
    "damage": "10000*level",
    "effect": [
@@ -826,51 +826,51 @@
     1
    ],
    "id": 12,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     11,
@@ -880,13 +880,13 @@
    "targeting_mode": [
     3
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   },
   {
-   "castpoint": 0.3,
-   "channelfinish": 1,
-   "channelthink": 1,
-   "channeltime": 0,
+   "cast_point": 0.3,
+   "channel_finish": 1,
+   "channel_think": 1,
+   "channel_time": 0,
    "cooldown_id": 5,
    "damage": "10000*level",
    "effect": [
@@ -896,51 +896,51 @@
     20
    ],
    "id": 13,
-   "immediately": 0,
+   "immediate": 0,
    "max_range": 0.0,
    "min_range": 0.0,
    "range": 0.0,
-   "recoverytime": 0.0,
-   "requestresource": [
+   "recovery_time": 0.0,
+   "request_resource": [
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
     },
     {
-     "requestresource_cost": 0,
-     "requestresource_id": 0
+     "request_resource_cost": 0,
+     "request_resource_id": 0
+    }
+   ],
+   "require_target": 0,
+   "required_item": [
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    },
+    {
+     "required_item_type": 1,
+     "required_item_value": 1
+    }
+   ],
+   "required_resource": [
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
+    },
+    {
+     "required_resource_type": 1,
+     "required_resource_value": 1
     }
    ],
    "required_status": 0,
-   "requireditem": [
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    },
-    {
-     "requireditem_type": 1,
-     "requireditem_value": 1
-    }
-   ],
-   "requiredresource": [
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    },
-    {
-     "requiredresource_type": 1,
-     "requiredresource_value": 1
-    }
-   ],
-   "rquest_target": 0,
    "self_status": 0,
    "skill_type": [
     1,
@@ -950,7 +950,7 @@
    "targeting_mode": [
     3
    ],
-   "thinkinterval": 0
+   "think_interval": 0
   }
  ]
 }

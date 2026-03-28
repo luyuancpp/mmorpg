@@ -13,12 +13,12 @@ import (
 type TestMultiKeyTableManager struct {
     data   []*pb.TestMultiKeyTable
     kvData map[int32]*pb.TestMultiKeyTable
-    kvStringkeyData map[string]*pb.TestMultiKeyTable
-    kvUint32keyData map[uint32]*pb.TestMultiKeyTable
-    kvIn32keyData map[int32]*pb.TestMultiKeyTable
-    kvMstringkeyData map[string]*pb.TestMultiKeyTable
-    kvMuint32keyData map[uint32]*pb.TestMultiKeyTable
-    kvMin32keyData map[int32]*pb.TestMultiKeyTable
+    kvString_keyData map[string]*pb.TestMultiKeyTable
+    kvUint32_keyData map[uint32]*pb.TestMultiKeyTable
+    kvInt32_keyData map[int32]*pb.TestMultiKeyTable
+    kvM_string_keyData map[string]*pb.TestMultiKeyTable
+    kvM_uint32_keyData map[uint32]*pb.TestMultiKeyTable
+    kvM_int32_keyData map[int32]*pb.TestMultiKeyTable
 }
 
 var TestMultiKeyTableManagerInstance = NewTestMultiKeyTableManager()
@@ -26,12 +26,12 @@ var TestMultiKeyTableManagerInstance = NewTestMultiKeyTableManager()
 func NewTestMultiKeyTableManager() *TestMultiKeyTableManager {
     return &TestMultiKeyTableManager{
         kvData: make(map[int32]*pb.TestMultiKeyTable),
-        kvStringkeyData: make(map[string]*pb.TestMultiKeyTable),
-        kvUint32keyData: make(map[uint32]*pb.TestMultiKeyTable),
-        kvIn32keyData: make(map[int32]*pb.TestMultiKeyTable),
-        kvMstringkeyData: make(map[string]*pb.TestMultiKeyTable),
-        kvMuint32keyData: make(map[uint32]*pb.TestMultiKeyTable),
-        kvMin32keyData: make(map[int32]*pb.TestMultiKeyTable),
+        kvString_keyData: make(map[string]*pb.TestMultiKeyTable),
+        kvUint32_keyData: make(map[uint32]*pb.TestMultiKeyTable),
+        kvInt32_keyData: make(map[int32]*pb.TestMultiKeyTable),
+        kvM_string_keyData: make(map[string]*pb.TestMultiKeyTable),
+        kvM_uint32_keyData: make(map[uint32]*pb.TestMultiKeyTable),
+        kvM_int32_keyData: make(map[int32]*pb.TestMultiKeyTable),
     }
 }
 
@@ -49,12 +49,12 @@ func (m *TestMultiKeyTableManager) Load(configDir string) error {
 
     for _, row := range container.Data {
         m.kvData[row.Id] = row
-        m.kvStringkeyData[row.Stringkey] = row
-        m.kvUint32keyData[row.Uint32key] = row
-        m.kvIn32keyData[row.In32key] = row
-        m.kvMstringkeyData[row.Mstringkey] = row
-        m.kvMuint32keyData[row.Muint32key] = row
-        m.kvMin32keyData[row.Min32key] = row
+        m.kvString_keyData[row.String_key] = row
+        m.kvUint32_keyData[row.Uint32_key] = row
+        m.kvInt32_keyData[row.Int32_key] = row
+        m.kvM_string_keyData[row.M_string_key] = row
+        m.kvM_uint32_keyData[row.M_uint32_key] = row
+        m.kvM_int32_keyData[row.M_int32_key] = row
     }
 
     m.data = container.Data
@@ -66,33 +66,33 @@ func (m *TestMultiKeyTableManager) GetById(id int32) (*pb.TestMultiKeyTable, boo
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByStringkey(key string) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvStringkeyData[key]
+func (m *TestMultiKeyTableManager) GetByString_key(key string) (*pb.TestMultiKeyTable, bool) {
+    row, ok := m.kvString_keyData[key]
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByUint32key(key uint32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvUint32keyData[key]
+func (m *TestMultiKeyTableManager) GetByUint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
+    row, ok := m.kvUint32_keyData[key]
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByIn32key(key int32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvIn32keyData[key]
+func (m *TestMultiKeyTableManager) GetByInt32_key(key int32) (*pb.TestMultiKeyTable, bool) {
+    row, ok := m.kvInt32_keyData[key]
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByMstringkey(key string) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvMstringkeyData[key]
+func (m *TestMultiKeyTableManager) GetByM_string_key(key string) (*pb.TestMultiKeyTable, bool) {
+    row, ok := m.kvM_string_keyData[key]
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByMuint32key(key uint32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvMuint32keyData[key]
+func (m *TestMultiKeyTableManager) GetByM_uint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
+    row, ok := m.kvM_uint32_keyData[key]
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByMin32key(key int32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvMin32keyData[key]
+func (m *TestMultiKeyTableManager) GetByM_int32_key(key int32) (*pb.TestMultiKeyTable, bool) {
+    row, ok := m.kvM_int32_keyData[key]
     return row, ok
 }
 

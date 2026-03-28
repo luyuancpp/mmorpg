@@ -64,10 +64,10 @@ class TestTableData;
 struct TestTableDataDefaultTypeInternal;
 extern TestTableDataDefaultTypeInternal _TestTableData_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull TestTableData_class_data_;
-class TestTable_ImmunetagEntry_DoNotUse;
-struct TestTable_ImmunetagEntry_DoNotUseDefaultTypeInternal;
-extern TestTable_ImmunetagEntry_DoNotUseDefaultTypeInternal _TestTable_ImmunetagEntry_DoNotUse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull TestTable_ImmunetagEntry_DoNotUse_class_data_;
+class TestTable_ImmuneTagEntry_DoNotUse;
+struct TestTable_ImmuneTagEntry_DoNotUseDefaultTypeInternal;
+extern TestTable_ImmuneTagEntry_DoNotUseDefaultTypeInternal _TestTable_ImmuneTagEntry_DoNotUse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull TestTable_ImmuneTagEntry_DoNotUse_class_data_;
 class TestTable_TagEntry_DoNotUse;
 struct TestTable_TagEntry_DoNotUseDefaultTypeInternal;
 extern TestTable_TagEntry_DoNotUseDefaultTypeInternal _TestTable_TagEntry_DoNotUse_default_instance_;
@@ -329,7 +329,7 @@ class TestTable_TagEntry_DoNotUse final
 extern const ::google::protobuf::internal::ClassDataFull TestTable_TagEntry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
-class TestTable_ImmunetagEntry_DoNotUse final
+class TestTable_ImmuneTagEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<std::string, std::string,
                              ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                              ::google::protobuf::internal::WireFormatLite::TYPE_STRING> {
@@ -338,12 +338,12 @@ class TestTable_ImmunetagEntry_DoNotUse final
       ::google::protobuf::internal::MapEntry<std::string, std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>;
-  TestTable_ImmunetagEntry_DoNotUse();
+  TestTable_ImmuneTagEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR TestTable_ImmunetagEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
-  explicit TestTable_ImmunetagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  explicit PROTOBUF_CONSTEXPR TestTable_ImmuneTagEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
+  explicit TestTable_ImmuneTagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr const void* PROTOBUF_NONNULL internal_default_instance() {
-    return &_TestTable_ImmunetagEntry_DoNotUse_default_instance_;
+    return &_TestTable_ImmuneTagEntry_DoNotUse_default_instance_;
   }
 
 
@@ -365,7 +365,7 @@ class TestTable_ImmunetagEntry_DoNotUse final
       ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr auto InternalNewImpl_();
 };
-extern const ::google::protobuf::internal::ClassDataFull TestTable_ImmunetagEntry_DoNotUse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull TestTable_ImmuneTagEntry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
 class TestTable final : public ::google::protobuf::Message
@@ -513,7 +513,7 @@ class TestTable final : public ::google::protobuf::Message
   enum : int {
     kEffectFieldNumber = 3,
     kTagFieldNumber = 4,
-    kImmunetagFieldNumber = 5,
+    kImmuneTagFieldNumber = 5,
     kTestobjFieldNumber = 6,
     kIdFieldNumber = 1,
     kLevelFieldNumber = 2,
@@ -551,19 +551,19 @@ class TestTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_tag();
 
   public:
-  // map<string, string> immunetag = 5;
-  int immunetag_size() const;
+  // map<string, string> immune_tag = 5;
+  int immune_tag_size() const;
   private:
-  int _internal_immunetag_size() const;
+  int _internal_immune_tag_size() const;
 
   public:
-  void clear_immunetag() ;
-  const ::google::protobuf::Map<std::string, std::string>& immunetag() const;
-  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL mutable_immunetag();
+  void clear_immune_tag() ;
+  const ::google::protobuf::Map<std::string, std::string>& immune_tag() const;
+  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL mutable_immune_tag();
 
   private:
-  const ::google::protobuf::Map<std::string, std::string>& _internal_immunetag() const;
-  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_immunetag();
+  const ::google::protobuf::Map<std::string, std::string>& _internal_immune_tag() const;
+  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_immune_tag();
 
   public:
   // repeated .Testtestobj testobj = 6;
@@ -608,7 +608,7 @@ class TestTable final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<3, 6,
-                                   3, 30,
+                                   3, 31,
                                    2>
       _table_;
 
@@ -635,10 +635,10 @@ class TestTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
         tag_;
-    ::google::protobuf::internal::MapField<TestTable_ImmunetagEntry_DoNotUse, std::string, std::string,
+    ::google::protobuf::internal::MapField<TestTable_ImmuneTagEntry_DoNotUse, std::string, std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
-        immunetag_;
+        immune_tag_;
     ::google::protobuf::RepeatedPtrField< ::Testtestobj > testobj_;
     ::uint32_t id_;
     ::uint32_t level_;
@@ -1042,33 +1042,33 @@ inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestT
   return _internal_mutable_tag();
 }
 
-// map<string, string> immunetag = 5;
-inline int TestTable::_internal_immunetag_size() const {
-  return _internal_immunetag().size();
+// map<string, string> immune_tag = 5;
+inline int TestTable::_internal_immune_tag_size() const {
+  return _internal_immune_tag().size();
 }
-inline int TestTable::immunetag_size() const {
-  return _internal_immunetag_size();
+inline int TestTable::immune_tag_size() const {
+  return _internal_immune_tag_size();
 }
-inline void TestTable::clear_immunetag() {
+inline void TestTable::clear_immune_tag() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.immunetag_.Clear();
+  _impl_.immune_tag_.Clear();
 }
-inline const ::google::protobuf::Map<std::string, std::string>& TestTable::_internal_immunetag() const {
+inline const ::google::protobuf::Map<std::string, std::string>& TestTable::_internal_immune_tag() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.immunetag_.GetMap();
+  return _impl_.immune_tag_.GetMap();
 }
-inline const ::google::protobuf::Map<std::string, std::string>& TestTable::immunetag() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:TestTable.immunetag)
-  return _internal_immunetag();
+inline const ::google::protobuf::Map<std::string, std::string>& TestTable::immune_tag() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:TestTable.immune_tag)
+  return _internal_immune_tag();
 }
-inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestTable::_internal_mutable_immunetag() {
+inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestTable::_internal_mutable_immune_tag() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.immunetag_.MutableMap();
+  return _impl_.immune_tag_.MutableMap();
 }
-inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestTable::mutable_immunetag()
+inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestTable::mutable_immune_tag()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:TestTable.immunetag)
-  return _internal_mutable_immunetag();
+  // @@protoc_insertion_point(field_mutable_map:TestTable.immune_tag)
+  return _internal_mutable_immune_tag();
 }
 
 // repeated .Testtestobj testobj = 6;

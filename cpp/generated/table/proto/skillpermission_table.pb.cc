@@ -28,8 +28,8 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr SkillPermissionTable::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        skilltype_{},
-        _skilltype_cached_byte_size_{0},
+        skill_type_{},
+        _skill_type_cached_byte_size_{0},
         id_{0u} {}
 
 template <typename>
@@ -87,7 +87,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillPermissionTable, _impl_._has_bits_),
         5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::SkillPermissionTable, _impl_.id_),
-        PROTOBUF_FIELD_OFFSET(::SkillPermissionTable, _impl_.skilltype_),
+        PROTOBUF_FIELD_OFFSET(::SkillPermissionTable, _impl_.skill_type_),
         0,
         ~0u,
         0x000, // bitmap
@@ -105,17 +105,17 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_skillpermission_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\033skillpermission_table.proto\"5\n\024SkillPe"
-    "rmissionTable\022\n\n\002id\030\001 \001(\r\022\021\n\tskilltype\030\002"
-    " \003(\r\"\?\n\030SkillPermissionTableData\022#\n\004data"
-    "\030\001 \003(\0132\025.SkillPermissionTableB\024Z\022generat"
-    "ed/pb/tableb\006proto3"
+    "\n\033skillpermission_table.proto\"6\n\024SkillPe"
+    "rmissionTable\022\n\n\002id\030\001 \001(\r\022\022\n\nskill_type\030"
+    "\002 \003(\r\"\?\n\030SkillPermissionTableData\022#\n\004dat"
+    "a\030\001 \003(\0132\025.SkillPermissionTableB\024Z\022genera"
+    "ted/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skillpermission_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_skillpermission_5ftable_2eproto = {
     false,
     false,
-    179,
+    180,
     descriptor_table_protodef_skillpermission_5ftable_2eproto,
     "skillpermission_table.proto",
     &descriptor_table_skillpermission_5ftable_2eproto_once,
@@ -153,8 +153,8 @@ PROTOBUF_NDEBUG_INLINE SkillPermissionTable::Impl_::Impl_(
     const ::SkillPermissionTable& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        skilltype_{visibility, arena, from.skilltype_},
-        _skilltype_cached_byte_size_{0} {}
+        skill_type_{visibility, arena, from.skill_type_},
+        _skill_type_cached_byte_size_{0} {}
 
 SkillPermissionTable::SkillPermissionTable(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -177,8 +177,8 @@ PROTOBUF_NDEBUG_INLINE SkillPermissionTable::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
-        skilltype_{visibility, arena},
-        _skilltype_cached_byte_size_{0} {}
+        skill_type_{visibility, arena},
+        _skill_type_cached_byte_size_{0} {}
 
 inline void SkillPermissionTable::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -202,8 +202,8 @@ inline void* PROTOBUF_NONNULL SkillPermissionTable::PlacementNew_(
 }
 constexpr auto SkillPermissionTable::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(SkillPermissionTable, _impl_.skilltype_) +
-          decltype(SkillPermissionTable::_impl_.skilltype_)::
+      PROTOBUF_FIELD_OFFSET(SkillPermissionTable, _impl_.skill_type_) +
+          decltype(SkillPermissionTable::_impl_.skill_type_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
@@ -269,9 +269,9 @@ SkillPermissionTable::_table_ = {
     ::_pbi::TcParser::GetTable<::SkillPermissionTable>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // repeated uint32 skilltype = 2;
+    // repeated uint32 skill_type = 2;
     {::_pbi::TcParser::FastV32P1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(SkillPermissionTable, _impl_.skilltype_)}},
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(SkillPermissionTable, _impl_.skill_type_)}},
     // uint32 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillPermissionTable, _impl_.id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(SkillPermissionTable, _impl_.id_)}},
@@ -281,8 +281,8 @@ SkillPermissionTable::_table_ = {
     // uint32 id = 1;
     {PROTOBUF_FIELD_OFFSET(SkillPermissionTable, _impl_.id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // repeated uint32 skilltype = 2;
-    {PROTOBUF_FIELD_OFFSET(SkillPermissionTable, _impl_.skilltype_), -1, 0,
+    // repeated uint32 skill_type = 2;
+    {PROTOBUF_FIELD_OFFSET(SkillPermissionTable, _impl_.skill_type_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
   }},
   // no aux_entries
@@ -296,7 +296,7 @@ PROTOBUF_NOINLINE void SkillPermissionTable::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.skilltype_.Clear();
+  _impl_.skill_type_.Clear();
   _impl_.id_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -326,12 +326,12 @@ PROTOBUF_NOINLINE void SkillPermissionTable::Clear() {
     }
   }
 
-  // repeated uint32 skilltype = 2;
+  // repeated uint32 skill_type = 2;
   {
-    int byte_size = this_._impl_._skilltype_cached_byte_size_.Get();
+    int byte_size = this_._impl_._skill_type_cached_byte_size_.Get();
     if (byte_size > 0) {
       target = stream->WriteUInt32Packed(
-          2, this_._internal_skilltype(), byte_size, target);
+          2, this_._internal_skill_type(), byte_size, target);
     }
   }
 
@@ -360,12 +360,12 @@ PROTOBUF_NOINLINE void SkillPermissionTable::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
    {
-    // repeated uint32 skilltype = 2;
+    // repeated uint32 skill_type = 2;
     {
       total_size +=
           ::_pbi::WireFormatLite::UInt32SizeWithPackedTagSize(
-              this_._internal_skilltype(), 1,
-              this_._impl_._skilltype_cached_byte_size_);
+              this_._internal_skill_type(), 1,
+              this_._impl_._skill_type_cached_byte_size_);
     }
   }
    {
@@ -390,7 +390,7 @@ void SkillPermissionTable::MergeImpl(::google::protobuf::MessageLite& to_msg, co
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  _this->_internal_mutable_skilltype()->MergeFrom(from._internal_skilltype());
+  _this->_internal_mutable_skill_type()->MergeFrom(from._internal_skill_type());
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000001u) != 0) {
     if (from._internal_id() != 0) {
@@ -413,7 +413,7 @@ void SkillPermissionTable::InternalSwap(SkillPermissionTable* PROTOBUF_RESTRICT 
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  _impl_.skilltype_.InternalSwap(&other->_impl_.skilltype_);
+  _impl_.skill_type_.InternalSwap(&other->_impl_.skill_type_);
   swap(_impl_.id_, other->_impl_.id_);
 }
 

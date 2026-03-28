@@ -2,7 +2,7 @@
  "data": [
   {
    "id": 1,
-   "immunetag": {
+   "immune_tag": {
     "Control": "None",
     "Wood": "None"
    },
@@ -35,7 +35,7 @@
     1
    ],
    "id": 2,
-   "immunetag": {
+   "immune_tag": {
     "Control": "None",
     "Water": "None"
    },
@@ -72,7 +72,7 @@
     1
    ],
    "id": 3,
-   "immunetag": {
+   "immune_tag": {
     "Control": "None",
     "None": "None"
    },
@@ -104,7 +104,7 @@
     1
    ],
    "id": 4,
-   "immunetag": {
+   "immune_tag": {
     "Control": "None",
     "Earth": "None"
    },
@@ -138,7 +138,7 @@
     1
    ],
    "id": 5,
-   "immunetag": {
+   "immune_tag": {
     "Control": "None",
     "Metal": "None"
    },
@@ -175,7 +175,7 @@
     1
    ],
    "id": 6,
-   "immunetag": {
+   "immune_tag": {
     "Control": "None",
     "Wood": "None"
    },

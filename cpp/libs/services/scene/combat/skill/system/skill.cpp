@@ -125,15 +125,15 @@ uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 	FetchAndValidateSkillPermissionTable(state);
 
 	const auto skillTypeIndex = (1 << skill);
-	if (skillTypeIndex >= skillPermissionTable->skilltype_size())
+	if (skillTypeIndex >= skillPermissionTable->skill_type_size())
 	{
 		return MAKE_ERROR_MSG(kInvalidTableData,
 			"state=" << state << " skill=" << skill
 			<< " skillTypeIndex=" << skillTypeIndex
-			<< " size=" << skillPermissionTable->skilltype_size());
+			<< " size=" << skillPermissionTable->skill_type_size());
 	}
 	
-	return skillPermissionTable->skilltype(skillTypeIndex);
+	return skillPermissionTable->skill_type(skillTypeIndex);
 }
 
 
@@ -221,7 +221,7 @@ void SkillSystem::HandleSkillRecovery(const entt::entity casterEntity, uint64_t 
 	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
 
 	auto& recoveryTimer = tlsEcs.actorRegistry.get_or_emplace<RecoveryTimerComp>(casterEntity).timer;
-	recoveryTimer.RunAfter(skillTable->recoverytime(), [casterEntity, skillId] {
+	recoveryTimer.RunAfter(skillTable->recovery_time(), [casterEntity, skillId] {
 		return HandleSkillFinish(casterEntity, skillId);
 		});
 }
@@ -259,12 +259,12 @@ void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t sk
 	HandleSkillSpell(casterEntity, skillId);
 
 	auto& channelFinishTimer = tlsEcs.actorRegistry.get_or_emplace<ChannelFinishTimerComp>(casterEntity).timer;
-	channelFinishTimer.RunAfter(skillTable->channelfinish(), [casterEntity, skillId] {
+	channelFinishTimer.RunAfter(skillTable->channel_finish(), [casterEntity, skillId] {
 		return HandleChannelFinish(casterEntity, skillId);
 		});
 
 	auto& channelIntervalTimer = tlsEcs.actorRegistry.get_or_emplace<ChannelIntervalTimerComp>(casterEntity).timer;
-	channelIntervalTimer.RunEvery(skillTable->channelthink(), [casterEntity, skillId] {
+	channelIntervalTimer.RunEvery(skillTable->channel_think(), [casterEntity, skillId] {
 		return HandleChannelThink(casterEntity, skillId);
 		});
 }
@@ -336,7 +336,7 @@ template <typename TimerComp>
 uint32_t CheckTimerPhase(const entt::entity casterEntity, const SkillTable* skillTable) {
 	auto& timerComp = tlsEcs.actorRegistry.get_or_emplace<TimerComp>(casterEntity);
 	if (timerComp.timer.IsActive()) {
-		if (skillTable->immediately()) {
+		if (skillTable->immediate()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently in phase. Sending interrupt message.";
 			SkillSystem::SendSkillInterruptedMessage(casterEntity, skillTable->id());
@@ -395,12 +395,12 @@ void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, con
 void SkillSystem::SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId) {
 	auto& castingTimer = tlsEcs.actorRegistry.get_or_emplace<CastingTimerComp>(casterEntity).timer;
 	if (IsSkillOfType(skillTable->id(), kGeneralSkill)) {
-		castingTimer.RunAfter(skillTable->castpoint(), [casterEntity, skillId] {
+		castingTimer.RunAfter(skillTable->cast_point(), [casterEntity, skillId] {
 			return HandleGeneralSkillSpell(casterEntity, skillId);
 			});
 	}
 	else if (IsSkillOfType(skillTable->id(), kChannelSkill)) {
-		castingTimer.RunAfter(skillTable->castpoint(), [casterEntity, skillId] {
+		castingTimer.RunAfter(skillTable->cast_point(), [casterEntity, skillId] {
 			return HandleChannelSkillSpell(casterEntity, skillId);
 			});
 	}

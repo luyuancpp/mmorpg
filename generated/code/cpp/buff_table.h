@@ -34,28 +34,28 @@ public:
 
 
 
-    double GetHealthregeneration(uint32_t tableId) {
+    double GetHealth_regeneration(uint32_t tableId) {
         auto [table, ok] = GetTable(tableId);
         if (!ok || table == nullptr) {
-            LOG_ERROR << "Healthregeneration table not found for ID: " << tableId;
+            LOG_ERROR << "Health_regeneration table not found for ID: " << tableId;
             return double();
         }
-        return expression_healthregeneration_.Value(table->healthregeneration());
+        return expression_health_regeneration_.Value(table->health_regeneration());
     }
-    void SetHealthregenerationParam(const std::vector<double>& paramList) {
-        expression_healthregeneration_.SetParam(paramList);
+    void SetHealth_regenerationParam(const std::vector<double>& paramList) {
+        expression_health_regeneration_.SetParam(paramList);
     }
 
-    double GetBonusdamage(uint32_t tableId) {
+    double GetBonus_damage(uint32_t tableId) {
         auto [table, ok] = GetTable(tableId);
         if (!ok || table == nullptr) {
-            LOG_ERROR << "Bonusdamage table not found for ID: " << tableId;
+            LOG_ERROR << "Bonus_damage table not found for ID: " << tableId;
             return double();
         }
-        return expression_bonusdamage_.Value(table->bonusdamage());
+        return expression_bonus_damage_.Value(table->bonus_damage());
     }
-    void SetBonusdamageParam(const std::vector<double>& paramList) {
-        expression_bonusdamage_.SetParam(paramList);
+    void SetBonus_damageParam(const std::vector<double>& paramList) {
+        expression_bonus_damage_.SetParam(paramList);
     }
 
 
@@ -67,9 +67,9 @@ private:
     KeyValueDataType kv_data_;
 
 
-    ExcelExpression<double> expression_healthregeneration_;
+    ExcelExpression<double> expression_health_regeneration_;
 
-    ExcelExpression<double> expression_bonusdamage_;
+    ExcelExpression<double> expression_bonus_damage_;
 
 };
 

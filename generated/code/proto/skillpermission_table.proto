@@ -5,7 +5,7 @@ option go_package = "generated/pb/table";
 
 message SkillPermissionTable {
 	uint32 id = 1;
-	repeated uint32 skilltype = 2;
+	repeated uint32 skill_type = 2;
 }
 
 message SkillPermissionTableData {

@@ -79,7 +79,7 @@ type TestTable struct {
 	Level         uint32                 `protobuf:"varint,2,opt,name=level,proto3" json:"level,omitempty"`
 	Effect        []uint32               `protobuf:"varint,3,rep,packed,name=effect,proto3" json:"effect,omitempty"`
 	Tag           map[string]string      `protobuf:"bytes,4,rep,name=tag,proto3" json:"tag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Immunetag     map[string]string      `protobuf:"bytes,5,rep,name=immunetag,proto3" json:"immunetag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ImmuneTag     map[string]string      `protobuf:"bytes,5,rep,name=immune_tag,json=immuneTag,proto3" json:"immune_tag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Testobj       []*Testtestobj         `protobuf:"bytes,6,rep,name=testobj,proto3" json:"testobj,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -143,9 +143,9 @@ func (x *TestTable) GetTag() map[string]string {
 	return nil
 }
 
-func (x *TestTable) GetImmunetag() map[string]string {
+func (x *TestTable) GetImmuneTag() map[string]string {
 	if x != nil {
-		return x.Immunetag
+		return x.ImmuneTag
 	}
 	return nil
 }
@@ -209,18 +209,19 @@ const file_test_table_proto_rawDesc = "" +
 	"\vTesttestobj\x12\x1f\n" +
 	"\vtestobj_key\x18\x01 \x01(\rR\n" +
 	"testobjKey\x12#\n" +
-	"\rtestobj_value\x18\x02 \x01(\rR\ftestobjValue\"\xc7\x02\n" +
+	"\rtestobj_value\x18\x02 \x01(\rR\ftestobjValue\"\xc8\x02\n" +
 	"\tTestTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x14\n" +
 	"\x05level\x18\x02 \x01(\rR\x05level\x12\x16\n" +
 	"\x06effect\x18\x03 \x03(\rR\x06effect\x12%\n" +
-	"\x03tag\x18\x04 \x03(\v2\x13.TestTable.TagEntryR\x03tag\x127\n" +
-	"\timmunetag\x18\x05 \x03(\v2\x19.TestTable.ImmunetagEntryR\timmunetag\x12&\n" +
+	"\x03tag\x18\x04 \x03(\v2\x13.TestTable.TagEntryR\x03tag\x128\n" +
+	"\n" +
+	"immune_tag\x18\x05 \x03(\v2\x19.TestTable.ImmuneTagEntryR\timmuneTag\x12&\n" +
 	"\atestobj\x18\x06 \x03(\v2\f.TesttestobjR\atestobj\x1a6\n" +
 	"\bTagEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a<\n" +
-	"\x0eImmunetagEntry\x12\x10\n" +
+	"\x0eImmuneTagEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"/\n" +
 	"\rTestTableData\x12\x1e\n" +
@@ -245,11 +246,11 @@ var file_test_table_proto_goTypes = []any{
 	(*TestTable)(nil),     // 1: TestTable
 	(*TestTableData)(nil), // 2: TestTableData
 	nil,                   // 3: TestTable.TagEntry
-	nil,                   // 4: TestTable.ImmunetagEntry
+	nil,                   // 4: TestTable.ImmuneTagEntry
 }
 var file_test_table_proto_depIdxs = []int32{
 	3, // 0: TestTable.tag:type_name -> TestTable.TagEntry
-	4, // 1: TestTable.immunetag:type_name -> TestTable.ImmunetagEntry
+	4, // 1: TestTable.immune_tag:type_name -> TestTable.ImmuneTagEntry
 	0, // 2: TestTable.testobj:type_name -> Testtestobj
 	1, // 3: TestTableData.data:type_name -> TestTable
 	4, // [4:4] is the sub-list for method output_type
