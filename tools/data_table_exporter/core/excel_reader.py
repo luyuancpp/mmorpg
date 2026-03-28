@@ -3,19 +3,20 @@
 Also provides data-access helpers so that generators never need to
 re-open or re-parse workbooks themselves.
 
-Excel header format (6 rows):
-    Row 1: field names
-    Row 2: proto types
-    Row 3: struct — repeated | set | map_key | map_value | message:Name
-    Row 4: owner
-    Row 5: options (space-separated tokens)
-    Row 6: comment
-    Row 7+: data
+Excel header format (5 rows):
+    Row 1: field name — one name per logical field span (first col of span)
+    Row 2: type declaration — ``uint32``, ``map<K,V>``, ``set<T>``,
+           ``repeated uint32``, ``repeated { uint32 f1; uint32 f2 }``
+    Row 3: owner — server | client | common | design (first col of span)
+    Row 4: options — space-separated tokens (first col of span)
+    Row 5: comment (first col of span)
+    Row 6+: data
 """
 
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -54,8 +55,9 @@ def read_table(file_path: Path, cfg: ExporterConfig) -> Optional[TableSchema]:
     sheet_name = wb.sheetnames[0]
     ws = wb[sheet_name]
 
-    if ws.cell(row=1, column=1).value != "id":
-        logger.error("First column of '%s' must be 'id' (%s)", sheet_name, file_path)
+    first_cell = str(ws.cell(row=1, column=1).value or "").strip()
+    if first_cell != "id":
+        logger.error("First column name must be 'id' (%s)", file_path)
         return None
 
     columns = _parse_columns(ws, cfg)
@@ -141,34 +143,177 @@ def _cell_str(ws, row: int, col: int) -> str:
     return str(v).strip() if v is not None else ""
 
 
+# ---------------------------------------------------------------------------
+# Internal — declaration parsing (proto-style Row 1)
+# ---------------------------------------------------------------------------
+
+# Regex patterns for type declarations (name-free)
+_RE_MAP = re.compile(r'^map\s*<\s*(\w+)\s*,\s*(\w+)\s*>$')
+_RE_SET = re.compile(r'^set\s*<\s*(\w+)\s*>$')
+_RE_REPEATED_MSG = re.compile(r'^repeated\s*\{(.+)\}$')
+_RE_REPEATED = re.compile(r'^repeated\s+(\w+)$')
+_RE_SCALAR = re.compile(r'^(\w+)$')
+
+
+def _parse_declaration(type_text: str, name: str):
+    """Parse a type declaration string together with a field name.
+
+    Returns a tuple whose first element is the kind:
+        ('scalar', name, data_type)
+        ('map', name, key_type, value_type)
+        ('set', name, value_type)
+        ('repeated', name, data_type)
+        ('message', name, [(data_type, field_name), ...])
+    """
+    text = type_text.strip()
+
+    m = _RE_MAP.match(text)
+    if m:
+        return ('map', name, m.group(1), m.group(2))
+
+    m = _RE_SET.match(text)
+    if m:
+        return ('set', name, m.group(1))
+
+    m = _RE_REPEATED_MSG.match(text)
+    if m:
+        body = m.group(1)
+        sub_fields = []
+        for part in body.split(';'):
+            part = part.strip()
+            if not part:
+                continue
+            tokens = part.split()
+            if len(tokens) == 2:
+                sub_fields.append((tokens[0], tokens[1]))
+            else:
+                raise ValueError(f"Cannot parse message sub-field: '{part}'")
+        return ('message', name, sub_fields)
+
+    m = _RE_REPEATED.match(text)
+    if m:
+        return ('repeated', name, m.group(1))
+
+    m = _RE_SCALAR.match(text)
+    if m:
+        return ('scalar', name, m.group(1))
+
+    raise ValueError(f"Cannot parse type declaration: '{text}'")
+
+
+# ---------------------------------------------------------------------------
+# Internal — column parsing (proto-style header)
+# ---------------------------------------------------------------------------
+
 def _parse_columns(ws, cfg: ExporterConfig) -> list[ColumnDef]:
+    """Parse Row 1 (name) + Row 2 (type) into a flat list of ColumnDefs."""
     meta = cfg.metadata_rows
     max_col = ws.max_column or 0
-    columns: list[ColumnDef] = []
 
+    # Row numbers
+    name_row = meta.get("field_name", 1)
+    type_row = meta.get("field_type", 2)
+    owner_row = meta.get("owner", 3)
+    options_row = meta.get("options", 4)
+    comment_row = meta.get("comment", 5)
+
+    # Step 1: find non-empty cells in the name row (field boundaries)
+    name_starts: list[tuple[int, str]] = []      # (0-based col index, name)
     for idx in range(max_col):
-        col_1based = idx + 1
-        name = _cell_str(ws, meta.get("column_name", 1), col_1based)
-        if not name:
-            continue
+        text = _cell_str(ws, name_row, idx + 1)
+        if text:
+            name_starts.append((idx, text))
 
-        data_type = _cell_str(ws, meta.get("data_type", 2), col_1based) or "int32"
-        struct = _cell_str(ws, meta.get("struct", 3), col_1based).lower()
-        owner = _cell_str(ws, meta.get("owner", 4), col_1based).lower()
-        options_raw = _cell_str(ws, meta.get("options", 5), col_1based)
-        comment = _cell_str(ws, meta.get("comment", 6), col_1based)
+    if not name_starts:
+        return []
 
+    # Step 2: compute spans — each field runs until the next name
+    spans: list[tuple[int, int, str]] = []        # (start, end_exclusive, name)
+    for i, (start, name) in enumerate(name_starts):
+        end = name_starts[i + 1][0] if i + 1 < len(name_starts) else max_col
+        spans.append((start, end, name))
+
+    # Step 3: parse each type declaration and expand into ColumnDefs
+    columns: list[ColumnDef] = []
+    for start, end, field_name in spans:
+        span_size = end - start
+
+        type_text = _cell_str(ws, type_row, start + 1)
+        owner = _cell_str(ws, owner_row, start + 1).lower()
+        options_raw = _cell_str(ws, options_row, start + 1)
+        comment = _cell_str(ws, comment_row, start + 1)
         options = options_raw.split() if options_raw else []
 
-        columns.append(ColumnDef(
-            name=name,
-            data_type=data_type,
-            owner=owner,
-            struct=struct,
-            options=options,
-            comment=comment,
-            excel_index=idx,
-        ))
+        parsed = _parse_declaration(type_text, field_name)
+        kind = parsed[0]
+
+        if kind == 'scalar':
+            _, name, data_type = parsed
+            if span_size > 1:
+                # Auto-detect repeated: scalar spanning multiple columns
+                for i in range(span_size):
+                    columns.append(ColumnDef(
+                        name=name, data_type=data_type, owner=owner,
+                        struct='repeated',
+                        options=options if i == 0 else [],
+                        comment=comment if i == 0 else '',
+                        excel_index=start + i,
+                    ))
+            else:
+                columns.append(ColumnDef(
+                    name=name, data_type=data_type, owner=owner,
+                    struct='', options=options, comment=comment,
+                    excel_index=start,
+                ))
+
+        elif kind == 'map':
+            _, name, key_type, value_type = parsed
+            for i in range(0, span_size, 2):
+                columns.append(ColumnDef(
+                    name=f'{name}_key', data_type=key_type, owner=owner,
+                    struct='map_key', options=options if i == 0 else [],
+                    comment=comment if i == 0 else '',
+                    excel_index=start + i,
+                ))
+                if start + i + 1 < end:
+                    columns.append(ColumnDef(
+                        name=f'{name}_value', data_type=value_type, owner=owner,
+                        struct='map_value', options=[],
+                        comment='', excel_index=start + i + 1,
+                    ))
+
+        elif kind == 'set':
+            _, name, value_type = parsed
+            for i in range(span_size):
+                columns.append(ColumnDef(
+                    name=name, data_type=value_type, owner=owner,
+                    struct='set', options=options if i == 0 else [],
+                    comment=comment if i == 0 else '',
+                    excel_index=start + i,
+                ))
+
+        elif kind == 'repeated':
+            _, name, data_type = parsed
+            for i in range(span_size):
+                columns.append(ColumnDef(
+                    name=name, data_type=data_type, owner=owner,
+                    struct='repeated', options=options if i == 0 else [],
+                    comment=comment if i == 0 else '',
+                    excel_index=start + i,
+                ))
+
+        elif kind == 'message':
+            _, msg_name, sub_fields = parsed
+            n_sub = len(sub_fields)
+            for i in range(span_size):
+                sf_type, sf_name = sub_fields[i % n_sub]
+                columns.append(ColumnDef(
+                    name=f'{msg_name}_{sf_name}', data_type=sf_type, owner=owner,
+                    struct=f'message:{msg_name}',
+                    options=options if i == 0 else [],
+                    comment=comment if i == 0 else '',
+                    excel_index=start + i,
+                ))
 
     return columns
 
