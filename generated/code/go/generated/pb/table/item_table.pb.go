@@ -24,7 +24,7 @@ const (
 type ItemTable struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	MaxStatckSize uint32                 `protobuf:"varint,2,opt,name=max_statck_size,json=maxStatckSize,proto3" json:"max_statck_size,omitempty"`
+	MaxStackSize  uint32                 `protobuf:"varint,2,opt,name=max_stack_size,json=maxStackSize,proto3" json:"max_stack_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,9 +66,9 @@ func (x *ItemTable) GetId() uint32 {
 	return 0
 }
 
-func (x *ItemTable) GetMaxStatckSize() uint32 {
+func (x *ItemTable) GetMaxStackSize() uint32 {
 	if x != nil {
-		return x.MaxStatckSize
+		return x.MaxStackSize
 	}
 	return 0
 }
@@ -121,10 +121,10 @@ var File_item_table_proto protoreflect.FileDescriptor
 
 const file_item_table_proto_rawDesc = "" +
 	"\n" +
-	"\x10item_table.proto\"C\n" +
+	"\x10item_table.proto\"A\n" +
 	"\tItemTable\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\x12&\n" +
-	"\x0fmax_statck_size\x18\x02 \x01(\rR\rmaxStatckSize\"/\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12$\n" +
+	"\x0emax_stack_size\x18\x02 \x01(\rR\fmaxStackSize\"/\n" +
 	"\rItemTableData\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
 	".ItemTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"

@@ -229,34 +229,34 @@ class MessageLimiterTable final : public ::google::protobuf::Message
   void _internal_set_id(::uint32_t value);
 
   public:
-  // uint32 MaxRequests = 2;
-  void clear_maxrequests() ;
-  ::uint32_t maxrequests() const;
-  void set_maxrequests(::uint32_t value);
+  // uint32 max_requests = 2;
+  void clear_max_requests() ;
+  ::uint32_t max_requests() const;
+  void set_max_requests(::uint32_t value);
 
   private:
-  ::uint32_t _internal_maxrequests() const;
-  void _internal_set_maxrequests(::uint32_t value);
+  ::uint32_t _internal_max_requests() const;
+  void _internal_set_max_requests(::uint32_t value);
 
   public:
-  // uint32 TimeWindow = 3;
-  void clear_timewindow() ;
-  ::uint32_t timewindow() const;
-  void set_timewindow(::uint32_t value);
+  // uint32 time_window = 3;
+  void clear_time_window() ;
+  ::uint32_t time_window() const;
+  void set_time_window(::uint32_t value);
 
   private:
-  ::uint32_t _internal_timewindow() const;
-  void _internal_set_timewindow(::uint32_t value);
+  ::uint32_t _internal_time_window() const;
+  void _internal_set_time_window(::uint32_t value);
 
   public:
-  // uint32 TipMessage = 4;
-  void clear_tipmessage() ;
-  ::uint32_t tipmessage() const;
-  void set_tipmessage(::uint32_t value);
+  // uint32 tip_message = 4;
+  void clear_tip_message() ;
+  ::uint32_t tip_message() const;
+  void set_tip_message(::uint32_t value);
 
   private:
-  ::uint32_t _internal_tipmessage() const;
-  void _internal_set_tipmessage(::uint32_t value);
+  ::uint32_t _internal_tip_message() const;
+  void _internal_set_tip_message(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:MessageLimiterTable)
@@ -286,9 +286,9 @@ class MessageLimiterTable final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t id_;
-    ::uint32_t maxrequests_;
-    ::uint32_t timewindow_;
-    ::uint32_t tipmessage_;
+    ::uint32_t max_requests_;
+    ::uint32_t time_window_;
+    ::uint32_t tip_message_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -534,76 +534,76 @@ inline void MessageLimiterTable::_internal_set_id(::uint32_t value) {
   _impl_.id_ = value;
 }
 
-// uint32 MaxRequests = 2;
-inline void MessageLimiterTable::clear_maxrequests() {
+// uint32 max_requests = 2;
+inline void MessageLimiterTable::clear_max_requests() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.maxrequests_ = 0u;
+  _impl_.max_requests_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t MessageLimiterTable::maxrequests() const {
-  // @@protoc_insertion_point(field_get:MessageLimiterTable.MaxRequests)
-  return _internal_maxrequests();
+inline ::uint32_t MessageLimiterTable::max_requests() const {
+  // @@protoc_insertion_point(field_get:MessageLimiterTable.max_requests)
+  return _internal_max_requests();
 }
-inline void MessageLimiterTable::set_maxrequests(::uint32_t value) {
-  _internal_set_maxrequests(value);
+inline void MessageLimiterTable::set_max_requests(::uint32_t value) {
+  _internal_set_max_requests(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:MessageLimiterTable.MaxRequests)
+  // @@protoc_insertion_point(field_set:MessageLimiterTable.max_requests)
 }
-inline ::uint32_t MessageLimiterTable::_internal_maxrequests() const {
+inline ::uint32_t MessageLimiterTable::_internal_max_requests() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.maxrequests_;
+  return _impl_.max_requests_;
 }
-inline void MessageLimiterTable::_internal_set_maxrequests(::uint32_t value) {
+inline void MessageLimiterTable::_internal_set_max_requests(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.maxrequests_ = value;
+  _impl_.max_requests_ = value;
 }
 
-// uint32 TimeWindow = 3;
-inline void MessageLimiterTable::clear_timewindow() {
+// uint32 time_window = 3;
+inline void MessageLimiterTable::clear_time_window() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.timewindow_ = 0u;
+  _impl_.time_window_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint32_t MessageLimiterTable::timewindow() const {
-  // @@protoc_insertion_point(field_get:MessageLimiterTable.TimeWindow)
-  return _internal_timewindow();
+inline ::uint32_t MessageLimiterTable::time_window() const {
+  // @@protoc_insertion_point(field_get:MessageLimiterTable.time_window)
+  return _internal_time_window();
 }
-inline void MessageLimiterTable::set_timewindow(::uint32_t value) {
-  _internal_set_timewindow(value);
+inline void MessageLimiterTable::set_time_window(::uint32_t value) {
+  _internal_set_time_window(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:MessageLimiterTable.TimeWindow)
+  // @@protoc_insertion_point(field_set:MessageLimiterTable.time_window)
 }
-inline ::uint32_t MessageLimiterTable::_internal_timewindow() const {
+inline ::uint32_t MessageLimiterTable::_internal_time_window() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.timewindow_;
+  return _impl_.time_window_;
 }
-inline void MessageLimiterTable::_internal_set_timewindow(::uint32_t value) {
+inline void MessageLimiterTable::_internal_set_time_window(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.timewindow_ = value;
+  _impl_.time_window_ = value;
 }
 
-// uint32 TipMessage = 4;
-inline void MessageLimiterTable::clear_tipmessage() {
+// uint32 tip_message = 4;
+inline void MessageLimiterTable::clear_tip_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.tipmessage_ = 0u;
+  _impl_.tip_message_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint32_t MessageLimiterTable::tipmessage() const {
-  // @@protoc_insertion_point(field_get:MessageLimiterTable.TipMessage)
-  return _internal_tipmessage();
+inline ::uint32_t MessageLimiterTable::tip_message() const {
+  // @@protoc_insertion_point(field_get:MessageLimiterTable.tip_message)
+  return _internal_tip_message();
 }
-inline void MessageLimiterTable::set_tipmessage(::uint32_t value) {
-  _internal_set_tipmessage(value);
+inline void MessageLimiterTable::set_tip_message(::uint32_t value) {
+  _internal_set_tip_message(value);
   _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:MessageLimiterTable.TipMessage)
+  // @@protoc_insertion_point(field_set:MessageLimiterTable.tip_message)
 }
-inline ::uint32_t MessageLimiterTable::_internal_tipmessage() const {
+inline ::uint32_t MessageLimiterTable::_internal_tip_message() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.tipmessage_;
+  return _impl_.tip_message_;
 }
-inline void MessageLimiterTable::_internal_set_tipmessage(::uint32_t value) {
+inline void MessageLimiterTable::_internal_set_tip_message(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.tipmessage_ = value;
+  _impl_.tip_message_ = value;
 }
 
 // -------------------------------------------------------------------

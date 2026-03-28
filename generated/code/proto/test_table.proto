@@ -13,7 +13,7 @@ message TestTable {
 	uint32 level = 2;
 	repeated uint32 effect = 3;
 	map <string, string> tag = 4;
-	map <string, string> immunetag = 5;
+	map <string, string> immune_tag = 5;
 	repeated Testtestobj testobj = 6;
 }
 

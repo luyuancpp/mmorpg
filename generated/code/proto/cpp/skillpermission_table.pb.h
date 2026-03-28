@@ -214,25 +214,25 @@ class SkillPermissionTable final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kSkilltypeFieldNumber = 2,
+    kSkillTypeFieldNumber = 2,
     kIdFieldNumber = 1,
   };
-  // repeated uint32 skilltype = 2;
-  int skilltype_size() const;
+  // repeated uint32 skill_type = 2;
+  int skill_type_size() const;
   private:
-  int _internal_skilltype_size() const;
+  int _internal_skill_type_size() const;
 
   public:
-  void clear_skilltype() ;
-  ::uint32_t skilltype(int index) const;
-  void set_skilltype(int index, ::uint32_t value);
-  void add_skilltype(::uint32_t value);
-  const ::google::protobuf::RepeatedField<::uint32_t>& skilltype() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_skilltype();
+  void clear_skill_type() ;
+  ::uint32_t skill_type(int index) const;
+  void set_skill_type(int index, ::uint32_t value);
+  void add_skill_type(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& skill_type() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_skill_type();
 
   private:
-  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_skilltype() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_skilltype();
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_skill_type() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_skill_type();
 
   public:
   // uint32 id = 1;
@@ -271,8 +271,8 @@ class SkillPermissionTable final : public ::google::protobuf::Message
         const SkillPermissionTable& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedField<::uint32_t> skilltype_;
-    ::google::protobuf::internal::CachedSize _skilltype_cached_byte_size_;
+    ::google::protobuf::RepeatedField<::uint32_t> skill_type_;
+    ::google::protobuf::internal::CachedSize _skill_type_cached_byte_size_;
     ::uint32_t id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -519,50 +519,50 @@ inline void SkillPermissionTable::_internal_set_id(::uint32_t value) {
   _impl_.id_ = value;
 }
 
-// repeated uint32 skilltype = 2;
-inline int SkillPermissionTable::_internal_skilltype_size() const {
-  return _internal_skilltype().size();
+// repeated uint32 skill_type = 2;
+inline int SkillPermissionTable::_internal_skill_type_size() const {
+  return _internal_skill_type().size();
 }
-inline int SkillPermissionTable::skilltype_size() const {
-  return _internal_skilltype_size();
+inline int SkillPermissionTable::skill_type_size() const {
+  return _internal_skill_type_size();
 }
-inline void SkillPermissionTable::clear_skilltype() {
+inline void SkillPermissionTable::clear_skill_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.skilltype_.Clear();
+  _impl_.skill_type_.Clear();
 }
-inline ::uint32_t SkillPermissionTable::skilltype(int index) const {
-  // @@protoc_insertion_point(field_get:SkillPermissionTable.skilltype)
-  return _internal_skilltype().Get(index);
+inline ::uint32_t SkillPermissionTable::skill_type(int index) const {
+  // @@protoc_insertion_point(field_get:SkillPermissionTable.skill_type)
+  return _internal_skill_type().Get(index);
 }
-inline void SkillPermissionTable::set_skilltype(int index, ::uint32_t value) {
-  _internal_mutable_skilltype()->Set(index, value);
-  // @@protoc_insertion_point(field_set:SkillPermissionTable.skilltype)
+inline void SkillPermissionTable::set_skill_type(int index, ::uint32_t value) {
+  _internal_mutable_skill_type()->Set(index, value);
+  // @@protoc_insertion_point(field_set:SkillPermissionTable.skill_type)
 }
-inline void SkillPermissionTable::add_skilltype(::uint32_t value) {
+inline void SkillPermissionTable::add_skill_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _internal_mutable_skilltype()->Add(value);
-  // @@protoc_insertion_point(field_add:SkillPermissionTable.skilltype)
+  _internal_mutable_skill_type()->Add(value);
+  // @@protoc_insertion_point(field_add:SkillPermissionTable.skill_type)
 }
-inline const ::google::protobuf::RepeatedField<::uint32_t>& SkillPermissionTable::skilltype() const
+inline const ::google::protobuf::RepeatedField<::uint32_t>& SkillPermissionTable::skill_type() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SkillPermissionTable.skilltype)
-  return _internal_skilltype();
+  // @@protoc_insertion_point(field_list:SkillPermissionTable.skill_type)
+  return _internal_skill_type();
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL SkillPermissionTable::mutable_skilltype()
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL SkillPermissionTable::mutable_skill_type()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SkillPermissionTable.skilltype)
+  // @@protoc_insertion_point(field_mutable_list:SkillPermissionTable.skill_type)
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_skilltype();
+  return _internal_mutable_skill_type();
 }
 inline const ::google::protobuf::RepeatedField<::uint32_t>&
-SkillPermissionTable::_internal_skilltype() const {
+SkillPermissionTable::_internal_skill_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.skilltype_;
+  return _impl_.skill_type_;
 }
 inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
-SkillPermissionTable::_internal_mutable_skilltype() {
+SkillPermissionTable::_internal_mutable_skill_type() {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.skilltype_;
+  return &_impl_.skill_type_;
 }
 
 // -------------------------------------------------------------------

@@ -29,7 +29,7 @@ inline constexpr ItemTable::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         id_{0u},
-        max_statck_size_{0u} {}
+        max_stack_size_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR ItemTable::ItemTable(::_pbi::ConstantInitialized)
@@ -86,7 +86,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::ItemTable, _impl_._has_bits_),
         5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::ItemTable, _impl_.id_),
-        PROTOBUF_FIELD_OFFSET(::ItemTable, _impl_.max_statck_size_),
+        PROTOBUF_FIELD_OFFSET(::ItemTable, _impl_.max_stack_size_),
         0,
         1,
         0x000, // bitmap
@@ -104,16 +104,16 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_item_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\020item_table.proto\"0\n\tItemTable\022\n\n\002id\030\001 "
-    "\001(\r\022\027\n\017max_statck_size\030\002 \001(\r\")\n\rItemTabl"
-    "eData\022\030\n\004data\030\001 \003(\0132\n.ItemTableB\024Z\022gener"
-    "ated/pb/tableb\006proto3"
+    "\n\020item_table.proto\"/\n\tItemTable\022\n\n\002id\030\001 "
+    "\001(\r\022\026\n\016max_stack_size\030\002 \001(\r\")\n\rItemTable"
+    "Data\022\030\n\004data\030\001 \003(\0132\n.ItemTableB\024Z\022genera"
+    "ted/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_item_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_item_5ftable_2eproto = {
     false,
     false,
-    141,
+    140,
     descriptor_table_protodef_item_5ftable_2eproto,
     "item_table.proto",
     &descriptor_table_item_5ftable_2eproto_once,
@@ -166,9 +166,9 @@ inline void ItemTable::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, max_statck_size_) -
+           offsetof(Impl_, max_stack_size_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::max_statck_size_));
+               sizeof(Impl_::max_stack_size_));
 }
 ItemTable::~ItemTable() {
   // @@protoc_insertion_point(destructor:ItemTable)
@@ -243,9 +243,9 @@ ItemTable::_table_ = {
     ::_pbi::TcParser::GetTable<::ItemTable>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 max_statck_size = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemTable, _impl_.max_statck_size_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.max_statck_size_)}},
+    // uint32 max_stack_size = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemTable, _impl_.max_stack_size_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.max_stack_size_)}},
     // uint32 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemTable, _impl_.id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.id_)}},
@@ -255,8 +255,8 @@ ItemTable::_table_ = {
     // uint32 id = 1;
     {PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 max_statck_size = 2;
-    {PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.max_statck_size_), _Internal::kHasBitsOffset + 1, 0,
+    // uint32 max_stack_size = 2;
+    {PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.max_stack_size_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -273,8 +273,8 @@ PROTOBUF_NOINLINE void ItemTable::Clear() {
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
     ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.max_statck_size_) -
-        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.max_statck_size_));
+        reinterpret_cast<char*>(&_impl_.max_stack_size_) -
+        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.max_stack_size_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -304,12 +304,12 @@ PROTOBUF_NOINLINE void ItemTable::Clear() {
     }
   }
 
-  // uint32 max_statck_size = 2;
+  // uint32 max_stack_size = 2;
   if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
-    if (this_._internal_max_statck_size() != 0) {
+    if (this_._internal_max_stack_size() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_max_statck_size(), target);
+          2, this_._internal_max_stack_size(), target);
     }
   }
 
@@ -346,11 +346,11 @@ PROTOBUF_NOINLINE void ItemTable::Clear() {
             this_._internal_id());
       }
     }
-    // uint32 max_statck_size = 2;
+    // uint32 max_stack_size = 2;
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_max_statck_size() != 0) {
+      if (this_._internal_max_stack_size() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_max_statck_size());
+            this_._internal_max_stack_size());
       }
     }
   }
@@ -374,8 +374,8 @@ void ItemTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_max_statck_size() != 0) {
-        _this->_impl_.max_statck_size_ = from._impl_.max_statck_size_;
+      if (from._internal_max_stack_size() != 0) {
+        _this->_impl_.max_stack_size_ = from._impl_.max_stack_size_;
       }
     }
   }
@@ -396,8 +396,8 @@ void ItemTable::InternalSwap(ItemTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL other
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.max_statck_size_)
-      + sizeof(ItemTable::_impl_.max_statck_size_)
+      PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.max_stack_size_)
+      + sizeof(ItemTable::_impl_.max_stack_size_)
       - PROTOBUF_FIELD_OFFSET(ItemTable, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));

@@ -29,9 +29,9 @@ inline constexpr MessageLimiterTable::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         id_{0u},
-        maxrequests_{0u},
-        timewindow_{0u},
-        tipmessage_{0u} {}
+        max_requests_{0u},
+        time_window_{0u},
+        tip_message_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR MessageLimiterTable::MessageLimiterTable(::_pbi::ConstantInitialized)
@@ -88,9 +88,9 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::MessageLimiterTable, _impl_._has_bits_),
         7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::MessageLimiterTable, _impl_.id_),
-        PROTOBUF_FIELD_OFFSET(::MessageLimiterTable, _impl_.maxrequests_),
-        PROTOBUF_FIELD_OFFSET(::MessageLimiterTable, _impl_.timewindow_),
-        PROTOBUF_FIELD_OFFSET(::MessageLimiterTable, _impl_.tipmessage_),
+        PROTOBUF_FIELD_OFFSET(::MessageLimiterTable, _impl_.max_requests_),
+        PROTOBUF_FIELD_OFFSET(::MessageLimiterTable, _impl_.time_window_),
+        PROTOBUF_FIELD_OFFSET(::MessageLimiterTable, _impl_.tip_message_),
         0,
         1,
         2,
@@ -110,18 +110,18 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_messagelimiter_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\032messagelimiter_table.proto\"^\n\023MessageL"
-    "imiterTable\022\n\n\002id\030\001 \001(\r\022\023\n\013MaxRequests\030\002"
-    " \001(\r\022\022\n\nTimeWindow\030\003 \001(\r\022\022\n\nTipMessage\030\004"
-    " \001(\r\"=\n\027MessageLimiterTableData\022\"\n\004data\030"
-    "\001 \003(\0132\024.MessageLimiterTableB\024Z\022generated"
-    "/pb/tableb\006proto3"
+    "\n\032messagelimiter_table.proto\"a\n\023MessageL"
+    "imiterTable\022\n\n\002id\030\001 \001(\r\022\024\n\014max_requests\030"
+    "\002 \001(\r\022\023\n\013time_window\030\003 \001(\r\022\023\n\013tip_messag"
+    "e\030\004 \001(\r\"=\n\027MessageLimiterTableData\022\"\n\004da"
+    "ta\030\001 \003(\0132\024.MessageLimiterTableB\024Z\022genera"
+    "ted/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_messagelimiter_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_messagelimiter_5ftable_2eproto = {
     false,
     false,
-    217,
+    220,
     descriptor_table_protodef_messagelimiter_5ftable_2eproto,
     "messagelimiter_table.proto",
     &descriptor_table_messagelimiter_5ftable_2eproto_once,
@@ -174,9 +174,9 @@ inline void MessageLimiterTable::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE aren
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, tipmessage_) -
+           offsetof(Impl_, tip_message_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::tipmessage_));
+               sizeof(Impl_::tip_message_));
 }
 MessageLimiterTable::~MessageLimiterTable() {
   // @@protoc_insertion_point(destructor:MessageLimiterTable)
@@ -251,32 +251,32 @@ MessageLimiterTable::_table_ = {
     ::_pbi::TcParser::GetTable<::MessageLimiterTable>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 TipMessage = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageLimiterTable, _impl_.tipmessage_), 3>(),
-     {32, 3, 0, PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.tipmessage_)}},
+    // uint32 tip_message = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageLimiterTable, _impl_.tip_message_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.tip_message_)}},
     // uint32 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageLimiterTable, _impl_.id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.id_)}},
-    // uint32 MaxRequests = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageLimiterTable, _impl_.maxrequests_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.maxrequests_)}},
-    // uint32 TimeWindow = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageLimiterTable, _impl_.timewindow_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.timewindow_)}},
+    // uint32 max_requests = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageLimiterTable, _impl_.max_requests_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.max_requests_)}},
+    // uint32 time_window = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageLimiterTable, _impl_.time_window_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.time_window_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 id = 1;
     {PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 MaxRequests = 2;
-    {PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.maxrequests_), _Internal::kHasBitsOffset + 1, 0,
+    // uint32 max_requests = 2;
+    {PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.max_requests_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 TimeWindow = 3;
-    {PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.timewindow_), _Internal::kHasBitsOffset + 2, 0,
+    // uint32 time_window = 3;
+    {PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.time_window_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 TipMessage = 4;
-    {PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.tipmessage_), _Internal::kHasBitsOffset + 3, 0,
+    // uint32 tip_message = 4;
+    {PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.tip_message_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -293,8 +293,8 @@ PROTOBUF_NOINLINE void MessageLimiterTable::Clear() {
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x0000000fu) != 0) {
     ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.tipmessage_) -
-        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.tipmessage_));
+        reinterpret_cast<char*>(&_impl_.tip_message_) -
+        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.tip_message_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -324,30 +324,30 @@ PROTOBUF_NOINLINE void MessageLimiterTable::Clear() {
     }
   }
 
-  // uint32 MaxRequests = 2;
+  // uint32 max_requests = 2;
   if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
-    if (this_._internal_maxrequests() != 0) {
+    if (this_._internal_max_requests() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_maxrequests(), target);
+          2, this_._internal_max_requests(), target);
     }
   }
 
-  // uint32 TimeWindow = 3;
+  // uint32 time_window = 3;
   if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
-    if (this_._internal_timewindow() != 0) {
+    if (this_._internal_time_window() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          3, this_._internal_timewindow(), target);
+          3, this_._internal_time_window(), target);
     }
   }
 
-  // uint32 TipMessage = 4;
+  // uint32 tip_message = 4;
   if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
-    if (this_._internal_tipmessage() != 0) {
+    if (this_._internal_tip_message() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          4, this_._internal_tipmessage(), target);
+          4, this_._internal_tip_message(), target);
     }
   }
 
@@ -384,25 +384,25 @@ PROTOBUF_NOINLINE void MessageLimiterTable::Clear() {
             this_._internal_id());
       }
     }
-    // uint32 MaxRequests = 2;
+    // uint32 max_requests = 2;
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_maxrequests() != 0) {
+      if (this_._internal_max_requests() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_maxrequests());
+            this_._internal_max_requests());
       }
     }
-    // uint32 TimeWindow = 3;
+    // uint32 time_window = 3;
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (this_._internal_timewindow() != 0) {
+      if (this_._internal_time_window() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_timewindow());
+            this_._internal_time_window());
       }
     }
-    // uint32 TipMessage = 4;
+    // uint32 tip_message = 4;
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (this_._internal_tipmessage() != 0) {
+      if (this_._internal_tip_message() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_tipmessage());
+            this_._internal_tip_message());
       }
     }
   }
@@ -426,18 +426,18 @@ void MessageLimiterTable::MergeImpl(::google::protobuf::MessageLite& to_msg, con
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_maxrequests() != 0) {
-        _this->_impl_.maxrequests_ = from._impl_.maxrequests_;
+      if (from._internal_max_requests() != 0) {
+        _this->_impl_.max_requests_ = from._impl_.max_requests_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (from._internal_timewindow() != 0) {
-        _this->_impl_.timewindow_ = from._impl_.timewindow_;
+      if (from._internal_time_window() != 0) {
+        _this->_impl_.time_window_ = from._impl_.time_window_;
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (from._internal_tipmessage() != 0) {
-        _this->_impl_.tipmessage_ = from._impl_.tipmessage_;
+      if (from._internal_tip_message() != 0) {
+        _this->_impl_.tip_message_ = from._impl_.tip_message_;
       }
     }
   }
@@ -458,8 +458,8 @@ void MessageLimiterTable::InternalSwap(MessageLimiterTable* PROTOBUF_RESTRICT PR
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.tipmessage_)
-      + sizeof(MessageLimiterTable::_impl_.tipmessage_)
+      PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.tip_message_)
+      + sizeof(MessageLimiterTable::_impl_.tip_message_)
       - PROTOBUF_FIELD_OFFSET(MessageLimiterTable, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));

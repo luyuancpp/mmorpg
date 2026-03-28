@@ -24,7 +24,7 @@ const (
 type SkillPermissionTable struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Skilltype     []uint32               `protobuf:"varint,2,rep,packed,name=skilltype,proto3" json:"skilltype,omitempty"`
+	SkillType     []uint32               `protobuf:"varint,2,rep,packed,name=skill_type,json=skillType,proto3" json:"skill_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,9 +66,9 @@ func (x *SkillPermissionTable) GetId() uint32 {
 	return 0
 }
 
-func (x *SkillPermissionTable) GetSkilltype() []uint32 {
+func (x *SkillPermissionTable) GetSkillType() []uint32 {
 	if x != nil {
-		return x.Skilltype
+		return x.SkillType
 	}
 	return nil
 }
@@ -121,10 +121,11 @@ var File_skillpermission_table_proto protoreflect.FileDescriptor
 
 const file_skillpermission_table_proto_rawDesc = "" +
 	"\n" +
-	"\x1bskillpermission_table.proto\"D\n" +
+	"\x1bskillpermission_table.proto\"E\n" +
 	"\x14SkillPermissionTable\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1c\n" +
-	"\tskilltype\x18\x02 \x03(\rR\tskilltype\"E\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1d\n" +
+	"\n" +
+	"skill_type\x18\x02 \x03(\rR\tskillType\"E\n" +
 	"\x18SkillPermissionTableData\x12)\n" +
 	"\x04data\x18\x01 \x03(\v2\x15.SkillPermissionTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
 

@@ -64,10 +64,10 @@ class TestMultiKeyTableData;
 struct TestMultiKeyTableDataDefaultTypeInternal;
 extern TestMultiKeyTableDataDefaultTypeInternal _TestMultiKeyTableData_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTableData_class_data_;
-class TestMultiKeyTable_Immunetag1Entry_DoNotUse;
-struct TestMultiKeyTable_Immunetag1Entry_DoNotUseDefaultTypeInternal;
-extern TestMultiKeyTable_Immunetag1Entry_DoNotUseDefaultTypeInternal _TestMultiKeyTable_Immunetag1Entry_DoNotUse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTable_Immunetag1Entry_DoNotUse_class_data_;
+class TestMultiKeyTable_ImmuneTag1Entry_DoNotUse;
+struct TestMultiKeyTable_ImmuneTag1Entry_DoNotUseDefaultTypeInternal;
+extern TestMultiKeyTable_ImmuneTag1Entry_DoNotUseDefaultTypeInternal _TestMultiKeyTable_ImmuneTag1Entry_DoNotUse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTable_ImmuneTag1Entry_DoNotUse_class_data_;
 class TestMultiKeyTable_Tag1Entry_DoNotUse;
 struct TestMultiKeyTable_Tag1Entry_DoNotUseDefaultTypeInternal;
 extern TestMultiKeyTable_Tag1Entry_DoNotUseDefaultTypeInternal _TestMultiKeyTable_Tag1Entry_DoNotUse_default_instance_;
@@ -329,7 +329,7 @@ class TestMultiKeyTable_Tag1Entry_DoNotUse final
 extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTable_Tag1Entry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
-class TestMultiKeyTable_Immunetag1Entry_DoNotUse final
+class TestMultiKeyTable_ImmuneTag1Entry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<std::string, std::string,
                              ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                              ::google::protobuf::internal::WireFormatLite::TYPE_STRING> {
@@ -338,12 +338,12 @@ class TestMultiKeyTable_Immunetag1Entry_DoNotUse final
       ::google::protobuf::internal::MapEntry<std::string, std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>;
-  TestMultiKeyTable_Immunetag1Entry_DoNotUse();
+  TestMultiKeyTable_ImmuneTag1Entry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR TestMultiKeyTable_Immunetag1Entry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
-  explicit TestMultiKeyTable_Immunetag1Entry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  explicit PROTOBUF_CONSTEXPR TestMultiKeyTable_ImmuneTag1Entry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
+  explicit TestMultiKeyTable_ImmuneTag1Entry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr const void* PROTOBUF_NONNULL internal_default_instance() {
-    return &_TestMultiKeyTable_Immunetag1Entry_DoNotUse_default_instance_;
+    return &_TestMultiKeyTable_ImmuneTag1Entry_DoNotUse_default_instance_;
   }
 
 
@@ -365,7 +365,7 @@ class TestMultiKeyTable_Immunetag1Entry_DoNotUse final
       ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr auto InternalNewImpl_();
 };
-extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTable_Immunetag1Entry_DoNotUse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull TestMultiKeyTable_ImmuneTag1Entry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
 class TestMultiKeyTable final : public ::google::protobuf::Message
@@ -513,16 +513,16 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   enum : int {
     kEffectFieldNumber = 3,
     kTag1FieldNumber = 10,
-    kImmunetag1FieldNumber = 11,
+    kImmuneTag1FieldNumber = 11,
     kTestobj1FieldNumber = 12,
-    kStringkeyFieldNumber = 4,
-    kMstringkeyFieldNumber = 7,
+    kStringKeyFieldNumber = 4,
+    kMStringKeyFieldNumber = 7,
     kIdFieldNumber = 1,
     kLevelFieldNumber = 2,
     kUint32KeyFieldNumber = 5,
-    kIn32KeyFieldNumber = 6,
-    kMuint32KeyFieldNumber = 8,
-    kMin32KeyFieldNumber = 9,
+    kInt32KeyFieldNumber = 6,
+    kMUint32KeyFieldNumber = 8,
+    kMInt32KeyFieldNumber = 9,
   };
   // repeated uint32 effect = 3;
   int effect_size() const;
@@ -557,19 +557,19 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_tag1();
 
   public:
-  // map<string, string> immunetag1 = 11;
-  int immunetag1_size() const;
+  // map<string, string> immune_tag1 = 11;
+  int immune_tag1_size() const;
   private:
-  int _internal_immunetag1_size() const;
+  int _internal_immune_tag1_size() const;
 
   public:
-  void clear_immunetag1() ;
-  const ::google::protobuf::Map<std::string, std::string>& immunetag1() const;
-  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL mutable_immunetag1();
+  void clear_immune_tag1() ;
+  const ::google::protobuf::Map<std::string, std::string>& immune_tag1() const;
+  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL mutable_immune_tag1();
 
   private:
-  const ::google::protobuf::Map<std::string, std::string>& _internal_immunetag1() const;
-  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_immunetag1();
+  const ::google::protobuf::Map<std::string, std::string>& _internal_immune_tag1() const;
+  ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_immune_tag1();
 
   public:
   // repeated .TestMultiKeytestobj1 testobj1 = 12;
@@ -589,34 +589,34 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   const ::TestMultiKeytestobj1& testobj1(int index) const;
   ::TestMultiKeytestobj1* PROTOBUF_NONNULL add_testobj1();
   const ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>& testobj1() const;
-  // string stringkey = 4;
-  void clear_stringkey() ;
-  const ::std::string& stringkey() const;
+  // string string_key = 4;
+  void clear_string_key() ;
+  const ::std::string& string_key() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_stringkey(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_stringkey();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_stringkey();
-  void set_allocated_stringkey(::std::string* PROTOBUF_NULLABLE value);
+  void set_string_key(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_string_key();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_string_key();
+  void set_allocated_string_key(::std::string* PROTOBUF_NULLABLE value);
 
   private:
-  const ::std::string& _internal_stringkey() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_stringkey(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_stringkey();
+  const ::std::string& _internal_string_key() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_string_key(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_string_key();
 
   public:
-  // string mstringkey = 7;
-  void clear_mstringkey() ;
-  const ::std::string& mstringkey() const;
+  // string m_string_key = 7;
+  void clear_m_string_key() ;
+  const ::std::string& m_string_key() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_mstringkey(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_mstringkey();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_mstringkey();
-  void set_allocated_mstringkey(::std::string* PROTOBUF_NULLABLE value);
+  void set_m_string_key(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_m_string_key();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_m_string_key();
+  void set_allocated_m_string_key(::std::string* PROTOBUF_NULLABLE value);
 
   private:
-  const ::std::string& _internal_mstringkey() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_mstringkey(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_mstringkey();
+  const ::std::string& _internal_m_string_key() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_m_string_key(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_m_string_key();
 
   public:
   // uint32 id = 1;
@@ -639,44 +639,44 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   void _internal_set_level(::uint32_t value);
 
   public:
-  // uint32 uint32key = 5;
-  void clear_uint32key() ;
-  ::uint32_t uint32key() const;
-  void set_uint32key(::uint32_t value);
+  // uint32 uint32_key = 5;
+  void clear_uint32_key() ;
+  ::uint32_t uint32_key() const;
+  void set_uint32_key(::uint32_t value);
 
   private:
-  ::uint32_t _internal_uint32key() const;
-  void _internal_set_uint32key(::uint32_t value);
+  ::uint32_t _internal_uint32_key() const;
+  void _internal_set_uint32_key(::uint32_t value);
 
   public:
-  // int32 in32key = 6;
-  void clear_in32key() ;
-  ::int32_t in32key() const;
-  void set_in32key(::int32_t value);
+  // int32 int32_key = 6;
+  void clear_int32_key() ;
+  ::int32_t int32_key() const;
+  void set_int32_key(::int32_t value);
 
   private:
-  ::int32_t _internal_in32key() const;
-  void _internal_set_in32key(::int32_t value);
+  ::int32_t _internal_int32_key() const;
+  void _internal_set_int32_key(::int32_t value);
 
   public:
-  // uint32 muint32key = 8;
-  void clear_muint32key() ;
-  ::uint32_t muint32key() const;
-  void set_muint32key(::uint32_t value);
+  // uint32 m_uint32_key = 8;
+  void clear_m_uint32_key() ;
+  ::uint32_t m_uint32_key() const;
+  void set_m_uint32_key(::uint32_t value);
 
   private:
-  ::uint32_t _internal_muint32key() const;
-  void _internal_set_muint32key(::uint32_t value);
+  ::uint32_t _internal_m_uint32_key() const;
+  void _internal_set_m_uint32_key(::uint32_t value);
 
   public:
-  // int32 min32key = 9;
-  void clear_min32key() ;
-  ::int32_t min32key() const;
-  void set_min32key(::int32_t value);
+  // int32 m_int32_key = 9;
+  void clear_m_int32_key() ;
+  ::int32_t m_int32_key() const;
+  void set_m_int32_key(::int32_t value);
 
   private:
-  ::int32_t _internal_min32key() const;
-  void _internal_set_min32key(::int32_t value);
+  ::int32_t _internal_m_int32_key() const;
+  void _internal_set_m_int32_key(::int32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:TestMultiKeyTable)
@@ -684,7 +684,7 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<4, 12,
-                                   3, 67,
+                                   3, 71,
                                    2>
       _table_;
 
@@ -711,19 +711,19 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
         tag1_;
-    ::google::protobuf::internal::MapField<TestMultiKeyTable_Immunetag1Entry_DoNotUse, std::string, std::string,
+    ::google::protobuf::internal::MapField<TestMultiKeyTable_ImmuneTag1Entry_DoNotUse, std::string, std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
-        immunetag1_;
+        immune_tag1_;
     ::google::protobuf::RepeatedPtrField< ::TestMultiKeytestobj1 > testobj1_;
-    ::google::protobuf::internal::ArenaStringPtr stringkey_;
-    ::google::protobuf::internal::ArenaStringPtr mstringkey_;
+    ::google::protobuf::internal::ArenaStringPtr string_key_;
+    ::google::protobuf::internal::ArenaStringPtr m_string_key_;
     ::uint32_t id_;
     ::uint32_t level_;
-    ::uint32_t uint32key_;
-    ::int32_t in32key_;
-    ::uint32_t muint32key_;
-    ::int32_t min32key_;
+    ::uint32_t uint32_key_;
+    ::int32_t int32_key_;
+    ::uint32_t m_uint32_key_;
+    ::int32_t m_int32_key_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1095,230 +1095,230 @@ TestMultiKeyTable::_internal_mutable_effect() {
   return &_impl_.effect_;
 }
 
-// string stringkey = 4;
-inline void TestMultiKeyTable::clear_stringkey() {
+// string string_key = 4;
+inline void TestMultiKeyTable::clear_string_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.stringkey_.ClearToEmpty();
+  _impl_.string_key_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::std::string& TestMultiKeyTable::stringkey() const
+inline const ::std::string& TestMultiKeyTable::string_key() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:TestMultiKeyTable.stringkey)
-  return _internal_stringkey();
+  // @@protoc_insertion_point(field_get:TestMultiKeyTable.string_key)
+  return _internal_string_key();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void TestMultiKeyTable::set_stringkey(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void TestMultiKeyTable::set_string_key(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.stringkey_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:TestMultiKeyTable.stringkey)
+  _impl_.string_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:TestMultiKeyTable.string_key)
 }
-inline ::std::string* PROTOBUF_NONNULL TestMultiKeyTable::mutable_stringkey()
+inline ::std::string* PROTOBUF_NONNULL TestMultiKeyTable::mutable_string_key()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_stringkey();
-  // @@protoc_insertion_point(field_mutable:TestMultiKeyTable.stringkey)
+  ::std::string* _s = _internal_mutable_string_key();
+  // @@protoc_insertion_point(field_mutable:TestMultiKeyTable.string_key)
   return _s;
 }
-inline const ::std::string& TestMultiKeyTable::_internal_stringkey() const {
+inline const ::std::string& TestMultiKeyTable::_internal_string_key() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.stringkey_.Get();
+  return _impl_.string_key_.Get();
 }
-inline void TestMultiKeyTable::_internal_set_stringkey(const ::std::string& value) {
+inline void TestMultiKeyTable::_internal_set_string_key(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
-  _impl_.stringkey_.Set(value, GetArena());
+  _impl_.string_key_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL TestMultiKeyTable::_internal_mutable_stringkey() {
+inline ::std::string* PROTOBUF_NONNULL TestMultiKeyTable::_internal_mutable_string_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
-  return _impl_.stringkey_.Mutable( GetArena());
+  return _impl_.string_key_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE TestMultiKeyTable::release_stringkey() {
+inline ::std::string* PROTOBUF_NULLABLE TestMultiKeyTable::release_string_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:TestMultiKeyTable.stringkey)
+  // @@protoc_insertion_point(field_release:TestMultiKeyTable.string_key)
   if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
     return nullptr;
   }
   _impl_._has_bits_[0] &= ~0x00000001u;
-  auto* released = _impl_.stringkey_.Release();
+  auto* released = _impl_.string_key_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.stringkey_.Set("", GetArena());
+    _impl_.string_key_.Set("", GetArena());
   }
   return released;
 }
-inline void TestMultiKeyTable::set_allocated_stringkey(::std::string* PROTOBUF_NULLABLE value) {
+inline void TestMultiKeyTable::set_allocated_string_key(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  _impl_.stringkey_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.stringkey_.IsDefault()) {
-    _impl_.stringkey_.Set("", GetArena());
+  _impl_.string_key_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.string_key_.IsDefault()) {
+    _impl_.string_key_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:TestMultiKeyTable.stringkey)
+  // @@protoc_insertion_point(field_set_allocated:TestMultiKeyTable.string_key)
 }
 
-// uint32 uint32key = 5;
-inline void TestMultiKeyTable::clear_uint32key() {
+// uint32 uint32_key = 5;
+inline void TestMultiKeyTable::clear_uint32_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.uint32key_ = 0u;
+  _impl_.uint32_key_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint32_t TestMultiKeyTable::uint32key() const {
-  // @@protoc_insertion_point(field_get:TestMultiKeyTable.uint32key)
-  return _internal_uint32key();
+inline ::uint32_t TestMultiKeyTable::uint32_key() const {
+  // @@protoc_insertion_point(field_get:TestMultiKeyTable.uint32_key)
+  return _internal_uint32_key();
 }
-inline void TestMultiKeyTable::set_uint32key(::uint32_t value) {
-  _internal_set_uint32key(value);
+inline void TestMultiKeyTable::set_uint32_key(::uint32_t value) {
+  _internal_set_uint32_key(value);
   _impl_._has_bits_[0] |= 0x00000010u;
-  // @@protoc_insertion_point(field_set:TestMultiKeyTable.uint32key)
+  // @@protoc_insertion_point(field_set:TestMultiKeyTable.uint32_key)
 }
-inline ::uint32_t TestMultiKeyTable::_internal_uint32key() const {
+inline ::uint32_t TestMultiKeyTable::_internal_uint32_key() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.uint32key_;
+  return _impl_.uint32_key_;
 }
-inline void TestMultiKeyTable::_internal_set_uint32key(::uint32_t value) {
+inline void TestMultiKeyTable::_internal_set_uint32_key(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.uint32key_ = value;
+  _impl_.uint32_key_ = value;
 }
 
-// int32 in32key = 6;
-inline void TestMultiKeyTable::clear_in32key() {
+// int32 int32_key = 6;
+inline void TestMultiKeyTable::clear_int32_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.in32key_ = 0;
+  _impl_.int32_key_ = 0;
   _impl_._has_bits_[0] &= ~0x00000020u;
 }
-inline ::int32_t TestMultiKeyTable::in32key() const {
-  // @@protoc_insertion_point(field_get:TestMultiKeyTable.in32key)
-  return _internal_in32key();
+inline ::int32_t TestMultiKeyTable::int32_key() const {
+  // @@protoc_insertion_point(field_get:TestMultiKeyTable.int32_key)
+  return _internal_int32_key();
 }
-inline void TestMultiKeyTable::set_in32key(::int32_t value) {
-  _internal_set_in32key(value);
+inline void TestMultiKeyTable::set_int32_key(::int32_t value) {
+  _internal_set_int32_key(value);
   _impl_._has_bits_[0] |= 0x00000020u;
-  // @@protoc_insertion_point(field_set:TestMultiKeyTable.in32key)
+  // @@protoc_insertion_point(field_set:TestMultiKeyTable.int32_key)
 }
-inline ::int32_t TestMultiKeyTable::_internal_in32key() const {
+inline ::int32_t TestMultiKeyTable::_internal_int32_key() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.in32key_;
+  return _impl_.int32_key_;
 }
-inline void TestMultiKeyTable::_internal_set_in32key(::int32_t value) {
+inline void TestMultiKeyTable::_internal_set_int32_key(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.in32key_ = value;
+  _impl_.int32_key_ = value;
 }
 
-// string mstringkey = 7;
-inline void TestMultiKeyTable::clear_mstringkey() {
+// string m_string_key = 7;
+inline void TestMultiKeyTable::clear_m_string_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.mstringkey_.ClearToEmpty();
+  _impl_.m_string_key_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline const ::std::string& TestMultiKeyTable::mstringkey() const
+inline const ::std::string& TestMultiKeyTable::m_string_key() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:TestMultiKeyTable.mstringkey)
-  return _internal_mstringkey();
+  // @@protoc_insertion_point(field_get:TestMultiKeyTable.m_string_key)
+  return _internal_m_string_key();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void TestMultiKeyTable::set_mstringkey(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void TestMultiKeyTable::set_m_string_key(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.mstringkey_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:TestMultiKeyTable.mstringkey)
+  _impl_.m_string_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:TestMultiKeyTable.m_string_key)
 }
-inline ::std::string* PROTOBUF_NONNULL TestMultiKeyTable::mutable_mstringkey()
+inline ::std::string* PROTOBUF_NONNULL TestMultiKeyTable::mutable_m_string_key()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_mstringkey();
-  // @@protoc_insertion_point(field_mutable:TestMultiKeyTable.mstringkey)
+  ::std::string* _s = _internal_mutable_m_string_key();
+  // @@protoc_insertion_point(field_mutable:TestMultiKeyTable.m_string_key)
   return _s;
 }
-inline const ::std::string& TestMultiKeyTable::_internal_mstringkey() const {
+inline const ::std::string& TestMultiKeyTable::_internal_m_string_key() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.mstringkey_.Get();
+  return _impl_.m_string_key_.Get();
 }
-inline void TestMultiKeyTable::_internal_set_mstringkey(const ::std::string& value) {
+inline void TestMultiKeyTable::_internal_set_m_string_key(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
-  _impl_.mstringkey_.Set(value, GetArena());
+  _impl_.m_string_key_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL TestMultiKeyTable::_internal_mutable_mstringkey() {
+inline ::std::string* PROTOBUF_NONNULL TestMultiKeyTable::_internal_mutable_m_string_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002u;
-  return _impl_.mstringkey_.Mutable( GetArena());
+  return _impl_.m_string_key_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE TestMultiKeyTable::release_mstringkey() {
+inline ::std::string* PROTOBUF_NULLABLE TestMultiKeyTable::release_m_string_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:TestMultiKeyTable.mstringkey)
+  // @@protoc_insertion_point(field_release:TestMultiKeyTable.m_string_key)
   if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
     return nullptr;
   }
   _impl_._has_bits_[0] &= ~0x00000002u;
-  auto* released = _impl_.mstringkey_.Release();
+  auto* released = _impl_.m_string_key_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.mstringkey_.Set("", GetArena());
+    _impl_.m_string_key_.Set("", GetArena());
   }
   return released;
 }
-inline void TestMultiKeyTable::set_allocated_mstringkey(::std::string* PROTOBUF_NULLABLE value) {
+inline void TestMultiKeyTable::set_allocated_m_string_key(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  _impl_.mstringkey_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.mstringkey_.IsDefault()) {
-    _impl_.mstringkey_.Set("", GetArena());
+  _impl_.m_string_key_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.m_string_key_.IsDefault()) {
+    _impl_.m_string_key_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:TestMultiKeyTable.mstringkey)
+  // @@protoc_insertion_point(field_set_allocated:TestMultiKeyTable.m_string_key)
 }
 
-// uint32 muint32key = 8;
-inline void TestMultiKeyTable::clear_muint32key() {
+// uint32 m_uint32_key = 8;
+inline void TestMultiKeyTable::clear_m_uint32_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.muint32key_ = 0u;
+  _impl_.m_uint32_key_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000040u;
 }
-inline ::uint32_t TestMultiKeyTable::muint32key() const {
-  // @@protoc_insertion_point(field_get:TestMultiKeyTable.muint32key)
-  return _internal_muint32key();
+inline ::uint32_t TestMultiKeyTable::m_uint32_key() const {
+  // @@protoc_insertion_point(field_get:TestMultiKeyTable.m_uint32_key)
+  return _internal_m_uint32_key();
 }
-inline void TestMultiKeyTable::set_muint32key(::uint32_t value) {
-  _internal_set_muint32key(value);
+inline void TestMultiKeyTable::set_m_uint32_key(::uint32_t value) {
+  _internal_set_m_uint32_key(value);
   _impl_._has_bits_[0] |= 0x00000040u;
-  // @@protoc_insertion_point(field_set:TestMultiKeyTable.muint32key)
+  // @@protoc_insertion_point(field_set:TestMultiKeyTable.m_uint32_key)
 }
-inline ::uint32_t TestMultiKeyTable::_internal_muint32key() const {
+inline ::uint32_t TestMultiKeyTable::_internal_m_uint32_key() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.muint32key_;
+  return _impl_.m_uint32_key_;
 }
-inline void TestMultiKeyTable::_internal_set_muint32key(::uint32_t value) {
+inline void TestMultiKeyTable::_internal_set_m_uint32_key(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.muint32key_ = value;
+  _impl_.m_uint32_key_ = value;
 }
 
-// int32 min32key = 9;
-inline void TestMultiKeyTable::clear_min32key() {
+// int32 m_int32_key = 9;
+inline void TestMultiKeyTable::clear_m_int32_key() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.min32key_ = 0;
+  _impl_.m_int32_key_ = 0;
   _impl_._has_bits_[0] &= ~0x00000080u;
 }
-inline ::int32_t TestMultiKeyTable::min32key() const {
-  // @@protoc_insertion_point(field_get:TestMultiKeyTable.min32key)
-  return _internal_min32key();
+inline ::int32_t TestMultiKeyTable::m_int32_key() const {
+  // @@protoc_insertion_point(field_get:TestMultiKeyTable.m_int32_key)
+  return _internal_m_int32_key();
 }
-inline void TestMultiKeyTable::set_min32key(::int32_t value) {
-  _internal_set_min32key(value);
+inline void TestMultiKeyTable::set_m_int32_key(::int32_t value) {
+  _internal_set_m_int32_key(value);
   _impl_._has_bits_[0] |= 0x00000080u;
-  // @@protoc_insertion_point(field_set:TestMultiKeyTable.min32key)
+  // @@protoc_insertion_point(field_set:TestMultiKeyTable.m_int32_key)
 }
-inline ::int32_t TestMultiKeyTable::_internal_min32key() const {
+inline ::int32_t TestMultiKeyTable::_internal_m_int32_key() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.min32key_;
+  return _impl_.m_int32_key_;
 }
-inline void TestMultiKeyTable::_internal_set_min32key(::int32_t value) {
+inline void TestMultiKeyTable::_internal_set_m_int32_key(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.min32key_ = value;
+  _impl_.m_int32_key_ = value;
 }
 
 // map<string, string> tag1 = 10;
@@ -1350,33 +1350,33 @@ inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestM
   return _internal_mutable_tag1();
 }
 
-// map<string, string> immunetag1 = 11;
-inline int TestMultiKeyTable::_internal_immunetag1_size() const {
-  return _internal_immunetag1().size();
+// map<string, string> immune_tag1 = 11;
+inline int TestMultiKeyTable::_internal_immune_tag1_size() const {
+  return _internal_immune_tag1().size();
 }
-inline int TestMultiKeyTable::immunetag1_size() const {
-  return _internal_immunetag1_size();
+inline int TestMultiKeyTable::immune_tag1_size() const {
+  return _internal_immune_tag1_size();
 }
-inline void TestMultiKeyTable::clear_immunetag1() {
+inline void TestMultiKeyTable::clear_immune_tag1() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.immunetag1_.Clear();
+  _impl_.immune_tag1_.Clear();
 }
-inline const ::google::protobuf::Map<std::string, std::string>& TestMultiKeyTable::_internal_immunetag1() const {
+inline const ::google::protobuf::Map<std::string, std::string>& TestMultiKeyTable::_internal_immune_tag1() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.immunetag1_.GetMap();
+  return _impl_.immune_tag1_.GetMap();
 }
-inline const ::google::protobuf::Map<std::string, std::string>& TestMultiKeyTable::immunetag1() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:TestMultiKeyTable.immunetag1)
-  return _internal_immunetag1();
+inline const ::google::protobuf::Map<std::string, std::string>& TestMultiKeyTable::immune_tag1() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:TestMultiKeyTable.immune_tag1)
+  return _internal_immune_tag1();
 }
-inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestMultiKeyTable::_internal_mutable_immunetag1() {
+inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestMultiKeyTable::_internal_mutable_immune_tag1() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.immunetag1_.MutableMap();
+  return _impl_.immune_tag1_.MutableMap();
 }
-inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestMultiKeyTable::mutable_immunetag1()
+inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestMultiKeyTable::mutable_immune_tag1()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:TestMultiKeyTable.immunetag1)
-  return _internal_mutable_immunetag1();
+  // @@protoc_insertion_point(field_mutable_map:TestMultiKeyTable.immune_tag1)
+  return _internal_mutable_immune_tag1();
 }
 
 // repeated .TestMultiKeytestobj1 testobj1 = 12;

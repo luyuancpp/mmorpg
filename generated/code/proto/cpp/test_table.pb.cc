@@ -69,23 +69,23 @@ struct TestTable_TagEntry_DoNotUseDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestTable_TagEntry_DoNotUseDefaultTypeInternal _TestTable_TagEntry_DoNotUse_default_instance_;
 template <typename>
-PROTOBUF_CONSTEXPR TestTable_ImmunetagEntry_DoNotUse::TestTable_ImmunetagEntry_DoNotUse(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR TestTable_ImmuneTagEntry_DoNotUse::TestTable_ImmuneTagEntry_DoNotUse(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : TestTable_ImmunetagEntry_DoNotUse::MapEntry(TestTable_ImmunetagEntry_DoNotUse_class_data_.base()){}
+    : TestTable_ImmuneTagEntry_DoNotUse::MapEntry(TestTable_ImmuneTagEntry_DoNotUse_class_data_.base()){}
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : TestTable_ImmunetagEntry_DoNotUse::MapEntry() {
+    : TestTable_ImmuneTagEntry_DoNotUse::MapEntry() {
 }
 #endif  // PROTOBUF_CUSTOM_VTABLE
-struct TestTable_ImmunetagEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR TestTable_ImmunetagEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~TestTable_ImmunetagEntry_DoNotUseDefaultTypeInternal() {}
+struct TestTable_ImmuneTagEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR TestTable_ImmuneTagEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~TestTable_ImmuneTagEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    TestTable_ImmunetagEntry_DoNotUse _instance;
+    TestTable_ImmuneTagEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestTable_ImmunetagEntry_DoNotUseDefaultTypeInternal _TestTable_ImmunetagEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestTable_ImmuneTagEntry_DoNotUseDefaultTypeInternal _TestTable_ImmuneTagEntry_DoNotUse_default_instance_;
 
 inline constexpr TestTable::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -93,7 +93,7 @@ inline constexpr TestTable::Impl_::Impl_(
         effect_{},
         _effect_cached_byte_size_{0},
         tag_{},
-        immunetag_{},
+        immune_tag_{},
         testobj_{},
         id_{0u},
         level_{0u} {}
@@ -164,10 +164,10 @@ const ::uint32_t
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::TestTable_ImmunetagEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::TestTable_ImmuneTagEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::TestTable_ImmunetagEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::TestTable_ImmunetagEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::TestTable_ImmuneTagEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::TestTable_ImmuneTagEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x081, // bitmap
@@ -177,7 +177,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::TestTable, _impl_.level_),
         PROTOBUF_FIELD_OFFSET(::TestTable, _impl_.effect_),
         PROTOBUF_FIELD_OFFSET(::TestTable, _impl_.tag_),
-        PROTOBUF_FIELD_OFFSET(::TestTable, _impl_.immunetag_),
+        PROTOBUF_FIELD_OFFSET(::TestTable, _impl_.immune_tag_),
         PROTOBUF_FIELD_OFFSET(::TestTable, _impl_.testobj_),
         0,
         1,
@@ -193,36 +193,36 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::Testtestobj)},
         {7, sizeof(::TestTable_TagEntry_DoNotUse)},
-        {14, sizeof(::TestTable_ImmunetagEntry_DoNotUse)},
+        {14, sizeof(::TestTable_ImmuneTagEntry_DoNotUse)},
         {21, sizeof(::TestTable)},
         {36, sizeof(::TestTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_Testtestobj_default_instance_._instance,
     &::_TestTable_TagEntry_DoNotUse_default_instance_._instance,
-    &::_TestTable_ImmunetagEntry_DoNotUse_default_instance_._instance,
+    &::_TestTable_ImmuneTagEntry_DoNotUse_default_instance_._instance,
     &::_TestTable_default_instance_._instance,
     &::_TestTableData_default_instance_._instance,
 };
 const char descriptor_table_protodef_test_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\020test_table.proto\"9\n\013Testtestobj\022\023\n\013tes"
-    "tobj_key\030\001 \001(\r\022\025\n\rtestobj_value\030\002 \001(\r\"\203\002"
+    "tobj_key\030\001 \001(\r\022\025\n\rtestobj_value\030\002 \001(\r\"\204\002"
     "\n\tTestTable\022\n\n\002id\030\001 \001(\r\022\r\n\005level\030\002 \001(\r\022\016"
     "\n\006effect\030\003 \003(\r\022 \n\003tag\030\004 \003(\0132\023.TestTable."
-    "TagEntry\022,\n\timmunetag\030\005 \003(\0132\031.TestTable."
-    "ImmunetagEntry\022\035\n\007testobj\030\006 \003(\0132\014.Testte"
-    "stobj\032*\n\010TagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030"
-    "\002 \001(\t:\0028\001\0320\n\016ImmunetagEntry\022\013\n\003key\030\001 \001(\t"
-    "\022\r\n\005value\030\002 \001(\t:\0028\001\")\n\rTestTableData\022\030\n\004"
-    "data\030\001 \003(\0132\n.TestTableB\024Z\022generated/pb/t"
-    "ableb\006proto3"
+    "TagEntry\022-\n\nimmune_tag\030\005 \003(\0132\031.TestTable"
+    ".ImmuneTagEntry\022\035\n\007testobj\030\006 \003(\0132\014.Testt"
+    "estobj\032*\n\010TagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value"
+    "\030\002 \001(\t:\0028\001\0320\n\016ImmuneTagEntry\022\013\n\003key\030\001 \001("
+    "\t\022\r\n\005value\030\002 \001(\t:\0028\001\")\n\rTestTableData\022\030\n"
+    "\004data\030\001 \003(\0132\n.TestTableB\024Z\022generated/pb/"
+    "tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_test_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_test_5ftable_2eproto = {
     false,
     false,
-    412,
+    413,
     descriptor_table_protodef_test_5ftable_2eproto,
     "test_table.proto",
     &descriptor_table_test_5ftable_2eproto_once,
@@ -616,62 +616,62 @@ TestTable_TagEntry_DoNotUse::_table_ = {
 // ===================================================================
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-TestTable_ImmunetagEntry_DoNotUse::TestTable_ImmunetagEntry_DoNotUse()
-    : SuperType(TestTable_ImmunetagEntry_DoNotUse_class_data_.base()) {}
-TestTable_ImmunetagEntry_DoNotUse::TestTable_ImmunetagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-    : SuperType(arena, TestTable_ImmunetagEntry_DoNotUse_class_data_.base()) {}
+TestTable_ImmuneTagEntry_DoNotUse::TestTable_ImmuneTagEntry_DoNotUse()
+    : SuperType(TestTable_ImmuneTagEntry_DoNotUse_class_data_.base()) {}
+TestTable_ImmuneTagEntry_DoNotUse::TestTable_ImmuneTagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+    : SuperType(arena, TestTable_ImmuneTagEntry_DoNotUse_class_data_.base()) {}
 #else   // PROTOBUF_CUSTOM_VTABLE
-TestTable_ImmunetagEntry_DoNotUse::TestTable_ImmunetagEntry_DoNotUse() : SuperType() {}
-TestTable_ImmunetagEntry_DoNotUse::TestTable_ImmunetagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
+TestTable_ImmuneTagEntry_DoNotUse::TestTable_ImmuneTagEntry_DoNotUse() : SuperType() {}
+TestTable_ImmuneTagEntry_DoNotUse::TestTable_ImmuneTagEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena) : SuperType(arena) {}
 #endif  // PROTOBUF_CUSTOM_VTABLE
-inline void* PROTOBUF_NONNULL TestTable_ImmunetagEntry_DoNotUse::PlacementNew_(
+inline void* PROTOBUF_NONNULL TestTable_ImmuneTagEntry_DoNotUse::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) TestTable_ImmunetagEntry_DoNotUse(arena);
+  return ::new (mem) TestTable_ImmuneTagEntry_DoNotUse(arena);
 }
-constexpr auto TestTable_ImmunetagEntry_DoNotUse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(TestTable_ImmunetagEntry_DoNotUse),
-                                            alignof(TestTable_ImmunetagEntry_DoNotUse));
+constexpr auto TestTable_ImmuneTagEntry_DoNotUse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(TestTable_ImmuneTagEntry_DoNotUse),
+                                            alignof(TestTable_ImmuneTagEntry_DoNotUse));
 }
-constexpr auto TestTable_ImmunetagEntry_DoNotUse::InternalGenerateClassData_() {
+constexpr auto TestTable_ImmuneTagEntry_DoNotUse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_TestTable_ImmunetagEntry_DoNotUse_default_instance_._instance,
+          &_TestTable_ImmuneTagEntry_DoNotUse_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &TestTable_ImmunetagEntry_DoNotUse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<TestTable_ImmunetagEntry_DoNotUse>(),
+          &TestTable_ImmuneTagEntry_DoNotUse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<TestTable_ImmuneTagEntry_DoNotUse>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &TestTable_ImmunetagEntry_DoNotUse::SharedDtor,
-          static_cast<void (::google::protobuf::MessageLite::*)()>(&TestTable_ImmunetagEntry_DoNotUse::ClearImpl),
+          &TestTable_ImmuneTagEntry_DoNotUse::SharedDtor,
+          static_cast<void (::google::protobuf::MessageLite::*)()>(&TestTable_ImmuneTagEntry_DoNotUse::ClearImpl),
               ::google::protobuf::Message::ByteSizeLongImpl, ::google::protobuf::Message::_InternalSerializeImpl
               ,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(TestTable_ImmunetagEntry_DoNotUse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(TestTable_ImmuneTagEntry_DoNotUse, _impl_._cached_size_),
           false,
       },
-      &TestTable_ImmunetagEntry_DoNotUse::kDescriptorMethods,
+      &TestTable_ImmuneTagEntry_DoNotUse::kDescriptorMethods,
       &descriptor_table_test_5ftable_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull TestTable_ImmunetagEntry_DoNotUse_class_data_ =
-        TestTable_ImmunetagEntry_DoNotUse::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull TestTable_ImmuneTagEntry_DoNotUse_class_data_ =
+        TestTable_ImmuneTagEntry_DoNotUse::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-TestTable_ImmunetagEntry_DoNotUse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&TestTable_ImmunetagEntry_DoNotUse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(TestTable_ImmunetagEntry_DoNotUse_class_data_.tc_table);
-  return TestTable_ImmunetagEntry_DoNotUse_class_data_.base();
+TestTable_ImmuneTagEntry_DoNotUse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&TestTable_ImmuneTagEntry_DoNotUse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(TestTable_ImmuneTagEntry_DoNotUse_class_data_.tc_table);
+  return TestTable_ImmuneTagEntry_DoNotUse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 0, 41, 2>
-TestTable_ImmunetagEntry_DoNotUse::_table_ = {
+TestTable_ImmuneTagEntry_DoNotUse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(TestTable_ImmunetagEntry_DoNotUse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(TestTable_ImmuneTagEntry_DoNotUse, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -680,33 +680,33 @@ TestTable_ImmunetagEntry_DoNotUse::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    TestTable_ImmunetagEntry_DoNotUse_class_data_.base(),
+    TestTable_ImmuneTagEntry_DoNotUse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::TestTable_ImmunetagEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::TestTable_ImmuneTagEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string value = 2;
     {::_pbi::TcParser::FastUS1,
-     {18, 1, 0, PROTOBUF_FIELD_OFFSET(TestTable_ImmunetagEntry_DoNotUse, _impl_.value_)}},
+     {18, 1, 0, PROTOBUF_FIELD_OFFSET(TestTable_ImmuneTagEntry_DoNotUse, _impl_.value_)}},
     // string key = 1;
     {::_pbi::TcParser::FastUS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(TestTable_ImmunetagEntry_DoNotUse, _impl_.key_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(TestTable_ImmuneTagEntry_DoNotUse, _impl_.key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // string key = 1;
-    {PROTOBUF_FIELD_OFFSET(TestTable_ImmunetagEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(TestTable_ImmuneTagEntry_DoNotUse, _impl_.key_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string value = 2;
-    {PROTOBUF_FIELD_OFFSET(TestTable_ImmunetagEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(TestTable_ImmuneTagEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
     "\30\3\5\0\0\0\0\0"
-    "TestTable.ImmunetagEntry"
+    "TestTable.ImmuneTagEntry"
     "key"
     "value"
   }},
@@ -739,7 +739,7 @@ PROTOBUF_NDEBUG_INLINE TestTable::Impl_::Impl_(
         effect_{visibility, arena, from.effect_},
         _effect_cached_byte_size_{0},
         tag_{visibility, arena, from.tag_},
-        immunetag_{visibility, arena, from.immunetag_},
+        immune_tag_{visibility, arena, from.immune_tag_},
         testobj_{visibility, arena, from.testobj_} {}
 
 TestTable::TestTable(
@@ -772,7 +772,7 @@ PROTOBUF_NDEBUG_INLINE TestTable::Impl_::Impl_(
         effect_{visibility, arena},
         _effect_cached_byte_size_{0},
         tag_{visibility, arena},
-        immunetag_{visibility, arena},
+        immune_tag_{visibility, arena},
         testobj_{visibility, arena} {}
 
 inline void TestTable::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
@@ -814,12 +814,12 @@ constexpr auto TestTable::InternalNewImpl_() {
           decltype(TestTable::_impl_.tag_)::
               InternalGetArenaOffsetAlt(
                   ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(TestTable, _impl_.immunetag_) +
-          decltype(TestTable::_impl_.immunetag_)::
+      PROTOBUF_FIELD_OFFSET(TestTable, _impl_.immune_tag_) +
+          decltype(TestTable::_impl_.immune_tag_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(TestTable, _impl_.immunetag_) +
-          decltype(TestTable::_impl_.immunetag_)::
+      PROTOBUF_FIELD_OFFSET(TestTable, _impl_.immune_tag_) +
+          decltype(TestTable::_impl_.immune_tag_)::
               InternalGetArenaOffsetAlt(
                   ::google::protobuf::Message::internal_visibility()),
       PROTOBUF_FIELD_OFFSET(TestTable, _impl_.testobj_) +
@@ -870,7 +870,7 @@ TestTable::GetClassData() const {
   return TestTable_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 6, 3, 30, 2>
+const ::_pbi::TcParseTable<3, 6, 3, 31, 2>
 TestTable::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(TestTable, _impl_._has_bits_),
@@ -920,8 +920,8 @@ TestTable::_table_ = {
     // map<string, string> tag = 4;
     {PROTOBUF_FIELD_OFFSET(TestTable, _impl_.tag_), -1, 1,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
-    // map<string, string> immunetag = 5;
-    {PROTOBUF_FIELD_OFFSET(TestTable, _impl_.immunetag_), -1, 2,
+    // map<string, string> immune_tag = 5;
+    {PROTOBUF_FIELD_OFFSET(TestTable, _impl_.immune_tag_), -1, 2,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
     // repeated .Testtestobj testobj = 6;
     {PROTOBUF_FIELD_OFFSET(TestTable, _impl_.testobj_), -1, 0,
@@ -937,10 +937,10 @@ TestTable::_table_ = {
                                        0)},
   }},
   {{
-    "\11\0\0\0\3\11\0\0"
+    "\11\0\0\0\3\12\0\0"
     "TestTable"
     "tag"
-    "immunetag"
+    "immune_tag"
   }},
 };
 PROTOBUF_NOINLINE void TestTable::Clear() {
@@ -952,7 +952,7 @@ PROTOBUF_NOINLINE void TestTable::Clear() {
 
   _impl_.effect_.Clear();
   _impl_.tag_.Clear();
-  _impl_.immunetag_.Clear();
+  _impl_.immune_tag_.Clear();
   _impl_.testobj_.Clear();
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
@@ -1039,13 +1039,13 @@ PROTOBUF_NOINLINE void TestTable::Clear() {
     }
   }
 
-  // map<string, string> immunetag = 5;
-  if (!this_._internal_immunetag().empty()) {
+  // map<string, string> immune_tag = 5;
+  if (!this_._internal_immune_tag().empty()) {
     using MapType = ::google::protobuf::Map<std::string, std::string>;
     using WireHelper = _pbi::MapEntryFuncs<std::string, std::string,
                                    _pbi::WireFormatLite::TYPE_STRING,
                                    _pbi::WireFormatLite::TYPE_STRING>;
-    const auto& field = this_._internal_immunetag();
+    const auto& field = this_._internal_immune_tag();
 
     if (stream->IsSerializationDeterministic() && field.size() > 1) {
       for (const auto& entry : ::google::protobuf::internal::MapSorterPtr<MapType>(field)) {
@@ -1053,10 +1053,10 @@ PROTOBUF_NOINLINE void TestTable::Clear() {
             5, entry.first, entry.second, target, stream);
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.first.data(), static_cast<int>(entry.first.length()),
- ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestTable.immunetag");
+ ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestTable.immune_tag");
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.second.data(), static_cast<int>(entry.second.length()),
- ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestTable.immunetag");
+ ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestTable.immune_tag");
       }
     } else {
       for (const auto& entry : field) {
@@ -1064,10 +1064,10 @@ PROTOBUF_NOINLINE void TestTable::Clear() {
             5, entry.first, entry.second, target, stream);
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.first.data(), static_cast<int>(entry.first.length()),
- ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestTable.immunetag");
+ ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestTable.immune_tag");
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.second.data(), static_cast<int>(entry.second.length()),
- ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestTable.immunetag");
+ ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestTable.immune_tag");
       }
     }
   }
@@ -1125,11 +1125,11 @@ PROTOBUF_NOINLINE void TestTable::Clear() {
                                        _pbi::WireFormatLite::TYPE_STRING>::ByteSizeLong(entry.first, entry.second);
       }
     }
-    // map<string, string> immunetag = 5;
+    // map<string, string> immune_tag = 5;
     {
       total_size +=
-          1 * ::google::protobuf::internal::FromIntSize(this_._internal_immunetag_size());
-      for (const auto& entry : this_._internal_immunetag()) {
+          1 * ::google::protobuf::internal::FromIntSize(this_._internal_immune_tag_size());
+      for (const auto& entry : this_._internal_immune_tag()) {
         total_size += _pbi::MapEntryFuncs<std::string, std::string,
                                        _pbi::WireFormatLite::TYPE_STRING,
                                        _pbi::WireFormatLite::TYPE_STRING>::ByteSizeLong(entry.first, entry.second);
@@ -1174,7 +1174,7 @@ void TestTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
 
   _this->_internal_mutable_effect()->MergeFrom(from._internal_effect());
   _this->_impl_.tag_.MergeFrom(from._impl_.tag_);
-  _this->_impl_.immunetag_.MergeFrom(from._impl_.immunetag_);
+  _this->_impl_.immune_tag_.MergeFrom(from._impl_.immune_tag_);
   _this->_internal_mutable_testobj()->MergeFrom(
       from._internal_testobj());
   cached_has_bits = from._impl_._has_bits_[0];
@@ -1208,7 +1208,7 @@ void TestTable::InternalSwap(TestTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL other
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.effect_.InternalSwap(&other->_impl_.effect_);
   _impl_.tag_.InternalSwap(&other->_impl_.tag_);
-  _impl_.immunetag_.InternalSwap(&other->_impl_.immunetag_);
+  _impl_.immune_tag_.InternalSwap(&other->_impl_.immune_tag_);
   _impl_.testobj_.InternalSwap(&other->_impl_.testobj_);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(TestTable, _impl_.level_)

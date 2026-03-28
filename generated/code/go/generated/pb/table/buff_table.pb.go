@@ -22,31 +22,31 @@ const (
 )
 
 type BuffTable struct {
-	state                           protoimpl.MessageState `protogen:"open.v1"`
-	Id                              uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Nocaster                        uint32                 `protobuf:"varint,2,opt,name=nocaster,proto3" json:"nocaster,omitempty"`
-	Bufftype                        uint32                 `protobuf:"varint,3,opt,name=bufftype,proto3" json:"bufftype,omitempty"`
-	Tag                             map[string]bool        `protobuf:"bytes,4,rep,name=tag,proto3" json:"tag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	Immunetag                       map[string]bool        `protobuf:"bytes,5,rep,name=immunetag,proto3" json:"immunetag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	Dispeltag                       map[string]bool        `protobuf:"bytes,6,rep,name=dispeltag,proto3" json:"dispeltag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	Level                           uint32                 `protobuf:"varint,7,opt,name=level,proto3" json:"level,omitempty"`
-	Maxlayer                        uint32                 `protobuf:"varint,8,opt,name=maxlayer,proto3" json:"maxlayer,omitempty"`
-	Infiniteduration                uint32                 `protobuf:"varint,9,opt,name=infiniteduration,proto3" json:"infiniteduration,omitempty"`
-	Duration                        float64                `protobuf:"fixed64,10,opt,name=duration,proto3" json:"duration,omitempty"`
-	Forceinterrupt                  uint32                 `protobuf:"varint,11,opt,name=forceinterrupt,proto3" json:"forceinterrupt,omitempty"`
-	Interval                        float64                `protobuf:"fixed64,12,opt,name=interval,proto3" json:"interval,omitempty"`
-	Intervalcount                   uint32                 `protobuf:"varint,13,opt,name=intervalcount,proto3" json:"intervalcount,omitempty"`
-	Intervaleffect                  []float64              `protobuf:"fixed64,14,rep,packed,name=intervaleffect,proto3" json:"intervaleffect,omitempty"`
-	MovementSpeedBoost              float64                `protobuf:"fixed64,15,opt,name=movement_speed_boost,json=movementSpeedBoost,proto3" json:"movement_speed_boost,omitempty"`
-	MovementSpeedReduction          float64                `protobuf:"fixed64,16,opt,name=movement_speed_reduction,json=movementSpeedReduction,proto3" json:"movement_speed_reduction,omitempty"`
-	Healthregeneration              string                 `protobuf:"bytes,17,opt,name=healthregeneration,proto3" json:"healthregeneration,omitempty"`
-	Subbuff                         []uint32               `protobuf:"varint,18,rep,packed,name=subbuff,proto3" json:"subbuff,omitempty"`
-	Targetsubbuff                   []uint32               `protobuf:"varint,19,rep,packed,name=targetsubbuff,proto3" json:"targetsubbuff,omitempty"`
-	Nodamageorskillhitinlastseconds float64                `protobuf:"fixed64,20,opt,name=nodamageorskillhitinlastseconds,proto3" json:"nodamageorskillhitinlastseconds,omitempty"`
-	Time                            uint32                 `protobuf:"varint,21,opt,name=time,proto3" json:"time,omitempty"`
-	Bonusdamage                     string                 `protobuf:"bytes,22,opt,name=bonusdamage,proto3" json:"bonusdamage,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Id                     uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	NoCaster               uint32                 `protobuf:"varint,2,opt,name=no_caster,json=noCaster,proto3" json:"no_caster,omitempty"`
+	BuffType               uint32                 `protobuf:"varint,3,opt,name=buff_type,json=buffType,proto3" json:"buff_type,omitempty"`
+	Tag                    map[string]bool        `protobuf:"bytes,4,rep,name=tag,proto3" json:"tag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	ImmuneTag              map[string]bool        `protobuf:"bytes,5,rep,name=immune_tag,json=immuneTag,proto3" json:"immune_tag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	DispelTag              map[string]bool        `protobuf:"bytes,6,rep,name=dispel_tag,json=dispelTag,proto3" json:"dispel_tag,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	Level                  uint32                 `protobuf:"varint,7,opt,name=level,proto3" json:"level,omitempty"`
+	MaxLayer               uint32                 `protobuf:"varint,8,opt,name=max_layer,json=maxLayer,proto3" json:"max_layer,omitempty"`
+	InfiniteDuration       uint32                 `protobuf:"varint,9,opt,name=infinite_duration,json=infiniteDuration,proto3" json:"infinite_duration,omitempty"`
+	Duration               float64                `protobuf:"fixed64,10,opt,name=duration,proto3" json:"duration,omitempty"`
+	ForceInterrupt         uint32                 `protobuf:"varint,11,opt,name=force_interrupt,json=forceInterrupt,proto3" json:"force_interrupt,omitempty"`
+	Interval               float64                `protobuf:"fixed64,12,opt,name=interval,proto3" json:"interval,omitempty"`
+	IntervalCount          uint32                 `protobuf:"varint,13,opt,name=interval_count,json=intervalCount,proto3" json:"interval_count,omitempty"`
+	IntervalEffect         []float64              `protobuf:"fixed64,14,rep,packed,name=interval_effect,json=intervalEffect,proto3" json:"interval_effect,omitempty"`
+	MovementSpeedBoost     float64                `protobuf:"fixed64,15,opt,name=movement_speed_boost,json=movementSpeedBoost,proto3" json:"movement_speed_boost,omitempty"`
+	MovementSpeedReduction float64                `protobuf:"fixed64,16,opt,name=movement_speed_reduction,json=movementSpeedReduction,proto3" json:"movement_speed_reduction,omitempty"`
+	HealthRegeneration     string                 `protobuf:"bytes,17,opt,name=health_regeneration,json=healthRegeneration,proto3" json:"health_regeneration,omitempty"`
+	SubBuff                []uint32               `protobuf:"varint,18,rep,packed,name=sub_buff,json=subBuff,proto3" json:"sub_buff,omitempty"`
+	TargetSubBuff          []uint32               `protobuf:"varint,19,rep,packed,name=target_sub_buff,json=targetSubBuff,proto3" json:"target_sub_buff,omitempty"`
+	CombatIdleSeconds      float64                `protobuf:"fixed64,20,opt,name=combat_idle_seconds,json=combatIdleSeconds,proto3" json:"combat_idle_seconds,omitempty"`
+	Time                   uint32                 `protobuf:"varint,21,opt,name=time,proto3" json:"time,omitempty"`
+	BonusDamage            string                 `protobuf:"bytes,22,opt,name=bonus_damage,json=bonusDamage,proto3" json:"bonus_damage,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *BuffTable) Reset() {
@@ -86,16 +86,16 @@ func (x *BuffTable) GetId() uint32 {
 	return 0
 }
 
-func (x *BuffTable) GetNocaster() uint32 {
+func (x *BuffTable) GetNoCaster() uint32 {
 	if x != nil {
-		return x.Nocaster
+		return x.NoCaster
 	}
 	return 0
 }
 
-func (x *BuffTable) GetBufftype() uint32 {
+func (x *BuffTable) GetBuffType() uint32 {
 	if x != nil {
-		return x.Bufftype
+		return x.BuffType
 	}
 	return 0
 }
@@ -107,16 +107,16 @@ func (x *BuffTable) GetTag() map[string]bool {
 	return nil
 }
 
-func (x *BuffTable) GetImmunetag() map[string]bool {
+func (x *BuffTable) GetImmuneTag() map[string]bool {
 	if x != nil {
-		return x.Immunetag
+		return x.ImmuneTag
 	}
 	return nil
 }
 
-func (x *BuffTable) GetDispeltag() map[string]bool {
+func (x *BuffTable) GetDispelTag() map[string]bool {
 	if x != nil {
-		return x.Dispeltag
+		return x.DispelTag
 	}
 	return nil
 }
@@ -128,16 +128,16 @@ func (x *BuffTable) GetLevel() uint32 {
 	return 0
 }
 
-func (x *BuffTable) GetMaxlayer() uint32 {
+func (x *BuffTable) GetMaxLayer() uint32 {
 	if x != nil {
-		return x.Maxlayer
+		return x.MaxLayer
 	}
 	return 0
 }
 
-func (x *BuffTable) GetInfiniteduration() uint32 {
+func (x *BuffTable) GetInfiniteDuration() uint32 {
 	if x != nil {
-		return x.Infiniteduration
+		return x.InfiniteDuration
 	}
 	return 0
 }
@@ -149,9 +149,9 @@ func (x *BuffTable) GetDuration() float64 {
 	return 0
 }
 
-func (x *BuffTable) GetForceinterrupt() uint32 {
+func (x *BuffTable) GetForceInterrupt() uint32 {
 	if x != nil {
-		return x.Forceinterrupt
+		return x.ForceInterrupt
 	}
 	return 0
 }
@@ -163,16 +163,16 @@ func (x *BuffTable) GetInterval() float64 {
 	return 0
 }
 
-func (x *BuffTable) GetIntervalcount() uint32 {
+func (x *BuffTable) GetIntervalCount() uint32 {
 	if x != nil {
-		return x.Intervalcount
+		return x.IntervalCount
 	}
 	return 0
 }
 
-func (x *BuffTable) GetIntervaleffect() []float64 {
+func (x *BuffTable) GetIntervalEffect() []float64 {
 	if x != nil {
-		return x.Intervaleffect
+		return x.IntervalEffect
 	}
 	return nil
 }
@@ -191,30 +191,30 @@ func (x *BuffTable) GetMovementSpeedReduction() float64 {
 	return 0
 }
 
-func (x *BuffTable) GetHealthregeneration() string {
+func (x *BuffTable) GetHealthRegeneration() string {
 	if x != nil {
-		return x.Healthregeneration
+		return x.HealthRegeneration
 	}
 	return ""
 }
 
-func (x *BuffTable) GetSubbuff() []uint32 {
+func (x *BuffTable) GetSubBuff() []uint32 {
 	if x != nil {
-		return x.Subbuff
+		return x.SubBuff
 	}
 	return nil
 }
 
-func (x *BuffTable) GetTargetsubbuff() []uint32 {
+func (x *BuffTable) GetTargetSubBuff() []uint32 {
 	if x != nil {
-		return x.Targetsubbuff
+		return x.TargetSubBuff
 	}
 	return nil
 }
 
-func (x *BuffTable) GetNodamageorskillhitinlastseconds() float64 {
+func (x *BuffTable) GetCombatIdleSeconds() float64 {
 	if x != nil {
-		return x.Nodamageorskillhitinlastseconds
+		return x.CombatIdleSeconds
 	}
 	return 0
 }
@@ -226,9 +226,9 @@ func (x *BuffTable) GetTime() uint32 {
 	return 0
 }
 
-func (x *BuffTable) GetBonusdamage() string {
+func (x *BuffTable) GetBonusDamage() string {
 	if x != nil {
-		return x.Bonusdamage
+		return x.BonusDamage
 	}
 	return ""
 }
@@ -281,38 +281,40 @@ var File_buff_table_proto protoreflect.FileDescriptor
 
 const file_buff_table_proto_rawDesc = "" +
 	"\n" +
-	"\x10buff_table.proto\"\x88\b\n" +
+	"\x10buff_table.proto\"\xfc\a\n" +
 	"\tBuffTable\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1a\n" +
-	"\bnocaster\x18\x02 \x01(\rR\bnocaster\x12\x1a\n" +
-	"\bbufftype\x18\x03 \x01(\rR\bbufftype\x12%\n" +
-	"\x03tag\x18\x04 \x03(\v2\x13.BuffTable.TagEntryR\x03tag\x127\n" +
-	"\timmunetag\x18\x05 \x03(\v2\x19.BuffTable.ImmunetagEntryR\timmunetag\x127\n" +
-	"\tdispeltag\x18\x06 \x03(\v2\x19.BuffTable.DispeltagEntryR\tdispeltag\x12\x14\n" +
-	"\x05level\x18\a \x01(\rR\x05level\x12\x1a\n" +
-	"\bmaxlayer\x18\b \x01(\rR\bmaxlayer\x12*\n" +
-	"\x10infiniteduration\x18\t \x01(\rR\x10infiniteduration\x12\x1a\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1b\n" +
+	"\tno_caster\x18\x02 \x01(\rR\bnoCaster\x12\x1b\n" +
+	"\tbuff_type\x18\x03 \x01(\rR\bbuffType\x12%\n" +
+	"\x03tag\x18\x04 \x03(\v2\x13.BuffTable.TagEntryR\x03tag\x128\n" +
+	"\n" +
+	"immune_tag\x18\x05 \x03(\v2\x19.BuffTable.ImmuneTagEntryR\timmuneTag\x128\n" +
+	"\n" +
+	"dispel_tag\x18\x06 \x03(\v2\x19.BuffTable.DispelTagEntryR\tdispelTag\x12\x14\n" +
+	"\x05level\x18\a \x01(\rR\x05level\x12\x1b\n" +
+	"\tmax_layer\x18\b \x01(\rR\bmaxLayer\x12+\n" +
+	"\x11infinite_duration\x18\t \x01(\rR\x10infiniteDuration\x12\x1a\n" +
 	"\bduration\x18\n" +
-	" \x01(\x01R\bduration\x12&\n" +
-	"\x0eforceinterrupt\x18\v \x01(\rR\x0eforceinterrupt\x12\x1a\n" +
-	"\binterval\x18\f \x01(\x01R\binterval\x12$\n" +
-	"\rintervalcount\x18\r \x01(\rR\rintervalcount\x12&\n" +
-	"\x0eintervaleffect\x18\x0e \x03(\x01R\x0eintervaleffect\x120\n" +
+	" \x01(\x01R\bduration\x12'\n" +
+	"\x0fforce_interrupt\x18\v \x01(\rR\x0eforceInterrupt\x12\x1a\n" +
+	"\binterval\x18\f \x01(\x01R\binterval\x12%\n" +
+	"\x0einterval_count\x18\r \x01(\rR\rintervalCount\x12'\n" +
+	"\x0finterval_effect\x18\x0e \x03(\x01R\x0eintervalEffect\x120\n" +
 	"\x14movement_speed_boost\x18\x0f \x01(\x01R\x12movementSpeedBoost\x128\n" +
-	"\x18movement_speed_reduction\x18\x10 \x01(\x01R\x16movementSpeedReduction\x12.\n" +
-	"\x12healthregeneration\x18\x11 \x01(\tR\x12healthregeneration\x12\x18\n" +
-	"\asubbuff\x18\x12 \x03(\rR\asubbuff\x12$\n" +
-	"\rtargetsubbuff\x18\x13 \x03(\rR\rtargetsubbuff\x12H\n" +
-	"\x1fnodamageorskillhitinlastseconds\x18\x14 \x01(\x01R\x1fnodamageorskillhitinlastseconds\x12\x12\n" +
-	"\x04time\x18\x15 \x01(\rR\x04time\x12 \n" +
-	"\vbonusdamage\x18\x16 \x01(\tR\vbonusdamage\x1a6\n" +
+	"\x18movement_speed_reduction\x18\x10 \x01(\x01R\x16movementSpeedReduction\x12/\n" +
+	"\x13health_regeneration\x18\x11 \x01(\tR\x12healthRegeneration\x12\x19\n" +
+	"\bsub_buff\x18\x12 \x03(\rR\asubBuff\x12&\n" +
+	"\x0ftarget_sub_buff\x18\x13 \x03(\rR\rtargetSubBuff\x12.\n" +
+	"\x13combat_idle_seconds\x18\x14 \x01(\x01R\x11combatIdleSeconds\x12\x12\n" +
+	"\x04time\x18\x15 \x01(\rR\x04time\x12!\n" +
+	"\fbonus_damage\x18\x16 \x01(\tR\vbonusDamage\x1a6\n" +
 	"\bTagEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\x1a<\n" +
-	"\x0eImmunetagEntry\x12\x10\n" +
+	"\x0eImmuneTagEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\x1a<\n" +
-	"\x0eDispeltagEntry\x12\x10\n" +
+	"\x0eDispelTagEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"/\n" +
 	"\rBuffTableData\x12\x1e\n" +
@@ -336,13 +338,13 @@ var file_buff_table_proto_goTypes = []any{
 	(*BuffTable)(nil),     // 0: BuffTable
 	(*BuffTableData)(nil), // 1: BuffTableData
 	nil,                   // 2: BuffTable.TagEntry
-	nil,                   // 3: BuffTable.ImmunetagEntry
-	nil,                   // 4: BuffTable.DispeltagEntry
+	nil,                   // 3: BuffTable.ImmuneTagEntry
+	nil,                   // 4: BuffTable.DispelTagEntry
 }
 var file_buff_table_proto_depIdxs = []int32{
 	2, // 0: BuffTable.tag:type_name -> BuffTable.TagEntry
-	3, // 1: BuffTable.immunetag:type_name -> BuffTable.ImmunetagEntry
-	4, // 2: BuffTable.dispeltag:type_name -> BuffTable.DispeltagEntry
+	3, // 1: BuffTable.immune_tag:type_name -> BuffTable.ImmuneTagEntry
+	4, // 2: BuffTable.dispel_tag:type_name -> BuffTable.DispelTagEntry
 	0, // 3: BuffTableData.data:type_name -> BuffTable
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type

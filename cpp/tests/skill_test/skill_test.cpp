@@ -117,8 +117,8 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
 TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateSkill_ReturnsOk) {
     entt::entity caster = tlsEcs.actorRegistry.create();
     auto tableSkill = std::make_shared<SkillTable>();
-    tableSkill->set_immediately(true);
-    tableSkill->set_castpoint(1000); // Set cast point to 1000ms
+    tableSkill->set_immediate(true);
+    tableSkill->set_cast_point(1000); // Set cast point to 1000ms
 
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
@@ -130,8 +130,8 @@ TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateSkill_ReturnsOk) {
 TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateSkill_ReturnsOk) {
     entt::entity caster = tlsEcs.actorRegistry.create();
     auto tableSkill = std::make_shared<SkillTable>();
-    tableSkill->set_immediately(true);
-    tableSkill->set_recoverytime(1000); // Set recovery time to 1000ms
+    tableSkill->set_immediate(true);
+    tableSkill->set_recovery_time(1000); // Set recovery time to 1000ms
 
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
@@ -143,9 +143,9 @@ TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateSkill_ReturnsOk) {
 TEST_F(SkillUtilTest, HandleChannelTimeTimer_ImmediateSkill_ReturnsOk) {
     entt::entity caster = tlsEcs.actorRegistry.create();
     auto tableSkill = std::make_shared<SkillTable>();
-    tableSkill->set_immediately(true);
-    tableSkill->set_channelfinish(1000); // Set channel finish time to 1000ms
-    tableSkill->set_channelthink(500);   // Set channel interval to 500ms
+    tableSkill->set_immediate(true);
+    tableSkill->set_channel_finish(1000); // Set channel finish time to 1000ms
+    tableSkill->set_channel_think(500);   // Set channel interval to 500ms
 
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
@@ -171,7 +171,7 @@ TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
     entt::entity caster = tlsEcs.actorRegistry.create();
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
-    tableSkill->set_castpoint(1); // Set cast point to 1000ms
+    tableSkill->set_cast_point(1); // Set cast point to 1000ms
 
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
@@ -204,7 +204,7 @@ TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
 
 
     auto tableSkill = std::make_shared<SkillTable>();
-    tableSkill->set_recoverytime(1000); // Set recovery time to 1000ms
+    tableSkill->set_recovery_time(1000); // Set recovery time to 1000ms
 
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));

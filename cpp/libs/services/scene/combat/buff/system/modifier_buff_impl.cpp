@@ -59,10 +59,10 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffEntry
 
     const auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();
 
-    BuffTableManager::Instance().SetHealthregenerationParam(
+    BuffTableManager::Instance().SetHealth_regenerationParam(
         { static_cast<double>(levelComponent.level()),  static_cast<double>(lostHealth) });
 
-    const auto healingAmount = BuffTableManager::Instance().GetHealthregeneration(buffTable->id());
+    const auto healingAmount = BuffTableManager::Instance().GetHealth_regeneration(buffTable->id());
     const auto currentHealth = std::min<uint64_t>(derivedAttributesPbComponent.max_health(),
         static_cast<uint64_t>(static_cast<double>(baseAttributesPbComponent.health()) +
             healingAmount));
@@ -76,7 +76,7 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffEntry
 
 bool ModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
-    switch (buffTable->bufftype())
+    switch (buffTable->buff_type())
     {
     case kBuffTypeHealthRegenerationBasedOnLostHealth:
         return OnHealthRegenerationBasedOnLostHealth(parent, buffComp, buffTable);
@@ -90,7 +90,7 @@ void ModifierBuffImplSystem::OnSkillHit(entt::entity caster, entt::entity target
 }
 
 bool ModifierBuffImplSystem::IsMovementSpeedBuff(const BuffTable* buffTable) {
-    return buffTable->bufftype() == kBuffTypeMovementSpeedReduction || 
-           buffTable->bufftype() == kBuffTypeMovementSpeedBoost;
+    return buffTable->buff_type() == kBuffTypeMovementSpeedReduction || 
+           buffTable->buff_type() == kBuffTypeMovementSpeedBoost;
 }
 

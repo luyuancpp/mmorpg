@@ -15,28 +15,28 @@
 ///<<< END WRITING YOUR CODE
 void ActorEventHandler::Register()
 {
-    tlsEcs.dispatcher.sink<InitializeActorComponentsEvent>().connect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
-    tlsEcs.dispatcher.sink<InterruptCurrentStatePbEvent>().connect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
+	tlsEcs.dispatcher.sink<InitializeActorComponentsEvent>().connect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
+	tlsEcs.dispatcher.sink<InterruptCurrentStatePbEvent>().connect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
 }
 
 void ActorEventHandler::UnRegister()
 {
-    tlsEcs.dispatcher.sink<InitializeActorComponentsEvent>().disconnect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
-    tlsEcs.dispatcher.sink<InterruptCurrentStatePbEvent>().disconnect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
+	tlsEcs.dispatcher.sink<InitializeActorComponentsEvent>().disconnect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
+	tlsEcs.dispatcher.sink<InterruptCurrentStatePbEvent>().disconnect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
 }
-void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeActorComponentsEvent& event)
+void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeActorComponentsEvent &event)
 {
-///<<< BEGIN WRITING YOUR CODE
-	const entt::entity actorEntity = entt::to_entity(event.actor_entity());
-///<<< END WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+	const entt::entity actorEntity = static_cast<entt::entity>(event.actor_entity());
+	///<<< END WRITING YOUR CODE
 }
-void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurrentStatePbEvent& event)
+void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurrentStatePbEvent &event)
 {
-///<<< BEGIN WRITING YOUR CODE
-	const entt::entity actorEntity = entt::to_entity(event.actor_entity());
+	///<<< BEGIN WRITING YOUR CODE
+	const entt::entity actorEntity = static_cast<entt::entity>(event.actor_entity());
 	if (event.actor_state() == kActorStateMounted)
 	{
 		MountSystem::InterruptAndUnmountActor(actorEntity);
 	}
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }

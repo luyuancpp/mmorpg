@@ -1,31 +1,31 @@
 {
  "data": [
   {
-   "bonusdamage": "0",
-   "bufftype": 1,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 1,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true,
     "Wood": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 1,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true,
     "Wood": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 1.0,
-   "intervalcount": 10,
+   "interval_count": 10,
    "level": 1,
-   "maxlayer": 1,
+   "max_layer": 1,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Metal": true
@@ -33,31 +33,31 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 1,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 1,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true,
     "Water": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 2,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true,
     "Water": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 1,
-   "maxlayer": 1,
+   "max_layer": 1,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Wood": true
@@ -65,29 +65,29 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 1,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 1,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 3,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 1,
-   "maxlayer": 1,
+   "max_layer": 1,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Water": true
@@ -95,31 +95,31 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 1,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 1,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "Earth": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 4,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "Earth": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 1,
-   "maxlayer": 1,
+   "max_layer": 1,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Fire": true
@@ -127,31 +127,31 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 100,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 100,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "Metal": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 5,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "Metal": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Earth": true
@@ -159,31 +159,31 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 100,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 100,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true,
     "Wood": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 6,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true,
     "Wood": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Metal": true
@@ -191,29 +191,29 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 100,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 100,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 7,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Wood": true
@@ -221,29 +221,29 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 100,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 100,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 8,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Metal": true
@@ -251,29 +251,29 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 100,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 100,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 9,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Wood": true
@@ -281,29 +281,29 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 100,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 100,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 10,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Water": true
@@ -311,29 +311,29 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 100,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 100,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 11,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Fire": true
@@ -341,29 +341,29 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 100,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 100,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "Control": true,
     "None": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 12,
-   "immunetag": {
+   "immune_tag": {
     "Control": true,
     "None": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Control": true,
     "Earth": true
@@ -371,127 +371,127 @@
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 1,
+   "bonus_damage": "0",
+   "buff_type": 1,
+   "combat_idle_seconds": 0.0,
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 13,
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 20.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "MovementSpeedReduction": true
    },
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 35,
-   "dispeltag": {
+   "bonus_damage": "0",
+   "buff_type": 35,
+   "combat_idle_seconds": 0.0,
+   "dispel_tag": {
     "MovementSpeedReduction": true
    },
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 14,
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 34,
+   "bonus_damage": "0",
+   "buff_type": 34,
+   "combat_idle_seconds": 0.0,
    "duration": 2.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 15,
-   "immunetag": {
+   "immune_tag": {
     "MovementSpeedReduction": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 0.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 13,
+   "bonus_damage": "0",
+   "buff_type": 13,
+   "combat_idle_seconds": 0.0,
    "duration": 2.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 16,
-   "immunetag": {
+   "immune_tag": {
     "MovementSpeedReduction": true
    },
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 0.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 20.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 42,
+   "bonus_damage": "0",
+   "buff_type": 42,
+   "combat_idle_seconds": 0.0,
    "duration": 0.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0.013*level*health",
+   "force_interrupt": 0,
+   "health_regeneration": "0.013*level*health",
    "id": 17,
-   "infiniteduration": 1,
+   "infinite_duration": 1,
    "interval": 1.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 20.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "HealthRegenerationBasedOnLostHealth": true
    },
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 43,
+   "bonus_damage": "0",
+   "buff_type": 43,
+   "combat_idle_seconds": 5.0,
    "duration": 5.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 18,
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 1.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 20.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 5.0,
-   "subbuff": [
+   "no_caster": 0,
+   "sub_buff": [
     17
    ],
    "tag": {
@@ -500,45 +500,45 @@
    "time": 0
   },
   {
-   "bonusdamage": "66",
-   "bufftype": 36,
+   "bonus_damage": "66",
+   "buff_type": 36,
+   "combat_idle_seconds": 5.0,
    "duration": 5.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 19,
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 1.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 20.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 5.0,
+   "no_caster": 0,
    "tag": {
     "NextBasicAttack": true
    },
-   "targetsubbuff": [
+   "target_sub_buff": [
     20
    ],
    "time": 0
   },
   {
-   "bonusdamage": "0",
-   "bufftype": 36,
+   "bonus_damage": "0",
+   "buff_type": 36,
+   "combat_idle_seconds": 0.0,
    "duration": 5.0,
-   "forceinterrupt": 0,
-   "healthregeneration": "0",
+   "force_interrupt": 0,
+   "health_regeneration": "0",
    "id": 20,
-   "infiniteduration": 0,
+   "infinite_duration": 0,
    "interval": 1.0,
-   "intervalcount": 0,
+   "interval_count": 0,
    "level": 100,
-   "maxlayer": 100,
+   "max_layer": 100,
    "movement_speed_boost": 20.0,
    "movement_speed_reduction": 0.0,
-   "nocaster": 0,
-   "nodamageorskillhitinlastseconds": 0.0,
+   "no_caster": 0,
    "tag": {
     "Silence": true
    },

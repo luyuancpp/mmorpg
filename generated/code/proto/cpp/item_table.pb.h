@@ -215,7 +215,7 @@ class ItemTable final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kIdFieldNumber = 1,
-    kMaxStatckSizeFieldNumber = 2,
+    kMaxStackSizeFieldNumber = 2,
   };
   // uint32 id = 1;
   void clear_id() ;
@@ -227,14 +227,14 @@ class ItemTable final : public ::google::protobuf::Message
   void _internal_set_id(::uint32_t value);
 
   public:
-  // uint32 max_statck_size = 2;
-  void clear_max_statck_size() ;
-  ::uint32_t max_statck_size() const;
-  void set_max_statck_size(::uint32_t value);
+  // uint32 max_stack_size = 2;
+  void clear_max_stack_size() ;
+  ::uint32_t max_stack_size() const;
+  void set_max_stack_size(::uint32_t value);
 
   private:
-  ::uint32_t _internal_max_statck_size() const;
-  void _internal_set_max_statck_size(::uint32_t value);
+  ::uint32_t _internal_max_stack_size() const;
+  void _internal_set_max_stack_size(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:ItemTable)
@@ -264,7 +264,7 @@ class ItemTable final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t id_;
-    ::uint32_t max_statck_size_;
+    ::uint32_t max_stack_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -510,28 +510,28 @@ inline void ItemTable::_internal_set_id(::uint32_t value) {
   _impl_.id_ = value;
 }
 
-// uint32 max_statck_size = 2;
-inline void ItemTable::clear_max_statck_size() {
+// uint32 max_stack_size = 2;
+inline void ItemTable::clear_max_stack_size() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.max_statck_size_ = 0u;
+  _impl_.max_stack_size_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t ItemTable::max_statck_size() const {
-  // @@protoc_insertion_point(field_get:ItemTable.max_statck_size)
-  return _internal_max_statck_size();
+inline ::uint32_t ItemTable::max_stack_size() const {
+  // @@protoc_insertion_point(field_get:ItemTable.max_stack_size)
+  return _internal_max_stack_size();
 }
-inline void ItemTable::set_max_statck_size(::uint32_t value) {
-  _internal_set_max_statck_size(value);
+inline void ItemTable::set_max_stack_size(::uint32_t value) {
+  _internal_set_max_stack_size(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:ItemTable.max_statck_size)
+  // @@protoc_insertion_point(field_set:ItemTable.max_stack_size)
 }
-inline ::uint32_t ItemTable::_internal_max_statck_size() const {
+inline ::uint32_t ItemTable::_internal_max_stack_size() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.max_statck_size_;
+  return _impl_.max_stack_size_;
 }
-inline void ItemTable::_internal_set_max_statck_size(::uint32_t value) {
+inline void ItemTable::_internal_set_max_stack_size(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.max_statck_size_ = value;
+  _impl_.max_stack_size_ = value;
 }
 
 // -------------------------------------------------------------------

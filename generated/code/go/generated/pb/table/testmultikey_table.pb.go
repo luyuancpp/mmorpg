@@ -78,14 +78,14 @@ type TestMultiKeyTable struct {
 	Id            uint32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Level         uint32                  `protobuf:"varint,2,opt,name=level,proto3" json:"level,omitempty"`
 	Effect        []uint32                `protobuf:"varint,3,rep,packed,name=effect,proto3" json:"effect,omitempty"`
-	Stringkey     string                  `protobuf:"bytes,4,opt,name=stringkey,proto3" json:"stringkey,omitempty"`
-	Uint32Key     uint32                  `protobuf:"varint,5,opt,name=uint32key,proto3" json:"uint32key,omitempty"`
-	In32Key       int32                   `protobuf:"varint,6,opt,name=in32key,proto3" json:"in32key,omitempty"`
-	Mstringkey    string                  `protobuf:"bytes,7,opt,name=mstringkey,proto3" json:"mstringkey,omitempty"`
-	Muint32Key    uint32                  `protobuf:"varint,8,opt,name=muint32key,proto3" json:"muint32key,omitempty"`
-	Min32Key      int32                   `protobuf:"varint,9,opt,name=min32key,proto3" json:"min32key,omitempty"`
+	StringKey     string                  `protobuf:"bytes,4,opt,name=string_key,json=stringKey,proto3" json:"string_key,omitempty"`
+	Uint32Key     uint32                  `protobuf:"varint,5,opt,name=uint32_key,json=uint32Key,proto3" json:"uint32_key,omitempty"`
+	Int32Key      int32                   `protobuf:"varint,6,opt,name=int32_key,json=int32Key,proto3" json:"int32_key,omitempty"`
+	MStringKey    string                  `protobuf:"bytes,7,opt,name=m_string_key,json=mStringKey,proto3" json:"m_string_key,omitempty"`
+	MUint32Key    uint32                  `protobuf:"varint,8,opt,name=m_uint32_key,json=mUint32Key,proto3" json:"m_uint32_key,omitempty"`
+	MInt32Key     int32                   `protobuf:"varint,9,opt,name=m_int32_key,json=mInt32Key,proto3" json:"m_int32_key,omitempty"`
 	Tag1          map[string]string       `protobuf:"bytes,10,rep,name=tag1,proto3" json:"tag1,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Immunetag1    map[string]string       `protobuf:"bytes,11,rep,name=immunetag1,proto3" json:"immunetag1,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ImmuneTag1    map[string]string       `protobuf:"bytes,11,rep,name=immune_tag1,json=immuneTag1,proto3" json:"immune_tag1,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Testobj1      []*TestMultiKeytestobj1 `protobuf:"bytes,12,rep,name=testobj1,proto3" json:"testobj1,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -142,9 +142,9 @@ func (x *TestMultiKeyTable) GetEffect() []uint32 {
 	return nil
 }
 
-func (x *TestMultiKeyTable) GetStringkey() string {
+func (x *TestMultiKeyTable) GetStringKey() string {
 	if x != nil {
-		return x.Stringkey
+		return x.StringKey
 	}
 	return ""
 }
@@ -156,30 +156,30 @@ func (x *TestMultiKeyTable) GetUint32Key() uint32 {
 	return 0
 }
 
-func (x *TestMultiKeyTable) GetIn32Key() int32 {
+func (x *TestMultiKeyTable) GetInt32Key() int32 {
 	if x != nil {
-		return x.In32Key
+		return x.Int32Key
 	}
 	return 0
 }
 
-func (x *TestMultiKeyTable) GetMstringkey() string {
+func (x *TestMultiKeyTable) GetMStringKey() string {
 	if x != nil {
-		return x.Mstringkey
+		return x.MStringKey
 	}
 	return ""
 }
 
-func (x *TestMultiKeyTable) GetMuint32Key() uint32 {
+func (x *TestMultiKeyTable) GetMUint32Key() uint32 {
 	if x != nil {
-		return x.Muint32Key
+		return x.MUint32Key
 	}
 	return 0
 }
 
-func (x *TestMultiKeyTable) GetMin32Key() int32 {
+func (x *TestMultiKeyTable) GetMInt32Key() int32 {
 	if x != nil {
-		return x.Min32Key
+		return x.MInt32Key
 	}
 	return 0
 }
@@ -191,9 +191,9 @@ func (x *TestMultiKeyTable) GetTag1() map[string]string {
 	return nil
 }
 
-func (x *TestMultiKeyTable) GetImmunetag1() map[string]string {
+func (x *TestMultiKeyTable) GetImmuneTag1() map[string]string {
 	if x != nil {
-		return x.Immunetag1
+		return x.ImmuneTag1
 	}
 	return nil
 }
@@ -256,31 +256,30 @@ const file_testmultikey_table_proto_rawDesc = "" +
 	"\x18testmultikey_table.proto\"`\n" +
 	"\x14TestMultiKeytestobj1\x12!\n" +
 	"\ftestobj1_key\x18\x01 \x01(\rR\vtestobj1Key\x12%\n" +
-	"\x0etestobj1_value\x18\x02 \x01(\rR\rtestobj1Value\"\xa4\x04\n" +
+	"\x0etestobj1_value\x18\x02 \x01(\rR\rtestobj1Value\"\xb2\x04\n" +
 	"\x11TestMultiKeyTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x14\n" +
 	"\x05level\x18\x02 \x01(\rR\x05level\x12\x16\n" +
-	"\x06effect\x18\x03 \x03(\rR\x06effect\x12\x1c\n" +
-	"\tstringkey\x18\x04 \x01(\tR\tstringkey\x12\x1c\n" +
-	"\tuint32key\x18\x05 \x01(\rR\tuint32key\x12\x18\n" +
-	"\ain32key\x18\x06 \x01(\x05R\ain32key\x12\x1e\n" +
+	"\x06effect\x18\x03 \x03(\rR\x06effect\x12\x1d\n" +
 	"\n" +
-	"mstringkey\x18\a \x01(\tR\n" +
-	"mstringkey\x12\x1e\n" +
+	"string_key\x18\x04 \x01(\tR\tstringKey\x12\x1d\n" +
 	"\n" +
-	"muint32key\x18\b \x01(\rR\n" +
-	"muint32key\x12\x1a\n" +
-	"\bmin32key\x18\t \x01(\x05R\bmin32key\x120\n" +
+	"uint32_key\x18\x05 \x01(\rR\tuint32Key\x12\x1b\n" +
+	"\tint32_key\x18\x06 \x01(\x05R\bint32Key\x12 \n" +
+	"\fm_string_key\x18\a \x01(\tR\n" +
+	"mStringKey\x12 \n" +
+	"\fm_uint32_key\x18\b \x01(\rR\n" +
+	"mUint32Key\x12\x1e\n" +
+	"\vm_int32_key\x18\t \x01(\x05R\tmInt32Key\x120\n" +
 	"\x04tag1\x18\n" +
-	" \x03(\v2\x1c.TestMultiKeyTable.Tag1EntryR\x04tag1\x12B\n" +
-	"\n" +
-	"immunetag1\x18\v \x03(\v2\".TestMultiKeyTable.Immunetag1EntryR\n" +
-	"immunetag1\x121\n" +
+	" \x03(\v2\x1c.TestMultiKeyTable.Tag1EntryR\x04tag1\x12C\n" +
+	"\vimmune_tag1\x18\v \x03(\v2\".TestMultiKeyTable.ImmuneTag1EntryR\n" +
+	"immuneTag1\x121\n" +
 	"\btestobj1\x18\f \x03(\v2\x15.TestMultiKeytestobj1R\btestobj1\x1a7\n" +
 	"\tTag1Entry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a=\n" +
-	"\x0fImmunetag1Entry\x12\x10\n" +
+	"\x0fImmuneTag1Entry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"?\n" +
 	"\x15TestMultiKeyTableData\x12&\n" +
@@ -304,11 +303,11 @@ var file_testmultikey_table_proto_goTypes = []any{
 	(*TestMultiKeyTable)(nil),     // 1: TestMultiKeyTable
 	(*TestMultiKeyTableData)(nil), // 2: TestMultiKeyTableData
 	nil,                           // 3: TestMultiKeyTable.Tag1Entry
-	nil,                           // 4: TestMultiKeyTable.Immunetag1Entry
+	nil,                           // 4: TestMultiKeyTable.ImmuneTag1Entry
 }
 var file_testmultikey_table_proto_depIdxs = []int32{
 	3, // 0: TestMultiKeyTable.tag1:type_name -> TestMultiKeyTable.Tag1Entry
-	4, // 1: TestMultiKeyTable.immunetag1:type_name -> TestMultiKeyTable.Immunetag1Entry
+	4, // 1: TestMultiKeyTable.immune_tag1:type_name -> TestMultiKeyTable.ImmuneTag1Entry
 	0, // 2: TestMultiKeyTable.testobj1:type_name -> TestMultiKeytestobj1
 	1, // 3: TestMultiKeyTableData.data:type_name -> TestMultiKeyTable
 	4, // [4:4] is the sub-list for method output_type

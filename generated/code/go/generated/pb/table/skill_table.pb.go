@@ -21,28 +21,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Skillrequireditem struct {
+type SkillrequiredItem struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	RequireditemType  uint32                 `protobuf:"varint,1,opt,name=requireditem_type,json=requireditemType,proto3" json:"requireditem_type,omitempty"`
-	RequireditemValue uint64                 `protobuf:"varint,2,opt,name=requireditem_value,json=requireditemValue,proto3" json:"requireditem_value,omitempty"`
+	RequiredItemType  uint32                 `protobuf:"varint,1,opt,name=required_item_type,json=requiredItemType,proto3" json:"required_item_type,omitempty"`
+	RequiredItemValue uint64                 `protobuf:"varint,2,opt,name=required_item_value,json=requiredItemValue,proto3" json:"required_item_value,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
 
-func (x *Skillrequireditem) Reset() {
-	*x = Skillrequireditem{}
+func (x *SkillrequiredItem) Reset() {
+	*x = SkillrequiredItem{}
 	mi := &file_skill_table_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Skillrequireditem) String() string {
+func (x *SkillrequiredItem) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Skillrequireditem) ProtoMessage() {}
+func (*SkillrequiredItem) ProtoMessage() {}
 
-func (x *Skillrequireditem) ProtoReflect() protoreflect.Message {
+func (x *SkillrequiredItem) ProtoReflect() protoreflect.Message {
 	mi := &file_skill_table_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,47 +54,47 @@ func (x *Skillrequireditem) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Skillrequireditem.ProtoReflect.Descriptor instead.
-func (*Skillrequireditem) Descriptor() ([]byte, []int) {
+// Deprecated: Use SkillrequiredItem.ProtoReflect.Descriptor instead.
+func (*SkillrequiredItem) Descriptor() ([]byte, []int) {
 	return file_skill_table_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Skillrequireditem) GetRequireditemType() uint32 {
+func (x *SkillrequiredItem) GetRequiredItemType() uint32 {
 	if x != nil {
-		return x.RequireditemType
+		return x.RequiredItemType
 	}
 	return 0
 }
 
-func (x *Skillrequireditem) GetRequireditemValue() uint64 {
+func (x *SkillrequiredItem) GetRequiredItemValue() uint64 {
 	if x != nil {
-		return x.RequireditemValue
+		return x.RequiredItemValue
 	}
 	return 0
 }
 
-type Skillrequiredresource struct {
+type SkillrequiredResource struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
-	RequiredresourceType  uint32                 `protobuf:"varint,1,opt,name=requiredresource_type,json=requiredresourceType,proto3" json:"requiredresource_type,omitempty"`
-	RequiredresourceValue uint32                 `protobuf:"varint,2,opt,name=requiredresource_value,json=requiredresourceValue,proto3" json:"requiredresource_value,omitempty"`
+	RequiredResourceType  uint32                 `protobuf:"varint,1,opt,name=required_resource_type,json=requiredResourceType,proto3" json:"required_resource_type,omitempty"`
+	RequiredResourceValue uint32                 `protobuf:"varint,2,opt,name=required_resource_value,json=requiredResourceValue,proto3" json:"required_resource_value,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
 
-func (x *Skillrequiredresource) Reset() {
-	*x = Skillrequiredresource{}
+func (x *SkillrequiredResource) Reset() {
+	*x = SkillrequiredResource{}
 	mi := &file_skill_table_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Skillrequiredresource) String() string {
+func (x *SkillrequiredResource) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Skillrequiredresource) ProtoMessage() {}
+func (*SkillrequiredResource) ProtoMessage() {}
 
-func (x *Skillrequiredresource) ProtoReflect() protoreflect.Message {
+func (x *SkillrequiredResource) ProtoReflect() protoreflect.Message {
 	mi := &file_skill_table_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -106,47 +106,47 @@ func (x *Skillrequiredresource) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Skillrequiredresource.ProtoReflect.Descriptor instead.
-func (*Skillrequiredresource) Descriptor() ([]byte, []int) {
+// Deprecated: Use SkillrequiredResource.ProtoReflect.Descriptor instead.
+func (*SkillrequiredResource) Descriptor() ([]byte, []int) {
 	return file_skill_table_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Skillrequiredresource) GetRequiredresourceType() uint32 {
+func (x *SkillrequiredResource) GetRequiredResourceType() uint32 {
 	if x != nil {
-		return x.RequiredresourceType
+		return x.RequiredResourceType
 	}
 	return 0
 }
 
-func (x *Skillrequiredresource) GetRequiredresourceValue() uint32 {
+func (x *SkillrequiredResource) GetRequiredResourceValue() uint32 {
 	if x != nil {
-		return x.RequiredresourceValue
+		return x.RequiredResourceValue
 	}
 	return 0
 }
 
-type Skillrequestresource struct {
+type SkillrequestResource struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
-	RequestresourceId   uint32                 `protobuf:"varint,1,opt,name=requestresource_id,json=requestresourceId,proto3" json:"requestresource_id,omitempty"`
-	RequestresourceCost uint32                 `protobuf:"varint,2,opt,name=requestresource_cost,json=requestresourceCost,proto3" json:"requestresource_cost,omitempty"`
+	RequestResourceId   uint32                 `protobuf:"varint,1,opt,name=request_resource_id,json=requestResourceId,proto3" json:"request_resource_id,omitempty"`
+	RequestResourceCost uint32                 `protobuf:"varint,2,opt,name=request_resource_cost,json=requestResourceCost,proto3" json:"request_resource_cost,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
 
-func (x *Skillrequestresource) Reset() {
-	*x = Skillrequestresource{}
+func (x *SkillrequestResource) Reset() {
+	*x = SkillrequestResource{}
 	mi := &file_skill_table_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Skillrequestresource) String() string {
+func (x *SkillrequestResource) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Skillrequestresource) ProtoMessage() {}
+func (*SkillrequestResource) ProtoMessage() {}
 
-func (x *Skillrequestresource) ProtoReflect() protoreflect.Message {
+func (x *SkillrequestResource) ProtoReflect() protoreflect.Message {
 	mi := &file_skill_table_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -158,21 +158,21 @@ func (x *Skillrequestresource) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Skillrequestresource.ProtoReflect.Descriptor instead.
-func (*Skillrequestresource) Descriptor() ([]byte, []int) {
+// Deprecated: Use SkillrequestResource.ProtoReflect.Descriptor instead.
+func (*SkillrequestResource) Descriptor() ([]byte, []int) {
 	return file_skill_table_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Skillrequestresource) GetRequestresourceId() uint32 {
+func (x *SkillrequestResource) GetRequestResourceId() uint32 {
 	if x != nil {
-		return x.RequestresourceId
+		return x.RequestResourceId
 	}
 	return 0
 }
 
-func (x *Skillrequestresource) GetRequestresourceCost() uint32 {
+func (x *SkillrequestResource) GetRequestResourceCost() uint32 {
 	if x != nil {
-		return x.RequestresourceCost
+		return x.RequestResourceCost
 	}
 	return 0
 }
@@ -182,16 +182,16 @@ type SkillTable struct {
 	Id               uint32                   `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	SkillType        []uint32                 `protobuf:"varint,2,rep,packed,name=skill_type,json=skillType,proto3" json:"skill_type,omitempty"`
 	TargetingMode    []uint32                 `protobuf:"varint,3,rep,packed,name=targeting_mode,json=targetingMode,proto3" json:"targeting_mode,omitempty"`
-	RquestTarget     uint32                   `protobuf:"varint,4,opt,name=rquest_target,json=rquestTarget,proto3" json:"rquest_target,omitempty"`
+	RequireTarget    uint32                   `protobuf:"varint,4,opt,name=require_target,json=requireTarget,proto3" json:"require_target,omitempty"`
 	TargetStatus     uint32                   `protobuf:"varint,5,opt,name=target_status,json=targetStatus,proto3" json:"target_status,omitempty"`
-	Castpoint        float64                  `protobuf:"fixed64,6,opt,name=castpoint,proto3" json:"castpoint,omitempty"`
-	Recoverytime     float64                  `protobuf:"fixed64,7,opt,name=recoverytime,proto3" json:"recoverytime,omitempty"`
-	Immediately      uint32                   `protobuf:"varint,8,opt,name=immediately,proto3" json:"immediately,omitempty"`
+	CastPoint        float64                  `protobuf:"fixed64,6,opt,name=cast_point,json=castPoint,proto3" json:"cast_point,omitempty"`
+	RecoveryTime     float64                  `protobuf:"fixed64,7,opt,name=recovery_time,json=recoveryTime,proto3" json:"recovery_time,omitempty"`
+	Immediate        uint32                   `protobuf:"varint,8,opt,name=immediate,proto3" json:"immediate,omitempty"`
 	Effect           []uint32                 `protobuf:"varint,9,rep,packed,name=effect,proto3" json:"effect,omitempty"`
-	Channelthink     uint32                   `protobuf:"varint,10,opt,name=channelthink,proto3" json:"channelthink,omitempty"`
-	Channelfinish    uint32                   `protobuf:"varint,11,opt,name=channelfinish,proto3" json:"channelfinish,omitempty"`
-	Thinkinterval    uint32                   `protobuf:"varint,12,opt,name=thinkinterval,proto3" json:"thinkinterval,omitempty"`
-	Channeltime      uint32                   `protobuf:"varint,13,opt,name=channeltime,proto3" json:"channeltime,omitempty"`
+	ChannelThink     uint32                   `protobuf:"varint,10,opt,name=channel_think,json=channelThink,proto3" json:"channel_think,omitempty"`
+	ChannelFinish    uint32                   `protobuf:"varint,11,opt,name=channel_finish,json=channelFinish,proto3" json:"channel_finish,omitempty"`
+	ThinkInterval    uint32                   `protobuf:"varint,12,opt,name=think_interval,json=thinkInterval,proto3" json:"think_interval,omitempty"`
+	ChannelTime      uint32                   `protobuf:"varint,13,opt,name=channel_time,json=channelTime,proto3" json:"channel_time,omitempty"`
 	Range            float64                  `protobuf:"fixed64,14,opt,name=range,proto3" json:"range,omitempty"`
 	MaxRange         float64                  `protobuf:"fixed64,15,opt,name=max_range,json=maxRange,proto3" json:"max_range,omitempty"`
 	MinRange         float64                  `protobuf:"fixed64,16,opt,name=min_range,json=minRange,proto3" json:"min_range,omitempty"`
@@ -199,9 +199,9 @@ type SkillTable struct {
 	RequiredStatus   uint32                   `protobuf:"varint,18,opt,name=required_status,json=requiredStatus,proto3" json:"required_status,omitempty"`
 	CooldownId       uint32                   `protobuf:"varint,19,opt,name=cooldown_id,json=cooldownId,proto3" json:"cooldown_id,omitempty"`
 	Damage           string                   `protobuf:"bytes,20,opt,name=damage,proto3" json:"damage,omitempty"`
-	Requireditem     []*Skillrequireditem     `protobuf:"bytes,21,rep,name=requireditem,proto3" json:"requireditem,omitempty"`
-	Requiredresource []*Skillrequiredresource `protobuf:"bytes,22,rep,name=requiredresource,proto3" json:"requiredresource,omitempty"`
-	Requestresource  []*Skillrequestresource  `protobuf:"bytes,23,rep,name=requestresource,proto3" json:"requestresource,omitempty"`
+	RequiredItem     []*SkillrequiredItem     `protobuf:"bytes,21,rep,name=required_item,json=requiredItem,proto3" json:"required_item,omitempty"`
+	RequiredResource []*SkillrequiredResource `protobuf:"bytes,22,rep,name=required_resource,json=requiredResource,proto3" json:"required_resource,omitempty"`
+	RequestResource  []*SkillrequestResource  `protobuf:"bytes,23,rep,name=request_resource,json=requestResource,proto3" json:"request_resource,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -257,9 +257,9 @@ func (x *SkillTable) GetTargetingMode() []uint32 {
 	return nil
 }
 
-func (x *SkillTable) GetRquestTarget() uint32 {
+func (x *SkillTable) GetRequireTarget() uint32 {
 	if x != nil {
-		return x.RquestTarget
+		return x.RequireTarget
 	}
 	return 0
 }
@@ -271,23 +271,23 @@ func (x *SkillTable) GetTargetStatus() uint32 {
 	return 0
 }
 
-func (x *SkillTable) GetCastpoint() float64 {
+func (x *SkillTable) GetCastPoint() float64 {
 	if x != nil {
-		return x.Castpoint
+		return x.CastPoint
 	}
 	return 0
 }
 
-func (x *SkillTable) GetRecoverytime() float64 {
+func (x *SkillTable) GetRecoveryTime() float64 {
 	if x != nil {
-		return x.Recoverytime
+		return x.RecoveryTime
 	}
 	return 0
 }
 
-func (x *SkillTable) GetImmediately() uint32 {
+func (x *SkillTable) GetImmediate() uint32 {
 	if x != nil {
-		return x.Immediately
+		return x.Immediate
 	}
 	return 0
 }
@@ -299,30 +299,30 @@ func (x *SkillTable) GetEffect() []uint32 {
 	return nil
 }
 
-func (x *SkillTable) GetChannelthink() uint32 {
+func (x *SkillTable) GetChannelThink() uint32 {
 	if x != nil {
-		return x.Channelthink
+		return x.ChannelThink
 	}
 	return 0
 }
 
-func (x *SkillTable) GetChannelfinish() uint32 {
+func (x *SkillTable) GetChannelFinish() uint32 {
 	if x != nil {
-		return x.Channelfinish
+		return x.ChannelFinish
 	}
 	return 0
 }
 
-func (x *SkillTable) GetThinkinterval() uint32 {
+func (x *SkillTable) GetThinkInterval() uint32 {
 	if x != nil {
-		return x.Thinkinterval
+		return x.ThinkInterval
 	}
 	return 0
 }
 
-func (x *SkillTable) GetChanneltime() uint32 {
+func (x *SkillTable) GetChannelTime() uint32 {
 	if x != nil {
-		return x.Channeltime
+		return x.ChannelTime
 	}
 	return 0
 }
@@ -376,23 +376,23 @@ func (x *SkillTable) GetDamage() string {
 	return ""
 }
 
-func (x *SkillTable) GetRequireditem() []*Skillrequireditem {
+func (x *SkillTable) GetRequiredItem() []*SkillrequiredItem {
 	if x != nil {
-		return x.Requireditem
+		return x.RequiredItem
 	}
 	return nil
 }
 
-func (x *SkillTable) GetRequiredresource() []*Skillrequiredresource {
+func (x *SkillTable) GetRequiredResource() []*SkillrequiredResource {
 	if x != nil {
-		return x.Requiredresource
+		return x.RequiredResource
 	}
 	return nil
 }
 
-func (x *SkillTable) GetRequestresource() []*Skillrequestresource {
+func (x *SkillTable) GetRequestResource() []*SkillrequestResource {
 	if x != nil {
-		return x.Requestresource
+		return x.RequestResource
 	}
 	return nil
 }
@@ -445,33 +445,34 @@ var File_skill_table_proto protoreflect.FileDescriptor
 
 const file_skill_table_proto_rawDesc = "" +
 	"\n" +
-	"\x11skill_table.proto\"o\n" +
-	"\x11Skillrequireditem\x12+\n" +
-	"\x11requireditem_type\x18\x01 \x01(\rR\x10requireditemType\x12-\n" +
-	"\x12requireditem_value\x18\x02 \x01(\x04R\x11requireditemValue\"\x83\x01\n" +
-	"\x15Skillrequiredresource\x123\n" +
-	"\x15requiredresource_type\x18\x01 \x01(\rR\x14requiredresourceType\x125\n" +
-	"\x16requiredresource_value\x18\x02 \x01(\rR\x15requiredresourceValue\"x\n" +
-	"\x14Skillrequestresource\x12-\n" +
-	"\x12requestresource_id\x18\x01 \x01(\rR\x11requestresourceId\x121\n" +
-	"\x14requestresource_cost\x18\x02 \x01(\rR\x13requestresourceCost\"\xca\x06\n" +
+	"\x11skill_table.proto\"r\n" +
+	"\x12Skillrequired_item\x12,\n" +
+	"\x12required_item_type\x18\x01 \x01(\rR\x10requiredItemType\x12.\n" +
+	"\x13required_item_value\x18\x02 \x01(\x04R\x11requiredItemValue\"\x86\x01\n" +
+	"\x16Skillrequired_resource\x124\n" +
+	"\x16required_resource_type\x18\x01 \x01(\rR\x14requiredResourceType\x126\n" +
+	"\x17required_resource_value\x18\x02 \x01(\rR\x15requiredResourceValue\"{\n" +
+	"\x15Skillrequest_resource\x12.\n" +
+	"\x13request_resource_id\x18\x01 \x01(\rR\x11requestResourceId\x122\n" +
+	"\x15request_resource_cost\x18\x02 \x01(\rR\x13requestResourceCost\"\xd4\x06\n" +
 	"\n" +
 	"SkillTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1d\n" +
 	"\n" +
 	"skill_type\x18\x02 \x03(\rR\tskillType\x12%\n" +
-	"\x0etargeting_mode\x18\x03 \x03(\rR\rtargetingMode\x12#\n" +
-	"\rrquest_target\x18\x04 \x01(\rR\frquestTarget\x12#\n" +
-	"\rtarget_status\x18\x05 \x01(\rR\ftargetStatus\x12\x1c\n" +
-	"\tcastpoint\x18\x06 \x01(\x01R\tcastpoint\x12\"\n" +
-	"\frecoverytime\x18\a \x01(\x01R\frecoverytime\x12 \n" +
-	"\vimmediately\x18\b \x01(\rR\vimmediately\x12\x16\n" +
-	"\x06effect\x18\t \x03(\rR\x06effect\x12\"\n" +
-	"\fchannelthink\x18\n" +
-	" \x01(\rR\fchannelthink\x12$\n" +
-	"\rchannelfinish\x18\v \x01(\rR\rchannelfinish\x12$\n" +
-	"\rthinkinterval\x18\f \x01(\rR\rthinkinterval\x12 \n" +
-	"\vchanneltime\x18\r \x01(\rR\vchanneltime\x12\x14\n" +
+	"\x0etargeting_mode\x18\x03 \x03(\rR\rtargetingMode\x12%\n" +
+	"\x0erequire_target\x18\x04 \x01(\rR\rrequireTarget\x12#\n" +
+	"\rtarget_status\x18\x05 \x01(\rR\ftargetStatus\x12\x1d\n" +
+	"\n" +
+	"cast_point\x18\x06 \x01(\x01R\tcastPoint\x12#\n" +
+	"\rrecovery_time\x18\a \x01(\x01R\frecoveryTime\x12\x1c\n" +
+	"\timmediate\x18\b \x01(\rR\timmediate\x12\x16\n" +
+	"\x06effect\x18\t \x03(\rR\x06effect\x12#\n" +
+	"\rchannel_think\x18\n" +
+	" \x01(\rR\fchannelThink\x12%\n" +
+	"\x0echannel_finish\x18\v \x01(\rR\rchannelFinish\x12%\n" +
+	"\x0ethink_interval\x18\f \x01(\rR\rthinkInterval\x12!\n" +
+	"\fchannel_time\x18\r \x01(\rR\vchannelTime\x12\x14\n" +
 	"\x05range\x18\x0e \x01(\x01R\x05range\x12\x1b\n" +
 	"\tmax_range\x18\x0f \x01(\x01R\bmaxRange\x12\x1b\n" +
 	"\tmin_range\x18\x10 \x01(\x01R\bminRange\x12\x1f\n" +
@@ -480,10 +481,10 @@ const file_skill_table_proto_rawDesc = "" +
 	"\x0frequired_status\x18\x12 \x01(\rR\x0erequiredStatus\x12\x1f\n" +
 	"\vcooldown_id\x18\x13 \x01(\rR\n" +
 	"cooldownId\x12\x16\n" +
-	"\x06damage\x18\x14 \x01(\tR\x06damage\x126\n" +
-	"\frequireditem\x18\x15 \x03(\v2\x12.SkillrequireditemR\frequireditem\x12B\n" +
-	"\x10requiredresource\x18\x16 \x03(\v2\x16.SkillrequiredresourceR\x10requiredresource\x12?\n" +
-	"\x0frequestresource\x18\x17 \x03(\v2\x15.SkillrequestresourceR\x0frequestresource\"1\n" +
+	"\x06damage\x18\x14 \x01(\tR\x06damage\x128\n" +
+	"\rrequired_item\x18\x15 \x03(\v2\x13.Skillrequired_itemR\frequiredItem\x12D\n" +
+	"\x11required_resource\x18\x16 \x03(\v2\x17.Skillrequired_resourceR\x10requiredResource\x12A\n" +
+	"\x10request_resource\x18\x17 \x03(\v2\x16.Skillrequest_resourceR\x0frequestResource\"1\n" +
 	"\x0eSkillTableData\x12\x1f\n" +
 	"\x04data\x18\x01 \x03(\v2\v.SkillTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
 
@@ -501,16 +502,16 @@ func file_skill_table_proto_rawDescGZIP() []byte {
 
 var file_skill_table_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_skill_table_proto_goTypes = []any{
-	(*Skillrequireditem)(nil),     // 0: Skillrequireditem
-	(*Skillrequiredresource)(nil), // 1: Skillrequiredresource
-	(*Skillrequestresource)(nil),  // 2: Skillrequestresource
+	(*SkillrequiredItem)(nil),     // 0: Skillrequired_item
+	(*SkillrequiredResource)(nil), // 1: Skillrequired_resource
+	(*SkillrequestResource)(nil),  // 2: Skillrequest_resource
 	(*SkillTable)(nil),            // 3: SkillTable
 	(*SkillTableData)(nil),        // 4: SkillTableData
 }
 var file_skill_table_proto_depIdxs = []int32{
-	0, // 0: SkillTable.requireditem:type_name -> Skillrequireditem
-	1, // 1: SkillTable.requiredresource:type_name -> Skillrequiredresource
-	2, // 2: SkillTable.requestresource:type_name -> Skillrequestresource
+	0, // 0: SkillTable.required_item:type_name -> Skillrequired_item
+	1, // 1: SkillTable.required_resource:type_name -> Skillrequired_resource
+	2, // 2: SkillTable.request_resource:type_name -> Skillrequest_resource
 	3, // 3: SkillTableData.data:type_name -> SkillTable
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type

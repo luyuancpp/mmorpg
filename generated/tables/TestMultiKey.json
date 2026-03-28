@@ -2,16 +2,16 @@
  "data": [
   {
    "id": 1,
-   "immunetag1": {
+   "immune_tag1": {
     "Control": "None",
     "Wood": "None"
    },
-   "in32key": 8,
+   "int32_key": 8,
    "level": 0,
-   "min32key": 10,
-   "mstringkey": "aa",
-   "muint32key": 17,
-   "stringkey": "aa",
+   "m_int32_key": 10,
+   "m_string_key": "aa",
+   "m_uint32_key": 17,
+   "string_key": "aa",
    "tag1": {
     "Metal": "Control"
    },
@@ -33,7 +33,7 @@
      "testobj1_value": 0
     }
    ],
-   "uint32key": 14
+   "uint32_key": 14
   },
   {
    "effect": [
@@ -41,16 +41,16 @@
     1
    ],
    "id": 2,
-   "immunetag1": {
+   "immune_tag1": {
     "Control": "None",
     "Water": "None"
    },
-   "in32key": 9,
+   "int32_key": 9,
    "level": 1,
-   "min32key": 10,
-   "mstringkey": "bb",
-   "muint32key": 17,
-   "stringkey": "bb",
+   "m_int32_key": 10,
+   "m_string_key": "bb",
+   "m_uint32_key": 17,
+   "string_key": "bb",
    "tag1": {
     "Wood": "Control"
    },
@@ -72,7 +72,7 @@
      "testobj1_value": 0
     }
    ],
-   "uint32key": 15
+   "uint32_key": 15
   },
   {
    "effect": [
@@ -84,16 +84,16 @@
     1
    ],
    "id": 3,
-   "immunetag1": {
+   "immune_tag1": {
     "Control": "None",
     "None": "None"
    },
-   "in32key": 10,
+   "int32_key": 10,
    "level": 1,
-   "min32key": 10,
-   "mstringkey": "cc",
-   "muint32key": 3,
-   "stringkey": "cc",
+   "m_int32_key": 10,
+   "m_string_key": "cc",
+   "m_uint32_key": 3,
+   "string_key": "cc",
    "tag1": {
     "Water": "Control"
    },
@@ -115,23 +115,23 @@
      "testobj1_value": 0
     }
    ],
-   "uint32key": 16
+   "uint32_key": 16
   },
   {
    "effect": [
     1
    ],
    "id": 4,
-   "immunetag1": {
+   "immune_tag1": {
     "Control": "None",
     "Earth": "None"
    },
-   "in32key": 11,
+   "int32_key": 11,
    "level": 1,
-   "min32key": 10,
-   "mstringkey": "dd",
-   "muint32key": 4,
-   "stringkey": "dd",
+   "m_int32_key": 10,
+   "m_string_key": "dd",
+   "m_uint32_key": 4,
+   "string_key": "dd",
    "tag1": {
     "Fire": "Control"
    },
@@ -153,7 +153,7 @@
      "testobj1_value": 0
     }
    ],
-   "uint32key": 17
+   "uint32_key": 17
   },
   {
    "effect": [
@@ -162,16 +162,16 @@
     1
    ],
    "id": 5,
-   "immunetag1": {
+   "immune_tag1": {
     "Control": "None",
     "Metal": "None"
    },
-   "in32key": 12,
+   "int32_key": 12,
    "level": 100,
-   "min32key": 10,
-   "mstringkey": "aa",
-   "muint32key": 5,
-   "stringkey": "aa",
+   "m_int32_key": 10,
+   "m_string_key": "aa",
+   "m_uint32_key": 5,
+   "string_key": "aa",
    "tag1": {
     "Earth": "Control"
    },
@@ -193,7 +193,7 @@
      "testobj1_value": 0
     }
    ],
-   "uint32key": 18
+   "uint32_key": 18
   },
   {
    "effect": [
@@ -205,16 +205,16 @@
     1
    ],
    "id": 6,
-   "immunetag1": {
+   "immune_tag1": {
     "Control": "None",
     "Wood": "None"
    },
-   "in32key": 13,
+   "int32_key": 13,
    "level": 100,
-   "min32key": 10,
-   "mstringkey": "bb",
-   "muint32key": 6,
-   "stringkey": "bb",
+   "m_int32_key": 10,
+   "m_string_key": "bb",
+   "m_uint32_key": 6,
+   "string_key": "bb",
    "tag1": {
     "Metal": "Control"
    },
@@ -236,7 +236,7 @@
      "testobj1_value": 0
     }
    ],
-   "uint32key": 19
+   "uint32_key": 19
   }
  ]
 }

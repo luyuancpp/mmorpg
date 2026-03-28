@@ -20,7 +20,7 @@ void BuffTableManager::Load() {
         kv_data_.emplace(row_data.id(), &row_data);
     }
 
-    expression_healthregeneration_.Init({
+    expression_health_regeneration_.Init({
         "level", 
         "health"
     });

@@ -36,7 +36,7 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTablePara
     for (const auto& buff : buffList | std::views::values) {
         FetchAndValidateBuffTable(buff.buffPb.buff_table_id());
         for (const auto& tag : buffTableParam->tag() | std::views::keys) {
-            if (buffTable->immunetag().contains(tag)) {
+            if (buffTable->immune_tag().contains(tag)) {
                 return true;
             }
         }
@@ -45,7 +45,7 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTablePara
 }
 
 BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
-    switch (buffTable->bufftype()) {
+    switch (buffTable->buff_type()) {
     case kBuffTypeNoDamageOrSkillHitInLastSeconds:
         return std::make_shared<BuffNoDamageOrSkillHitInLastSecondsComp>();
     default:
@@ -78,7 +78,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     {
         newBuff.buffPb.set_caster(abilityContext->caster());
     }
-    newBuff.buffPb.set_processed_caster(buffTable->nocaster() ? entt::null : (abilityContext ? abilityContext->caster() : entt::null));
+    newBuff.buffPb.set_processed_caster(buffTable->no_caster() ? entt::null : (abilityContext ? abilityContext->caster() : entt::null));
 
     if (OnBuffAwake(parent, buffTableId) == kSuccess) {
         return {result, UINT64_MAX};
@@ -209,7 +209,7 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
     auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
     for (auto& buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
-            if (buffComp.buffPb.layer() < buffTable->maxlayer()) {
+            if (buffComp.buffPb.layer() < buffTable->max_layer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
             }
             OnBuffRefresh(parentEntity, buffTableId, abilityContext, buffComp);
@@ -228,7 +228,7 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
     for (auto& [buffId, buffPbComp] : buffList) {
         FetchBuffTableOrContinue(buffTableId);
-        for (const auto& removeTag : addBuffTable->dispeltag() | std::views::keys) {
+        for (const auto& removeTag : addBuffTable->dispel_tag() | std::views::keys) {
             if (buffTable->tag().contains(removeTag)) {
                 dispelBuffIdList.emplace_back(buffId);
                 break;
@@ -240,9 +240,9 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
         BuffSystem::OnBuffExpire(parent, buffId);
     }
 
-    if (addBuffTable->bufftype() != kBuffTypeDispel) {
+    if (addBuffTable->buff_type() != kBuffTypeDispel) {
         return MAKE_ERROR_MSG(kInvalidTableData,
-            "bufftype=" << addBuffTable->bufftype()
+            "buff_type=" << addBuffTable->buff_type()
             << " buffTableId=" << buffTableId);
     }
 
@@ -369,7 +369,7 @@ bool BuffSystem::AddSubBuffs(entt::entity parent,
 
     buffComp.buffPb.set_has_added_sub_buff(true);
 
-    for (const auto& subBuff : buffTable->subbuff()) {
+    for (const auto& subBuff : buffTable->sub_buff()) {
         auto [result, newBuffId] = BuffSystem::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
 
         if (result != kSuccess || newBuffId == UINT64_MAX) {
@@ -392,7 +392,7 @@ void BuffSystem::AddTargetSubBuffs(const entt::entity targetEntity,
         return;
     }
 
-    for (auto& targetSubBuffTableId : buffTable->targetsubbuff()) {
+    for (auto& targetSubBuffTableId : buffTable->target_sub_buff()) {
         AddOrUpdateBuff(targetEntity, targetSubBuffTableId, abilityContext);
     }
 }
@@ -401,7 +401,7 @@ void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
     const BuffTable* buffTable,
     BuffEntry& buffComp)
 {
-    for (const auto& subBuff : buffTable->subbuff()) {
+    for (const auto& subBuff : buffTable->sub_buff()) {
         auto [result, newBuffId] = BuffSystem::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
 
         if (result != kSuccess || newBuffId == UINT64_MAX) {
@@ -414,7 +414,7 @@ void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
 }
 
 bool CanApplyMoreTicks(const BuffPeriodicBuffComp& periodicBuff, const BuffTable* buffTable) {
-    return (buffTable->intervalcount() <= 0) || (periodicBuff.ticks_done() + 1 <= buffTable->intervalcount());
+    return (buffTable->interval_count() <= 0) || (periodicBuff.ticks_done() + 1 <= buffTable->interval_count());
 }
 
 void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffEntry& buffComp, double delta) {
