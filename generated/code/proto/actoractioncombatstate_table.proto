@@ -3,6 +3,11 @@ syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
+option java_package = "com.game.table";
+option java_outer_classname = "ActorActionCombatStateTableOuterClass";
+option java_multiple_files = true;
+
+
 message ActorActionCombatStatestate {
 	uint32 state_mode = 1;
 	uint32 state_tip = 2;

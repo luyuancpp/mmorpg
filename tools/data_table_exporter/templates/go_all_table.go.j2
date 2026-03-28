@@ -2,6 +2,7 @@
 package table
 
 import (
+    "fmt"
     "log"
     "sync"
 )
@@ -45,4 +46,25 @@ func LoadTablesAsync(configDir string) {
 // OnTablesLoadSuccess registers a callback invoked after all tables load.
 func OnTablesLoadSuccess(cb func()) {
     loadSuccessCallback = cb
+}
+
+// ReloadTables re-creates all table managers and loads fresh data.
+// Safe for hot-reload: replaces the global instances atomically.
+func ReloadTables(configDir string) error {
+{%- for item in sheetnames %}
+    new{{ item }} := New{{ item }}TableManager()
+    if err := new{{ item }}.Load(configDir); err != nil {
+        return fmt.Errorf("reload {{ item }} failed: %w", err)
+    }
+{%- endfor %}
+
+    // Swap all instances at once after all loads succeed.
+{%- for item in sheetnames %}
+    {{ item }}TableManagerInstance = new{{ item }}
+{%- endfor %}
+
+    if loadSuccessCallback != nil {
+        loadSuccessCallback()
+    }
+    return nil
 }

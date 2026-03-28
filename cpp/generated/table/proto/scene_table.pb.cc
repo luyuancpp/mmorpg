@@ -106,14 +106,15 @@ const char descriptor_table_protodef_scene_5ftable_2eproto[] ABSL_ATTRIBUTE_SECT
     protodesc_cold) = {
     "\n\021scene_table.proto\",\n\nSceneTable\022\n\n\002id\030"
     "\001 \001(\r\022\022\n\ndungeon_id\030\002 \001(\r\"+\n\016SceneTableD"
-    "ata\022\031\n\004data\030\001 \003(\0132\013.SceneTableB\024Z\022genera"
+    "ata\022\031\n\004data\030\001 \003(\0132\013.SceneTableB<\n\016com.ga"
+    "me.tableB\024SceneTableOuterClassP\001Z\022genera"
     "ted/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_scene_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_scene_5ftable_2eproto = {
     false,
     false,
-    140,
+    180,
     descriptor_table_protodef_scene_5ftable_2eproto,
     "scene_table.proto",
     &descriptor_table_scene_5ftable_2eproto_once,

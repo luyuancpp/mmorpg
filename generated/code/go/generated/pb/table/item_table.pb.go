@@ -127,7 +127,8 @@ const file_item_table_proto_rawDesc = "" +
 	"\x0emax_stack_size\x18\x02 \x01(\rR\fmaxStackSize\"/\n" +
 	"\rItemTableData\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
-	".ItemTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	".ItemTableR\x04dataB;\n" +
+	"\x0ecom.game.tableB\x13ItemTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_item_table_proto_rawDescOnce sync.Once

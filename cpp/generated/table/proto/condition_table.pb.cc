@@ -139,14 +139,15 @@ const char descriptor_table_protodef_condition_5ftable_2eproto[] ABSL_ATTRIBUTE_
     "(\r\022\026\n\016valid_duration\030\007 \001(\004\022\025\n\rquantity_t"
     "ype\030\010 \001(\r\022\024\n\014target_count\030\t \001(\r\022\025\n\rcompa"
     "rison_op\030\n \001(\r\"3\n\022ConditionTableData\022\035\n\004"
-    "data\030\001 \003(\0132\017.ConditionTableB\024Z\022generated"
-    "/pb/tableb\006proto3"
+    "data\030\001 \003(\0132\017.ConditionTableB@\n\016com.game."
+    "tableB\030ConditionTableOuterClassP\001Z\022gener"
+    "ated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_condition_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_condition_5ftable_2eproto = {
     false,
     false,
-    337,
+    381,
     descriptor_table_protodef_condition_5ftable_2eproto,
     "condition_table.proto",
     &descriptor_table_condition_5ftable_2eproto_once,

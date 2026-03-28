@@ -130,14 +130,15 @@ const char descriptor_table_protodef_mission_5ftable_2eproto[] ABSL_ATTRIBUTE_SE
     "\022\027\n\017condition_order\030\005 \001(\r\022\023\n\013auto_reward"
     "\030\006 \001(\r\022\021\n\treward_id\030\007 \001(\r\022\027\n\017next_missio"
     "n_id\030\010 \003(\r\"/\n\020MissionTableData\022\033\n\004data\030\001"
-    " \003(\0132\r.MissionTableB\024Z\022generated/pb/tabl"
-    "eb\006proto3"
+    " \003(\0132\r.MissionTableB>\n\016com.game.tableB\026M"
+    "issionTableOuterClassP\001Z\022generated/pb/ta"
+    "bleb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mission_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_mission_5ftable_2eproto = {
     false,
     false,
-    289,
+    331,
     descriptor_table_protodef_mission_5ftable_2eproto,
     "mission_table.proto",
     &descriptor_table_mission_5ftable_2eproto_once,

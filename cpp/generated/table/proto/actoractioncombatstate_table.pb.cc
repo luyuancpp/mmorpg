@@ -145,14 +145,15 @@ const char descriptor_table_protodef_actoractioncombatstate_5ftable_2eproto[] AB
     "nCombatStateTable\022\n\n\002id\030\001 \001(\r\022+\n\005state\030\002"
     " \003(\0132\034.ActorActionCombatStatestate\"M\n\037Ac"
     "torActionCombatStateTableData\022*\n\004data\030\001 "
-    "\003(\0132\034.ActorActionCombatStateTableB\024Z\022gen"
-    "erated/pb/tableb\006proto3"
+    "\003(\0132\034.ActorActionCombatStateTableBM\n\016com"
+    ".game.tableB%ActorActionCombatStateTable"
+    "OuterClassP\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_actoractioncombatstate_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_actoractioncombatstate_5ftable_2eproto = {
     false,
     false,
-    303,
+    360,
     descriptor_table_protodef_actoractioncombatstate_5ftable_2eproto,
     "actoractioncombatstate_table.proto",
     &descriptor_table_actoractioncombatstate_5ftable_2eproto_once,

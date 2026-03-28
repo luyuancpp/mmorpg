@@ -68,11 +68,18 @@ languages:
     grpc_deploy_base: ../../go
 
   java:
-    enabled: false # set to true when ready
+    enabled: true
     code_dir: ../../generated/code/java
+    proto_output_dir: ../../generated/code/proto/java
     package: "com.game.table"
     constants_dir: ../../generated/code/java/constants
     table_id_dir: ../../generated/code/java/table_id
+    bit_index_dir: ../../generated/code/java/bit_index
+    deploy:
+      - src: ../../generated/code/java
+        dst: ../../java/config_node/src/main/java/com/game/table
+      - src: ../../generated/code/proto/java/com/game/table
+        dst: ../../java/config_node/src/main/java/com/game/table
 
 # --- Tables with named ID constants ---
 constant_tables: [GlobalVariable]

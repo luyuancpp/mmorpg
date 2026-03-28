@@ -32,12 +32,13 @@ def generate_proto_files(cfg: ExporterConfig, tables: list[TableSchema]) -> None
     template = env.get_template("proto_table.proto.j2")
 
     with ThreadPoolExecutor() as pool:
-        pool.map(lambda t: _gen_one_proto(t, template, cfg), tables)
+        java_pkg = cfg.java.package if cfg.java.enabled else ""
+        pool.map(lambda t: _gen_one_proto(t, template, cfg, java_pkg), tables)
 
 
-def _gen_one_proto(table: TableSchema, template, cfg: ExporterConfig) -> None:
+def _gen_one_proto(table: TableSchema, template, cfg: ExporterConfig, java_package: str = "") -> None:
     try:
-        content = template.render(table=table)
+        content = template.render(table=table, java_package=java_package)
         out = cfg.proto_dir / f"{table.name.lower()}_table.proto"
         write_file(out, content)
         logger.info("Generated %s", out)
@@ -76,6 +77,21 @@ def compile_proto_go(cfg: ExporterConfig) -> None:
         src = cfg.proto_dir / sub
         if src.exists():
             _compile(src, cfg.go.proto_output_dir, "go_out", cfg)
+
+
+def compile_proto_java(cfg: ExporterConfig) -> None:
+    """Compile all ``.proto`` → Java using *protoc*."""
+    if not cfg.java.enabled:
+        return
+    ensure_dirs(cfg.java.proto_output_dir)
+    _compile(cfg.proto_dir, cfg.java.proto_output_dir, "java_out", cfg)
+
+    for sub in ("tip", "operator"):
+        src = cfg.proto_dir / sub
+        if src.exists():
+            dst = cfg.java.proto_output_dir / sub
+            ensure_dirs(dst)
+            _compile(src, dst, "java_out", cfg)
 
 
 def _compile(source_dir: Path, output_dir: Path, out_flag: str, cfg: ExporterConfig) -> None:

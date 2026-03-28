@@ -80,6 +80,19 @@ def to_go_type(proto_type: str) -> str:
     return _GO_TYPE_MAP.get(proto_type, "interface{}")
 
 
+def to_go_proto_field(snake_name: str) -> str:
+    """Convert snake_case proto field name to Go CamelCase struct field.
+
+    Example: ``sub_buff`` → ``SubBuff``, ``id`` → ``Id``.
+    """
+    return "".join(word.capitalize() for word in snake_name.split("_"))
+
+
+def to_go_repeated_elem_type(proto_type: str) -> str:
+    """Go element type for repeated fields (same as to_go_type)."""
+    return _GO_TYPE_MAP.get(proto_type, "interface{}")
+
+
 # ---------------------------------------------------------------------------
 # Java
 # ---------------------------------------------------------------------------
@@ -112,4 +125,15 @@ def to_java_type(proto_type: str) -> str:
 
 
 def to_java_boxed(proto_type: str) -> str:
+    return _JAVA_BOXED_MAP.get(proto_type, proto_type)
+
+
+def to_java_proto_getter(snake_name: str) -> str:
+    """Convert snake_case field name to Java proto getter (e.g. ``sub_buff`` → ``getSubBuff``)."""
+    camel = "".join(word.capitalize() for word in snake_name.split("_"))
+    return f"get{camel}"
+
+
+def to_java_repeated_elem_type(proto_type: str) -> str:
+    """Java element type inside a proto repeated field (boxed for generics)."""
     return _JAVA_BOXED_MAP.get(proto_type, proto_type)

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"unicode"
 
 	"protogen/internal"
 	_config "protogen/internal/config"
@@ -17,17 +18,18 @@ import (
 const handlerTemplate = `package handler
 
 import (
-	"robot/pb/game"
+	"robot/proto/{{.ImportDir}}"
 	"robot/logic/gameobject"
 )
 
-func {{.HandlerName}}(player *gameobject.Player, response *game.{{.ResponseType}}) {
+func {{.HandlerName}}(player *gameobject.Player, response *{{.ResponseType}}) {
 }
 `
 
 type ServiceData struct {
 	HandlerName  string
 	ResponseType string
+	ImportDir    string
 }
 
 // GoRobotHandlerGenerator generates Go handler files and removes obsolete ones.
@@ -61,9 +63,11 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 
 				handlerName := serviceName + method.Method() + "Handler"
 				responseType := method.GoResponse()
+				importDir := method.GoResponseImportDir()
 
 				if strings.Contains(responseType, _config.Global.Naming.EmptyResponse) {
 					responseType = method.GoRequest()
+					importDir = method.GoRequestImportDir()
 					logger.Global.Debug("Response type is empty, substituting request type",
 						zap.String("service_name", serviceName),
 						zap.String("method_name", method.Method()),
@@ -72,7 +76,7 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 					)
 				}
 
-				fileName := sanitizeFileName(serviceName + method.Method())
+				fileName := camelToSnake(serviceName + method.Method())
 				filePath := filepath.Join(_config.Global.PathLists.MethodHandlerDirectories.Robot, fileName+".go")
 
 				if fileExists(filePath) {
@@ -84,7 +88,7 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 					continue
 				}
 
-				err := generateHandlerFile(filePath, handlerName, responseType)
+				err := generateHandlerFile(filePath, handlerName, responseType, importDir)
 				if err != nil {
 					logger.Global.Warn("Failed to generate handler file, skipping",
 						zap.String("file_path", filePath),
@@ -109,8 +113,8 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 	)
 }
 
-// generateHandlerFile Generates a Go file using the provided handler and response names.
-func generateHandlerFile(fileName, handlerName, responseType string) error {
+// generateHandlerFile creates a Go file using the provided handler and response names.
+func generateHandlerFile(fileName, handlerName, responseType, importDir string) error {
 	if fileName == "" {
 		logger.Global.Fatal("Failed to generate handler file: file path is empty")
 	}
@@ -135,6 +139,7 @@ func generateHandlerFile(fileName, handlerName, responseType string) error {
 	data := ServiceData{
 		HandlerName:  handlerName,
 		ResponseType: responseType,
+		ImportDir:    importDir,
 	}
 
 	logger.Global.Debug("Executing handler template rendering",
@@ -146,7 +151,7 @@ func generateHandlerFile(fileName, handlerName, responseType string) error {
 	return tmpl.Execute(file, data)
 }
 
-// fileExists Checks if a file already exists.
+// fileExists checks if a file already exists.
 func fileExists(filePath string) bool {
 	_, err := os.Stat(filePath)
 	if err != nil {
@@ -162,12 +167,20 @@ func fileExists(filePath string) bool {
 	return true
 }
 
-// sanitizeFileName replaces invalid characters in service names for valid file names.
-func sanitizeFileName(serviceName string) string {
-	sanitized := strings.ToLower(strings.ReplaceAll(serviceName, " ", "_"))
-	logger.Global.Debug("File name sanitized",
-		zap.String("original_name", serviceName),
-		zap.String("sanitized_name", sanitized),
-	)
-	return sanitized
+// camelToSnake converts a CamelCase string to snake_case.
+func camelToSnake(s string) string {
+	var b strings.Builder
+	runes := []rune(s)
+	for i, r := range runes {
+		if i > 0 && unicode.IsUpper(r) {
+			prev := runes[i-1]
+			if unicode.IsLower(prev) || unicode.IsDigit(prev) {
+				b.WriteRune('_')
+			} else if unicode.IsUpper(prev) && i+1 < len(runes) && unicode.IsLower(runes[i+1]) {
+				b.WriteRune('_')
+			}
+		}
+		b.WriteRune(unicode.ToLower(r))
+	}
+	return b.String()
 }

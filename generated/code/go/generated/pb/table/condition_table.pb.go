@@ -207,7 +207,8 @@ const file_condition_table_proto_rawDesc = "" +
 	"\rcomparison_op\x18\n" +
 	" \x01(\rR\fcomparisonOp\"9\n" +
 	"\x12ConditionTableData\x12#\n" +
-	"\x04data\x18\x01 \x03(\v2\x0f.ConditionTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\x0f.ConditionTableR\x04dataB@\n" +
+	"\x0ecom.game.tableB\x18ConditionTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_condition_table_proto_rawDescOnce sync.Once

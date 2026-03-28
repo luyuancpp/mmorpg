@@ -127,7 +127,8 @@ const file_skillpermission_table_proto_rawDesc = "" +
 	"\n" +
 	"skill_type\x18\x02 \x03(\rR\tskillType\"E\n" +
 	"\x18SkillPermissionTableData\x12)\n" +
-	"\x04data\x18\x01 \x03(\v2\x15.SkillPermissionTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\x15.SkillPermissionTableR\x04dataBF\n" +
+	"\x0ecom.game.tableB\x1eSkillPermissionTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_skillpermission_table_proto_rawDescOnce sync.Once

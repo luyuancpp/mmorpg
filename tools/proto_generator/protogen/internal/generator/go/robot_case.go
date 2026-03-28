@@ -16,56 +16,59 @@ import (
 const handlerTotalTemplate = `package handler
 
 import (
+	"reflect"
+
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"robot/generated/pb/game"
-	"robot/proto/common"
-
 	"robot/logic/gameobject"
 	"robot/pkg"
+	"robot/proto/common"
 )
 
+type handlerFunc func(*gameobject.Player, []byte)
+
+// unmarshalAndCall creates a handlerFunc that unmarshals body into a new
+// message of type PT and forwards it to the typed handler function.
+func unmarshalAndCall[PT proto.Message](fn func(*gameobject.Player, PT)) handlerFunc {
+	var zero PT
+	msgType := reflect.TypeOf(zero).Elem()
+	return func(player *gameobject.Player, body []byte) {
+		msg := reflect.New(msgType).Interface().(PT)
+		if err := proto.Unmarshal(body, msg); err != nil {
+			zap.L().Error("unmarshal failed", zap.Error(err))
+			return
+		}
+		fn(player, msg)
+	}
+}
+
+var messageHandlers = map[uint32]handlerFunc{
+{{- range .Cases }}
+	game.{{.MessageID}}: unmarshalAndCall({{.FunctionCall}}),
+{{- end }}
+}
+
 func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent) {
-	// Log the incoming message body for debugging
 	zap.L().Debug("Received message body", zap.String("response", response.String()))
 
-	// Retrieve the player from the player list
 	player, ok := gameobject.PlayerList.Get(client.PlayerId)
 	if !ok {
 		zap.L().Error("Player not found", zap.Uint64("player_id", client.PlayerId))
 		return
 	}
 
-	// Handle different message types
-	switch response.MessageId {
-	{{- range .Cases }}
-	case game.{{.MessageID}}:
-		{{.HandlerFunction}}(player, response.SerializedMessage)
-	{{- end }}
-	default:
-		// Handle unknown message IDs
-		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId), zap.String("response", response.String()))
+	if h, ok := messageHandlers[response.MessageId]; ok {
+		h(player, response.SerializedMessage)
+	} else {
+		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId))
 	}
 }
-
-{{- range .Cases }}
-func {{.HandlerFunction}}(player *gameobject.Player, body []byte) {
-	message := &{{.MessageType}}{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal {{.MessageType}}", zap.Error(err))
-		return
-	}
-	{{.FunctionCall}}(player, message)
-}
-
-{{- end }}
 `
 
 type HandlerCase struct {
-	MessageID       string
-	HandlerFunction string
-	MessageType     string
-	FunctionCall    string
+	MessageID    string
+	FunctionCall string
 }
 
 type CasesData struct {
@@ -123,21 +126,18 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 	}()
 }
 
-// generateHandlerCases creates the cases for the switch statement based on the method.
+// generateHandlerCases creates the cases for the handler map based on the method.
 func generateHandlerCases(method *internal.MethodInfo, cases []HandlerCase) []HandlerCase {
 	handlerCase := HandlerCase{
-		MessageID:       method.Service() + method.Method() + _config.Global.Naming.MessageId,
-		HandlerFunction: "handle" + method.Service() + method.Method(),
-		MessageType:     determineResponseType(method),
-		FunctionCall:    method.Service() + method.Method() + "Handler",
+		MessageID:    method.Service() + method.Method() + _config.Global.Naming.MessageId,
+		FunctionCall: method.Service() + method.Method() + "Handler",
 	}
 
 	logger.Global.Debug("Generated handler case",
 		zap.String("service_name", method.Service()),
 		zap.String("method_name", method.Method()),
 		zap.String("message_id", handlerCase.MessageID),
-		zap.String("handler_function", handlerCase.HandlerFunction),
-		zap.String("message_type", handlerCase.MessageType),
+		zap.String("function_call", handlerCase.FunctionCall),
 	)
 
 	cases = append(cases, handlerCase)
@@ -198,21 +198,4 @@ func isRelevantService(method *internal.MethodInfo) bool {
 	}
 
 	return isRelevant
-}
-
-// determineResponseType returns the response type or request type based on configuration.
-func determineResponseType(method *internal.MethodInfo) string {
-	responseType := method.GoResponse()
-
-	if strings.Contains(responseType, _config.Global.Naming.EmptyResponse) {
-		responseType = method.GoRequest()
-		logger.Global.Debug("Response type is empty, using request type",
-			zap.String("service_name", method.Service()),
-			zap.String("method_name", method.Method()),
-			zap.String("original_response_type", method.GoResponse()),
-			zap.String("final_type", responseType),
-		)
-	}
-
-	return responseType
 }

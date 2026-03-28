@@ -242,14 +242,15 @@ const char descriptor_table_protodef_testmultikey_5ftable_2eproto[] ABSL_ATTRIBU
     "\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\0321\n\017Immu"
     "neTag1Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:"
     "\0028\001\"9\n\025TestMultiKeyTableData\022 \n\004data\030\001 \003"
-    "(\0132\022.TestMultiKeyTableB\024Z\022generated/pb/t"
-    "ableb\006proto3"
+    "(\0132\022.TestMultiKeyTableBC\n\016com.game.table"
+    "B\033TestMultiKeyTableOuterClassP\001Z\022generat"
+    "ed/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_testmultikey_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_testmultikey_5ftable_2eproto = {
     false,
     false,
-    612,
+    659,
     descriptor_table_protodef_testmultikey_5ftable_2eproto,
     "testmultikey_table.proto",
     &descriptor_table_testmultikey_5ftable_2eproto_once,

@@ -128,7 +128,8 @@ const file_scene_table_proto_rawDesc = "" +
 	"\n" +
 	"dungeon_id\x18\x02 \x01(\rR\tdungeonId\"1\n" +
 	"\x0eSceneTableData\x12\x1f\n" +
-	"\x04data\x18\x01 \x03(\v2\v.SceneTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\v.SceneTableR\x04dataB<\n" +
+	"\x0ecom.game.tableB\x14SceneTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_scene_table_proto_rawDescOnce sync.Once

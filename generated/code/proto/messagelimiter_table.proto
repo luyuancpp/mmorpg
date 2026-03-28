@@ -3,6 +3,11 @@ syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
+option java_package = "com.game.table";
+option java_outer_classname = "MessageLimiterTableOuterClass";
+option java_multiple_files = true;
+
+
 message MessageLimiterTable {
 	uint32 id = 1;
 	uint32 max_requests = 2;

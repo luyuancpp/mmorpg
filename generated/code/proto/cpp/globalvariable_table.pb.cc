@@ -104,13 +104,15 @@ const char descriptor_table_protodef_globalvariable_5ftable_2eproto[] ABSL_ATTRI
     "\n\032globalvariable_table.proto\"!\n\023GlobalVa"
     "riableTable\022\n\n\002id\030\001 \001(\r\"=\n\027GlobalVariabl"
     "eTableData\022\"\n\004data\030\001 \003(\0132\024.GlobalVariabl"
-    "eTableB\024Z\022generated/pb/tableb\006proto3"
+    "eTableBE\n\016com.game.tableB\035GlobalVariable"
+    "TableOuterClassP\001Z\022generated/pb/tableb\006p"
+    "roto3"
 };
 static ::absl::once_flag descriptor_table_globalvariable_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_globalvariable_5ftable_2eproto = {
     false,
     false,
-    156,
+    205,
     descriptor_table_protodef_globalvariable_5ftable_2eproto,
     "globalvariable_table.proto",
     &descriptor_table_globalvariable_5ftable_2eproto_once,

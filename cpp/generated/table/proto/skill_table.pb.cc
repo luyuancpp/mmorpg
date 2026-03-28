@@ -299,13 +299,14 @@ const char descriptor_table_protodef_skill_5ftable_2eproto[] ABSL_ATTRIBUTE_SECT
     "urce\030\026 \003(\0132\027.Skillrequired_resource\0220\n\020r"
     "equest_resource\030\027 \003(\0132\026.Skillrequest_res"
     "ource\"+\n\016SkillTableData\022\031\n\004data\030\001 \003(\0132\013."
-    "SkillTableB\024Z\022generated/pb/tableb\006proto3"
+    "SkillTableB<\n\016com.game.tableB\024SkillTable"
+    "OuterClassP\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_skill_5ftable_2eproto = {
     false,
     false,
-    920,
+    960,
     descriptor_table_protodef_skill_5ftable_2eproto,
     "skill_table.proto",
     &descriptor_table_skill_5ftable_2eproto_once,

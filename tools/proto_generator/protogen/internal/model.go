@@ -240,6 +240,29 @@ func (info *MethodInfo) GoResponse() string {
 	return fileDir + typeName
 }
 
+// GoResponseImportDir returns the proto file's relative directory path for the
+// response type (e.g. "chat", "common/base", "scene"). Used to construct the
+// correct Go import path: "robot/proto/" + GoResponseImportDir().
+func (info *MethodInfo) GoResponseImportDir() string {
+	fullType := strings.TrimPrefix(info.MethodDescriptorProto.GetOutputType(), ".")
+	if activeMsgDesc, ok := ActiveMsgDescCache[protoreflect.FullName(fullType)]; ok {
+		filePath := activeMsgDesc.ParentFile().Path()
+		return filepath.ToSlash(filepath.Dir(filePath))
+	}
+	return ""
+}
+
+// GoRequestImportDir returns the proto file's relative directory path for the
+// request type.
+func (info *MethodInfo) GoRequestImportDir() string {
+	fullType := strings.TrimPrefix(info.MethodDescriptorProto.GetInputType(), ".")
+	if activeMsgDesc, ok := ActiveMsgDescCache[protoreflect.FullName(fullType)]; ok {
+		filePath := activeMsgDesc.ParentFile().Path()
+		return filepath.ToSlash(filepath.Dir(filePath))
+	}
+	return ""
+}
+
 func (info *MethodInfo) RequestName() string {
 	return GetTypeName(info.MethodDescriptorProto.GetInputType())
 }

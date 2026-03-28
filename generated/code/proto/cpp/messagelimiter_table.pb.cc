@@ -114,14 +114,15 @@ const char descriptor_table_protodef_messagelimiter_5ftable_2eproto[] ABSL_ATTRI
     "imiterTable\022\n\n\002id\030\001 \001(\r\022\024\n\014max_requests\030"
     "\002 \001(\r\022\023\n\013time_window\030\003 \001(\r\022\023\n\013tip_messag"
     "e\030\004 \001(\r\"=\n\027MessageLimiterTableData\022\"\n\004da"
-    "ta\030\001 \003(\0132\024.MessageLimiterTableB\024Z\022genera"
-    "ted/pb/tableb\006proto3"
+    "ta\030\001 \003(\0132\024.MessageLimiterTableBE\n\016com.ga"
+    "me.tableB\035MessageLimiterTableOuterClassP"
+    "\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_messagelimiter_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_messagelimiter_5ftable_2eproto = {
     false,
     false,
-    220,
+    269,
     descriptor_table_protodef_messagelimiter_5ftable_2eproto,
     "messagelimiter_table.proto",
     &descriptor_table_messagelimiter_5ftable_2eproto_once,

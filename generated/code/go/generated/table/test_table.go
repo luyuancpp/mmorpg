@@ -12,14 +12,16 @@ import (
 
 type TestTableManager struct {
     data   []*pb.TestTable
-    kvData map[int32]*pb.TestTable
+    kvData map[uint32]*pb.TestTable
+    idxEffect map[uint32][]*pb.TestTable
 }
 
 var TestTableManagerInstance = NewTestTableManager()
 
 func NewTestTableManager() *TestTableManager {
     return &TestTableManager{
-        kvData: make(map[int32]*pb.TestTable),
+        kvData: make(map[uint32]*pb.TestTable),
+        idxEffect: make(map[uint32][]*pb.TestTable),
     }
 }
 
@@ -37,14 +39,22 @@ func (m *TestTableManager) Load(configDir string) error {
 
     for _, row := range container.Data {
         m.kvData[row.Id] = row
+        for _, elem := range row.Effect {
+            m.idxEffect[elem] = append(m.idxEffect[elem], row)
+        }
     }
 
     m.data = container.Data
     return nil
 }
 
-func (m *TestTableManager) GetById(id int32) (*pb.TestTable, bool) {
+func (m *TestTableManager) GetById(id uint32) (*pb.TestTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
+}
+
+
+func (m *TestTableManager) GetByEffectIndex(key uint32) []*pb.TestTable {
+    return m.idxEffect[key]
 }
 

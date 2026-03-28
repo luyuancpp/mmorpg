@@ -12,14 +12,14 @@ import (
 
 type MainSceneTableManager struct {
     data   []*pb.MainSceneTable
-    kvData map[int32]*pb.MainSceneTable
+    kvData map[uint32]*pb.MainSceneTable
 }
 
 var MainSceneTableManagerInstance = NewMainSceneTableManager()
 
 func NewMainSceneTableManager() *MainSceneTableManager {
     return &MainSceneTableManager{
-        kvData: make(map[int32]*pb.MainSceneTable),
+        kvData: make(map[uint32]*pb.MainSceneTable),
     }
 }
 
@@ -43,7 +43,7 @@ func (m *MainSceneTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *MainSceneTableManager) GetById(id int32) (*pb.MainSceneTable, bool) {
+func (m *MainSceneTableManager) GetById(id uint32) (*pb.MainSceneTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }

@@ -1,0 +1,41 @@
+{# go_table_comp.go.j2 — per-column component structs for one data table #}
+package table
+
+import (
+    pb "{{ proto_import_path }}"
+)
+
+// ============================================================
+// Per-column component structs for {{ sheetname }}Table
+// ============================================================
+// Scalar columns → value components
+// Repeated columns → slice components
+// ============================================================
+
+{% for col in table.scalar_comp_columns %}
+type {{ sheetname }}{{ col.name | title }}Comp struct {
+    Value {{ to_go_type(col.data_type) }}
+}
+{% endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+type {{ sheetname }}{{ arr.name | title }}Comp struct {
+    Values []{{ to_go_repeated_elem_type(arr.data_type) }}
+}
+{% endfor %}
+
+// ============================================================
+// Factory helpers — build component from a proto row
+// ============================================================
+
+{% for col in table.scalar_comp_columns -%}
+func Make{{ sheetname }}{{ col.name | title }}Comp(row *pb.{{ sheetname }}Table) {{ sheetname }}{{ col.name | title }}Comp {
+    return {{ sheetname }}{{ col.name | title }}Comp{Value: row.{{ to_go_proto_field(col.name) }}}
+}
+
+{% endfor -%}
+{% for arr in table.repeated_comp_arrays -%}
+func Make{{ sheetname }}{{ arr.name | title }}Comp(row *pb.{{ sheetname }}Table) {{ sheetname }}{{ arr.name | title }}Comp {
+    return {{ sheetname }}{{ arr.name | title }}Comp{Values: row.{{ to_go_proto_field(arr.name) }}}
+}
+
+{% endfor %}

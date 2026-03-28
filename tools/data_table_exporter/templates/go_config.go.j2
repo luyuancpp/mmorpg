@@ -12,9 +12,12 @@ import (
 
 type {{ sheetname }}TableManager struct {
     data   []*pb.{{ sheetname }}Table
-    kvData map[int32]*pb.{{ sheetname }}Table
+    kvData map[{{ to_go_type(table.id_column.data_type) }}]*pb.{{ sheetname }}Table
 {%- for col in table.table_keys %}
     kv{{ col.name | title }}Data map[{{ to_go_type(col.data_type) }}]*pb.{{ sheetname }}Table
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+    idx{{ arr.name | title }} map[{{ to_go_type(arr.data_type) }}][]*pb.{{ sheetname }}Table
 {%- endfor %}
 }
 
@@ -22,9 +25,12 @@ var {{ sheetname }}TableManagerInstance = New{{ sheetname }}TableManager()
 
 func New{{ sheetname }}TableManager() *{{ sheetname }}TableManager {
     return &{{ sheetname }}TableManager{
-        kvData: make(map[int32]*pb.{{ sheetname }}Table),
+        kvData: make(map[{{ to_go_type(table.id_column.data_type) }}]*pb.{{ sheetname }}Table),
 {%- for col in table.table_keys %}
         kv{{ col.name | title }}Data: make(map[{{ to_go_type(col.data_type) }}]*pb.{{ sheetname }}Table),
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+        idx{{ arr.name | title }}: make(map[{{ to_go_type(arr.data_type) }}][]*pb.{{ sheetname }}Table),
 {%- endfor %}
     }
 }
@@ -44,7 +50,12 @@ func (m *{{ sheetname }}TableManager) Load(configDir string) error {
     for _, row := range container.Data {
         m.kvData[row.Id] = row
 {%- for col in table.table_keys %}
-        m.kv{{ col.name | title }}Data[row.{{ col.name | capitalize }}] = row
+        m.kv{{ col.name | title }}Data[row.{{ to_go_proto_field(col.name) }}] = row
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+        for _, elem := range row.{{ to_go_proto_field(arr.name) }} {
+            m.idx{{ arr.name | title }}[elem] = append(m.idx{{ arr.name | title }}[elem], row)
+        }
 {%- endfor %}
     }
 
@@ -52,7 +63,7 @@ func (m *{{ sheetname }}TableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *{{ sheetname }}TableManager) GetById(id int32) (*pb.{{ sheetname }}Table, bool) {
+func (m *{{ sheetname }}TableManager) GetById(id {{ to_go_type(table.id_column.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
@@ -61,6 +72,12 @@ func (m *{{ sheetname }}TableManager) GetById(id int32) (*pb.{{ sheetname }}Tabl
 func (m *{{ sheetname }}TableManager) GetBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
     row, ok := m.kv{{ col.name | title }}Data[key]
     return row, ok
+}
+
+{% endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+func (m *{{ sheetname }}TableManager) GetBy{{ arr.name | title }}Index(key {{ to_go_type(arr.data_type) }}) []*pb.{{ sheetname }}Table {
+    return m.idx{{ arr.name | title }}[key]
 }
 
 {% endfor %}

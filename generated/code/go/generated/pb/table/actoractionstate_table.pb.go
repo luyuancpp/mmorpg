@@ -182,7 +182,8 @@ const file_actoractionstate_table_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12,\n" +
 	"\x05state\x18\x02 \x03(\v2\x16.ActorActionStatestateR\x05state\"G\n" +
 	"\x19ActorActionStateTableData\x12*\n" +
-	"\x04data\x18\x01 \x03(\v2\x16.ActorActionStateTableR\x04dataB\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x04data\x18\x01 \x03(\v2\x16.ActorActionStateTableR\x04dataBG\n" +
+	"\x0ecom.game.tableB\x1fActorActionStateTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_actoractionstate_table_proto_rawDescOnce sync.Once

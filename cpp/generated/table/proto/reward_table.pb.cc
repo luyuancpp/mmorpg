@@ -143,14 +143,15 @@ const char descriptor_table_protodef_reward_5ftable_2eproto[] ABSL_ATTRIBUTE_SEC
     "reward_item\030\001 \001(\r\022\024\n\014reward_count\030\002 \001(\r\""
     "8\n\013RewardTable\022\n\n\002id\030\001 \001(\r\022\035\n\006reward\030\002 \003"
     "(\0132\r.Rewardreward\"-\n\017RewardTableData\022\032\n\004"
-    "data\030\001 \003(\0132\014.RewardTableB\024Z\022generated/pb"
-    "/tableb\006proto3"
+    "data\030\001 \003(\0132\014.RewardTableB=\n\016com.game.tab"
+    "leB\025RewardTableOuterClassP\001Z\022generated/p"
+    "b/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_reward_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_reward_5ftable_2eproto = {
     false,
     false,
-    214,
+    255,
     descriptor_table_protodef_reward_5ftable_2eproto,
     "reward_table.proto",
     &descriptor_table_reward_5ftable_2eproto_once,

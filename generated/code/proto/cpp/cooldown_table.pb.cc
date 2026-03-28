@@ -107,13 +107,14 @@ const char descriptor_table_protodef_cooldown_5ftable_2eproto[] ABSL_ATTRIBUTE_S
     "\n\024cooldown_table.proto\"-\n\rCooldownTable\022"
     "\n\n\002id\030\001 \001(\r\022\020\n\010duration\030\002 \001(\r\"1\n\021Cooldow"
     "nTableData\022\034\n\004data\030\001 \003(\0132\016.CooldownTable"
-    "B\024Z\022generated/pb/tableb\006proto3"
+    "B\?\n\016com.game.tableB\027CooldownTableOuterCl"
+    "assP\001Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_cooldown_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_cooldown_5ftable_2eproto = {
     false,
     false,
-    150,
+    193,
     descriptor_table_protodef_cooldown_5ftable_2eproto,
     "cooldown_table.proto",
     &descriptor_table_cooldown_5ftable_2eproto_once,

@@ -12,14 +12,20 @@ import (
 
 type BuffTableManager struct {
     data   []*pb.BuffTable
-    kvData map[int32]*pb.BuffTable
+    kvData map[uint32]*pb.BuffTable
+    idxInterval_effect map[float64][]*pb.BuffTable
+    idxSub_buff map[uint32][]*pb.BuffTable
+    idxTarget_sub_buff map[uint32][]*pb.BuffTable
 }
 
 var BuffTableManagerInstance = NewBuffTableManager()
 
 func NewBuffTableManager() *BuffTableManager {
     return &BuffTableManager{
-        kvData: make(map[int32]*pb.BuffTable),
+        kvData: make(map[uint32]*pb.BuffTable),
+        idxInterval_effect: make(map[float64][]*pb.BuffTable),
+        idxSub_buff: make(map[uint32][]*pb.BuffTable),
+        idxTarget_sub_buff: make(map[uint32][]*pb.BuffTable),
     }
 }
 
@@ -37,14 +43,38 @@ func (m *BuffTableManager) Load(configDir string) error {
 
     for _, row := range container.Data {
         m.kvData[row.Id] = row
+        for _, elem := range row.IntervalEffect {
+            m.idxInterval_effect[elem] = append(m.idxInterval_effect[elem], row)
+        }
+        for _, elem := range row.SubBuff {
+            m.idxSub_buff[elem] = append(m.idxSub_buff[elem], row)
+        }
+        for _, elem := range row.TargetSubBuff {
+            m.idxTarget_sub_buff[elem] = append(m.idxTarget_sub_buff[elem], row)
+        }
     }
 
     m.data = container.Data
     return nil
 }
 
-func (m *BuffTableManager) GetById(id int32) (*pb.BuffTable, bool) {
+func (m *BuffTableManager) GetById(id uint32) (*pb.BuffTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
+}
+
+
+func (m *BuffTableManager) GetByInterval_effectIndex(key float64) []*pb.BuffTable {
+    return m.idxInterval_effect[key]
+}
+
+
+func (m *BuffTableManager) GetBySub_buffIndex(key uint32) []*pb.BuffTable {
+    return m.idxSub_buff[key]
+}
+
+
+func (m *BuffTableManager) GetByTarget_sub_buffIndex(key uint32) []*pb.BuffTable {
+    return m.idxTarget_sub_buff[key]
 }
 
