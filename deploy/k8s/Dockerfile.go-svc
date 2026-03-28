@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # ────────────────────────────────────────────────────────────────
 # Multi-stage Dockerfile for Go micro-services.
 #

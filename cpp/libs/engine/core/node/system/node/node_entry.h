@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef __linux__
+#include <absl/log/initialize.h>
+#else
 #include "grpc/third_party/abseil-cpp/absl/log/initialize.h"
+#endif
 #include "muduo/net/EventLoop.h"
 #include "node/system/node/simple_node.h"
 

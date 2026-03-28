@@ -59,11 +59,11 @@ EXTERNAL_LIBS = [
     "gRPC::grpc++", "gRPC::grpc++_reflection", "gRPC::grpc", "gRPC::gpr",
     "protobuf::libprotobuf",
     # muduo (from muduo-linux cmake build, no find_package)
-    "muduo_net", "muduo_base",
+    "muduo_protobuf_codec", "muduo_hiredis", "muduo_net", "muduo_base",
     # other third-party (installed to /usr/local/lib)
     "rdkafka++", "rdkafka",
-    "yaml-cpp", "hiredis",
-    "z", "ssl", "crypto",
+    "yaml-cpp", "hiredis", "curl",
+    "z", "zstd", "ssl", "crypto",
     # system
     "pthread", "dl",
 ]
@@ -124,14 +124,15 @@ def parse_vcxproj(vcxproj_file):
                             path = attrs["Include"].value.replace("\\", "/")
                             source_files.append(path)
 
-            # Include directories — take from first ItemDefinitionGroup encountered
-            if sub_node.nodeName == "ItemDefinitionGroup" and not include_dirs:
+            # Include directories — merge from ALL ItemDefinitionGroups
+            # (Debug and Release may have different paths; we need the union)
+            if sub_node.nodeName == "ItemDefinitionGroup":
                 for group in sub_node.childNodes:
                     for node in group.childNodes:
                         if node.nodeName == "AdditionalIncludeDirectories" and node.firstChild:
                             for inc in node.firstChild.data.split(";"):
                                 inc = inc.strip().replace("\\", "/")
-                                if inc and not inc.startswith("%"):
+                                if inc and not inc.startswith("%") and inc not in include_dirs:
                                     include_dirs.append(inc)
 
     return source_files, include_dirs
@@ -147,6 +148,9 @@ def transform_include_for_linux(inc):
             return None
     for old, new in INCLUDE_REPLACEMENTS:
         inc = inc.replace(old, new)
+    # Handle end-of-string: "third_party/muduo" without trailing / or ;
+    if inc.endswith("third_party/muduo"):
+        inc = inc[:-len("third_party/muduo")] + "third_party/muduo-linux"
     return inc
 
 
@@ -198,6 +202,16 @@ def write_cmake(vcxproj_dir, project_name, source_files, include_dirs, target_ty
             linux_includes.append(transformed)
     # Always include /usr/local/include for installed gRPC/protobuf headers
     linux_includes.append("/usr/local/include")
+    # Common third-party header paths that MSVC propagates from parent projects
+    # but CMake does not.  Add them globally so every target can find them.
+    for extra in [
+        "third_party/spdlog/include",
+        "third_party/entt/single_include",
+        "third_party/fmt/include",
+    ]:
+        abs_extra = root_rel + extra
+        if abs_extra not in linux_includes:
+            linux_includes.append(abs_extra)
     if linux_includes:
         lines.append("include_directories(")
         for inc in sorted(set(linux_includes)):

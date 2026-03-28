@@ -69,7 +69,6 @@ function Test-RuntimePrerequisites {
     $dockerfileFullPath = Resolve-WorkspacePath -Path $DockerfilePath
 
     $requiredPaths = @(
-        (Join-Path $runtimeRootPath "bin/centre"),
         (Join-Path $runtimeRootPath "bin/gate"),
         (Join-Path $runtimeRootPath "bin/scene"),
         (Join-Path $runtimeRootPath "bin/zoneinfo/Asia/Hong_Kong"),
@@ -88,7 +87,6 @@ function Test-RuntimePrerequisites {
     }
 
     $windowsBinaryHints = @(
-        (Join-Path $runtimeRootPath "bin/centre.exe"),
         (Join-Path $runtimeRootPath "bin/gate.exe"),
         (Join-Path $runtimeRootPath "bin/scene.exe")
     ) | Where-Object { Test-Path $_ }
