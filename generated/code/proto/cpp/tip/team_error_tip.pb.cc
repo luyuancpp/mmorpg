@@ -36,17 +36,17 @@ const char descriptor_table_protodef_team_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE
     protodesc_cold) = {
     "\n\024team_error_tip.proto*\327\003\n\nteam_error\022\021\n"
     "\rkTeam_errorOK\020\000\022\030\n\024kTeamNotInApplicants"
-    "\020K\022\021\n\rkTeamPlayerId\020L\022\024\n\020kTeamMembersFul"
-    "l\020M\022\025\n\021kTeamMemberInTeam\020N\022\030\n\024kTeamMembe"
-    "rNotInTeam\020O\022\021\n\rkTeamKickSelf\020P\022\026\n\022kTeam"
-    "KickNotLeader\020Q\022\024\n\020kTeamAppointSelf\020R\022\037\n"
-    "\033kTeamAppointLeaderNotLeader\020S\022\r\n\tkTeamF"
-    "ull\020T\022\030\n\024kTeamInApplicantList\020U\022\033\n\027kTeam"
-    "NotInApplicantList\020V\022\024\n\020kTeamListMaxSize"
-    "\020W\022\025\n\021kTeamHasNotTeamId\020X\022\031\n\025kTeamDismis"
-    "sNotLeader\020Y\022\027\n\023kTeamMemberListFull\020Z\022 \n"
-    "\034kTeamCreateTeamMaxMemberSize\020[\022\027\n\023kTeam"
-    "PlayerNotFound\020\\B\024Z\022generated/pb/tableb\006"
+    "\020L\022\021\n\rkTeamPlayerId\020M\022\024\n\020kTeamMembersFul"
+    "l\020N\022\025\n\021kTeamMemberInTeam\020O\022\030\n\024kTeamMembe"
+    "rNotInTeam\020P\022\021\n\rkTeamKickSelf\020Q\022\026\n\022kTeam"
+    "KickNotLeader\020R\022\024\n\020kTeamAppointSelf\020S\022\037\n"
+    "\033kTeamAppointLeaderNotLeader\020T\022\r\n\tkTeamF"
+    "ull\020U\022\030\n\024kTeamInApplicantList\020V\022\033\n\027kTeam"
+    "NotInApplicantList\020W\022\024\n\020kTeamListMaxSize"
+    "\020X\022\025\n\021kTeamHasNotTeamId\020Y\022\031\n\025kTeamDismis"
+    "sNotLeader\020Z\022\027\n\023kTeamMemberListFull\020[\022 \n"
+    "\034kTeamCreateTeamMaxMemberSize\020\\\022\027\n\023kTeam"
+    "PlayerNotFound\020]B\024Z\022generated/pb/tableb\006"
     "proto3"
 };
 static ::absl::once_flag descriptor_table_team_5ferror_5ftip_2eproto_once;
@@ -71,7 +71,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL team_error_descriptor
   return file_level_enum_descriptors_team_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t team_error_internal_data_[] = {
-    65536u, 96u, 0u, 0u, 268434432u, };
+    65536u, 96u, 0u, 0u, 536868864u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

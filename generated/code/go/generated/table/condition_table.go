@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type ConditionTableManager struct {
-    data []*pb.ConditionTable
+    data   []*pb.ConditionTable
     kvData map[int32]*pb.ConditionTable
 }
+
+var ConditionTableManagerInstance = NewConditionTableManager()
 
 func NewConditionTableManager() *ConditionTableManager {
     return &ConditionTableManager{
@@ -24,12 +27,12 @@ func (m *ConditionTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "condition.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.ConditionTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *ConditionTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *ConditionTableManager) GetById(id int32) (*pb.Condition, bool) {
+func (m *ConditionTableManager) GetById(id int32) (*pb.ConditionTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

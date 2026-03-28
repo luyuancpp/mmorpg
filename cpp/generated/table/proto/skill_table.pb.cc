@@ -110,10 +110,10 @@ inline constexpr SkillTable::Impl_::Impl_(
         _skill_type_cached_byte_size_{0},
         targeting_mode_{},
         _targeting_mode_cached_byte_size_{0},
-        requireditem_{},
-        requiredresource_{},
         effect_{},
         _effect_cached_byte_size_{0},
+        requireditem_{},
+        requiredresource_{},
         requestresource_{},
         damage_(
             &::google::protobuf::internal::fixed_address_empty_string,
@@ -218,14 +218,11 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.castpoint_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.recoverytime_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.immediately_),
-        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requireditem_),
-        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requiredresource_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.effect_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.channelthink_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.channelfinish_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.thinkinterval_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.channeltime_),
-        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requestresource_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.range_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.max_range_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.min_range_),
@@ -233,6 +230,9 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.required_status_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.cooldown_id_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.damage_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requireditem_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requiredresource_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requestresource_),
         1,
         ~0u,
         ~0u,
@@ -242,13 +242,10 @@ const ::uint32_t
         6,
         5,
         ~0u,
-        ~0u,
-        ~0u,
         7,
         8,
         9,
         10,
-        ~0u,
         11,
         12,
         13,
@@ -256,6 +253,9 @@ const ::uint32_t
         15,
         16,
         0,
+        ~0u,
+        ~0u,
+        ~0u,
         0x000, // bitmap
         PROTOBUF_FIELD_OFFSET(::SkillTableData, _impl_.data_),
 };
@@ -288,16 +288,16 @@ const char descriptor_table_protodef_skill_5ftable_2eproto[] ABSL_ATTRIBUTE_SECT
     "eting_mode\030\003 \003(\r\022\025\n\rrquest_target\030\004 \001(\r\022"
     "\025\n\rtarget_status\030\005 \001(\r\022\021\n\tcastpoint\030\006 \001("
     "\001\022\024\n\014recoverytime\030\007 \001(\001\022\023\n\013immediately\030\010"
-    " \001(\r\022(\n\014requireditem\030\t \003(\0132\022.Skillrequir"
-    "editem\0220\n\020requiredresource\030\n \003(\0132\026.Skill"
-    "requiredresource\022\016\n\006effect\030\013 \003(\r\022\024\n\014chan"
-    "nelthink\030\014 \001(\r\022\025\n\rchannelfinish\030\r \001(\r\022\025\n"
-    "\rthinkinterval\030\016 \001(\r\022\023\n\013channeltime\030\017 \001("
-    "\r\022.\n\017requestresource\030\020 \003(\0132\025.Skillreques"
-    "tresource\022\r\n\005range\030\021 \001(\001\022\021\n\tmax_range\030\022 "
-    "\001(\001\022\021\n\tmin_range\030\023 \001(\001\022\023\n\013self_status\030\024 "
-    "\001(\r\022\027\n\017required_status\030\025 \001(\r\022\023\n\013cooldown"
-    "_id\030\026 \001(\r\022\016\n\006damage\030\027 \001(\t\"+\n\016SkillTableD"
+    " \001(\r\022\016\n\006effect\030\t \003(\r\022\024\n\014channelthink\030\n \001"
+    "(\r\022\025\n\rchannelfinish\030\013 \001(\r\022\025\n\rthinkinterv"
+    "al\030\014 \001(\r\022\023\n\013channeltime\030\r \001(\r\022\r\n\005range\030\016"
+    " \001(\001\022\021\n\tmax_range\030\017 \001(\001\022\021\n\tmin_range\030\020 \001"
+    "(\001\022\023\n\013self_status\030\021 \001(\r\022\027\n\017required_stat"
+    "us\030\022 \001(\r\022\023\n\013cooldown_id\030\023 \001(\r\022\016\n\006damage\030"
+    "\024 \001(\t\022(\n\014requireditem\030\025 \003(\0132\022.Skillrequi"
+    "reditem\0220\n\020requiredresource\030\026 \003(\0132\026.Skil"
+    "lrequiredresource\022.\n\017requestresource\030\027 \003"
+    "(\0132\025.Skillrequestresource\"+\n\016SkillTableD"
     "ata\022\031\n\004data\030\001 \003(\0132\013.SkillTableB\024Z\022genera"
     "ted/pb/tableb\006proto3"
 };
@@ -1187,10 +1187,10 @@ PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
         _skill_type_cached_byte_size_{0},
         targeting_mode_{visibility, arena, from.targeting_mode_},
         _targeting_mode_cached_byte_size_{0},
-        requireditem_{visibility, arena, from.requireditem_},
-        requiredresource_{visibility, arena, from.requiredresource_},
         effect_{visibility, arena, from.effect_},
         _effect_cached_byte_size_{0},
+        requireditem_{visibility, arena, from.requireditem_},
+        requiredresource_{visibility, arena, from.requiredresource_},
         requestresource_{visibility, arena, from.requestresource_},
         damage_(arena, from.damage_) {}
 
@@ -1225,10 +1225,10 @@ PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
         _skill_type_cached_byte_size_{0},
         targeting_mode_{visibility, arena},
         _targeting_mode_cached_byte_size_{0},
-        requireditem_{visibility, arena},
-        requiredresource_{visibility, arena},
         effect_{visibility, arena},
         _effect_cached_byte_size_{0},
+        requireditem_{visibility, arena},
+        requiredresource_{visibility, arena},
         requestresource_{visibility, arena},
         damage_(arena) {}
 
@@ -1268,16 +1268,16 @@ constexpr auto SkillTable::InternalNewImpl_() {
           decltype(SkillTable::_impl_.targeting_mode_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
+      PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_) +
+          decltype(SkillTable::_impl_.effect_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
       PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requireditem_) +
           decltype(SkillTable::_impl_.requireditem_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
       PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requiredresource_) +
           decltype(SkillTable::_impl_.requiredresource_)::
-              InternalGetArenaOffset(
-                  ::google::protobuf::Message::internal_visibility()),
-      PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_) +
-          decltype(SkillTable::_impl_.effect_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
       PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_) +
@@ -1372,51 +1372,51 @@ SkillTable::_table_ = {
     // uint32 immediately = 8;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.immediately_), 5>(),
      {64, 5, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediately_)}},
-    // repeated .Skillrequireditem requireditem = 9;
-    {::_pbi::TcParser::FastMtR1,
-     {74, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requireditem_)}},
-    // repeated .Skillrequiredresource requiredresource = 10;
-    {::_pbi::TcParser::FastMtR1,
-     {82, 63, 1, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requiredresource_)}},
-    // repeated uint32 effect = 11;
+    // repeated uint32 effect = 9;
     {::_pbi::TcParser::FastV32P1,
-     {90, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_)}},
-    // uint32 channelthink = 12;
+     {74, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_)}},
+    // uint32 channelthink = 10;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channelthink_), 7>(),
-     {96, 7, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_)}},
-    // uint32 channelfinish = 13;
+     {80, 7, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_)}},
+    // uint32 channelfinish = 11;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channelfinish_), 8>(),
-     {104, 8, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_)}},
-    // uint32 thinkinterval = 14;
+     {88, 8, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_)}},
+    // uint32 thinkinterval = 12;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.thinkinterval_), 9>(),
-     {112, 9, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_)}},
-    // uint32 channeltime = 15;
+     {96, 9, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_)}},
+    // uint32 channeltime = 13;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channeltime_), 10>(),
-     {120, 10, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_)}},
-    // repeated .Skillrequestresource requestresource = 16;
-    {::_pbi::TcParser::FastMtR2,
-     {386, 63, 2, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_)}},
-    // double range = 17;
+     {104, 10, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_)}},
+    // double range = 14;
+    {::_pbi::TcParser::FastF64S1,
+     {113, 11, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_)}},
+    // double max_range = 15;
+    {::_pbi::TcParser::FastF64S1,
+     {121, 12, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_)}},
+    // double min_range = 16;
     {::_pbi::TcParser::FastF64S2,
-     {393, 11, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_)}},
-    // double max_range = 18;
-    {::_pbi::TcParser::FastF64S2,
-     {401, 12, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_)}},
-    // double min_range = 19;
-    {::_pbi::TcParser::FastF64S2,
-     {409, 13, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.min_range_)}},
-    // uint32 self_status = 20;
+     {385, 13, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.min_range_)}},
+    // uint32 self_status = 17;
     {::_pbi::TcParser::FastV32S2,
-     {416, 14, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_)}},
-    // uint32 required_status = 21;
+     {392, 14, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_)}},
+    // uint32 required_status = 18;
     {::_pbi::TcParser::FastV32S2,
-     {424, 15, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_)}},
-    // uint32 cooldown_id = 22;
+     {400, 15, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_)}},
+    // uint32 cooldown_id = 19;
     {::_pbi::TcParser::FastV32S2,
-     {432, 16, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)}},
-    // string damage = 23;
+     {408, 16, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)}},
+    // string damage = 20;
     {::_pbi::TcParser::FastUS2,
-     {442, 0, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_)}},
+     {418, 0, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_)}},
+    // repeated .Skillrequireditem requireditem = 21;
+    {::_pbi::TcParser::FastMtR2,
+     {426, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requireditem_)}},
+    // repeated .Skillrequiredresource requiredresource = 22;
+    {::_pbi::TcParser::FastMtR2,
+     {434, 63, 1, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requiredresource_)}},
+    // repeated .Skillrequestresource requestresource = 23;
+    {::_pbi::TcParser::FastMtR2,
+     {442, 63, 2, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -1452,51 +1452,51 @@ SkillTable::_table_ = {
     // uint32 immediately = 8;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediately_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // repeated .Skillrequireditem requireditem = 9;
-    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requireditem_), -1, 0,
-    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // repeated .Skillrequiredresource requiredresource = 10;
-    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requiredresource_), -1, 1,
-    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // repeated uint32 effect = 11;
+    // repeated uint32 effect = 9;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
-    // uint32 channelthink = 12;
+    // uint32 channelthink = 10;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_), _Internal::kHasBitsOffset + 7, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 channelfinish = 13;
+    // uint32 channelfinish = 11;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_), _Internal::kHasBitsOffset + 8, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 thinkinterval = 14;
+    // uint32 thinkinterval = 12;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_), _Internal::kHasBitsOffset + 9, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 channeltime = 15;
+    // uint32 channeltime = 13;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_), _Internal::kHasBitsOffset + 10, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // repeated .Skillrequestresource requestresource = 16;
-    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_), -1, 2,
-    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // double range = 17;
+    // double range = 14;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_), _Internal::kHasBitsOffset + 11, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
-    // double max_range = 18;
+    // double max_range = 15;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_), _Internal::kHasBitsOffset + 12, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
-    // double min_range = 19;
+    // double min_range = 16;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.min_range_), _Internal::kHasBitsOffset + 13, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
-    // uint32 self_status = 20;
+    // uint32 self_status = 17;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_), _Internal::kHasBitsOffset + 14, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 required_status = 21;
+    // uint32 required_status = 18;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_), _Internal::kHasBitsOffset + 15, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 cooldown_id = 22;
+    // uint32 cooldown_id = 19;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_), _Internal::kHasBitsOffset + 16, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // string damage = 23;
+    // string damage = 20;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // repeated .Skillrequireditem requireditem = 21;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requireditem_), -1, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    // repeated .Skillrequiredresource requiredresource = 22;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requiredresource_), -1, 1,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    // repeated .Skillrequestresource requestresource = 23;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_), -1, 2,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::Skillrequireditem>()},
@@ -1504,7 +1504,7 @@ SkillTable::_table_ = {
       {::_pbi::TcParser::GetTable<::Skillrequestresource>()},
   }},
   {{
-    "\12\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6"
+    "\12\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0\0"
     "SkillTable"
     "damage"
   }},
@@ -1518,9 +1518,9 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
 
   _impl_.skill_type_.Clear();
   _impl_.targeting_mode_.Clear();
+  _impl_.effect_.Clear();
   _impl_.requireditem_.Clear();
   _impl_.requiredresource_.Clear();
-  _impl_.effect_.Clear();
   _impl_.requestresource_.Clear();
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000001u) != 0) {
@@ -1628,146 +1628,146 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
     }
   }
 
-  // repeated .Skillrequireditem requireditem = 9;
+  // repeated uint32 effect = 9;
+  {
+    int byte_size = this_._impl_._effect_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteUInt32Packed(
+          9, this_._internal_effect(), byte_size, target);
+    }
+  }
+
+  // uint32 channelthink = 10;
+  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
+    if (this_._internal_channelthink() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          10, this_._internal_channelthink(), target);
+    }
+  }
+
+  // uint32 channelfinish = 11;
+  if ((this_._impl_._has_bits_[0] & 0x00000100u) != 0) {
+    if (this_._internal_channelfinish() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          11, this_._internal_channelfinish(), target);
+    }
+  }
+
+  // uint32 thinkinterval = 12;
+  if ((this_._impl_._has_bits_[0] & 0x00000200u) != 0) {
+    if (this_._internal_thinkinterval() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          12, this_._internal_thinkinterval(), target);
+    }
+  }
+
+  // uint32 channeltime = 13;
+  if ((this_._impl_._has_bits_[0] & 0x00000400u) != 0) {
+    if (this_._internal_channeltime() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          13, this_._internal_channeltime(), target);
+    }
+  }
+
+  // double range = 14;
+  if ((this_._impl_._has_bits_[0] & 0x00000800u) != 0) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_range()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          14, this_._internal_range(), target);
+    }
+  }
+
+  // double max_range = 15;
+  if ((this_._impl_._has_bits_[0] & 0x00001000u) != 0) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_max_range()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          15, this_._internal_max_range(), target);
+    }
+  }
+
+  // double min_range = 16;
+  if ((this_._impl_._has_bits_[0] & 0x00002000u) != 0) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_min_range()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          16, this_._internal_min_range(), target);
+    }
+  }
+
+  // uint32 self_status = 17;
+  if ((this_._impl_._has_bits_[0] & 0x00004000u) != 0) {
+    if (this_._internal_self_status() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          17, this_._internal_self_status(), target);
+    }
+  }
+
+  // uint32 required_status = 18;
+  if ((this_._impl_._has_bits_[0] & 0x00008000u) != 0) {
+    if (this_._internal_required_status() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          18, this_._internal_required_status(), target);
+    }
+  }
+
+  // uint32 cooldown_id = 19;
+  if ((this_._impl_._has_bits_[0] & 0x00010000u) != 0) {
+    if (this_._internal_cooldown_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          19, this_._internal_cooldown_id(), target);
+    }
+  }
+
+  // string damage = 20;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_damage().empty()) {
+      const ::std::string& _s = this_._internal_damage();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillTable.damage");
+      target = stream->WriteStringMaybeAliased(20, _s, target);
+    }
+  }
+
+  // repeated .Skillrequireditem requireditem = 21;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this_._internal_requireditem_size());
        i < n; i++) {
     const auto& repfield = this_._internal_requireditem().Get(i);
     target =
         ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-            9, repfield, repfield.GetCachedSize(),
+            21, repfield, repfield.GetCachedSize(),
             target, stream);
   }
 
-  // repeated .Skillrequiredresource requiredresource = 10;
+  // repeated .Skillrequiredresource requiredresource = 22;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this_._internal_requiredresource_size());
        i < n; i++) {
     const auto& repfield = this_._internal_requiredresource().Get(i);
     target =
         ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-            10, repfield, repfield.GetCachedSize(),
+            22, repfield, repfield.GetCachedSize(),
             target, stream);
   }
 
-  // repeated uint32 effect = 11;
-  {
-    int byte_size = this_._impl_._effect_cached_byte_size_.Get();
-    if (byte_size > 0) {
-      target = stream->WriteUInt32Packed(
-          11, this_._internal_effect(), byte_size, target);
-    }
-  }
-
-  // uint32 channelthink = 12;
-  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
-    if (this_._internal_channelthink() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          12, this_._internal_channelthink(), target);
-    }
-  }
-
-  // uint32 channelfinish = 13;
-  if ((this_._impl_._has_bits_[0] & 0x00000100u) != 0) {
-    if (this_._internal_channelfinish() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          13, this_._internal_channelfinish(), target);
-    }
-  }
-
-  // uint32 thinkinterval = 14;
-  if ((this_._impl_._has_bits_[0] & 0x00000200u) != 0) {
-    if (this_._internal_thinkinterval() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          14, this_._internal_thinkinterval(), target);
-    }
-  }
-
-  // uint32 channeltime = 15;
-  if ((this_._impl_._has_bits_[0] & 0x00000400u) != 0) {
-    if (this_._internal_channeltime() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          15, this_._internal_channeltime(), target);
-    }
-  }
-
-  // repeated .Skillrequestresource requestresource = 16;
+  // repeated .Skillrequestresource requestresource = 23;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this_._internal_requestresource_size());
        i < n; i++) {
     const auto& repfield = this_._internal_requestresource().Get(i);
     target =
         ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-            16, repfield, repfield.GetCachedSize(),
+            23, repfield, repfield.GetCachedSize(),
             target, stream);
-  }
-
-  // double range = 17;
-  if ((this_._impl_._has_bits_[0] & 0x00000800u) != 0) {
-    if (::absl::bit_cast<::uint64_t>(this_._internal_range()) != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-          17, this_._internal_range(), target);
-    }
-  }
-
-  // double max_range = 18;
-  if ((this_._impl_._has_bits_[0] & 0x00001000u) != 0) {
-    if (::absl::bit_cast<::uint64_t>(this_._internal_max_range()) != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-          18, this_._internal_max_range(), target);
-    }
-  }
-
-  // double min_range = 19;
-  if ((this_._impl_._has_bits_[0] & 0x00002000u) != 0) {
-    if (::absl::bit_cast<::uint64_t>(this_._internal_min_range()) != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-          19, this_._internal_min_range(), target);
-    }
-  }
-
-  // uint32 self_status = 20;
-  if ((this_._impl_._has_bits_[0] & 0x00004000u) != 0) {
-    if (this_._internal_self_status() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          20, this_._internal_self_status(), target);
-    }
-  }
-
-  // uint32 required_status = 21;
-  if ((this_._impl_._has_bits_[0] & 0x00008000u) != 0) {
-    if (this_._internal_required_status() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          21, this_._internal_required_status(), target);
-    }
-  }
-
-  // uint32 cooldown_id = 22;
-  if ((this_._impl_._has_bits_[0] & 0x00010000u) != 0) {
-    if (this_._internal_cooldown_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          22, this_._internal_cooldown_id(), target);
-    }
-  }
-
-  // string damage = 23;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
-    if (!this_._internal_damage().empty()) {
-      const ::std::string& _s = this_._internal_damage();
-      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillTable.damage");
-      target = stream->WriteStringMaybeAliased(23, _s, target);
-    }
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -1809,28 +1809,28 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
               this_._internal_targeting_mode(), 1,
               this_._impl_._targeting_mode_cached_byte_size_);
     }
-    // repeated .Skillrequireditem requireditem = 9;
-    {
-      total_size += 1UL * this_._internal_requireditem_size();
-      for (const auto& msg : this_._internal_requireditem()) {
-        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
-      }
-    }
-    // repeated .Skillrequiredresource requiredresource = 10;
-    {
-      total_size += 1UL * this_._internal_requiredresource_size();
-      for (const auto& msg : this_._internal_requiredresource()) {
-        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
-      }
-    }
-    // repeated uint32 effect = 11;
+    // repeated uint32 effect = 9;
     {
       total_size +=
           ::_pbi::WireFormatLite::UInt32SizeWithPackedTagSize(
               this_._internal_effect(), 1,
               this_._impl_._effect_cached_byte_size_);
     }
-    // repeated .Skillrequestresource requestresource = 16;
+    // repeated .Skillrequireditem requireditem = 21;
+    {
+      total_size += 2UL * this_._internal_requireditem_size();
+      for (const auto& msg : this_._internal_requireditem()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // repeated .Skillrequiredresource requiredresource = 22;
+    {
+      total_size += 2UL * this_._internal_requiredresource_size();
+      for (const auto& msg : this_._internal_requiredresource()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // repeated .Skillrequestresource requestresource = 23;
     {
       total_size += 2UL * this_._internal_requestresource_size();
       for (const auto& msg : this_._internal_requestresource()) {
@@ -1840,7 +1840,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x000000ffu) != 0) {
-    // string damage = 23;
+    // string damage = 20;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_damage().empty()) {
         total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
@@ -1887,7 +1887,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
         total_size += 9;
       }
     }
-    // uint32 channelthink = 12;
+    // uint32 channelthink = 10;
     if ((cached_has_bits & 0x00000080u) != 0) {
       if (this_._internal_channelthink() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
@@ -1896,53 +1896,53 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
     }
   }
   if ((cached_has_bits & 0x0000ff00u) != 0) {
-    // uint32 channelfinish = 13;
+    // uint32 channelfinish = 11;
     if ((cached_has_bits & 0x00000100u) != 0) {
       if (this_._internal_channelfinish() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_channelfinish());
       }
     }
-    // uint32 thinkinterval = 14;
+    // uint32 thinkinterval = 12;
     if ((cached_has_bits & 0x00000200u) != 0) {
       if (this_._internal_thinkinterval() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_thinkinterval());
       }
     }
-    // uint32 channeltime = 15;
+    // uint32 channeltime = 13;
     if ((cached_has_bits & 0x00000400u) != 0) {
       if (this_._internal_channeltime() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_channeltime());
       }
     }
-    // double range = 17;
+    // double range = 14;
     if ((cached_has_bits & 0x00000800u) != 0) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_range()) != 0) {
-        total_size += 10;
+        total_size += 9;
       }
     }
-    // double max_range = 18;
+    // double max_range = 15;
     if ((cached_has_bits & 0x00001000u) != 0) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_max_range()) != 0) {
-        total_size += 10;
+        total_size += 9;
       }
     }
-    // double min_range = 19;
+    // double min_range = 16;
     if ((cached_has_bits & 0x00002000u) != 0) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_min_range()) != 0) {
         total_size += 10;
       }
     }
-    // uint32 self_status = 20;
+    // uint32 self_status = 17;
     if ((cached_has_bits & 0x00004000u) != 0) {
       if (this_._internal_self_status() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                         this_._internal_self_status());
       }
     }
-    // uint32 required_status = 21;
+    // uint32 required_status = 18;
     if ((cached_has_bits & 0x00008000u) != 0) {
       if (this_._internal_required_status() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
@@ -1951,7 +1951,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
     }
   }
    {
-    // uint32 cooldown_id = 22;
+    // uint32 cooldown_id = 19;
     if ((cached_has_bits & 0x00010000u) != 0) {
       if (this_._internal_cooldown_id() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
@@ -1973,11 +1973,11 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
 
   _this->_internal_mutable_skill_type()->MergeFrom(from._internal_skill_type());
   _this->_internal_mutable_targeting_mode()->MergeFrom(from._internal_targeting_mode());
+  _this->_internal_mutable_effect()->MergeFrom(from._internal_effect());
   _this->_internal_mutable_requireditem()->MergeFrom(
       from._internal_requireditem());
   _this->_internal_mutable_requiredresource()->MergeFrom(
       from._internal_requiredresource());
-  _this->_internal_mutable_effect()->MergeFrom(from._internal_effect());
   _this->_internal_mutable_requestresource()->MergeFrom(
       from._internal_requestresource());
   cached_has_bits = from._impl_._has_bits_[0];
@@ -2094,9 +2094,9 @@ void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.skill_type_.InternalSwap(&other->_impl_.skill_type_);
   _impl_.targeting_mode_.InternalSwap(&other->_impl_.targeting_mode_);
+  _impl_.effect_.InternalSwap(&other->_impl_.effect_);
   _impl_.requireditem_.InternalSwap(&other->_impl_.requireditem_);
   _impl_.requiredresource_.InternalSwap(&other->_impl_.requiredresource_);
-  _impl_.effect_.InternalSwap(&other->_impl_.effect_);
   _impl_.requestresource_.InternalSwap(&other->_impl_.requestresource_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.damage_, &other->_impl_.damage_, arena);
   ::google::protobuf::internal::memswap<

@@ -1,5 +1,7 @@
+
 #pragma once
 #include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
@@ -8,8 +10,6 @@
 class SkillPermissionTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SkillPermissionTable*>;
-
-    // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
     static SkillPermissionTableManager& Instance() {
@@ -25,20 +25,24 @@ public:
 
     void Load();
 
-    // Setter for the success callback
     void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
-        loadSuccessCallback_ = callback;//multi thread
+        loadSuccessCallback_ = callback;
     }
 
-    void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
+    void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    
+
+
+
+
+
 
 private:
-    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
+    LoadSuccessCallback loadSuccessCallback_;
     SkillPermissionTableData data_;
     KeyValueDataType kv_data_;
-    
+
+
 };
 
 inline const SkillPermissionTableData& GetSkillPermissionAllTable() {
@@ -47,7 +51,7 @@ inline const SkillPermissionTableData& GetSkillPermissionAllTable() {
 
 #define FetchAndValidateSkillPermissionTable(tableId) \
     const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().GetTable(tableId); \
-    do { if (!( skillPermissionTable )) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return fetchResult; } } while(0)
+    do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomSkillPermissionTable(prefix, tableId) \
     const auto [prefix##SkillPermissionTable, prefix##fetchResult] = SkillPermissionTableManager::Instance().GetTable(tableId); \
@@ -55,16 +59,16 @@ inline const SkillPermissionTableData& GetSkillPermissionAllTable() {
 
 #define FetchSkillPermissionTableOrReturnCustom(tableId, customReturnValue) \
     const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().GetTable(tableId); \
-    do { if (!( skillPermissionTable )) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchSkillPermissionTableOrReturnVoid(tableId) \
     const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().GetTable(tableId); \
-    do { if (!( skillPermissionTable )) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return; } } while(0)
+    do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchSkillPermissionTableOrContinue(tableId) \
     const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().GetTable(tableId); \
-    do { if (!( skillPermissionTable )) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; continue; } } while(0)
+    do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchSkillPermissionTableOrReturnFalse(tableId) \
     const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().GetTable(tableId); \
-    do { if (!( skillPermissionTable )) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return false; } } while(0)
+    do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return false; } } while(0)

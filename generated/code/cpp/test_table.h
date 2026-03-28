@@ -1,5 +1,7 @@
+
 #pragma once
 #include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
@@ -8,8 +10,6 @@
 class TestTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const TestTable*>;
-
-    // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
     static TestTableManager& Instance() {
@@ -25,20 +25,24 @@ public:
 
     void Load();
 
-    // Setter for the success callback
     void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
-        loadSuccessCallback_ = callback;//multi thread
+        loadSuccessCallback_ = callback;
     }
 
-    void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
+    void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    
+
+
+
+
+
 
 private:
-    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
+    LoadSuccessCallback loadSuccessCallback_;
     TestTableData data_;
     KeyValueDataType kv_data_;
-    
+
+
 };
 
 inline const TestTableData& GetTestAllTable() {
@@ -47,7 +51,7 @@ inline const TestTableData& GetTestAllTable() {
 
 #define FetchAndValidateTestTable(tableId) \
     const auto [testTable, fetchResult] = TestTableManager::Instance().GetTable(tableId); \
-    do { if (!( testTable )) { LOG_ERROR << "Test table not found for ID: " << tableId; return fetchResult; } } while(0)
+    do { if (!(testTable)) { LOG_ERROR << "Test table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomTestTable(prefix, tableId) \
     const auto [prefix##TestTable, prefix##fetchResult] = TestTableManager::Instance().GetTable(tableId); \
@@ -55,16 +59,16 @@ inline const TestTableData& GetTestAllTable() {
 
 #define FetchTestTableOrReturnCustom(tableId, customReturnValue) \
     const auto [testTable, fetchResult] = TestTableManager::Instance().GetTable(tableId); \
-    do { if (!( testTable )) { LOG_ERROR << "Test table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    do { if (!(testTable)) { LOG_ERROR << "Test table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchTestTableOrReturnVoid(tableId) \
     const auto [testTable, fetchResult] = TestTableManager::Instance().GetTable(tableId); \
-    do { if (!( testTable )) { LOG_ERROR << "Test table not found for ID: " << tableId; return; } } while(0)
+    do { if (!(testTable)) { LOG_ERROR << "Test table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchTestTableOrContinue(tableId) \
     const auto [testTable, fetchResult] = TestTableManager::Instance().GetTable(tableId); \
-    do { if (!( testTable )) { LOG_ERROR << "Test table not found for ID: " << tableId; continue; } } while(0)
+    do { if (!(testTable)) { LOG_ERROR << "Test table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchTestTableOrReturnFalse(tableId) \
     const auto [testTable, fetchResult] = TestTableManager::Instance().GetTable(tableId); \
-    do { if (!( testTable )) { LOG_ERROR << "Test table not found for ID: " << tableId; return false; } } while(0)
+    do { if (!(testTable)) { LOG_ERROR << "Test table not found for ID: " << tableId; return false; } } while(0)

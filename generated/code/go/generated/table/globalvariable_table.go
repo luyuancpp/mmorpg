@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type GlobalVariableTableManager struct {
-    data []*pb.GlobalVariableTable
+    data   []*pb.GlobalVariableTable
     kvData map[int32]*pb.GlobalVariableTable
 }
+
+var GlobalVariableTableManagerInstance = NewGlobalVariableTableManager()
 
 func NewGlobalVariableTableManager() *GlobalVariableTableManager {
     return &GlobalVariableTableManager{
@@ -24,12 +27,12 @@ func (m *GlobalVariableTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "globalvariable.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.GlobalVariableTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *GlobalVariableTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *GlobalVariableTableManager) GetById(id int32) (*pb.GlobalVariable, bool) {
+func (m *GlobalVariableTableManager) GetById(id int32) (*pb.GlobalVariableTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

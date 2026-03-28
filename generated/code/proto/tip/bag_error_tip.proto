@@ -1,39 +1,39 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum bag_error {
-
   kBag_errorOK = 0;
 
-  kBagDeleteItemFindGuid = 100;
+  kBagDeleteItemFindGuid = 101;
 
-  kBagDeleteItemAlreadyHasGuid = 101;
+  kBagDeleteItemAlreadyHasGuid = 102;
 
-  kBagAddItemHasNotBaseComponent = 102;
+  kBagAddItemHasNotBaseComponent = 103;
 
-  kBagAddItemInvalidGuid = 103;
+  kBagAddItemInvalidGuid = 104;
 
-  kBagAddItemInvalidParam = 104;
+  kBagAddItemInvalidParam = 105;
 
-  kBagAddItemBagFull = 105;
+  kBagAddItemBagFull = 106;
 
-  kBagItemNotStacked = 106;
+  kBagItemNotStacked = 107;
 
-  kBagInsufficientItems = 107;
+  kBagInsufficientItems = 108;
 
-  kBagDelItemPos = 108;
+  kBagDelItemPos = 109;
 
-  kBagDelItemConfig = 109;
+  kBagDelItemConfig = 110;
 
-  kBagDelItemGuid = 110;
+  kBagDelItemGuid = 111;
 
-  kBagDelItemFindItem = 111;
+  kBagDelItemFindItem = 112;
 
-  kBagDelItemSize = 112;
+  kBagDelItemSize = 113;
 
-  kBagItemDeletionSizeMismatch = 113;
+  kBagItemDeletionSizeMismatch = 114;
 
-  kBagInsufficientBagSpace = 114;
+  kBagInsufficientBagSpace = 115;
 
 };

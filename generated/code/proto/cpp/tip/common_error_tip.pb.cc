@@ -34,27 +34,27 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
     file_default_instances = nullptr;
 const char descriptor_table_protodef_common_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\026common_error_tip.proto*\375\003\n\014common_erro"
+    "\n\026common_error_tip.proto*\202\004\n\014common_erro"
     "r\022\023\n\017kCommon_errorOK\020\000\022\014\n\010kSuccess\020\001\022\023\n\017"
     "kInvalidTableId\020\002\022\025\n\021kInvalidTableData\020\003"
     "\022\027\n\023kServiceUnavailable\020\004\022\021\n\rkEntityIsNu"
-    "ll\020\005\022\025\n\021kInvalidParameter\020\006\022\022\n\016kServerCr"
-    "ashed\020\007\022\024\n\020kIndexOutOfRange\020\010\022\026\n\022kRateLi"
-    "mitExceeded\020\t\022\030\n\024kThisEntityIsInvalid\020\n\022"
-    "\030\n\024kMessageSizeExceeded\020\013\022\024\n\020kSessionNot"
-    "Found\020\014\022\034\n\030kPlayerNotFoundInSession\020\r\022\026\n"
-    "\022kMessageIdNotFound\020\016\022\035\n\031kRequestMessage"
-    "ParseError\020\017\022\037\n\033kArraySizeTooLargeInMess"
-    "age\020\020\022\036\n\032kResponseMessageParseError\020\021\022\033\n"
-    "\027kNegativeValueInMessage\020\022\022\034\n\030kFailedToR"
-    "egisterTheNode\020\023B\024Z\022generated/pb/tableb\006"
-    "proto3"
+    "ll\020\005\022\025\n\021kInvalidParameter\020\006\022\027\n\023kFeatureU"
+    "navailable\020\007\022\024\n\020kIndexOutOfRange\020\010\022\026\n\022kR"
+    "ateLimitExceeded\020\t\022\030\n\024kThisEntityIsInval"
+    "id\020\n\022\030\n\024kMessageSizeExceeded\020\013\022\024\n\020kSessi"
+    "onNotFound\020\014\022\034\n\030kPlayerNotFoundInSession"
+    "\020\r\022\026\n\022kMessageIdNotFound\020\016\022\035\n\031kRequestMe"
+    "ssageParseError\020\017\022\037\n\033kArraySizeTooLargeI"
+    "nMessage\020\020\022\036\n\032kResponseMessageParseError"
+    "\020\021\022\033\n\027kNegativeValueInMessage\020\022\022\034\n\030kFail"
+    "edToRegisterTheNode\020\023B\024Z\022generated/pb/ta"
+    "bleb\006proto3"
 };
 static ::absl::once_flag descriptor_table_common_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_common_5ferror_5ftip_2eproto = {
     false,
     false,
-    566,
+    571,
     descriptor_table_protodef_common_5ferror_5ftip_2eproto,
     "common_error_tip.proto",
     &descriptor_table_common_5ferror_5ftip_2eproto_once,

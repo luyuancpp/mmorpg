@@ -1,13 +1,13 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum buff_error {
-
   kBuff_errorOK = 0;
 
-  kBuffMaxBuffStack = 122;
+  kBuffMaxBuffStack = 123;
 
-  kBuffTargetImmuneToBuff = 123;
+  kBuffTargetImmuneToBuff = 124;
 
 };

@@ -68,7 +68,7 @@ enum common_error : int {
   kServiceUnavailable = 4,
   kEntityIsNull = 5,
   kInvalidParameter = 6,
-  kServerCrashed = 7,
+  kFeatureUnavailable = 7,
   kIndexOutOfRange = 8,
   kRateLimitExceeded = 9,
   kThisEntityIsInvalid = 10,

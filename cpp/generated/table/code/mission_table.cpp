@@ -1,3 +1,4 @@
+
 #include "google/protobuf/util/json_util.h"
 #include "core/utils/file/file2string.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -18,21 +19,23 @@ void MissionTableManager::Load() {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
+
 }
 
 std::pair<const MissionTable*, uint32_t> MissionTableManager::GetTable(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Mission table not found for ID: " << tableId;
-        return {nullptr, kInvalidTableId };
+        return {nullptr, kInvalidTableId};
     }
-    return {it->second, kSuccess };
+    return {it->second, kSuccess};
 }
 
 std::pair<const MissionTable*, uint32_t> MissionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        return {nullptr, kInvalidTableId };
+        return {nullptr, kInvalidTableId};
     }
-    return {it->second, kSuccess };
+    return {it->second, kSuccess};
 }
+

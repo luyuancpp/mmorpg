@@ -1,5 +1,7 @@
+
 #pragma once
 #include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
@@ -8,8 +10,6 @@
 class MonsterBaseTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const MonsterBaseTable*>;
-
-    // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
     static MonsterBaseTableManager& Instance() {
@@ -25,20 +25,24 @@ public:
 
     void Load();
 
-    // Setter for the success callback
     void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
-        loadSuccessCallback_ = callback;//multi thread
+        loadSuccessCallback_ = callback;
     }
 
-    void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
+    void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    
+
+
+
+
+
 
 private:
-    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
+    LoadSuccessCallback loadSuccessCallback_;
     MonsterBaseTableData data_;
     KeyValueDataType kv_data_;
-    
+
+
 };
 
 inline const MonsterBaseTableData& GetMonsterBaseAllTable() {
@@ -47,7 +51,7 @@ inline const MonsterBaseTableData& GetMonsterBaseAllTable() {
 
 #define FetchAndValidateMonsterBaseTable(tableId) \
     const auto [monsterBaseTable, fetchResult] = MonsterBaseTableManager::Instance().GetTable(tableId); \
-    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return fetchResult; } } while(0)
+    do { if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMonsterBaseTable(prefix, tableId) \
     const auto [prefix##MonsterBaseTable, prefix##fetchResult] = MonsterBaseTableManager::Instance().GetTable(tableId); \
@@ -55,16 +59,16 @@ inline const MonsterBaseTableData& GetMonsterBaseAllTable() {
 
 #define FetchMonsterBaseTableOrReturnCustom(tableId, customReturnValue) \
     const auto [monsterBaseTable, fetchResult] = MonsterBaseTableManager::Instance().GetTable(tableId); \
-    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    do { if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMonsterBaseTableOrReturnVoid(tableId) \
     const auto [monsterBaseTable, fetchResult] = MonsterBaseTableManager::Instance().GetTable(tableId); \
-    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return; } } while(0)
+    do { if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMonsterBaseTableOrContinue(tableId) \
     const auto [monsterBaseTable, fetchResult] = MonsterBaseTableManager::Instance().GetTable(tableId); \
-    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; continue; } } while(0)
+    do { if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMonsterBaseTableOrReturnFalse(tableId) \
     const auto [monsterBaseTable, fetchResult] = MonsterBaseTableManager::Instance().GetTable(tableId); \
-    do { if (!( monsterBaseTable )) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return false; } } while(0)
+    do { if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << tableId; return false; } } while(0)

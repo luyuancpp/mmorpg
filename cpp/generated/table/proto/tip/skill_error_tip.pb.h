@@ -62,13 +62,13 @@ internal::EnumTraitsT<::skill_error_internal_data_>
 
 enum skill_error : int {
   kSkill_errorOK = 0,
-  kSkillUnInterruptible = 115,
-  kSkillInvalidTargetId = 116,
-  kSkillInvalidTarget = 117,
-  kSkillCooldownNotReady = 118,
-  kSkillCannotBeCastInCurrentState = 119,
-  kSkillCannotBeCastSilenceRestriction = 120,
-  kSkillCannotBeCastStunRestriction = 121,
+  kSkillUnInterruptible = 116,
+  kSkillInvalidTargetId = 117,
+  kSkillInvalidTarget = 118,
+  kSkillCooldownNotReady = 119,
+  kSkillCannotBeCastInCurrentState = 120,
+  kSkillCannotBeCastSilenceRestriction = 121,
+  kSkillCannotBeCastStunRestriction = 122,
   skill_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   skill_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -79,11 +79,11 @@ extern const uint32_t skill_error_internal_data_[];
 inline constexpr skill_error skill_error_MIN =
     static_cast<skill_error>(0);
 inline constexpr skill_error skill_error_MAX =
-    static_cast<skill_error>(121);
+    static_cast<skill_error>(122);
 inline bool skill_error_IsValid(int value) {
   return ::google::protobuf::internal::ValidateEnum(value, skill_error_internal_data_);
 }
-inline constexpr int skill_error_ARRAYSIZE = 121 + 1;
+inline constexpr int skill_error_ARRAYSIZE = 122 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL skill_error_descriptor();
 template <typename T>
 const ::std::string& skill_error_Name(T value) {

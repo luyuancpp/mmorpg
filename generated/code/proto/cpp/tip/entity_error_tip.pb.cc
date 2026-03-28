@@ -36,7 +36,7 @@ const char descriptor_table_protodef_entity_5ferror_5ftip_2eproto[] ABSL_ATTRIBU
     protodesc_cold) = {
     "\n\026entity_error_tip.proto*A\n\014entity_error"
     "\022\023\n\017kEntity_errorOK\020\000\022\034\n\030kEntityTransfor"
-    "mNotFound\020|B\024Z\022generated/pb/tableb\006proto"
+    "mNotFound\020}B\024Z\022generated/pb/tableb\006proto"
     "3"
 };
 static ::absl::once_flag descriptor_table_entity_5ferror_5ftip_2eproto_once;
@@ -61,7 +61,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL entity_error_descript
   return file_level_enum_descriptors_entity_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t entity_error_internal_data_[] = {
-    65536u, 65536u, 124u, };
+    65536u, 65536u, 125u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

@@ -62,7 +62,7 @@ internal::EnumTraitsT<::entity_error_internal_data_>
 
 enum entity_error : int {
   kEntity_errorOK = 0,
-  kEntityTransformNotFound = 124,
+  kEntityTransformNotFound = 125,
   entity_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   entity_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -73,11 +73,11 @@ extern const uint32_t entity_error_internal_data_[];
 inline constexpr entity_error entity_error_MIN =
     static_cast<entity_error>(0);
 inline constexpr entity_error entity_error_MAX =
-    static_cast<entity_error>(124);
+    static_cast<entity_error>(125);
 inline bool entity_error_IsValid(int value) {
   return ::google::protobuf::internal::ValidateEnum(value, entity_error_internal_data_);
 }
-inline constexpr int entity_error_ARRAYSIZE = 124 + 1;
+inline constexpr int entity_error_ARRAYSIZE = 125 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL entity_error_descriptor();
 template <typename T>
 const ::std::string& entity_error_Name(T value) {

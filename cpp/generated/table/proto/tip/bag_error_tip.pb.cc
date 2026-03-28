@@ -36,16 +36,16 @@ const char descriptor_table_protodef_bag_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_
     protodesc_cold) = {
     "\n\023bag_error_tip.proto*\261\003\n\tbag_error\022\020\n\014k"
     "Bag_errorOK\020\000\022\032\n\026kBagDeleteItemFindGuid\020"
-    "d\022 \n\034kBagDeleteItemAlreadyHasGuid\020e\022\"\n\036k"
-    "BagAddItemHasNotBaseComponent\020f\022\032\n\026kBagA"
-    "ddItemInvalidGuid\020g\022\033\n\027kBagAddItemInvali"
-    "dParam\020h\022\026\n\022kBagAddItemBagFull\020i\022\026\n\022kBag"
-    "ItemNotStacked\020j\022\031\n\025kBagInsufficientItem"
-    "s\020k\022\022\n\016kBagDelItemPos\020l\022\025\n\021kBagDelItemCo"
-    "nfig\020m\022\023\n\017kBagDelItemGuid\020n\022\027\n\023kBagDelIt"
-    "emFindItem\020o\022\023\n\017kBagDelItemSize\020p\022 \n\034kBa"
-    "gItemDeletionSizeMismatch\020q\022\034\n\030kBagInsuf"
-    "ficientBagSpace\020rB\024Z\022generated/pb/tableb"
+    "e\022 \n\034kBagDeleteItemAlreadyHasGuid\020f\022\"\n\036k"
+    "BagAddItemHasNotBaseComponent\020g\022\032\n\026kBagA"
+    "ddItemInvalidGuid\020h\022\033\n\027kBagAddItemInvali"
+    "dParam\020i\022\026\n\022kBagAddItemBagFull\020j\022\026\n\022kBag"
+    "ItemNotStacked\020k\022\031\n\025kBagInsufficientItem"
+    "s\020l\022\022\n\016kBagDelItemPos\020m\022\025\n\021kBagDelItemCo"
+    "nfig\020n\022\023\n\017kBagDelItemGuid\020o\022\027\n\023kBagDelIt"
+    "emFindItem\020p\022\023\n\017kBagDelItemSize\020q\022 \n\034kBa"
+    "gItemDeletionSizeMismatch\020r\022\034\n\030kBagInsuf"
+    "ficientBagSpace\020sB\024Z\022generated/pb/tableb"
     "\006proto3"
 };
 static ::absl::once_flag descriptor_table_bag_5ferror_5ftip_2eproto_once;
@@ -70,7 +70,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL bag_error_descriptor(
   return file_level_enum_descriptors_bag_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t bag_error_internal_data_[] = {
-    65536u, 128u, 0u, 0u, 0u, 262136u, };
+    65536u, 128u, 0u, 0u, 0u, 524272u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

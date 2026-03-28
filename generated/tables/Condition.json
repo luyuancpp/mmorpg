@@ -1,223 +1,221 @@
 {
  "data": [
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1
    ],
-   "condition_type": 1,
-   "id": 1
+   "condition_category": 1,
+   "id": 1,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     2
    ],
-   "condition_type": 1,
-   "id": 2
+   "condition_category": 1,
+   "id": 2,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     3
    ],
-   "condition_type": 1,
-   "id": 3
+   "condition_category": 1,
+   "id": 3,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     4
    ],
-   "condition_type": 1,
-   "id": 4
+   "condition_category": 1,
+   "id": 4,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1
    ],
-   "condition_type": 1,
-   "id": 5
+   "condition_category": 1,
+   "id": 5,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     2
    ],
-   "condition_type": 1,
-   "id": 6
+   "condition_category": 1,
+   "id": 6,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     3
    ],
-   "condition_type": 1,
-   "id": 7
+   "condition_category": 1,
+   "id": 7,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     4
    ],
-   "condition_type": 1,
-   "id": 8
+   "condition_category": 1,
+   "id": 8,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1
    ],
-   "condition_type": 1,
-   "id": 9
+   "condition_category": 1,
+   "id": 9,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     2
    ],
-   "condition_type": 1,
-   "id": 10
+   "condition_category": 1,
+   "id": 10,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     3
    ],
-   "condition_type": 1,
-   "id": 11
+   "condition_category": 1,
+   "id": 11,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     4
    ],
-   "condition_type": 1,
-   "id": 12
+   "condition_category": 1,
+   "id": 12,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     5
    ],
-   "condition_type": 1,
-   "id": 13
+   "condition_category": 1,
+   "id": 13,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
-   "condition_type": 1,
-   "id": 14
+   "comparison_op": 0,
+   "condition_category": 1,
+   "id": 14,
+   "quantity_type": 0,
+   "target_count": 2
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1
    ],
-   "condition_type": 2,
-   "id": 15
+   "condition_category": 2,
+   "id": 15,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     2
    ],
-   "condition_type": 2,
-   "id": 16
+   "condition_category": 2,
+   "id": 16,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     3
    ],
-   "condition_type": 2,
-   "id": 17
+   "condition_category": 2,
+   "id": 17,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     4
    ],
-   "condition_type": 2,
-   "id": 18
+   "condition_category": 2,
+   "id": 18,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1,
     2,
     3,
     4
    ],
-   "condition_type": 3,
-   "id": 19
+   "condition_category": 3,
+   "id": 19,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     5,
     6,
     7,
     8
    ],
-   "condition_type": 3,
-   "id": 20
+   "condition_category": 3,
+   "id": 20,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1,
     2
    ],
-   "condition_type": 3,
-   "id": 21
+   "condition_category": 3,
+   "id": 21,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1
    ],
@@ -227,13 +225,13 @@
     2,
     2
    ],
-   "condition_type": 4,
-   "id": 22
+   "condition_category": 4,
+   "id": 22,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1
    ],
@@ -243,62 +241,64 @@
     3,
     4
    ],
-   "condition_type": 5,
-   "id": 23
+   "condition_category": 5,
+   "id": 23,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     10
    ],
-   "condition_type": 6,
-   "id": 24
+   "condition_category": 6,
+   "id": 24,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
-   "condition_type": 1,
-   "id": 25
+   "comparison_op": 0,
+   "condition_category": 1,
+   "id": 25,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
-   "condition_type": 7,
-   "id": 26
+   "comparison_op": 0,
+   "condition_category": 7,
+   "id": 26,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     15
    ],
-   "condition_type": 8,
-   "id": 27
+   "condition_category": 8,
+   "id": 27,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 1,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     16
    ],
-   "condition_type": 8,
-   "id": 28
+   "condition_category": 8,
+   "id": 28,
+   "quantity_type": 0,
+   "target_count": 1
   },
   {
-   "amount": 2,
-   "amount_type": 0,
-   "comparison": 0,
+   "comparison_op": 0,
    "condition1": [
     1
    ],
-   "condition_type": 1,
-   "id": 29
+   "condition_category": 1,
+   "id": 29,
+   "quantity_type": 0,
+   "target_count": 2
   }
  ]
 }

@@ -1,5 +1,7 @@
+
 #pragma once
 #include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
@@ -8,8 +10,6 @@
 class MessageLimiterTableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const MessageLimiterTable*>;
-
-    // Callback type definition
     using LoadSuccessCallback = std::function<void()>;
 
     static MessageLimiterTableManager& Instance() {
@@ -25,20 +25,24 @@ public:
 
     void Load();
 
-    // Setter for the success callback
     void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
-        loadSuccessCallback_ = callback;//multi thread
+        loadSuccessCallback_ = callback;
     }
 
-    void LoadSuccess(){if (loadSuccessCallback_){loadSuccessCallback_();}}
+    void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    
+
+
+
+
+
 
 private:
-    LoadSuccessCallback loadSuccessCallback_;  // The callback for load success
+    LoadSuccessCallback loadSuccessCallback_;
     MessageLimiterTableData data_;
     KeyValueDataType kv_data_;
-    
+
+
 };
 
 inline const MessageLimiterTableData& GetMessageLimiterAllTable() {
@@ -47,7 +51,7 @@ inline const MessageLimiterTableData& GetMessageLimiterAllTable() {
 
 #define FetchAndValidateMessageLimiterTable(tableId) \
     const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
-    do { if (!( messageLimiterTable )) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return fetchResult; } } while(0)
+    do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMessageLimiterTable(prefix, tableId) \
     const auto [prefix##MessageLimiterTable, prefix##fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
@@ -55,16 +59,16 @@ inline const MessageLimiterTableData& GetMessageLimiterAllTable() {
 
 #define FetchMessageLimiterTableOrReturnCustom(tableId, customReturnValue) \
     const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
-    do { if (!( messageLimiterTable )) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return customReturnValue; } } while(0)
+    do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMessageLimiterTableOrReturnVoid(tableId) \
     const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
-    do { if (!( messageLimiterTable )) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return; } } while(0)
+    do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMessageLimiterTableOrContinue(tableId) \
     const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
-    do { if (!( messageLimiterTable )) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; continue; } } while(0)
+    do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMessageLimiterTableOrReturnFalse(tableId) \
     const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
-    do { if (!( messageLimiterTable )) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return false; } } while(0)
+    do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return false; } } while(0)

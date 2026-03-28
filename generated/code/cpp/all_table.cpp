@@ -1,4 +1,5 @@
-﻿#include "all_table.h"
+
+#include "all_table.h"
 
 #include <thread>
 #include "muduo/base/CountDownLatch.h"
@@ -21,6 +22,7 @@
 #include "skillpermission_table.h"
 #include "test_table.h"
 #include "testmultikey_table.h"
+
 
 LoadSuccessCallback loadSuccessCallback;
 
@@ -81,7 +83,7 @@ void LoadTables() {
     TestMultiKeyTableManager::Instance().LoadSuccess();
 
 
-    if (loadSuccessCallback){
+    if (loadSuccessCallback) {
         loadSuccessCallback();
     }
 }
@@ -89,158 +91,194 @@ void LoadTables() {
 void LoadTablesAsync() {
     static muduo::CountDownLatch latch(18);
 
-    std::thread ActorActionCombatStateLoadThread([](){
+    std::thread ActorActionCombatStateLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         ActorActionCombatStateTableManager::Instance().Load();
-            latch.countDown();});
-            ActorActionCombatStateLoadThread.detach();
+        latch.countDown();
+    });
+    ActorActionCombatStateLoadThread.detach();
 
-    std::thread ActorActionStateLoadThread([](){
+    std::thread ActorActionStateLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         ActorActionStateTableManager::Instance().Load();
-            latch.countDown();});
-            ActorActionStateLoadThread.detach();
+        latch.countDown();
+    });
+    ActorActionStateLoadThread.detach();
 
-    std::thread BuffLoadThread([](){
+    std::thread BuffLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         BuffTableManager::Instance().Load();
-            latch.countDown();});
-            BuffLoadThread.detach();
+        latch.countDown();
+    });
+    BuffLoadThread.detach();
 
-    std::thread ClassLoadThread([](){
+    std::thread ClassLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         ClassTableManager::Instance().Load();
-            latch.countDown();});
-            ClassLoadThread.detach();
+        latch.countDown();
+    });
+    ClassLoadThread.detach();
 
-    std::thread ConditionLoadThread([](){
+    std::thread ConditionLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         ConditionTableManager::Instance().Load();
-            latch.countDown();});
-            ConditionLoadThread.detach();
+        latch.countDown();
+    });
+    ConditionLoadThread.detach();
 
-    std::thread CooldownLoadThread([](){
+    std::thread CooldownLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         CooldownTableManager::Instance().Load();
-            latch.countDown();});
-            CooldownLoadThread.detach();
+        latch.countDown();
+    });
+    CooldownLoadThread.detach();
 
-    std::thread GlobalVariableLoadThread([](){
+    std::thread GlobalVariableLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         GlobalVariableTableManager::Instance().Load();
-            latch.countDown();});
-            GlobalVariableLoadThread.detach();
+        latch.countDown();
+    });
+    GlobalVariableLoadThread.detach();
 
-    std::thread ItemLoadThread([](){
+    std::thread ItemLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         ItemTableManager::Instance().Load();
-            latch.countDown();});
-            ItemLoadThread.detach();
+        latch.countDown();
+    });
+    ItemLoadThread.detach();
 
-    std::thread MainSceneLoadThread([](){
+    std::thread MainSceneLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         MainSceneTableManager::Instance().Load();
-            latch.countDown();});
-            MainSceneLoadThread.detach();
+        latch.countDown();
+    });
+    MainSceneLoadThread.detach();
 
-    std::thread MessageLimiterLoadThread([](){
+    std::thread MessageLimiterLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         MessageLimiterTableManager::Instance().Load();
-            latch.countDown();});
-            MessageLimiterLoadThread.detach();
+        latch.countDown();
+    });
+    MessageLimiterLoadThread.detach();
 
-    std::thread MissionLoadThread([](){
+    std::thread MissionLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         MissionTableManager::Instance().Load();
-            latch.countDown();});
-            MissionLoadThread.detach();
+        latch.countDown();
+    });
+    MissionLoadThread.detach();
 
-    std::thread MonsterBaseLoadThread([](){
+    std::thread MonsterBaseLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         MonsterBaseTableManager::Instance().Load();
-            latch.countDown();});
-            MonsterBaseLoadThread.detach();
+        latch.countDown();
+    });
+    MonsterBaseLoadThread.detach();
 
-    std::thread RewardLoadThread([](){
+    std::thread RewardLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         RewardTableManager::Instance().Load();
-            latch.countDown();});
-            RewardLoadThread.detach();
+        latch.countDown();
+    });
+    RewardLoadThread.detach();
 
-    std::thread SceneLoadThread([](){
+    std::thread SceneLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         SceneTableManager::Instance().Load();
-            latch.countDown();});
-            SceneLoadThread.detach();
+        latch.countDown();
+    });
+    SceneLoadThread.detach();
 
-    std::thread SkillLoadThread([](){
+    std::thread SkillLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         SkillTableManager::Instance().Load();
-            latch.countDown();});
-            SkillLoadThread.detach();
+        latch.countDown();
+    });
+    SkillLoadThread.detach();
 
-    std::thread SkillPermissionLoadThread([](){
+    std::thread SkillPermissionLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         SkillPermissionTableManager::Instance().Load();
-            latch.countDown();});
-            SkillPermissionLoadThread.detach();
+        latch.countDown();
+    });
+    SkillPermissionLoadThread.detach();
 
-    std::thread TestLoadThread([](){
+    std::thread TestLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         TestTableManager::Instance().Load();
-            latch.countDown();});
-            TestLoadThread.detach();
+        latch.countDown();
+    });
+    TestLoadThread.detach();
 
-    std::thread TestMultiKeyLoadThread([](){
+    std::thread TestMultiKeyLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
         TestMultiKeyTableManager::Instance().Load();
-            latch.countDown();});
-            TestMultiKeyLoadThread.detach();
+        latch.countDown();
+    });
+    TestMultiKeyLoadThread.detach();
 
     latch.wait();
 
 
     ActorActionCombatStateTableManager::Instance().LoadSuccess();
+
     ActorActionStateTableManager::Instance().LoadSuccess();
+
     BuffTableManager::Instance().LoadSuccess();
+
     ClassTableManager::Instance().LoadSuccess();
+
     ConditionTableManager::Instance().LoadSuccess();
+
     CooldownTableManager::Instance().LoadSuccess();
+
     GlobalVariableTableManager::Instance().LoadSuccess();
+
     ItemTableManager::Instance().LoadSuccess();
+
     MainSceneTableManager::Instance().LoadSuccess();
+
     MessageLimiterTableManager::Instance().LoadSuccess();
+
     MissionTableManager::Instance().LoadSuccess();
+
     MonsterBaseTableManager::Instance().LoadSuccess();
+
     RewardTableManager::Instance().LoadSuccess();
+
     SceneTableManager::Instance().LoadSuccess();
+
     SkillTableManager::Instance().LoadSuccess();
+
     SkillPermissionTableManager::Instance().LoadSuccess();
+
     TestTableManager::Instance().LoadSuccess();
+
     TestMultiKeyTableManager::Instance().LoadSuccess();
-     if (loadSuccessCallback){
+
+    if (loadSuccessCallback) {
         loadSuccessCallback();
     }
 }
 
-void OnTablesLoadSuccess(const LoadSuccessCallback& callback){
-loadSuccessCallback = callback;
+void OnTablesLoadSuccess(const LoadSuccessCallback& callback) {
+    loadSuccessCallback = callback;
 }

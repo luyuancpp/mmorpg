@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,25 +11,27 @@ import (
 )
 
 type TestMultiKeyTableManager struct {
-    data []*pb.TestMultiKeyTable
+    data   []*pb.TestMultiKeyTable
     kvData map[int32]*pb.TestMultiKeyTable
-    kvStringkeyData map[string]*pb.TestMultiKey
-    kvUint32keyData map[int32]*pb.TestMultiKey
-    kvIn32keyData map[int32]*pb.TestMultiKey
-    kvMstringkeyData map[string]*pb.TestMultiKey
-    kvMuint32keyData map[int32]*pb.TestMultiKey
-    kvMin32keyData map[int32]*pb.TestMultiKey
+    kvStringkeyData map[string]*pb.TestMultiKeyTable
+    kvUint32keyData map[uint32]*pb.TestMultiKeyTable
+    kvIn32keyData map[int32]*pb.TestMultiKeyTable
+    kvMstringkeyData map[string]*pb.TestMultiKeyTable
+    kvMuint32keyData map[uint32]*pb.TestMultiKeyTable
+    kvMin32keyData map[int32]*pb.TestMultiKeyTable
 }
+
+var TestMultiKeyTableManagerInstance = NewTestMultiKeyTableManager()
 
 func NewTestMultiKeyTableManager() *TestMultiKeyTableManager {
     return &TestMultiKeyTableManager{
         kvData: make(map[int32]*pb.TestMultiKeyTable),
-        kvStringkeyData: make(map[string]*pb.TestMultiKey),
-        kvUint32keyData: make(map[int32]*pb.TestMultiKey),
-        kvIn32keyData: make(map[int32]*pb.TestMultiKey),
-        kvMstringkeyData: make(map[string]*pb.TestMultiKey),
-        kvMuint32keyData: make(map[int32]*pb.TestMultiKey),
-        kvMin32keyData: make(map[int32]*pb.TestMultiKey),
+        kvStringkeyData: make(map[string]*pb.TestMultiKeyTable),
+        kvUint32keyData: make(map[uint32]*pb.TestMultiKeyTable),
+        kvIn32keyData: make(map[int32]*pb.TestMultiKeyTable),
+        kvMstringkeyData: make(map[string]*pb.TestMultiKeyTable),
+        kvMuint32keyData: make(map[uint32]*pb.TestMultiKeyTable),
+        kvMin32keyData: make(map[int32]*pb.TestMultiKeyTable),
     }
 }
 
@@ -36,12 +39,12 @@ func (m *TestMultiKeyTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "testmultikey.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.TestMultiKeyTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -58,31 +61,38 @@ func (m *TestMultiKeyTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *TestMultiKeyTableManager) GetById(id int32) (*pb.TestMultiKey, bool) {
+func (m *TestMultiKeyTableManager) GetById(id int32) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
-func (m *TestMultiKeyTableManager) GetByStringkey(key string) (*pb.TestMultiKey, bool) {
+
+func (m *TestMultiKeyTableManager) GetByStringkey(key string) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvStringkeyData[key]
     return row, ok
 }
-func (m *TestMultiKeyTableManager) GetByUint32key(key int32) (*pb.TestMultiKey, bool) {
+
+func (m *TestMultiKeyTableManager) GetByUint32key(key uint32) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvUint32keyData[key]
     return row, ok
 }
-func (m *TestMultiKeyTableManager) GetByIn32key(key int32) (*pb.TestMultiKey, bool) {
+
+func (m *TestMultiKeyTableManager) GetByIn32key(key int32) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvIn32keyData[key]
     return row, ok
 }
-func (m *TestMultiKeyTableManager) GetByMstringkey(key string) (*pb.TestMultiKey, bool) {
+
+func (m *TestMultiKeyTableManager) GetByMstringkey(key string) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvMstringkeyData[key]
     return row, ok
 }
-func (m *TestMultiKeyTableManager) GetByMuint32key(key int32) (*pb.TestMultiKey, bool) {
+
+func (m *TestMultiKeyTableManager) GetByMuint32key(key uint32) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvMuint32keyData[key]
     return row, ok
 }
-func (m *TestMultiKeyTableManager) GetByMin32key(key int32) (*pb.TestMultiKey, bool) {
+
+func (m *TestMultiKeyTableManager) GetByMin32key(key int32) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvMin32keyData[key]
     return row, ok
 }
+

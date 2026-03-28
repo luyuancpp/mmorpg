@@ -837,27 +837,27 @@ class SkillTable final : public ::google::protobuf::Message
   enum : int {
     kSkillTypeFieldNumber = 2,
     kTargetingModeFieldNumber = 3,
-    kRequireditemFieldNumber = 9,
-    kRequiredresourceFieldNumber = 10,
-    kEffectFieldNumber = 11,
-    kRequestresourceFieldNumber = 16,
-    kDamageFieldNumber = 23,
+    kEffectFieldNumber = 9,
+    kRequireditemFieldNumber = 21,
+    kRequiredresourceFieldNumber = 22,
+    kRequestresourceFieldNumber = 23,
+    kDamageFieldNumber = 20,
     kIdFieldNumber = 1,
     kRquestTargetFieldNumber = 4,
     kCastpointFieldNumber = 6,
     kTargetStatusFieldNumber = 5,
     kImmediatelyFieldNumber = 8,
     kRecoverytimeFieldNumber = 7,
-    kChannelthinkFieldNumber = 12,
-    kChannelfinishFieldNumber = 13,
-    kThinkintervalFieldNumber = 14,
-    kChanneltimeFieldNumber = 15,
-    kRangeFieldNumber = 17,
-    kMaxRangeFieldNumber = 18,
-    kMinRangeFieldNumber = 19,
-    kSelfStatusFieldNumber = 20,
-    kRequiredStatusFieldNumber = 21,
-    kCooldownIdFieldNumber = 22,
+    kChannelthinkFieldNumber = 10,
+    kChannelfinishFieldNumber = 11,
+    kThinkintervalFieldNumber = 12,
+    kChanneltimeFieldNumber = 13,
+    kRangeFieldNumber = 14,
+    kMaxRangeFieldNumber = 15,
+    kMinRangeFieldNumber = 16,
+    kSelfStatusFieldNumber = 17,
+    kRequiredStatusFieldNumber = 18,
+    kCooldownIdFieldNumber = 19,
   };
   // repeated uint32 skill_type = 2;
   int skill_type_size() const;
@@ -895,41 +895,7 @@ class SkillTable final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_targeting_mode();
 
   public:
-  // repeated .Skillrequireditem requireditem = 9;
-  int requireditem_size() const;
-  private:
-  int _internal_requireditem_size() const;
-
-  public:
-  void clear_requireditem() ;
-  ::Skillrequireditem* PROTOBUF_NONNULL mutable_requireditem(int index);
-  ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* PROTOBUF_NONNULL mutable_requireditem();
-
-  private:
-  const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& _internal_requireditem() const;
-  ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* PROTOBUF_NONNULL _internal_mutable_requireditem();
-  public:
-  const ::Skillrequireditem& requireditem(int index) const;
-  ::Skillrequireditem* PROTOBUF_NONNULL add_requireditem();
-  const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& requireditem() const;
-  // repeated .Skillrequiredresource requiredresource = 10;
-  int requiredresource_size() const;
-  private:
-  int _internal_requiredresource_size() const;
-
-  public:
-  void clear_requiredresource() ;
-  ::Skillrequiredresource* PROTOBUF_NONNULL mutable_requiredresource(int index);
-  ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* PROTOBUF_NONNULL mutable_requiredresource();
-
-  private:
-  const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& _internal_requiredresource() const;
-  ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* PROTOBUF_NONNULL _internal_mutable_requiredresource();
-  public:
-  const ::Skillrequiredresource& requiredresource(int index) const;
-  ::Skillrequiredresource* PROTOBUF_NONNULL add_requiredresource();
-  const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& requiredresource() const;
-  // repeated uint32 effect = 11;
+  // repeated uint32 effect = 9;
   int effect_size() const;
   private:
   int _internal_effect_size() const;
@@ -947,7 +913,41 @@ class SkillTable final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_effect();
 
   public:
-  // repeated .Skillrequestresource requestresource = 16;
+  // repeated .Skillrequireditem requireditem = 21;
+  int requireditem_size() const;
+  private:
+  int _internal_requireditem_size() const;
+
+  public:
+  void clear_requireditem() ;
+  ::Skillrequireditem* PROTOBUF_NONNULL mutable_requireditem(int index);
+  ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* PROTOBUF_NONNULL mutable_requireditem();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& _internal_requireditem() const;
+  ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* PROTOBUF_NONNULL _internal_mutable_requireditem();
+  public:
+  const ::Skillrequireditem& requireditem(int index) const;
+  ::Skillrequireditem* PROTOBUF_NONNULL add_requireditem();
+  const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& requireditem() const;
+  // repeated .Skillrequiredresource requiredresource = 22;
+  int requiredresource_size() const;
+  private:
+  int _internal_requiredresource_size() const;
+
+  public:
+  void clear_requiredresource() ;
+  ::Skillrequiredresource* PROTOBUF_NONNULL mutable_requiredresource(int index);
+  ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* PROTOBUF_NONNULL mutable_requiredresource();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& _internal_requiredresource() const;
+  ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* PROTOBUF_NONNULL _internal_mutable_requiredresource();
+  public:
+  const ::Skillrequiredresource& requiredresource(int index) const;
+  ::Skillrequiredresource* PROTOBUF_NONNULL add_requiredresource();
+  const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& requiredresource() const;
+  // repeated .Skillrequestresource requestresource = 23;
   int requestresource_size() const;
   private:
   int _internal_requestresource_size() const;
@@ -964,7 +964,7 @@ class SkillTable final : public ::google::protobuf::Message
   const ::Skillrequestresource& requestresource(int index) const;
   ::Skillrequestresource* PROTOBUF_NONNULL add_requestresource();
   const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>& requestresource() const;
-  // string damage = 23;
+  // string damage = 20;
   void clear_damage() ;
   const ::std::string& damage() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
@@ -1039,7 +1039,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_recoverytime(double value);
 
   public:
-  // uint32 channelthink = 12;
+  // uint32 channelthink = 10;
   void clear_channelthink() ;
   ::uint32_t channelthink() const;
   void set_channelthink(::uint32_t value);
@@ -1049,7 +1049,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_channelthink(::uint32_t value);
 
   public:
-  // uint32 channelfinish = 13;
+  // uint32 channelfinish = 11;
   void clear_channelfinish() ;
   ::uint32_t channelfinish() const;
   void set_channelfinish(::uint32_t value);
@@ -1059,7 +1059,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_channelfinish(::uint32_t value);
 
   public:
-  // uint32 thinkinterval = 14;
+  // uint32 thinkinterval = 12;
   void clear_thinkinterval() ;
   ::uint32_t thinkinterval() const;
   void set_thinkinterval(::uint32_t value);
@@ -1069,7 +1069,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_thinkinterval(::uint32_t value);
 
   public:
-  // uint32 channeltime = 15;
+  // uint32 channeltime = 13;
   void clear_channeltime() ;
   ::uint32_t channeltime() const;
   void set_channeltime(::uint32_t value);
@@ -1079,7 +1079,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_channeltime(::uint32_t value);
 
   public:
-  // double range = 17;
+  // double range = 14;
   void clear_range() ;
   double range() const;
   void set_range(double value);
@@ -1089,7 +1089,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_range(double value);
 
   public:
-  // double max_range = 18;
+  // double max_range = 15;
   void clear_max_range() ;
   double max_range() const;
   void set_max_range(double value);
@@ -1099,7 +1099,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_max_range(double value);
 
   public:
-  // double min_range = 19;
+  // double min_range = 16;
   void clear_min_range() ;
   double min_range() const;
   void set_min_range(double value);
@@ -1109,7 +1109,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_min_range(double value);
 
   public:
-  // uint32 self_status = 20;
+  // uint32 self_status = 17;
   void clear_self_status() ;
   ::uint32_t self_status() const;
   void set_self_status(::uint32_t value);
@@ -1119,7 +1119,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_self_status(::uint32_t value);
 
   public:
-  // uint32 required_status = 21;
+  // uint32 required_status = 18;
   void clear_required_status() ;
   ::uint32_t required_status() const;
   void set_required_status(::uint32_t value);
@@ -1129,7 +1129,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_required_status(::uint32_t value);
 
   public:
-  // uint32 cooldown_id = 22;
+  // uint32 cooldown_id = 19;
   void clear_cooldown_id() ;
   ::uint32_t cooldown_id() const;
   void set_cooldown_id(::uint32_t value);
@@ -1169,10 +1169,10 @@ class SkillTable final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _skill_type_cached_byte_size_;
     ::google::protobuf::RepeatedField<::uint32_t> targeting_mode_;
     ::google::protobuf::internal::CachedSize _targeting_mode_cached_byte_size_;
-    ::google::protobuf::RepeatedPtrField< ::Skillrequireditem > requireditem_;
-    ::google::protobuf::RepeatedPtrField< ::Skillrequiredresource > requiredresource_;
     ::google::protobuf::RepeatedField<::uint32_t> effect_;
     ::google::protobuf::internal::CachedSize _effect_cached_byte_size_;
+    ::google::protobuf::RepeatedPtrField< ::Skillrequireditem > requireditem_;
+    ::google::protobuf::RepeatedPtrField< ::Skillrequiredresource > requiredresource_;
     ::google::protobuf::RepeatedPtrField< ::Skillrequestresource > requestresource_;
     ::google::protobuf::internal::ArenaStringPtr damage_;
     ::uint32_t id_;
@@ -1804,107 +1804,7 @@ inline void SkillTable::_internal_set_immediately(::uint32_t value) {
   _impl_.immediately_ = value;
 }
 
-// repeated .Skillrequireditem requireditem = 9;
-inline int SkillTable::_internal_requireditem_size() const {
-  return _internal_requireditem().size();
-}
-inline int SkillTable::requireditem_size() const {
-  return _internal_requireditem_size();
-}
-inline void SkillTable::clear_requireditem() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.requireditem_.Clear();
-}
-inline ::Skillrequireditem* PROTOBUF_NONNULL SkillTable::mutable_requireditem(int index)
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:SkillTable.requireditem)
-  return _internal_mutable_requireditem()->Mutable(index);
-}
-inline ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* PROTOBUF_NONNULL SkillTable::mutable_requireditem()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SkillTable.requireditem)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_requireditem();
-}
-inline const ::Skillrequireditem& SkillTable::requireditem(int index) const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:SkillTable.requireditem)
-  return _internal_requireditem().Get(index);
-}
-inline ::Skillrequireditem* PROTOBUF_NONNULL SkillTable::add_requireditem()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::Skillrequireditem* _add = _internal_mutable_requireditem()->Add();
-  // @@protoc_insertion_point(field_add:SkillTable.requireditem)
-  return _add;
-}
-inline const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& SkillTable::requireditem() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SkillTable.requireditem)
-  return _internal_requireditem();
-}
-inline const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>&
-SkillTable::_internal_requireditem() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.requireditem_;
-}
-inline ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* PROTOBUF_NONNULL
-SkillTable::_internal_mutable_requireditem() {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.requireditem_;
-}
-
-// repeated .Skillrequiredresource requiredresource = 10;
-inline int SkillTable::_internal_requiredresource_size() const {
-  return _internal_requiredresource().size();
-}
-inline int SkillTable::requiredresource_size() const {
-  return _internal_requiredresource_size();
-}
-inline void SkillTable::clear_requiredresource() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.requiredresource_.Clear();
-}
-inline ::Skillrequiredresource* PROTOBUF_NONNULL SkillTable::mutable_requiredresource(int index)
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:SkillTable.requiredresource)
-  return _internal_mutable_requiredresource()->Mutable(index);
-}
-inline ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* PROTOBUF_NONNULL SkillTable::mutable_requiredresource()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SkillTable.requiredresource)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_requiredresource();
-}
-inline const ::Skillrequiredresource& SkillTable::requiredresource(int index) const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:SkillTable.requiredresource)
-  return _internal_requiredresource().Get(index);
-}
-inline ::Skillrequiredresource* PROTOBUF_NONNULL SkillTable::add_requiredresource()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::Skillrequiredresource* _add = _internal_mutable_requiredresource()->Add();
-  // @@protoc_insertion_point(field_add:SkillTable.requiredresource)
-  return _add;
-}
-inline const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& SkillTable::requiredresource() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SkillTable.requiredresource)
-  return _internal_requiredresource();
-}
-inline const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>&
-SkillTable::_internal_requiredresource() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.requiredresource_;
-}
-inline ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* PROTOBUF_NONNULL
-SkillTable::_internal_mutable_requiredresource() {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.requiredresource_;
-}
-
-// repeated uint32 effect = 11;
+// repeated uint32 effect = 9;
 inline int SkillTable::_internal_effect_size() const {
   return _internal_effect().size();
 }
@@ -1950,7 +1850,7 @@ SkillTable::_internal_mutable_effect() {
   return &_impl_.effect_;
 }
 
-// uint32 channelthink = 12;
+// uint32 channelthink = 10;
 inline void SkillTable::clear_channelthink() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channelthink_ = 0u;
@@ -1974,7 +1874,7 @@ inline void SkillTable::_internal_set_channelthink(::uint32_t value) {
   _impl_.channelthink_ = value;
 }
 
-// uint32 channelfinish = 13;
+// uint32 channelfinish = 11;
 inline void SkillTable::clear_channelfinish() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channelfinish_ = 0u;
@@ -1998,7 +1898,7 @@ inline void SkillTable::_internal_set_channelfinish(::uint32_t value) {
   _impl_.channelfinish_ = value;
 }
 
-// uint32 thinkinterval = 14;
+// uint32 thinkinterval = 12;
 inline void SkillTable::clear_thinkinterval() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.thinkinterval_ = 0u;
@@ -2022,7 +1922,7 @@ inline void SkillTable::_internal_set_thinkinterval(::uint32_t value) {
   _impl_.thinkinterval_ = value;
 }
 
-// uint32 channeltime = 15;
+// uint32 channeltime = 13;
 inline void SkillTable::clear_channeltime() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channeltime_ = 0u;
@@ -2046,57 +1946,7 @@ inline void SkillTable::_internal_set_channeltime(::uint32_t value) {
   _impl_.channeltime_ = value;
 }
 
-// repeated .Skillrequestresource requestresource = 16;
-inline int SkillTable::_internal_requestresource_size() const {
-  return _internal_requestresource().size();
-}
-inline int SkillTable::requestresource_size() const {
-  return _internal_requestresource_size();
-}
-inline void SkillTable::clear_requestresource() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.requestresource_.Clear();
-}
-inline ::Skillrequestresource* PROTOBUF_NONNULL SkillTable::mutable_requestresource(int index)
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:SkillTable.requestresource)
-  return _internal_mutable_requestresource()->Mutable(index);
-}
-inline ::google::protobuf::RepeatedPtrField<::Skillrequestresource>* PROTOBUF_NONNULL SkillTable::mutable_requestresource()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SkillTable.requestresource)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_requestresource();
-}
-inline const ::Skillrequestresource& SkillTable::requestresource(int index) const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:SkillTable.requestresource)
-  return _internal_requestresource().Get(index);
-}
-inline ::Skillrequestresource* PROTOBUF_NONNULL SkillTable::add_requestresource()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::Skillrequestresource* _add = _internal_mutable_requestresource()->Add();
-  // @@protoc_insertion_point(field_add:SkillTable.requestresource)
-  return _add;
-}
-inline const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>& SkillTable::requestresource() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SkillTable.requestresource)
-  return _internal_requestresource();
-}
-inline const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>&
-SkillTable::_internal_requestresource() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.requestresource_;
-}
-inline ::google::protobuf::RepeatedPtrField<::Skillrequestresource>* PROTOBUF_NONNULL
-SkillTable::_internal_mutable_requestresource() {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.requestresource_;
-}
-
-// double range = 17;
+// double range = 14;
 inline void SkillTable::clear_range() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.range_ = 0;
@@ -2120,7 +1970,7 @@ inline void SkillTable::_internal_set_range(double value) {
   _impl_.range_ = value;
 }
 
-// double max_range = 18;
+// double max_range = 15;
 inline void SkillTable::clear_max_range() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_range_ = 0;
@@ -2144,7 +1994,7 @@ inline void SkillTable::_internal_set_max_range(double value) {
   _impl_.max_range_ = value;
 }
 
-// double min_range = 19;
+// double min_range = 16;
 inline void SkillTable::clear_min_range() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.min_range_ = 0;
@@ -2168,7 +2018,7 @@ inline void SkillTable::_internal_set_min_range(double value) {
   _impl_.min_range_ = value;
 }
 
-// uint32 self_status = 20;
+// uint32 self_status = 17;
 inline void SkillTable::clear_self_status() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.self_status_ = 0u;
@@ -2192,7 +2042,7 @@ inline void SkillTable::_internal_set_self_status(::uint32_t value) {
   _impl_.self_status_ = value;
 }
 
-// uint32 required_status = 21;
+// uint32 required_status = 18;
 inline void SkillTable::clear_required_status() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.required_status_ = 0u;
@@ -2216,7 +2066,7 @@ inline void SkillTable::_internal_set_required_status(::uint32_t value) {
   _impl_.required_status_ = value;
 }
 
-// uint32 cooldown_id = 22;
+// uint32 cooldown_id = 19;
 inline void SkillTable::clear_cooldown_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.cooldown_id_ = 0u;
@@ -2240,7 +2090,7 @@ inline void SkillTable::_internal_set_cooldown_id(::uint32_t value) {
   _impl_.cooldown_id_ = value;
 }
 
-// string damage = 23;
+// string damage = 20;
 inline void SkillTable::clear_damage() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.damage_.ClearToEmpty();
@@ -2303,6 +2153,156 @@ inline void SkillTable::set_allocated_damage(::std::string* PROTOBUF_NULLABLE va
     _impl_.damage_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:SkillTable.damage)
+}
+
+// repeated .Skillrequireditem requireditem = 21;
+inline int SkillTable::_internal_requireditem_size() const {
+  return _internal_requireditem().size();
+}
+inline int SkillTable::requireditem_size() const {
+  return _internal_requireditem_size();
+}
+inline void SkillTable::clear_requireditem() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.requireditem_.Clear();
+}
+inline ::Skillrequireditem* PROTOBUF_NONNULL SkillTable::mutable_requireditem(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:SkillTable.requireditem)
+  return _internal_mutable_requireditem()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* PROTOBUF_NONNULL SkillTable::mutable_requireditem()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:SkillTable.requireditem)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_requireditem();
+}
+inline const ::Skillrequireditem& SkillTable::requireditem(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.requireditem)
+  return _internal_requireditem().Get(index);
+}
+inline ::Skillrequireditem* PROTOBUF_NONNULL SkillTable::add_requireditem()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::Skillrequireditem* _add = _internal_mutable_requireditem()->Add();
+  // @@protoc_insertion_point(field_add:SkillTable.requireditem)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& SkillTable::requireditem() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:SkillTable.requireditem)
+  return _internal_requireditem();
+}
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>&
+SkillTable::_internal_requireditem() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.requireditem_;
+}
+inline ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* PROTOBUF_NONNULL
+SkillTable::_internal_mutable_requireditem() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.requireditem_;
+}
+
+// repeated .Skillrequiredresource requiredresource = 22;
+inline int SkillTable::_internal_requiredresource_size() const {
+  return _internal_requiredresource().size();
+}
+inline int SkillTable::requiredresource_size() const {
+  return _internal_requiredresource_size();
+}
+inline void SkillTable::clear_requiredresource() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.requiredresource_.Clear();
+}
+inline ::Skillrequiredresource* PROTOBUF_NONNULL SkillTable::mutable_requiredresource(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:SkillTable.requiredresource)
+  return _internal_mutable_requiredresource()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* PROTOBUF_NONNULL SkillTable::mutable_requiredresource()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:SkillTable.requiredresource)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_requiredresource();
+}
+inline const ::Skillrequiredresource& SkillTable::requiredresource(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.requiredresource)
+  return _internal_requiredresource().Get(index);
+}
+inline ::Skillrequiredresource* PROTOBUF_NONNULL SkillTable::add_requiredresource()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::Skillrequiredresource* _add = _internal_mutable_requiredresource()->Add();
+  // @@protoc_insertion_point(field_add:SkillTable.requiredresource)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& SkillTable::requiredresource() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:SkillTable.requiredresource)
+  return _internal_requiredresource();
+}
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>&
+SkillTable::_internal_requiredresource() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.requiredresource_;
+}
+inline ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* PROTOBUF_NONNULL
+SkillTable::_internal_mutable_requiredresource() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.requiredresource_;
+}
+
+// repeated .Skillrequestresource requestresource = 23;
+inline int SkillTable::_internal_requestresource_size() const {
+  return _internal_requestresource().size();
+}
+inline int SkillTable::requestresource_size() const {
+  return _internal_requestresource_size();
+}
+inline void SkillTable::clear_requestresource() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.requestresource_.Clear();
+}
+inline ::Skillrequestresource* PROTOBUF_NONNULL SkillTable::mutable_requestresource(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:SkillTable.requestresource)
+  return _internal_mutable_requestresource()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::Skillrequestresource>* PROTOBUF_NONNULL SkillTable::mutable_requestresource()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:SkillTable.requestresource)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_requestresource();
+}
+inline const ::Skillrequestresource& SkillTable::requestresource(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.requestresource)
+  return _internal_requestresource().Get(index);
+}
+inline ::Skillrequestresource* PROTOBUF_NONNULL SkillTable::add_requestresource()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::Skillrequestresource* _add = _internal_mutable_requestresource()->Add();
+  // @@protoc_insertion_point(field_add:SkillTable.requestresource)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>& SkillTable::requestresource() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:SkillTable.requestresource)
+  return _internal_requestresource();
+}
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>&
+SkillTable::_internal_requestresource() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.requestresource_;
+}
+inline ::google::protobuf::RepeatedPtrField<::Skillrequestresource>* PROTOBUF_NONNULL
+SkillTable::_internal_mutable_requestresource() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.requestresource_;
 }
 
 // -------------------------------------------------------------------

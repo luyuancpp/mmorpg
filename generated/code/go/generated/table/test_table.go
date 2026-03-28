@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -10,9 +11,11 @@ import (
 )
 
 type TestTableManager struct {
-    data []*pb.TestTable
+    data   []*pb.TestTable
     kvData map[int32]*pb.TestTable
 }
+
+var TestTableManagerInstance = NewTestTableManager()
 
 func NewTestTableManager() *TestTableManager {
     return &TestTableManager{
@@ -24,12 +27,12 @@ func (m *TestTableManager) Load(configDir string) error {
     path := filepath.Join(configDir, "test.json")
     raw, err := os.ReadFile(path)
     if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
+        return fmt.Errorf("failed to read file: %w", err)
     }
 
     var container pb.TestTableData
     if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+        return fmt.Errorf("failed to parse json: %w", err)
     }
 
     for _, row := range container.Data {
@@ -40,7 +43,8 @@ func (m *TestTableManager) Load(configDir string) error {
     return nil
 }
 
-func (m *TestTableManager) GetById(id int32) (*pb.Test, bool) {
+func (m *TestTableManager) GetById(id int32) (*pb.TestTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

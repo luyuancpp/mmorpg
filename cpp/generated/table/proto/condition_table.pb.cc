@@ -37,10 +37,11 @@ inline constexpr ConditionTable::Impl_::Impl_(
         condition4_{},
         _condition4_cached_byte_size_{0},
         id_{0u},
-        condition_type_{0u},
-        amount_type_{0u},
-        amount_{0u},
-        comparison_{0u} {}
+        condition_category_{0u},
+        valid_duration_{::uint64_t{0u}},
+        quantity_type_{0u},
+        target_count_{0u},
+        comparison_op_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR ConditionTable::ConditionTable(::_pbi::ConstantInitialized)
@@ -95,16 +96,17 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_._has_bits_),
-        12, // hasbit index offset
+        13, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.id_),
-        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.condition_type_),
+        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.condition_category_),
         PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.condition1_),
         PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.condition2_),
         PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.condition3_),
         PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.condition4_),
-        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.amount_type_),
-        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.amount_),
-        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.comparison_),
+        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.valid_duration_),
+        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.quantity_type_),
+        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.target_count_),
+        PROTOBUF_FIELD_OFFSET(::ConditionTable, _impl_.comparison_op_),
         0,
         1,
         ~0u,
@@ -114,6 +116,7 @@ const ::uint32_t
         2,
         3,
         4,
+        5,
         0x000, // bitmap
         PROTOBUF_FIELD_OFFSET(::ConditionTableData, _impl_.data_),
 };
@@ -121,7 +124,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::ConditionTable)},
-        {21, sizeof(::ConditionTableData)},
+        {23, sizeof(::ConditionTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_ConditionTable_default_instance_._instance,
@@ -129,20 +132,21 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_condition_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\025condition_table.proto\"\275\001\n\016ConditionTab"
-    "le\022\n\n\002id\030\001 \001(\r\022\026\n\016condition_type\030\002 \001(\r\022\022"
-    "\n\ncondition1\030\003 \003(\r\022\022\n\ncondition2\030\004 \003(\r\022\022"
-    "\n\ncondition3\030\005 \003(\r\022\022\n\ncondition4\030\006 \003(\r\022\023"
-    "\n\013amount_type\030\007 \001(\r\022\016\n\006amount\030\010 \001(\r\022\022\n\nc"
-    "omparison\030\t \001(\r\"3\n\022ConditionTableData\022\035\n"
-    "\004data\030\001 \003(\0132\017.ConditionTableB\024Z\022generate"
-    "d/pb/tableb\006proto3"
+    "\n\025condition_table.proto\"\344\001\n\016ConditionTab"
+    "le\022\n\n\002id\030\001 \001(\r\022\032\n\022condition_category\030\002 \001"
+    "(\r\022\022\n\ncondition1\030\003 \003(\r\022\022\n\ncondition2\030\004 \003"
+    "(\r\022\022\n\ncondition3\030\005 \003(\r\022\022\n\ncondition4\030\006 \003"
+    "(\r\022\026\n\016valid_duration\030\007 \001(\004\022\025\n\rquantity_t"
+    "ype\030\010 \001(\r\022\024\n\014target_count\030\t \001(\r\022\025\n\rcompa"
+    "rison_op\030\n \001(\r\"3\n\022ConditionTableData\022\035\n\004"
+    "data\030\001 \003(\0132\017.ConditionTableB\024Z\022generated"
+    "/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_condition_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_condition_5ftable_2eproto = {
     false,
     false,
-    298,
+    337,
     descriptor_table_protodef_condition_5ftable_2eproto,
     "condition_table.proto",
     &descriptor_table_condition_5ftable_2eproto_once,
@@ -206,9 +210,9 @@ ConditionTable::ConditionTable(
                offsetof(Impl_, id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, id_),
-           offsetof(Impl_, comparison_) -
+           offsetof(Impl_, comparison_op_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::comparison_));
+               sizeof(Impl_::comparison_op_));
 
   // @@protoc_insertion_point(copy_constructor:ConditionTable)
 }
@@ -230,9 +234,9 @@ inline void ConditionTable::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, comparison_) -
+           offsetof(Impl_, comparison_op_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::comparison_));
+               sizeof(Impl_::comparison_op_));
 }
 ConditionTable::~ConditionTable() {
   // @@protoc_insertion_point(destructor:ConditionTable)
@@ -312,16 +316,16 @@ ConditionTable::GetClassData() const {
   return ConditionTable_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 9, 0, 0, 2>
+const ::_pbi::TcParseTable<4, 10, 0, 0, 2>
 ConditionTable::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_._has_bits_),
     0, // no _extensions_
-    9, 120,  // max_field_number, fast_idx_mask
+    10, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294966784,  // skipmap
+    4294966272,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    9,  // num_field_entries
+    10,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     ConditionTable_class_data_.base(),
@@ -335,9 +339,9 @@ ConditionTable::_table_ = {
     // uint32 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.id_)}},
-    // uint32 condition_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.condition_type_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.condition_type_)}},
+    // uint32 condition_category = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.condition_category_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.condition_category_)}},
     // repeated uint32 condition1 = 3;
     {::_pbi::TcParser::FastV32P1,
      {26, 63, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.condition1_)}},
@@ -350,16 +354,18 @@ ConditionTable::_table_ = {
     // repeated uint32 condition4 = 6;
     {::_pbi::TcParser::FastV32P1,
      {50, 63, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.condition4_)}},
-    // uint32 amount_type = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.amount_type_), 2>(),
-     {56, 2, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.amount_type_)}},
-    // uint32 amount = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.amount_), 3>(),
-     {64, 3, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.amount_)}},
-    // uint32 comparison = 9;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.comparison_), 4>(),
-     {72, 4, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.comparison_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 valid_duration = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ConditionTable, _impl_.valid_duration_), 2>(),
+     {56, 2, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.valid_duration_)}},
+    // uint32 quantity_type = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.quantity_type_), 3>(),
+     {64, 3, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.quantity_type_)}},
+    // uint32 target_count = 9;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.target_count_), 4>(),
+     {72, 4, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.target_count_)}},
+    // uint32 comparison_op = 10;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionTable, _impl_.comparison_op_), 5>(),
+     {80, 5, 0, PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.comparison_op_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -371,8 +377,8 @@ ConditionTable::_table_ = {
     // uint32 id = 1;
     {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 condition_type = 2;
-    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.condition_type_), _Internal::kHasBitsOffset + 1, 0,
+    // uint32 condition_category = 2;
+    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.condition_category_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // repeated uint32 condition1 = 3;
     {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.condition1_), -1, 0,
@@ -386,14 +392,17 @@ ConditionTable::_table_ = {
     // repeated uint32 condition4 = 6;
     {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.condition4_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
-    // uint32 amount_type = 7;
-    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.amount_type_), _Internal::kHasBitsOffset + 2, 0,
+    // uint64 valid_duration = 7;
+    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.valid_duration_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 quantity_type = 8;
+    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.quantity_type_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 amount = 8;
-    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.amount_), _Internal::kHasBitsOffset + 3, 0,
+    // uint32 target_count = 9;
+    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.target_count_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 comparison = 9;
-    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.comparison_), _Internal::kHasBitsOffset + 4, 0,
+    // uint32 comparison_op = 10;
+    {PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.comparison_op_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -412,10 +421,10 @@ PROTOBUF_NOINLINE void ConditionTable::Clear() {
   _impl_.condition3_.Clear();
   _impl_.condition4_.Clear();
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000001fu) != 0) {
+  if ((cached_has_bits & 0x0000003fu) != 0) {
     ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.comparison_) -
-        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.comparison_));
+        reinterpret_cast<char*>(&_impl_.comparison_op_) -
+        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.comparison_op_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -445,12 +454,12 @@ PROTOBUF_NOINLINE void ConditionTable::Clear() {
     }
   }
 
-  // uint32 condition_type = 2;
+  // uint32 condition_category = 2;
   if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
-    if (this_._internal_condition_type() != 0) {
+    if (this_._internal_condition_category() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_condition_type(), target);
+          2, this_._internal_condition_category(), target);
     }
   }
 
@@ -490,30 +499,39 @@ PROTOBUF_NOINLINE void ConditionTable::Clear() {
     }
   }
 
-  // uint32 amount_type = 7;
+  // uint64 valid_duration = 7;
   if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
-    if (this_._internal_amount_type() != 0) {
+    if (this_._internal_valid_duration() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          7, this_._internal_amount_type(), target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          7, this_._internal_valid_duration(), target);
     }
   }
 
-  // uint32 amount = 8;
+  // uint32 quantity_type = 8;
   if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
-    if (this_._internal_amount() != 0) {
+    if (this_._internal_quantity_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          8, this_._internal_amount(), target);
+          8, this_._internal_quantity_type(), target);
     }
   }
 
-  // uint32 comparison = 9;
+  // uint32 target_count = 9;
   if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
-    if (this_._internal_comparison() != 0) {
+    if (this_._internal_target_count() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          9, this_._internal_comparison(), target);
+          9, this_._internal_target_count(), target);
+    }
+  }
+
+  // uint32 comparison_op = 10;
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+    if (this_._internal_comparison_op() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          10, this_._internal_comparison_op(), target);
     }
   }
 
@@ -572,7 +590,7 @@ PROTOBUF_NOINLINE void ConditionTable::Clear() {
     }
   }
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000001fu) != 0) {
+  if ((cached_has_bits & 0x0000003fu) != 0) {
     // uint32 id = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_id() != 0) {
@@ -580,32 +598,39 @@ PROTOBUF_NOINLINE void ConditionTable::Clear() {
             this_._internal_id());
       }
     }
-    // uint32 condition_type = 2;
+    // uint32 condition_category = 2;
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_condition_type() != 0) {
+      if (this_._internal_condition_category() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_condition_type());
+            this_._internal_condition_category());
       }
     }
-    // uint32 amount_type = 7;
+    // uint64 valid_duration = 7;
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (this_._internal_amount_type() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_amount_type());
+      if (this_._internal_valid_duration() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_valid_duration());
       }
     }
-    // uint32 amount = 8;
+    // uint32 quantity_type = 8;
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (this_._internal_amount() != 0) {
+      if (this_._internal_quantity_type() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_amount());
+            this_._internal_quantity_type());
       }
     }
-    // uint32 comparison = 9;
+    // uint32 target_count = 9;
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (this_._internal_comparison() != 0) {
+      if (this_._internal_target_count() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_comparison());
+            this_._internal_target_count());
+      }
+    }
+    // uint32 comparison_op = 10;
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (this_._internal_comparison_op() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_comparison_op());
       }
     }
   }
@@ -626,30 +651,35 @@ void ConditionTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   _this->_internal_mutable_condition3()->MergeFrom(from._internal_condition3());
   _this->_internal_mutable_condition4()->MergeFrom(from._internal_condition4());
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000001fu) != 0) {
+  if ((cached_has_bits & 0x0000003fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (from._internal_id() != 0) {
         _this->_impl_.id_ = from._impl_.id_;
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_condition_type() != 0) {
-        _this->_impl_.condition_type_ = from._impl_.condition_type_;
+      if (from._internal_condition_category() != 0) {
+        _this->_impl_.condition_category_ = from._impl_.condition_category_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (from._internal_amount_type() != 0) {
-        _this->_impl_.amount_type_ = from._impl_.amount_type_;
+      if (from._internal_valid_duration() != 0) {
+        _this->_impl_.valid_duration_ = from._impl_.valid_duration_;
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (from._internal_amount() != 0) {
-        _this->_impl_.amount_ = from._impl_.amount_;
+      if (from._internal_quantity_type() != 0) {
+        _this->_impl_.quantity_type_ = from._impl_.quantity_type_;
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (from._internal_comparison() != 0) {
-        _this->_impl_.comparison_ = from._impl_.comparison_;
+      if (from._internal_target_count() != 0) {
+        _this->_impl_.target_count_ = from._impl_.target_count_;
+      }
+    }
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (from._internal_comparison_op() != 0) {
+        _this->_impl_.comparison_op_ = from._impl_.comparison_op_;
       }
     }
   }
@@ -674,8 +704,8 @@ void ConditionTable::InternalSwap(ConditionTable* PROTOBUF_RESTRICT PROTOBUF_NON
   _impl_.condition3_.InternalSwap(&other->_impl_.condition3_);
   _impl_.condition4_.InternalSwap(&other->_impl_.condition4_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.comparison_)
-      + sizeof(ConditionTable::_impl_.comparison_)
+      PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.comparison_op_)
+      + sizeof(ConditionTable::_impl_.comparison_op_)
       - PROTOBUF_FIELD_OFFSET(ConditionTable, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));

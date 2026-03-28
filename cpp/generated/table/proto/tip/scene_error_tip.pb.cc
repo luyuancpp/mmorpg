@@ -34,33 +34,33 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
     file_default_instances = nullptr;
 const char descriptor_table_protodef_scene_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\025scene_error_tip.proto*\373\005\n\013scene_error\022"
+    "\n\025scene_error_tip.proto*\375\005\n\013scene_error\022"
     "\022\n\016kScene_errorOK\020\000\022\027\n\023kEnterSceneNotFou"
-    "nd\0203\022\026\n\022kEnterSceneNotFull\0204\022\027\n\023kEnterSc"
-    "eneMainFull\0205\022\027\n\023kEnterGameNodeCrash\0206\022\031"
-    "\n\025kEnterSceneServerType\0207\022\031\n\025kEnterScene"
-    "ParamError\0208\022\030\n\024kEnterSceneSceneFull\0209\022\034"
-    "\n\030kEnterSceneSceneNotFound\020:\022 \n\034kEnterSc"
-    "eneYouInCurrentScene\020;\022\"\n\036kEnterSceneEnt"
-    "erCrossRoomScene\020<\022\031\n\025kEnterSceneGsInfoN"
-    "ull\020=\022\025\n\021kEnterSceneGsFull\020>\022\036\n\032kEnterSc"
-    "eneYourSceneIsNull\020\?\022!\n\035kEnterSceneChang"
-    "eSceneOffLine\020@\022\034\n\030kEnterSceneChangingSc"
-    "ene\020A\022\031\n\025kEnterSceneChangingGs\020B\022#\n\037kCha"
-    "ngeScenePlayerQueueNotFound\020C\022\037\n\033kChange"
-    "ScenePlayerQueueFull\020D\022*\n&kChangeScenePl"
-    "ayerQueueComponentGsNull\020E\022)\n%kChangeSce"
-    "nePlayerQueueComponentEmpty\020F\022 \n\034kChange"
-    "SceneEnQueueNotSameGs\020G\022 \n\034kInvalidEnter"
-    "SceneParameters\020H\022\033\n\027kCheckEnterSceneCre"
-    "ator\020I\022\025\n\021kEnterSceneFailed\020JB\024Z\022generat"
-    "ed/pb/tableb\006proto3"
+    "nd\0204\022\026\n\022kEnterSceneNotFull\0205\022\027\n\023kEnterSc"
+    "eneMainFull\0206\022\031\n\025kEnterNodeUnavailable\0207"
+    "\022\031\n\025kEnterSceneServerType\0208\022\031\n\025kEnterSce"
+    "neParamError\0209\022\030\n\024kEnterSceneSceneFull\020:"
+    "\022\034\n\030kEnterSceneSceneNotFound\020;\022 \n\034kEnter"
+    "SceneYouInCurrentScene\020<\022\"\n\036kEnterSceneE"
+    "nterCrossRoomScene\020=\022\031\n\025kEnterSceneGsInf"
+    "oNull\020>\022\025\n\021kEnterSceneGsFull\020\?\022\036\n\032kEnter"
+    "SceneYourSceneIsNull\020@\022!\n\035kEnterSceneCha"
+    "ngeSceneOffLine\020A\022\034\n\030kEnterSceneChanging"
+    "Scene\020B\022\031\n\025kEnterSceneChangingGs\020C\022#\n\037kC"
+    "hangeScenePlayerQueueNotFound\020D\022\037\n\033kChan"
+    "geScenePlayerQueueFull\020E\022*\n&kChangeScene"
+    "PlayerQueueComponentGsNull\020F\022)\n%kChangeS"
+    "cenePlayerQueueComponentEmpty\020G\022 \n\034kChan"
+    "geSceneEnQueueNotSameGs\020H\022 \n\034kInvalidEnt"
+    "erSceneParameters\020I\022\033\n\027kCheckEnterSceneC"
+    "reator\020J\022\025\n\021kEnterSceneFailed\020KB\024Z\022gener"
+    "ated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_scene_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_scene_5ferror_5ftip_2eproto = {
     false,
     false,
-    819,
+    821,
     descriptor_table_protodef_scene_5ferror_5ftip_2eproto,
     "scene_error_tip.proto",
     &descriptor_table_scene_5ferror_5ftip_2eproto_once,
@@ -78,7 +78,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL scene_error_descripto
   return file_level_enum_descriptors_scene_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t scene_error_internal_data_[] = {
-    65536u, 96u, 0u, 4294705152u, 1023u, };
+    65536u, 96u, 0u, 4294443008u, 2047u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

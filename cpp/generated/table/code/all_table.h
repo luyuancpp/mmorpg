@@ -1,8 +1,9 @@
-﻿#pragma once
+
+#pragma once
 
 #include <functional>
 
-using LoadSuccessCallback = std::function< void() >;
+using LoadSuccessCallback = std::function<void()>;
 
 void LoadTables();
 

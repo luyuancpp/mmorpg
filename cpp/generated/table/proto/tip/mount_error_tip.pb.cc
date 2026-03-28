@@ -35,7 +35,7 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
 const char descriptor_table_protodef_mount_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\025mount_error_tip.proto*7\n\013mount_error\022\022"
-    "\n\016kMount_errorOK\020\000\022\024\n\020kMountNotMounted\020~"
+    "\n\016kMount_errorOK\020\000\022\024\n\020kMountNotMounted\020\177"
     "B\024Z\022generated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mount_5ferror_5ftip_2eproto_once;
@@ -60,7 +60,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL mount_error_descripto
   return file_level_enum_descriptors_mount_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t mount_error_internal_data_[] = {
-    65536u, 65536u, 126u, };
+    65536u, 65536u, 127u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

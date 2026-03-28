@@ -1,57 +1,57 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum scene_error {
-
   kScene_errorOK = 0;
 
-  kEnterSceneNotFound = 51;
+  kEnterSceneNotFound = 52;
 
-  kEnterSceneNotFull = 52;
+  kEnterSceneNotFull = 53;
 
-  kEnterSceneMainFull = 53;
+  kEnterSceneMainFull = 54;
 
-  kEnterGameNodeCrash = 54;
+  kEnterNodeUnavailable = 55;
 
-  kEnterSceneServerType = 55;
+  kEnterSceneServerType = 56;
 
-  kEnterSceneParamError = 56;
+  kEnterSceneParamError = 57;
 
-  kEnterSceneSceneFull = 57;
+  kEnterSceneSceneFull = 58;
 
-  kEnterSceneSceneNotFound = 58;
+  kEnterSceneSceneNotFound = 59;
 
-  kEnterSceneYouInCurrentScene = 59;
+  kEnterSceneYouInCurrentScene = 60;
 
-  kEnterSceneEnterCrossRoomScene = 60;
+  kEnterSceneEnterCrossRoomScene = 61;
 
-  kEnterSceneGsInfoNull = 61;
+  kEnterSceneGsInfoNull = 62;
 
-  kEnterSceneGsFull = 62;
+  kEnterSceneGsFull = 63;
 
-  kEnterSceneYourSceneIsNull = 63;
+  kEnterSceneYourSceneIsNull = 64;
 
-  kEnterSceneChangeSceneOffLine = 64;
+  kEnterSceneChangeSceneOffLine = 65;
 
-  kEnterSceneChangingScene = 65;
+  kEnterSceneChangingScene = 66;
 
-  kEnterSceneChangingGs = 66;
+  kEnterSceneChangingGs = 67;
 
-  kChangeScenePlayerQueueNotFound = 67;
+  kChangeScenePlayerQueueNotFound = 68;
 
-  kChangeScenePlayerQueueFull = 68;
+  kChangeScenePlayerQueueFull = 69;
 
-  kChangeScenePlayerQueueComponentGsNull = 69;
+  kChangeScenePlayerQueueComponentGsNull = 70;
 
-  kChangeScenePlayerQueueComponentEmpty = 70;
+  kChangeScenePlayerQueueComponentEmpty = 71;
 
-  kChangeSceneEnQueueNotSameGs = 71;
+  kChangeSceneEnQueueNotSameGs = 72;
 
-  kInvalidEnterSceneParameters = 72;
+  kInvalidEnterSceneParameters = 73;
 
-  kCheckEnterSceneCreator = 73;
+  kCheckEnterSceneCreator = 74;
 
-  kEnterSceneFailed = 74;
+  kEnterSceneFailed = 75;
 
 };

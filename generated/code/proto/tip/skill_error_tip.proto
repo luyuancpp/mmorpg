@@ -1,23 +1,23 @@
+
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum skill_error {
-
   kSkill_errorOK = 0;
 
-  kSkillUnInterruptible = 115;
+  kSkillUnInterruptible = 116;
 
-  kSkillInvalidTargetId = 116;
+  kSkillInvalidTargetId = 117;
 
-  kSkillInvalidTarget = 117;
+  kSkillInvalidTarget = 118;
 
-  kSkillCooldownNotReady = 118;
+  kSkillCooldownNotReady = 119;
 
-  kSkillCannotBeCastInCurrentState = 119;
+  kSkillCannotBeCastInCurrentState = 120;
 
-  kSkillCannotBeCastSilenceRestriction = 120;
+  kSkillCannotBeCastSilenceRestriction = 121;
 
-  kSkillCannotBeCastStunRestriction = 121;
+  kSkillCannotBeCastStunRestriction = 122;
 
 };
