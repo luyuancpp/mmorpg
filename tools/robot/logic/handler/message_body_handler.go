@@ -53,7 +53,7 @@ var messageHandlers = map[uint32]handlerFunc{
 	game.SceneSkillClientPlayerGetSkillListMessageId:            unmarshalAndCall(SceneSkillClientPlayerGetSkillListHandler),
 }
 
-func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent) {
+func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {
 	zap.L().Debug("Received message body", zap.String("response", response.String()))
 
 	player, ok := gameobject.PlayerList.Get(client.PlayerId)

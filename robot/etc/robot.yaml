@@ -1,0 +1,5 @@
+# Robot load-test configuration
+gate_addr: "127.0.0.1:6000"
+robot_count: 10
+account_fmt: "robot_%04d"
+password: "123456"
