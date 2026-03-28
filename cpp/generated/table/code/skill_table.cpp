@@ -18,6 +18,15 @@ void SkillTableManager::Load() {
     for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
+        for (const auto& elem : row_data.skill_type()) {
+            idx_skill_type_.emplace(elem, &row_data);
+        }
+        for (const auto& elem : row_data.targeting_mode()) {
+            idx_targeting_mode_.emplace(elem, &row_data);
+        }
+        for (const auto& elem : row_data.effect()) {
+            idx_effect_.emplace(elem, &row_data);
+        }
     }
 
     expression_damage_.Init({

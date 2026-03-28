@@ -19,8 +19,8 @@ uint32_t MessageLimiter::CanSend(uint32_t messageId) {
     // Override from per-message config if present
     if (const auto [configEntry, _] = MessageLimiterTableManager::Instance().GetTableWithoutErrorLogging(messageId);
         configEntry != nullptr) {
-        maxAllowedRequests = configEntry->maxrequests();
-        timeWindowDuration = configEntry->timewindow();
+        maxAllowedRequests = configEntry->max_requests();
+        timeWindowDuration = configEntry->time_window();
     }
 
     if (messageTimestamps.empty()) {

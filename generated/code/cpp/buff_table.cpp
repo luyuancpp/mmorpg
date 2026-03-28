@@ -18,6 +18,15 @@ void BuffTableManager::Load() {
     for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
+        for (const auto& elem : row_data.interval_effect()) {
+            idx_interval_effect_.emplace(elem, &row_data);
+        }
+        for (const auto& elem : row_data.sub_buff()) {
+            idx_sub_buff_.emplace(elem, &row_data);
+        }
+        for (const auto& elem : row_data.target_sub_buff()) {
+            idx_target_sub_buff_.emplace(elem, &row_data);
+        }
     }
 
     expression_health_regeneration_.Init({

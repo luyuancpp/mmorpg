@@ -37,11 +37,17 @@ public:
 
 
 
+    const std::unordered_multimap<uint32_t, const ClassTable*>& GetSkillIndex() const { return idx_skill_; }
+
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     ClassTableData data_;
     KeyValueDataType kv_data_;
 
+
+
+    std::unordered_multimap<uint32_t, const ClassTable*> idx_skill_;
 
 };
 

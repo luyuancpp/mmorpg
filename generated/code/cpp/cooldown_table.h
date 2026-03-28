@@ -37,10 +37,12 @@ public:
 
 
 
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     CooldownTableData data_;
     KeyValueDataType kv_data_;
+
 
 
 };

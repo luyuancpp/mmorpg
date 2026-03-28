@@ -10,6 +10,7 @@ from core.excel_reader import read_all_tables
 from core.file_utils import ensure_dirs, md5_copy
 from core.foreign_key import validate_foreign_keys
 from core.generators.bit_index_gen import generate_bit_indexes
+from core.generators.comp_gen import generate_comp_headers
 from core.generators.config_gen import generate_config_classes
 from core.generators.constants_gen import generate_constants
 from core.generators.enum_gen import generate_operator_enums, generate_tip_enums
@@ -49,6 +50,7 @@ def run(cfg: ExporterConfig) -> None:
     compile_proto_cpp(cfg)
     compile_proto_go(cfg)
     generate_config_classes(cfg, tables)
+    generate_comp_headers(cfg, tables)
     generate_table_ids(cfg, tables)
     generate_constants(cfg, tables)
     generate_bit_indexes(cfg, tables)

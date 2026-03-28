@@ -220,3 +220,38 @@ class TableSchema:
             for idx in g.indices:
                 result[idx] = g.name
         return result
+
+    # ----- component generation helpers -----
+
+    @property
+    def scalar_comp_columns(self) -> list[ColumnDef]:
+        """Server columns eligible for scalar ECS component generation.
+
+        Excludes: map, set, repeated, grouped, and excluded (client/design) columns.
+        Returns one ColumnDef per unique field name (deduped).
+        """
+        group_indices = set()
+        for g in self.groups.values():
+            group_indices.update(g.indices)
+        seen: set[str] = set()
+        result: list[ColumnDef] = []
+        for c in self.columns:
+            if not c.is_server:
+                continue
+            if c.map_role or c.is_repeated or c.is_set:
+                continue
+            if c.excel_index in group_indices:
+                continue
+            if c.name in seen or c.name in self.arrays:
+                continue
+            seen.add(c.name)
+            result.append(c)
+        return result
+
+    @property
+    def repeated_comp_arrays(self) -> list["ArrayField"]:
+        """Repeated scalar arrays eligible for ECS component + value index.
+
+        Returns ArrayField objects (not grouped sub-messages).
+        """
+        return [a for a in self.arrays.values()]

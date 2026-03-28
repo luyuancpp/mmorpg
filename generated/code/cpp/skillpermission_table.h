@@ -37,11 +37,17 @@ public:
 
 
 
+    const std::unordered_multimap<uint32_t, const SkillPermissionTable*>& GetSkill_typeIndex() const { return idx_skill_type_; }
+
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     SkillPermissionTableData data_;
     KeyValueDataType kv_data_;
 
+
+
+    std::unordered_multimap<uint32_t, const SkillPermissionTable*> idx_skill_type_;
 
 };
 

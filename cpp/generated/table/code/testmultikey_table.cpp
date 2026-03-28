@@ -24,6 +24,9 @@ void TestMultiKeyTableManager::Load() {
         kv_m_string_keydata_.emplace(row_data.m_string_key(), &row_data);
         kv_m_uint32_keydata_.emplace(row_data.m_uint32_key(), &row_data);
         kv_m_int32_keydata_.emplace(row_data.m_int32_key(), &row_data);
+        for (const auto& elem : row_data.effect()) {
+            idx_effect_.emplace(elem, &row_data);
+        }
     }
 
 }

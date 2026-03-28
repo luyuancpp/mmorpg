@@ -61,6 +61,13 @@ public:
 
 
 
+    const std::unordered_multimap<double, const BuffTable*>& GetInterval_effectIndex() const { return idx_interval_effect_; }
+
+    const std::unordered_multimap<uint32_t, const BuffTable*>& GetSub_buffIndex() const { return idx_sub_buff_; }
+
+    const std::unordered_multimap<uint32_t, const BuffTable*>& GetTarget_sub_buffIndex() const { return idx_target_sub_buff_; }
+
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     BuffTableData data_;
@@ -70,6 +77,13 @@ private:
     ExcelExpression<double> expression_health_regeneration_;
 
     ExcelExpression<double> expression_bonus_damage_;
+
+
+    std::unordered_multimap<double, const BuffTable*> idx_interval_effect_;
+
+    std::unordered_multimap<uint32_t, const BuffTable*> idx_sub_buff_;
+
+    std::unordered_multimap<uint32_t, const BuffTable*> idx_target_sub_buff_;
 
 };
 

@@ -49,6 +49,13 @@ public:
 
 
 
+    const std::unordered_multimap<uint32_t, const SkillTable*>& GetSkill_typeIndex() const { return idx_skill_type_; }
+
+    const std::unordered_multimap<uint32_t, const SkillTable*>& GetTargeting_modeIndex() const { return idx_targeting_mode_; }
+
+    const std::unordered_multimap<uint32_t, const SkillTable*>& GetEffectIndex() const { return idx_effect_; }
+
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     SkillTableData data_;
@@ -56,6 +63,13 @@ private:
 
 
     ExcelExpression<double> expression_damage_;
+
+
+    std::unordered_multimap<uint32_t, const SkillTable*> idx_skill_type_;
+
+    std::unordered_multimap<uint32_t, const SkillTable*> idx_targeting_mode_;
+
+    std::unordered_multimap<uint32_t, const SkillTable*> idx_effect_;
 
 };
 

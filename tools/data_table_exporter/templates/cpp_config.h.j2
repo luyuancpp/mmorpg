@@ -53,6 +53,9 @@ public:
 {% for col in table.foreign_key_columns %}
     // FK: {{ col.name }} → {{ col.foreign_key.target_table }}.{{ col.foreign_key.target_column }}
 {% endfor %}
+{% for arr in table.repeated_comp_arrays %}
+    const std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*>& Get{{ arr.name | title }}Index() const { return idx_{{ arr.name }}_; }
+{% endfor %}
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
@@ -63,6 +66,9 @@ private:
 {% endfor %}
 {% for col in table.expression_columns %}
     ExcelExpression<{{ col.expression_type }}> expression_{{ col.name }}_;
+{% endfor %}
+{% for arr in table.repeated_comp_arrays %}
+    std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*> idx_{{ arr.name }}_;
 {% endfor %}
 };
 

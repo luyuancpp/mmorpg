@@ -1,0 +1,47 @@
+{# cpp_table_comp.h.j2 — per-column ECS component structs for one data table #}
+#pragma once
+#include <cstdint>
+#include <span>
+#include <string_view>
+#include "table/proto/{{ sheetname | lower }}_table.pb.h"
+
+// ============================================================
+// Per-column ECS components for {{ sheetname }}Table
+// ============================================================
+// Scalar columns → value components
+// String columns → std::string_view (points into proto memory)
+// Repeated columns → std::span (points into proto RepeatedField)
+// ============================================================
+
+{% for col in table.scalar_comp_columns %}
+struct {{ sheetname }}{{ col.name | title }}Comp {
+    {{ to_cpp_comp_type(col.data_type) }} value;
+};
+{% endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+struct {{ sheetname }}{{ arr.name | title }}Comp {
+    std::span<const {{ to_cpp_repeated_elem_type(arr.data_type) }}> values;
+};
+{% endfor %}
+
+// ============================================================
+// Factory helpers — build component from a proto row
+// ============================================================
+
+{% for col in table.scalar_comp_columns -%}
+{% if col.data_type == "string" -%}
+inline {{ sheetname }}{{ col.name | title }}Comp Make{{ sheetname }}{{ col.name | title }}Comp(const {{ sheetname }}Table& row) {
+    return { std::string_view(row.{{ col.name }}()) };
+}
+{% else -%}
+inline {{ sheetname }}{{ col.name | title }}Comp Make{{ sheetname }}{{ col.name | title }}Comp(const {{ sheetname }}Table& row) {
+    return { row.{{ col.name }}() };
+}
+{% endif -%}
+{% endfor -%}
+{% for arr in table.repeated_comp_arrays -%}
+inline {{ sheetname }}{{ arr.name | title }}Comp Make{{ sheetname }}{{ arr.name | title }}Comp(const {{ sheetname }}Table& row) {
+    const auto& rf = row.{{ arr.name }}();
+    return { std::span<const {{ to_cpp_repeated_elem_type(arr.data_type) }}>(rf.data(), rf.size()) };
+}
+{% endfor %}
