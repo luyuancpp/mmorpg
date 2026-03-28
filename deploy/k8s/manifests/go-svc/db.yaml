@@ -35,6 +35,9 @@ spec:
         - name: db
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: IfNotPresent
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
           args: ["-f", "/app/etc/db.yaml"]
           ports:
             - containerPort: 6000

@@ -8,20 +8,14 @@ excel:
   data_dir: ../../data                          # Main data tables (*.xlsx)
   operator_file: ../../data/operator/Operator.xlsx
   tip_file: ../../data/tip/Tip.xlsx
-  data_begin_row: 20                            # 1-based row where data starts
+  data_begin_row: 7                             # 1-based row where data starts
   metadata_rows:                                # 1-based Excel row numbers
-    column_name: 1
-    data_type: 2
-    map_type: 3                                 # map_key | map_value | set
+    column_name: 1                              # field names
+    data_type: 2                                # proto types: int32, string, …
+    struct: 3                                   # repeated | set | map_key | map_value | message:Name
     owner: 4                                    # server | client | common | design
-    multi_key: 5                                # "multi" → use multimap
-    table_key: 6                                # "table_key" → secondary index
-    expression_type: 7                          # return type for expression eval
-    expression_params: 8                        # comma-separated param names
-    foreign_key: 9                              # fk:TableName  or  fk:TableName.column
-    group_foreign_key: 10                       # gfk:TableName
-    bit_index_marker_row: 6                     # row to check for "bit_index" literal
-  field_info_end_row: 18                        # last row of per-column metadata
+    options: 5                                  # space-separated: bit_index key multi fk:T gfk:T expr:type expr_params:a,b
+    comment: 6                                  # human-readable comment
   server_owner_types: [server, common]          # owner values included in server gen
 
 # --- Output roots ---

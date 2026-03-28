@@ -181,7 +181,14 @@ void Node::InitRpcServer() {
 
 	localNodeInfo.set_node_uuid(boost::uuids::to_string(uuidGenerator()));
 
-	muduo::net::InetAddress zoneRedisAddress(tlsNodeConfigManager.GetGameConfig().zone_redis().host(), tlsNodeConfigManager.GetGameConfig().zone_redis().port());
+	const auto& redisHost = tlsNodeConfigManager.GetGameConfig().zone_redis().host();
+	const auto redisPort = static_cast<uint16_t>(tlsNodeConfigManager.GetGameConfig().zone_redis().port());
+	muduo::net::InetAddress zoneRedisAddress(redisPort);
+	if (!muduo::net::InetAddress::resolve(redisHost, &zoneRedisAddress)) {
+		LOG_WARN << "DNS resolve failed for Redis host '" << redisHost << "', treating as literal IP";
+		zoneRedisAddress = muduo::net::InetAddress(redisHost, redisPort);
+	}
+	LOG_INFO << "Zone Redis address: " << zoneRedisAddress.toIpPort();
 	tlsRedis.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, zoneRedisAddress);
 	tlsRedis.GetZoneRedis()->connect();
 

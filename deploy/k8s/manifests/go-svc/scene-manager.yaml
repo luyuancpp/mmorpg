@@ -35,6 +35,9 @@ spec:
         - name: scene-manager
           image: PLACEHOLDER_IMAGE
           imagePullPolicy: IfNotPresent
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
           args: ["-f", "/app/etc/scene_manager_service.yaml"]
           ports:
             - containerPort: 60000

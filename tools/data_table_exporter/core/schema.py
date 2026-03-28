@@ -2,6 +2,15 @@
 
 Defines the data structures that represent parsed Excel table metadata.
 All generators consume these models instead of raw Excel data.
+
+Excel header format (6 rows):
+    Row 1: field names
+    Row 2: proto types (int32, string, uint32, double, …)
+    Row 3: struct — "repeated", "set", "map_key", "map_value", "message:Name", or empty
+    Row 4: owner — "server", "client", "common", "design", or "constants_name"
+    Row 5: options — space-separated tokens: bit_index, key, multi, fk:T, gfk:T, expr:type, expr_params:a,b
+    Row 6: comment
+    Row 7+: data
 """
 
 from __future__ import annotations
@@ -15,9 +24,7 @@ from typing import Optional
 class ForeignKeyRef:
     """A column-level foreign key reference.
 
-    Parsed from Excel metadata row content like:
-        fk:Reward         → references Reward.id
-        fk:Item.type      → references Item.type
+    Parsed from option token ``fk:Table`` or ``fk:Table.column``.
     """
     target_table: str
     target_column: str = "id"
@@ -38,8 +45,7 @@ class ForeignKeyRef:
 class GroupForeignKeyRef:
     """A group-level foreign key reference.
 
-    Parsed from Excel metadata row content like:
-        gfk:Reward        → this column group references the Reward table
+    Parsed from option token ``gfk:Table``.
     """
     target_table: str
 
@@ -54,20 +60,81 @@ class GroupForeignKeyRef:
 
 @dataclass
 class ColumnDef:
-    """Metadata for a single Excel column, extracted from header rows."""
+    """Metadata for a single Excel column, extracted from the 6-row header."""
     name: str
     data_type: str                                  # proto type: int32, string, …
     owner: str = ""                                 # server | client | common | design
-    map_role: str = ""                              # "map_key" | "map_value" | "set" | ""
-    is_table_key: bool = False                      # secondary index column
-    is_multi_key: bool = False                      # use multimap
-    expression_type: str = ""                       # return type for expression eval
-    expression_params: list[str] = field(default_factory=list)
-    has_bit_index: bool = False                     # bit_index marker present
-    foreign_key: Optional[ForeignKeyRef] = None
-    group_foreign_key: Optional[GroupForeignKeyRef] = None
+    struct: str = ""                                # repeated | set | map_key | map_value | message:Name | ""
+    options: list[str] = field(default_factory=list)  # space-separated tokens
+    comment: str = ""
     excel_index: int = 0                            # 0-based column index
-    constants_name: Optional[str] = None            # value of constants_name row
+    constants_name: Optional[str] = None
+
+    # ----- struct-derived properties -----
+
+    @property
+    def map_role(self) -> str:
+        if self.struct in ("set", "map_key", "map_value"):
+            return self.struct
+        return ""
+
+    @property
+    def is_repeated(self) -> bool:
+        return self.struct == "repeated"
+
+    @property
+    def is_set(self) -> bool:
+        return self.struct == "set"
+
+    @property
+    def message_name(self) -> str:
+        if self.struct.startswith("message:"):
+            return self.struct.split(":", 1)[1]
+        return ""
+
+    # ----- option-derived properties -----
+
+    @property
+    def is_table_key(self) -> bool:
+        return "key" in self.options
+
+    @property
+    def is_multi_key(self) -> bool:
+        return "multi" in self.options
+
+    @property
+    def has_bit_index(self) -> bool:
+        return "bit_index" in self.options
+
+    @property
+    def expression_type(self) -> str:
+        for opt in self.options:
+            if opt.startswith("expr:"):
+                return opt[5:]
+        return ""
+
+    @property
+    def expression_params(self) -> list[str]:
+        for opt in self.options:
+            if opt.startswith("expr_params:"):
+                return [p.strip() for p in opt[12:].split(",") if p.strip()]
+        return []
+
+    @property
+    def foreign_key(self) -> Optional[ForeignKeyRef]:
+        for opt in self.options:
+            if opt.lower().startswith("fk:"):
+                return ForeignKeyRef.parse(opt)
+        return None
+
+    @property
+    def group_foreign_key(self) -> Optional[GroupForeignKeyRef]:
+        for opt in self.options:
+            if opt.lower().startswith("gfk:"):
+                return GroupForeignKeyRef.parse(opt)
+        return None
+
+    # ----- owner-derived properties -----
 
     @property
     def is_server(self) -> bool:
@@ -80,31 +147,40 @@ class ColumnDef:
 
 @dataclass
 class ArrayField:
-    """Consecutive columns with the same name → repeated proto field."""
+    """Columns with the same name and ``struct: repeated`` → repeated proto field."""
     name: str
     data_type: str
     indices: list[int] = field(default_factory=list)
 
 
 @dataclass
+class MapField:
+    """Consecutive ``map_key`` + ``map_value`` column pairs → proto ``map`` field."""
+    name: str           # common prefix (e.g. "tag" from "tag_key"/"tag_value")
+    key_type: str
+    value_type: str
+
+
+@dataclass
 class GroupField:
-    """Non-consecutive column pattern → repeated sub-message field."""
-    name: str                           # common prefix of grouped columns
-    columns: list[ColumnDef] = field(default_factory=list)
-    indices: list[int] = field(default_factory=list)
+    """Columns sharing the same ``message:Name`` → repeated sub-message field."""
+    name: str
+    columns: list[ColumnDef] = field(default_factory=list)   # unique column defs
+    indices: list[int] = field(default_factory=list)          # all column positions
 
 
 @dataclass
 class TableSchema:
     """Complete schema for one Excel sheet / data table."""
     name: str
-    source_path: Optional[Path] = None                # path to the source .xlsx
+    source_path: Optional[Path] = None
     columns: list[ColumnDef] = field(default_factory=list)
     arrays: dict[str, ArrayField] = field(default_factory=dict)
     groups: dict[str, GroupField] = field(default_factory=dict)
+    maps: dict[str, MapField] = field(default_factory=dict)
     use_flat_multimap: bool = False
     has_constants_name: bool = False
-    constants_name_index: Optional[int] = None      # column index of constants_name
+    constants_name_index: Optional[int] = None
 
     # ----- convenience properties -----
 
@@ -135,3 +211,12 @@ class TableSchema:
     @property
     def set_columns(self) -> list[ColumnDef]:
         return [c for c in self.columns if c.map_role == "set"]
+
+    @property
+    def col_to_group(self) -> dict[int, str]:
+        """Map column index → group name for grouped columns."""
+        result: dict[int, str] = {}
+        for g in self.groups.values():
+            for idx in g.indices:
+                result[idx] = g.name
+        return result
