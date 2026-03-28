@@ -1,0 +1,48 @@
+{# go_all_table.go.j2 — aggregated table loader #}
+package table
+
+import (
+    "log"
+    "sync"
+)
+
+var loadSuccessCallback func()
+
+// LoadTables loads all config tables synchronously.
+func LoadTables(configDir string) {
+{%- for item in sheetnames %}
+    if err := {{ item }}TableManagerInstance.Load(configDir); err != nil {
+        log.Fatalf("failed to load {{ item }} table: %v", err)
+    }
+{%- endfor %}
+
+    if loadSuccessCallback != nil {
+        loadSuccessCallback()
+    }
+}
+
+// LoadTablesAsync loads all config tables using goroutines.
+func LoadTablesAsync(configDir string) {
+    var wg sync.WaitGroup
+    wg.Add({{ sheetnames | length }})
+
+{%- for item in sheetnames %}
+    go func() {
+        defer wg.Done()
+        if err := {{ item }}TableManagerInstance.Load(configDir); err != nil {
+            log.Fatalf("failed to load {{ item }} table: %v", err)
+        }
+    }()
+{%- endfor %}
+
+    wg.Wait()
+
+    if loadSuccessCallback != nil {
+        loadSuccessCallback()
+    }
+}
+
+// OnTablesLoadSuccess registers a callback invoked after all tables load.
+func OnTablesLoadSuccess(cb func()) {
+    loadSuccessCallback = cb
+}

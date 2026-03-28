@@ -1,0 +1,65 @@
+{# java_config.java.j2 — per-table config manager class #}
+package {{ package }};
+
+import com.google.protobuf.util.JsonFormat;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Auto-generated config manager for {{ sheetname }}.
+ * DO NOT EDIT — regenerate from Excel via Data Table Exporter.
+ */
+public class {{ sheetname }}TableManager {
+
+    private static final {{ sheetname }}TableManager INSTANCE = new {{ sheetname }}TableManager();
+
+    private {{ sheetname }}TableData data;
+    private final Map<Integer, {{ sheetname }}Table> kvData = new HashMap<>();
+{% for col in table.table_keys %}
+    private final Map<{{ to_java_boxed(col.data_type) }}, {{ sheetname }}Table> kv{{ col.name | title }}Data = new HashMap<>();
+{% endfor %}
+
+    public static {{ sheetname }}TableManager getInstance() {
+        return INSTANCE;
+    }
+
+    public void load(String configDir) throws Exception {
+        String json = Files.readString(Path.of(configDir, "{{ sheetname | lower }}.json"));
+        {{ sheetname }}TableData.Builder builder = {{ sheetname }}TableData.newBuilder();
+        JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        this.data = builder.build();
+
+        for ({{ sheetname }}Table row : data.getDataList()) {
+            kvData.put(row.getId(), row);
+{%- for col in table.table_keys %}
+            kv{{ col.name | title }}Data.put(row.get{{ col.name | title }}(), row);
+{%- endfor %}
+        }
+    }
+
+    public {{ sheetname }}TableData getAll() {
+        return data;
+    }
+
+    public {{ sheetname }}Table getById(int id) {
+        return kvData.get(id);
+    }
+
+    public Map<Integer, {{ sheetname }}Table> getKvData() {
+        return Collections.unmodifiableMap(kvData);
+    }
+
+{% for col in table.table_keys %}
+    public {{ sheetname }}Table getBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
+        return kv{{ col.name | title }}Data.get(key);
+    }
+{% endfor %}
+
+{% for col in table.foreign_key_columns %}
+    // FK: {{ col.name }} → {{ col.foreign_key.target_table }}.{{ col.foreign_key.target_column }}
+{% endfor %}
+}

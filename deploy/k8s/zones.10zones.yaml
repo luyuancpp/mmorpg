@@ -1,0 +1,60 @@
+zones:
+  - name: zone-1
+    zoneId: 1
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-2
+    zoneId: 2
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-3
+    zoneId: 3
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-4
+    zoneId: 4
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-5
+    zoneId: 5
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-6
+    zoneId: 6
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-7
+    zoneId: 7
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-8
+    zoneId: 8
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-9
+    zoneId: 9
+    replicas:
+      gate: 1
+      scene: 2
+
+  - name: zone-10
+    zoneId: 10
+    replicas:
+      gate: 1
+      scene: 2

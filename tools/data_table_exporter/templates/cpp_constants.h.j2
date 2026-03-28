@@ -1,0 +1,6 @@
+{# cpp_constants.h.j2 — named constant definitions #}
+#pragma once
+
+{% for const in constants %}
+constexpr uint32_t {{ const.name }} = {{ const.value }};
+{% endfor %}

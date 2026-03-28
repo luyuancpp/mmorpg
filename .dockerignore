@@ -1,0 +1,45 @@
+# ── Docker build-context exclusions ──────────────────────────────
+# Keeps the context small for Go/Java service builds.
+# The C++ Dockerfile.cpp selectively COPYs what it needs.
+
+# ── Large third-party sources (cloned inside Docker instead) ───
+third_party/grpc/
+# OpenSSL headers come from apt libssl-dev
+third_party/openssl/
+
+# Windows pre-built libraries — not used in Linux Docker builds
+lib/
+
+# Build outputs and IDE files
+bin/
+x64/
+vsout/
+*.user
+*.suo
+*.sdf
+*.db
+
+# OS / editor
+.git
+.vs/
+.vscode/
+.idea/
+
+# Java build output
+java/**/target/
+
+# Go build caches
+go/**/tmp/
+
+# Deploy staging (runtime image has its own COPY)
+deploy/k8s/runtime/linux/
+
+# Docs and non-build assets
+docs/
+robot/
+data/
+test/
+
+# Logs
+*.log
+bin/logs/

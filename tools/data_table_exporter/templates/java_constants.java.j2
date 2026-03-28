@@ -1,0 +1,14 @@
+{# java_constants.java.j2 — named constant definitions #}
+package {{ package }};
+
+/**
+ * Auto-generated constants from {{ classname }}.
+ * DO NOT EDIT — regenerate from Excel via Data Table Exporter.
+ */
+public final class {{ classname }} {
+{% for item in constants %}
+    public static final int {{ item.name }} = {{ item.value }};
+{% endfor %}
+
+    private {{ classname }}() {}
+}

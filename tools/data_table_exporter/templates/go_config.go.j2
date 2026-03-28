@@ -1,0 +1,69 @@
+{# go_config.go.j2 — per-table config manager struct #}
+package table
+
+import (
+    "fmt"
+    "os"
+    "path/filepath"
+
+    "google.golang.org/protobuf/encoding/protojson"
+    pb "{{ proto_import_path }}"
+)
+
+type {{ sheetname }}TableManager struct {
+    data   []*pb.{{ sheetname }}Table
+    kvData map[int32]*pb.{{ sheetname }}Table
+{%- for col in table.table_keys %}
+    kv{{ col.name | title }}Data map[{{ to_go_type(col.data_type) }}]*pb.{{ sheetname }}Table
+{%- endfor %}
+}
+
+var {{ sheetname }}TableManagerInstance = New{{ sheetname }}TableManager()
+
+func New{{ sheetname }}TableManager() *{{ sheetname }}TableManager {
+    return &{{ sheetname }}TableManager{
+        kvData: make(map[int32]*pb.{{ sheetname }}Table),
+{%- for col in table.table_keys %}
+        kv{{ col.name | title }}Data: make(map[{{ to_go_type(col.data_type) }}]*pb.{{ sheetname }}Table),
+{%- endfor %}
+    }
+}
+
+func (m *{{ sheetname }}TableManager) Load(configDir string) error {
+    path := filepath.Join(configDir, "{{ sheetname | lower }}.json")
+    raw, err := os.ReadFile(path)
+    if err != nil {
+        return fmt.Errorf("failed to read file: %w", err)
+    }
+
+    var container pb.{{ sheetname }}TableData
+    if err := protojson.Unmarshal(raw, &container); err != nil {
+        return fmt.Errorf("failed to parse json: %w", err)
+    }
+
+    for _, row := range container.Data {
+        m.kvData[row.Id] = row
+{%- for col in table.table_keys %}
+        m.kv{{ col.name | title }}Data[row.{{ col.name | capitalize }}] = row
+{%- endfor %}
+    }
+
+    m.data = container.Data
+    return nil
+}
+
+func (m *{{ sheetname }}TableManager) GetById(id int32) (*pb.{{ sheetname }}Table, bool) {
+    row, ok := m.kvData[id]
+    return row, ok
+}
+
+{% for col in table.table_keys -%}
+func (m *{{ sheetname }}TableManager) GetBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
+    row, ok := m.kv{{ col.name | title }}Data[key]
+    return row, ok
+}
+
+{% endfor %}
+{%- for col in table.foreign_key_columns %}
+// FK: {{ col.name }} → {{ col.foreign_key.target_table }}.{{ col.foreign_key.target_column }}
+{% endfor %}

@@ -1,0 +1,8 @@
+{# go_constants.go.j2 — named constant definitions #}
+package table
+
+const (
+{%- for item in constants %}
+    {{ item.name }} = {{ item.value }}
+{%- endfor %}
+)
