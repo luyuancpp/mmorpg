@@ -216,6 +216,7 @@ class MissionTable final : public ::google::protobuf::Message
   enum : int {
     kConditionIdFieldNumber = 2,
     kNextMissionIdFieldNumber = 8,
+    kTargetCountFieldNumber = 9,
     kIdFieldNumber = 1,
     kMissionTypeFieldNumber = 3,
     kMissionSubTypeFieldNumber = 4,
@@ -257,6 +258,24 @@ class MissionTable final : public ::google::protobuf::Message
   private:
   const ::google::protobuf::RepeatedField<::uint32_t>& _internal_next_mission_id() const;
   ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_next_mission_id();
+
+  public:
+  // repeated uint32 target_count = 9;
+  int target_count_size() const;
+  private:
+  int _internal_target_count_size() const;
+
+  public:
+  void clear_target_count() ;
+  ::uint32_t target_count(int index) const;
+  void set_target_count(int index, ::uint32_t value);
+  void add_target_count(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& target_count() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_target_count();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_target_count() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_target_count();
 
   public:
   // uint32 id = 1;
@@ -323,7 +342,7 @@ class MissionTable final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 8,
+  static const ::google::protobuf::internal::TcParseTable<4, 9,
                                    0, 0,
                                    2>
       _table_;
@@ -349,6 +368,8 @@ class MissionTable final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _condition_id_cached_byte_size_;
     ::google::protobuf::RepeatedField<::uint32_t> next_mission_id_;
     ::google::protobuf::internal::CachedSize _next_mission_id_cached_byte_size_;
+    ::google::protobuf::RepeatedField<::uint32_t> target_count_;
+    ::google::protobuf::internal::CachedSize _target_count_cached_byte_size_;
     ::uint32_t id_;
     ::uint32_t mission_type_;
     ::uint32_t mission_sub_type_;
@@ -810,6 +831,52 @@ inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
 MissionTable::_internal_mutable_next_mission_id() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.next_mission_id_;
+}
+
+// repeated uint32 target_count = 9;
+inline int MissionTable::_internal_target_count_size() const {
+  return _internal_target_count().size();
+}
+inline int MissionTable::target_count_size() const {
+  return _internal_target_count_size();
+}
+inline void MissionTable::clear_target_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_count_.Clear();
+}
+inline ::uint32_t MissionTable::target_count(int index) const {
+  // @@protoc_insertion_point(field_get:MissionTable.target_count)
+  return _internal_target_count().Get(index);
+}
+inline void MissionTable::set_target_count(int index, ::uint32_t value) {
+  _internal_mutable_target_count()->Set(index, value);
+  // @@protoc_insertion_point(field_set:MissionTable.target_count)
+}
+inline void MissionTable::add_target_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_target_count()->Add(value);
+  // @@protoc_insertion_point(field_add:MissionTable.target_count)
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>& MissionTable::target_count() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:MissionTable.target_count)
+  return _internal_target_count();
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL MissionTable::mutable_target_count()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:MissionTable.target_count)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_target_count();
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>&
+MissionTable::_internal_target_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_count_;
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
+MissionTable::_internal_mutable_target_count() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.target_count_;
 }
 
 // -------------------------------------------------------------------
