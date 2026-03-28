@@ -65,7 +65,23 @@ else
     echo "gRPC already installed, skipping"
 fi
 
-# ── 3. muduo-linux ──────────────────────────────────────────────────────────
+# ── 3. hiredis (must be before muduo so muduo finds it) ─────────────────────
+
+HIREDIS_DIR="$REPO_ROOT/third_party/redis/deps/hiredis"
+if [ ! -f "$LIB_DIR/libhiredis.a" ]; then
+    echo "=== Building hiredis ==="
+    cd "$HIREDIS_DIR"
+    make -j"$CPU"
+    cp -f libhiredis.a "$LIB_DIR/"
+    make install PREFIX=/usr/local
+    ldconfig
+    cd "$REPO_ROOT"
+    echo "hiredis install ok"
+else
+    echo "hiredis already built, skipping"
+fi
+
+# ── 4. muduo-linux ──────────────────────────────────────────────────────────
 
 MUDUO_DIR="$REPO_ROOT/third_party/muduo-linux"
 MUDUO_BUILD="$MUDUO_DIR/.build_linux"
@@ -82,21 +98,6 @@ if [ ! -f "$LIB_DIR/libmuduo_net.a" ]; then
     echo "muduo install ok"
 else
     echo "muduo already built, skipping"
-fi
-
-# ── 4. hiredis ──────────────────────────────────────────────────────────────
-
-HIREDIS_DIR="$REPO_ROOT/third_party/redis/deps/hiredis"
-if [ ! -f "$LIB_DIR/libhiredis.a" ]; then
-    echo "=== Building hiredis ==="
-    cd "$HIREDIS_DIR"
-    make -j"$CPU"
-    cp -f libhiredis.a "$LIB_DIR/"
-    make install PREFIX=/usr/local
-    cd "$REPO_ROOT"
-    echo "hiredis install ok"
-else
-    echo "hiredis already built, skipping"
 fi
 
 # ── 5. librdkafka ──────────────────────────────────────────────────────────

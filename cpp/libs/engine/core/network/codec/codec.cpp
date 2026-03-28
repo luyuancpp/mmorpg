@@ -8,6 +8,7 @@
 
 #include "network/codec/codec.h"
 
+#include <cassert>
 #include "muduo/base/Logging.h"
 #include "muduo/net/Endian.h"
 #include "muduo/net/protorpc/google-inl.h"
@@ -30,7 +31,7 @@ void ProtobufCodec::fillEmptyBuffer(Buffer* buf, const google::protobuf::Message
   buf->append(typeName.c_str(), nameLen);
 
   // code copied from MessageLite::SerializeToArray() and MessageLite::SerializePartialToArray().
-  GOOGLE_DCHECK(message.IsInitialized()) << InitializationErrorMessage("serialize", message);
+  assert(message.IsInitialized());
 
   /**
    * 'ByteSize()' of message is deprecated in Protocol Buffers v3.4.0 firstly.

@@ -363,7 +363,7 @@ void Node::LoadAllConfigData() {
 }
 
 void Node::SetupTimeZone() {
-	const muduo::TimeZone hkTz("zoneinfo/Asia/Hong_Kong");
+	const muduo::TimeZone hkTz = muduo::TimeZone::loadZoneFile("zoneinfo/Asia/Hong_Kong");
 	muduo::Logger::setTimeZone(hkTz);
 }
 

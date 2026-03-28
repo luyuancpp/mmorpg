@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # ────────────────────────────────────────────────────────────────
 # Multi-stage Dockerfile for the Java sa-token auth service.
 #
@@ -10,9 +9,12 @@
 # ────────────────────────────────────────────────────────────────
 
 # ── Build stage ──────────────────────────────────────────────────
-FROM eclipse-temurin:23-jdk-alpine AS builder
+# Use Debian-based JDK because protobuf-maven-plugin downloads a
+# glibc-linked protoc binary that does not run on musl/Alpine.
+FROM eclipse-temurin:23-jdk AS builder
 
-RUN apk add --no-cache maven
+RUN apt-get update && apt-get install -y --no-install-recommends maven \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
 COPY . /src/

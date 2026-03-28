@@ -1,10 +1,10 @@
+{# tip_enum.proto.j2 — one file per tip/error group #}
 syntax = "proto3";
 
 option go_package = "generated/pb/table";
 
 enum {{ group_name }} {
-
-  k{{ group_name.capitalize() }}OK = 0;
+  k{{ group_name | capitalize }}OK = 0;
 {% for enum_name, enum_id in group_data.items() %}
   k{{ enum_name }} = {{ enum_id }};
 {% endfor %}

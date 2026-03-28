@@ -14,6 +14,11 @@
 #ifdef _WIN32
 #include <WinSock2.h>
 #pragma comment(lib, "ws2_32.lib")
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #endif
 
 uint32_t tryPortId{ 0 };
@@ -88,10 +93,17 @@ bool IsPortReservedType(uint32_t type)
 }
 
 bool IsLocalPortAvailable(uint16_t port) {
+#ifdef _WIN32
 	SOCKET sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock == INVALID_SOCKET) {
 		return false;
 	}
+#else
+	int sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock < 0) {
+		return false;
+	}
+#endif
 
 	sockaddr_in addr{};
 	addr.sin_family = AF_INET;
@@ -103,7 +115,11 @@ bool IsLocalPortAvailable(uint16_t port) {
 		reinterpret_cast<const char*>(&optval), sizeof(optval));
 
 	bool available = (::bind(sock, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) == 0);
+#ifdef _WIN32
 	::closesocket(sock);
+#else
+	::close(sock);
+#endif
 	return available;
 }
 
