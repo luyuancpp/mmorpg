@@ -86,7 +86,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent &acceptEvent, Mis
 	{
 		FetchConditionTableOrContinue(conditionId);
 		missionPb.add_progress(0);
-		missionComp.GetMutableEventMissionsClassify()[conditionTable->condition_type()].emplace(missionId);
+		missionComp.GetMutableEventMissionsClassify()[conditionTable->condition_category()].emplace(missionId);
 	}
 
 	missionComp.GetMutableMissionList().mutable_missions()->insert({missionId, std::move(missionPb)});
@@ -191,7 +191,7 @@ void MissionSystem::RemoveMissionClassification(MissionsComp &missionComp, uint3
 	for (const auto &conditionId : config.GetConditionIds(missionId))
 	{
 		FetchConditionTableOrContinue(conditionId);
-		missionComp.GetMutableEventMissionsClassify()[conditionTable->condition_type()].erase(missionId);
+		missionComp.GetMutableEventMissionsClassify()[conditionTable->condition_category()].erase(missionId);
 	}
 }
 
@@ -240,7 +240,7 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 	{
 		return false;
 	}
-	if (conditionEvent.condition_type() != conditionTable->condition_type())
+	if (conditionEvent.condition_type() != conditionTable->condition_category())
 	{
 		return false;
 	}

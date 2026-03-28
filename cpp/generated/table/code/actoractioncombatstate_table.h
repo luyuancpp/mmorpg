@@ -37,10 +37,12 @@ public:
 
 
 
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     ActorActionCombatStateTableData data_;
     KeyValueDataType kv_data_;
+
 
 
 };

@@ -21,6 +21,11 @@ void {{ sheetname }}TableManager::Load() {
 {%- for col in table.table_keys %}
         kv_{{ col.name }}data_.emplace(row_data.{{ col.name }}(), &row_data);
 {%- endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+        for (const auto& elem : row_data.{{ arr.name }}()) {
+            idx_{{ arr.name }}_.emplace(elem, &row_data);
+        }
+{%- endfor %}
     }
 {% for col in table.expression_columns if col.expression_params %}
     expression_{{ col.name }}_.Init({

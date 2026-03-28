@@ -18,6 +18,18 @@ void ConditionTableManager::Load() {
     for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
+        for (const auto& elem : row_data.condition1()) {
+            idx_condition1_.emplace(elem, &row_data);
+        }
+        for (const auto& elem : row_data.condition2()) {
+            idx_condition2_.emplace(elem, &row_data);
+        }
+        for (const auto& elem : row_data.condition3()) {
+            idx_condition3_.emplace(elem, &row_data);
+        }
+        for (const auto& elem : row_data.condition4()) {
+            idx_condition4_.emplace(elem, &row_data);
+        }
     }
 
 }

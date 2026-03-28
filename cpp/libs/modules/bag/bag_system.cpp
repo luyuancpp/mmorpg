@@ -80,15 +80,15 @@ uint32_t Bag::HasEnoughSpace(const ItemCountMap &itemsToAdd)
 	{
 		FetchAndValidateItemTable(configId);
 
-		if (itemTable->max_statck_size() <= 0)
+		if (itemTable->max_stack_size() <= 0)
 		{
 			LOG_ERROR << "config error:" << configId << " player:" << PlayerGuid();
 			return PrintStackAndReturnError(kInvalidTableData);
 		}
 
-		if (itemTable->max_statck_size() == 1)
+		if (itemTable->max_stack_size() == 1)
 		{
-			std::size_t needGridSize = static_cast<std::size_t>(itemTable->max_statck_size() * count);
+			std::size_t needGridSize = static_cast<std::size_t>(itemTable->max_stack_size() * count);
 			if (emptySize <= 0 || emptySize < needGridSize)
 			{
 				return PrintStackAndReturnError(kBagItemNotStacked);
@@ -117,7 +117,7 @@ uint32_t Bag::HasEnoughSpace(const ItemCountMap &itemsToAdd)
 			}
 
 			FetchItemTableOrContinue(stackConfigId);
-			auto remainStackSize = itemTable->max_statck_size() - item.size();
+			auto remainStackSize = itemTable->max_stack_size() - item.size();
 			if (remainStackSize <= 0)
 			{
 				continue;
@@ -136,7 +136,7 @@ uint32_t Bag::HasEnoughSpace(const ItemCountMap &itemsToAdd)
 	for (const auto &[configId, count] : pendingStackItems)
 	{
 		FetchItemTableOrContinue(configId);
-		auto needGridSize = CalculateStackGridSize(count, itemTable->max_statck_size());
+		auto needGridSize = CalculateStackGridSize(count, itemTable->max_stack_size());
 		if (emptySize <= 0 || emptySize < needGridSize)
 		{
 			return PrintStackAndReturnError(kBagItemNotStacked);
@@ -259,12 +259,12 @@ void Bag::Neaten()
 	{
 		FetchItemTableOrContinue(item.config_id());
 
-		if (itemTable->max_statck_size() <= 1)
+		if (itemTable->max_stack_size() <= 1)
 		{
 			continue;
 		}
 
-		if (item.size() >= itemTable->max_statck_size()) // skip full stacks
+		if (item.size() >= itemTable->max_stack_size()) // skip full stacks
 		{
 			continue;
 		}
@@ -314,7 +314,7 @@ void Bag::Neaten()
 			auto currentItemEntity = itemList[index];
 			auto currentItem = itemRegistry_.get_or_emplace<ItemComp>(currentItemEntity);
 
-			if (totalStackSize <= itemTable->max_statck_size())
+			if (totalStackSize <= itemTable->max_stack_size())
 			{
 				currentItem.set_size(totalStackSize);
 				++index;
@@ -322,8 +322,8 @@ void Bag::Neaten()
 			}
 			else
 			{
-				currentItem.set_size(itemTable->max_statck_size());
-				totalStackSize -= itemTable->max_statck_size();
+				currentItem.set_size(itemTable->max_stack_size());
+				totalStackSize -= itemTable->max_stack_size();
 			}
 		}
 
@@ -510,17 +510,17 @@ uint32_t Bag::AddItem(const InitItemParam &initItemParam)
 
 	FetchAndValidateItemTable(itemPBCompCopy.config_id());
 
-	if (itemTable->max_statck_size() <= 0)
+	if (itemTable->max_stack_size() <= 0)
 	{
 		return PrintStackAndReturnError(kInvalidTableData);
 	}
 
-	if (itemTable->max_statck_size() == 1)
+	if (itemTable->max_stack_size() == 1)
 	{
 		return AddNonStackableItem(std::move(itemPBCompCopy));
 	}
 
-	return AddStackableItem(std::move(itemPBCompCopy), itemTable->max_statck_size());
+	return AddStackableItem(std::move(itemPBCompCopy), itemTable->max_stack_size());
 }
 
 uint32_t Bag::RemoveItem(Guid del_guid)
@@ -569,9 +569,9 @@ void Bag::DestroyItem(Guid guid)
 	items_.erase(guid);
 }
 
-std::size_t Bag::CalculateStackGridSize(std::size_t total_size, std::size_t max_statck_size)
+std::size_t Bag::CalculateStackGridSize(std::size_t total_size, std::size_t max_stack_size)
 {
-	return (total_size + max_statck_size - 1) / max_statck_size;
+	return (total_size + max_stack_size - 1) / max_stack_size;
 }
 
 uint32_t Bag::OnNewGrid(Guid guid)

@@ -37,11 +37,21 @@ public:
 
 
 
+    const std::unordered_multimap<uint32_t, const MissionTable*>& GetCondition_idIndex() const { return idx_condition_id_; }
+
+    const std::unordered_multimap<uint32_t, const MissionTable*>& GetNext_mission_idIndex() const { return idx_next_mission_id_; }
+
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     MissionTableData data_;
     KeyValueDataType kv_data_;
 
+
+
+    std::unordered_multimap<uint32_t, const MissionTable*> idx_condition_id_;
+
+    std::unordered_multimap<uint32_t, const MissionTable*> idx_next_mission_id_;
 
 };
 

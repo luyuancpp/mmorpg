@@ -36,6 +36,30 @@ def cpp_map_type(is_multi: bool) -> str:
     return "unordered_multimap" if is_multi else "unordered_map"
 
 
+# --- Component helpers (for per-column ECS component generation) ---
+
+_CPP_COMP_TYPE_MAP: dict[str, str] = {
+    "int32":  "int32_t",
+    "int64":  "int64_t",
+    "uint32": "uint32_t",
+    "uint64": "uint64_t",
+    "float":  "float",
+    "double": "double",
+    "bool":   "bool",
+    "string": "std::string_view",
+}
+
+
+def to_cpp_comp_type(proto_type: str) -> str:
+    """C++ type for a per-column ECS component value (string → string_view)."""
+    return _CPP_COMP_TYPE_MAP.get(proto_type, proto_type)
+
+
+def to_cpp_repeated_elem_type(proto_type: str) -> str:
+    """C++ element type inside a proto RepeatedField (for span)."""
+    return _CPP_TYPE_MAP.get(proto_type, proto_type)
+
+
 # ---------------------------------------------------------------------------
 # Go
 # ---------------------------------------------------------------------------

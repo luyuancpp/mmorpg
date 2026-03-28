@@ -55,6 +55,9 @@ public:
 
 
 
+    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetEffectIndex() const { return idx_effect_; }
+
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     TestMultiKeyTableData data_;
@@ -72,6 +75,9 @@ private:
 
     std::unordered_multimap<int32_t, const TestMultiKeyTable*> kv_m_int32_keydata_;
 
+
+
+    std::unordered_multimap<uint32_t, const TestMultiKeyTable*> idx_effect_;
 
 };
 

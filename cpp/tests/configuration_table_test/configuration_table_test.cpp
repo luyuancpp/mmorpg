@@ -3,8 +3,10 @@
 #include "muduo/base/Logging.h"
 #include "table/code/test_table.h"
 #include "table/code/testmultikey_table.h"
+#include "table/code/testmultikey_table_comp.h"
 #include "table/code/skill_table.h"
 #include "table/code/buff_table.h"
+#include "table/code/buff_table_comp.h"
 #include "../test_config_helper.h"
 
 void LoadTables();
@@ -51,7 +53,7 @@ TEST(ConfigTableTest, IterateTestMultiKeyTable)
 
 TEST(ConfigTableTest, MultiKeyUint32RangeQuery)
 {
-	auto &data = TestMultiKeyTableManager::Instance().GetMuint32keyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetM_uint32_keyData();
 	auto range = data.equal_range(17);
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -61,7 +63,7 @@ TEST(ConfigTableTest, MultiKeyUint32RangeQuery)
 
 TEST(ConfigTableTest, MultiKeyInt32RangeQuery)
 {
-	auto &data = TestMultiKeyTableManager::Instance().GetMin32keyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetM_int32_keyData();
 	auto range = data.equal_range(10);
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -71,7 +73,7 @@ TEST(ConfigTableTest, MultiKeyInt32RangeQuery)
 
 TEST(ConfigTableTest, MultiKeyStringRangeQuery)
 {
-	auto &data = TestMultiKeyTableManager::Instance().GetMstringkeyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetM_string_keyData();
 	auto range = data.equal_range("aa");
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -85,20 +87,119 @@ TEST(ConfigTableTest, MultiKeyStringRangeQuery)
 
 TEST(ConfigTableTest, FindByUint32Key)
 {
-	auto result = TestMultiKeyTableManager::Instance().GetByUint32key(14);
+	auto result = TestMultiKeyTableManager::Instance().GetByUint32_key(14);
 	EXPECT_EQ(result.first->id(), 1);
 }
 
 TEST(ConfigTableTest, FindByInt32Key)
 {
-	auto result = TestMultiKeyTableManager::Instance().GetByIn32key(8);
+	auto result = TestMultiKeyTableManager::Instance().GetByInt32_key(8);
 	EXPECT_EQ(result.first->id(), 1);
 }
 
 TEST(ConfigTableTest, FindByStringKey)
 {
-	auto result = TestMultiKeyTableManager::Instance().GetByStringkey("aa");
+	auto result = TestMultiKeyTableManager::Instance().GetByString_key("aa");
 	EXPECT_EQ(result.first->id(), 1);
+}
+
+// ---------------------------------------------------------------------------
+// 每列组件 (per-column ECS component)
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, ScalarCompFromRow)
+{
+	auto [row, ok] = TestMultiKeyTableManager::Instance().GetTable(1);
+	ASSERT_NE(row, nullptr);
+
+	auto idComp = MakeTestMultiKeyIdComp(*row);
+	EXPECT_EQ(idComp.value, 1u);
+
+	auto strComp = MakeTestMultiKeyString_keyComp(*row);
+	EXPECT_EQ(strComp.value, "aa");
+
+	auto u32Comp = MakeTestMultiKeyUint32_keyComp(*row);
+	EXPECT_EQ(u32Comp.value, 14u);
+
+	auto i32Comp = MakeTestMultiKeyInt32_keyComp(*row);
+	EXPECT_EQ(i32Comp.value, 8);
+}
+
+TEST(ConfigTableTest, RepeatedCompSpan)
+{
+	auto [row, ok] = TestMultiKeyTableManager::Instance().GetTable(1);
+	ASSERT_NE(row, nullptr);
+
+	auto effectComp = MakeTestMultiKeyEffectComp(*row);
+	// span points into proto memory
+	EXPECT_EQ(effectComp.values.data(), row->effect().data());
+	EXPECT_EQ(effectComp.values.size(), static_cast<size_t>(row->effect_size()));
+}
+
+TEST(ConfigTableTest, BuffCompStringView)
+{
+	// Verify string columns produce valid string_view components
+	for (auto &row : GetBuffAllTable().data())
+	{
+		auto comp = MakeBuffHealth_regenerationComp(row);
+		// string_view should point into proto memory (not a copy)
+		if (!row.health_regeneration().empty())
+		{
+			EXPECT_EQ(comp.value.data(), row.health_regeneration().data());
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// repeated 列值索引 (repeated column value index)
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, RepeatedEffectIndex)
+{
+	// GetEffectIndex() returns multimap<uint32_t, const Table*>
+	auto &idx = TestMultiKeyTableManager::Instance().GetEffectIndex();
+	// Every row's effect values should be indexed
+	for (auto &row : GetTestMultiKeyAllTable().data())
+	{
+		for (auto val : row.effect())
+		{
+			auto range = idx.equal_range(val);
+			bool found = false;
+			for (auto it = range.first; it != range.second; ++it)
+			{
+				if (it->second->id() == row.id())
+				{
+					found = true;
+					break;
+				}
+			}
+			EXPECT_TRUE(found) << "effect value " << val
+							   << " not indexed for row id " << row.id();
+		}
+	}
+}
+
+TEST(ConfigTableTest, BuffSubBuffIndex)
+{
+	auto &idx = BuffTableManager::Instance().GetSub_buffIndex();
+	for (auto &row : GetBuffAllTable().data())
+	{
+		for (auto val : row.sub_buff())
+		{
+			auto range = idx.equal_range(val);
+			bool found = false;
+			for (auto it = range.first; it != range.second; ++it)
+			{
+				if (it->second->id() == row.id())
+				{
+					found = true;
+					break;
+				}
+			}
+			EXPECT_TRUE(found) << "sub_buff value " << val
+							   << " not indexed for row id " << row.id();
+		}
+	}
 }
 
 int main(int argc, char **argv)
