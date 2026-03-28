@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GtaTestDurations xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Executable>F:\work\mmorpg\bin\aoi_test.exe</Executable>
+  <TestDurations>
+    <TestDuration Test="AoiSystemTest.TestGetGridIdForLocation" Duration="1" />
+    <TestDuration Test="AoiSystemTest.TestScanNeighborGridIds" Duration="1" />
+    <TestDuration Test="AoiSystemTest.TestUpdatePlayerMovement" Duration="3" />
+    <TestDuration Test="AoiSystemTest.TestPlayerMovementAcrossSixHexes" Duration="2" />
+    <TestDuration Test="AoiEntityVisibilityTest.TestEntityEnterView" Duration="1" />
+    <TestDuration Test="AoiEntityVisibilityTest.TestEntityLeaveView" Duration="1" />
+  </TestDurations>
+</GtaTestDurations>

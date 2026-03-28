@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="6" failures="2" disabled="0" errors="0" time="0.01" timestamp="2026-03-28T18:29:54.623" name="AllTests">
+  <testsuite name="AoiSystemTest" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="0.007" timestamp="2026-03-28T18:29:54.623">
+    <testcase name="TestGetGridIdForLocation" file="F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp" line="63" status="run" result="completed" time="0.001" timestamp="2026-03-28T18:29:54.623" classname="AoiSystemTest" />
+    <testcase name="TestScanNeighborGridIds" file="F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp" line="76" status="run" result="completed" time="0." timestamp="2026-03-28T18:29:54.625" classname="AoiSystemTest" />
+    <testcase name="TestUpdatePlayerMovement" file="F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp" line="93" status="run" result="completed" time="0.003" timestamp="2026-03-28T18:29:54.625" classname="AoiSystemTest" />
+    <testcase name="TestPlayerMovementAcrossSixHexes" file="F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp" line="134" status="run" result="completed" time="0.002" timestamp="2026-03-28T18:29:54.628" classname="AoiSystemTest" />
+  </testsuite>
+  <testsuite name="AoiEntityVisibilityTest" tests="2" failures="2" disabled="0" skipped="0" errors="0" time="0.002" timestamp="2026-03-28T18:29:54.631">
+    <testcase name="TestEntityEnterView" file="F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp" line="255" status="run" result="completed" time="0.001" timestamp="2026-03-28T18:29:54.631" classname="AoiEntityVisibilityTest">
+      <failure message="F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp:266&#x0A;Expected: (it2) != (entitiesToNotifyEntry.end()), actual: 24-byte object &lt;30-9B 6F-7B 30-01 00-00 00-00 00-00 00-00 00-00 90-0B 6F-7B 30-01 00-00&gt; vs 24-byte object &lt;30-9B 6F-7B 30-01 00-00 48-EF 15-20 18-00 00-00 90-0B 6F-7B 30-01 00-00&gt;&#x0A;entity2 not found in entitiesToNotifyEntry&#x0A;" type=""><![CDATA[F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp:266
+Expected: (it2) != (entitiesToNotifyEntry.end()), actual: 24-byte object <30-9B 6F-7B 30-01 00-00 00-00 00-00 00-00 00-00 90-0B 6F-7B 30-01 00-00> vs 24-byte object <30-9B 6F-7B 30-01 00-00 48-EF 15-20 18-00 00-00 90-0B 6F-7B 30-01 00-00>
+entity2 not found in entitiesToNotifyEntry
+]]></failure>
+    </testcase>
+    <testcase name="TestEntityLeaveView" file="F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp" line="275" status="run" result="completed" time="0." timestamp="2026-03-28T18:29:54.632" classname="AoiEntityVisibilityTest">
+      <failure message="F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp:286&#x0A;Expected: (it2) != (entitiesToNotifyEntry.end()), actual: 24-byte object &lt;30-9B 6F-7B 30-01 00-00 00-00 00-00 00-00 00-00 90-0B 6F-7B 30-01 00-00&gt; vs 24-byte object &lt;30-9B 6F-7B 30-01 00-00 B8-EC 15-20 18-00 00-00 90-0B 6F-7B 30-01 00-00&gt;&#x0A;entity2 not found in entitiesToNotifyEntry (enter)&#x0A;" type=""><![CDATA[F:\work\mmorpg\cpp\tests\aoi_test\aoi_system_test.cpp:286
+Expected: (it2) != (entitiesToNotifyEntry.end()), actual: 24-byte object <30-9B 6F-7B 30-01 00-00 00-00 00-00 00-00 00-00 90-0B 6F-7B 30-01 00-00> vs 24-byte object <30-9B 6F-7B 30-01 00-00 B8-EC 15-20 18-00 00-00 90-0B 6F-7B 30-01 00-00>
+entity2 not found in entitiesToNotifyEntry (enter)
+]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

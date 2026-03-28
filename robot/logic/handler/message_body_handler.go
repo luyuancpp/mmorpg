@@ -6,7 +6,7 @@ import (
 	"robot/generated/pb/game"
 	"robot/logic/gameobject"
 	"robot/pkg"
-	"robot/proto/common"
+	base "robot/proto/common/base"
 
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"

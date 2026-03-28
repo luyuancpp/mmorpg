@@ -19,10 +19,10 @@ paths:
   node_pkg_logic_scene: "{{node_lib_game}}scene/"
   scene_node_dir: "{{node_cpp_dir}}nodes/scene/"
   gate_node_dir: "{{node_cpp_dir}}nodes/gate/"
-  robot: "tools/robot/"
+  robot: "robot/"
   robot_generated: "{{output_root}}generated/robot/"
-  robot_proto: "{{robot_generated}}proto/"  # Robot-specific proto source directory
-  robot_generated_proto: "{{robot_generated}}/proto/"  # Robot generated proto directory
+  robot_proto: "{{robot_generated}}proto/" # Robot-specific proto source directory
+  robot_generated_proto: "{{robot_generated}}/proto/" # Robot generated proto directory
   generated_dir: "cpp/generated/"
 
   # Tools and temporary directories
@@ -58,7 +58,7 @@ paths:
   service_id_file: "{{proto_dir}}service_id.txt"
   event_id_file: "{{proto_dir}}event_id.txt"
   robot_message_id_file: "{{robot_go_game_pb_dir}}/message_id.go"
-  robot_proto_import_path: "{{output_root}}{{robot_proto}}"  # Robot proto import path
+  robot_proto_import_path: "{{output_root}}{{robot_proto}}" # Robot proto import path
   service_cpp_file: "{{service_info_dir}}rpc_event_registry.cpp"
   service_header_file: "{{service_info_dir}}rpc_event_registry.h"
   grpc_init_cpp_file: "{{cpp_gen_grpc_dir}}grpc_init_client.cpp"
@@ -76,19 +76,18 @@ paths:
   # Scene attribute sync generated directory
   scene_attribute_sync_dir: "{{output_root}}{{node_pkg_dir}}/services/scene/generated/attribute/"
 
-
 # Directory name constants (for directory names / path segment constants)
 directory_names:
-  generated_rpc_name: "rpc/"               # RPC generated directory name
-  service_info_name: "service_metadata/"   # Service metadata directory name
-  proto_dir_name: "proto/"                 # Proto directory name
+  generated_rpc_name: "rpc/" # RPC generated directory name
+  service_info_name: "service_metadata/" # Service metadata directory name
+  proto_dir_name: "proto/" # Proto directory name
   go_zero_proto_dir_name: "go-zero/" # Go-zero proto directory name
-  robot_proto_name: "{{robot_proto}}"      # Robot proto directory name constant
+  robot_proto_name: "{{robot_proto}}" # Robot proto directory name constant
   robot_go_zero_proto_name: "{{robot_go_zero_proto}}" # Robot Go-zero proto directory name constant
-  model_dir_name: "model/"                 # Model directory name
-  service_include_dir: "rpc/"              # Service include directory name
-  normal_go_proto: "proto/"                 # Standard Go code directory name (without slash; unified when joining paths)
-  go_grpc_base_dir_name: "service/grpc/"  # Go gRPC service root directory path segment
+  model_dir_name: "model/" # Model directory name
+  service_include_dir: "rpc/" # Service include directory name
+  normal_go_proto: "proto/" # Standard Go code directory name (without slash; unified when joining paths)
+  go_grpc_base_dir_name: "service/grpc/" # Go gRPC service root directory path segment
 
 # File extension configuration (file suffixes / extensions only)
 file_extensions:
@@ -142,7 +141,7 @@ naming:
   # Original config naming constants
   player_service_include_name: "#include \"rpc/player_service_interface.h\"\n"
   player_service_replied_include_name: "#include \"rpc/player_rpc_response_handler.h\"\n"
-  macro_return_include_name: "#include \"macros/return_define.h\""
+  macro_return_include_name: '#include "macros/return_define.h"'
   node_enum_name: "eNodeType"
   node_service_suffix: "nodeservice"
   go_package: "generated/pb/game"
@@ -150,7 +149,7 @@ naming:
   google_method_controller: "::google::protobuf::RpcController* controller, "
   player_method_controller: "entt::entity player,"
   include_end_line: "\"\n"
-  include_begin: "#include \""
+  include_begin: '#include "'
   your_code_begin: "///<<< BEGIN WRITING YOUR CODE"
   your_code_end: "///<<< END WRITING YOUR CODE"
   your_code_pair: "{{your_code_begin}}\n{{your_code_end}}"
@@ -228,8 +227,8 @@ generators:
   enable_go: true
   enable_handler: true
   enable_rpc_response: true
-  enable_robot_proto: true  # Enable robot proto generation
-  enable_robot_go_zero: true  # Enable robot go-zero proto generation
+  enable_robot_proto: true # Enable robot proto generation
+  enable_robot_go_zero: true # Enable robot go-zero proto generation
   enable_attribute_sync: true
 
 # Template mapping configuration
@@ -259,17 +258,16 @@ mappings:
     template: "internal/template/attribute_sync.h.tmpl"
     lang: "cpp"
 
-
 # Proto parser configuration
 parser:
   include_paths:
     - "../../proto/common"
     - "../../proto/service"
-    - "../../{{robot_proto}}"  # Add robot proto to include paths
+    - "../../{{robot_proto}}" # Add robot proto to include paths
   ignore_files:
     - "test_*.proto"
     - "deprecated_*.proto"
-    - "{{robot_proto}}test_*.proto"  # Ignore robot test protos
+    - "{{robot_proto}}test_*.proto" # Ignore robot test protos
 
 # Logging configuration
 log:
@@ -278,20 +276,19 @@ log:
   file_path: "protogen.log"
 
 domain_meta:
-
   login:
     source: "{{proto_dir}}login/"
     rpc:
       type: grpc
     outputs:
       go:
-        proto:   "go/generated/login/proto"
+        proto: "go/generated/login/proto"
         handler: "go/generated/login/handler"
-        grpc:    "go/generated/login/grpc"
+        grpc: "go/generated/login/grpc"
       cpp:
-        proto:   "cpp/generated/login/proto"
+        proto: "cpp/generated/login/proto"
         handler: "cpp/generated/login/handler"
-        grpc:    "cpp/generated/login/grpc"
+        grpc: "cpp/generated/login/grpc"
 
   scene:
     source: "{{proto_dir}}scene/"
@@ -319,13 +316,13 @@ domain_meta:
       type: grpc
     outputs:
       go:
-        proto:   "go/generated/chat/proto"
+        proto: "go/generated/chat/proto"
         handler: "go/generated/chat/handler"
-        grpc:    "go/generated/chat/grpc"
+        grpc: "go/generated/chat/grpc"
       cpp:
-        proto:   "cpp/generated/chat/proto"
+        proto: "cpp/generated/chat/proto"
         handler: "cpp/generated/chat/handler"
-        grpc:    "cpp/generated/chat/grpc"
+        grpc: "cpp/generated/chat/grpc"
 
   db:
     source: "{{proto_dir}}db/"
@@ -333,10 +330,10 @@ domain_meta:
       type: rpc
     outputs:
       go:
-        proto:   "go/generated/db/proto"
+        proto: "go/generated/db/proto"
         handler: "go/generated/db/handler"
       cpp:
-        proto:   "cpp/generated/db/proto"
+        proto: "cpp/generated/db/proto"
         handler: "cpp/generated/db/handler"
 
   scene_manager:
@@ -345,13 +342,13 @@ domain_meta:
       type: grpc
     outputs:
       go:
-        proto:   "go/generated/scene_manager/proto"
+        proto: "go/generated/scene_manager/proto"
         handler: "go/generated/scene_manager/handler"
-        grpc:    "go/generated/scene_manager/grpc"
+        grpc: "go/generated/scene_manager/grpc"
       cpp:
-        proto:   "cpp/generated/scene_manager/proto"
+        proto: "cpp/generated/scene_manager/proto"
         handler: "cpp/generated/scene_manager/handler"
-        grpc:    "cpp/generated/scene_manager/grpc"
+        grpc: "cpp/generated/scene_manager/grpc"
 
   data_service:
     source: "{{proto_dir}}data_service/"
@@ -359,13 +356,13 @@ domain_meta:
       type: grpc
     outputs:
       go:
-        proto:   "go/generated/data_service/proto"
+        proto: "go/generated/data_service/proto"
         handler: "go/generated/data_service/handler"
-        grpc:    "go/generated/data_service/grpc"
+        grpc: "go/generated/data_service/grpc"
       cpp:
-        proto:   "cpp/generated/data_service/proto"
+        proto: "cpp/generated/data_service/proto"
         handler: "cpp/generated/data_service/handler"
-        grpc:    "cpp/generated/data_service/grpc"
+        grpc: "cpp/generated/data_service/grpc"
 
   etcd:
     source: "{{proto_dir}}etcd/"
@@ -373,10 +370,10 @@ domain_meta:
       type: etcd
     outputs:
       go:
-        proto:   "go/generated/etcd/proto"
+        proto: "go/generated/etcd/proto"
         handler: "go/generated/etcd/handler"
       cpp:
-        proto:   "cpp/generated/etcd/proto"
+        proto: "cpp/generated/etcd/proto"
         handler: "cpp/generated/etcd/handler"
 
   common:
@@ -405,9 +402,9 @@ domain_meta:
       type: grpc
     outputs:
       go:
-        proto:   "go/generated/guild/proto"
+        proto: "go/generated/guild/proto"
         handler: "go/generated/guild/handler"
-        grpc:    "go/generated/guild/grpc"
+        grpc: "go/generated/guild/grpc"
 
   friend:
     source: "{{proto_dir}}friend/"
@@ -415,6 +412,6 @@ domain_meta:
       type: grpc
     outputs:
       go:
-        proto:   "go/generated/friend/proto"
+        proto: "go/generated/friend/proto"
         handler: "go/generated/friend/handler"
-        grpc:    "go/generated/friend/grpc"
+        grpc: "go/generated/friend/grpc"

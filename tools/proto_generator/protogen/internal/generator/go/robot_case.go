@@ -23,7 +23,7 @@ import (
 	"robot/generated/pb/game"
 	"robot/logic/gameobject"
 	"robot/pkg"
-	"robot/proto/common"
+	base "robot/proto/common/base"
 )
 
 type handlerFunc func(*gameobject.Player, []byte)
@@ -49,7 +49,7 @@ var messageHandlers = map[uint32]handlerFunc{
 {{- end }}
 }
 
-func MessageBodyHandler(client *pkg.GameClient, response *common.MessageContent) {
+func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {
 	zap.L().Debug("Received message body", zap.String("response", response.String()))
 
 	player, ok := gameobject.PlayerList.Get(client.PlayerId)
