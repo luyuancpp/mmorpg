@@ -1,0 +1,95 @@
+{# cpp_config.h.j2 — per-table config manager header #}
+#pragma once
+#include <cstdint>
+#include <functional>
+#include <unordered_map>
+#include "table_expression.h"
+#include "muduo/base/Logging.h"
+#include "table/proto/{{ sheetname | lower }}_table.pb.h"
+
+class {{ sheetname }}TableManager {
+public:
+    using KeyValueDataType = std::unordered_map<uint32_t, const {{ sheetname }}Table*>;
+    using LoadSuccessCallback = std::function<void()>;
+
+    static {{ sheetname }}TableManager& Instance() {
+        static {{ sheetname }}TableManager instance;
+        return instance;
+    }
+
+    const {{ sheetname }}TableData& All() const { return data_; }
+
+    std::pair<const {{ sheetname }}Table*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const {{ sheetname }}Table*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    const KeyValueDataType& KeyValueData() const { return kv_data_; }
+
+    void Load();
+
+    void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
+        loadSuccessCallback_ = callback;
+    }
+
+    void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
+
+{% for col in table.table_keys %}
+    std::pair<const {{ sheetname }}Table*, uint32_t> GetBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} tableId) const;
+    const std::{{ cpp_map_type(col.is_multi_key) }}<{{ to_cpp_type(col.data_type) }}, const {{ sheetname }}Table*>& Get{{ col.name | title }}Data() const { return kv_{{ col.name }}data_; }
+{% endfor %}
+
+{% for col in table.expression_columns %}
+    {{ col.expression_type }} Get{{ col.name | title }}(uint32_t tableId) {
+        auto [table, ok] = GetTable(tableId);
+        if (!ok || table == nullptr) {
+            LOG_ERROR << "{{ col.name | title }} table not found for ID: " << tableId;
+            return {{ col.expression_type }}();
+        }
+        return expression_{{ col.name }}_.Value(table->{{ col.name }}());
+    }
+    void Set{{ col.name | title }}Param(const std::vector<{{ col.expression_type }}>& paramList) {
+        expression_{{ col.name }}_.SetParam(paramList);
+    }
+{% endfor %}
+
+{% for col in table.foreign_key_columns %}
+    // FK: {{ col.name }} → {{ col.foreign_key.target_table }}.{{ col.foreign_key.target_column }}
+{% endfor %}
+
+private:
+    LoadSuccessCallback loadSuccessCallback_;
+    {{ sheetname }}TableData data_;
+    KeyValueDataType kv_data_;
+{% for col in table.table_keys %}
+    std::{{ cpp_map_type(col.is_multi_key) }}<{{ to_cpp_type(col.data_type) }}, const {{ sheetname }}Table*> kv_{{ col.name }}data_;
+{% endfor %}
+{% for col in table.expression_columns %}
+    ExcelExpression<{{ col.expression_type }}> expression_{{ col.name }}_;
+{% endfor %}
+};
+
+inline const {{ sheetname }}TableData& Get{{ sheetname }}AllTable() {
+    return {{ sheetname }}TableManager::Instance().All();
+}
+
+#define FetchAndValidate{{ sheetname }}Table(tableId) \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return fetchResult; } } while(0)
+
+#define FetchAndValidateCustom{{ sheetname }}Table(prefix, tableId) \
+    const auto [prefix##{{ sheetname }}Table, prefix##fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    do { if (!(prefix##{{ sheetname }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
+
+#define Fetch{{ sheetname }}TableOrReturnCustom(tableId, customReturnValue) \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return customReturnValue; } } while(0)
+
+#define Fetch{{ sheetname }}TableOrReturnVoid(tableId) \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return; } } while(0)
+
+#define Fetch{{ sheetname }}TableOrContinue(tableId) \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; continue; } } while(0)
+
+#define Fetch{{ sheetname }}TableOrReturnFalse(tableId) \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return false; } } while(0)

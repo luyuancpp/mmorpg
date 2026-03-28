@@ -1,0 +1,44 @@
+{# proto_table.proto.j2 — generates one .proto file per data table #}
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+{% for group in table.groups.values() -%}
+message {{ table.name }}{{ group.name }} {
+{% for col in group.columns %}
+	{{ col.data_type }} {{ col.name }} = {{ loop.index }};
+{% endfor -%}
+}
+
+{% endfor -%}
+message {{ table.name }}Table {
+{%- set ns = namespace(idx=1) %}
+{% for col in table.server_columns -%}
+{%- if col.map_role == "set" %}
+	map <{{ col.data_type }}, bool> {{ col.name }} = {{ ns.idx }};
+{%- elif col.map_role == "map_key" %}
+{#- map_key columns: handled as part of a key-value pair #}
+{%- elif col.map_role == "map_value" %}
+{#- skip map_value; the map was declared on the key column's line #}
+{%- elif col.name in table.arrays %}
+	repeated {{ col.data_type }} {{ col.name }} = {{ ns.idx }};
+{%- else %}
+{%- set in_group = false %}
+{%- for g in table.groups.values() if col.excel_index in g.indices %}
+{%- set in_group = true %}
+{%- endfor %}
+{%- if not in_group %}
+	{{ col.data_type }} {{ col.name }} = {{ ns.idx }};
+{%- endif %}
+{%- endif %}
+{%- set ns.idx = ns.idx + 1 %}
+{% endfor -%}
+{%- for g in table.groups.values() %}
+	repeated {{ table.name }}{{ g.name }} {{ g.name }} = {{ ns.idx }};
+{%- set ns.idx = ns.idx + 1 %}
+{% endfor %}
+}
+
+message {{ table.name }}TableData {
+	repeated {{ table.name }}Table data = 1;
+}

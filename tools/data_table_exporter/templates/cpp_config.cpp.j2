@@ -1,0 +1,61 @@
+{# cpp_config.cpp.j2 — per-table config manager implementation #}
+#include "google/protobuf/util/json_util.h"
+#include "core/utils/file/file2string.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/{{ sheetname | lower }}_table.h"
+
+std::string GetConfigDir();
+
+void {{ sheetname }}TableManager::Load() {
+    data_.Clear();
+
+    std::string path = GetConfigDir() + "{{ sheetname | lower }}.json";
+    const auto contents = File2String(path);
+    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+        LOG_FATAL << "{{ sheetname }}" << result.message().data();
+    }
+
+    for (int32_t i = 0; i < data_.data_size(); ++i) {
+        const auto& row_data = data_.data(i);
+        kv_data_.emplace(row_data.id(), &row_data);
+{%- for col in table.table_keys %}
+        kv_{{ col.name }}data_.emplace(row_data.{{ col.name }}(), &row_data);
+{%- endfor %}
+    }
+{% for col in table.expression_columns if col.expression_params %}
+    expression_{{ col.name }}_.Init({
+{%- for p in col.expression_params %}
+        "{{ p }}"{% if not loop.last %}, {% endif %}
+{%- endfor %}
+    });
+{% endfor %}
+}
+
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetTable(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
+        return {nullptr, kInvalidTableId};
+    }
+    return {it->second, kSuccess};
+}
+
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return {nullptr, kInvalidTableId};
+    }
+    return {it->second, kSuccess};
+}
+
+{% for col in table.table_keys -%}
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} tableId) const {
+    const auto it = kv_{{ col.name }}data_.find(tableId);
+    if (it == kv_{{ col.name }}data_.end()) {
+        LOG_ERROR << "{{ sheetname }} table not found for {{ col.name }}: " << tableId;
+        return {nullptr, kInvalidTableId};
+    }
+    return {it->second, kSuccess};
+}
+
+{% endfor %}

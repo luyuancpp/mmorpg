@@ -130,7 +130,8 @@ function Invoke-KubectlWithInputFile {
 
 	$tempFile = [System.IO.Path]::GetTempFileName()
 	try {
-		Set-Content -Path $tempFile -Value $InputContent -NoNewline
+		$sanitized = $InputContent -replace "`t", "    "
+		Set-Content -Path $tempFile -Value $sanitized -NoNewline -Encoding utf8NoBOM
 		Invoke-Kubectl -Args ($Args + @("-f", $tempFile))
 	}
 	finally {
@@ -172,10 +173,10 @@ function New-NodeConfigMapYaml {
 		[Parameter(Mandatory = $true)][string]$ConfigName
 	)
 
-	$baseDeployConfig = @"
+	$baseDeployConfig = (@"
 Etcd:
   Hosts:
-	- "etcd:2379"
+    - "etcd:2379"
   KeepaliveInterval: 1
   NodeTTLSeconds: 60
 TableDataDirectory: "../generated/generated_tables/"
@@ -187,13 +188,13 @@ service_discovery_prefixes:
   - "LoginNodeService.rpc"
 Kafka:
   Brokers:
-	- "kafka:9092"
+    - "kafka:9092"
   Topics:
-	- "game-events"
+    - "game-events"
   GroupID: "game-consumer-group"
   EnableAutoCommit: true
   AutoOffsetReset: "earliest"
-"@
+"@) -replace "`t", "  "
 
 	$gameConfig = @"
 SceneNodeType: 0
@@ -341,7 +342,6 @@ function Wait-ForZoneReady {
 
 	Write-Host "Waiting for zone workloads to become ready: namespace=$Namespace"
 	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "mysql"
-	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "centre"
 	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "gate"
 	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "scene"
 
@@ -551,7 +551,7 @@ metadata:
   name: $configMapName
 data:
   ${configFileName}: |
-$($svcConfig -split "`n" | ForEach-Object { "    `$_" } | Out-String)
+$($svcConfig -split "`n" | ForEach-Object { "    $_" } | Out-String)
 "@
 }
 
@@ -631,7 +631,7 @@ metadata:
   name: $configMapName
 data:
   application.yaml: |
-$($svcConfig -split "`n" | ForEach-Object { "    `$_" } | Out-String)
+$($svcConfig -split "`n" | ForEach-Object { "    $_" } | Out-String)
 "@
 }
 
@@ -831,12 +831,10 @@ function Apply-Zone {
 	$configMapYaml = New-NodeConfigMapYaml -CurrentZoneId $CurrentZoneId -ConfigName $configMapName
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $configMapYaml
 
-	$centreYaml = New-NodeDeploymentYaml -NodeName "centre" -Replicas $CurrentCentreReplicas -RpcPort 17000 -StartCommand "./centre" -ConfigMapName $configMapName
 	$gateYaml = New-NodeDeploymentYaml -NodeName "gate" -Replicas $CurrentGateReplicas -RpcPort 18000 -StartCommand "./gate" -ConfigMapName $configMapName
 	$sceneYaml = New-NodeDeploymentYaml -NodeName "scene" -Replicas $CurrentSceneReplicas -RpcPort 19000 -StartCommand "./scene" -ConfigMapName $configMapName
 	$gateServiceYaml = New-GateServiceYaml -ServiceName $gateServiceName
 
-	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $centreYaml
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $gateYaml
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $sceneYaml
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $namespace) -InputContent $gateServiceYaml

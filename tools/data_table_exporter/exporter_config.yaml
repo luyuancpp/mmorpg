@@ -1,0 +1,85 @@
+# ============================================================
+# Data Table Exporter Configuration
+# All paths are relative to this file's directory.
+# ============================================================
+
+# --- Excel source ---
+excel:
+  data_dir: ../../data                          # Main data tables (*.xlsx)
+  operator_file: ../../data/operator/Operator.xlsx
+  tip_file: ../../data/tip/Tip.xlsx
+  data_begin_row: 20                            # 1-based row where data starts
+  metadata_rows:                                # 1-based Excel row numbers
+    column_name: 1
+    data_type: 2
+    map_type: 3                                 # map_key | map_value | set
+    owner: 4                                    # server | client | common | design
+    multi_key: 5                                # "multi" → use multimap
+    table_key: 6                                # "table_key" → secondary index
+    expression_type: 7                          # return type for expression eval
+    expression_params: 8                        # comma-separated param names
+    foreign_key: 9                              # fk:TableName  or  fk:TableName.column
+    group_foreign_key: 10                       # gfk:TableName
+    bit_index_marker_row: 6                     # row to check for "bit_index" literal
+  field_info_end_row: 18                        # last row of per-column metadata
+  server_owner_types: [server, common]          # owner values included in server gen
+
+# --- Output roots ---
+output:
+  generated_dir: ../../generated
+  json_dir: ../../generated/tables
+  proto_dir: ../../generated/code/proto
+  state_dir: ./state
+
+# --- Protoc compiler ---
+protoc:
+  command: protoc
+  extra_includes:
+    - ../../third_party/grpc/third_party/protobuf/src
+
+# --- Language generation ---
+languages:
+  cpp:
+    enabled: true
+    code_dir: ../../generated/code/cpp
+    proto_output_dir: ../../generated/code/proto/cpp
+    constants_dir: ../../generated/code/cpp/constants
+    table_id_dir: ../../generated/code/cpp/table_id
+    bit_index_dir: ../../generated/code/cpp/bit_index
+    deploy:
+      - src: ../../generated/code/cpp
+        dst: ../../cpp/generated/table/code
+      - src: ../../generated/code/cpp/bit_index
+        dst: ../../cpp/generated/table/code/bit_index
+      - src: ../../generated/code/cpp/constants
+        dst: ../../cpp/generated/table/code/constants
+      - src: ../../generated/code/proto/cpp
+        dst: ../../cpp/generated/table/proto
+      - src: ../../generated/code/proto/cpp/operator
+        dst: ../../cpp/generated/table/proto/operator
+      - src: ../../generated/code/proto/cpp/tip
+        dst: ../../cpp/generated/table/proto/tip
+      - src: ../../generated/code/cpp/table_id
+        dst: ../../cpp/generated/table/code/table_id
+
+  go:
+    enabled: true
+    code_dir: ../../generated/code/go/generated/table
+    proto_output_dir: ../../generated/code/go
+    proto_import_path: "game/generated/pb/table"
+    constants_dir: ../../generated/code/go/generated/constants
+    table_id_dir: ../../generated/code/go/generated/table/table_id
+    bit_index_dir: ../../generated/code/go/generated/bit_index
+    # Go services that receive a copy of generated code
+    grpc_service_scan_dir: ../../proto/service/go/grpc
+    grpc_deploy_base: ../../go
+
+  java:
+    enabled: false                              # set to true when ready
+    code_dir: ../../generated/code/java
+    package: "com.game.table"
+    constants_dir: ../../generated/code/java/constants
+    table_id_dir: ../../generated/code/java/table_id
+
+# --- Tables with named ID constants ---
+constant_tables: [GlobalVariable]

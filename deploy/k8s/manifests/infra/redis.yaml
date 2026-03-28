@@ -30,8 +30,7 @@ spec:
           args:
             - redis-server
             - --appendonly
-            - yes
-            - --no-maint-notify
+            - "yes"
           ports:
             - containerPort: 6379
               name: redis

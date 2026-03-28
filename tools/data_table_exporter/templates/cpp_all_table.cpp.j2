@@ -1,0 +1,47 @@
+{# cpp_all_table.cpp.j2 — aggregated table loader implementation #}
+#include "all_table.h"
+
+#include <thread>
+#include "muduo/base/CountDownLatch.h"
+
+{% for item in sheetnames -%}
+#include "{{ item | lower }}_table.h"
+{% endfor %}
+
+LoadSuccessCallback loadSuccessCallback;
+
+void LoadTables() {
+{% for item in sheetnames %}
+    {{ item }}TableManager::Instance().Load();
+    {{ item }}TableManager::Instance().LoadSuccess();
+{% endfor %}
+
+    if (loadSuccessCallback) {
+        loadSuccessCallback();
+    }
+}
+
+void LoadTablesAsync() {
+    static muduo::CountDownLatch latch({{ sheetnames | length }});
+{% for item in sheetnames %}
+    std::thread {{ item }}LoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        {{ item }}TableManager::Instance().Load();
+        latch.countDown();
+    });
+    {{ item }}LoadThread.detach();
+{% endfor %}
+    latch.wait();
+
+{% for item in sheetnames %}
+    {{ item }}TableManager::Instance().LoadSuccess();
+{% endfor %}
+    if (loadSuccessCallback) {
+        loadSuccessCallback();
+    }
+}
+
+void OnTablesLoadSuccess(const LoadSuccessCallback& callback) {
+    loadSuccessCallback = callback;
+}

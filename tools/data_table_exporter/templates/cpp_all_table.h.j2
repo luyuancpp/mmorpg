@@ -1,0 +1,12 @@
+{# cpp_all_table.h.j2 — aggregated table loader header #}
+#pragma once
+
+#include <functional>
+
+using LoadSuccessCallback = std::function<void()>;
+
+void LoadTables();
+
+void LoadTablesAsync();
+
+void OnTablesLoadSuccess(const LoadSuccessCallback& callback);

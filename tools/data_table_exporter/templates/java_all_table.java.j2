@@ -1,0 +1,55 @@
+{# java_all_table.java.j2 — aggregated table loader #}
+package {{ package }};
+
+import java.util.concurrent.CountDownLatch;
+
+/**
+ * Auto-generated aggregated table loader.
+ * DO NOT EDIT — regenerate from Excel via Data Table Exporter.
+ */
+public class AllTable {
+
+    private static Runnable loadSuccessCallback;
+
+    /**
+     * Load all config tables synchronously.
+     */
+    public static void loadTables(String configDir) throws Exception {
+{% for item in sheetnames %}
+        {{ item }}TableManager.getInstance().load(configDir);
+{% endfor %}
+        if (loadSuccessCallback != null) {
+            loadSuccessCallback.run();
+        }
+    }
+
+    /**
+     * Load all config tables asynchronously using threads.
+     */
+    public static void loadTablesAsync(String configDir) throws Exception {
+        CountDownLatch latch = new CountDownLatch({{ sheetnames | length }});
+{% for item in sheetnames %}
+        new Thread(() -> {
+            try {
+                {{ item }}TableManager.getInstance().load(configDir);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load {{ item }} table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+{% endfor %}
+        latch.await();
+
+        if (loadSuccessCallback != null) {
+            loadSuccessCallback.run();
+        }
+    }
+
+    /**
+     * Register a callback invoked after all tables load.
+     */
+    public static void onTablesLoadSuccess(Runnable callback) {
+        loadSuccessCallback = callback;
+    }
+}
