@@ -1,7 +1,6 @@
 #pragma once
 
 #include "session/comp/session_info_comp.h"
-#include "core/utils/hash/consistent_hash_node.h"
 #include "network/network_utils.h"
 
 using GateSessionMap = std::unordered_map<Guid, SessionInfo>;

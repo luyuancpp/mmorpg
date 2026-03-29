@@ -2,10 +2,16 @@
 
 #include <algorithm>
 #include <functional>
+#include <iomanip>
 #include <memory>
 #include <unordered_map>
 #include <optional>
+#include <sstream>
+#include <string_view>
 #include <ctime>
+
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
 
 #include "gate_codec.h"
 #include "node/system/node/node.h"
@@ -25,7 +31,36 @@
 #include <network/node_utils.h>
 #include <node_config_manager.h>
 
-#include "utils/hash/sha.h"
+namespace {
+std::string BytesToHex(const unsigned char* data, unsigned int size)
+{
+	std::ostringstream stream;
+	stream << std::hex << std::setfill('0');
+	for (unsigned int index = 0; index < size; ++index)
+	{
+		stream << std::setw(2) << static_cast<unsigned int>(data[index]);
+	}
+	return stream.str();
+}
+
+std::string HmacSha256Hex(std::string_view secret, std::string_view payload)
+{
+	unsigned char digest[EVP_MAX_MD_SIZE];
+	unsigned int digestLength = 0;
+	const auto* result = HMAC(EVP_sha256(),
+		secret.data(),
+		static_cast<int>(secret.size()),
+		reinterpret_cast<const unsigned char*>(payload.data()),
+		payload.size(),
+		digest,
+		&digestLength);
+	if (result == nullptr)
+	{
+		return {};
+	}
+	return BytesToHex(digest, digestLength);
+}
+}
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
 {
@@ -241,7 +276,7 @@ static void OnClientHighWaterMark(const muduo::net::TcpConnectionPtr &conn, size
 void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr &conn)
 {
 	auto sessionId = tlsSessionManager.session_id_gen().Generate();
-	while (tlsSessionManager.sessions().contains(sessionId))
+	while (tlsSessionManager.sessions().find(sessionId) != tlsSessionManager.sessions().end())
 	{
 		sessionId = tlsSessionManager.session_id_gen().Generate();
 	}
