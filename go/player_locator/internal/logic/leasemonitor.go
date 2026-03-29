@@ -11,8 +11,8 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 
-	kafkapb "proto/contracts/kafka"
 	"player_locator/internal/svc"
+	kafkapb "proto/contracts/kafka"
 	pb "proto/player_locator"
 )
 
