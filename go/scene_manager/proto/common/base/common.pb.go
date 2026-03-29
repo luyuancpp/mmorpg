@@ -83,6 +83,7 @@ type NodeInfo struct {
 	ZoneId        uint32                 `protobuf:"varint,6,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
 	ProtocolType  uint32                 `protobuf:"varint,7,opt,name=protocol_type,json=protocolType,proto3" json:"protocol_type,omitempty"` // Node communication protocol type
 	NodeUuid      string                 `protobuf:"bytes,8,opt,name=node_uuid,json=nodeUuid,proto3" json:"node_uuid,omitempty"`
+	PlayerCount   uint32                 `protobuf:"varint,9,opt,name=player_count,json=playerCount,proto3" json:"player_count,omitempty"` // Current online player/connection count (for load balancing)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -171,6 +172,13 @@ func (x *NodeInfo) GetNodeUuid() string {
 		return x.NodeUuid
 	}
 	return ""
+}
+
+func (x *NodeInfo) GetPlayerCount() uint32 {
+	if x != nil {
+		return x.PlayerCount
+	}
+	return 0
 }
 
 type NodeInfoListComp struct {
@@ -352,7 +360,7 @@ const file_proto_common_base_common_proto_rawDesc = "" +
 	"\x1eproto/common/base/common.proto\"2\n" +
 	"\fEndpointComp\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x12\n" +
-	"\x04port\x18\x02 \x01(\rR\x04port\"\x8f\x02\n" +
+	"\x04port\x18\x02 \x01(\rR\x04port\"\xb2\x02\n" +
 	"\bNodeInfo\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12\x1b\n" +
 	"\tnode_type\x18\x02 \x01(\rR\bnodeType\x12\x1f\n" +
@@ -362,7 +370,8 @@ const file_proto_common_base_common_proto_rawDesc = "" +
 	"\bendpoint\x18\x05 \x01(\v2\r.EndpointCompR\bendpoint\x12\x17\n" +
 	"\azone_id\x18\x06 \x01(\rR\x06zoneId\x12#\n" +
 	"\rprotocol_type\x18\a \x01(\rR\fprotocolType\x12\x1b\n" +
-	"\tnode_uuid\x18\b \x01(\tR\bnodeUuid\":\n" +
+	"\tnode_uuid\x18\b \x01(\tR\bnodeUuid\x12!\n" +
+	"\fplayer_count\x18\t \x01(\rR\vplayerCount\":\n" +
 	"\x10NodeInfoListComp\x12&\n" +
 	"\tnode_list\x18\x01 \x03(\v2\t.NodeInfoR\bnodeList\"4\n" +
 	"\x0eNetworkAddress\x12\x0e\n" +

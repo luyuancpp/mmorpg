@@ -37,7 +37,7 @@
     <ClInclude Include="code\mainscene_table.h" />
     <ClInclude Include="code\messagelimiter_table.h" />
     <ClInclude Include="code\mission_table.h" />
-    <ClInclude Include="code\monsterbase_table.h" />
+    <ClInclude Include="code\monster_table.h" />
     <ClInclude Include="code\reward_table.h" />
     <ClInclude Include="code\scene_table.h" />
     <ClInclude Include="code\skillpermission_table.h" />
@@ -62,7 +62,7 @@
     <ClInclude Include="proto\mainscene_table.pb.h" />
     <ClInclude Include="proto\messagelimiter_table.pb.h" />
     <ClInclude Include="proto\mission_table.pb.h" />
-    <ClInclude Include="proto\monsterbase_table.pb.h" />
+    <ClInclude Include="proto\monster_table.pb.h" />
     <ClInclude Include="proto\operator\ability_operator.pb.h" />
     <ClInclude Include="proto\operator\bag_operator.pb.h" />
     <ClInclude Include="proto\operator\scene_operator.pb.h" />
@@ -99,7 +99,7 @@
     <ClCompile Include="code\mainscene_table.cpp" />
     <ClCompile Include="code\messagelimiter_table.cpp" />
     <ClCompile Include="code\mission_table.cpp" />
-    <ClCompile Include="code\monsterbase_table.cpp" />
+    <ClCompile Include="code\monster_table.cpp" />
     <ClCompile Include="code\reward_table.cpp" />
     <ClCompile Include="code\scene_table.cpp" />
     <ClCompile Include="code\skillpermission_table.cpp" />
@@ -117,7 +117,7 @@
     <ClCompile Include="proto\mainscene_table.pb.cc" />
     <ClCompile Include="proto\messagelimiter_table.pb.cc" />
     <ClCompile Include="proto\mission_table.pb.cc" />
-    <ClCompile Include="proto\monsterbase_table.pb.cc" />
+    <ClCompile Include="proto\monster_table.pb.cc" />
     <ClCompile Include="proto\operator\ability_operator.pb.cc" />
     <ClCompile Include="proto\operator\bag_operator.pb.cc" />
     <ClCompile Include="proto\operator\scene_operator.pb.cc" />

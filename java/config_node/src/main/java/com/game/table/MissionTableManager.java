@@ -26,6 +26,8 @@ public class MissionTableManager {
 
     private final Map<Integer, List<MissionTable>> idxNext_mission_id = new HashMap<>();
 
+    private final Map<Integer, List<MissionTable>> idxTarget_count = new HashMap<>();
+
 
     public static MissionTableManager getInstance() {
         return INSTANCE;
@@ -44,6 +46,9 @@ public class MissionTableManager {
             }
             for (Integer elem : row.getNextMissionIdList()) {
                 idxNext_mission_id.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
+            }
+            for (Integer elem : row.getTargetCountList()) {
+                idxTarget_count.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
         }
     }
@@ -69,6 +74,10 @@ public class MissionTableManager {
 
     public List<MissionTable> getByNext_mission_idIndex(int key) {
         return idxNext_mission_id.getOrDefault(key, Collections.emptyList());
+    }
+
+    public List<MissionTable> getByTarget_countIndex(int key) {
+        return idxTarget_count.getOrDefault(key, Collections.emptyList());
     }
 
 

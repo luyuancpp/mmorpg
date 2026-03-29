@@ -18,9 +18,9 @@ message Skillrequired_resource {
 	uint32 required_resource_value = 2;
 }
 
-message Skillrequest_resource {
-	uint32 request_resource_id = 1;
-	uint32 request_resource_cost = 2;
+message Skillcost_resource {
+	uint32 cost_resource_id = 1;
+	uint32 cost_resource_cost = 2;
 }
 
 message SkillTable {
@@ -46,7 +46,7 @@ message SkillTable {
 	string damage = 20;
 	repeated Skillrequired_item required_item = 21;
 	repeated Skillrequired_resource required_resource = 22;
-	repeated Skillrequest_resource request_resource = 23;
+	repeated Skillcost_resource cost_resource = 23;
 }
 
 message SkillTableData {

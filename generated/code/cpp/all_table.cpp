@@ -15,7 +15,7 @@
 #include "mainscene_table.h"
 #include "messagelimiter_table.h"
 #include "mission_table.h"
-#include "monsterbase_table.h"
+#include "monster_table.h"
 #include "reward_table.h"
 #include "scene_table.h"
 #include "skill_table.h"
@@ -61,8 +61,8 @@ void LoadTables() {
     MissionTableManager::Instance().Load();
     MissionTableManager::Instance().LoadSuccess();
 
-    MonsterBaseTableManager::Instance().Load();
-    MonsterBaseTableManager::Instance().LoadSuccess();
+    MonsterTableManager::Instance().Load();
+    MonsterTableManager::Instance().LoadSuccess();
 
     RewardTableManager::Instance().Load();
     RewardTableManager::Instance().LoadSuccess();
@@ -179,13 +179,13 @@ void LoadTablesAsync() {
     });
     MissionLoadThread.detach();
 
-    std::thread MonsterBaseLoadThread([]() {
+    std::thread MonsterLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
-        MonsterBaseTableManager::Instance().Load();
+        MonsterTableManager::Instance().Load();
         latch.countDown();
     });
-    MonsterBaseLoadThread.detach();
+    MonsterLoadThread.detach();
 
     std::thread RewardLoadThread([]() {
         void InitThreadLocalConfig();
@@ -260,7 +260,7 @@ void LoadTablesAsync() {
 
     MissionTableManager::Instance().LoadSuccess();
 
-    MonsterBaseTableManager::Instance().LoadSuccess();
+    MonsterTableManager::Instance().LoadSuccess();
 
     RewardTableManager::Instance().LoadSuccess();
 

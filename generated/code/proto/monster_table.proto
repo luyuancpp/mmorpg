@@ -1,0 +1,17 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "MonsterTableOuterClass";
+option java_multiple_files = true;
+
+
+message MonsterTable {
+	uint32 id = 1;
+}
+
+message MonsterTableData {
+	repeated MonsterTable data = 1;
+}

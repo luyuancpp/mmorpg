@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
-#include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
+#include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/login/login.grpc.pb.h"
 
@@ -107,6 +107,26 @@ extern AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLogi
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request);
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+using LoginPreGateStubPtr = std::unique_ptr<LoginPreGate::Stub>;
+#pragma region LoginPreGateGetGateList
+
+struct AsyncLoginPreGateGetGateListGrpcClient {
+    uint32_t messageId{ LoginPreGateGetGateListMessageId };
+    ClientContext context;
+    Status status;
+    ::loginpb::GetGateListResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::loginpb::GetGateListResponse>> response_reader;
+};
+
+class ::loginpb::GetGateListRequest;
+using AsyncLoginPreGateGetGateListHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::loginpb::GetGateListResponse&)>;
+extern AsyncLoginPreGateGetGateListHandlerFunctionType AsyncLoginPreGateGetGateListHandler;
+
+void SendLoginPreGateGetGateList(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::GetGateListRequest& request);
+void SendLoginPreGateGetGateList(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::GetGateListRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendLoginPreGateGetGateList(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 using LoginAdminStubPtr = std::unique_ptr<LoginAdmin::Stub>;
 #pragma region LoginAdminRemovePlayersFromAccounts

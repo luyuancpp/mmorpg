@@ -56,6 +56,11 @@ void EtcdManager::ForceRegisterNodeService() {
 	pendingKeys.push_back(serviceKey);
 }
 
+void EtcdManager::UpdateNodeInfo() {
+	const auto serviceKey = MakeNodeEtcdKey(gNode->GetNodeInfo());
+	EtcdHelper::PutServiceNodeInfo(gNode->GetNodeInfo(), serviceKey);
+}
+
 void EtcdManager::RegisterNodePort() {
 	const auto portKey = MakeNodePortEtcdKey(gNode->GetNodeInfo());
 	LOG_INFO << "Registering node port to etcd with key: " << portKey;

@@ -944,6 +944,7 @@ class NodeInfo final : public ::google::protobuf::Message
     kSceneNodeTypeFieldNumber = 4,
     kZoneIdFieldNumber = 6,
     kProtocolTypeFieldNumber = 7,
+    kPlayerCountFieldNumber = 9,
   };
   // string node_uuid = 8;
   void clear_node_uuid() ;
@@ -1035,11 +1036,21 @@ class NodeInfo final : public ::google::protobuf::Message
   void _internal_set_protocol_type(::uint32_t value);
 
   public:
+  // uint32 player_count = 9;
+  void clear_player_count() ;
+  ::uint32_t player_count() const;
+  void set_player_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_player_count() const;
+  void _internal_set_player_count(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:NodeInfo)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 8,
+  static const ::google::protobuf::internal::TcParseTable<4, 9,
                                    1, 34,
                                    2>
       _table_;
@@ -1069,6 +1080,7 @@ class NodeInfo final : public ::google::protobuf::Message
     ::uint32_t scene_node_type_;
     ::uint32_t zone_id_;
     ::uint32_t protocol_type_;
+    ::uint32_t player_count_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1688,6 +1700,30 @@ inline void NodeInfo::set_allocated_node_uuid(::std::string* PROTOBUF_NULLABLE v
     _impl_.node_uuid_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:NodeInfo.node_uuid)
+}
+
+// uint32 player_count = 9;
+inline void NodeInfo::clear_player_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_count_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000100u;
+}
+inline ::uint32_t NodeInfo::player_count() const {
+  // @@protoc_insertion_point(field_get:NodeInfo.player_count)
+  return _internal_player_count();
+}
+inline void NodeInfo::set_player_count(::uint32_t value) {
+  _internal_set_player_count(value);
+  _impl_._has_bits_[0] |= 0x00000100u;
+  // @@protoc_insertion_point(field_set:NodeInfo.player_count)
+}
+inline ::uint32_t NodeInfo::_internal_player_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_count_;
+}
+inline void NodeInfo::_internal_set_player_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_count_ = value;
 }
 
 // -------------------------------------------------------------------

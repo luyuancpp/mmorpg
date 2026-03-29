@@ -24,6 +24,9 @@ void MissionTableManager::Load() {
         for (const auto& elem : row_data.next_mission_id()) {
             idx_next_mission_id_.emplace(elem, &row_data);
         }
+        for (const auto& elem : row_data.target_count()) {
+            idx_target_count_.emplace(elem, &row_data);
+        }
     }
 
 }

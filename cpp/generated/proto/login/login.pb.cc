@@ -206,6 +206,54 @@ struct LeaveGameRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaveGameRequestDefaultTypeInternal _LeaveGameRequest_default_instance_;
+template <typename>
+PROTOBUF_CONSTEXPR GetGateListRequest::GetGateListRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(GetGateListRequest_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct GetGateListRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetGateListRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetGateListRequestDefaultTypeInternal() {}
+  union {
+    GetGateListRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetGateListRequestDefaultTypeInternal _GetGateListRequest_default_instance_;
+
+inline constexpr GateEndpoint::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        ip_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        node_id_{0u},
+        port_{0u},
+        player_count_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GateEndpoint::GateEndpoint(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GateEndpoint_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GateEndpointDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GateEndpointDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GateEndpointDefaultTypeInternal() {}
+  union {
+    GateEndpoint _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GateEndpointDefaultTypeInternal _GateEndpoint_default_instance_;
 
 inline constexpr EnterGameRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -252,6 +300,31 @@ struct CreatePlayerRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CreatePlayerRequestDefaultTypeInternal _CreatePlayerRequest_default_instance_;
+
+inline constexpr GetGateListResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : gates_{},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetGateListResponse::GetGateListResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetGateListResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetGateListResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetGateListResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetGateListResponseDefaultTypeInternal() {}
+  union {
+    GetGateListResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetGateListResponseDefaultTypeInternal _GetGateListResponse_default_instance_;
 
 inline constexpr EnterGameResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -468,6 +541,20 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::loginpb::LoginNodeDisconnectRequest, _impl_.session_id_),
         0,
         0x000, // bitmap
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::loginpb::GateEndpoint, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::loginpb::GateEndpoint, _impl_.node_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::GateEndpoint, _impl_.ip_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::GateEndpoint, _impl_.port_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::GateEndpoint, _impl_.player_count_),
+        1,
+        0,
+        2,
+        3,
+        0x000, // bitmap
+        0x000, // bitmap
+        PROTOBUF_FIELD_OFFSET(::loginpb::GetGateListResponse, _impl_.gates_),
         0x000, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::RemovePlayersFromAccountsRequest, _impl_.player_ids_),
         0x081, // bitmap
@@ -495,8 +582,11 @@ static const ::_pbi::MigrationSchema
         {69, sizeof(::loginpb::LeaveGameRequest)},
         {70, sizeof(::loginpb::LoginNodeDisconnectRequest)},
         {75, sizeof(::loginpb::LoginEmptyResponse)},
-        {76, sizeof(::loginpb::RemovePlayersFromAccountsRequest)},
-        {78, sizeof(::loginpb::RemovePlayersFromAccountsResponse)},
+        {76, sizeof(::loginpb::GateEndpoint)},
+        {87, sizeof(::loginpb::GetGateListRequest)},
+        {88, sizeof(::loginpb::GetGateListResponse)},
+        {90, sizeof(::loginpb::RemovePlayersFromAccountsRequest)},
+        {92, sizeof(::loginpb::RemovePlayersFromAccountsResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::loginpb::_LoginSessionInfo_default_instance_._instance,
@@ -511,6 +601,9 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::loginpb::_LeaveGameRequest_default_instance_._instance,
     &::loginpb::_LoginNodeDisconnectRequest_default_instance_._instance,
     &::loginpb::_LoginEmptyResponse_default_instance_._instance,
+    &::loginpb::_GateEndpoint_default_instance_._instance,
+    &::loginpb::_GetGateListRequest_default_instance_._instance,
+    &::loginpb::_GetGateListResponse_default_instance_._instance,
     &::loginpb::_RemovePlayersFromAccountsRequest_default_instance_._instance,
     &::loginpb::_RemovePlayersFromAccountsResponse_default_instance_._instance,
 };
@@ -519,50 +612,58 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_2eproto[] ABSL_ATTRIB
     "\n\027proto/login/login.proto\022\007loginpb\032\033prot"
     "o/db/proto_option.proto\032\033proto/common/ba"
     "se/tip.proto\032%proto/common/base/user_acc"
-    "ounts.proto\"\215\001\n\020LoginSessionInfo\022\017\n\007acco"
-    "unt\030\001 \001(\t\022\017\n\007role_id\030\002 \001(\004\022\022\n\nsession_id"
-    "\030\003 \001(\004\022\017\n\007gate_id\030\004 \001(\004\022\021\n\tdevice_id\030\005 \001"
-    "(\t\022\022\n\nlogin_time\030\006 \001(\003\022\013\n\003fsm\030\007 \001(\t\"B\n\032A"
-    "ccountSimplePlayerWrapper\022$\n\006player\030\001 \001("
-    "\0132\024.AccountSimplePlayer\"1\n\014LoginRequest\022"
-    "\017\n\007account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"m\n\rLo"
-    "ginResponse\022&\n\rerror_message\030\001 \001(\0132\017.Tip"
-    "InfoMessage\0224\n\007players\030\002 \003(\0132#.loginpb.A"
-    "ccountSimplePlayerWrapper\"\221\001\n\014TestRespon"
-    "se\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessa"
-    "ge\0224\n\007players\030\002 \003(\0132#.loginpb.AccountSim"
-    "plePlayerWrapper\022\022\n\nteststring\030\003 \003(\t\022\017\n\007"
-    "testint\030\004 \003(\005\"\025\n\023CreatePlayerRequest\"t\n\024"
-    "CreatePlayerResponse\022&\n\rerror_message\030\001 "
-    "\001(\0132\017.TipInfoMessage\0224\n\007players\030\002 \003(\0132#."
-    "loginpb.AccountSimplePlayerWrapper\"9\n\020En"
-    "terGameRequest\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\nreq"
-    "uest_id\030\002 \001(\t\"N\n\021EnterGameResponse\022&\n\rer"
-    "ror_message\030\001 \001(\0132\017.TipInfoMessage\022\021\n\tpl"
-    "ayer_id\030\002 \001(\004\"\022\n\020LeaveGameRequest\"0\n\032Log"
-    "inNodeDisconnectRequest\022\022\n\nsession_id\030\001 "
-    "\001(\004\"\024\n\022LoginEmptyResponse\"6\n RemovePlaye"
-    "rsFromAccountsRequest\022\022\n\nplayer_ids\030\001 \003("
-    "\004\"i\n!RemovePlayersFromAccountsResponse\022\025"
-    "\n\rremoved_count\030\001 \001(\r\022\027\n\017not_found_count"
-    "\030\002 \001(\r\022\024\n\014failed_count\030\003 \001(\r2\370\002\n\021ClientP"
-    "layerLogin\0226\n\005Login\022\025.loginpb.LoginReque"
-    "st\032\026.loginpb.LoginResponse\022K\n\014CreatePlay"
-    "er\022\034.loginpb.CreatePlayerRequest\032\035.login"
-    "pb.CreatePlayerResponse\022B\n\tEnterGame\022\031.l"
-    "oginpb.EnterGameRequest\032\032.loginpb.EnterG"
-    "ameResponse\022C\n\tLeaveGame\022\031.loginpb.Leave"
-    "GameRequest\032\033.loginpb.LoginEmptyResponse"
-    "\022N\n\nDisconnect\022#.loginpb.LoginNodeDiscon"
-    "nectRequest\032\033.loginpb.LoginEmptyResponse"
-    "\032\005\210\250\303\001\0012\200\001\n\nLoginAdmin\022r\n\031RemovePlayersF"
-    "romAccounts\022).loginpb.RemovePlayersFromA"
-    "ccountsRequest\032*.loginpb.RemovePlayersFr"
-    "omAccountsResponseB\023Z\021login/proto/loginb"
-    "\006proto3"
+    "ounts.proto\032\036proto/common/base/common.pr"
+    "oto\"\215\001\n\020LoginSessionInfo\022\017\n\007account\030\001 \001("
+    "\t\022\017\n\007role_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\004\022\017"
+    "\n\007gate_id\030\004 \001(\004\022\021\n\tdevice_id\030\005 \001(\t\022\022\n\nlo"
+    "gin_time\030\006 \001(\003\022\013\n\003fsm\030\007 \001(\t\"B\n\032AccountSi"
+    "mplePlayerWrapper\022$\n\006player\030\001 \001(\0132\024.Acco"
+    "untSimplePlayer\"1\n\014LoginRequest\022\017\n\007accou"
+    "nt\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"m\n\rLoginRespo"
+    "nse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMess"
+    "age\0224\n\007players\030\002 \003(\0132#.loginpb.AccountSi"
+    "mplePlayerWrapper\"\221\001\n\014TestResponse\022&\n\rer"
+    "ror_message\030\001 \001(\0132\017.TipInfoMessage\0224\n\007pl"
+    "ayers\030\002 \003(\0132#.loginpb.AccountSimplePlaye"
+    "rWrapper\022\022\n\nteststring\030\003 \003(\t\022\017\n\007testint\030"
+    "\004 \003(\005\"\025\n\023CreatePlayerRequest\"t\n\024CreatePl"
+    "ayerResponse\022&\n\rerror_message\030\001 \001(\0132\017.Ti"
+    "pInfoMessage\0224\n\007players\030\002 \003(\0132#.loginpb."
+    "AccountSimplePlayerWrapper\"9\n\020EnterGameR"
+    "equest\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\nrequest_id\030"
+    "\002 \001(\t\"N\n\021EnterGameResponse\022&\n\rerror_mess"
+    "age\030\001 \001(\0132\017.TipInfoMessage\022\021\n\tplayer_id\030"
+    "\002 \001(\004\"\022\n\020LeaveGameRequest\"0\n\032LoginNodeDi"
+    "sconnectRequest\022\022\n\nsession_id\030\001 \001(\004\"\024\n\022L"
+    "oginEmptyResponse\"O\n\014GateEndpoint\022\017\n\007nod"
+    "e_id\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\r\022\024\n\014"
+    "player_count\030\004 \001(\r\"\024\n\022GetGateListRequest"
+    "\";\n\023GetGateListResponse\022$\n\005gates\030\001 \003(\0132\025"
+    ".loginpb.GateEndpoint\"6\n RemovePlayersFr"
+    "omAccountsRequest\022\022\n\nplayer_ids\030\001 \003(\004\"i\n"
+    "!RemovePlayersFromAccountsResponse\022\025\n\rre"
+    "moved_count\030\001 \001(\r\022\027\n\017not_found_count\030\002 \001"
+    "(\r\022\024\n\014failed_count\030\003 \001(\r2\370\002\n\021ClientPlaye"
+    "rLogin\0226\n\005Login\022\025.loginpb.LoginRequest\032\026"
+    ".loginpb.LoginResponse\022K\n\014CreatePlayer\022\034"
+    ".loginpb.CreatePlayerRequest\032\035.loginpb.C"
+    "reatePlayerResponse\022B\n\tEnterGame\022\031.login"
+    "pb.EnterGameRequest\032\032.loginpb.EnterGameR"
+    "esponse\022C\n\tLeaveGame\022\031.loginpb.LeaveGame"
+    "Request\032\033.loginpb.LoginEmptyResponse\022N\n\n"
+    "Disconnect\022#.loginpb.LoginNodeDisconnect"
+    "Request\032\033.loginpb.LoginEmptyResponse\032\005\210\250"
+    "\303\001\0012X\n\014LoginPreGate\022H\n\013GetGateList\022\033.log"
+    "inpb.GetGateListRequest\032\034.loginpb.GetGat"
+    "eListResponse2\200\001\n\nLoginAdmin\022r\n\031RemovePl"
+    "ayersFromAccounts\022).loginpb.RemovePlayer"
+    "sFromAccountsRequest\032*.loginpb.RemovePla"
+    "yersFromAccountsResponseB\023Z\021login/proto/"
+    "loginb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2flogin_2flogin_2eproto_deps[3] = {
+    descriptor_table_proto_2flogin_2flogin_2eproto_deps[4] = {
+        &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fuser_5faccounts_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
@@ -571,13 +672,13 @@ static ::absl::once_flag descriptor_table_proto_2flogin_2flogin_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_2flogin_2eproto = {
     false,
     false,
-    1727,
+    2013,
     descriptor_table_protodef_proto_2flogin_2flogin_2eproto,
     "proto/login/login.proto",
     &descriptor_table_proto_2flogin_2flogin_2eproto_once,
     descriptor_table_proto_2flogin_2flogin_2eproto_deps,
-    3,
-    14,
+    4,
+    17,
     schemas,
     file_default_instances,
     TableStruct_proto_2flogin_2flogin_2eproto::offsets,
@@ -3797,6 +3898,737 @@ LoginEmptyResponse::_table_ = {
 
 ::google::protobuf::Metadata LoginEmptyResponse::GetMetadata() const {
   return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GateEndpoint::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GateEndpoint>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_._has_bits_);
+};
+
+GateEndpoint::GateEndpoint(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GateEndpoint_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:loginpb.GateEndpoint)
+}
+PROTOBUF_NDEBUG_INLINE GateEndpoint::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::loginpb::GateEndpoint& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        ip_(arena, from.ip_) {}
+
+GateEndpoint::GateEndpoint(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GateEndpoint& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GateEndpoint_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GateEndpoint* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, node_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, node_id_),
+           offsetof(Impl_, player_count_) -
+               offsetof(Impl_, node_id_) +
+               sizeof(Impl_::player_count_));
+
+  // @@protoc_insertion_point(copy_constructor:loginpb.GateEndpoint)
+}
+PROTOBUF_NDEBUG_INLINE GateEndpoint::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        ip_(arena) {}
+
+inline void GateEndpoint::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, node_id_),
+           0,
+           offsetof(Impl_, player_count_) -
+               offsetof(Impl_, node_id_) +
+               sizeof(Impl_::player_count_));
+}
+GateEndpoint::~GateEndpoint() {
+  // @@protoc_insertion_point(destructor:loginpb.GateEndpoint)
+  SharedDtor(*this);
+}
+inline void GateEndpoint::SharedDtor(MessageLite& self) {
+  GateEndpoint& this_ = static_cast<GateEndpoint&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.ip_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GateEndpoint::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GateEndpoint(arena);
+}
+constexpr auto GateEndpoint::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GateEndpoint),
+                                            alignof(GateEndpoint));
+}
+constexpr auto GateEndpoint::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GateEndpoint_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GateEndpoint::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GateEndpoint>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GateEndpoint::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GateEndpoint>(), &GateEndpoint::ByteSizeLong,
+              &GateEndpoint::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_._cached_size_),
+          false,
+      },
+      &GateEndpoint::kDescriptorMethods,
+      &descriptor_table_proto_2flogin_2flogin_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GateEndpoint_class_data_ =
+        GateEndpoint::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GateEndpoint::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GateEndpoint_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GateEndpoint_class_data_.tc_table);
+  return GateEndpoint_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 31, 2>
+GateEndpoint::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GateEndpoint_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::loginpb::GateEndpoint>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 player_count = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateEndpoint, _impl_.player_count_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.player_count_)}},
+    // uint32 node_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateEndpoint, _impl_.node_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.node_id_)}},
+    // string ip = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.ip_)}},
+    // uint32 port = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateEndpoint, _impl_.port_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.port_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 node_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.node_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // string ip = 2;
+    {PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.ip_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 port = 3;
+    {PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.port_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 player_count = 4;
+    {PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.player_count_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+    "\24\0\2\0\0\0\0\0"
+    "loginpb.GateEndpoint"
+    "ip"
+  }},
+};
+PROTOBUF_NOINLINE void GateEndpoint::Clear() {
+// @@protoc_insertion_point(message_clear_start:loginpb.GateEndpoint)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    _impl_.ip_.ClearNonDefaultToEmpty();
+  }
+  if ((cached_has_bits & 0x0000000eu) != 0) {
+    ::memset(&_impl_.node_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.player_count_) -
+        reinterpret_cast<char*>(&_impl_.node_id_)) + sizeof(_impl_.player_count_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GateEndpoint::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GateEndpoint& this_ = static_cast<const GateEndpoint&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GateEndpoint::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GateEndpoint& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:loginpb.GateEndpoint)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 node_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_node_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          1, this_._internal_node_id(), target);
+    }
+  }
+
+  // string ip = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_ip().empty()) {
+      const ::std::string& _s = this_._internal_ip();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.GateEndpoint.ip");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // uint32 port = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_port() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          3, this_._internal_port(), target);
+    }
+  }
+
+  // uint32 player_count = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_player_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          4, this_._internal_player_count(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:loginpb.GateEndpoint)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GateEndpoint::ByteSizeLong(const MessageLite& base) {
+  const GateEndpoint& this_ = static_cast<const GateEndpoint&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GateEndpoint::ByteSizeLong() const {
+  const GateEndpoint& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:loginpb.GateEndpoint)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    // string ip = 2;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_ip().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_ip());
+      }
+    }
+    // uint32 node_id = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_node_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_node_id());
+      }
+    }
+    // uint32 port = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_port() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_port());
+      }
+    }
+    // uint32 player_count = 4;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_player_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_player_count());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GateEndpoint::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GateEndpoint*>(&to_msg);
+  auto& from = static_cast<const GateEndpoint&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.GateEndpoint)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_ip().empty()) {
+        _this->_internal_set_ip(from._internal_ip());
+      } else {
+        if (_this->_impl_.ip_.IsDefault()) {
+          _this->_internal_set_ip("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_node_id() != 0) {
+        _this->_impl_.node_id_ = from._impl_.node_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_port() != 0) {
+        _this->_impl_.port_ = from._impl_.port_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_player_count() != 0) {
+        _this->_impl_.player_count_ = from._impl_.player_count_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void GateEndpoint::CopyFrom(const GateEndpoint& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.GateEndpoint)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GateEndpoint::InternalSwap(GateEndpoint* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.ip_, &other->_impl_.ip_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.player_count_)
+      + sizeof(GateEndpoint::_impl_.player_count_)
+      - PROTOBUF_FIELD_OFFSET(GateEndpoint, _impl_.node_id_)>(
+          reinterpret_cast<char*>(&_impl_.node_id_),
+          reinterpret_cast<char*>(&other->_impl_.node_id_));
+}
+
+::google::protobuf::Metadata GateEndpoint::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetGateListRequest::_Internal {
+ public:
+};
+
+GetGateListRequest::GetGateListRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, GetGateListRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:loginpb.GetGateListRequest)
+}
+GetGateListRequest::GetGateListRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetGateListRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, GetGateListRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetGateListRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:loginpb.GetGateListRequest)
+}
+
+inline void* PROTOBUF_NONNULL GetGateListRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetGateListRequest(arena);
+}
+constexpr auto GetGateListRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetGateListRequest),
+                                            alignof(GetGateListRequest));
+}
+constexpr auto GetGateListRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetGateListRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetGateListRequest::MergeImpl,
+          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<GetGateListRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetGateListRequest::SharedDtor,
+          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<GetGateListRequest>(), &GetGateListRequest::ByteSizeLong,
+              &GetGateListRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetGateListRequest, _impl_._cached_size_),
+          false,
+      },
+      &GetGateListRequest::kDescriptorMethods,
+      &descriptor_table_proto_2flogin_2flogin_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetGateListRequest_class_data_ =
+        GetGateListRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetGateListRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetGateListRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetGateListRequest_class_data_.tc_table);
+  return GetGateListRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 0, 0, 0, 2>
+GetGateListRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    0, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967295,  // skipmap
+    offsetof(decltype(_table_), field_names),  // no field_entries
+    0,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GetGateListRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::loginpb::GetGateListRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, // no field_entries, or aux_entries
+  {{
+  }},
+};
+
+
+
+
+
+
+
+::google::protobuf::Metadata GetGateListRequest::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetGateListResponse::_Internal {
+ public:
+};
+
+GetGateListResponse::GetGateListResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetGateListResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:loginpb.GetGateListResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetGateListResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::loginpb::GetGateListResponse& from_msg)
+      : gates_{visibility, arena, from.gates_},
+        _cached_size_{0} {}
+
+GetGateListResponse::GetGateListResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetGateListResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetGateListResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetGateListResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:loginpb.GetGateListResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetGateListResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : gates_{visibility, arena},
+        _cached_size_{0} {}
+
+inline void GetGateListResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+GetGateListResponse::~GetGateListResponse() {
+  // @@protoc_insertion_point(destructor:loginpb.GetGateListResponse)
+  SharedDtor(*this);
+}
+inline void GetGateListResponse::SharedDtor(MessageLite& self) {
+  GetGateListResponse& this_ = static_cast<GetGateListResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetGateListResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetGateListResponse(arena);
+}
+constexpr auto GetGateListResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(GetGateListResponse, _impl_.gates_) +
+          decltype(GetGateListResponse::_impl_.gates_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(GetGateListResponse), alignof(GetGateListResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&GetGateListResponse::PlacementNew_,
+                                 sizeof(GetGateListResponse),
+                                 alignof(GetGateListResponse));
+  }
+}
+constexpr auto GetGateListResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetGateListResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetGateListResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetGateListResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetGateListResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetGateListResponse>(), &GetGateListResponse::ByteSizeLong,
+              &GetGateListResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetGateListResponse, _impl_._cached_size_),
+          false,
+      },
+      &GetGateListResponse::kDescriptorMethods,
+      &descriptor_table_proto_2flogin_2flogin_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetGateListResponse_class_data_ =
+        GetGateListResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetGateListResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetGateListResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetGateListResponse_class_data_.tc_table);
+  return GetGateListResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
+GetGateListResponse::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    GetGateListResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::loginpb::GetGateListResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated .loginpb.GateEndpoint gates = 1;
+    {::_pbi::TcParser::FastMtR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetGateListResponse, _impl_.gates_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated .loginpb.GateEndpoint gates = 1;
+    {PROTOBUF_FIELD_OFFSET(GetGateListResponse, _impl_.gates_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }},
+  {{
+      {::_pbi::TcParser::GetTable<::loginpb::GateEndpoint>()},
+  }},
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void GetGateListResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:loginpb.GetGateListResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.gates_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetGateListResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetGateListResponse& this_ = static_cast<const GetGateListResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetGateListResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetGateListResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:loginpb.GetGateListResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // repeated .loginpb.GateEndpoint gates = 1;
+  for (unsigned i = 0, n = static_cast<unsigned>(
+                           this_._internal_gates_size());
+       i < n; i++) {
+    const auto& repfield = this_._internal_gates().Get(i);
+    target =
+        ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+            1, repfield, repfield.GetCachedSize(),
+            target, stream);
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:loginpb.GetGateListResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetGateListResponse::ByteSizeLong(const MessageLite& base) {
+  const GetGateListResponse& this_ = static_cast<const GetGateListResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetGateListResponse::ByteSizeLong() const {
+  const GetGateListResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:loginpb.GetGateListResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+   {
+    // repeated .loginpb.GateEndpoint gates = 1;
+    {
+      total_size += 1UL * this_._internal_gates_size();
+      for (const auto& msg : this_._internal_gates()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetGateListResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GetGateListResponse*>(&to_msg);
+  auto& from = static_cast<const GetGateListResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.GetGateListResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_gates()->MergeFrom(
+      from._internal_gates());
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void GetGateListResponse::CopyFrom(const GetGateListResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.GetGateListResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetGateListResponse::InternalSwap(GetGateListResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.gates_.InternalSwap(&other->_impl_.gates_);
+}
+
+::google::protobuf::Metadata GetGateListResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 

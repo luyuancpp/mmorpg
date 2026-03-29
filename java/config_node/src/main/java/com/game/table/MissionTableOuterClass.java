@@ -45,15 +45,15 @@ public final class MissionTableOuterClass {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\023mission_table.proto\"\272\001\n\014MissionTable\022\n" +
+      "\n\023mission_table.proto\"\320\001\n\014MissionTable\022\n" +
       "\n\002id\030\001 \001(\r\022\024\n\014condition_id\030\002 \003(\r\022\024\n\014miss" +
       "ion_type\030\003 \001(\r\022\030\n\020mission_sub_type\030\004 \001(\r" +
       "\022\027\n\017condition_order\030\005 \001(\r\022\023\n\013auto_reward" +
       "\030\006 \001(\r\022\021\n\treward_id\030\007 \001(\r\022\027\n\017next_missio" +
-      "n_id\030\010 \003(\r\"/\n\020MissionTableData\022\033\n\004data\030\001" +
-      " \003(\0132\r.MissionTableB>\n\016com.game.tableB\026M" +
-      "issionTableOuterClassP\001Z\022generated/pb/ta" +
-      "bleb\006proto3"
+      "n_id\030\010 \003(\r\022\024\n\014target_count\030\t \003(\r\"/\n\020Miss" +
+      "ionTableData\022\033\n\004data\030\001 \003(\0132\r.MissionTabl" +
+      "eB>\n\016com.game.tableB\026MissionTableOuterCl" +
+      "assP\001Z\022generated/pb/tableb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -64,7 +64,7 @@ public final class MissionTableOuterClass {
     internal_static_MissionTable_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_MissionTable_descriptor,
-        new java.lang.String[] { "Id", "ConditionId", "MissionType", "MissionSubType", "ConditionOrder", "AutoReward", "RewardId", "NextMissionId", });
+        new java.lang.String[] { "Id", "ConditionId", "MissionType", "MissionSubType", "ConditionOrder", "AutoReward", "RewardId", "NextMissionId", "TargetCount", });
     internal_static_MissionTableData_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_MissionTableData_fieldAccessorTable = new

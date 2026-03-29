@@ -15,6 +15,7 @@ type MissionTableManager struct {
     kvData map[uint32]*pb.MissionTable
     idxCondition_id map[uint32][]*pb.MissionTable
     idxNext_mission_id map[uint32][]*pb.MissionTable
+    idxTarget_count map[uint32][]*pb.MissionTable
 }
 
 var MissionTableManagerInstance = NewMissionTableManager()
@@ -24,6 +25,7 @@ func NewMissionTableManager() *MissionTableManager {
         kvData: make(map[uint32]*pb.MissionTable),
         idxCondition_id: make(map[uint32][]*pb.MissionTable),
         idxNext_mission_id: make(map[uint32][]*pb.MissionTable),
+        idxTarget_count: make(map[uint32][]*pb.MissionTable),
     }
 }
 
@@ -47,6 +49,9 @@ func (m *MissionTableManager) Load(configDir string) error {
         for _, elem := range row.NextMissionId {
             m.idxNext_mission_id[elem] = append(m.idxNext_mission_id[elem], row)
         }
+        for _, elem := range row.TargetCount {
+            m.idxTarget_count[elem] = append(m.idxTarget_count[elem], row)
+        }
     }
 
     m.data = container.Data
@@ -66,5 +71,10 @@ func (m *MissionTableManager) GetByCondition_idIndex(key uint32) []*pb.MissionTa
 
 func (m *MissionTableManager) GetByNext_mission_idIndex(key uint32) []*pb.MissionTable {
     return m.idxNext_mission_id[key]
+}
+
+
+func (m *MissionTableManager) GetByTarget_countIndex(key uint32) []*pb.MissionTable {
+    return m.idxTarget_count[key]
 }
 

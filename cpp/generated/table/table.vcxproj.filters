@@ -69,7 +69,7 @@
     <ClInclude Include="code\mission_table.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="code\monsterbase_table.h">
+    <ClInclude Include="code\monster_table.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="code\reward_table.h">
@@ -171,7 +171,7 @@
     <ClInclude Include="proto\mission_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="proto\monsterbase_table.pb.h">
+    <ClInclude Include="proto\monster_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\reward_table.pb.h">
@@ -251,7 +251,7 @@
     <ClCompile Include="code\mission_table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="code\monsterbase_table.cpp">
+    <ClCompile Include="code\monster_table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="code\reward_table.cpp">
@@ -353,7 +353,7 @@
     <ClCompile Include="proto\mission_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="proto\monsterbase_table.pb.cc">
+    <ClCompile Include="proto\monster_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\reward_table.pb.cc">

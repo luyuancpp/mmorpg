@@ -10,6 +10,7 @@ import (
 	"login/internal/logic/pkg/node"
 	loginserver "login/internal/server/clientplayerlogin"
 	loginadminserver "login/internal/server/loginadmin"
+	loginpregateserver "login/internal/server/loginpregate"
 	"login/internal/svc"
 	login_proto "proto/common/base"
 	login_proto_login "proto/login"
@@ -134,6 +135,7 @@ func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	server := zrpc.MustNewServer(cfg.RpcServerConf, func(grpcServer *grpc.Server) {
 		login_proto_login.RegisterClientPlayerLoginServer(grpcServer, loginserver.NewClientPlayerLoginServer(ctx))
 		login_proto_login.RegisterLoginAdminServer(grpcServer, loginadminserver.NewLoginAdminServer(ctx))
+		login_proto_login.RegisterLoginPreGateServer(grpcServer, loginpregateserver.NewLoginPreGateServer(ctx))
 
 		if cfg.Mode == service.DevMode || cfg.Mode == service.TestMode {
 			reflection.Register(grpcServer)

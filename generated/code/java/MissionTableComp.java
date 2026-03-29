@@ -65,4 +65,10 @@ public final class MissionTableComp {
         }
     }
 
+    public record Target_count(List<Integer> values) {
+        public static Target_count from(MissionTable row) {
+            return new Target_count(row.getTargetCountList());
+        }
+    }
+
 }

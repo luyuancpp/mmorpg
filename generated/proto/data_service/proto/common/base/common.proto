@@ -18,6 +18,7 @@ message NodeInfo {
   uint32 zone_id = 6;
   uint32 protocol_type = 7; // Node communication protocol type
   string node_uuid = 8;
+  uint32 player_count = 9; // Current online player/connection count (for load balancing)
 }
 
 message NodeInfoListComp

@@ -273,6 +273,114 @@ var ClientPlayerLogin_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	LoginPreGate_GetGateList_FullMethodName = "/loginpb.LoginPreGate/GetGateList"
+)
+
+// LoginPreGateClient is the client API for LoginPreGate service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type LoginPreGateClient interface {
+	// Client calls this before connecting to any Gate.
+	// Returns all available Gate endpoints with current load.
+	// Client picks the least-loaded Gate and TCP-connects to it.
+	GetGateList(ctx context.Context, in *GetGateListRequest, opts ...grpc.CallOption) (*GetGateListResponse, error)
+}
+
+type loginPreGateClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewLoginPreGateClient(cc grpc.ClientConnInterface) LoginPreGateClient {
+	return &loginPreGateClient{cc}
+}
+
+func (c *loginPreGateClient) GetGateList(ctx context.Context, in *GetGateListRequest, opts ...grpc.CallOption) (*GetGateListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetGateListResponse)
+	err := c.cc.Invoke(ctx, LoginPreGate_GetGateList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// LoginPreGateServer is the server API for LoginPreGate service.
+// All implementations must embed UnimplementedLoginPreGateServer
+// for forward compatibility.
+type LoginPreGateServer interface {
+	// Client calls this before connecting to any Gate.
+	// Returns all available Gate endpoints with current load.
+	// Client picks the least-loaded Gate and TCP-connects to it.
+	GetGateList(context.Context, *GetGateListRequest) (*GetGateListResponse, error)
+	mustEmbedUnimplementedLoginPreGateServer()
+}
+
+// UnimplementedLoginPreGateServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedLoginPreGateServer struct{}
+
+func (UnimplementedLoginPreGateServer) GetGateList(context.Context, *GetGateListRequest) (*GetGateListResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetGateList not implemented")
+}
+func (UnimplementedLoginPreGateServer) mustEmbedUnimplementedLoginPreGateServer() {}
+func (UnimplementedLoginPreGateServer) testEmbeddedByValue()                      {}
+
+// UnsafeLoginPreGateServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to LoginPreGateServer will
+// result in compilation errors.
+type UnsafeLoginPreGateServer interface {
+	mustEmbedUnimplementedLoginPreGateServer()
+}
+
+func RegisterLoginPreGateServer(s grpc.ServiceRegistrar, srv LoginPreGateServer) {
+	// If the following call panics, it indicates UnimplementedLoginPreGateServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&LoginPreGate_ServiceDesc, srv)
+}
+
+func _LoginPreGate_GetGateList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGateListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LoginPreGateServer).GetGateList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LoginPreGate_GetGateList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LoginPreGateServer).GetGateList(ctx, req.(*GetGateListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// LoginPreGate_ServiceDesc is the grpc.ServiceDesc for LoginPreGate service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var LoginPreGate_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loginpb.LoginPreGate",
+	HandlerType: (*LoginPreGateServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetGateList",
+			Handler:    _LoginPreGate_GetGateList_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/login/login.proto",
+}
+
+const (
 	LoginAdmin_RemovePlayersFromAccounts_FullMethodName = "/loginpb.LoginAdmin/RemovePlayersFromAccounts"
 )
 

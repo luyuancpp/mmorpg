@@ -4,7 +4,7 @@
 #include "{{ .MessageName | ToLower }}_attribute_sync.h"
 
 // Engine core dependency
-#include "engine/thread_context/registry_manager.h"
+#include "thread_context/ecs_context.h"
 // Scene-related dependency
 #include "spatial/comp/scene_node_scene_comp.h"
 // Network dependency
@@ -24,7 +24,7 @@ void {{ .MessageName }}SyncAttributesCore(entt::entity entity, uint32_t message_
     }
 
     // Get thread-local actor registry (core data container)
-    auto& actorRegistry = tlsRegistryManager.actorRegistry;
+    auto& actorRegistry = tlsEcs.actorRegistry;
 
     // 2. Get dirty mask component
     auto& dirtyMaskComp = actorRegistry.get_or_emplace<{{ .MessageName }}DirtyMaskComp>(entity);
@@ -145,7 +145,7 @@ void {{ .MessageName }}SyncAttributes(entt::entity entity, uint32_t message_id, 
 void Set{{ .MessageName }}AttrDirtyBit(entt::entity entity, std::size_t bitIdx)
 {
     // Get thread-local actor registry
-    auto& actorRegistry = tlsRegistryManager.actorRegistry;
+    auto& actorRegistry = tlsEcs.actorRegistry;
 
     // Get or create dirty mask component
     auto& dirtyMaskComp = actorRegistry.get_or_emplace<{{ .MessageName }}DirtyMaskComp>(entity);

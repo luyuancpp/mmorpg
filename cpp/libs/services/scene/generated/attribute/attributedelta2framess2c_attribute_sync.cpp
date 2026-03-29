@@ -4,7 +4,7 @@
 #include "attributedelta2framess2c_attribute_sync.h"
 
 // Engine core dependency
-#include "engine/thread_context/registry_manager.h"
+#include "thread_context/ecs_context.h"
 // Scene-related dependency
 #include "spatial/comp/scene_node_scene_comp.h"
 // Network dependency

@@ -37,10 +37,10 @@ public final class SkillTableOuterClass {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_Skillrequired_resource_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_Skillrequest_resource_descriptor;
+    internal_static_Skillcost_resource_descriptor;
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_Skillrequest_resource_fieldAccessorTable;
+      internal_static_Skillcost_resource_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_SkillTable_descriptor;
   static final 
@@ -64,26 +64,26 @@ public final class SkillTableOuterClass {
       "m\022\032\n\022required_item_type\030\001 \001(\r\022\033\n\023require" +
       "d_item_value\030\002 \001(\004\"Y\n\026Skillrequired_reso" +
       "urce\022\036\n\026required_resource_type\030\001 \001(\r\022\037\n\027" +
-      "required_resource_value\030\002 \001(\r\"S\n\025Skillre" +
-      "quest_resource\022\033\n\023request_resource_id\030\001 " +
-      "\001(\r\022\035\n\025request_resource_cost\030\002 \001(\r\"\270\004\n\nS" +
-      "killTable\022\n\n\002id\030\001 \001(\r\022\022\n\nskill_type\030\002 \003(" +
-      "\r\022\026\n\016targeting_mode\030\003 \003(\r\022\026\n\016require_tar" +
-      "get\030\004 \001(\r\022\025\n\rtarget_status\030\005 \001(\r\022\022\n\ncast" +
-      "_point\030\006 \001(\001\022\025\n\rrecovery_time\030\007 \001(\001\022\021\n\ti" +
-      "mmediate\030\010 \001(\r\022\016\n\006effect\030\t \003(\r\022\025\n\rchanne" +
-      "l_think\030\n \001(\r\022\026\n\016channel_finish\030\013 \001(\r\022\026\n" +
-      "\016think_interval\030\014 \001(\r\022\024\n\014channel_time\030\r " +
-      "\001(\r\022\r\n\005range\030\016 \001(\001\022\021\n\tmax_range\030\017 \001(\001\022\021\n" +
-      "\tmin_range\030\020 \001(\001\022\023\n\013self_status\030\021 \001(\r\022\027\n" +
-      "\017required_status\030\022 \001(\r\022\023\n\013cooldown_id\030\023 " +
-      "\001(\r\022\016\n\006damage\030\024 \001(\t\022*\n\rrequired_item\030\025 \003" +
-      "(\0132\023.Skillrequired_item\0222\n\021required_reso" +
-      "urce\030\026 \003(\0132\027.Skillrequired_resource\0220\n\020r" +
-      "equest_resource\030\027 \003(\0132\026.Skillrequest_res" +
-      "ource\"+\n\016SkillTableData\022\031\n\004data\030\001 \003(\0132\013." +
-      "SkillTableB<\n\016com.game.tableB\024SkillTable" +
-      "OuterClassP\001Z\022generated/pb/tableb\006proto3"
+      "required_resource_value\030\002 \001(\r\"J\n\022Skillco" +
+      "st_resource\022\030\n\020cost_resource_id\030\001 \001(\r\022\032\n" +
+      "\022cost_resource_cost\030\002 \001(\r\"\262\004\n\nSkillTable" +
+      "\022\n\n\002id\030\001 \001(\r\022\022\n\nskill_type\030\002 \003(\r\022\026\n\016targ" +
+      "eting_mode\030\003 \003(\r\022\026\n\016require_target\030\004 \001(\r" +
+      "\022\025\n\rtarget_status\030\005 \001(\r\022\022\n\ncast_point\030\006 " +
+      "\001(\001\022\025\n\rrecovery_time\030\007 \001(\001\022\021\n\timmediate\030" +
+      "\010 \001(\r\022\016\n\006effect\030\t \003(\r\022\025\n\rchannel_think\030\n" +
+      " \001(\r\022\026\n\016channel_finish\030\013 \001(\r\022\026\n\016think_in" +
+      "terval\030\014 \001(\r\022\024\n\014channel_time\030\r \001(\r\022\r\n\005ra" +
+      "nge\030\016 \001(\001\022\021\n\tmax_range\030\017 \001(\001\022\021\n\tmin_rang" +
+      "e\030\020 \001(\001\022\023\n\013self_status\030\021 \001(\r\022\027\n\017required" +
+      "_status\030\022 \001(\r\022\023\n\013cooldown_id\030\023 \001(\r\022\016\n\006da" +
+      "mage\030\024 \001(\t\022*\n\rrequired_item\030\025 \003(\0132\023.Skil" +
+      "lrequired_item\0222\n\021required_resource\030\026 \003(" +
+      "\0132\027.Skillrequired_resource\022*\n\rcost_resou" +
+      "rce\030\027 \003(\0132\023.Skillcost_resource\"+\n\016SkillT" +
+      "ableData\022\031\n\004data\030\001 \003(\0132\013.SkillTableB<\n\016c" +
+      "om.game.tableB\024SkillTableOuterClassP\001Z\022g" +
+      "enerated/pb/tableb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -101,18 +101,18 @@ public final class SkillTableOuterClass {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_Skillrequired_resource_descriptor,
         new java.lang.String[] { "RequiredResourceType", "RequiredResourceValue", });
-    internal_static_Skillrequest_resource_descriptor =
+    internal_static_Skillcost_resource_descriptor =
       getDescriptor().getMessageTypes().get(2);
-    internal_static_Skillrequest_resource_fieldAccessorTable = new
+    internal_static_Skillcost_resource_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_Skillrequest_resource_descriptor,
-        new java.lang.String[] { "RequestResourceId", "RequestResourceCost", });
+        internal_static_Skillcost_resource_descriptor,
+        new java.lang.String[] { "CostResourceId", "CostResourceCost", });
     internal_static_SkillTable_descriptor =
       getDescriptor().getMessageTypes().get(3);
     internal_static_SkillTable_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_SkillTable_descriptor,
-        new java.lang.String[] { "Id", "SkillType", "TargetingMode", "RequireTarget", "TargetStatus", "CastPoint", "RecoveryTime", "Immediate", "Effect", "ChannelThink", "ChannelFinish", "ThinkInterval", "ChannelTime", "Range", "MaxRange", "MinRange", "SelfStatus", "RequiredStatus", "CooldownId", "Damage", "RequiredItem", "RequiredResource", "RequestResource", });
+        new java.lang.String[] { "Id", "SkillType", "TargetingMode", "RequireTarget", "TargetStatus", "CastPoint", "RecoveryTime", "Immediate", "Effect", "ChannelThink", "ChannelFinish", "ThinkInterval", "ChannelTime", "Range", "MaxRange", "MinRange", "SelfStatus", "RequiredStatus", "CooldownId", "Damage", "RequiredItem", "RequiredResource", "CostResource", });
     internal_static_SkillTableData_descriptor =
       getDescriptor().getMessageTypes().get(4);
     internal_static_SkillTableData_fieldAccessorTable = new

@@ -16,7 +16,7 @@ namespace {
 template <typename EventT>
 void EnqueueGateKafkaEvent(const EventT& event)
 {
-    dispatcher.enqueue(event);
+    tlsEcs.dispatcher.enqueue(event);
 }
 
 template <typename EventT>

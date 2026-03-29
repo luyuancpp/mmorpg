@@ -1,11 +1,12 @@
 param(
 	[Parameter(Mandatory = $true)]
-	[ValidateSet("zone-up", "zone-down", "zone-status", "all-up", "all-down", "all-status")]
+	[ValidateSet("zone-up", "zone-down", "zone-status", "all-up", "all-down", "all-status", "infra-up", "infra-down", "infra-status")]
 	[string]$Command,
 
 	[string]$ZoneName = "yesterday",
 	[int]$ZoneId = 101,
 	[string]$NamespacePrefix = "mmorpg-zone",
+	[string]$InfraNamespace = "mmorpg-infra",
 
 	[string]$ZonesConfigPath = "",
 
@@ -176,7 +177,7 @@ function New-NodeConfigMapYaml {
 	$baseDeployConfig = (@"
 Etcd:
   Hosts:
-    - "etcd:2379"
+    - "etcd.${InfraNamespace}:2379"
   KeepaliveInterval: 1
   NodeTTLSeconds: 60
 TableDataDirectory: "../generated/generated_tables/"
@@ -188,7 +189,7 @@ service_discovery_prefixes:
   - "LoginNodeService.rpc"
 Kafka:
   Brokers:
-    - "kafka:9092"
+    - "kafka.${InfraNamespace}:9092"
   Topics:
     - "game-events"
   GroupID: "game-consumer-group"
@@ -200,7 +201,7 @@ Kafka:
 SceneNodeType: 0
 ZoneId: $CurrentZoneId
 zoneredis:
-  host: "redis"
+  host: "redis.${InfraNamespace}"
   port: 6379
   password: ""
   db: 0
@@ -341,7 +342,6 @@ function Wait-ForZoneReady {
 	}
 
 	Write-Host "Waiting for zone workloads to become ready: namespace=$Namespace"
-	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "mysql"
 	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "gate"
 	Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName "scene"
 
@@ -375,19 +375,19 @@ Name: db.rpc
 ListenOn: 0.0.0.0:6000
 Etcd:
   Hosts:
-    - "etcd:2379"
+    - "etcd.${InfraNamespace}:2379"
   Key: db.rpc
 ServerConfig:
   JsonPath: "/app/data/mysql_database_table_list.json"
   Kafka:
     Brokers:
-      - "kafka:9092"
+      - "kafka.${InfraNamespace}:9092"
     GroupID: "db_rpc_consumer_group"
     Topic: "db_task_topic"
     PartitionCnt: 5
     IsOfflineExpand: false
   Database:
-    Hosts: "mysql:3306"
+    Hosts: "mysql.${InfraNamespace}:3306"
     User: "root"
     Passwd: "root"
     DBName: "game"
@@ -395,7 +395,7 @@ ServerConfig:
     MaxIdleConn: 3
     Net: ""
   RedisClient:
-    Hosts: "redis:6379"
+    Hosts: "redis.${InfraNamespace}:6379"
     DefaultTTLSeconds: 3600
     Password: ""
     DB: 0
@@ -407,10 +407,10 @@ Name: dataservice.rpc
 ListenOn: 0.0.0.0:9000
 Etcd:
   Hosts:
-    - "etcd:2379"
+    - "etcd.${InfraNamespace}:2379"
   Key: dataservice.rpc
 MappingRedis:
-  Host: redis:6379
+  Host: redis.${InfraNamespace}:6379
   Type: node
   DB: 15
 Regions:
@@ -418,9 +418,9 @@ Regions:
     Zones: [1]
     Redis:
       Addrs:
-        - redis:6379
+        - redis.${InfraNamespace}:6379
 DevRedis:
-  Host: redis:6379
+  Host: redis.${InfraNamespace}:6379
   Type: node
   DB: 0
 PlayerLockTTLSec: 3
@@ -433,7 +433,7 @@ ListenOn: 0.0.0.0:50000
 Timeout: 100000
 Etcd:
   Hosts:
-    - "etcd:2379"
+    - "etcd.${InfraNamespace}:2379"
   Key: login.rpc
 Node:
   ZoneId: ${CurrentZoneId}
@@ -444,7 +444,7 @@ Node:
   MaxLoginDuration: 5m
   LogoutGraceTime: 5s
   RedisClient:
-    Host: redis:6379
+    Host: redis.${InfraNamespace}:6379
     Password: ""
     DB: 0
     DefaultTTL: 24h
@@ -464,7 +464,7 @@ Account:
 Registry:
   Etcd:
     Hosts:
-      - "etcd:2379"
+      - "etcd.${InfraNamespace}:2379"
     Key: loginservice.rpc
     DialTimeout: 5s
 Timeouts:
@@ -478,12 +478,12 @@ Timeouts:
 PlayerLocatorRpc:
   Etcd:
     Hosts:
-      - "etcd:2379"
+      - "etcd.${InfraNamespace}:2379"
     Key: playerlocator.rpc
   Timeout: 5000
 Kafka:
   Brokers:
-    - "kafka:9092"
+    - "kafka.${InfraNamespace}:9092"
   GroupID: "db_rpc_consumer_group"
   Topic: "db_task_topic"
   PartitionCnt: 5
@@ -508,22 +508,22 @@ ListenOn: 0.0.0.0:50100
 Timeout: 10000
 Etcd:
   Hosts:
-    - "etcd:2379"
+    - "etcd.${InfraNamespace}:2379"
   Key: playerlocator.rpc
 RedisClient:
-  Host: redis:6379
+  Host: redis.${InfraNamespace}:6379
   Password: ""
   DB: 0
 Kafka:
   Brokers:
-    - "kafka:9092"
+    - "kafka.${InfraNamespace}:9092"
 Node:
   ZoneId: ${CurrentZoneId}
   LeaseTTL: 500
 Registry:
   Etcd:
     Hosts:
-      - "etcd:2379"
+      - "etcd.${InfraNamespace}:2379"
     DialTimeout: 5s
 Lease:
   DefaultTTLSeconds: 30
@@ -537,15 +537,15 @@ Name: scenemanagerservice.rpc
 ListenOn: 0.0.0.0:60000
 Etcd:
   Hosts:
-    - "etcd:2379"
+    - "etcd.${InfraNamespace}:2379"
   Key: scenemanagerservice.rpc
 Redis:
-  Host: redis:6379
+  Host: redis.${InfraNamespace}:6379
   Type: node
   Key: scenemanagerservice
 Kafka:
   Brokers:
-    - "kafka:9092"
+    - "kafka.${InfraNamespace}:9092"
 NodeID: "node-1"
 "@
 		}
@@ -621,7 +621,7 @@ spring:
       server-addr: nacos:8848
   data:
     redis:
-      host: redis
+      host: redis.${InfraNamespace}
 sa-token:
   is-read-cookie: false
 grpc:
@@ -828,14 +828,6 @@ function Apply-Zone {
 
 	Ensure-Namespace -Namespace $namespace
 
-	if (-not $SkipInfra) {
-		Write-Host "Applying infra manifests (etcd/redis/kafka/mysql) to namespace $namespace"
-		Invoke-Kubectl -Args @("apply", "-n", $namespace, "-f", (Join-Path $InfraManifestsDir "etcd.yaml"))
-		Invoke-Kubectl -Args @("apply", "-n", $namespace, "-f", (Join-Path $InfraManifestsDir "redis.yaml"))
-		Invoke-Kubectl -Args @("apply", "-n", $namespace, "-f", (Join-Path $InfraManifestsDir "kafka.yaml"))
-		Invoke-Kubectl -Args @("apply", "-n", $namespace, "-f", (Join-Path $InfraManifestsDir "mysql.yaml"))
-	}
-
 	$configMapName = "node-config"
 	$gateServiceName = "gate-entry"
 	$configMapYaml = New-NodeConfigMapYaml -CurrentZoneId $CurrentZoneId -ConfigName $configMapName
@@ -874,6 +866,32 @@ function Show-ZoneStatus {
 	Invoke-Kubectl -Args @("get", "deploy,po,svc,cm", "-n", $namespace) -AllowFailure
 }
 
+function Apply-Infra {
+	Write-Host "Deploying shared infrastructure to namespace $InfraNamespace"
+	Ensure-Namespace -Namespace $InfraNamespace
+
+	foreach ($manifest in @("etcd.yaml", "redis.yaml", "kafka.yaml", "mysql.yaml")) {
+		$path = Join-Path $InfraManifestsDir $manifest
+		if (-not (Test-Path $path)) {
+			Write-Warning "Infra manifest not found: $path — skipping"
+			continue
+		}
+		Invoke-Kubectl -Args @("apply", "-n", $InfraNamespace, "-f", $path)
+	}
+
+	Write-Host "Shared infrastructure deployed: namespace=$InfraNamespace"
+}
+
+function Remove-Infra {
+	Write-Host "Deleting shared infrastructure namespace: $InfraNamespace"
+	Invoke-Kubectl -Args @("delete", "namespace", $InfraNamespace) -AllowFailure
+}
+
+function Show-InfraStatus {
+	Write-Host "Shared infrastructure status for namespace=$InfraNamespace"
+	Invoke-Kubectl -Args @("get", "deploy,po,svc,cm", "-n", $InfraNamespace) -AllowFailure
+}
+
 function Resolve-ZonesConfigPath {
 	if (-not [string]::IsNullOrWhiteSpace($ZonesConfigPath)) {
 		return $ZonesConfigPath
@@ -887,6 +905,15 @@ Apply-OpsProfileDefaults
 Show-ExposureProfileWarning
 
 switch ($Command) {
+	"infra-up" {
+		Apply-Infra
+	}
+	"infra-down" {
+		Remove-Infra
+	}
+	"infra-status" {
+		Show-InfraStatus
+	}
 	"zone-up" {
 		Apply-Zone -CurrentZoneName $ZoneName -CurrentZoneId $ZoneId -CurrentCentreReplicas $CentreReplicas -CurrentGateReplicas $GateReplicas -CurrentSceneReplicas $SceneReplicas
 	}
@@ -897,6 +924,9 @@ switch ($Command) {
 		Show-ZoneStatus -CurrentZoneName $ZoneName
 	}
 	"all-up" {
+		if (-not $SkipInfra) {
+			Apply-Infra
+		}
 		$zonesPath = Resolve-ZonesConfigPath
 		$zones = Get-ZonesFromJson -Path $zonesPath
 		foreach ($zone in $zones) {
@@ -909,8 +939,12 @@ switch ($Command) {
 		foreach ($zone in $zones) {
 			Remove-Zone -CurrentZoneName $zone.name
 		}
+		if (-not $SkipInfra) {
+			Remove-Infra
+		}
 	}
 	"all-status" {
+		Show-InfraStatus
 		$zonesPath = Resolve-ZonesConfigPath
 		$zones = Get-ZonesFromJson -Path $zonesPath
 		foreach ($zone in $zones) {

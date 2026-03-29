@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-stop", "dev-status", "merge-zone")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-stop", "dev-status", "merge-zone")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -18,6 +18,7 @@ param(
     [string]$ZoneName = "yesterday",
     [int]$ZoneId = 101,
     [string]$NamespacePrefix = "mmorpg-zone",
+    [string]$InfraNamespace = "mmorpg-infra",
     [string]$ZonesConfigPath = "",
     [string]$NodeImage = "ghcr.io/luyuancpp/mmorpg-node:latest",
     [ValidateSet("custom", "managed-cloud", "bare-metal")]
@@ -281,6 +282,7 @@ function Invoke-K8sDeploy {
         ZoneName = $ZoneName
         ZoneId = $ZoneId
         NamespacePrefix = $NamespacePrefix
+        InfraNamespace = $InfraNamespace
         NodeImage = $NodeImage
         OpsProfile = $OpsProfile
         CentreReplicas = $CentreReplicas
@@ -334,6 +336,25 @@ function Invoke-K8sDeploy {
     }
 
     & $scriptPath @args
+}
+
+function Invoke-K8sBuildAll {
+    Write-Host "=== Building C++ node image ===" -ForegroundColor Cyan
+    $cppDockerfile = Join-Path $RepoRoot "deploy\k8s\Dockerfile.cpp"
+    if ($DryRun) {
+        Write-Host "[dry-run] docker build -f $cppDockerfile -t $NodeImage $RepoRoot"
+    } else {
+        & docker build -f $cppDockerfile -t $NodeImage $RepoRoot
+        if ($LASTEXITCODE -ne 0) { throw "C++ node image build failed" }
+    }
+
+    Write-Host "`n=== Building Go service images ===" -ForegroundColor Cyan
+    & (Join-Path $ScriptDir "go_svc_image.ps1") -Command build-all -Registry $GoSvcRegistry -Tag $GoSvcTag -DryRun:$DryRun
+
+    Write-Host "`n=== Building Java service image ===" -ForegroundColor Cyan
+    & (Join-Path $ScriptDir "java_svc_image.ps1") -Command build -Registry $JavaSvcRegistry -Tag $JavaSvcTag -DryRun:$DryRun
+
+    Write-Host "`nAll images built successfully." -ForegroundColor Green
 }
 
 function Invoke-K8sImage {
@@ -452,6 +473,10 @@ Other common commands:
     -Command naming-apply
     -Command third-party-grpc-build
     -Command iwyu-run
+    -Command k8s-build-all
+        Build all Docker images (C++ node + Go services + Java auth) before deployment.
+    -Command k8s-infra-up | k8s-infra-down | k8s-infra-status
+        Manage shared infrastructure (etcd/redis/kafka/mysql) in the mmorpg-infra namespace.
     -Command k8s-zone-up | k8s-zone-down | k8s-zone-status
     -Command k8s-all-up | k8s-all-down | k8s-all-status
     -Command k8s-stage-runtime
@@ -479,12 +504,16 @@ switch ($Command) {
     "naming-apply" { Invoke-NamingApply }
     "third-party-grpc-build" { Invoke-ThirdPartyGrpcBuild }
     "iwyu-run"              { Invoke-IwyuRun }
+    "k8s-infra-up" { Invoke-K8sDeploy -K8sCommand "infra-up" }
+    "k8s-infra-down" { Invoke-K8sDeploy -K8sCommand "infra-down" }
+    "k8s-infra-status" { Invoke-K8sDeploy -K8sCommand "infra-status" }
     "k8s-zone-up" { Invoke-K8sDeploy -K8sCommand "zone-up" }
     "k8s-zone-down" { Invoke-K8sDeploy -K8sCommand "zone-down" }
     "k8s-zone-status" { Invoke-K8sDeploy -K8sCommand "zone-status" }
     "k8s-all-up" { Invoke-K8sDeploy -K8sCommand "all-up" }
     "k8s-all-down" { Invoke-K8sDeploy -K8sCommand "all-down" }
     "k8s-all-status" { Invoke-K8sDeploy -K8sCommand "all-status" }
+    "k8s-build-all" { Invoke-K8sBuildAll }
     "k8s-stage-runtime" { Invoke-K8sStageRuntime }
     "k8s-image-preflight" { Invoke-K8sImage -ImageCommand "preflight" }
     "k8s-build-image" { Invoke-K8sImage -ImageCommand "build-image" }
