@@ -21,68 +21,67 @@
 
 #include <utility>
 
-namespace {
-
-struct GateRuntimeContext {
-    ProtobufDispatcher protobufDispatcher;
-    ProtobufCodec codec;
-    RpcClientSessionHandler rpcClientHandler;
-    DependencyGate dependencyGate;
-    TimerTaskComp playerCountReportTimer;
-
-    GateRuntimeContext()
-        : protobufDispatcher([](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp) {
-            LOG_ERROR << "Unknown message: " << std::string(msg->GetTypeName());
-            conn->shutdown();
-        })
-        , codec([this](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp ts) {
-            protobufDispatcher.onProtobufMessage(conn, msg, ts);
-        })
-        , rpcClientHandler(codec, protobufDispatcher)
-    {
-    }
-};
-
-void LogGrpcThreadConfig()
+namespace
 {
-    LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
-        << ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs()
-        << ", EventEngine pool reserve=" << (grpc_channel_cache::ConfiguredThreadPoolReserveThreads() > 0
-            ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolReserveThreads())
-            : std::string("default"))
-        << ", EventEngine pool max=" << (grpc_channel_cache::ConfiguredThreadPoolMaxThreads() > 0
-            ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolMaxThreads())
-            : std::string("unlimited"));
-}
+
+    struct GateRuntimeContext
+    {
+        ProtobufDispatcher protobufDispatcher;
+        ProtobufCodec codec;
+        RpcClientSessionHandler rpcClientHandler;
+        DependencyGate dependencyGate;
+        TimerTaskComp playerCountReportTimer;
+
+        GateRuntimeContext()
+            : protobufDispatcher([](const TcpConnectionPtr &conn, const MessagePtr &msg, Timestamp)
+                                 {
+            LOG_ERROR << "Unknown message: " << std::string(msg->GetTypeName());
+            conn->shutdown(); }),
+              codec([this](const TcpConnectionPtr &conn, const MessagePtr &msg, Timestamp ts)
+                    { protobufDispatcher.onProtobufMessage(conn, msg, ts); }),
+              rpcClientHandler(codec, protobufDispatcher)
+        {
+        }
+    };
+
+    void LogGrpcThreadConfig()
+    {
+        LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
+                 << ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs()
+                 << ", EventEngine pool reserve=" << (grpc_channel_cache::ConfiguredThreadPoolReserveThreads() > 0 ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolReserveThreads()) : std::string("default"))
+                 << ", EventEngine pool max=" << (grpc_channel_cache::ConfiguredThreadPoolMaxThreads() > 0 ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolMaxThreads()) : std::string("unlimited"));
+    }
 
 } // namespace
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext>(
         "logs/gate",
         GateNodeService,
-        Node::CanConnectNodeTypeList{ SceneNodeService, LoginNodeService },
-        [](EventLoop&, GateRuntimeContext& context) {
+        Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService},
+        [](EventLoop &, GateRuntimeContext &context)
+        {
             LogGrpcThreadConfig();
         },
-        [](SimpleNode<GateHandler>& node, GateRuntimeContext& context) {
+        [](SimpleNode<GateHandler> &node, GateRuntimeContext &context)
+        {
             InitGateCodec(context.codec);
             // gRPC response -> client TCP bridge
-            SetIfEmptyHandler([&context](const ClientContext& ctx, const ::google::protobuf::Message& reply) {
+            SetIfEmptyHandler([&context](const ClientContext &ctx, const ::google::protobuf::Message &reply)
+                              {
                 auto sd = GetSessionDetailsByClientContext(ctx);
                 if (!sd) return;
                 auto it = tlsSessionManager.sessions().find(sd->session_id());
                 if (it == tlsSessionManager.sessions().end()) return;
-                context.rpcClientHandler.SendMessageToClient(it->second.conn, reply);
-            });
+                context.rpcClientHandler.SendMessageToClient(it->second.conn, reply); });
 
             EventHandler::Register();
 
             // Post-startup: attach client TCP callbacks + initialize session ID generator
-            node.SetAfterStart([&context](SimpleNode<GateHandler>& n) {
-                context.dependencyGate.WaitAndRun(n, { LoginNodeService, SceneNodeService },
-                    [&context](SimpleNode<GateHandler>& n) {
+            node.SetAfterStart([&context](SimpleNode<GateHandler> &n)
+                               { context.dependencyGate.WaitAndRun(n, {LoginNodeService, SceneNodeService}, [&context](SimpleNode<GateHandler> &n)
+                                                                   {
                         n.GetTcpServer().setConnectionCallback(
                             [&context](const TcpConnectionPtr& conn) {
                                 context.rpcClientHandler.OnConnection(conn);
@@ -98,12 +97,11 @@ int main(int argc, char* argv[])
                             auto count = static_cast<uint32_t>(tlsSessionManager.sessions().size());
                             n.GetNodeInfo().set_player_count(count);
                             n.GetEtcdManager().UpdateNodeInfo();
-                        });
-                    }, "Gate");
-            });
+                        }); }, "Gate"); });
 
             // Kafka: unified registration path for all node command-consumers.
-            node.SetKafkaHandlers([](SimpleNode<GateHandler>& n) {
+            node.SetKafkaHandlers([](SimpleNode<GateHandler> &n)
+                                  {
                 node::kafka::KafkaCommandHandlerOptions options;
                 options.topicPrefix = "gate";
                 options.groupPrefix = "gate-group";
@@ -115,7 +113,6 @@ int main(int argc, char* argv[])
                     options,
                     [](const std::string& topic, const contracts::kafka::GateCommand& command) {
                         DispatchGateKafkaCommand(topic, command);
-                    });
-            });
+                    }); });
         });
 }

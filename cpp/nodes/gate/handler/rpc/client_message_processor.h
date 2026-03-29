@@ -8,6 +8,7 @@
 #include "proto/common/base/message.pb.h"
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
+using ClientTokenVerifyRequestPtr = std::shared_ptr<ClientTokenVerifyRequest>;
 
 struct SessionInfo;
 class OnNodeRemovePbEvent;
@@ -15,36 +16,39 @@ class OnNodeRemovePbEvent;
 class RpcClientSessionHandler : muduo::noncopyable
 {
 public:
-    RpcClientSessionHandler(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
+    RpcClientSessionHandler(ProtobufCodec &codec, ProtobufDispatcher &dispatcher);
 
-    ProtobufCodec& codec() const { return protobufCodec; }
+    ProtobufCodec &codec() const { return protobufCodec; }
 
-    void OnConnection(const muduo::net::TcpConnectionPtr& conn);
+    void OnConnection(const muduo::net::TcpConnectionPtr &conn);
 
-    void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) const;
+    void SendMessageToClient(const muduo::net::TcpConnectionPtr &conn, const ::google::protobuf::Message &message) const;
 
-    void DispatchClientRpcMessage(const muduo::net::TcpConnectionPtr& conn,
-        const RpcClientMessagePtr& message,
-        muduo::Timestamp);
+    void DispatchClientRpcMessage(const muduo::net::TcpConnectionPtr &conn,
+                                  const RpcClientMessagePtr &message,
+                                  muduo::Timestamp);
 
-    static Guid GetSessionId(const muduo::net::TcpConnectionPtr& conn);
+    static Guid GetSessionId(const muduo::net::TcpConnectionPtr &conn);
 
-    static void SendTipToClient(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
+    static void SendTipToClient(const muduo::net::TcpConnectionPtr &conn, uint32_t tip_id);
 
-    bool CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const;
+    bool CheckMessageSize(const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const;
 
-    bool CheckMessageLimit(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn)const;
+    bool CheckMessageLimit(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const;
 
-    bool ValidateClientMessage(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const;
+    bool ValidateClientMessage(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const;
 
+    void DispatchTokenVerify(const muduo::net::TcpConnectionPtr &conn,
+                             const ClientTokenVerifyRequestPtr &message,
+                             muduo::Timestamp);
 
-	void OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent& pb);
+    void OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent &pb);
 
 private:
-    static void HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr& conn);
+    static void HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn);
 
-    static void HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn);
+    static void HandleConnectionEstablished(const muduo::net::TcpConnectionPtr &conn);
 
-    ProtobufCodec& protobufCodec;
-    ProtobufDispatcher& messageDispatcher;
+    ProtobufCodec &protobufCodec;
+    ProtobufDispatcher &messageDispatcher;
 };

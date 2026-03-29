@@ -252,7 +252,7 @@ ClientPlayerLogin::Service::~Service() {
 
 
 static const char* LoginPreGate_method_names[] = {
-  "/loginpb.LoginPreGate/GetGateList",
+  "/loginpb.LoginPreGate/AssignGate",
 };
 
 std::unique_ptr< LoginPreGate::Stub> LoginPreGate::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -262,28 +262,28 @@ std::unique_ptr< LoginPreGate::Stub> LoginPreGate::NewStub(const std::shared_ptr
 }
 
 LoginPreGate::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
-  : channel_(channel), rpcmethod_GetGateList_(LoginPreGate_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  : channel_(channel), rpcmethod_AssignGate_(LoginPreGate_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
-::grpc::Status LoginPreGate::Stub::GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::loginpb::GetGateListResponse* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::loginpb::GetGateListRequest, ::loginpb::GetGateListResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetGateList_, context, request, response);
+::grpc::Status LoginPreGate::Stub::AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::loginpb::AssignGateResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::loginpb::AssignGateRequest, ::loginpb::AssignGateResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AssignGate_, context, request, response);
 }
 
-void LoginPreGate::Stub::async::GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::loginpb::GetGateListRequest, ::loginpb::GetGateListResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetGateList_, context, request, response, std::move(f));
+void LoginPreGate::Stub::async::AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::loginpb::AssignGateRequest, ::loginpb::AssignGateResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AssignGate_, context, request, response, std::move(f));
 }
 
-void LoginPreGate::Stub::async::GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response, ::grpc::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetGateList_, context, request, response, reactor);
+void LoginPreGate::Stub::async::AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AssignGate_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::loginpb::GetGateListResponse>* LoginPreGate::Stub::PrepareAsyncGetGateListRaw(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::GetGateListResponse, ::loginpb::GetGateListRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetGateList_, context, request);
+::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>* LoginPreGate::Stub::PrepareAsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::AssignGateResponse, ::loginpb::AssignGateRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AssignGate_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::loginpb::GetGateListResponse>* LoginPreGate::Stub::AsyncGetGateListRaw(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>* LoginPreGate::Stub::AsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
-    this->PrepareAsyncGetGateListRaw(context, request, cq);
+    this->PrepareAsyncAssignGateRaw(context, request, cq);
   result->StartCall();
   return result;
 }
@@ -292,19 +292,19 @@ LoginPreGate::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       LoginPreGate_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< LoginPreGate::Service, ::loginpb::GetGateListRequest, ::loginpb::GetGateListResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< LoginPreGate::Service, ::loginpb::AssignGateRequest, ::loginpb::AssignGateResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](LoginPreGate::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::loginpb::GetGateListRequest* req,
-             ::loginpb::GetGateListResponse* resp) {
-               return service->GetGateList(ctx, req, resp);
+             const ::loginpb::AssignGateRequest* req,
+             ::loginpb::AssignGateResponse* resp) {
+               return service->AssignGate(ctx, req, resp);
              }, this)));
 }
 
 LoginPreGate::Service::~Service() {
 }
 
-::grpc::Status LoginPreGate::Service::GetGateList(::grpc::ServerContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response) {
+::grpc::Status LoginPreGate::Service::AssignGate(::grpc::ServerContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response) {
   (void) context;
   (void) request;
   (void) response;

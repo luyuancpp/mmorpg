@@ -30,6 +30,10 @@ message BaseDeployConfig {
 
     // Table data directory path
     string table_data_directory = 10; // Config table directory path
+
+    // Shared HMAC secret for Gate connection tokens (Login signs, Gate verifies).
+    // If empty, Gate skips token verification (dev/test mode).
+    string gate_token_secret = 11;
 }
 
 // Game config

@@ -1641,6 +1641,173 @@ func (x *NodeHandshakeResponse) GetPeerNode() *NodeInfo {
 	return nil
 }
 
+// Payload signed by Login, verified by Gate.
+type GateTokenPayload struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	GateNodeId      uint32                 `protobuf:"varint,1,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"`              // which gate this token is for
+	ZoneId          uint32                 `protobuf:"varint,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`                            // zone context
+	ExpireTimestamp int64                  `protobuf:"varint,3,opt,name=expire_timestamp,json=expireTimestamp,proto3" json:"expire_timestamp,omitempty"` // unix seconds — token invalid after this time
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GateTokenPayload) Reset() {
+	*x = GateTokenPayload{}
+	mi := &file_proto_common_base_message_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GateTokenPayload) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GateTokenPayload) ProtoMessage() {}
+
+func (x *GateTokenPayload) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_base_message_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GateTokenPayload.ProtoReflect.Descriptor instead.
+func (*GateTokenPayload) Descriptor() ([]byte, []int) {
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *GateTokenPayload) GetGateNodeId() uint32 {
+	if x != nil {
+		return x.GateNodeId
+	}
+	return 0
+}
+
+func (x *GateTokenPayload) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
+func (x *GateTokenPayload) GetExpireTimestamp() int64 {
+	if x != nil {
+		return x.ExpireTimestamp
+	}
+	return 0
+}
+
+// Client sends this as the FIRST protobuf message after TCP-connecting to Gate.
+type ClientTokenVerifyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Payload       []byte                 `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`     // serialized GateTokenPayload
+	Signature     []byte                 `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"` // HMAC-SHA256(secret, payload) — 32 raw bytes
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClientTokenVerifyRequest) Reset() {
+	*x = ClientTokenVerifyRequest{}
+	mi := &file_proto_common_base_message_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClientTokenVerifyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientTokenVerifyRequest) ProtoMessage() {}
+
+func (x *ClientTokenVerifyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_base_message_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientTokenVerifyRequest.ProtoReflect.Descriptor instead.
+func (*ClientTokenVerifyRequest) Descriptor() ([]byte, []int) {
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ClientTokenVerifyRequest) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *ClientTokenVerifyRequest) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+// Gate responds after verifying the token.
+type ClientTokenVerifyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"` // non-empty on failure
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClientTokenVerifyResponse) Reset() {
+	*x = ClientTokenVerifyResponse{}
+	mi := &file_proto_common_base_message_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClientTokenVerifyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientTokenVerifyResponse) ProtoMessage() {}
+
+func (x *ClientTokenVerifyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_base_message_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientTokenVerifyResponse.ProtoReflect.Descriptor instead.
+func (*ClientTokenVerifyResponse) Descriptor() ([]byte, []int) {
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ClientTokenVerifyResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ClientTokenVerifyResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 var File_proto_common_base_message_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_message_proto_rawDesc = "" +
@@ -1759,7 +1926,18 @@ const file_proto_common_base_message_proto_rawDesc = "" +
 	"\tself_node\x18\x03 \x01(\v2\t.NodeInfoR\bselfNode\"u\n" +
 	"\x15NodeHandshakeResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12&\n" +
-	"\tpeer_node\x18\x02 \x01(\v2\t.NodeInfoR\bpeerNodeB!Z\x1fscene_manager/proto/common/baseb\x06proto3"
+	"\tpeer_node\x18\x02 \x01(\v2\t.NodeInfoR\bpeerNode\"x\n" +
+	"\x10GateTokenPayload\x12 \n" +
+	"\fgate_node_id\x18\x01 \x01(\rR\n" +
+	"gateNodeId\x12\x17\n" +
+	"\azone_id\x18\x02 \x01(\rR\x06zoneId\x12)\n" +
+	"\x10expire_timestamp\x18\x03 \x01(\x03R\x0fexpireTimestamp\"R\n" +
+	"\x18ClientTokenVerifyRequest\x12\x18\n" +
+	"\apayload\x18\x01 \x01(\fR\apayload\x12\x1c\n" +
+	"\tsignature\x18\x02 \x01(\fR\tsignature\"K\n" +
+	"\x19ClientTokenVerifyResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05errorB!Z\x1fscene_manager/proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_message_proto_rawDescOnce sync.Once
@@ -1773,7 +1951,7 @@ func file_proto_common_base_message_proto_rawDescGZIP() []byte {
 	return file_proto_common_base_message_proto_rawDescData
 }
 
-var file_proto_common_base_message_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_proto_common_base_message_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_proto_common_base_message_proto_goTypes = []any{
 	(*RoutingNodeInfo)(nil),                   // 0: RoutingNodeInfo
 	(*MessageContent)(nil),                    // 1: MessageContent
@@ -1804,14 +1982,17 @@ var file_proto_common_base_message_proto_goTypes = []any{
 	(*ClientRequest)(nil),                     // 26: ClientRequest
 	(*NodeHandshakeRequest)(nil),              // 27: NodeHandshakeRequest
 	(*NodeHandshakeResponse)(nil),             // 28: NodeHandshakeResponse
-	(*NodeInfo)(nil),                          // 29: NodeInfo
-	(*TipInfoMessage)(nil),                    // 30: TipInfoMessage
-	(*SessionDetails)(nil),                    // 31: SessionDetails
-	(*NetworkAddress)(nil),                    // 32: NetworkAddress
+	(*GateTokenPayload)(nil),                  // 29: GateTokenPayload
+	(*ClientTokenVerifyRequest)(nil),          // 30: ClientTokenVerifyRequest
+	(*ClientTokenVerifyResponse)(nil),         // 31: ClientTokenVerifyResponse
+	(*NodeInfo)(nil),                          // 32: NodeInfo
+	(*TipInfoMessage)(nil),                    // 33: TipInfoMessage
+	(*SessionDetails)(nil),                    // 34: SessionDetails
+	(*NetworkAddress)(nil),                    // 35: NetworkAddress
 }
 var file_proto_common_base_message_proto_depIdxs = []int32{
-	29, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
-	30, // 1: MessageContent.error_message:type_name -> TipInfoMessage
+	32, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
+	33, // 1: MessageContent.error_message:type_name -> TipInfoMessage
 	1,  // 2: NodeRouteMessageRequest.message_content:type_name -> MessageContent
 	2,  // 3: NodeRouteMessageRequest.header:type_name -> NodeMessageHeader
 	1,  // 4: NodeRouteMessageResponse.message_content:type_name -> MessageContent
@@ -1820,27 +2001,27 @@ var file_proto_common_base_message_proto_depIdxs = []int32{
 	5,  // 7: PlayerNodeServiceRequest.header:type_name -> PlayerInfoExternal
 	1,  // 8: PlayerMessageResponse.message_content:type_name -> MessageContent
 	5,  // 9: PlayerMessageResponse.header:type_name -> PlayerInfoExternal
-	29, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
-	31, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
-	31, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
-	31, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
-	31, // 14: RegisterCentreSessionNodeRequest.session_info:type_name -> SessionDetails
-	31, // 15: RegisterSessionCentreNodeResponse.session_info:type_name -> SessionDetails
-	31, // 16: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
+	32, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
+	34, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
+	34, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
+	34, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
+	34, // 14: RegisterCentreSessionNodeRequest.session_info:type_name -> SessionDetails
+	34, // 15: RegisterSessionCentreNodeResponse.session_info:type_name -> SessionDetails
+	34, // 16: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
 	0,  // 17: RouteMessageRequest.route_nodes:type_name -> RoutingNodeInfo
 	0,  // 18: RouteMessageResponse.route_nodes:type_name -> RoutingNodeInfo
-	29, // 19: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
+	32, // 19: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
 	5,  // 20: RoutePlayerMessageRequest.player_info:type_name -> PlayerInfoExternal
-	29, // 21: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
+	32, // 21: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
 	5,  // 22: RoutePlayerMessageResponse.player_info:type_name -> PlayerInfoExternal
-	32, // 23: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
-	32, // 24: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
-	32, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
+	35, // 23: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
+	35, // 24: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
+	35, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
 	22, // 26: ProtoFieldCheckerTestPB.sub_message:type_name -> ProtoFieldCheckerTestSubPB
 	25, // 27: MyProtoMessage.nested_message:type_name -> MyNestedMessage
-	29, // 28: NodeHandshakeRequest.self_node:type_name -> NodeInfo
-	30, // 29: NodeHandshakeResponse.error_message:type_name -> TipInfoMessage
-	29, // 30: NodeHandshakeResponse.peer_node:type_name -> NodeInfo
+	32, // 28: NodeHandshakeRequest.self_node:type_name -> NodeInfo
+	33, // 29: NodeHandshakeResponse.error_message:type_name -> TipInfoMessage
+	32, // 30: NodeHandshakeResponse.peer_node:type_name -> NodeInfo
 	31, // [31:31] is the sub-list for method output_type
 	31, // [31:31] is the sub-list for method input_type
 	31, // [31:31] is the sub-list for extension type_name
@@ -1862,7 +2043,7 @@ func file_proto_common_base_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_base_message_proto_rawDesc), len(file_proto_common_base_message_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   29,
+			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

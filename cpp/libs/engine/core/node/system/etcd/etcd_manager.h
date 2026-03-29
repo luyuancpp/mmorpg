@@ -8,19 +8,19 @@ class NodeInfo;
 class EtcdManager
 {
 public:
-	std::deque<std::string>& GetPendingKeys() { return pendingKeys; }
+	std::deque<std::string> &GetPendingKeys() { return pendingKeys; }
 
 	void Shutdown();
 
 	std::string GetServiceName(uint32_t type);
 
-	std::string MakeNodeEtcdPrefix(const NodeInfo& info);
+	std::string MakeNodeEtcdPrefix(const NodeInfo &info);
 
-	std::string MakeNodeEtcdKey(const NodeInfo& info);
+	std::string MakeNodeEtcdKey(const NodeInfo &info);
 
-	std::string MakeNodePortEtcdPrefix(const NodeInfo& nodeInfo);
+	std::string MakeNodePortEtcdPrefix(const NodeInfo &nodeInfo);
 
-	std::string MakeNodePortEtcdKey(const NodeInfo& nodeInfo);
+	std::string MakeNodePortEtcdKey(const NodeInfo &nodeInfo);
 
 	void RegisterNodeService();
 
@@ -34,7 +34,7 @@ public:
 
 	void StartLeaseKeepAlive();
 
-	static std::string MakeSnowFlakeGuardKey(const NodeInfo& info);
+	static std::string MakeSnowFlakeGuardKey(const NodeInfo &info);
 
 	void WriteSnowFlakeGuard();
 

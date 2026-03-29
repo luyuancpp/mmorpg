@@ -44,7 +44,7 @@ func main() {
 		zap.L().Fatal("load config", zap.Error(err))
 	}
 
-	host, portStr, err := resolveGateAddr(cfg)
+	host, portStr, tokenPayload, tokenSig, err := resolveGateAddr(cfg)
 	if err != nil {
 		zap.L().Fatal("resolve gate address", zap.Error(err))
 	}
@@ -73,7 +73,7 @@ func main() {
 		wg.Add(1)
 		go func(account string) {
 			defer wg.Done()
-			runRobot(host, port, account, cfg, stats, stopAll)
+			runRobot(host, port, account, cfg, stats, stopAll, tokenPayload, tokenSig)
 		}(account)
 		// Stagger connections to avoid thundering herd.
 		time.Sleep(50 * time.Millisecond)
@@ -92,7 +92,7 @@ func main() {
 }
 
 // runRobot is the lifecycle for a single robot (one goroutine).
-func runRobot(host string, port int, account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}) {
+func runRobot(host string, port int, account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, tokenPayload, tokenSig []byte) {
 	gc, err := pkg.NewGameClient(host, port)
 	if err != nil {
 		zap.L().Error("connect failed", zap.String("account", account), zap.Error(err))
@@ -107,6 +107,15 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 
 	// Give the connection time to establish.
 	time.Sleep(500 * time.Millisecond)
+
+	// --- Gate token handshake (if token was provided by AssignGate) ---
+	if len(tokenPayload) > 0 {
+		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
+			zap.L().Error("gate token verification failed", zap.String("account", account), zap.Error(err))
+			stats.LoginFail()
+			return
+		}
+	}
 
 	// --- Login flow ---
 	loginStart := time.Now()
@@ -250,56 +259,71 @@ func waitForMessage(gc *pkg.GameClient, messageId uint32, stats *metrics.Stats) 
 	}
 }
 
-// resolveGateAddr picks the best gate endpoint.
-// If login_addr is configured, it calls LoginPreGate.GetGateList to select the
-// least-loaded gate. Otherwise, falls back to the static gate_addr config.
-func resolveGateAddr(cfg *config.Config) (host string, port string, err error) {
+// resolveGateAddr picks the best gate endpoint via Login's AssignGate RPC.
+// Returns gate address and the HMAC connection token.
+// If login_addr is configured, calls LoginPreGate.AssignGate to get the
+// assigned gate + signed token. Otherwise, falls back to static gate_addr
+// with nil token (dev mode, relies on Gate skipping verification).
+func resolveGateAddr(cfg *config.Config) (host string, port string, payload []byte, signature []byte, err error) {
 	if cfg.LoginAddr != "" {
-		gateAddr, err := selectLeastLoadedGate(cfg.LoginAddr)
-		if err != nil {
-			zap.L().Warn("GetGateList failed, falling back to gate_addr",
+		result, assignErr := assignGate(cfg.LoginAddr, 0) // zone_id=0 means any zone
+		if assignErr != nil {
+			zap.L().Warn("AssignGate failed, falling back to gate_addr",
 				zap.String("login_addr", cfg.LoginAddr),
-				zap.Error(err),
+				zap.Error(assignErr),
 			)
 		} else {
-			zap.L().Info("auto-selected gate via GetGateList",
-				zap.String("gate", gateAddr),
+			zap.L().Info("assigned gate via AssignGate",
+				zap.String("gate", result.addr),
 			)
-			return net.SplitHostPort(gateAddr)
+			h, p, splitErr := net.SplitHostPort(result.addr)
+			return h, p, result.payload, result.signature, splitErr
 		}
 	}
-	return net.SplitHostPort(cfg.GateAddr)
+	h, p, splitErr := net.SplitHostPort(cfg.GateAddr)
+	return h, p, nil, nil, splitErr
 }
 
-// selectLeastLoadedGate calls LoginPreGate.GetGateList and returns the address
-// of the gate with the lowest player_count (first in the sorted response).
-func selectLeastLoadedGate(loginAddr string) (string, error) {
+type gateAssignment struct {
+	addr      string
+	payload   []byte
+	signature []byte
+}
+
+// assignGate calls LoginPreGate.AssignGate and returns the assigned gate
+// address plus the HMAC token to send during the Gate handshake.
+func assignGate(loginAddr string, zoneId uint32) (*gateAssignment, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	conn, err := grpc.NewClient(loginAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return "", fmt.Errorf("grpc dial login %s: %w", loginAddr, err)
+		return nil, fmt.Errorf("grpc dial login %s: %w", loginAddr, err)
 	}
 	defer conn.Close()
 
 	client := login.NewLoginPreGateClient(conn)
-	resp, err := client.GetGateList(ctx, &login.GetGateListRequest{})
+	resp, err := client.AssignGate(ctx, &login.AssignGateRequest{ZoneId: zoneId})
 	if err != nil {
-		return "", fmt.Errorf("GetGateList: %w", err)
+		return nil, fmt.Errorf("AssignGate: %w", err)
 	}
-	if len(resp.Gates) == 0 {
-		return "", fmt.Errorf("GetGateList returned empty list")
+	if resp.Error != "" {
+		return nil, fmt.Errorf("AssignGate: %s", resp.Error)
+	}
+	if resp.Ip == "" || resp.Port == 0 {
+		return nil, fmt.Errorf("AssignGate returned empty address")
 	}
 
-	// Response is sorted by player_count ascending; pick the first (least loaded)
-	best := resp.Gates[0]
-	zap.L().Info("gate list received",
-		zap.Int("count", len(resp.Gates)),
-		zap.Uint32("selected_node_id", best.NodeId),
-		zap.Uint32("player_count", best.PlayerCount),
+	addr := fmt.Sprintf("%s:%d", resp.Ip, resp.Port)
+	zap.L().Info("gate assigned",
+		zap.String("addr", addr),
+		zap.Int64("deadline", resp.TokenDeadline),
 	)
-	return fmt.Sprintf("%s:%d", best.Ip, best.Port), nil
+	return &gateAssignment{
+		addr:      addr,
+		payload:   resp.TokenPayload,
+		signature: resp.TokenSignature,
+	}, nil
 }
 
 func initLogger() {
