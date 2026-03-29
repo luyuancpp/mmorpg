@@ -7,10 +7,15 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 
 	"friend/internal/config"
+	"friend/internal/constants"
 	"friend/internal/data"
 	base "proto/common/base"
 	pb "proto/friend"
 )
+
+func tipErr(id uint32, msg string) *base.TipInfoMessage {
+	return &base.TipInfoMessage{Id: id, Parameters: []string{msg}}
+}
 
 type FriendLogic struct {
 	repo *data.FriendRepo
@@ -23,7 +28,7 @@ func NewFriendLogic(repo *data.FriendRepo) *FriendLogic {
 func (l *FriendLogic) AddFriend(ctx context.Context, req *pb.AddFriendRequest) (*pb.AddFriendResponse, error) {
 	if req.PlayerId == req.TargetPlayerId {
 		return &pb.AddFriendResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 1, Parameters: []string{"cannot add yourself"}},
+			ErrorMessage: tipErr(constants.ErrCannotAddSelf, "cannot add yourself"),
 		}, nil
 	}
 
@@ -34,7 +39,7 @@ func (l *FriendLogic) AddFriend(ctx context.Context, req *pb.AddFriendRequest) (
 	}
 	if already {
 		return &pb.AddFriendResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 2, Parameters: []string{"already friends"}},
+			ErrorMessage: tipErr(constants.ErrAlreadyFriends, "already friends"),
 		}, nil
 	}
 
@@ -45,7 +50,7 @@ func (l *FriendLogic) AddFriend(ctx context.Context, req *pb.AddFriendRequest) (
 	}
 	if uint32(len(friends)) >= config.AppConfig.Cache.MaxFriends {
 		return &pb.AddFriendResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 3, Parameters: []string{"friend list full"}},
+			ErrorMessage: tipErr(constants.ErrFriendListFull, "friend list full"),
 		}, nil
 	}
 
@@ -56,7 +61,7 @@ func (l *FriendLogic) AddFriend(ctx context.Context, req *pb.AddFriendRequest) (
 	}
 	if hasPending {
 		return &pb.AddFriendResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 4, Parameters: []string{"request already sent"}},
+			ErrorMessage: tipErr(constants.ErrRequestAlreadySent, "request already sent"),
 		}, nil
 	}
 

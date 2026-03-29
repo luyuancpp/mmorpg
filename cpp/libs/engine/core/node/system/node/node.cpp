@@ -411,19 +411,6 @@ void Node::AsyncOutput(const char* msg, int len) {
 #endif
 }
 
-std::string Node::FormatIpAndPort() {
-	return ::FormatIpAndPort(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
-}
-
-std::string Node::GetIp() {
-	return GetNodeInfo().endpoint().ip();
-}
-
-uint32_t Node::GetPort() {
-	return GetNodeInfo().endpoint().port();
-}
-
-
 bool Node::IsCurrentNode(const NodeInfo& candidateNode) const
 {
 	return NodeUtils::IsSameNode(candidateNode.node_uuid(), GetNodeInfo().node_uuid());

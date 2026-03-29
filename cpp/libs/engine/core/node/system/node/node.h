@@ -55,9 +55,6 @@ public:
     CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
 	NodeHandshakeManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
     ServiceDiscoveryManager& GetServiceDiscoveryManager() { return serviceDiscoveryManager; }
-    std::string FormatIpAndPort();
-    std::string GetIp();
-    uint32_t GetPort();
 	EtcdManager& GetEtcdManager() { return etcdManager; }
 	grpc_channel_cache::GrpcChannelCache& GetGrpcChannelCache() { return grpcChannelCache; }
     bool HasDiscoveredServiceNode(uint32_t nodeType) const {

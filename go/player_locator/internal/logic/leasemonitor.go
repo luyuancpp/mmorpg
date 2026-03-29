@@ -89,12 +89,10 @@ func handleLeaseExpiry(ctx context.Context, svcCtx *svc.ServiceContext, playerID
 		}
 	}
 
-	// Clean up both session and location keys
-	if err := svcCtx.RedisClient.Del(ctx, key).Err(); err != nil {
-		logx.Errorf("LeaseMonitor: failed to delete session key for player %d: %v", playerID, err)
-	}
-	if err := svcCtx.RedisClient.Del(ctx, locationKey(int64(playerID))).Err(); err != nil {
-		logx.Errorf("LeaseMonitor: failed to delete location key for player %d: %v", playerID, err)
+	// Clean up both session and location keys in one round-trip
+	keys := []string{key, locationKey(int64(playerID))}
+	if err := svcCtx.RedisClient.Del(ctx, keys...).Err(); err != nil {
+		logx.Errorf("LeaseMonitor: failed to delete keys for player %d: %v", playerID, err)
 	}
 
 	if session == nil {
