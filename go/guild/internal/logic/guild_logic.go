@@ -8,6 +8,7 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/zeromicro/go-zero/core/logx"
 
+	"guild/internal/constants"
 	"guild/internal/data"
 	base "proto/common/base"
 	pb "proto/guild"
@@ -22,6 +23,10 @@ func NewGuildLogic(repo *data.GuildRepo, sf *snowflake.Node) *GuildLogic {
 	return &GuildLogic{repo: repo, snowflake: sf}
 }
 
+func tipErr(id uint32, msg string) *base.TipInfoMessage {
+	return &base.TipInfoMessage{Id: id, Parameters: []string{msg}}
+}
+
 func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest) (*pb.CreateGuildResponse, error) {
 	// Check if player already in a guild
 	existingGuildID, err := l.repo.GetPlayerGuildID(ctx, req.PlayerId)
@@ -29,9 +34,7 @@ func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest
 		return nil, fmt.Errorf("check existing guild: %w", err)
 	}
 	if existingGuildID > 0 {
-		return &pb.CreateGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 1, Parameters: []string{"already in a guild"}},
-		}, nil
+		return &pb.CreateGuildResponse{ErrorMessage: tipErr(constants.ErrAlreadyInGuild, "already in a guild")}, nil
 	}
 
 	now := time.Now().UnixMilli()
@@ -41,14 +44,14 @@ func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest
 		GuildID:      guildID,
 		Name:         req.Name,
 		LeaderID:     req.PlayerId,
-		Level:        1,
+		Level:        constants.DefaultInitLevel,
 		CreateTimeMs: now,
-		MaxMembers:   50,
+		MaxMembers:   constants.DefaultMaxMembers,
 		ZoneID:       req.ZoneId,
 		Members: []data.MemberData{
 			{
 				PlayerID:     req.PlayerId,
-				Role:         3, // leader
+				Role:         constants.RoleLeader,
 				JoinTimeMs:   now,
 				LastActiveMs: now,
 			},
@@ -75,9 +78,7 @@ func (l *GuildLogic) GetGuild(ctx context.Context, req *pb.GetGuildRequest) (*pb
 		return nil, err
 	}
 	if guild == nil {
-		return &pb.GetGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 2, Parameters: []string{"guild not found"}},
-		}, nil
+		return &pb.GetGuildResponse{ErrorMessage: tipErr(constants.ErrGuildNotFound, "guild not found")}, nil
 	}
 	return &pb.GetGuildResponse{Guild: toProtoGuild(guild)}, nil
 }
@@ -88,9 +89,7 @@ func (l *GuildLogic) GetPlayerGuild(ctx context.Context, req *pb.GetPlayerGuildR
 		return nil, err
 	}
 	if guildID == 0 {
-		return &pb.GetPlayerGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 3, Parameters: []string{"not in any guild"}},
-		}, nil
+		return &pb.GetPlayerGuildResponse{ErrorMessage: tipErr(constants.ErrNotInGuild, "not in any guild")}, nil
 	}
 
 	guild, err := l.repo.GetGuild(ctx, guildID)
@@ -106,9 +105,7 @@ func (l *GuildLogic) JoinGuild(ctx context.Context, req *pb.JoinGuildRequest) (*
 		return nil, err
 	}
 	if existingGuildID > 0 {
-		return &pb.JoinGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 1, Parameters: []string{"already in a guild"}},
-		}, nil
+		return &pb.JoinGuildResponse{ErrorMessage: tipErr(constants.ErrAlreadyInGuild, "already in a guild")}, nil
 	}
 
 	guild, err := l.repo.GetGuild(ctx, req.GuildId)
@@ -116,20 +113,16 @@ func (l *GuildLogic) JoinGuild(ctx context.Context, req *pb.JoinGuildRequest) (*
 		return nil, err
 	}
 	if guild == nil {
-		return &pb.JoinGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 2, Parameters: []string{"guild not found"}},
-		}, nil
+		return &pb.JoinGuildResponse{ErrorMessage: tipErr(constants.ErrGuildNotFound, "guild not found")}, nil
 	}
 	if uint32(len(guild.Members)) >= guild.MaxMembers {
-		return &pb.JoinGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 4, Parameters: []string{"guild is full"}},
-		}, nil
+		return &pb.JoinGuildResponse{ErrorMessage: tipErr(constants.ErrGuildFull, "guild is full")}, nil
 	}
 
 	now := time.Now().UnixMilli()
 	guild.Members = append(guild.Members, data.MemberData{
 		PlayerID:     req.PlayerId,
-		Role:         0,
+		Role:         constants.RoleMember,
 		JoinTimeMs:   now,
 		LastActiveMs: now,
 	})
@@ -149,9 +142,7 @@ func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) 
 		return nil, err
 	}
 	if guildID == 0 {
-		return &pb.LeaveGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 3, Parameters: []string{"not in any guild"}},
-		}, nil
+		return &pb.LeaveGuildResponse{ErrorMessage: tipErr(constants.ErrNotInGuild, "not in any guild")}, nil
 	}
 
 	guild, err := l.repo.GetGuild(ctx, guildID)
@@ -159,14 +150,10 @@ func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) 
 		return nil, err
 	}
 	if guild == nil {
-		return &pb.LeaveGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 2, Parameters: []string{"guild not found"}},
-		}, nil
+		return &pb.LeaveGuildResponse{ErrorMessage: tipErr(constants.ErrGuildNotFound, "guild not found")}, nil
 	}
 	if guild.LeaderID == req.PlayerId {
-		return &pb.LeaveGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 5, Parameters: []string{"leader cannot leave, disband instead"}},
-		}, nil
+		return &pb.LeaveGuildResponse{ErrorMessage: tipErr(constants.ErrLeaderCantLeave, "leader cannot leave, disband instead")}, nil
 	}
 
 	// Remove member
@@ -193,9 +180,7 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 		return nil, err
 	}
 	if guildID == 0 {
-		return &pb.DisbandGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 3, Parameters: []string{"not in any guild"}},
-		}, nil
+		return &pb.DisbandGuildResponse{ErrorMessage: tipErr(constants.ErrNotInGuild, "not in any guild")}, nil
 	}
 
 	guild, err := l.repo.GetGuild(ctx, guildID)
@@ -203,9 +188,7 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 		return nil, err
 	}
 	if guild == nil || guild.LeaderID != req.PlayerId {
-		return &pb.DisbandGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 6, Parameters: []string{"not guild leader"}},
-		}, nil
+		return &pb.DisbandGuildResponse{ErrorMessage: tipErr(constants.ErrNotLeader, "not guild leader")}, nil
 	}
 
 	// Remove all member mappings
@@ -231,23 +214,19 @@ func (l *GuildLogic) SetAnnouncement(ctx context.Context, req *pb.SetAnnouncemen
 		return nil, err
 	}
 	if guild == nil {
-		return &pb.SetAnnouncementResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 2, Parameters: []string{"guild not found"}},
-		}, nil
+		return &pb.SetAnnouncementResponse{ErrorMessage: tipErr(constants.ErrGuildNotFound, "guild not found")}, nil
 	}
 
 	// Check permission: leader or officer
 	authorized := false
 	for _, m := range guild.Members {
-		if m.PlayerID == req.PlayerId && m.Role >= 1 {
+		if m.PlayerID == req.PlayerId && m.Role >= constants.RoleOfficer {
 			authorized = true
 			break
 		}
 	}
 	if !authorized {
-		return &pb.SetAnnouncementResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 7, Parameters: []string{"no permission"}},
-		}, nil
+		return &pb.SetAnnouncementResponse{ErrorMessage: tipErr(constants.ErrNoPermission, "no permission")}, nil
 	}
 
 	guild.Announcement = req.Announcement
@@ -265,9 +244,7 @@ func (l *GuildLogic) UpdateGuildScore(ctx context.Context, req *pb.UpdateGuildSc
 		return nil, err
 	}
 	if guild == nil {
-		return &pb.UpdateGuildScoreResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 2, Parameters: []string{"guild not found"}},
-		}, nil
+		return &pb.UpdateGuildScoreResponse{ErrorMessage: tipErr(constants.ErrGuildNotFound, "guild not found")}, nil
 	}
 	// Use the guild's own zone_id for per-zone ranking
 	zoneID := guild.ZoneID
@@ -314,9 +291,7 @@ func (l *GuildLogic) GetGuildRankByGuild(ctx context.Context, req *pb.GetGuildRa
 		return nil, err
 	}
 	if entry.Rank == 0 {
-		return &pb.GetGuildRankByGuildResponse{
-			ErrorMessage: &base.TipInfoMessage{Id: 8, Parameters: []string{"guild not ranked"}},
-		}, nil
+		return &pb.GetGuildRankByGuildResponse{ErrorMessage: tipErr(constants.ErrNotRanked, "guild not ranked")}, nil
 	}
 
 	guild, err := l.repo.GetGuild(ctx, entry.GuildID)

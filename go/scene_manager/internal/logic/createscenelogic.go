@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"scene_manager/internal/svc"
 	"proto/scene_manager"
+	"scene_manager/internal/constants"
+	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -44,7 +45,7 @@ func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*s
 	id, err := l.svcCtx.Redis.Incr("scene:id_counter")
 	if err != nil {
 		l.Logger.Errorf("Failed to generate scene id: %v", err)
-		return &scene_manager.CreateSceneResponse{ErrorCode: 1, ErrorMessage: "Internal error"}, nil
+		return &scene_manager.CreateSceneResponse{ErrorCode: constants.ErrRedis, ErrorMessage: "Internal error"}, nil
 	}
 	sceneId := uint64(id)
 
@@ -52,7 +53,7 @@ func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*s
 	err = l.svcCtx.Redis.Set(fmt.Sprintf("scene:%d:node", sceneId), targetNode)
 	if err != nil {
 		l.Logger.Errorf("Failed to register scene: %v", err)
-		return &scene_manager.CreateSceneResponse{ErrorCode: 1, ErrorMessage: "Redis error"}, nil
+		return &scene_manager.CreateSceneResponse{ErrorCode: constants.ErrRedis, ErrorMessage: "Redis error"}, nil
 	}
 
 	// 4. Increment scene count on the target node for load tracking

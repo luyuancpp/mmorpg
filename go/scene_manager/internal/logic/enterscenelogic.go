@@ -5,6 +5,7 @@ import (
 	"fmt"
 	kafkacontracts "proto/contracts/kafka"
 	game "scene_manager/generated/pb/game"
+	"scene_manager/internal/constants"
 	"strconv"
 
 	"proto/scene_manager"
@@ -29,105 +30,104 @@ func NewEnterSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterS
 	}
 }
 
+func errResp(code uint32, msg string) *scene_manager.EnterSceneResponse {
+	return &scene_manager.EnterSceneResponse{ErrorCode: code, ErrorMessage: msg}
+}
+
 // EnterScene routes a player into a scene, managed by SceneManager.
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
 	// 1. Resolve the target Scene node.
-	//    scene_id=0 means first login — pick a node via load balancing.
-	//    Otherwise, look up the node that owns the requested scene.
-	var nodeId string
-	if in.SceneId == 0 {
-		bestNode, err := GetBestNode(l.ctx, l.svcCtx)
-		if err != nil {
-			l.Logger.Errorf("Failed to select best node for first login: %v", err)
-			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "No available scene node"}, nil
-		}
-		nodeId = bestNode
-		l.Logger.Infof("First login: selected scene node %s for player %d", nodeId, in.PlayerId)
-	} else {
-		key := fmt.Sprintf("scene:%d:node", in.SceneId)
-		var err error
-		nodeId, err = l.svcCtx.Redis.Get(key)
-		if err != nil {
-			l.Logger.Errorf("Scene lookup failed: %v", err)
-			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Scene lookup failed"}, nil
-		}
+	nodeId, err := l.resolveNode(in.SceneId)
+	if err != nil {
+		return errResp(constants.ErrNoAvailableNode, err.Error()), nil
 	}
 
 	// 2. IDEMPOTENCY CHECK: Is player already here?
 	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
 	if err == nil && currentLoc != nil {
 		if currentLoc.SceneId == in.SceneId && currentLoc.NodeId == nodeId {
-			// Already in the correct scene. Treat as success.
 			l.Logger.Infof("Player %d already in scene %d, idempotent success", in.PlayerId, in.SceneId)
 			return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
 		}
 	}
 
 	// 3. Update Player Location (Source of Truth)
-	err = UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, in.SceneId, nodeId)
-	if err != nil {
+	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, in.SceneId, nodeId); err != nil {
 		l.Logger.Errorf("Failed to update player location: %v", err)
-		return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Failed to update location"}, nil
+		return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
 	}
 
 	// 4. Send Route Command to Gate (via Kafka)
 	if in.GateId != "" {
-		targetNodeId, convErr := strconv.ParseUint(nodeId, 10, 32)
-		if convErr != nil {
-			l.Logger.Errorf("Invalid scene node id %q: %v", nodeId, convErr)
-			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Invalid scene node id"}, nil
+		if err := l.routePlayerToGate(in, nodeId); err != nil {
+			l.Logger.Errorf("Failed to route player %d to gate: %v", in.PlayerId, err)
+			return errResp(constants.ErrKafkaRoute, err.Error()), nil
 		}
-
-		targetGateId, convErr := strconv.ParseUint(in.GateId, 10, 32)
-		if convErr != nil {
-			l.Logger.Errorf("Invalid GateID %q: %v", in.GateId, convErr)
-			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Invalid gate id"}, nil
-		}
-
-		eventId := uint32(game.ContractsKafkaRoutePlayerEventEventId)
-		event := &kafkacontracts.RoutePlayerEvent{
-			SessionId:    in.SessionId,
-			TargetNodeId: uint32(targetNodeId),
-		}
-
-		payload, err := proto.Marshal(event)
-		if err != nil {
-			l.Logger.Errorf("Failed to marshal RoutePlayerEvent: %v", err)
-			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Failed to encode route event"}, nil
-		}
-
-		cmd := &kafkacontracts.GateCommand{
-			PlayerId:         in.PlayerId,
-			TargetNodeId:     uint32(targetNodeId),
-			SessionId:        in.SessionId,
-			Payload:          payload,
-			TargetGateId:     uint32(targetGateId),
-			TargetInstanceId: in.GateInstanceId,
-			EventId:          eventId,
-		}
-
-		bytes, err := proto.Marshal(cmd)
-		if err != nil {
-			l.Logger.Errorf("Failed to marshal GateCommand: %v", err)
-			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Failed to encode gate command"}, nil
-		}
-
-		topic := fmt.Sprintf("gate-%s", in.GateId)
-		err = l.svcCtx.Kafka.WriteMessages(l.ctx, kafkago.Message{
-			Topic: topic,
-			Key:   []byte(fmt.Sprintf("%d", in.PlayerId)),
-			Value: bytes,
-		})
-		if err != nil {
-			l.Logger.Errorf("Failed to push to Kafka topic %s: %v", topic, err)
-			return &scene_manager.EnterSceneResponse{ErrorCode: 1, ErrorMessage: "Failed to route player to gate"}, nil
-		}
-		l.Logger.Infof("Pushed RoutePlayer to Kafka topic %s for player %d -> node %s", topic, in.PlayerId, nodeId)
 	} else {
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
 
 	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, in.SceneId, nodeId)
-
 	return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
+}
+
+// resolveNode picks the target scene node: load-balanced for first login (sceneId=0),
+// or looks up the owning node for an existing scene.
+func (l *EnterSceneLogic) resolveNode(sceneId uint64) (string, error) {
+	if sceneId == 0 {
+		return GetBestNode(l.ctx, l.svcCtx)
+	}
+	key := fmt.Sprintf("scene:%d:node", sceneId)
+	nodeId, err := l.svcCtx.Redis.Get(key)
+	if err != nil {
+		return "", fmt.Errorf("scene lookup failed: %w", err)
+	}
+	return nodeId, nil
+}
+
+// routePlayerToGate builds a GateCommand and pushes it to the gate's Kafka topic.
+func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest, nodeId string) error {
+	targetNodeId, err := strconv.ParseUint(nodeId, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid scene node id %q: %w", nodeId, err)
+	}
+	targetGateId, err := strconv.ParseUint(in.GateId, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid gate id %q: %w", in.GateId, err)
+	}
+
+	event := &kafkacontracts.RoutePlayerEvent{
+		SessionId:    in.SessionId,
+		TargetNodeId: uint32(targetNodeId),
+	}
+	payload, err := proto.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("marshal RoutePlayerEvent: %w", err)
+	}
+
+	cmd := &kafkacontracts.GateCommand{
+		PlayerId:         in.PlayerId,
+		TargetNodeId:     uint32(targetNodeId),
+		SessionId:        in.SessionId,
+		Payload:          payload,
+		TargetGateId:     uint32(targetGateId),
+		TargetInstanceId: in.GateInstanceId,
+		EventId:          uint32(game.ContractsKafkaRoutePlayerEventEventId),
+	}
+	bytes, err := proto.Marshal(cmd)
+	if err != nil {
+		return fmt.Errorf("marshal GateCommand: %w", err)
+	}
+
+	topic := GateTopicName(in.GateId)
+	if err := l.svcCtx.Kafka.WriteMessages(l.ctx, kafkago.Message{
+		Topic: topic,
+		Key:   []byte(fmt.Sprintf("%d", in.PlayerId)),
+		Value: bytes,
+	}); err != nil {
+		return fmt.Errorf("push to Kafka topic %s: %w", topic, err)
+	}
+
+	l.Logger.Infof("Pushed RoutePlayer to Kafka topic %s for player %d -> node %s", topic, in.PlayerId, nodeId)
+	return nil
 }

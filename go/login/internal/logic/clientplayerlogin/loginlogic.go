@@ -53,12 +53,11 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-	defer func(accountLocker *locker.AccountLocker, ctx context.Context, account string) {
-		err := accountLocker.ReleaseLogin(ctx, account)
-		if err != nil {
+	defer func() {
+		if err := accountLocker.ReleaseLogin(l.ctx, in.Account); err != nil {
 			logx.Errorf("Login lock release failed for account=%s, err=%v", in.Account, err)
 		}
-	}(accountLocker, l.ctx, in.Account)
+	}()
 
 	// 2. Get Session
 	sessionDetails, sessionFound := ctxkeys.GetSessionDetails(l.ctx)
@@ -203,24 +202,3 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 
 	return userAccount, nil
 }
-
-// startLoginDurationTimer starts a timer to force logout after MaxLoginDuration
-/*func startLoginDurationTimer(playerID string, loginTime time.Time, cfg NodeConfig) {
-	expireTime := loginTime.Add(cfg.MaxLoginDuration)
-	// Calculate reminder time (LogoutGraceTime before expiry)
-	remindTime := expireTime.Add(-cfg.LogoutGraceTime)
-
-	// Start the timer
-	go func() {
-		now := time.Now()
-		// Wait until reminder time
-		time.Sleep(remindTime.Sub(now))
-		// Push logout reminder
-		pushLogoutRemind(playerID, cfg.LogoutGraceTime)
-
-		// Wait until expiry
-		time.Sleep(cfg.LogoutGraceTime)
-		// Force logout
-		forceLogout(playerID, "login duration exceeded max limit")
-	}()
-}*/
