@@ -24,8 +24,6 @@ public:
 
 	void RegisterNodeService();
 
-	void ForceRegisterNodeService();
-
 	void UpdateNodeInfo();
 
 	void RegisterNodePort();

@@ -1,5 +1,7 @@
 #include "player_message_utils.h"
 
+#include <random>
+
 #include "proto/common/component/player_network_comp.pb.h"
 #include "thread_context/redis_manager.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
@@ -13,13 +15,12 @@
 #include "thread_context/player_manager.h"
 #include <thread_context/registry_manager.h>
 
-
-void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
+void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, Guid playerId)
 {
 	SendMessageToClientViaGate(messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
-void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
+void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, entt::entity playerEntity)
 {
 	if (!tlsEcs.actorRegistry.valid(playerEntity))
 	{
@@ -27,15 +28,15 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_WARN << "Player node info not found for player entity " << entt::to_integral(playerEntity);
 		return;
 	}
 
-	entt::entity gateSessionId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
-	auto& gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+	entt::entity gateSessionId{GetGateNodeId(playerSessionSnapshotPB->gate_session_id())};
+	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (!gateNodeRegistry.valid(gateSessionId))
 	{
 		LOG_ERROR << "Gate session not found for player with session ID " << playerSessionSnapshotPB->gate_session_id();
@@ -52,7 +53,7 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 	SendMessageToClientViaGate(messageId, message, *gateSessionPtr, playerSessionSnapshotPB->gate_session_id());
 }
 
-void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, RpcSession& gate, uint64_t sessionId)
+void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, RpcSession &gate, uint64_t sessionId)
 {
 	NodeRouteMessageRequest request;
 	const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
@@ -63,10 +64,10 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 	gate.SendRequest(GateSendMessageToPlayerMessageId, request);
 }
 
-void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId)
+void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message &message, NodeId gateNodeId)
 {
-	entt::entity gateEntity{ gateNodeId };
-	auto& gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+	entt::entity gateEntity{gateNodeId};
+	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	if (!gateNodeRegistry.valid(gateEntity))
 	{
 		LOG_ERROR << "Gate not found for NodeId -> " << gateNodeId;
@@ -83,16 +84,15 @@ void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& 
 	gateSessionPtr->SendRequest(messageId, message);
 }
 
-
 using BroadCastSessionIdList = std::unordered_set<uint64_t>;
 
-template<typename PlayerContainer>
-void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& message, const PlayerContainer& playerList)
+template <typename PlayerContainer>
+void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &message, const PlayerContainer &playerList)
 {
 	std::unordered_map<entt::entity, BroadCastSessionIdList> gateList;
-	auto& gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 
-	for (auto& player : playerList)
+	for (auto &player : playerList)
 	{
 		if (!tlsEcs.actorRegistry.valid(player))
 		{
@@ -100,14 +100,14 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& mess
 			continue;
 		}
 
-		const auto* playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+		const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 		if (!playerSessionSnapshotPB)
 		{
 			LOG_ERROR << "Player node info not found for player entity: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
 			continue;
 		}
 
-		entt::entity gateNodeId{ GetGateNodeId(playerSessionSnapshotPB->gate_session_id()) };
+		entt::entity gateNodeId{GetGateNodeId(playerSessionSnapshotPB->gate_session_id())};
 		if (!gateNodeRegistry.valid(gateNodeId))
 		{
 			LOG_ERROR << "Gate node not found for player session ID: " << playerSessionSnapshotPB->gate_session_id();
@@ -117,7 +117,7 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& mess
 		gateList[gateNodeId].emplace(playerSessionSnapshotPB->gate_session_id());
 	}
 
-	for (auto&& [gateNodeId, sessionIdList] : gateList)
+	for (auto &&[gateNodeId, sessionIdList] : gateList)
 	{
 		const auto gateNodeSession = gateNodeRegistry.try_get<RpcSession>(gateNodeId);
 		if (!gateNodeSession)
@@ -130,7 +130,7 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& mess
 		request.mutable_message_content()->set_message_id(messageId);
 		request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 
-		for (auto&& sessionId : sessionIdList)
+		for (auto &&sessionId : sessionIdList)
 		{
 			request.mutable_session_list()->Add(sessionId);
 		}
@@ -139,46 +139,57 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message& mess
 	}
 }
 
-void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityUnorderedSet& playerList)
+void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message &message, const EntityUnorderedSet &playerList)
 {
 	InternalBroadcast(messageId, message, playerList);
 }
 
-void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityVector& playerList)
+void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message &message, const EntityVector &playerList)
 {
 	InternalBroadcast(messageId, message, playerList);
 }
 
-void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId) {
+void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message &message, Guid playerId)
+{
 	SendMessageToPlayerOnGrpcNode(messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
-inline NodeId GetEffectiveNodeId(
-	uint32_t nodeType)
+inline NodeId PickRandomNodeId(uint32_t nodeType)
 {
-	if (IsZoneSingletonNodeType(nodeType)) {
-		auto node = FindZoneUniqueNodeInfo(GetNodeInfo().zone_id(), nodeType);
-		if (node == nullptr) {
-			LOG_ERROR << "Node not found for type: " << nodeType;
-			return kInvalidNodeId;
+	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
+	auto view = registry.view<NodeInfo>();
+	std::vector<NodeId> candidates;
+	const auto zoneId = GetNodeInfo().zone_id();
+	for (auto entity : view)
+	{
+		const auto &node = view.get<NodeInfo>(entity);
+		if (node.zone_id() == zoneId)
+		{
+			candidates.push_back(node.node_id());
 		}
-
-		return node->node_id();
 	}
-
-	return kInvalidNodeId;
+	if (candidates.empty())
+	{
+		LOG_ERROR << "No available node for type: " << nodeType;
+		return kInvalidNodeId;
+	}
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<size_t> dis(0, candidates.size() - 1);
+	return candidates[dis(gen)];
 }
 
-void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity) {
+void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message &message, entt::entity playerEntity)
+{
 	if (!tlsEcs.actorRegistry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity is not valid";
 		return;
 	}
 
-	auto& rpcHandlerMeta = gRpcMethodRegistry[messageId];
+	auto &rpcHandlerMeta = gRpcMethodRegistry[messageId];
 
-	const auto* playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player node info not found for player entity";
@@ -189,28 +200,29 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 	sessionDetails.set_session_id(playerSessionSnapshotPB->gate_session_id());
 	sessionDetails.set_player_id(tlsEcs.actorRegistry.get_or_emplace<Guid>(playerEntity));
 
-	if (!rpcHandlerMeta.sender) {
+	if (!rpcHandlerMeta.sender)
+	{
 		LOG_ERROR << "Message sender not found for message ID: " << messageId;
 		return;
 	}
 
-	auto nodeId = GetEffectiveNodeId(rpcHandlerMeta.targetNodeType);
-	entt::entity node{ entt::to_entity(nodeId) };
-	if (!tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType).valid(node)) {
+	auto nodeId = PickRandomNodeId(rpcHandlerMeta.targetNodeType);
+	entt::entity node{entt::to_entity(nodeId)};
+	if (!tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType).valid(node))
+	{
 		LOG_ERROR << "Node not found for type: " << rpcHandlerMeta.targetNodeType;
 		return;
 	}
 	rpcHandlerMeta.sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType),
-		node,
-		*rpcHandlerMeta.requestProto,
-		{ kSessionBinMetaKey },
-		SerializeSessionDetails(sessionDetails));
+						  node,
+						  *rpcHandlerMeta.requestProto,
+						  {kSessionBinMetaKey},
+						  SerializeSessionDetails(sessionDetails));
 }
 
-
 void SendMessageToPlayerOnSceneNode(uint32_t messageId,
-	const google::protobuf::Message& message,
-	entt::entity playerEntity)
+									const google::protobuf::Message &message,
+									entt::entity playerEntity)
 {
 	SendMessageToPlayerOnNode(
 		/* wrappedMessageId */ SceneSendMessageToPlayerMessageId,
@@ -221,27 +233,26 @@ void SendMessageToPlayerOnSceneNode(uint32_t messageId,
 }
 
 void SendMessageToPlayerOnSceneNode(uint32_t messageId,
-	const google::protobuf::Message& message,
-	Guid playerId)
+									const google::protobuf::Message &message,
+									Guid playerId)
 {
 	SendMessageToPlayerOnSceneNode(messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
-
 void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
-	uint32_t nodeType,
-	uint32_t messageId,
-	const google::protobuf::Message& message,
-	Guid playerId) {
+							   uint32_t nodeType,
+							   uint32_t messageId,
+							   const google::protobuf::Message &message,
+							   Guid playerId)
+{
 	SendMessageToPlayerOnNode(wrappedMessageId, nodeType, messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
-
 void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
-	uint32_t nodeType,
-	uint32_t messageId,
-	const google::protobuf::Message& message,
-	entt::entity playerEntity)
+							   uint32_t nodeType,
+							   uint32_t messageId,
+							   const google::protobuf::Message &message,
+							   entt::entity playerEntity)
 {
 	if (!tlsEcs.actorRegistry.valid(playerEntity))
 	{
@@ -249,28 +260,29 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "Player session info not found -> " << entt::to_integral(playerEntity);
 		return;
 	}
 
-	const auto& nodeIdMap = playerSessionSnapshotPB->node_id();
+	const auto &nodeIdMap = playerSessionSnapshotPB->node_id();
 	auto it = nodeIdMap.find(nodeType);
-	if (it == nodeIdMap.end()) {
+	if (it == nodeIdMap.end())
+	{
 		LOG_ERROR << "Node type not found in player session snapshot: " << nodeType
-			<< ", player entity: " << entt::to_integral(playerEntity);
+				  << ", player entity: " << entt::to_integral(playerEntity);
 		return;
 	}
 
-	entt::entity nodeEntity{ it->second };
+	entt::entity nodeEntity{it->second};
 
-	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
+	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
 	if (!registry.valid(nodeEntity))
 	{
 		LOG_ERROR << "Node entity invalid for player -> " << entt::to_integral(playerEntity)
-			<< ", node ID: " << entt::to_integral(nodeEntity);
+				  << ", node ID: " << entt::to_integral(nodeEntity);
 		return;
 	}
 
@@ -289,13 +301,13 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 	session->SendRequest(wrappedMessageId, request);
 }
 
-
 void CallMethodOnPlayerNode(
 	uint32_t remoteMethodId,
 	uint32_t nodeType,
 	uint32_t messageId,
-	const google::protobuf::Message& message,
-	Guid playerId) {
+	const google::protobuf::Message &message,
+	Guid playerId)
+{
 	CallMethodOnPlayerNode(remoteMethodId, nodeType, messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
@@ -303,7 +315,7 @@ void CallMethodOnPlayerNode(
 	uint32_t remoteMethodId,
 	uint32_t nodeType,
 	uint32_t messageId,
-	const google::protobuf::Message& message,
+	const google::protobuf::Message &message,
 	entt::entity player)
 {
 	if (!tlsEcs.actorRegistry.valid(player))
@@ -312,29 +324,30 @@ void CallMethodOnPlayerNode(
 		return;
 	}
 
-	const auto* playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (!playerSessionSnapshotPB)
 	{
 		LOG_ERROR << "PlayerSessionSnapshotComp not found for player -> " << entt::to_integral(player);
 		return;
 	}
 
-	const auto& nodeIdMap = playerSessionSnapshotPB->node_id();
+	const auto &nodeIdMap = playerSessionSnapshotPB->node_id();
 	auto it = nodeIdMap.find(nodeType);
-	if (it == nodeIdMap.end()) {
+	if (it == nodeIdMap.end())
+	{
 		LOG_ERROR << "Node type not found in player session snapshot: " << nodeType
-			<< ", player entity: " << entt::to_integral(player);
+				  << ", player entity: " << entt::to_integral(player);
 		return;
 	}
 
-	entt::entity targetNodeEntity{ it->second };
+	entt::entity targetNodeEntity{it->second};
 
-	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
+	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
 
 	if (!registry.valid(targetNodeEntity))
 	{
 		LOG_ERROR << "Invalid target node for player -> " << entt::to_integral(player)
-			<< ", node_id: " << it->second;
+				  << ", node_id: " << it->second;
 		return;
 	}
 
@@ -360,4 +373,3 @@ void CallMethodOnPlayerNode(
 
 	session->CallRemoteMethod(remoteMethodId, request);
 }
-

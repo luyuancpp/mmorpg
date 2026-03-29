@@ -93,6 +93,10 @@ cpp/libs/base/modules/
 
 # Runtime artifacts (not for version control)
 bin/zoneinfo/
+bin/go_services.pid.json
+bin/XMLGoogleTestResults.xml
+bin/*.testdurations
+bin/*.bak
 bin/cpp_nodes.pid.json
 bin/start_server.*
 bin/stop_server.*
@@ -114,6 +118,9 @@ bin/zlib*
 
 # Copilot / AI session artifacts
 _copilot_session_transfer/
+
+# Debug symbols (too large for GitHub)
+debug-symbols-out/
 
 # Clang plugin build
 .no_raw_ptr_check_ok

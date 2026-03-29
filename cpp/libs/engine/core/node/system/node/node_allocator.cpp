@@ -1,6 +1,5 @@
 #include "node_allocator.h"
 #include <muduo/base/Logging.h>
-#include <network/network_utils.h>
 #include "node.h"
 #include "node/system/etcd/etcd_manager.h"
 #include "node/system/etcd/etcd_helper.h"
@@ -21,34 +20,26 @@
 #include <unistd.h>
 #endif
 
-uint32_t tryPortId{ 0 };
+uint32_t tryPortId{0};
 
-void NodeAllocator::AcquireNode() {
+void NodeAllocator::AcquireNode()
+{
 	const uint32_t nodeType = gNode->GetNodeType();
 	LOG_INFO << "Acquiring node ID for node type: " << nodeType;
 
-	// Startup path A: zone-singleton services always use zone_id as node_id.
-	// We force-put node key to avoid delete/put ordering races during restart.
-	if (IsZoneSingletonNodeType(nodeType)) {
-		const uint32_t zoneId = tlsNodeConfigManager.GetGameConfig().zone_id();
-		gNode->GetNodeInfo().set_node_id(zoneId);
-		LOG_INFO << "Assigned node_id by zone_id: " << zoneId;
-
-		gNode->GetEtcdManager().ForceRegisterNodeService();
-		return;
-	}
-
-	// Startup path B: non-singleton services pick next free ID in local snapshot,
+	// All services pick next free ID in local snapshot,
 	// then rely on etcd PutIfAbsent CAS to enforce same-type uniqueness.
-	auto& nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[nodeType];
-	auto& existingNodes = *nodeList.mutable_node_list();
+	auto &nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[nodeType];
+	auto &existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedIds;
 	uint32_t maxUsedId = 0;
 
-	for (const auto& node : existingNodes) {
+	for (const auto &node : existingNodes)
+	{
 		usedIds.insert(node.node_id());
-		if (node.node_id() > maxUsedId) {
+		if (node.node_id() > maxUsedId)
+		{
 			maxUsedId = node.node_id();
 		}
 	}
@@ -56,19 +47,24 @@ void NodeAllocator::AcquireNode() {
 	static constexpr uint32_t kMaxNodeId = static_cast<uint32_t>(kNodeMask);
 	uint32_t nextNodeId;
 
-	if (maxUsedId < kMaxNodeId) {
+	if (maxUsedId < kMaxNodeId)
+	{
 		nextNodeId = maxUsedId + 1;
 	}
-	else {
+	else
+	{
 		bool found = false;
-		for (uint32_t id = 0; id <= kMaxNodeId; ++id) {
-			if (usedIds.find(id) == usedIds.end()) {
+		for (uint32_t id = 0; id <= kMaxNodeId; ++id)
+		{
+			if (usedIds.find(id) == usedIds.end())
+			{
 				nextNodeId = id;
 				found = true;
 				break;
 			}
 		}
-		if (!found) {
+		if (!found)
+		{
 			LOG_FATAL << "No available node ID (max " << kMaxNodeId << ")";
 			throw std::runtime_error("Node ID space exhausted");
 		}
@@ -79,11 +75,12 @@ void NodeAllocator::AcquireNode() {
 	gNode->GetEtcdManager().RegisterNodeService();
 }
 
-void NodeAllocator::ReRegisterExistingNode() {
+void NodeAllocator::ReRegisterExistingNode()
+{
 	// Re-registration must keep existing node_id to preserve SnowFlake worker bits
 	// and avoid mid-flight identity change after temporary lease loss.
 	LOG_INFO << "Re-registering existing node with node_id=" << GetNodeInfo().node_id()
-		<< " port=" << GetNodeInfo().endpoint().port();
+			 << " port=" << GetNodeInfo().endpoint().port();
 	gNode->GetEtcdManager().RegisterNodePort();
 }
 
@@ -92,15 +89,18 @@ bool IsPortReservedType(uint32_t type)
 	return type == eNodeType::GateNodeService;
 }
 
-bool IsLocalPortAvailable(uint16_t port) {
+bool IsLocalPortAvailable(uint16_t port)
+{
 #ifdef _WIN32
 	SOCKET sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sock == INVALID_SOCKET) {
+	if (sock == INVALID_SOCKET)
+	{
 		return false;
 	}
 #else
 	int sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sock < 0) {
+	if (sock < 0)
+	{
 		return false;
 	}
 #endif
@@ -112,9 +112,9 @@ bool IsLocalPortAvailable(uint16_t port) {
 
 	int optval = 1;
 	::setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		reinterpret_cast<const char*>(&optval), sizeof(optval));
+				 reinterpret_cast<const char *>(&optval), sizeof(optval));
 
-	bool available = (::bind(sock, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) == 0);
+	bool available = (::bind(sock, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) == 0);
 #ifdef _WIN32
 	::closesocket(sock);
 #else
@@ -123,21 +123,23 @@ bool IsLocalPortAvailable(uint16_t port) {
 	return available;
 }
 
-uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
-	uint32_t minPort, uint32_t maxPort, uint32_t tryPortId)
+uint32_t AllocatePortInRange(const std::unordered_set<uint32_t> &usedPorts,
+							 uint32_t minPort, uint32_t maxPort, uint32_t tryPortId)
 {
 	// Scan from tryPortId to maxPort first
-	for (uint32_t port = tryPortId; port <= maxPort; ++port) {
-		if (usedPorts.find(port) == usedPorts.end()
-			&& IsLocalPortAvailable(static_cast<uint16_t>(port))) {
+	for (uint32_t port = tryPortId; port <= maxPort; ++port)
+	{
+		if (usedPorts.find(port) == usedPorts.end() && IsLocalPortAvailable(static_cast<uint16_t>(port)))
+		{
 			return port;
 		}
 	}
 
 	// Wrap around from minPort to tryPortId - 1
-	for (uint32_t port = minPort; port < tryPortId; ++port) {
-		if (usedPorts.find(port) == usedPorts.end()
-			&& IsLocalPortAvailable(static_cast<uint16_t>(port))) {
+	for (uint32_t port = minPort; port < tryPortId; ++port)
+	{
+		if (usedPorts.find(port) == usedPorts.end() && IsLocalPortAvailable(static_cast<uint16_t>(port)))
+		{
 			return port;
 		}
 	}
@@ -145,34 +147,40 @@ uint32_t AllocatePortInRange(const std::unordered_set<uint32_t>& usedPorts,
 	return 0; // No available port
 }
 
-void NodeAllocator::AcquireNodePort() {
-	auto& nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[gNode->GetNodeType()];
-	auto& existingNodes = *nodeList.mutable_node_list();
+void NodeAllocator::AcquireNodePort()
+{
+	auto &nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[gNode->GetNodeType()];
+	auto &existingNodes = *nodeList.mutable_node_list();
 
 	std::unordered_set<uint32_t> usedPorts;
-	for (const auto& node : existingNodes) {
+	for (const auto &node : existingNodes)
+	{
 		usedPorts.insert(node.endpoint().port());
 	}
 
 	uint32_t assignedPort = 0;
 
-	if (IsPortReservedType(GetNodeInfo().node_type())) {
+	if (IsPortReservedType(GetNodeInfo().node_type()))
+	{
 		constexpr uint32_t GATE_BASE_PORT = 10000;
 		constexpr uint32_t GATE_PORT_LIMIT = 19999;
 
 		// Reset to base if out of range
-		if (tryPortId < GATE_BASE_PORT || tryPortId > GATE_PORT_LIMIT) {
+		if (tryPortId < GATE_BASE_PORT || tryPortId > GATE_PORT_LIMIT)
+		{
 			tryPortId = GATE_BASE_PORT;
 		}
 
 		assignedPort = AllocatePortInRange(usedPorts, GATE_BASE_PORT, GATE_PORT_LIMIT, tryPortId);
 		LOG_INFO << "Assigned Gate RPC port: " << assignedPort;
 	}
-	else {
+	else
+	{
 		constexpr uint32_t MIN_PORT = 20000;
 		constexpr uint32_t MAX_PORT = 65535;
 
-		if (tryPortId < MIN_PORT || tryPortId > MAX_PORT) {
+		if (tryPortId < MIN_PORT || tryPortId > MAX_PORT)
+		{
 			tryPortId = MIN_PORT;
 		}
 
@@ -180,10 +188,12 @@ void NodeAllocator::AcquireNodePort() {
 		LOG_INFO << "Assigned dynamic RPC port: " << assignedPort;
 	}
 
-	if (assignedPort != 0) {
+	if (assignedPort != 0)
+	{
 		tryPortId = assignedPort + 1;
 	}
-	else {
+	else
+	{
 		LOG_WARN << "No available RPC port found. TryPortId was: " << tryPortId;
 		tryPortId = 0; // fallback or signal failure
 	}
@@ -191,9 +201,8 @@ void NodeAllocator::AcquireNodePort() {
 	GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
 
 	LOG_INFO << "NodeType: " << gNode->GetNodeType()
-		<< " IP: " << GetNodeInfo().endpoint().ip()
-		<< " Port: " << assignedPort;
+			 << " IP: " << GetNodeInfo().endpoint().ip()
+			 << " Port: " << assignedPort;
 
 	gNode->GetEtcdManager().RegisterNodePort();
 }
-

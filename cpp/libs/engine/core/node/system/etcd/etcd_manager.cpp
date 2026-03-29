@@ -52,14 +52,6 @@ void EtcdManager::RegisterNodeService()
 	LOG_INFO << "Registered node to etcd: " << gNode->GetNodeInfo().DebugString();
 }
 
-void EtcdManager::ForceRegisterNodeService()
-{
-	const auto serviceKey = MakeNodeEtcdKey(gNode->GetNodeInfo());
-	LOG_INFO << "Force registering (singleton) node service to etcd: " << serviceKey;
-	EtcdHelper::ForcePut(serviceKey, gNode->GetNodeInfo(), gNode->GetLeaseId());
-	pendingKeys.push_back(serviceKey);
-}
-
 void EtcdManager::UpdateNodeInfo()
 {
 	const auto serviceKey = MakeNodeEtcdKey(gNode->GetNodeInfo());
