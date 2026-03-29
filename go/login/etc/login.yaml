@@ -1,7 +1,7 @@
 # Base RPC service config
 Name: login.rpc
 ListenOn: 127.0.0.1:50000
-Timeout: 100000  # Max server-side timeout per request (10s)
+Timeout: 100000 # Max server-side timeout per request (10s)
 
 Etcd:
   Hosts:
@@ -11,13 +11,13 @@ Etcd:
 # Node config (with login duration limits)
 Node:
   ZoneId: 0
-  SessionExpireMin: 1                  # Session idle timeout (expires after 1 min of inactivity)
-  MaxLoginDevices: 3                   # Max concurrent login devices per account
-  LeaseTTL: 500                        # Lease TTL (seconds)
-  QueueShardCount: 50                  # Queue shard count
+  SessionExpireMin: 1 # Session idle timeout (expires after 1 min of inactivity)
+  MaxLoginDevices: 3 # Max concurrent login devices per account
+  LeaseTTL: 500 # Lease TTL (seconds)
+  QueueShardCount: 50 # Queue shard count
   # Login duration limit (max online time per session)
-  MaxLoginDuration: 5m                # Max login duration (forced logout on timeout)
-  LogoutGraceTime: 5s                  # Grace period to notify player before timeout
+  MaxLoginDuration: 5m # Max login duration (forced logout on timeout)
+  LogoutGraceTime: 5s # Grace period to notify player before timeout
   RedisClient:
     Host: 127.0.0.1:6379
     Password: ""
@@ -29,19 +29,19 @@ Node:
 
 # Snowflake ID config
 Snowflake:
-  Epoch: 1721473263000  # Epoch ms for 2024-07-20 15:01:03
+  Epoch: 1721473263000 # Epoch ms for 2024-07-20 15:01:03
   NodeBits: 13
   StepBits: 9
 
 # Distributed lock config
 Locker:
-  AccountLockTTL: 10  # 10 seconds
-  PlayerLockTTL: 5    # 5 seconds
+  AccountLockTTL: 10 # 10 seconds
+  PlayerLockTTL: 5 # 5 seconds
 
 # Account config
 Account:
   MaxDevicesPerAccount: 3
-  CacheExpire: 12h    # 12 hours
+  CacheExpire: 12h # 12 hours
 
 # Service registry/discovery config
 Registry:
@@ -56,10 +56,10 @@ Timeouts:
   EtcdDialTimeout: 5s
   ServiceDiscoveryTimeout: 10s
   TaskWaitTimeout: 5s
-  LoginTotalTimeout: 10s  # Total login timeout (including Redis load, DB ops, etc.)
+  LoginTotalTimeout: 10s # Total login timeout (including Redis load, DB ops, etc.)
   RoleCacheExpire: 24h
-  TaskManagerCleanInterval: 5s   # Task manager cleanup interval
-  TaskBatchExpireTime: 10s       # Task batch expiration time
+  TaskManagerCleanInterval: 5s # Task manager cleanup interval
+  TaskBatchExpireTime: 10s # Task batch expiration time
 # PlayerLocator gRPC client (discovered via etcd)
 PlayerLocatorRpc:
   Etcd:
@@ -75,6 +75,11 @@ SceneManagerRpc:
       - 127.0.0.1:2379
     Key: scenemanagerservice.rpc
   Timeout: 5000
+
+# Shared HMAC secret for Gate connection tokens.
+# Login signs tokens with this secret; Gate verifies them.
+# Must match GateTokenSecret in bin/etc/base_deploy_config.yaml.
+GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 
 # Kafka config
 Kafka:

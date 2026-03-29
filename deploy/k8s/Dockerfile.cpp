@@ -138,7 +138,7 @@ COPY generated/tables/ /app/generated/generated_tables/
 # Table filenames are PascalCase on disk (Windows); C++ code expects lowercase.
 RUN cd /app/generated/generated_tables/ \
     && for f in *.json; do lc="$(echo "$f" | tr '[:upper:]' '[:lower:]')"; \
-       [ "$f" != "$lc" ] && mv "$f" "$lc" || true; done
+    [ "$f" != "$lc" ] && mv "$f" "$lc" || true; done
 
 # Timezone data — symlink system zoneinfo so nodes find it at bin/zoneinfo/
 RUN ln -s /usr/share/zoneinfo /app/bin/zoneinfo

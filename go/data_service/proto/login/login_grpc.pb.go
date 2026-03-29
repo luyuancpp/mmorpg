@@ -273,17 +273,17 @@ var ClientPlayerLogin_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	LoginPreGate_GetGateList_FullMethodName = "/loginpb.LoginPreGate/GetGateList"
+	LoginPreGate_AssignGate_FullMethodName = "/loginpb.LoginPreGate/AssignGate"
 )
 
 // LoginPreGateClient is the client API for LoginPreGate service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LoginPreGateClient interface {
-	// Client calls this before connecting to any Gate.
-	// Returns all available Gate endpoints with current load.
-	// Client picks the least-loaded Gate and TCP-connects to it.
-	GetGateList(ctx context.Context, in *GetGateListRequest, opts ...grpc.CallOption) (*GetGateListResponse, error)
+	// Login picks the least-loaded Gate for the given zone, signs a one-time
+	// HMAC token. Client TCP-connects to the assigned gate and sends the
+	// token as a ClientTokenVerifyRequest (first message after connect).
+	AssignGate(ctx context.Context, in *AssignGateRequest, opts ...grpc.CallOption) (*AssignGateResponse, error)
 }
 
 type loginPreGateClient struct {
@@ -294,10 +294,10 @@ func NewLoginPreGateClient(cc grpc.ClientConnInterface) LoginPreGateClient {
 	return &loginPreGateClient{cc}
 }
 
-func (c *loginPreGateClient) GetGateList(ctx context.Context, in *GetGateListRequest, opts ...grpc.CallOption) (*GetGateListResponse, error) {
+func (c *loginPreGateClient) AssignGate(ctx context.Context, in *AssignGateRequest, opts ...grpc.CallOption) (*AssignGateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetGateListResponse)
-	err := c.cc.Invoke(ctx, LoginPreGate_GetGateList_FullMethodName, in, out, cOpts...)
+	out := new(AssignGateResponse)
+	err := c.cc.Invoke(ctx, LoginPreGate_AssignGate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -308,10 +308,10 @@ func (c *loginPreGateClient) GetGateList(ctx context.Context, in *GetGateListReq
 // All implementations must embed UnimplementedLoginPreGateServer
 // for forward compatibility.
 type LoginPreGateServer interface {
-	// Client calls this before connecting to any Gate.
-	// Returns all available Gate endpoints with current load.
-	// Client picks the least-loaded Gate and TCP-connects to it.
-	GetGateList(context.Context, *GetGateListRequest) (*GetGateListResponse, error)
+	// Login picks the least-loaded Gate for the given zone, signs a one-time
+	// HMAC token. Client TCP-connects to the assigned gate and sends the
+	// token as a ClientTokenVerifyRequest (first message after connect).
+	AssignGate(context.Context, *AssignGateRequest) (*AssignGateResponse, error)
 	mustEmbedUnimplementedLoginPreGateServer()
 }
 
@@ -322,8 +322,8 @@ type LoginPreGateServer interface {
 // pointer dereference when methods are called.
 type UnimplementedLoginPreGateServer struct{}
 
-func (UnimplementedLoginPreGateServer) GetGateList(context.Context, *GetGateListRequest) (*GetGateListResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetGateList not implemented")
+func (UnimplementedLoginPreGateServer) AssignGate(context.Context, *AssignGateRequest) (*AssignGateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AssignGate not implemented")
 }
 func (UnimplementedLoginPreGateServer) mustEmbedUnimplementedLoginPreGateServer() {}
 func (UnimplementedLoginPreGateServer) testEmbeddedByValue()                      {}
@@ -346,20 +346,20 @@ func RegisterLoginPreGateServer(s grpc.ServiceRegistrar, srv LoginPreGateServer)
 	s.RegisterService(&LoginPreGate_ServiceDesc, srv)
 }
 
-func _LoginPreGate_GetGateList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetGateListRequest)
+func _LoginPreGate_AssignGate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssignGateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LoginPreGateServer).GetGateList(ctx, in)
+		return srv.(LoginPreGateServer).AssignGate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: LoginPreGate_GetGateList_FullMethodName,
+		FullMethod: LoginPreGate_AssignGate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LoginPreGateServer).GetGateList(ctx, req.(*GetGateListRequest))
+		return srv.(LoginPreGateServer).AssignGate(ctx, req.(*AssignGateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -372,8 +372,8 @@ var LoginPreGate_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*LoginPreGateServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetGateList",
-			Handler:    _LoginPreGate_GetGateList_Handler,
+			MethodName: "AssignGate",
+			Handler:    _LoginPreGate_AssignGate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

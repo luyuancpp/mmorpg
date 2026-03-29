@@ -871,47 +871,47 @@ class LoginPreGate final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    // Client calls this before connecting to any Gate.
-    // Returns all available Gate endpoints with current load.
-    // Client picks the least-loaded Gate and TCP-connects to it.
-    virtual ::grpc::Status GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::loginpb::GetGateListResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::GetGateListResponse>> AsyncGetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::GetGateListResponse>>(AsyncGetGateListRaw(context, request, cq));
+    // Login picks the least-loaded Gate for the given zone, signs a one-time
+    // HMAC token. Client TCP-connects to the assigned gate and sends the
+    // token as a ClientTokenVerifyRequest (first message after connect).
+    virtual ::grpc::Status AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::loginpb::AssignGateResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>> AsyncAssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>>(AsyncAssignGateRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::GetGateListResponse>> PrepareAsyncGetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::GetGateListResponse>>(PrepareAsyncGetGateListRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>> PrepareAsyncAssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>>(PrepareAsyncAssignGateRaw(context, request, cq));
     }
     class async_interface {
      public:
       virtual ~async_interface() {}
-      // Client calls this before connecting to any Gate.
-      // Returns all available Gate endpoints with current load.
-      // Client picks the least-loaded Gate and TCP-connects to it.
-      virtual void GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // Login picks the least-loaded Gate for the given zone, signs a one-time
+      // HMAC token. Client TCP-connects to the assigned gate and sends the
+      // token as a ClientTokenVerifyRequest (first message after connect).
+      virtual void AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::GetGateListResponse>* AsyncGetGateListRaw(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::GetGateListResponse>* PrepareAsyncGetGateListRaw(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>* AsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>* PrepareAsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    ::grpc::Status GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::loginpb::GetGateListResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::GetGateListResponse>> AsyncGetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::GetGateListResponse>>(AsyncGetGateListRaw(context, request, cq));
+    ::grpc::Status AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::loginpb::AssignGateResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>> AsyncAssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>>(AsyncAssignGateRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::GetGateListResponse>> PrepareAsyncGetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::GetGateListResponse>>(PrepareAsyncGetGateListRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>> PrepareAsyncAssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>>(PrepareAsyncAssignGateRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
      public:
-      void GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response, std::function<void(::grpc::Status)>) override;
-      void GetGateList(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, std::function<void(::grpc::Status)>) override;
+      void AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -923,9 +923,9 @@ class LoginPreGate final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::loginpb::GetGateListResponse>* AsyncGetGateListRaw(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::loginpb::GetGateListResponse>* PrepareAsyncGetGateListRaw(::grpc::ClientContext* context, const ::loginpb::GetGateListRequest& request, ::grpc::CompletionQueue* cq) override;
-    const ::grpc::internal::RpcMethod rpcmethod_GetGateList_;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>* AsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>* PrepareAsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_AssignGate_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -933,150 +933,150 @@ class LoginPreGate final {
    public:
     Service();
     virtual ~Service();
-    // Client calls this before connecting to any Gate.
-    // Returns all available Gate endpoints with current load.
-    // Client picks the least-loaded Gate and TCP-connects to it.
-    virtual ::grpc::Status GetGateList(::grpc::ServerContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response);
+    // Login picks the least-loaded Gate for the given zone, signs a one-time
+    // HMAC token. Client TCP-connects to the assigned gate and sends the
+    // token as a ClientTokenVerifyRequest (first message after connect).
+    virtual ::grpc::Status AssignGate(::grpc::ServerContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response);
   };
   template <class BaseClass>
-  class WithAsyncMethod_GetGateList : public BaseClass {
+  class WithAsyncMethod_AssignGate : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithAsyncMethod_GetGateList() {
+    WithAsyncMethod_AssignGate() {
       ::grpc::Service::MarkMethodAsync(0);
     }
-    ~WithAsyncMethod_GetGateList() override {
+    ~WithAsyncMethod_AssignGate() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetGateList(::grpc::ServerContext* /*context*/, const ::loginpb::GetGateListRequest* /*request*/, ::loginpb::GetGateListResponse* /*response*/) override {
+    ::grpc::Status AssignGate(::grpc::ServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestGetGateList(::grpc::ServerContext* context, ::loginpb::GetGateListRequest* request, ::grpc::ServerAsyncResponseWriter< ::loginpb::GetGateListResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestAssignGate(::grpc::ServerContext* context, ::loginpb::AssignGateRequest* request, ::grpc::ServerAsyncResponseWriter< ::loginpb::AssignGateResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_GetGateList<Service > AsyncService;
+  typedef WithAsyncMethod_AssignGate<Service > AsyncService;
   template <class BaseClass>
-  class WithCallbackMethod_GetGateList : public BaseClass {
+  class WithCallbackMethod_AssignGate : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithCallbackMethod_GetGateList() {
+    WithCallbackMethod_AssignGate() {
       ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::GetGateListRequest, ::loginpb::GetGateListResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::AssignGateRequest, ::loginpb::AssignGateResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::loginpb::GetGateListRequest* request, ::loginpb::GetGateListResponse* response) { return this->GetGateList(context, request, response); }));}
-    void SetMessageAllocatorFor_GetGateList(
-        ::grpc::MessageAllocator< ::loginpb::GetGateListRequest, ::loginpb::GetGateListResponse>* allocator) {
+                   ::grpc::CallbackServerContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response) { return this->AssignGate(context, request, response); }));}
+    void SetMessageAllocatorFor_AssignGate(
+        ::grpc::MessageAllocator< ::loginpb::AssignGateRequest, ::loginpb::AssignGateResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::GetGateListRequest, ::loginpb::GetGateListResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::AssignGateRequest, ::loginpb::AssignGateResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~WithCallbackMethod_GetGateList() override {
+    ~WithCallbackMethod_AssignGate() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetGateList(::grpc::ServerContext* /*context*/, const ::loginpb::GetGateListRequest* /*request*/, ::loginpb::GetGateListResponse* /*response*/) override {
+    ::grpc::Status AssignGate(::grpc::ServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* GetGateList(
-      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::GetGateListRequest* /*request*/, ::loginpb::GetGateListResponse* /*response*/)  { return nullptr; }
+    virtual ::grpc::ServerUnaryReactor* AssignGate(
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_GetGateList<Service > CallbackService;
+  typedef WithCallbackMethod_AssignGate<Service > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
-  class WithGenericMethod_GetGateList : public BaseClass {
+  class WithGenericMethod_AssignGate : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithGenericMethod_GetGateList() {
+    WithGenericMethod_AssignGate() {
       ::grpc::Service::MarkMethodGeneric(0);
     }
-    ~WithGenericMethod_GetGateList() override {
+    ~WithGenericMethod_AssignGate() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetGateList(::grpc::ServerContext* /*context*/, const ::loginpb::GetGateListRequest* /*request*/, ::loginpb::GetGateListResponse* /*response*/) override {
+    ::grpc::Status AssignGate(::grpc::ServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
-  class WithRawMethod_GetGateList : public BaseClass {
+  class WithRawMethod_AssignGate : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawMethod_GetGateList() {
+    WithRawMethod_AssignGate() {
       ::grpc::Service::MarkMethodRaw(0);
     }
-    ~WithRawMethod_GetGateList() override {
+    ~WithRawMethod_AssignGate() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetGateList(::grpc::ServerContext* /*context*/, const ::loginpb::GetGateListRequest* /*request*/, ::loginpb::GetGateListResponse* /*response*/) override {
+    ::grpc::Status AssignGate(::grpc::ServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestGetGateList(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestAssignGate(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
-  class WithRawCallbackMethod_GetGateList : public BaseClass {
+  class WithRawCallbackMethod_AssignGate : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawCallbackMethod_GetGateList() {
+    WithRawCallbackMethod_AssignGate() {
       ::grpc::Service::MarkMethodRawCallback(0,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetGateList(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->AssignGate(context, request, response); }));
     }
-    ~WithRawCallbackMethod_GetGateList() override {
+    ~WithRawCallbackMethod_AssignGate() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetGateList(::grpc::ServerContext* /*context*/, const ::loginpb::GetGateListRequest* /*request*/, ::loginpb::GetGateListResponse* /*response*/) override {
+    ::grpc::Status AssignGate(::grpc::ServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* GetGateList(
+    virtual ::grpc::ServerUnaryReactor* AssignGate(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithStreamedUnaryMethod_GetGateList : public BaseClass {
+  class WithStreamedUnaryMethod_AssignGate : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithStreamedUnaryMethod_GetGateList() {
+    WithStreamedUnaryMethod_AssignGate() {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::loginpb::GetGateListRequest, ::loginpb::GetGateListResponse>(
+          ::loginpb::AssignGateRequest, ::loginpb::AssignGateResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::loginpb::GetGateListRequest, ::loginpb::GetGateListResponse>* streamer) {
-                       return this->StreamedGetGateList(context,
+                     ::loginpb::AssignGateRequest, ::loginpb::AssignGateResponse>* streamer) {
+                       return this->StreamedAssignGate(context,
                          streamer);
                   }));
     }
-    ~WithStreamedUnaryMethod_GetGateList() override {
+    ~WithStreamedUnaryMethod_AssignGate() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status GetGateList(::grpc::ServerContext* /*context*/, const ::loginpb::GetGateListRequest* /*request*/, ::loginpb::GetGateListResponse* /*response*/) override {
+    ::grpc::Status AssignGate(::grpc::ServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedGetGateList(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::GetGateListRequest,::loginpb::GetGateListResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedAssignGate(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::AssignGateRequest,::loginpb::AssignGateResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_GetGateList<Service > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_AssignGate<Service > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_GetGateList<Service > StreamedService;
+  typedef WithStreamedUnaryMethod_AssignGate<Service > StreamedService;
 };
 
 class LoginAdmin final {

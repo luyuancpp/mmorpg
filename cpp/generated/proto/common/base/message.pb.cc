@@ -152,6 +152,91 @@ struct MyNestedMessageDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MyNestedMessageDefaultTypeInternal _MyNestedMessage_default_instance_;
 
+inline constexpr GateTokenPayload::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        gate_node_id_{0u},
+        zone_id_{0u},
+        expire_timestamp_{::int64_t{0}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GateTokenPayload::GateTokenPayload(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GateTokenPayload_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GateTokenPayloadDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GateTokenPayloadDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GateTokenPayloadDefaultTypeInternal() {}
+  union {
+    GateTokenPayload _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GateTokenPayloadDefaultTypeInternal _GateTokenPayload_default_instance_;
+
+inline constexpr ClientTokenVerifyResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        error_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        success_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ClientTokenVerifyResponse::ClientTokenVerifyResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ClientTokenVerifyResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ClientTokenVerifyResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ClientTokenVerifyResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ClientTokenVerifyResponseDefaultTypeInternal() {}
+  union {
+    ClientTokenVerifyResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClientTokenVerifyResponseDefaultTypeInternal _ClientTokenVerifyResponse_default_instance_;
+
+inline constexpr ClientTokenVerifyRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        payload_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        signature_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ClientTokenVerifyRequest::ClientTokenVerifyRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ClientTokenVerifyRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ClientTokenVerifyRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ClientTokenVerifyRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ClientTokenVerifyRequestDefaultTypeInternal() {}
+  union {
+    ClientTokenVerifyRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClientTokenVerifyRequestDefaultTypeInternal _ClientTokenVerifyRequest_default_instance_;
+
 inline constexpr ClientRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1040,6 +1125,29 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::NodeHandshakeResponse, _impl_.peer_node_),
         0,
         1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_.gate_node_id_),
+        PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_.zone_id_),
+        PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_.expire_timestamp_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::ClientTokenVerifyRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::ClientTokenVerifyRequest, _impl_.payload_),
+        PROTOBUF_FIELD_OFFSET(::ClientTokenVerifyRequest, _impl_.signature_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::ClientTokenVerifyResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::ClientTokenVerifyResponse, _impl_.success_),
+        PROTOBUF_FIELD_OFFSET(::ClientTokenVerifyResponse, _impl_.error_),
+        1,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1073,6 +1181,9 @@ static const ::_pbi::MigrationSchema
         {193, sizeof(::ClientRequest)},
         {206, sizeof(::NodeHandshakeRequest)},
         {215, sizeof(::NodeHandshakeResponse)},
+        {222, sizeof(::GateTokenPayload)},
+        {231, sizeof(::ClientTokenVerifyRequest)},
+        {238, sizeof(::ClientTokenVerifyResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
@@ -1104,6 +1215,9 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_ClientRequest_default_instance_._instance,
     &::_NodeHandshakeRequest_default_instance_._instance,
     &::_NodeHandshakeResponse_default_instance_._instance,
+    &::_GateTokenPayload_default_instance_._instance,
+    &::_ClientTokenVerifyRequest_default_instance_._instance,
+    &::_ClientTokenVerifyResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -1177,8 +1291,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto[] A
     "n\030\001 \001(\t\022\r\n\005token\030\002 \001(\t\022\034\n\tself_node\030\003 \001("
     "\0132\t.NodeInfo\"]\n\025NodeHandshakeResponse\022&\n"
     "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022\034\n"
-    "\tpeer_node\030\002 \001(\0132\t.NodeInfoB\rZ\013common/ba"
-    "seb\006proto3"
+    "\tpeer_node\030\002 \001(\0132\t.NodeInfo\"S\n\020GateToken"
+    "Payload\022\024\n\014gate_node_id\030\001 \001(\r\022\017\n\007zone_id"
+    "\030\002 \001(\r\022\030\n\020expire_timestamp\030\003 \001(\003\">\n\030Clie"
+    "ntTokenVerifyRequest\022\017\n\007payload\030\001 \001(\014\022\021\n"
+    "\tsignature\030\002 \001(\014\";\n\031ClientTokenVerifyRes"
+    "ponse\022\017\n\007success\030\001 \001(\010\022\r\n\005error\030\002 \001(\tB\rZ"
+    "\013common/baseb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto_deps[3] = {
@@ -1190,13 +1309,13 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fmessage_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto = {
     false,
     false,
-    2850,
+    3060,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto,
     "proto/common/base/message.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto_once,
     descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto_deps,
     3,
-    29,
+    32,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fbase_2fmessage_2eproto::offsets,
@@ -10367,6 +10486,908 @@ void NodeHandshakeResponse::InternalSwap(NodeHandshakeResponse* PROTOBUF_RESTRIC
 }
 
 ::google::protobuf::Metadata NodeHandshakeResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GateTokenPayload::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GateTokenPayload>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_._has_bits_);
+};
+
+GateTokenPayload::GateTokenPayload(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GateTokenPayload_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:GateTokenPayload)
+}
+GateTokenPayload::GateTokenPayload(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GateTokenPayload& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GateTokenPayload_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE GateTokenPayload::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GateTokenPayload::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, gate_node_id_),
+           0,
+           offsetof(Impl_, expire_timestamp_) -
+               offsetof(Impl_, gate_node_id_) +
+               sizeof(Impl_::expire_timestamp_));
+}
+GateTokenPayload::~GateTokenPayload() {
+  // @@protoc_insertion_point(destructor:GateTokenPayload)
+  SharedDtor(*this);
+}
+inline void GateTokenPayload::SharedDtor(MessageLite& self) {
+  GateTokenPayload& this_ = static_cast<GateTokenPayload&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GateTokenPayload::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GateTokenPayload(arena);
+}
+constexpr auto GateTokenPayload::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GateTokenPayload),
+                                            alignof(GateTokenPayload));
+}
+constexpr auto GateTokenPayload::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GateTokenPayload_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GateTokenPayload::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GateTokenPayload>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GateTokenPayload::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GateTokenPayload>(), &GateTokenPayload::ByteSizeLong,
+              &GateTokenPayload::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_._cached_size_),
+          false,
+      },
+      &GateTokenPayload::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GateTokenPayload_class_data_ =
+        GateTokenPayload::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GateTokenPayload::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GateTokenPayload_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GateTokenPayload_class_data_.tc_table);
+  return GateTokenPayload_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+GateTokenPayload::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GateTokenPayload_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::GateTokenPayload>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 gate_node_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateTokenPayload, _impl_.gate_node_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.gate_node_id_)}},
+    // uint32 zone_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateTokenPayload, _impl_.zone_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.zone_id_)}},
+    // int64 expire_timestamp = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateTokenPayload, _impl_.expire_timestamp_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.expire_timestamp_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 gate_node_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.gate_node_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 zone_id = 2;
+    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.zone_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // int64 expire_timestamp = 3;
+    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.expire_timestamp_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void GateTokenPayload::Clear() {
+// @@protoc_insertion_point(message_clear_start:GateTokenPayload)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    ::memset(&_impl_.gate_node_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.expire_timestamp_) -
+        reinterpret_cast<char*>(&_impl_.gate_node_id_)) + sizeof(_impl_.expire_timestamp_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GateTokenPayload::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GateTokenPayload& this_ = static_cast<const GateTokenPayload&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GateTokenPayload::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GateTokenPayload& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:GateTokenPayload)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 gate_node_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_gate_node_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          1, this_._internal_gate_node_id(), target);
+    }
+  }
+
+  // uint32 zone_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_zone_id(), target);
+    }
+  }
+
+  // int64 expire_timestamp = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_expire_timestamp() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
+              stream, this_._internal_expire_timestamp(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:GateTokenPayload)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GateTokenPayload::ByteSizeLong(const MessageLite& base) {
+  const GateTokenPayload& this_ = static_cast<const GateTokenPayload&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GateTokenPayload::ByteSizeLong() const {
+  const GateTokenPayload& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:GateTokenPayload)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    // uint32 gate_node_id = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_gate_node_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_gate_node_id());
+      }
+    }
+    // uint32 zone_id = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_zone_id());
+      }
+    }
+    // int64 expire_timestamp = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_expire_timestamp() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_expire_timestamp());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GateTokenPayload::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GateTokenPayload*>(&to_msg);
+  auto& from = static_cast<const GateTokenPayload&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:GateTokenPayload)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_gate_node_id() != 0) {
+        _this->_impl_.gate_node_id_ = from._impl_.gate_node_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_expire_timestamp() != 0) {
+        _this->_impl_.expire_timestamp_ = from._impl_.expire_timestamp_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void GateTokenPayload::CopyFrom(const GateTokenPayload& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:GateTokenPayload)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GateTokenPayload::InternalSwap(GateTokenPayload* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.expire_timestamp_)
+      + sizeof(GateTokenPayload::_impl_.expire_timestamp_)
+      - PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.gate_node_id_)>(
+          reinterpret_cast<char*>(&_impl_.gate_node_id_),
+          reinterpret_cast<char*>(&other->_impl_.gate_node_id_));
+}
+
+::google::protobuf::Metadata GateTokenPayload::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class ClientTokenVerifyRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<ClientTokenVerifyRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ClientTokenVerifyRequest, _impl_._has_bits_);
+};
+
+ClientTokenVerifyRequest::ClientTokenVerifyRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ClientTokenVerifyRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:ClientTokenVerifyRequest)
+}
+PROTOBUF_NDEBUG_INLINE ClientTokenVerifyRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::ClientTokenVerifyRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        payload_(arena, from.payload_),
+        signature_(arena, from.signature_) {}
+
+ClientTokenVerifyRequest::ClientTokenVerifyRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ClientTokenVerifyRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ClientTokenVerifyRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ClientTokenVerifyRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:ClientTokenVerifyRequest)
+}
+PROTOBUF_NDEBUG_INLINE ClientTokenVerifyRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        payload_(arena),
+        signature_(arena) {}
+
+inline void ClientTokenVerifyRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+ClientTokenVerifyRequest::~ClientTokenVerifyRequest() {
+  // @@protoc_insertion_point(destructor:ClientTokenVerifyRequest)
+  SharedDtor(*this);
+}
+inline void ClientTokenVerifyRequest::SharedDtor(MessageLite& self) {
+  ClientTokenVerifyRequest& this_ = static_cast<ClientTokenVerifyRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.payload_.Destroy();
+  this_._impl_.signature_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ClientTokenVerifyRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ClientTokenVerifyRequest(arena);
+}
+constexpr auto ClientTokenVerifyRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ClientTokenVerifyRequest),
+                                            alignof(ClientTokenVerifyRequest));
+}
+constexpr auto ClientTokenVerifyRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_ClientTokenVerifyRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ClientTokenVerifyRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ClientTokenVerifyRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ClientTokenVerifyRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ClientTokenVerifyRequest>(), &ClientTokenVerifyRequest::ByteSizeLong,
+              &ClientTokenVerifyRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ClientTokenVerifyRequest, _impl_._cached_size_),
+          false,
+      },
+      &ClientTokenVerifyRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ClientTokenVerifyRequest_class_data_ =
+        ClientTokenVerifyRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ClientTokenVerifyRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClientTokenVerifyRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ClientTokenVerifyRequest_class_data_.tc_table);
+  return ClientTokenVerifyRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+ClientTokenVerifyRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ClientTokenVerifyRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ClientTokenVerifyRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::ClientTokenVerifyRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bytes signature = 2;
+    {::_pbi::TcParser::FastBS1,
+     {18, 1, 0, PROTOBUF_FIELD_OFFSET(ClientTokenVerifyRequest, _impl_.signature_)}},
+    // bytes payload = 1;
+    {::_pbi::TcParser::FastBS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientTokenVerifyRequest, _impl_.payload_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // bytes payload = 1;
+    {PROTOBUF_FIELD_OFFSET(ClientTokenVerifyRequest, _impl_.payload_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // bytes signature = 2;
+    {PROTOBUF_FIELD_OFFSET(ClientTokenVerifyRequest, _impl_.signature_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void ClientTokenVerifyRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:ClientTokenVerifyRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.payload_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.signature_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ClientTokenVerifyRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ClientTokenVerifyRequest& this_ = static_cast<const ClientTokenVerifyRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ClientTokenVerifyRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ClientTokenVerifyRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:ClientTokenVerifyRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // bytes payload = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_payload().empty()) {
+      const ::std::string& _s = this_._internal_payload();
+      target = stream->WriteBytesMaybeAliased(1, _s, target);
+    }
+  }
+
+  // bytes signature = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_signature().empty()) {
+      const ::std::string& _s = this_._internal_signature();
+      target = stream->WriteBytesMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:ClientTokenVerifyRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ClientTokenVerifyRequest::ByteSizeLong(const MessageLite& base) {
+  const ClientTokenVerifyRequest& this_ = static_cast<const ClientTokenVerifyRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ClientTokenVerifyRequest::ByteSizeLong() const {
+  const ClientTokenVerifyRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:ClientTokenVerifyRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // bytes payload = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_payload().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_payload());
+      }
+    }
+    // bytes signature = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_signature().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_signature());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ClientTokenVerifyRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ClientTokenVerifyRequest*>(&to_msg);
+  auto& from = static_cast<const ClientTokenVerifyRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ClientTokenVerifyRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_payload().empty()) {
+        _this->_internal_set_payload(from._internal_payload());
+      } else {
+        if (_this->_impl_.payload_.IsDefault()) {
+          _this->_internal_set_payload("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_signature().empty()) {
+        _this->_internal_set_signature(from._internal_signature());
+      } else {
+        if (_this->_impl_.signature_.IsDefault()) {
+          _this->_internal_set_signature("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ClientTokenVerifyRequest::CopyFrom(const ClientTokenVerifyRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ClientTokenVerifyRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ClientTokenVerifyRequest::InternalSwap(ClientTokenVerifyRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.payload_, &other->_impl_.payload_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.signature_, &other->_impl_.signature_, arena);
+}
+
+::google::protobuf::Metadata ClientTokenVerifyRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class ClientTokenVerifyResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<ClientTokenVerifyResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ClientTokenVerifyResponse, _impl_._has_bits_);
+};
+
+ClientTokenVerifyResponse::ClientTokenVerifyResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ClientTokenVerifyResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:ClientTokenVerifyResponse)
+}
+PROTOBUF_NDEBUG_INLINE ClientTokenVerifyResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::ClientTokenVerifyResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        error_(arena, from.error_) {}
+
+ClientTokenVerifyResponse::ClientTokenVerifyResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ClientTokenVerifyResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ClientTokenVerifyResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ClientTokenVerifyResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.success_ = from._impl_.success_;
+
+  // @@protoc_insertion_point(copy_constructor:ClientTokenVerifyResponse)
+}
+PROTOBUF_NDEBUG_INLINE ClientTokenVerifyResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        error_(arena) {}
+
+inline void ClientTokenVerifyResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.success_ = {};
+}
+ClientTokenVerifyResponse::~ClientTokenVerifyResponse() {
+  // @@protoc_insertion_point(destructor:ClientTokenVerifyResponse)
+  SharedDtor(*this);
+}
+inline void ClientTokenVerifyResponse::SharedDtor(MessageLite& self) {
+  ClientTokenVerifyResponse& this_ = static_cast<ClientTokenVerifyResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.error_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ClientTokenVerifyResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ClientTokenVerifyResponse(arena);
+}
+constexpr auto ClientTokenVerifyResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ClientTokenVerifyResponse),
+                                            alignof(ClientTokenVerifyResponse));
+}
+constexpr auto ClientTokenVerifyResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_ClientTokenVerifyResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ClientTokenVerifyResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ClientTokenVerifyResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ClientTokenVerifyResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ClientTokenVerifyResponse>(), &ClientTokenVerifyResponse::ByteSizeLong,
+              &ClientTokenVerifyResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ClientTokenVerifyResponse, _impl_._cached_size_),
+          false,
+      },
+      &ClientTokenVerifyResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ClientTokenVerifyResponse_class_data_ =
+        ClientTokenVerifyResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ClientTokenVerifyResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ClientTokenVerifyResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ClientTokenVerifyResponse_class_data_.tc_table);
+  return ClientTokenVerifyResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 39, 2>
+ClientTokenVerifyResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ClientTokenVerifyResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ClientTokenVerifyResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::ClientTokenVerifyResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string error = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(ClientTokenVerifyResponse, _impl_.error_)}},
+    // bool success = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ClientTokenVerifyResponse, _impl_.success_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(ClientTokenVerifyResponse, _impl_.success_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // bool success = 1;
+    {PROTOBUF_FIELD_OFFSET(ClientTokenVerifyResponse, _impl_.success_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+    // string error = 2;
+    {PROTOBUF_FIELD_OFFSET(ClientTokenVerifyResponse, _impl_.error_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\31\0\5\0\0\0\0\0"
+    "ClientTokenVerifyResponse"
+    "error"
+  }},
+};
+PROTOBUF_NOINLINE void ClientTokenVerifyResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:ClientTokenVerifyResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    _impl_.error_.ClearNonDefaultToEmpty();
+  }
+  _impl_.success_ = false;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ClientTokenVerifyResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ClientTokenVerifyResponse& this_ = static_cast<const ClientTokenVerifyResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ClientTokenVerifyResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ClientTokenVerifyResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:ClientTokenVerifyResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // bool success = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_success() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          1, this_._internal_success(), target);
+    }
+  }
+
+  // string error = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_error().empty()) {
+      const ::std::string& _s = this_._internal_error();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "ClientTokenVerifyResponse.error");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:ClientTokenVerifyResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ClientTokenVerifyResponse::ByteSizeLong(const MessageLite& base) {
+  const ClientTokenVerifyResponse& this_ = static_cast<const ClientTokenVerifyResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ClientTokenVerifyResponse::ByteSizeLong() const {
+  const ClientTokenVerifyResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:ClientTokenVerifyResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // string error = 2;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_error().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_error());
+      }
+    }
+    // bool success = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_success() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ClientTokenVerifyResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ClientTokenVerifyResponse*>(&to_msg);
+  auto& from = static_cast<const ClientTokenVerifyResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ClientTokenVerifyResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_error().empty()) {
+        _this->_internal_set_error(from._internal_error());
+      } else {
+        if (_this->_impl_.error_.IsDefault()) {
+          _this->_internal_set_error("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_success() != 0) {
+        _this->_impl_.success_ = from._impl_.success_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ClientTokenVerifyResponse::CopyFrom(const ClientTokenVerifyResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ClientTokenVerifyResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ClientTokenVerifyResponse::InternalSwap(ClientTokenVerifyResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.error_, &other->_impl_.error_, arena);
+  swap(_impl_.success_, other->_impl_.success_);
+}
+
+::google::protobuf::Metadata ClientTokenVerifyResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

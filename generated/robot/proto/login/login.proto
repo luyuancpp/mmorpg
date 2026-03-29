@@ -93,25 +93,24 @@ service ClientPlayerLogin  {
 
 // ── Pre-connection RPCs (called before connecting to Gate) ──────
 
-message GateEndpoint {
-  uint32 node_id = 1;
-  string ip = 2;
-  uint32 port = 3;
-  uint32 player_count = 4; // current connection count for load balancing
+message AssignGateRequest {
+  uint32 zone_id = 1;
 }
 
-message GetGateListRequest {
-}
-
-message GetGateListResponse {
-  repeated GateEndpoint gates = 1;
+message AssignGateResponse {
+  string ip = 1;
+  uint32 port = 2;
+  bytes token_payload = 3;    // serialized GateTokenPayload — pass to ClientTokenVerifyRequest.payload
+  bytes token_signature = 4;  // HMAC-SHA256 signature — pass to ClientTokenVerifyRequest.signature
+  int64 token_deadline = 5;   // unix seconds when token expires (informational for client)
+  string error = 6;           // non-empty on failure (no gate available, etc.)
 }
 
 service LoginPreGate {
-  // Client calls this before connecting to any Gate.
-  // Returns all available Gate endpoints with current load.
-  // Client picks the least-loaded Gate and TCP-connects to it.
-  rpc GetGateList (GetGateListRequest) returns (GetGateListResponse);
+  // Login picks the least-loaded Gate for the given zone, signs a one-time
+  // HMAC token. Client TCP-connects to the assigned gate and sends the
+  // token as a ClientTokenVerifyRequest (first message after connect).
+  rpc AssignGate (AssignGateRequest) returns (AssignGateResponse);
 }
 
 // ── Admin-only RPCs (internal, not client-facing) ──────────────

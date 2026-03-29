@@ -5,6 +5,7 @@
 #include <memory>
 #include <unordered_map>
 #include <optional>
+#include <ctime>
 
 #include "gate_codec.h"
 #include "node/system/node/node.h"
@@ -22,19 +23,26 @@
 #include <session/manager/session_manager.h>
 #include "thread_context/dispatcher_manager.h"
 #include <network/node_utils.h>
+#include <node_config_manager.h>
 
-static std::optional<entt::entity> PickRandomNode(uint32_t nodeType) {
+#include "utils/hash/sha.h"
+
+static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
+{
 	std::vector<entt::entity> candidates;
-	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
+	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
 	auto view = registry.view<NodeInfo>();
-	for (auto entity : view) {
-		const auto& node = view.get<NodeInfo>(entity);
-		if (node.zone_id() == GetNodeInfo().zone_id()) {
+	for (auto entity : view)
+	{
+		const auto &node = view.get<NodeInfo>(entity);
+		if (node.zone_id() == GetNodeInfo().zone_id())
+		{
 			candidates.push_back(entity);
 		}
 	}
 
-	if (candidates.empty()) {
+	if (candidates.empty())
+	{
 		return std::nullopt;
 	}
 
@@ -46,50 +54,58 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType) {
 }
 
 static inline NodeId GetEffectiveNodeId(
-	const SessionInfo& session,
+	const SessionInfo &session,
 	uint32_t nodeType)
 {
-	if (IsZoneSingletonNodeType(nodeType)) {
-        auto node = FindZoneUniqueNodeInfo(gNode->GetNodeInfo().zone_id(), nodeType);
-        if (node == nullptr) {
-            LOG_ERROR << "Node not found for type: " << nodeType;
-            return kInvalidNodeId;
-        }
+	if (IsZoneSingletonNodeType(nodeType))
+	{
+		auto node = FindZoneUniqueNodeInfo(gNode->GetNodeInfo().zone_id(), nodeType);
+		if (node == nullptr)
+		{
+			LOG_ERROR << "Node not found for type: " << nodeType;
+			return kInvalidNodeId;
+		}
 
 		return node->node_id();
 	}
-	else {
+	else
+	{
 		return session.GetNodeId(nodeType);
 	}
 }
 
-RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
-    ProtobufDispatcher& dispatcherParam)
-    : protobufCodec(codec),
-    messageDispatcher(dispatcherParam)
+RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
+												 ProtobufDispatcher &dispatcherParam)
+	: protobufCodec(codec),
+	  messageDispatcher(dispatcherParam)
 {
-    messageDispatcher.registerMessageCallback<ClientRequest>(
-        std::bind(&RpcClientSessionHandler::DispatchClientRpcMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	messageDispatcher.registerMessageCallback<ClientRequest>(
+		std::bind(&RpcClientSessionHandler::DispatchClientRpcMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+	messageDispatcher.registerMessageCallback<ClientTokenVerifyRequest>(
+		std::bind(&RpcClientSessionHandler::DispatchTokenVerify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
 	tlsEcs.dispatcher.sink<OnNodeRemovePbEvent>().connect<&RpcClientSessionHandler::OnNodeRemovePbEventHandler>(*this);
-
 }
 
 // TODO: Handle login service shutdown mid-request; replacement node can't resume
 std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_t nodeType)
 {
 	// Zone-singleton node type: single instance per zone
-	if (IsZoneSingletonNodeType(nodeType)) {
+	if (IsZoneSingletonNodeType(nodeType))
+	{
 		auto nodeInfo = FindZoneUniqueNodeInfo(gNode->GetNodeInfo().zone_id(), nodeType);
-		if (!nodeInfo) {
+		if (!nodeInfo)
+		{
 			LOG_ERROR << "Singleton node not found for nodeType: " << nodeType;
 			return std::nullopt;
 		}
 
-		const auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
-		auto entity = entt::entity{ nodeInfo->node_id() };
+		const auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
+		auto entity = entt::entity{nodeInfo->node_id()};
 
-		if (!registry.valid(entity)) {
+		if (!registry.valid(entity))
+		{
 			LOG_ERROR << "[SingletonNode] Entity invalid. nodeType: " << nodeType;
 			return std::nullopt;
 		}
@@ -99,25 +115,29 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 
 	// Regular node: requires session binding
 	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
-	if (sessionIt == tlsSessionManager.sessions().end()) {
+	if (sessionIt == tlsSessionManager.sessions().end())
+	{
 		LOG_ERROR << "Session not found for session id: " << sessionId;
 		return std::nullopt;
 	}
 
-	auto& session = sessionIt->second;
+	auto &session = sessionIt->second;
 
-	if (!session.HasNodeId(nodeType)) {
+	if (!session.HasNodeId(nodeType))
+	{
 		auto randomNode = PickRandomNode(nodeType);
-		if (!randomNode) {
+		if (!randomNode)
+		{
 			LOG_ERROR << "[LoginNode] No available login node for session id: " << sessionId;
 			return std::nullopt;
 		}
 		session.SetNodeId(nodeType, entt::to_integral(*randomNode));
 	}
 
-	const auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
-	entt::entity nodeEntity = entt::entity{ GetEffectiveNodeId(session, nodeType) };
-	if (!registry.valid(nodeEntity)) {
+	const auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
+	entt::entity nodeEntity = entt::entity{GetEffectiveNodeId(session, nodeType)};
+	if (!registry.valid(nodeEntity))
+	{
 		LOG_ERROR << "[LoginNode] Bound login node is invalid. session id: " << sessionId;
 		session.SetNodeId(nodeType, kInvalidNodeId);
 		return std::nullopt;
@@ -126,125 +146,136 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 	return nodeEntity;
 }
 
-
-void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
+void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr &conn)
 {
-    // TODO: Handle unauthenticated messages sent before login
-    if (conn->connected()) {
-        HandleConnectionEstablished(conn);
-    }
-    else {
-        HandleConnectionDisconnection(conn);
-    }
+	// Token verification is handled by DispatchTokenVerify (ClientTokenVerifyRequest).
+	// Until verified, DispatchClientRpcMessage rejects all ClientRequest messages.
+	if (conn->connected())
+	{
+		HandleConnectionEstablished(conn);
+	}
+	else
+	{
+		HandleConnectionDisconnection(conn);
+	}
 }
 
-void RpcClientSessionHandler::SendMessageToClient(const muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) const
+void RpcClientSessionHandler::SendMessageToClient(const muduo::net::TcpConnectionPtr &conn, const ::google::protobuf::Message &message) const
 {
-    protobufCodec.send(conn, message);
+	protobufCodec.send(conn, message);
 }
 
-Guid RpcClientSessionHandler::GetSessionId(const muduo::net::TcpConnectionPtr& conn)
+Guid RpcClientSessionHandler::GetSessionId(const muduo::net::TcpConnectionPtr &conn)
 {
-    try {
-        return boost::any_cast<Guid>(conn->getContext());
-    }
-    catch (const boost::bad_any_cast& e) {
-        LOG_ERROR << "Failed to cast session ID from connection context: " << e.what();
-        return kInvalidGuid;
-    }
+	try
+	{
+		return boost::any_cast<Guid>(conn->getContext());
+	}
+	catch (const boost::bad_any_cast &e)
+	{
+		LOG_ERROR << "Failed to cast session ID from connection context: " << e.what();
+		return kInvalidGuid;
+	}
 }
 
-void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr& conn, uint32_t tipId)
+void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr &conn, uint32_t tipId)
 {
-    TipInfoMessage tipMessage;
-    tipMessage.set_id(tipId);
-    MessageContent message;
-    message.set_serialized_message(tipMessage.SerializeAsString());
-    message.set_message_id(SceneClientPlayerCommonSendTipToClientMessageId);
-    GetGateCodec().send(conn, message);
+	TipInfoMessage tipMessage;
+	tipMessage.set_id(tipId);
+	MessageContent message;
+	message.set_serialized_message(tipMessage.SerializeAsString());
+	message.set_message_id(SceneClientPlayerCommonSendTipToClientMessageId);
+	GetGateCodec().send(conn, message);
 
-    LOG_TRACE << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
+	LOG_TRACE << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
 
-bool RpcClientSessionHandler::CheckMessageSize(const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
-    constexpr size_t kMaxClientMessageSize = 1024;
-    if (request->ByteSizeLong() > kMaxClientMessageSize) {
-        LOG_ERROR << "Message size exceeds 1KB. Message ID: " << request->message_id();
-        MessageContent errResponse;
-        errResponse.set_id(request->id());
-        errResponse.set_message_id(request->message_id());
-        errResponse.mutable_error_message()->set_id(kMessageSizeExceeded);
-        conn->send(errResponse.SerializeAsString());
-        return false;
-    }
-    return true;
+bool RpcClientSessionHandler::CheckMessageSize(const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
+{
+	constexpr size_t kMaxClientMessageSize = 1024;
+	if (request->ByteSizeLong() > kMaxClientMessageSize)
+	{
+		LOG_ERROR << "Message size exceeds 1KB. Message ID: " << request->message_id();
+		MessageContent errResponse;
+		errResponse.set_id(request->id());
+		errResponse.set_message_id(request->message_id());
+		errResponse.mutable_error_message()->set_id(kMessageSizeExceeded);
+		conn->send(errResponse.SerializeAsString());
+		return false;
+	}
+	return true;
 }
 
-bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
-    if (const auto err = session.messageLimiter.CanSend(request->message_id()); err != kSuccess) {
-        LOG_ERROR << "Failed to send message. Message ID: " << request->message_id() << ", Error: " << err;
-        MessageContent errResponse;
-        errResponse.set_id(request->id());
-        errResponse.set_message_id(request->message_id());
-        errResponse.mutable_error_message()->set_id(err);
-        conn->send(errResponse.SerializeAsString());
-        return false;
-    }
-    return true;
+bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
+{
+	if (const auto err = session.messageLimiter.CanSend(request->message_id()); err != kSuccess)
+	{
+		LOG_ERROR << "Failed to send message. Message ID: " << request->message_id() << ", Error: " << err;
+		MessageContent errResponse;
+		errResponse.set_id(request->id());
+		errResponse.set_message_id(request->message_id());
+		errResponse.mutable_error_message()->set_id(err);
+		conn->send(errResponse.SerializeAsString());
+		return false;
+	}
+	return true;
 }
 
 template <typename Message, typename Request>
-void ParseMessageFromRequestBody(Message& message, const Request& request, const uint64_t sessionId) {
-    const std::string& requestBody = request->body();
-	if (requestBody.empty()) {
+void ParseMessageFromRequestBody(Message &message, const Request &request, const uint64_t sessionId)
+{
+	const std::string &requestBody = request->body();
+	if (requestBody.empty())
+	{
 		return;
 	}
 
-	if (!message.ParseFromString(requestBody)) {
-        LOG_ERROR << "Failed to parse client message body for session id: " << sessionId;
-        return;
-    }
+	if (!message.ParseFromString(requestBody))
+	{
+		LOG_ERROR << "Failed to parse client message body for session id: " << sessionId;
+		return;
+	}
 }
 
-void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr& conn)
+void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn)
 {
-    // Disconnect notification goes to Login; its session manager owns the disconnect lease.
-    // Gate no longer notifies Centre (decommissioned).
+	// Disconnect notification goes to Login; its session manager owns the disconnect lease.
+	// Gate no longer notifies Centre (decommissioned).
 
-    const auto sessionId = entt::to_integral(GetSessionId(conn));
+	const auto sessionId = entt::to_integral(GetSessionId(conn));
 
-    // Notify login node of disconnection
-    const auto& loginNode = ResolveSessionTargetNode(sessionId, eNodeType::LoginNodeService);
-    if (loginNode)
-    {
-        loginpb::LoginNodeDisconnectRequest request;
-        request.set_session_id(sessionId);
-        SessionDetails sessionDetails;
-        sessionDetails.set_session_id(sessionId);
-        sessionDetails.set_gate_node_id(gNode->GetNodeId());
-        sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
-        loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request, { kSessionBinMetaKey }, SerializeSessionDetails(sessionDetails));
-    }
+	// Notify login node of disconnection
+	const auto &loginNode = ResolveSessionTargetNode(sessionId, eNodeType::LoginNodeService);
+	if (loginNode)
+	{
+		loginpb::LoginNodeDisconnectRequest request;
+		request.set_session_id(sessionId);
+		SessionDetails sessionDetails;
+		sessionDetails.set_session_id(sessionId);
+		sessionDetails.set_gate_node_id(gNode->GetNodeId());
+		sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
+		loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request, {kSessionBinMetaKey}, SerializeSessionDetails(sessionDetails));
+	}
 
-    tlsSessionManager.sessions().erase(sessionId);
+	tlsSessionManager.sessions().erase(sessionId);
 
-    LOG_TRACE << "Disconnected session id: " << sessionId;
+	LOG_TRACE << "Disconnected session id: " << sessionId;
 }
 
 // High-water-mark: output buffer exceeded threshold — client not consuming (disconnect/cheat/slow), force close.
 static constexpr size_t kClientHighWaterMark = 2 * 1024 * 1024; // 2MB
 
-static void OnClientHighWaterMark(const muduo::net::TcpConnectionPtr& conn, size_t oldLen)
+static void OnClientHighWaterMark(const muduo::net::TcpConnectionPtr &conn, size_t oldLen)
 {
 	const auto sessionId = RpcClientSessionHandler::GetSessionId(conn);
 	LOG_WARN << "Client high water mark triggered, session_id=" << sessionId
-		<< ", buffered=" << oldLen
-		<< " bytes, threshold=" << kClientHighWaterMark
-		<< " bytes, forcing close";
+			 << ", buffered=" << oldLen
+			 << " bytes, threshold=" << kClientHighWaterMark
+			 << " bytes, forcing close";
 	conn->forceClose();
 }
 
-void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
+void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr &conn)
 {
 	auto sessionId = tlsSessionManager.session_id_gen().Generate();
 	while (tlsSessionManager.sessions().contains(sessionId))
@@ -259,50 +290,60 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 
 	SessionInfo session;
 	session.conn = conn;
+
+	// Dev mode: if no gate_token_secret configured, auto-verify all connections
+	const auto &secret = gNodeConfigManager.GetBaseDeployConfig().gate_token_secret();
+	if (secret.empty())
+	{
+		session.verified = true;
+	}
+
 	tlsSessionManager.sessions().emplace(sessionId, std::move(session));
 
 	LOG_TRACE << "New connection, assigned session id: " << sessionId;
 }
 
 // Handle messages related to the game node
-void HandleTcpNodeMessage(const SessionInfo& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
+void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr &request, Guid sessionId, const muduo::net::TcpConnectionPtr &conn)
 {
-    auto& handlerMeta = gRpcMethodRegistry[request->message_id()];
+	auto &handlerMeta = gRpcMethodRegistry[request->message_id()];
 
 	// Player sent message without being logged in — invalid node binding
-    entt::entity targetNodeEntity = entt::entity{ GetEffectiveNodeId(session, handlerMeta.targetNodeType) };
-	auto& registry = tlsNodeContextManager.GetRegistry(handlerMeta.targetNodeType);
+	entt::entity targetNodeEntity = entt::entity{GetEffectiveNodeId(session, handlerMeta.targetNodeType)};
+	auto &registry = tlsNodeContextManager.GetRegistry(handlerMeta.targetNodeType);
 	if (!registry.valid(targetNodeEntity))
 	{
 		LOG_ERROR << "[TCP Node Error] Invalid target node entity: " << static_cast<uint32_t>(targetNodeEntity)
-			<< ", message_id: " << request->message_id()
-			<< ", session_id: " << sessionId
-			<< ", node_type: " << handlerMeta.targetNodeType
-			<< ", registry: " << NodeUtils::GetRegistryName(registry);
+				  << ", message_id: " << request->message_id()
+				  << ", session_id: " << sessionId
+				  << ", node_type: " << handlerMeta.targetNodeType
+				  << ", registry: " << NodeUtils::GetRegistryName(registry);
 
 		RpcClientSessionHandler::SendTipToClient(conn, kServiceUnavailable);
 		return;
 	}
 
-    auto& tcpNode = registry.get<RpcClientPtr>(targetNodeEntity);
+	auto &tcpNode = registry.get<RpcClientPtr>(targetNodeEntity);
 	ProcessClientPlayerMessageRequest message;
-    message.mutable_message_content()->set_serialized_message(request->body());
-    message.set_session_id(sessionId);
-    message.mutable_message_content()->set_id(request->id());
-    message.mutable_message_content()->set_message_id(request->message_id());
-    tcpNode->CallRemoteMethod(SceneProcessClientPlayerMessageMessageId, message);
+	message.mutable_message_content()->set_serialized_message(request->body());
+	message.set_session_id(sessionId);
+	message.mutable_message_content()->set_id(request->id());
+	message.mutable_message_content()->set_message_id(request->message_id());
+	tcpNode->CallRemoteMethod(SceneProcessClientPlayerMessageMessageId, message);
 
-    LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
+	LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }
 
-void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn){
-	auto& rpcHandlerMeta = gRpcMethodRegistry[request->message_id()];
+void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn)
+{
+	auto &rpcHandlerMeta = gRpcMethodRegistry[request->message_id()];
 	ParseMessageFromRequestBody(*rpcHandlerMeta.requestProto, request, sessionId);
 
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(sessionId);
 	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
-	if (sessionIt == tlsSessionManager.sessions().end()) {
+	if (sessionIt == tlsSessionManager.sessions().end())
+	{
 		LOG_ERROR << "Session not found for session id: " << sessionId;
 		return;
 	}
@@ -310,7 +351,8 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 	sessionDetails.set_gate_node_id(gNode->GetNodeId());
 	sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
 
-	if (rpcHandlerMeta.sender){
+	if (rpcHandlerMeta.sender)
+	{
 		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta.targetNodeType);
 		if (!node)
 		{
@@ -319,59 +361,165 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, c
 			return;
 		}
 
-		rpcHandlerMeta.sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType), 
-			*node, 
-			*rpcHandlerMeta.requestProto, 
-			{ kSessionBinMetaKey }, 
-			SerializeSessionDetails(sessionDetails));
+		rpcHandlerMeta.sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType),
+							  *node,
+							  *rpcHandlerMeta.requestProto,
+							  {kSessionBinMetaKey},
+							  SerializeSessionDetails(sessionDetails));
 	}
 }
 
-bool RpcClientSessionHandler::ValidateClientMessage(SessionInfo& session, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn) const {
-	if (!CheckMessageSize(request, conn)) return false;
-	if (!CheckMessageLimit(session, request, conn)) return false;
+bool RpcClientSessionHandler::ValidateClientMessage(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
+{
+	if (!CheckMessageSize(request, conn))
+		return false;
+	if (!CheckMessageLimit(session, request, conn))
+		return false;
 	return true;
 }
 
-
 // Main request handler, forwards the request to the appropriate service
-void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConnectionPtr& conn,
-	const RpcClientMessagePtr& request,
-	muduo::Timestamp)
+void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConnectionPtr &conn,
+													   const RpcClientMessagePtr &request,
+													   muduo::Timestamp)
 {
 	auto sessionId = GetSessionId(conn);
 	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
-	if (sessionIt == tlsSessionManager.sessions().end()) {
+	if (sessionIt == tlsSessionManager.sessions().end())
+	{
 		LOG_ERROR << "[Invalid Session] No session found for conn session_id: " << sessionId
-			<< ", message_id: " << request->message_id();
+				  << ", message_id: " << request->message_id();
 		return;
 	}
 
-
-	if (request->message_id() >= gRpcMethodRegistry.size() || !IsClientMessageId(request->message_id())) {
+	if (request->message_id() >= gRpcMethodRegistry.size() || !IsClientMessageId(request->message_id()))
+	{
 		LOG_ERROR << "Invalid or unauthorized message ID: " << request->message_id();
 		return;
 	}
 
-	auto& session = sessionIt->second;
+	auto &session = sessionIt->second;
 
-    if (!ValidateClientMessage(session, request, conn)) return;
-
-	auto& messageInfo = gRpcMethodRegistry[request->message_id()];
-    if (messageInfo.protocol == PROTOCOL_TCP) {
-		HandleTcpNodeMessage(session, request, sessionId, conn);
-    } else if (messageInfo.protocol == PROTOCOL_GRPC) {
-    	HandleGrpcNodeMessage(sessionId, request, conn);
-    }
-}
-
-void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent& pb)
-{
-	auto& registry = tlsNodeContextManager.GetRegistry(pb.node_type());
-	for (auto& session : tlsSessionManager.sessions())
+	// Reject all game messages until the client passes token verification.
+	// If gate_token_secret is empty (dev mode), all sessions are auto-verified on connect.
+	if (!session.verified)
 	{
-		if (session.second.GetNodeId(pb.node_type()) != pb.entity()) continue;
-		session.second.SetNodeId(pb.node_type(), kInvalidNodeId);
+		LOG_WARN << "[Token] Unverified session rejected message_id: " << request->message_id()
+				 << ", session_id: " << sessionId;
+		conn->shutdown();
+		return;
+	}
+
+	if (!ValidateClientMessage(session, request, conn))
+		return;
+
+	auto &messageInfo = gRpcMethodRegistry[request->message_id()];
+	if (messageInfo.protocol == PROTOCOL_TCP)
+	{
+		HandleTcpNodeMessage(session, request, sessionId, conn);
+	}
+	else if (messageInfo.protocol == PROTOCOL_GRPC)
+	{
+		HandleGrpcNodeMessage(sessionId, request, conn);
 	}
 }
 
+void RpcClientSessionHandler::DispatchTokenVerify(const muduo::net::TcpConnectionPtr &conn,
+												  const ClientTokenVerifyRequestPtr &message,
+												  muduo::Timestamp)
+{
+	auto sessionId = GetSessionId(conn);
+	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
+	if (sessionIt == tlsSessionManager.sessions().end())
+	{
+		LOG_ERROR << "[Token] No session found for session_id: " << sessionId;
+		return;
+	}
+
+	auto &session = sessionIt->second;
+
+	auto sendReply = [&](bool success, const std::string &error)
+	{
+		ClientTokenVerifyResponse resp;
+		resp.set_success(success);
+		if (!error.empty())
+			resp.set_error(error);
+		protobufCodec.send(conn, resp);
+	};
+
+	if (session.verified)
+	{
+		sendReply(true, "");
+		return;
+	}
+
+	const auto &secret = gNodeConfigManager.GetBaseDeployConfig().gate_token_secret();
+	if (secret.empty())
+	{
+		// Dev mode: no secret configured, accept all
+		session.verified = true;
+		sendReply(true, "");
+		return;
+	}
+
+	// Recompute HMAC-SHA256(secret, payload) and compare with client-provided signature (hex)
+	const auto &payloadBytes = message->payload();
+	const auto &clientSig = message->signature();
+
+	auto expectedHex = HmacSha256Hex(secret, payloadBytes);
+	std::string clientSigStr(clientSig.begin(), clientSig.end());
+
+	if (expectedHex != clientSigStr)
+	{
+		LOG_WARN << "[Token] HMAC mismatch for session_id: " << sessionId;
+		sendReply(false, "invalid token signature");
+		conn->shutdown();
+		return;
+	}
+
+	// Deserialize payload and validate fields
+	GateTokenPayload payload;
+	if (!payload.ParseFromString(payloadBytes))
+	{
+		LOG_WARN << "[Token] Failed to parse token payload for session_id: " << sessionId;
+		sendReply(false, "malformed token payload");
+		conn->shutdown();
+		return;
+	}
+
+	// Check gate_node_id matches this gate
+	if (payload.gate_node_id() != gNode->GetNodeId())
+	{
+		LOG_WARN << "[Token] gate_node_id mismatch: token=" << payload.gate_node_id()
+				 << " self=" << gNode->GetNodeId() << " session_id: " << sessionId;
+		sendReply(false, "token not for this gate");
+		conn->shutdown();
+		return;
+	}
+
+	// Check expiry
+	auto now = static_cast<int64_t>(std::time(nullptr));
+	if (payload.expire_timestamp() <= now)
+	{
+		LOG_WARN << "[Token] Expired token for session_id: " << sessionId
+				 << " expire=" << payload.expire_timestamp() << " now=" << now;
+		sendReply(false, "token expired");
+		conn->shutdown();
+		return;
+	}
+
+	session.verified = true;
+	sendReply(true, "");
+	LOG_INFO << "[Token] Session verified, session_id: " << sessionId;
+}
+
+void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent &pb)
+{
+	auto &registry = tlsNodeContextManager.GetRegistry(pb.node_type());
+	for (auto &session : tlsSessionManager.sessions())
+	{
+		if (session.second.GetNodeId(pb.node_type()) != pb.entity())
+			continue;
+		session.second.SetNodeId(pb.node_type(), kInvalidNodeId);
+	}
+}

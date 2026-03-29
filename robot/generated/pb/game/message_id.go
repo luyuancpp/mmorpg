@@ -118,4 +118,4 @@ const DataServiceQueryTransactionLogMessageId = 114
 const SceneRollbackClientPlayerGmListSnapshotsMessageId = 115
 const SceneRollbackClientPlayerGmPreviewRollbackMessageId = 116
 const SceneRollbackClientPlayerGmQueryTransactionLogMessageId = 117
-const LoginPreGateGetGateListMessageId = 118
+const LoginPreGateAssignGateMessageId = 118

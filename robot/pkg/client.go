@@ -60,6 +60,31 @@ func (gc *GameClient) RecvOne() (*base.MessageContent, error) {
 	}
 }
 
+// VerifyGateToken sends a ClientTokenVerifyRequest as the first message and
+// waits for a ClientTokenVerifyResponse from Gate.
+func (gc *GameClient) VerifyGateToken(payload, signature []byte) error {
+	req := &base.ClientTokenVerifyRequest{
+		Payload:   payload,
+		Signature: signature,
+	}
+	gc.client.Send(req)
+
+	msg, err := gc.client.Recv()
+	if err != nil {
+		return fmt.Errorf("recv token verify response: %w", err)
+	}
+
+	switch m := msg.(type) {
+	case *base.ClientTokenVerifyResponse:
+		if !m.Success {
+			return fmt.Errorf("gate token rejected: %s", m.Error)
+		}
+		return nil
+	default:
+		return fmt.Errorf("unexpected response type for token verify: %T", msg)
+	}
+}
+
 // RecvLoop reads messages from the gate and dispatches them via onMessage.
 func (gc *GameClient) RecvLoop(onMessage func(*GameClient, *base.MessageContent)) {
 	for {

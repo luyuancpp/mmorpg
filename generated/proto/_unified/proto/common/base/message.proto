@@ -213,3 +213,24 @@ message NodeHandshakeResponse {
     TipInfoMessage error_message = 1;  // Error message (optional)
 	NodeInfo peer_node = 2;              // Peer node info (returns the remote side)
 }
+
+// ── Client-to-Gate connection token (anti-cheat handshake) ─────────────
+
+// Payload signed by Login, verified by Gate.
+message GateTokenPayload {
+  uint32 gate_node_id = 1;   // which gate this token is for
+  uint32 zone_id = 2;        // zone context
+  int64 expire_timestamp = 3; // unix seconds — token invalid after this time
+}
+
+// Client sends this as the FIRST protobuf message after TCP-connecting to Gate.
+message ClientTokenVerifyRequest {
+  bytes payload = 1;     // serialized GateTokenPayload
+  bytes signature = 2;   // HMAC-SHA256(secret, payload) — 32 raw bytes
+}
+
+// Gate responds after verifying the token.
+message ClientTokenVerifyResponse {
+  bool success = 1;
+  string error = 2;       // non-empty on failure
+}

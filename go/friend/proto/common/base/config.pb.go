@@ -164,8 +164,11 @@ type BaseDeployConfig struct {
 	Kafka                    *KafkaConfig           `protobuf:"bytes,9,opt,name=kafka,proto3" json:"kafka,omitempty"` // Kafka config
 	// Table data directory path
 	TableDataDirectory string `protobuf:"bytes,10,opt,name=table_data_directory,json=tableDataDirectory,proto3" json:"table_data_directory,omitempty"` // Config table directory path
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Shared HMAC secret for Gate connection tokens (Login signs, Gate verifies).
+	// If empty, Gate skips token verification (dev/test mode).
+	GateTokenSecret string `protobuf:"bytes,11,opt,name=gate_token_secret,json=gateTokenSecret,proto3" json:"gate_token_secret,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *BaseDeployConfig) Reset() {
@@ -264,6 +267,13 @@ func (x *BaseDeployConfig) GetKafka() *KafkaConfig {
 func (x *BaseDeployConfig) GetTableDataDirectory() string {
 	if x != nil {
 		return x.TableDataDirectory
+	}
+	return ""
+}
+
+func (x *BaseDeployConfig) GetGateTokenSecret() string {
+	if x != nil {
+		return x.GateTokenSecret
 	}
 	return ""
 }
@@ -411,7 +421,7 @@ const file_proto_common_base_config_proto_rawDesc = "" +
 	"\x06topics\x18\x02 \x03(\tR\x06topics\x12\x19\n" +
 	"\bgroup_id\x18\x03 \x01(\tR\agroupId\x12,\n" +
 	"\x12enable_auto_commit\x18\x04 \x01(\bR\x10enableAutoCommit\x12*\n" +
-	"\x11auto_offset_reset\x18\x05 \x01(\tR\x0fautoOffsetReset\"\xcf\x03\n" +
+	"\x11auto_offset_reset\x18\x05 \x01(\tR\x0fautoOffsetReset\"\xfb\x03\n" +
 	"\x10BaseDeployConfig\x12\x1d\n" +
 	"\n" +
 	"etcd_hosts\x18\x01 \x03(\tR\tetcdHosts\x12\x1b\n" +
@@ -424,7 +434,8 @@ const file_proto_common_base_config_proto_rawDesc = "" +
 	"\x15health_check_interval\x18\b \x01(\rR\x13healthCheckInterval\x12\"\n" +
 	"\x05kafka\x18\t \x01(\v2\f.KafkaConfigR\x05kafka\x120\n" +
 	"\x14table_data_directory\x18\n" +
-	" \x01(\tR\x12tableDataDirectory\"\xf0\x01\n" +
+	" \x01(\tR\x12tableDataDirectory\x12*\n" +
+	"\x11gate_token_secret\x18\v \x01(\tR\x0fgateTokenSecret\"\xf0\x01\n" +
 	"\n" +
 	"GameConfig\x12&\n" +
 	"\x0fscene_node_type\x18\x01 \x01(\rR\rsceneNodeType\x12\x17\n" +
