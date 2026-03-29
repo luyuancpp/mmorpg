@@ -306,15 +306,10 @@ func DeletePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *Dele
 	}
 
 	if len(allKeys) > 0 {
-		logx.Infof("[DeletePlayerData] player %d: deleting %d Redis keys: %v", req.PlayerID, len(allKeys), allKeys)
-		err = del(ctx, client, allKeys...)
-		if err != nil {
-			logx.Errorf("[DeletePlayerData] player %d: failed to delete Redis keys: %v", req.PlayerID, err)
+		if err = del(ctx, client, allKeys...); err != nil {
+			logx.Errorf("[DeletePlayerData] player %d: failed to delete %d Redis keys: %v", req.PlayerID, len(allKeys), err)
 			return &DeletePlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
 		}
-		logx.Infof("[DeletePlayerData] player %d: deleted %d Redis keys", req.PlayerID, len(allKeys))
-	} else {
-		logx.Infof("[DeletePlayerData] player %d: no Redis keys found to delete", req.PlayerID)
 	}
 
 	deleted := uint32(len(allKeys))
@@ -325,11 +320,10 @@ func DeletePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *Dele
 			logx.Errorf("[DeletePlayerData] player %d: failed to delete zone mapping: %v", req.PlayerID, err)
 		} else {
 			deleted++
-			logx.Infof("[DeletePlayerData] player %d: deleted zone mapping (player:zone:%d)", req.PlayerID, req.PlayerID)
 		}
 	}
 
-	logx.Infof("[DeletePlayerData] player %d: total keys deleted=%d (include_zone_mapping=%v)", req.PlayerID, deleted, req.DeleteZoneMapping)
+	logx.Infof("[DeletePlayerData] player %d: deleted=%d zone=%v", req.PlayerID, deleted, req.DeleteZoneMapping)
 	return &DeletePlayerDataResp{KeysDeleted: deleted}, nil
 }
 

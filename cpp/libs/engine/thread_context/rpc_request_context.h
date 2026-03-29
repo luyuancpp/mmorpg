@@ -29,9 +29,6 @@ struct RpcRequestContext
     // --- Current TCP connection (set by RPC dispatch layer) ---
     std::shared_ptr<muduo::net::TcpConnection> conn;
 
-    // Call at the top of each RPC dispatch to clear stale state.
-    void Reset();
-
 private:
     RoutingNodeInfo routeData_;
     std::string routeMsgBody_;
