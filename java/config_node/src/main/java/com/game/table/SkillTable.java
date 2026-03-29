@@ -34,7 +34,7 @@ private static final long serialVersionUID = 0L;
     damage_ = "";
     requiredItem_ = java.util.Collections.emptyList();
     requiredResource_ = java.util.Collections.emptyList();
-    requestResource_ = java.util.Collections.emptyList();
+    costResource_ = java.util.Collections.emptyList();
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -437,45 +437,45 @@ private static final long serialVersionUID = 0L;
     return requiredResource_.get(index);
   }
 
-  public static final int REQUEST_RESOURCE_FIELD_NUMBER = 23;
+  public static final int COST_RESOURCE_FIELD_NUMBER = 23;
   @SuppressWarnings("serial")
-  private java.util.List<com.game.table.Skillrequest_resource> requestResource_;
+  private java.util.List<com.game.table.Skillcost_resource> costResource_;
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
   @java.lang.Override
-  public java.util.List<com.game.table.Skillrequest_resource> getRequestResourceList() {
-    return requestResource_;
+  public java.util.List<com.game.table.Skillcost_resource> getCostResourceList() {
+    return costResource_;
   }
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
   @java.lang.Override
-  public java.util.List<? extends com.game.table.Skillrequest_resourceOrBuilder> 
-      getRequestResourceOrBuilderList() {
-    return requestResource_;
+  public java.util.List<? extends com.game.table.Skillcost_resourceOrBuilder> 
+      getCostResourceOrBuilderList() {
+    return costResource_;
   }
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
   @java.lang.Override
-  public int getRequestResourceCount() {
-    return requestResource_.size();
+  public int getCostResourceCount() {
+    return costResource_.size();
   }
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
   @java.lang.Override
-  public com.game.table.Skillrequest_resource getRequestResource(int index) {
-    return requestResource_.get(index);
+  public com.game.table.Skillcost_resource getCostResource(int index) {
+    return costResource_.get(index);
   }
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
   @java.lang.Override
-  public com.game.table.Skillrequest_resourceOrBuilder getRequestResourceOrBuilder(
+  public com.game.table.Skillcost_resourceOrBuilder getCostResourceOrBuilder(
       int index) {
-    return requestResource_.get(index);
+    return costResource_.get(index);
   }
 
   private byte memoizedIsInitialized = -1;
@@ -571,8 +571,8 @@ private static final long serialVersionUID = 0L;
     for (int i = 0; i < requiredResource_.size(); i++) {
       output.writeMessage(22, requiredResource_.get(i));
     }
-    for (int i = 0; i < requestResource_.size(); i++) {
-      output.writeMessage(23, requestResource_.get(i));
+    for (int i = 0; i < costResource_.size(); i++) {
+      output.writeMessage(23, costResource_.get(i));
     }
     getUnknownFields().writeTo(output);
   }
@@ -700,9 +700,9 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeMessageSize(22, requiredResource_.get(i));
     }
-    for (int i = 0; i < requestResource_.size(); i++) {
+    for (int i = 0; i < costResource_.size(); i++) {
       size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(23, requestResource_.get(i));
+        .computeMessageSize(23, costResource_.get(i));
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -768,8 +768,8 @@ private static final long serialVersionUID = 0L;
         .equals(other.getRequiredItemList())) return false;
     if (!getRequiredResourceList()
         .equals(other.getRequiredResourceList())) return false;
-    if (!getRequestResourceList()
-        .equals(other.getRequestResourceList())) return false;
+    if (!getCostResourceList()
+        .equals(other.getCostResourceList())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -840,9 +840,9 @@ private static final long serialVersionUID = 0L;
       hash = (37 * hash) + REQUIRED_RESOURCE_FIELD_NUMBER;
       hash = (53 * hash) + getRequiredResourceList().hashCode();
     }
-    if (getRequestResourceCount() > 0) {
-      hash = (37 * hash) + REQUEST_RESOURCE_FIELD_NUMBER;
-      hash = (53 * hash) + getRequestResourceList().hashCode();
+    if (getCostResourceCount() > 0) {
+      hash = (37 * hash) + COST_RESOURCE_FIELD_NUMBER;
+      hash = (53 * hash) + getCostResourceList().hashCode();
     }
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
@@ -1009,11 +1009,11 @@ private static final long serialVersionUID = 0L;
         requiredResourceBuilder_.clear();
       }
       bitField0_ = (bitField0_ & ~0x00200000);
-      if (requestResourceBuilder_ == null) {
-        requestResource_ = java.util.Collections.emptyList();
+      if (costResourceBuilder_ == null) {
+        costResource_ = java.util.Collections.emptyList();
       } else {
-        requestResource_ = null;
-        requestResourceBuilder_.clear();
+        costResource_ = null;
+        costResourceBuilder_.clear();
       }
       bitField0_ = (bitField0_ & ~0x00400000);
       return this;
@@ -1067,14 +1067,14 @@ private static final long serialVersionUID = 0L;
       } else {
         result.requiredResource_ = requiredResourceBuilder_.build();
       }
-      if (requestResourceBuilder_ == null) {
+      if (costResourceBuilder_ == null) {
         if (((bitField0_ & 0x00400000) != 0)) {
-          requestResource_ = java.util.Collections.unmodifiableList(requestResource_);
+          costResource_ = java.util.Collections.unmodifiableList(costResource_);
           bitField0_ = (bitField0_ & ~0x00400000);
         }
-        result.requestResource_ = requestResource_;
+        result.costResource_ = costResource_;
       } else {
-        result.requestResource_ = requestResourceBuilder_.build();
+        result.costResource_ = costResourceBuilder_.build();
       }
     }
 
@@ -1295,29 +1295,29 @@ private static final long serialVersionUID = 0L;
           }
         }
       }
-      if (requestResourceBuilder_ == null) {
-        if (!other.requestResource_.isEmpty()) {
-          if (requestResource_.isEmpty()) {
-            requestResource_ = other.requestResource_;
+      if (costResourceBuilder_ == null) {
+        if (!other.costResource_.isEmpty()) {
+          if (costResource_.isEmpty()) {
+            costResource_ = other.costResource_;
             bitField0_ = (bitField0_ & ~0x00400000);
           } else {
-            ensureRequestResourceIsMutable();
-            requestResource_.addAll(other.requestResource_);
+            ensureCostResourceIsMutable();
+            costResource_.addAll(other.costResource_);
           }
           onChanged();
         }
       } else {
-        if (!other.requestResource_.isEmpty()) {
-          if (requestResourceBuilder_.isEmpty()) {
-            requestResourceBuilder_.dispose();
-            requestResourceBuilder_ = null;
-            requestResource_ = other.requestResource_;
+        if (!other.costResource_.isEmpty()) {
+          if (costResourceBuilder_.isEmpty()) {
+            costResourceBuilder_.dispose();
+            costResourceBuilder_ = null;
+            costResource_ = other.costResource_;
             bitField0_ = (bitField0_ & ~0x00400000);
-            requestResourceBuilder_ = 
+            costResourceBuilder_ = 
               com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                 internalGetRequestResourceFieldBuilder() : null;
+                 internalGetCostResourceFieldBuilder() : null;
           } else {
-            requestResourceBuilder_.addAllMessages(other.requestResource_);
+            costResourceBuilder_.addAllMessages(other.costResource_);
           }
         }
       }
@@ -1507,15 +1507,15 @@ private static final long serialVersionUID = 0L;
               break;
             } // case 178
             case 186: {
-              com.game.table.Skillrequest_resource m =
+              com.game.table.Skillcost_resource m =
                   input.readMessage(
-                      com.game.table.Skillrequest_resource.parser(),
+                      com.game.table.Skillcost_resource.parser(),
                       extensionRegistry);
-              if (requestResourceBuilder_ == null) {
-                ensureRequestResourceIsMutable();
-                requestResource_.add(m);
+              if (costResourceBuilder_ == null) {
+                ensureCostResourceIsMutable();
+                costResource_.add(m);
               } else {
-                requestResourceBuilder_.addMessage(m);
+                costResourceBuilder_.addMessage(m);
               }
               break;
             } // case 186
@@ -2852,244 +2852,244 @@ private static final long serialVersionUID = 0L;
       return requiredResourceBuilder_;
     }
 
-    private java.util.List<com.game.table.Skillrequest_resource> requestResource_ =
+    private java.util.List<com.game.table.Skillcost_resource> costResource_ =
       java.util.Collections.emptyList();
-    private void ensureRequestResourceIsMutable() {
+    private void ensureCostResourceIsMutable() {
       if (!((bitField0_ & 0x00400000) != 0)) {
-        requestResource_ = new java.util.ArrayList<com.game.table.Skillrequest_resource>(requestResource_);
+        costResource_ = new java.util.ArrayList<com.game.table.Skillcost_resource>(costResource_);
         bitField0_ |= 0x00400000;
        }
     }
 
     private com.google.protobuf.RepeatedFieldBuilder<
-        com.game.table.Skillrequest_resource, com.game.table.Skillrequest_resource.Builder, com.game.table.Skillrequest_resourceOrBuilder> requestResourceBuilder_;
+        com.game.table.Skillcost_resource, com.game.table.Skillcost_resource.Builder, com.game.table.Skillcost_resourceOrBuilder> costResourceBuilder_;
 
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public java.util.List<com.game.table.Skillrequest_resource> getRequestResourceList() {
-      if (requestResourceBuilder_ == null) {
-        return java.util.Collections.unmodifiableList(requestResource_);
+    public java.util.List<com.game.table.Skillcost_resource> getCostResourceList() {
+      if (costResourceBuilder_ == null) {
+        return java.util.Collections.unmodifiableList(costResource_);
       } else {
-        return requestResourceBuilder_.getMessageList();
+        return costResourceBuilder_.getMessageList();
       }
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public int getRequestResourceCount() {
-      if (requestResourceBuilder_ == null) {
-        return requestResource_.size();
+    public int getCostResourceCount() {
+      if (costResourceBuilder_ == null) {
+        return costResource_.size();
       } else {
-        return requestResourceBuilder_.getCount();
+        return costResourceBuilder_.getCount();
       }
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public com.game.table.Skillrequest_resource getRequestResource(int index) {
-      if (requestResourceBuilder_ == null) {
-        return requestResource_.get(index);
+    public com.game.table.Skillcost_resource getCostResource(int index) {
+      if (costResourceBuilder_ == null) {
+        return costResource_.get(index);
       } else {
-        return requestResourceBuilder_.getMessage(index);
+        return costResourceBuilder_.getMessage(index);
       }
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder setRequestResource(
-        int index, com.game.table.Skillrequest_resource value) {
-      if (requestResourceBuilder_ == null) {
+    public Builder setCostResource(
+        int index, com.game.table.Skillcost_resource value) {
+      if (costResourceBuilder_ == null) {
         if (value == null) {
           throw new NullPointerException();
         }
-        ensureRequestResourceIsMutable();
-        requestResource_.set(index, value);
+        ensureCostResourceIsMutable();
+        costResource_.set(index, value);
         onChanged();
       } else {
-        requestResourceBuilder_.setMessage(index, value);
+        costResourceBuilder_.setMessage(index, value);
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder setRequestResource(
-        int index, com.game.table.Skillrequest_resource.Builder builderForValue) {
-      if (requestResourceBuilder_ == null) {
-        ensureRequestResourceIsMutable();
-        requestResource_.set(index, builderForValue.build());
+    public Builder setCostResource(
+        int index, com.game.table.Skillcost_resource.Builder builderForValue) {
+      if (costResourceBuilder_ == null) {
+        ensureCostResourceIsMutable();
+        costResource_.set(index, builderForValue.build());
         onChanged();
       } else {
-        requestResourceBuilder_.setMessage(index, builderForValue.build());
+        costResourceBuilder_.setMessage(index, builderForValue.build());
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder addRequestResource(com.game.table.Skillrequest_resource value) {
-      if (requestResourceBuilder_ == null) {
+    public Builder addCostResource(com.game.table.Skillcost_resource value) {
+      if (costResourceBuilder_ == null) {
         if (value == null) {
           throw new NullPointerException();
         }
-        ensureRequestResourceIsMutable();
-        requestResource_.add(value);
+        ensureCostResourceIsMutable();
+        costResource_.add(value);
         onChanged();
       } else {
-        requestResourceBuilder_.addMessage(value);
+        costResourceBuilder_.addMessage(value);
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder addRequestResource(
-        int index, com.game.table.Skillrequest_resource value) {
-      if (requestResourceBuilder_ == null) {
+    public Builder addCostResource(
+        int index, com.game.table.Skillcost_resource value) {
+      if (costResourceBuilder_ == null) {
         if (value == null) {
           throw new NullPointerException();
         }
-        ensureRequestResourceIsMutable();
-        requestResource_.add(index, value);
+        ensureCostResourceIsMutable();
+        costResource_.add(index, value);
         onChanged();
       } else {
-        requestResourceBuilder_.addMessage(index, value);
+        costResourceBuilder_.addMessage(index, value);
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder addRequestResource(
-        com.game.table.Skillrequest_resource.Builder builderForValue) {
-      if (requestResourceBuilder_ == null) {
-        ensureRequestResourceIsMutable();
-        requestResource_.add(builderForValue.build());
+    public Builder addCostResource(
+        com.game.table.Skillcost_resource.Builder builderForValue) {
+      if (costResourceBuilder_ == null) {
+        ensureCostResourceIsMutable();
+        costResource_.add(builderForValue.build());
         onChanged();
       } else {
-        requestResourceBuilder_.addMessage(builderForValue.build());
+        costResourceBuilder_.addMessage(builderForValue.build());
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder addRequestResource(
-        int index, com.game.table.Skillrequest_resource.Builder builderForValue) {
-      if (requestResourceBuilder_ == null) {
-        ensureRequestResourceIsMutable();
-        requestResource_.add(index, builderForValue.build());
+    public Builder addCostResource(
+        int index, com.game.table.Skillcost_resource.Builder builderForValue) {
+      if (costResourceBuilder_ == null) {
+        ensureCostResourceIsMutable();
+        costResource_.add(index, builderForValue.build());
         onChanged();
       } else {
-        requestResourceBuilder_.addMessage(index, builderForValue.build());
+        costResourceBuilder_.addMessage(index, builderForValue.build());
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder addAllRequestResource(
-        java.lang.Iterable<? extends com.game.table.Skillrequest_resource> values) {
-      if (requestResourceBuilder_ == null) {
-        ensureRequestResourceIsMutable();
+    public Builder addAllCostResource(
+        java.lang.Iterable<? extends com.game.table.Skillcost_resource> values) {
+      if (costResourceBuilder_ == null) {
+        ensureCostResourceIsMutable();
         com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, requestResource_);
+            values, costResource_);
         onChanged();
       } else {
-        requestResourceBuilder_.addAllMessages(values);
+        costResourceBuilder_.addAllMessages(values);
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder clearRequestResource() {
-      if (requestResourceBuilder_ == null) {
-        requestResource_ = java.util.Collections.emptyList();
+    public Builder clearCostResource() {
+      if (costResourceBuilder_ == null) {
+        costResource_ = java.util.Collections.emptyList();
         bitField0_ = (bitField0_ & ~0x00400000);
         onChanged();
       } else {
-        requestResourceBuilder_.clear();
+        costResourceBuilder_.clear();
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public Builder removeRequestResource(int index) {
-      if (requestResourceBuilder_ == null) {
-        ensureRequestResourceIsMutable();
-        requestResource_.remove(index);
+    public Builder removeCostResource(int index) {
+      if (costResourceBuilder_ == null) {
+        ensureCostResourceIsMutable();
+        costResource_.remove(index);
         onChanged();
       } else {
-        requestResourceBuilder_.remove(index);
+        costResourceBuilder_.remove(index);
       }
       return this;
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public com.game.table.Skillrequest_resource.Builder getRequestResourceBuilder(
+    public com.game.table.Skillcost_resource.Builder getCostResourceBuilder(
         int index) {
-      return internalGetRequestResourceFieldBuilder().getBuilder(index);
+      return internalGetCostResourceFieldBuilder().getBuilder(index);
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public com.game.table.Skillrequest_resourceOrBuilder getRequestResourceOrBuilder(
+    public com.game.table.Skillcost_resourceOrBuilder getCostResourceOrBuilder(
         int index) {
-      if (requestResourceBuilder_ == null) {
-        return requestResource_.get(index);  } else {
-        return requestResourceBuilder_.getMessageOrBuilder(index);
+      if (costResourceBuilder_ == null) {
+        return costResource_.get(index);  } else {
+        return costResourceBuilder_.getMessageOrBuilder(index);
       }
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public java.util.List<? extends com.game.table.Skillrequest_resourceOrBuilder> 
-         getRequestResourceOrBuilderList() {
-      if (requestResourceBuilder_ != null) {
-        return requestResourceBuilder_.getMessageOrBuilderList();
+    public java.util.List<? extends com.game.table.Skillcost_resourceOrBuilder> 
+         getCostResourceOrBuilderList() {
+      if (costResourceBuilder_ != null) {
+        return costResourceBuilder_.getMessageOrBuilderList();
       } else {
-        return java.util.Collections.unmodifiableList(requestResource_);
+        return java.util.Collections.unmodifiableList(costResource_);
       }
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public com.game.table.Skillrequest_resource.Builder addRequestResourceBuilder() {
-      return internalGetRequestResourceFieldBuilder().addBuilder(
-          com.game.table.Skillrequest_resource.getDefaultInstance());
+    public com.game.table.Skillcost_resource.Builder addCostResourceBuilder() {
+      return internalGetCostResourceFieldBuilder().addBuilder(
+          com.game.table.Skillcost_resource.getDefaultInstance());
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public com.game.table.Skillrequest_resource.Builder addRequestResourceBuilder(
+    public com.game.table.Skillcost_resource.Builder addCostResourceBuilder(
         int index) {
-      return internalGetRequestResourceFieldBuilder().addBuilder(
-          index, com.game.table.Skillrequest_resource.getDefaultInstance());
+      return internalGetCostResourceFieldBuilder().addBuilder(
+          index, com.game.table.Skillcost_resource.getDefaultInstance());
     }
     /**
-     * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+     * <code>repeated .Skillcost_resource cost_resource = 23;</code>
      */
-    public java.util.List<com.game.table.Skillrequest_resource.Builder> 
-         getRequestResourceBuilderList() {
-      return internalGetRequestResourceFieldBuilder().getBuilderList();
+    public java.util.List<com.game.table.Skillcost_resource.Builder> 
+         getCostResourceBuilderList() {
+      return internalGetCostResourceFieldBuilder().getBuilderList();
     }
     private com.google.protobuf.RepeatedFieldBuilder<
-        com.game.table.Skillrequest_resource, com.game.table.Skillrequest_resource.Builder, com.game.table.Skillrequest_resourceOrBuilder> 
-        internalGetRequestResourceFieldBuilder() {
-      if (requestResourceBuilder_ == null) {
-        requestResourceBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-            com.game.table.Skillrequest_resource, com.game.table.Skillrequest_resource.Builder, com.game.table.Skillrequest_resourceOrBuilder>(
-                requestResource_,
+        com.game.table.Skillcost_resource, com.game.table.Skillcost_resource.Builder, com.game.table.Skillcost_resourceOrBuilder> 
+        internalGetCostResourceFieldBuilder() {
+      if (costResourceBuilder_ == null) {
+        costResourceBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+            com.game.table.Skillcost_resource, com.game.table.Skillcost_resource.Builder, com.game.table.Skillcost_resourceOrBuilder>(
+                costResource_,
                 ((bitField0_ & 0x00400000) != 0),
                 getParentForChildren(),
                 isClean());
-        requestResource_ = null;
+        costResource_ = null;
       }
-      return requestResourceBuilder_;
+      return costResourceBuilder_;
     }
 
     // @@protoc_insertion_point(builder_scope:SkillTable)

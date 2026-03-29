@@ -79,4 +79,21 @@ public interface MissionTableOrBuilder extends
    * @return The nextMissionId at the given index.
    */
   int getNextMissionId(int index);
+
+  /**
+   * <code>repeated uint32 target_count = 9;</code>
+   * @return A list containing the targetCount.
+   */
+  java.util.List<java.lang.Integer> getTargetCountList();
+  /**
+   * <code>repeated uint32 target_count = 9;</code>
+   * @return The count of targetCount.
+   */
+  int getTargetCountCount();
+  /**
+   * <code>repeated uint32 target_count = 9;</code>
+   * @param index The index of the element to return.
+   * @return The targetCount at the given index.
+   */
+  int getTargetCount(int index);
 }

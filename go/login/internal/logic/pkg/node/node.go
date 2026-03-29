@@ -14,6 +14,11 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
+// NewEtcdClient creates a new etcd client using the shared config.
+func NewEtcdClient() (*clientv3.Client, error) {
+	return etcd.NewClient()
+}
+
 type Node struct {
 	Info         *login_proto.NodeInfo
 	reg          *etcd.NodeRegistry

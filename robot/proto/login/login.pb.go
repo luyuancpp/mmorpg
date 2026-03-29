@@ -640,6 +640,154 @@ func (*LoginEmptyResponse) Descriptor() ([]byte, []int) {
 	return file_proto_login_login_proto_rawDescGZIP(), []int{11}
 }
 
+type GateEndpoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        uint32                 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Ip            string                 `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`
+	Port          uint32                 `protobuf:"varint,3,opt,name=port,proto3" json:"port,omitempty"`
+	PlayerCount   uint32                 `protobuf:"varint,4,opt,name=player_count,json=playerCount,proto3" json:"player_count,omitempty"` // current connection count for load balancing
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GateEndpoint) Reset() {
+	*x = GateEndpoint{}
+	mi := &file_proto_login_login_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GateEndpoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GateEndpoint) ProtoMessage() {}
+
+func (x *GateEndpoint) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_login_login_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GateEndpoint.ProtoReflect.Descriptor instead.
+func (*GateEndpoint) Descriptor() ([]byte, []int) {
+	return file_proto_login_login_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GateEndpoint) GetNodeId() uint32 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *GateEndpoint) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+func (x *GateEndpoint) GetPort() uint32 {
+	if x != nil {
+		return x.Port
+	}
+	return 0
+}
+
+func (x *GateEndpoint) GetPlayerCount() uint32 {
+	if x != nil {
+		return x.PlayerCount
+	}
+	return 0
+}
+
+type GetGateListRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGateListRequest) Reset() {
+	*x = GetGateListRequest{}
+	mi := &file_proto_login_login_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGateListRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGateListRequest) ProtoMessage() {}
+
+func (x *GetGateListRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_login_login_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGateListRequest.ProtoReflect.Descriptor instead.
+func (*GetGateListRequest) Descriptor() ([]byte, []int) {
+	return file_proto_login_login_proto_rawDescGZIP(), []int{13}
+}
+
+type GetGateListResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Gates         []*GateEndpoint        `protobuf:"bytes,1,rep,name=gates,proto3" json:"gates,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGateListResponse) Reset() {
+	*x = GetGateListResponse{}
+	mi := &file_proto_login_login_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGateListResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGateListResponse) ProtoMessage() {}
+
+func (x *GetGateListResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_login_login_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGateListResponse.ProtoReflect.Descriptor instead.
+func (*GetGateListResponse) Descriptor() ([]byte, []int) {
+	return file_proto_login_login_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetGateListResponse) GetGates() []*GateEndpoint {
+	if x != nil {
+		return x.Gates
+	}
+	return nil
+}
+
 type RemovePlayersFromAccountsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerIds     []uint64               `protobuf:"varint,1,rep,packed,name=player_ids,json=playerIds,proto3" json:"player_ids,omitempty"` // orphan player IDs to remove from their accounts
@@ -649,7 +797,7 @@ type RemovePlayersFromAccountsRequest struct {
 
 func (x *RemovePlayersFromAccountsRequest) Reset() {
 	*x = RemovePlayersFromAccountsRequest{}
-	mi := &file_proto_login_login_proto_msgTypes[12]
+	mi := &file_proto_login_login_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -661,7 +809,7 @@ func (x *RemovePlayersFromAccountsRequest) String() string {
 func (*RemovePlayersFromAccountsRequest) ProtoMessage() {}
 
 func (x *RemovePlayersFromAccountsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_login_login_proto_msgTypes[12]
+	mi := &file_proto_login_login_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -674,7 +822,7 @@ func (x *RemovePlayersFromAccountsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemovePlayersFromAccountsRequest.ProtoReflect.Descriptor instead.
 func (*RemovePlayersFromAccountsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_login_login_proto_rawDescGZIP(), []int{12}
+	return file_proto_login_login_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *RemovePlayersFromAccountsRequest) GetPlayerIds() []uint64 {
@@ -695,7 +843,7 @@ type RemovePlayersFromAccountsResponse struct {
 
 func (x *RemovePlayersFromAccountsResponse) Reset() {
 	*x = RemovePlayersFromAccountsResponse{}
-	mi := &file_proto_login_login_proto_msgTypes[13]
+	mi := &file_proto_login_login_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -707,7 +855,7 @@ func (x *RemovePlayersFromAccountsResponse) String() string {
 func (*RemovePlayersFromAccountsResponse) ProtoMessage() {}
 
 func (x *RemovePlayersFromAccountsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_login_login_proto_msgTypes[13]
+	mi := &file_proto_login_login_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -720,7 +868,7 @@ func (x *RemovePlayersFromAccountsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use RemovePlayersFromAccountsResponse.ProtoReflect.Descriptor instead.
 func (*RemovePlayersFromAccountsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_login_login_proto_rawDescGZIP(), []int{13}
+	return file_proto_login_login_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RemovePlayersFromAccountsResponse) GetRemovedCount() uint32 {
@@ -748,7 +896,7 @@ var File_proto_login_login_proto protoreflect.FileDescriptor
 
 const file_proto_login_login_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/login/login.proto\x12\aloginpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a%proto/common/base/user_accounts.proto\"\xcb\x01\n" +
+	"\x17proto/login/login.proto\x12\aloginpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a%proto/common/base/user_accounts.proto\x1a\x1eproto/common/base/common.proto\"\xcb\x01\n" +
 	"\x10LoginSessionInfo\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x17\n" +
 	"\arole_id\x18\x02 \x01(\x04R\x06roleId\x12\x1d\n" +
@@ -789,7 +937,15 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"\x1aLoginNodeDisconnectRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\"\x14\n" +
-	"\x12LoginEmptyResponse\"A\n" +
+	"\x12LoginEmptyResponse\"n\n" +
+	"\fGateEndpoint\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12\x0e\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\x12\x12\n" +
+	"\x04port\x18\x03 \x01(\rR\x04port\x12!\n" +
+	"\fplayer_count\x18\x04 \x01(\rR\vplayerCount\"\x14\n" +
+	"\x12GetGateListRequest\"B\n" +
+	"\x13GetGateListResponse\x12+\n" +
+	"\x05gates\x18\x01 \x03(\v2\x15.loginpb.GateEndpointR\x05gates\"A\n" +
 	" RemovePlayersFromAccountsRequest\x12\x1d\n" +
 	"\n" +
 	"player_ids\x18\x01 \x03(\x04R\tplayerIds\"\x93\x01\n" +
@@ -803,7 +959,9 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"\tEnterGame\x12\x19.loginpb.EnterGameRequest\x1a\x1a.loginpb.EnterGameResponse\x12C\n" +
 	"\tLeaveGame\x12\x19.loginpb.LeaveGameRequest\x1a\x1b.loginpb.LoginEmptyResponse\x12N\n" +
 	"\n" +
-	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponse\x1a\x05\x88\xa8\xc3\x01\x012\x80\x01\n" +
+	"Disconnect\x12#.loginpb.LoginNodeDisconnectRequest\x1a\x1b.loginpb.LoginEmptyResponse\x1a\x05\x88\xa8\xc3\x01\x012X\n" +
+	"\fLoginPreGate\x12H\n" +
+	"\vGetGateList\x12\x1b.loginpb.GetGateListRequest\x1a\x1c.loginpb.GetGateListResponse2\x80\x01\n" +
 	"\n" +
 	"LoginAdmin\x12r\n" +
 	"\x19RemovePlayersFromAccounts\x12).loginpb.RemovePlayersFromAccountsRequest\x1a*.loginpb.RemovePlayersFromAccountsResponseB\x13Z\x11robot/proto/loginb\x06proto3"
@@ -820,7 +978,7 @@ func file_proto_login_login_proto_rawDescGZIP() []byte {
 	return file_proto_login_login_proto_rawDescData
 }
 
-var file_proto_login_login_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_proto_login_login_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_proto_login_login_proto_goTypes = []any{
 	(*LoginSessionInfo)(nil),                  // 0: loginpb.LoginSessionInfo
 	(*AccountSimplePlayerWrapper)(nil),        // 1: loginpb.AccountSimplePlayerWrapper
@@ -834,37 +992,43 @@ var file_proto_login_login_proto_goTypes = []any{
 	(*LeaveGameRequest)(nil),                  // 9: loginpb.LeaveGameRequest
 	(*LoginNodeDisconnectRequest)(nil),        // 10: loginpb.LoginNodeDisconnectRequest
 	(*LoginEmptyResponse)(nil),                // 11: loginpb.LoginEmptyResponse
-	(*RemovePlayersFromAccountsRequest)(nil),  // 12: loginpb.RemovePlayersFromAccountsRequest
-	(*RemovePlayersFromAccountsResponse)(nil), // 13: loginpb.RemovePlayersFromAccountsResponse
-	(*base.AccountSimplePlayer)(nil),          // 14: AccountSimplePlayer
-	(*base.TipInfoMessage)(nil),               // 15: TipInfoMessage
+	(*GateEndpoint)(nil),                      // 12: loginpb.GateEndpoint
+	(*GetGateListRequest)(nil),                // 13: loginpb.GetGateListRequest
+	(*GetGateListResponse)(nil),               // 14: loginpb.GetGateListResponse
+	(*RemovePlayersFromAccountsRequest)(nil),  // 15: loginpb.RemovePlayersFromAccountsRequest
+	(*RemovePlayersFromAccountsResponse)(nil), // 16: loginpb.RemovePlayersFromAccountsResponse
+	(*base.AccountSimplePlayer)(nil),          // 17: AccountSimplePlayer
+	(*base.TipInfoMessage)(nil),               // 18: TipInfoMessage
 }
 var file_proto_login_login_proto_depIdxs = []int32{
-	14, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer
-	15, // 1: loginpb.LoginResponse.error_message:type_name -> TipInfoMessage
+	17, // 0: loginpb.AccountSimplePlayerWrapper.player:type_name -> AccountSimplePlayer
+	18, // 1: loginpb.LoginResponse.error_message:type_name -> TipInfoMessage
 	1,  // 2: loginpb.LoginResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	15, // 3: loginpb.TestResponse.error_message:type_name -> TipInfoMessage
+	18, // 3: loginpb.TestResponse.error_message:type_name -> TipInfoMessage
 	1,  // 4: loginpb.TestResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	15, // 5: loginpb.CreatePlayerResponse.error_message:type_name -> TipInfoMessage
+	18, // 5: loginpb.CreatePlayerResponse.error_message:type_name -> TipInfoMessage
 	1,  // 6: loginpb.CreatePlayerResponse.players:type_name -> loginpb.AccountSimplePlayerWrapper
-	15, // 7: loginpb.EnterGameResponse.error_message:type_name -> TipInfoMessage
-	2,  // 8: loginpb.ClientPlayerLogin.Login:input_type -> loginpb.LoginRequest
-	5,  // 9: loginpb.ClientPlayerLogin.CreatePlayer:input_type -> loginpb.CreatePlayerRequest
-	7,  // 10: loginpb.ClientPlayerLogin.EnterGame:input_type -> loginpb.EnterGameRequest
-	9,  // 11: loginpb.ClientPlayerLogin.LeaveGame:input_type -> loginpb.LeaveGameRequest
-	10, // 12: loginpb.ClientPlayerLogin.Disconnect:input_type -> loginpb.LoginNodeDisconnectRequest
-	12, // 13: loginpb.LoginAdmin.RemovePlayersFromAccounts:input_type -> loginpb.RemovePlayersFromAccountsRequest
-	3,  // 14: loginpb.ClientPlayerLogin.Login:output_type -> loginpb.LoginResponse
-	6,  // 15: loginpb.ClientPlayerLogin.CreatePlayer:output_type -> loginpb.CreatePlayerResponse
-	8,  // 16: loginpb.ClientPlayerLogin.EnterGame:output_type -> loginpb.EnterGameResponse
-	11, // 17: loginpb.ClientPlayerLogin.LeaveGame:output_type -> loginpb.LoginEmptyResponse
-	11, // 18: loginpb.ClientPlayerLogin.Disconnect:output_type -> loginpb.LoginEmptyResponse
-	13, // 19: loginpb.LoginAdmin.RemovePlayersFromAccounts:output_type -> loginpb.RemovePlayersFromAccountsResponse
-	14, // [14:20] is the sub-list for method output_type
-	8,  // [8:14] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	18, // 7: loginpb.EnterGameResponse.error_message:type_name -> TipInfoMessage
+	12, // 8: loginpb.GetGateListResponse.gates:type_name -> loginpb.GateEndpoint
+	2,  // 9: loginpb.ClientPlayerLogin.Login:input_type -> loginpb.LoginRequest
+	5,  // 10: loginpb.ClientPlayerLogin.CreatePlayer:input_type -> loginpb.CreatePlayerRequest
+	7,  // 11: loginpb.ClientPlayerLogin.EnterGame:input_type -> loginpb.EnterGameRequest
+	9,  // 12: loginpb.ClientPlayerLogin.LeaveGame:input_type -> loginpb.LeaveGameRequest
+	10, // 13: loginpb.ClientPlayerLogin.Disconnect:input_type -> loginpb.LoginNodeDisconnectRequest
+	13, // 14: loginpb.LoginPreGate.GetGateList:input_type -> loginpb.GetGateListRequest
+	15, // 15: loginpb.LoginAdmin.RemovePlayersFromAccounts:input_type -> loginpb.RemovePlayersFromAccountsRequest
+	3,  // 16: loginpb.ClientPlayerLogin.Login:output_type -> loginpb.LoginResponse
+	6,  // 17: loginpb.ClientPlayerLogin.CreatePlayer:output_type -> loginpb.CreatePlayerResponse
+	8,  // 18: loginpb.ClientPlayerLogin.EnterGame:output_type -> loginpb.EnterGameResponse
+	11, // 19: loginpb.ClientPlayerLogin.LeaveGame:output_type -> loginpb.LoginEmptyResponse
+	11, // 20: loginpb.ClientPlayerLogin.Disconnect:output_type -> loginpb.LoginEmptyResponse
+	14, // 21: loginpb.LoginPreGate.GetGateList:output_type -> loginpb.GetGateListResponse
+	16, // 22: loginpb.LoginAdmin.RemovePlayersFromAccounts:output_type -> loginpb.RemovePlayersFromAccountsResponse
+	16, // [16:23] is the sub-list for method output_type
+	9,  // [9:16] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_proto_login_login_proto_init() }
@@ -878,9 +1042,9 @@ func file_proto_login_login_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_login_login_proto_rawDesc), len(file_proto_login_login_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   3,
 		},
 		GoTypes:           file_proto_login_login_proto_goTypes,
 		DependencyIndexes: file_proto_login_login_proto_depIdxs,

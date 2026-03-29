@@ -14,15 +14,7 @@
    "id": 1,
    "mission_sub_type": 1,
    "mission_type": 1,
-   "reward_id": 1,
-   "target_count": [
-    1,
-    1,
-    1,
-    1,
-    1,
-    1
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 0,
@@ -38,15 +30,7 @@
    "id": 2,
    "mission_sub_type": 2,
    "mission_type": 1,
-   "reward_id": 1,
-   "target_count": [
-    1,
-    2,
-    1,
-    2,
-    2,
-    2
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 1,
@@ -65,10 +49,7 @@
    "id": 4,
    "mission_sub_type": 1,
    "mission_type": 1,
-   "reward_id": 1,
-   "target_count": [
-    1
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 1,
@@ -92,15 +73,7 @@
    "id": 6,
    "mission_sub_type": 1,
    "mission_type": 1,
-   "reward_id": 1,
-   "target_count": [
-    1,
-    1,
-    1,
-    1,
-    1,
-    1
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 1,
@@ -112,13 +85,12 @@
    "mission_sub_type": 1,
    "mission_type": 1,
    "next_mission_id": [
-    8,
-    8,
     8
    ],
    "reward_id": 1,
    "target_count": [
-    1
+    8,
+    8
    ]
   },
   {
@@ -131,13 +103,12 @@
    "mission_sub_type": 1,
    "mission_type": 1,
    "next_mission_id": [
-    9,
-    9,
     9
    ],
    "reward_id": 1,
    "target_count": [
-    1
+    9,
+    9
    ]
   },
   {
@@ -150,13 +121,12 @@
    "mission_sub_type": 1,
    "mission_type": 1,
    "next_mission_id": [
-    10,
-    10,
     10
    ],
    "reward_id": 1,
    "target_count": [
-    1
+    10,
+    10
    ]
   },
   {
@@ -169,13 +139,12 @@
    "mission_sub_type": 1,
    "mission_type": 1,
    "next_mission_id": [
-    11,
-    11,
     11
    ],
    "reward_id": 1,
    "target_count": [
-    1
+    11,
+    11
    ]
   },
   {
@@ -188,13 +157,12 @@
    "mission_sub_type": 1,
    "mission_type": 1,
    "next_mission_id": [
-    12,
-    12,
     12
    ],
    "reward_id": 1,
    "target_count": [
-    1
+    12,
+    12
    ]
   },
   {
@@ -206,10 +174,7 @@
    "id": 12,
    "mission_sub_type": 1,
    "mission_type": 1,
-   "reward_id": 1,
-   "target_count": [
-    1
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 1,
@@ -220,10 +185,7 @@
    "id": 13,
    "mission_sub_type": 1,
    "mission_type": 9,
-   "reward_id": 1,
-   "target_count": [
-    2
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 1,
@@ -235,11 +197,7 @@
    "id": 14,
    "mission_sub_type": 1,
    "mission_type": 3,
-   "reward_id": 1,
-   "target_count": [
-    1,
-    1
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 1,
@@ -250,10 +208,7 @@
    "id": 15,
    "mission_sub_type": 2,
    "mission_type": 2,
-   "reward_id": 1,
-   "target_count": [
-    1
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 1,
@@ -264,10 +219,7 @@
    "id": 16,
    "mission_sub_type": 1,
    "mission_type": 2,
-   "reward_id": 1,
-   "target_count": [
-    1
-   ]
+   "reward_id": 1
   },
   {
    "auto_reward": 1,
@@ -278,10 +230,7 @@
    "id": 17,
    "mission_sub_type": 1,
    "mission_type": 2,
-   "reward_id": 1,
-   "target_count": [
-    2
-   ]
+   "reward_id": 1
   }
  ]
 }

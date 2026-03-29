@@ -2,6 +2,7 @@ package cpp
 
 const AsyncClientHeaderTemplate = `#pragma once
 #include <memory>
+#include <boost/circular_buffer.hpp>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 {{.GrpcIncludeHeadName}}

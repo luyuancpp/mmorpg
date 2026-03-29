@@ -44,8 +44,8 @@ func LoadTables(configDir string) {
     if err := MissionTableManagerInstance.Load(configDir); err != nil {
         log.Fatalf("failed to load Mission table: %v", err)
     }
-    if err := MonsterBaseTableManagerInstance.Load(configDir); err != nil {
-        log.Fatalf("failed to load MonsterBase table: %v", err)
+    if err := MonsterTableManagerInstance.Load(configDir); err != nil {
+        log.Fatalf("failed to load Monster table: %v", err)
     }
     if err := RewardTableManagerInstance.Load(configDir); err != nil {
         log.Fatalf("failed to load Reward table: %v", err)
@@ -143,8 +143,8 @@ func LoadTablesAsync(configDir string) {
     }()
     go func() {
         defer wg.Done()
-        if err := MonsterBaseTableManagerInstance.Load(configDir); err != nil {
-            log.Fatalf("failed to load MonsterBase table: %v", err)
+        if err := MonsterTableManagerInstance.Load(configDir); err != nil {
+            log.Fatalf("failed to load Monster table: %v", err)
         }
     }()
     go func() {
@@ -243,9 +243,9 @@ func ReloadTables(configDir string) error {
     if err := newMission.Load(configDir); err != nil {
         return fmt.Errorf("reload Mission failed: %w", err)
     }
-    newMonsterBase := NewMonsterBaseTableManager()
-    if err := newMonsterBase.Load(configDir); err != nil {
-        return fmt.Errorf("reload MonsterBase failed: %w", err)
+    newMonster := NewMonsterTableManager()
+    if err := newMonster.Load(configDir); err != nil {
+        return fmt.Errorf("reload Monster failed: %w", err)
     }
     newReward := NewRewardTableManager()
     if err := newReward.Load(configDir); err != nil {
@@ -284,7 +284,7 @@ func ReloadTables(configDir string) error {
     MainSceneTableManagerInstance = newMainScene
     MessageLimiterTableManagerInstance = newMessageLimiter
     MissionTableManagerInstance = newMission
-    MonsterBaseTableManagerInstance = newMonsterBase
+    MonsterTableManagerInstance = newMonster
     RewardTableManagerInstance = newReward
     SceneTableManagerInstance = newScene
     SkillTableManagerInstance = newSkill

@@ -5,6 +5,7 @@ option go_package = "login";
 import "proto/db/proto_option.proto";
 import "proto/common/base/tip.proto";
 import "proto/common/base/user_accounts.proto";
+import "proto/common/base/common.proto";
 
 package loginpb;
 
@@ -88,6 +89,29 @@ service ClientPlayerLogin  {
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LeaveGame (LeaveGameRequest) returns (LoginEmptyResponse);
   rpc Disconnect (LoginNodeDisconnectRequest) returns (LoginEmptyResponse);
+}
+
+// ── Pre-connection RPCs (called before connecting to Gate) ──────
+
+message GateEndpoint {
+  uint32 node_id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 player_count = 4; // current connection count for load balancing
+}
+
+message GetGateListRequest {
+}
+
+message GetGateListResponse {
+  repeated GateEndpoint gates = 1;
+}
+
+service LoginPreGate {
+  // Client calls this before connecting to any Gate.
+  // Returns all available Gate endpoints with current load.
+  // Client picks the least-loaded Gate and TCP-connects to it.
+  rpc GetGateList (GetGateListRequest) returns (GetGateListResponse);
 }
 
 // ── Admin-only RPCs (internal, not client-facing) ──────────────

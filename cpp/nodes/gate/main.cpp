@@ -28,6 +28,7 @@ struct GateRuntimeContext {
     ProtobufCodec codec;
     RpcClientSessionHandler rpcClientHandler;
     DependencyGate dependencyGate;
+    TimerTaskComp playerCountReportTimer;
 
     GateRuntimeContext()
         : protobufDispatcher([](const TcpConnectionPtr& conn, const MessagePtr& msg, Timestamp) {
@@ -91,6 +92,13 @@ int main(int argc, char* argv[])
                                 context.codec.onMessage(conn, buf, ts);
                             });
                         tlsSessionManager.session_id_gen().set_node_id(n.GetNodeId());
+
+                        // Report player_count to etcd every 10 seconds for load balancing
+                        context.playerCountReportTimer.RunEvery(10.0, [&n] {
+                            auto count = static_cast<uint32_t>(tlsSessionManager.sessions().size());
+                            n.GetNodeInfo().set_player_count(count);
+                            n.GetEtcdManager().UpdateNodeInfo();
+                        });
                     }, "Gate");
             });
 

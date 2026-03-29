@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
-#include "entt/src/entt/entity/registry.hpp"
 #include <boost/circular_buffer.hpp>
+#include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/friend/friend.grpc.pb.h"
 

@@ -21,13 +21,13 @@ import (
 )
 
 const playerLoaderTemplate = `
-#include "thread_context/registry_manager.h"
-#include "proto/logic/database/mysql_database_table.pb.h"
+#include "thread_context/ecs_context.h"
+#include "proto/common/database/mysql_database_table.pb.h"
 
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
-	tlsRegistryManager.actorRegistry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
+	tlsEcs.actorRegistry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
 	{{- end }}
 	{{- end }}
 }
@@ -35,7 +35,7 @@ void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.Messag
 void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
-	message.mutable_{{.Name}}()->CopyFrom(tlsRegistryManager.actorRegistry.get_or_emplace<{{.TypeName}}>(player));
+	message.mutable_{{.Name}}()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<{{.TypeName}}>(player));
 	{{- end }}
 	{{- end }}
 }
@@ -56,20 +56,20 @@ type DescData struct {
 
 const playerHeaderTemplate = `#pragma once
 #include "entt/src/entt/entity/registry.hpp"
-#include "proto/common/database/mysql_database_table.pb.h"
+#include "proto/common/database/player_cache.pb.h"
 {{- range .Entries }}
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message);
 void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);
 {{ end }}
 
-void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
+inline void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
 {
 {{- range .Entries }}
 {{.HandlerName}}MessageFieldsMarshal(player, *message.mutable_{{.MessageType}}_data());
 {{- end }}
 }
 
-void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
+inline void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
 {
 {{- range .Entries }}
 {{.HandlerName}}MessageFieldsUnmarshal(player, message.{{.MessageType}}_data());

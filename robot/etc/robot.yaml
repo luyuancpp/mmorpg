@@ -1,5 +1,11 @@
 # Robot load-test configuration
-gate_addr: "127.0.0.1:6000"
+# If login_addr is set, robot calls GetGateList to auto-select the least-loaded gate.
+# If login_addr is empty, falls back to gate_addr (hardcoded).
+login_addr: "127.0.0.1:50000"
+gate_addr: "127.0.0.1:10000"
 robot_count: 10
 account_fmt: "robot_%04d"
 password: "123456"
+skill_ids: [1001]
+action_interval: 3   # seconds between AI actions
+report_interval: 5   # seconds between stats prints

@@ -125,28 +125,28 @@ func (x *SkillrequiredResource) GetRequiredResourceValue() uint32 {
 	return 0
 }
 
-type SkillrequestResource struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	RequestResourceId   uint32                 `protobuf:"varint,1,opt,name=request_resource_id,json=requestResourceId,proto3" json:"request_resource_id,omitempty"`
-	RequestResourceCost uint32                 `protobuf:"varint,2,opt,name=request_resource_cost,json=requestResourceCost,proto3" json:"request_resource_cost,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+type SkillcostResource struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	CostResourceId   uint32                 `protobuf:"varint,1,opt,name=cost_resource_id,json=costResourceId,proto3" json:"cost_resource_id,omitempty"`
+	CostResourceCost uint32                 `protobuf:"varint,2,opt,name=cost_resource_cost,json=costResourceCost,proto3" json:"cost_resource_cost,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
-func (x *SkillrequestResource) Reset() {
-	*x = SkillrequestResource{}
+func (x *SkillcostResource) Reset() {
+	*x = SkillcostResource{}
 	mi := &file_skill_table_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SkillrequestResource) String() string {
+func (x *SkillcostResource) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SkillrequestResource) ProtoMessage() {}
+func (*SkillcostResource) ProtoMessage() {}
 
-func (x *SkillrequestResource) ProtoReflect() protoreflect.Message {
+func (x *SkillcostResource) ProtoReflect() protoreflect.Message {
 	mi := &file_skill_table_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -158,21 +158,21 @@ func (x *SkillrequestResource) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SkillrequestResource.ProtoReflect.Descriptor instead.
-func (*SkillrequestResource) Descriptor() ([]byte, []int) {
+// Deprecated: Use SkillcostResource.ProtoReflect.Descriptor instead.
+func (*SkillcostResource) Descriptor() ([]byte, []int) {
 	return file_skill_table_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SkillrequestResource) GetRequestResourceId() uint32 {
+func (x *SkillcostResource) GetCostResourceId() uint32 {
 	if x != nil {
-		return x.RequestResourceId
+		return x.CostResourceId
 	}
 	return 0
 }
 
-func (x *SkillrequestResource) GetRequestResourceCost() uint32 {
+func (x *SkillcostResource) GetCostResourceCost() uint32 {
 	if x != nil {
-		return x.RequestResourceCost
+		return x.CostResourceCost
 	}
 	return 0
 }
@@ -201,7 +201,7 @@ type SkillTable struct {
 	Damage           string                   `protobuf:"bytes,20,opt,name=damage,proto3" json:"damage,omitempty"`
 	RequiredItem     []*SkillrequiredItem     `protobuf:"bytes,21,rep,name=required_item,json=requiredItem,proto3" json:"required_item,omitempty"`
 	RequiredResource []*SkillrequiredResource `protobuf:"bytes,22,rep,name=required_resource,json=requiredResource,proto3" json:"required_resource,omitempty"`
-	RequestResource  []*SkillrequestResource  `protobuf:"bytes,23,rep,name=request_resource,json=requestResource,proto3" json:"request_resource,omitempty"`
+	CostResource     []*SkillcostResource     `protobuf:"bytes,23,rep,name=cost_resource,json=costResource,proto3" json:"cost_resource,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -390,9 +390,9 @@ func (x *SkillTable) GetRequiredResource() []*SkillrequiredResource {
 	return nil
 }
 
-func (x *SkillTable) GetRequestResource() []*SkillrequestResource {
+func (x *SkillTable) GetCostResource() []*SkillcostResource {
 	if x != nil {
-		return x.RequestResource
+		return x.CostResource
 	}
 	return nil
 }
@@ -451,10 +451,10 @@ const file_skill_table_proto_rawDesc = "" +
 	"\x13required_item_value\x18\x02 \x01(\x04R\x11requiredItemValue\"\x86\x01\n" +
 	"\x16Skillrequired_resource\x124\n" +
 	"\x16required_resource_type\x18\x01 \x01(\rR\x14requiredResourceType\x126\n" +
-	"\x17required_resource_value\x18\x02 \x01(\rR\x15requiredResourceValue\"{\n" +
-	"\x15Skillrequest_resource\x12.\n" +
-	"\x13request_resource_id\x18\x01 \x01(\rR\x11requestResourceId\x122\n" +
-	"\x15request_resource_cost\x18\x02 \x01(\rR\x13requestResourceCost\"\xd4\x06\n" +
+	"\x17required_resource_value\x18\x02 \x01(\rR\x15requiredResourceValue\"l\n" +
+	"\x12Skillcost_resource\x12(\n" +
+	"\x10cost_resource_id\x18\x01 \x01(\rR\x0ecostResourceId\x12,\n" +
+	"\x12cost_resource_cost\x18\x02 \x01(\rR\x10costResourceCost\"\xcb\x06\n" +
 	"\n" +
 	"SkillTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1d\n" +
@@ -483,8 +483,8 @@ const file_skill_table_proto_rawDesc = "" +
 	"cooldownId\x12\x16\n" +
 	"\x06damage\x18\x14 \x01(\tR\x06damage\x128\n" +
 	"\rrequired_item\x18\x15 \x03(\v2\x13.Skillrequired_itemR\frequiredItem\x12D\n" +
-	"\x11required_resource\x18\x16 \x03(\v2\x17.Skillrequired_resourceR\x10requiredResource\x12A\n" +
-	"\x10request_resource\x18\x17 \x03(\v2\x16.Skillrequest_resourceR\x0frequestResource\"1\n" +
+	"\x11required_resource\x18\x16 \x03(\v2\x17.Skillrequired_resourceR\x10requiredResource\x128\n" +
+	"\rcost_resource\x18\x17 \x03(\v2\x13.Skillcost_resourceR\fcostResource\"1\n" +
 	"\x0eSkillTableData\x12\x1f\n" +
 	"\x04data\x18\x01 \x03(\v2\v.SkillTableR\x04dataB<\n" +
 	"\x0ecom.game.tableB\x14SkillTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"
@@ -505,14 +505,14 @@ var file_skill_table_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_skill_table_proto_goTypes = []any{
 	(*SkillrequiredItem)(nil),     // 0: Skillrequired_item
 	(*SkillrequiredResource)(nil), // 1: Skillrequired_resource
-	(*SkillrequestResource)(nil),  // 2: Skillrequest_resource
+	(*SkillcostResource)(nil),     // 2: Skillcost_resource
 	(*SkillTable)(nil),            // 3: SkillTable
 	(*SkillTableData)(nil),        // 4: SkillTableData
 }
 var file_skill_table_proto_depIdxs = []int32{
 	0, // 0: SkillTable.required_item:type_name -> Skillrequired_item
 	1, // 1: SkillTable.required_resource:type_name -> Skillrequired_resource
-	2, // 2: SkillTable.request_resource:type_name -> Skillrequest_resource
+	2, // 2: SkillTable.cost_resource:type_name -> Skillcost_resource
 	3, // 3: SkillTableData.data:type_name -> SkillTable
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type

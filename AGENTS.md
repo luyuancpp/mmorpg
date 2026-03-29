@@ -156,7 +156,13 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
 pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run
 
 # K8s
+# Build all images before deploying
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-build-all
+# Deploy shared infrastructure (etcd/redis/kafka/mysql → mmorpg-infra namespace)
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-infra-up
+# Deploy a single zone (game services only → mmorpg-zone-{name} namespace)
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -ZoneName yesterday -ZoneId 101 -OpsProfile managed-cloud -NodeImage <image> -WaitReady
+# Deploy all zones (infra + all zones)
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-up -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml -OpsProfile managed-cloud -NodeImage <image> -WaitReady
 
 # Go services (local dev)

@@ -6,6 +6,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 1,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 10,
+     "cost_resource_id": 1
+    },
+    {
+     "cost_resource_cost": 20,
+     "cost_resource_id": 2
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "100*level",
    "effect": [
     1,
@@ -23,24 +41,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 1.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 10,
-     "request_resource_id": 1
-    },
-    {
-     "request_resource_cost": 20,
-     "request_resource_id": 2
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -80,6 +80,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "100*level",
    "effect": [
     1,
@@ -97,24 +115,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -154,6 +154,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "1000*level",
    "effect": [
     1,
@@ -171,24 +189,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -227,6 +227,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "10000*level",
    "effect": [
     1,
@@ -244,24 +262,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -301,6 +301,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "10000*level",
    "effect": [
     1,
@@ -318,24 +336,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -375,6 +375,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "100*level",
    "effect": [
     1,
@@ -392,24 +410,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -449,6 +449,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "1000*level",
    "effect": [
     1,
@@ -466,24 +484,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -523,6 +523,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "10000*level",
    "effect": [
     1,
@@ -540,24 +558,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -597,6 +597,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "100*level",
    "effect": [
     1,
@@ -614,24 +632,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -670,6 +670,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "1000*level",
    "effect": [
     1,
@@ -687,24 +705,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -740,6 +740,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "10000*level",
    "effect": [
     1,
@@ -757,24 +775,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -814,6 +814,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 0,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "10000*level",
    "effect": [
     1,
@@ -831,24 +849,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {
@@ -888,6 +888,24 @@
    "channel_think": 1,
    "channel_time": 0,
    "cooldown_id": 5,
+   "cost_resource": [
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    },
+    {
+     "cost_resource_cost": 0,
+     "cost_resource_id": 0
+    }
+   ],
    "damage": "10000*level",
    "effect": [
     14,
@@ -901,24 +919,6 @@
    "min_range": 0.0,
    "range": 0.0,
    "recovery_time": 0.0,
-   "request_resource": [
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    },
-    {
-     "request_resource_cost": 0,
-     "request_resource_id": 0
-    }
-   ],
    "require_target": 0,
    "required_item": [
     {

@@ -133,13 +133,14 @@ namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt:
 namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace loginpb{void SendLoginPreGateGetGateList(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 119> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -450,6 +451,13 @@ void InitMessageInfo()
         std::make_unique<::loginpb::LoginNodeDisconnectRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
         nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
+
+    // --- LoginPreGate ---
+    gRpcMethodRegistry[LoginPreGateGetGateListMessageId] = RpcMethodMeta{
+        "LoginPreGate", "GetGateList",
+        std::make_unique<::loginpb::GetGateListRequest>(),
+        std::make_unique<::loginpb::GetGateListResponse>(),
+        nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateGetGateList};
 
     // --- LoginAdmin ---
     gRpcMethodRegistry[LoginAdminRemovePlayersFromAccountsMessageId] = RpcMethodMeta{

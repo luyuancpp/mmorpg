@@ -14,6 +14,7 @@ import (
 	game "login/generated/pb/game"
 	"login/internal/config"
 	"login/internal/kafka"
+	"login/internal/logic/pkg/node"
 	"login/internal/logic/pkg/taskmanager"
 	smpb "login/proto/scene_manager"
 	login_proto "proto/common/base"
@@ -31,6 +32,7 @@ type ServiceContext struct {
 	ExpandMonitor       *kafka.ExpandMonitor
 	PlayerLocatorClient plpb.PlayerLocatorClient
 	SceneManagerClient  smpb.SceneManagerClient
+	GateWatcher         *node.NodeWatcher
 }
 
 func NewServiceContext() *ServiceContext {
@@ -85,6 +87,19 @@ func NewServiceContext() *ServiceContext {
 	smConn := zrpc.MustNewClient(config.AppConfig.SceneManagerRpc)
 	smClient := smpb.NewSceneManagerClient(smConn.Conn())
 
+	// Initialize GateWatcher for gate node discovery (load balancing)
+	gateNodeType := uint32(login_proto.ENodeType_GateNodeService)
+	gatePrefix := node.BuildRpcPrefix(
+		node.GetRpcPrefix(gateNodeType),
+		config.AppConfig.Node.ZoneId,
+		gateNodeType,
+	)
+	etcdClient, err := node.NewEtcdClient()
+	if err != nil {
+		panic(fmt.Errorf("failed to create etcd client for GateWatcher: %w", err))
+	}
+	gateWatcher := node.NewNodeWatcher(etcdClient, gatePrefix)
+
 	return &ServiceContext{
 		RedisClient:         redisClient,
 		KafkaClient:         kafkaClient,
@@ -92,6 +107,7 @@ func NewServiceContext() *ServiceContext {
 		ExpandMonitor:       monitor,
 		PlayerLocatorClient: plClient,
 		SceneManagerClient:  smClient,
+		GateWatcher:         gateWatcher,
 	}
 }
 

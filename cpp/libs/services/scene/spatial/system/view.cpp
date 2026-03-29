@@ -11,7 +11,7 @@
 #include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff.h"
 #include "spatial/comp/scene_node_scene_comp.h"
-#include "table/buff_table.h"
+#include "table/code/buff_table.h"
 
 #include "engine/core/type_define/type_define.h"
 #include "network/player_message_utils.h"

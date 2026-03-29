@@ -33,6 +33,7 @@
 #include "proto/db/proto_option.pb.h"
 #include "proto/common/base/tip.pb.h"
 #include "proto/common/base/user_accounts.pb.h"
+#include "proto/common/base/common.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -77,6 +78,18 @@ class EnterGameResponse;
 struct EnterGameResponseDefaultTypeInternal;
 extern EnterGameResponseDefaultTypeInternal _EnterGameResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull EnterGameResponse_class_data_;
+class GateEndpoint;
+struct GateEndpointDefaultTypeInternal;
+extern GateEndpointDefaultTypeInternal _GateEndpoint_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GateEndpoint_class_data_;
+class GetGateListRequest;
+struct GetGateListRequestDefaultTypeInternal;
+extern GetGateListRequestDefaultTypeInternal _GetGateListRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetGateListRequest_class_data_;
+class GetGateListResponse;
+struct GetGateListResponseDefaultTypeInternal;
+extern GetGateListResponseDefaultTypeInternal _GetGateListResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetGateListResponse_class_data_;
 class LeaveGameRequest;
 struct LeaveGameRequestDefaultTypeInternal;
 extern LeaveGameRequestDefaultTypeInternal _LeaveGameRequest_default_instance_;
@@ -181,7 +194,7 @@ class RemovePlayersFromAccountsResponse final : public ::google::protobuf::Messa
     return *reinterpret_cast<const RemovePlayersFromAccountsResponse*>(
         &_RemovePlayersFromAccountsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(RemovePlayersFromAccountsResponse& a, RemovePlayersFromAccountsResponse& b) { a.Swap(&b); }
   inline void Swap(RemovePlayersFromAccountsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -396,7 +409,7 @@ class RemovePlayersFromAccountsRequest final : public ::google::protobuf::Messag
     return *reinterpret_cast<const RemovePlayersFromAccountsRequest*>(
         &_RemovePlayersFromAccountsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(RemovePlayersFromAccountsRequest& a, RemovePlayersFromAccountsRequest& b) { a.Swap(&b); }
   inline void Swap(RemovePlayersFromAccountsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1514,6 +1527,384 @@ class LeaveGameRequest final : public ::google::protobuf::internal::ZeroFieldsBa
 extern const ::google::protobuf::internal::ClassDataFull LeaveGameRequest_class_data_;
 // -------------------------------------------------------------------
 
+class GetGateListRequest final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:loginpb.GetGateListRequest) */ {
+ public:
+  inline GetGateListRequest() : GetGateListRequest(nullptr) {}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetGateListRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetGateListRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetGateListRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetGateListRequest(const GetGateListRequest& from) : GetGateListRequest(nullptr, from) {}
+  inline GetGateListRequest(GetGateListRequest&& from) noexcept
+      : GetGateListRequest(nullptr, ::std::move(from)) {}
+  inline GetGateListRequest& operator=(const GetGateListRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetGateListRequest& operator=(GetGateListRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetGateListRequest& default_instance() {
+    return *reinterpret_cast<const GetGateListRequest*>(
+        &_GetGateListRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 13;
+  friend void swap(GetGateListRequest& a, GetGateListRequest& b) { a.Swap(&b); }
+  inline void Swap(GetGateListRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetGateListRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetGateListRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<GetGateListRequest>(arena);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const GetGateListRequest& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const GetGateListRequest& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
+  }
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "loginpb.GetGateListRequest"; }
+
+ protected:
+  explicit GetGateListRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetGateListRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetGateListRequest& from);
+  GetGateListRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetGateListRequest&& from) noexcept
+      : GetGateListRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  // @@protoc_insertion_point(class_scope:loginpb.GetGateListRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 0,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetGateListRequest& from_msg);
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  friend struct ::TableStruct_proto_2flogin_2flogin_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetGateListRequest_class_data_;
+// -------------------------------------------------------------------
+
+class GateEndpoint final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:loginpb.GateEndpoint) */ {
+ public:
+  inline GateEndpoint() : GateEndpoint(nullptr) {}
+  ~GateEndpoint() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GateEndpoint* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GateEndpoint));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GateEndpoint(::google::protobuf::internal::ConstantInitialized);
+
+  inline GateEndpoint(const GateEndpoint& from) : GateEndpoint(nullptr, from) {}
+  inline GateEndpoint(GateEndpoint&& from) noexcept
+      : GateEndpoint(nullptr, ::std::move(from)) {}
+  inline GateEndpoint& operator=(const GateEndpoint& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GateEndpoint& operator=(GateEndpoint&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GateEndpoint& default_instance() {
+    return *reinterpret_cast<const GateEndpoint*>(
+        &_GateEndpoint_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 12;
+  friend void swap(GateEndpoint& a, GateEndpoint& b) { a.Swap(&b); }
+  inline void Swap(GateEndpoint* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GateEndpoint* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GateEndpoint* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GateEndpoint>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GateEndpoint& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GateEndpoint& from) { GateEndpoint::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GateEndpoint* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "loginpb.GateEndpoint"; }
+
+ protected:
+  explicit GateEndpoint(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GateEndpoint(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GateEndpoint& from);
+  GateEndpoint(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GateEndpoint&& from) noexcept
+      : GateEndpoint(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kIpFieldNumber = 2,
+    kNodeIdFieldNumber = 1,
+    kPortFieldNumber = 3,
+    kPlayerCountFieldNumber = 4,
+  };
+  // string ip = 2;
+  void clear_ip() ;
+  const ::std::string& ip() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_ip(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_ip();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_ip();
+  void set_allocated_ip(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_ip() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_ip(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_ip();
+
+  public:
+  // uint32 node_id = 1;
+  void clear_node_id() ;
+  ::uint32_t node_id() const;
+  void set_node_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_node_id() const;
+  void _internal_set_node_id(::uint32_t value);
+
+  public:
+  // uint32 port = 3;
+  void clear_port() ;
+  ::uint32_t port() const;
+  void set_port(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_port() const;
+  void _internal_set_port(::uint32_t value);
+
+  public:
+  // uint32 player_count = 4;
+  void clear_player_count() ;
+  ::uint32_t player_count() const;
+  void set_player_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_player_count() const;
+  void _internal_set_player_count(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:loginpb.GateEndpoint)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 31,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GateEndpoint& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr ip_;
+    ::uint32_t node_id_;
+    ::uint32_t port_;
+    ::uint32_t player_count_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogin_2flogin_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GateEndpoint_class_data_;
+// -------------------------------------------------------------------
+
 class EnterGameRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:loginpb.EnterGameRequest) */ {
  public:
@@ -1866,6 +2257,203 @@ class CreatePlayerRequest final : public ::google::protobuf::internal::ZeroField
 };
 
 extern const ::google::protobuf::internal::ClassDataFull CreatePlayerRequest_class_data_;
+// -------------------------------------------------------------------
+
+class GetGateListResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:loginpb.GetGateListResponse) */ {
+ public:
+  inline GetGateListResponse() : GetGateListResponse(nullptr) {}
+  ~GetGateListResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetGateListResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetGateListResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetGateListResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetGateListResponse(const GetGateListResponse& from) : GetGateListResponse(nullptr, from) {}
+  inline GetGateListResponse(GetGateListResponse&& from) noexcept
+      : GetGateListResponse(nullptr, ::std::move(from)) {}
+  inline GetGateListResponse& operator=(const GetGateListResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetGateListResponse& operator=(GetGateListResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetGateListResponse& default_instance() {
+    return *reinterpret_cast<const GetGateListResponse*>(
+        &_GetGateListResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 14;
+  friend void swap(GetGateListResponse& a, GetGateListResponse& b) { a.Swap(&b); }
+  inline void Swap(GetGateListResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetGateListResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetGateListResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetGateListResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetGateListResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetGateListResponse& from) { GetGateListResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetGateListResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "loginpb.GetGateListResponse"; }
+
+ protected:
+  explicit GetGateListResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetGateListResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetGateListResponse& from);
+  GetGateListResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetGateListResponse&& from) noexcept
+      : GetGateListResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kGatesFieldNumber = 1,
+  };
+  // repeated .loginpb.GateEndpoint gates = 1;
+  int gates_size() const;
+  private:
+  int _internal_gates_size() const;
+
+  public:
+  void clear_gates() ;
+  ::loginpb::GateEndpoint* PROTOBUF_NONNULL mutable_gates(int index);
+  ::google::protobuf::RepeatedPtrField<::loginpb::GateEndpoint>* PROTOBUF_NONNULL mutable_gates();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::loginpb::GateEndpoint>& _internal_gates() const;
+  ::google::protobuf::RepeatedPtrField<::loginpb::GateEndpoint>* PROTOBUF_NONNULL _internal_mutable_gates();
+  public:
+  const ::loginpb::GateEndpoint& gates(int index) const;
+  ::loginpb::GateEndpoint* PROTOBUF_NONNULL add_gates();
+  const ::google::protobuf::RepeatedPtrField<::loginpb::GateEndpoint>& gates() const;
+  // @@protoc_insertion_point(class_scope:loginpb.GetGateListResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetGateListResponse& from_msg);
+    ::google::protobuf::RepeatedPtrField< ::loginpb::GateEndpoint > gates_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogin_2flogin_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetGateListResponse_class_data_;
 // -------------------------------------------------------------------
 
 class EnterGameResponse final : public ::google::protobuf::Message
@@ -4303,6 +4891,205 @@ inline void LoginNodeDisconnectRequest::_internal_set_session_id(::uint64_t valu
 // -------------------------------------------------------------------
 
 // LoginEmptyResponse
+
+// -------------------------------------------------------------------
+
+// GateEndpoint
+
+// uint32 node_id = 1;
+inline void GateEndpoint::clear_node_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint32_t GateEndpoint::node_id() const {
+  // @@protoc_insertion_point(field_get:loginpb.GateEndpoint.node_id)
+  return _internal_node_id();
+}
+inline void GateEndpoint::set_node_id(::uint32_t value) {
+  _internal_set_node_id(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:loginpb.GateEndpoint.node_id)
+}
+inline ::uint32_t GateEndpoint::_internal_node_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.node_id_;
+}
+inline void GateEndpoint::_internal_set_node_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_id_ = value;
+}
+
+// string ip = 2;
+inline void GateEndpoint::clear_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ip_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& GateEndpoint::ip() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.GateEndpoint.ip)
+  return _internal_ip();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GateEndpoint::set_ip(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.ip_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:loginpb.GateEndpoint.ip)
+}
+inline ::std::string* PROTOBUF_NONNULL GateEndpoint::mutable_ip()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_ip();
+  // @@protoc_insertion_point(field_mutable:loginpb.GateEndpoint.ip)
+  return _s;
+}
+inline const ::std::string& GateEndpoint::_internal_ip() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ip_.Get();
+}
+inline void GateEndpoint::_internal_set_ip(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.ip_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GateEndpoint::_internal_mutable_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.ip_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GateEndpoint::release_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:loginpb.GateEndpoint.ip)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.ip_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.ip_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GateEndpoint::set_allocated_ip(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.ip_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.ip_.IsDefault()) {
+    _impl_.ip_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:loginpb.GateEndpoint.ip)
+}
+
+// uint32 port = 3;
+inline void GateEndpoint::clear_port() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.port_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint32_t GateEndpoint::port() const {
+  // @@protoc_insertion_point(field_get:loginpb.GateEndpoint.port)
+  return _internal_port();
+}
+inline void GateEndpoint::set_port(::uint32_t value) {
+  _internal_set_port(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:loginpb.GateEndpoint.port)
+}
+inline ::uint32_t GateEndpoint::_internal_port() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.port_;
+}
+inline void GateEndpoint::_internal_set_port(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.port_ = value;
+}
+
+// uint32 player_count = 4;
+inline void GateEndpoint::clear_player_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_count_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t GateEndpoint::player_count() const {
+  // @@protoc_insertion_point(field_get:loginpb.GateEndpoint.player_count)
+  return _internal_player_count();
+}
+inline void GateEndpoint::set_player_count(::uint32_t value) {
+  _internal_set_player_count(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:loginpb.GateEndpoint.player_count)
+}
+inline ::uint32_t GateEndpoint::_internal_player_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_count_;
+}
+inline void GateEndpoint::_internal_set_player_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_count_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GetGateListRequest
+
+// -------------------------------------------------------------------
+
+// GetGateListResponse
+
+// repeated .loginpb.GateEndpoint gates = 1;
+inline int GetGateListResponse::_internal_gates_size() const {
+  return _internal_gates().size();
+}
+inline int GetGateListResponse::gates_size() const {
+  return _internal_gates_size();
+}
+inline void GetGateListResponse::clear_gates() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gates_.Clear();
+}
+inline ::loginpb::GateEndpoint* PROTOBUF_NONNULL GetGateListResponse::mutable_gates(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:loginpb.GetGateListResponse.gates)
+  return _internal_mutable_gates()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::loginpb::GateEndpoint>* PROTOBUF_NONNULL GetGateListResponse::mutable_gates()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:loginpb.GetGateListResponse.gates)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_gates();
+}
+inline const ::loginpb::GateEndpoint& GetGateListResponse::gates(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.GetGateListResponse.gates)
+  return _internal_gates().Get(index);
+}
+inline ::loginpb::GateEndpoint* PROTOBUF_NONNULL GetGateListResponse::add_gates()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::loginpb::GateEndpoint* _add = _internal_mutable_gates()->Add();
+  // @@protoc_insertion_point(field_add:loginpb.GetGateListResponse.gates)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::loginpb::GateEndpoint>& GetGateListResponse::gates() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:loginpb.GetGateListResponse.gates)
+  return _internal_gates();
+}
+inline const ::google::protobuf::RepeatedPtrField<::loginpb::GateEndpoint>&
+GetGateListResponse::_internal_gates() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.gates_;
+}
+inline ::google::protobuf::RepeatedPtrField<::loginpb::GateEndpoint>* PROTOBUF_NONNULL
+GetGateListResponse::_internal_mutable_gates() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.gates_;
+}
 
 // -------------------------------------------------------------------
 

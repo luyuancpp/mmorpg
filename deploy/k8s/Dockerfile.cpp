@@ -6,6 +6,10 @@
 # Usage:
 #   docker build -f deploy/k8s/Dockerfile.cpp -t mmorpg-node:v1 .
 #
+# Extract debug symbols (for crash analysis):
+#   docker build -f deploy/k8s/Dockerfile.cpp --target=symbols -o ./debug-symbols .
+#   # → debug-symbols/gate.debug, debug-symbols/scene.debug
+#
 # First build is slow (~30–60 min) because gRPC is compiled from source.
 # Docker layer caching speeds up subsequent builds significantly —
 # as long as third_party/ hasn't changed, deps are reused.
@@ -97,7 +101,13 @@ COPY tools/scripts/build_linux.sh    tools/scripts/build_linux.sh
 
 # Generate CMakeLists.txt from vcxproj, then build all libs + executables.
 # --skip-deps: deps already built in previous stage.
-RUN bash tools/scripts/build_linux.sh --skip-deps --release
+# --relwithdebinfo: Release optimizations + debug info for crash analysis.
+# --split-debug: extract .debug symbol files, then strip the binaries.
+RUN bash tools/scripts/build_linux.sh --skip-deps --relwithdebinfo --split-debug
+
+# ── Stage 2.5: Debug symbols archive (extract with --target=symbols) ────
+FROM scratch AS symbols
+COPY --from=builder /src/bin/symbols/ /symbols/
 
 # ── Stage 3: Minimal runtime image ──────────────────────────────────────
 FROM ubuntu:24.04
@@ -114,8 +124,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Shared libraries built in deps stage (gRPC, protobuf, rdkafka, etc.)
-COPY --from=builder /usr/local/lib/ /usr/local/lib/
+# Shared libraries built in deps stage (only .so files — skip .a static libs)
+COPY --from=builder /usr/local/lib/*.so*  /usr/local/lib/
 RUN ldconfig
 
 # Compiled C++ node binaries

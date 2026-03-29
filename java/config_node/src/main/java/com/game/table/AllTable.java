@@ -38,7 +38,7 @@ public class AllTable {
 
         MissionTableManager.getInstance().load(configDir);
 
-        MonsterBaseTableManager.getInstance().load(configDir);
+        MonsterTableManager.getInstance().load(configDir);
 
         RewardTableManager.getInstance().load(configDir);
 
@@ -175,9 +175,9 @@ public class AllTable {
 
         new Thread(() -> {
             try {
-                MonsterBaseTableManager.getInstance().load(configDir);
+                MonsterTableManager.getInstance().load(configDir);
             } catch (Exception e) {
-                throw new RuntimeException("Failed to load MonsterBase table", e);
+                throw new RuntimeException("Failed to load Monster table", e);
             } finally {
                 latch.countDown();
             }
@@ -285,7 +285,7 @@ public class AllTable {
 
         MissionTableManager.getInstance().load(configDir);
 
-        MonsterBaseTableManager.getInstance().load(configDir);
+        MonsterTableManager.getInstance().load(configDir);
 
         RewardTableManager.getInstance().load(configDir);
 

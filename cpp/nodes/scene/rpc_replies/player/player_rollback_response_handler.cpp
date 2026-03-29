@@ -9,6 +9,7 @@ void SceneRollbackClientPlayerReply::GmAttachDebt(entt::entity player,const ::Gm
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmWaiveDebt(entt::entity player,const ::GmWaiveDebtRequest* request,
@@ -16,6 +17,7 @@ void SceneRollbackClientPlayerReply::GmWaiveDebt(entt::entity player,const ::GmW
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmAdjustDebt(entt::entity player,const ::GmAdjustDebtRequest* request,
@@ -23,6 +25,7 @@ void SceneRollbackClientPlayerReply::GmAdjustDebt(entt::entity player,const ::Gm
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmFreezeDebt(entt::entity player,const ::GmFreezeDebtRequest* request,
@@ -30,6 +33,7 @@ void SceneRollbackClientPlayerReply::GmFreezeDebt(entt::entity player,const ::Gm
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmQueryDebt(entt::entity player,const ::GmQueryDebtRequest* request,
@@ -37,6 +41,7 @@ void SceneRollbackClientPlayerReply::GmQueryDebt(entt::entity player,const ::GmQ
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmCreateSnapshot(entt::entity player,const ::GmCreateSnapshotRequest* request,
@@ -44,6 +49,7 @@ void SceneRollbackClientPlayerReply::GmCreateSnapshot(entt::entity player,const 
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmListSnapshots(entt::entity player,const ::GmListSnapshotsRequest* request,
@@ -51,6 +57,7 @@ void SceneRollbackClientPlayerReply::GmListSnapshots(entt::entity player,const :
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmPreviewRollback(entt::entity player,const ::GmPreviewRollbackRequest* request,
@@ -58,6 +65,7 @@ void SceneRollbackClientPlayerReply::GmPreviewRollback(entt::entity player,const
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmExecuteRollback(entt::entity player,const ::GmExecuteRollbackRequest* request,
@@ -65,6 +73,7 @@ void SceneRollbackClientPlayerReply::GmExecuteRollback(entt::entity player,const
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmQueryTransactionLog(entt::entity player,const ::GmQueryTransactionLogRequest* request,
@@ -72,6 +81,7 @@ void SceneRollbackClientPlayerReply::GmQueryTransactionLog(entt::entity player,c
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmTraceItem(entt::entity player,const ::GmTraceItemRequest* request,
@@ -79,6 +89,7 @@ void SceneRollbackClientPlayerReply::GmTraceItem(entt::entity player,const ::GmT
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneRollbackClientPlayerReply::GmClawbackItem(entt::entity player,const ::GmClawbackItemRequest* request,
@@ -86,4 +97,5 @@ void SceneRollbackClientPlayerReply::GmClawbackItem(entt::entity player,const ::
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }

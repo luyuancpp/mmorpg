@@ -31,6 +31,7 @@ type MissionTable struct {
 	AutoReward     uint32                 `protobuf:"varint,6,opt,name=auto_reward,json=autoReward,proto3" json:"auto_reward,omitempty"`
 	RewardId       uint32                 `protobuf:"varint,7,opt,name=reward_id,json=rewardId,proto3" json:"reward_id,omitempty"`
 	NextMissionId  []uint32               `protobuf:"varint,8,rep,packed,name=next_mission_id,json=nextMissionId,proto3" json:"next_mission_id,omitempty"`
+	TargetCount    []uint32               `protobuf:"varint,9,rep,packed,name=target_count,json=targetCount,proto3" json:"target_count,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -121,6 +122,13 @@ func (x *MissionTable) GetNextMissionId() []uint32 {
 	return nil
 }
 
+func (x *MissionTable) GetTargetCount() []uint32 {
+	if x != nil {
+		return x.TargetCount
+	}
+	return nil
+}
+
 type MissionTableData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          []*MissionTable        `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
@@ -169,7 +177,7 @@ var File_mission_table_proto protoreflect.FileDescriptor
 
 const file_mission_table_proto_rawDesc = "" +
 	"\n" +
-	"\x13mission_table.proto\"\x9d\x02\n" +
+	"\x13mission_table.proto\"\xc0\x02\n" +
 	"\fMissionTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12!\n" +
 	"\fcondition_id\x18\x02 \x03(\rR\vconditionId\x12!\n" +
@@ -179,7 +187,8 @@ const file_mission_table_proto_rawDesc = "" +
 	"\vauto_reward\x18\x06 \x01(\rR\n" +
 	"autoReward\x12\x1b\n" +
 	"\treward_id\x18\a \x01(\rR\brewardId\x12&\n" +
-	"\x0fnext_mission_id\x18\b \x03(\rR\rnextMissionId\"5\n" +
+	"\x0fnext_mission_id\x18\b \x03(\rR\rnextMissionId\x12!\n" +
+	"\ftarget_count\x18\t \x03(\rR\vtargetCount\"5\n" +
 	"\x10MissionTableData\x12!\n" +
 	"\x04data\x18\x01 \x03(\v2\r.MissionTableR\x04dataB>\n" +
 	"\x0ecom.game.tableB\x16MissionTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"

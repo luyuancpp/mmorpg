@@ -46,6 +46,10 @@ struct MissionNext_mission_idComp {
     std::span<const uint32_t> values;
 };
 
+struct MissionTarget_countComp {
+    std::span<const uint32_t> values;
+};
+
 
 // ============================================================
 // Factory helpers — build component from a proto row
@@ -75,5 +79,9 @@ inline MissionCondition_idComp MakeMissionCondition_idComp(const MissionTable& r
 }
 inline MissionNext_mission_idComp MakeMissionNext_mission_idComp(const MissionTable& row) {
     const auto& rf = row.next_mission_id();
+    return { std::span<const uint32_t>(rf.data(), rf.size()) };
+}
+inline MissionTarget_countComp MakeMissionTarget_countComp(const MissionTable& row) {
+    const auto& rf = row.target_count();
     return { std::span<const uint32_t>(rf.data(), rf.size()) };
 }

@@ -45,6 +45,10 @@ type MissionNext_mission_idComp struct {
     Values []uint32
 }
 
+type MissionTarget_countComp struct {
+    Values []uint32
+}
+
 
 // ============================================================
 // Factory helpers — build component from a proto row
@@ -80,5 +84,9 @@ func MakeMissionCondition_idComp(row *pb.MissionTable) MissionCondition_idComp {
 
 func MakeMissionNext_mission_idComp(row *pb.MissionTable) MissionNext_mission_idComp {
     return MissionNext_mission_idComp{Values: row.NextMissionId}
+}
+
+func MakeMissionTarget_countComp(row *pb.MissionTable) MissionTarget_countComp {
+    return MissionTarget_countComp{Values: row.TargetCount}
 }
 

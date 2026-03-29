@@ -218,26 +218,26 @@ public interface SkillTableOrBuilder extends
       int index);
 
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
-  java.util.List<com.game.table.Skillrequest_resource> 
-      getRequestResourceList();
+  java.util.List<com.game.table.Skillcost_resource> 
+      getCostResourceList();
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
-  com.game.table.Skillrequest_resource getRequestResource(int index);
+  com.game.table.Skillcost_resource getCostResource(int index);
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
-  int getRequestResourceCount();
+  int getCostResourceCount();
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
-  java.util.List<? extends com.game.table.Skillrequest_resourceOrBuilder> 
-      getRequestResourceOrBuilderList();
+  java.util.List<? extends com.game.table.Skillcost_resourceOrBuilder> 
+      getCostResourceOrBuilderList();
   /**
-   * <code>repeated .Skillrequest_resource request_resource = 23;</code>
+   * <code>repeated .Skillcost_resource cost_resource = 23;</code>
    */
-  com.game.table.Skillrequest_resourceOrBuilder getRequestResourceOrBuilder(
+  com.game.table.Skillcost_resourceOrBuilder getCostResourceOrBuilder(
       int index);
 }

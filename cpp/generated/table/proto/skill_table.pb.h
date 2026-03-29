@@ -60,10 +60,10 @@ class SkillTableData;
 struct SkillTableDataDefaultTypeInternal;
 extern SkillTableDataDefaultTypeInternal _SkillTableData_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SkillTableData_class_data_;
-class Skillrequest_resource;
-struct Skillrequest_resourceDefaultTypeInternal;
-extern Skillrequest_resourceDefaultTypeInternal _Skillrequest_resource_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull Skillrequest_resource_class_data_;
+class Skillcost_resource;
+struct Skillcost_resourceDefaultTypeInternal;
+extern Skillcost_resourceDefaultTypeInternal _Skillcost_resource_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull Skillcost_resource_class_data_;
 class Skillrequired_item;
 struct Skillrequired_itemDefaultTypeInternal;
 extern Skillrequired_itemDefaultTypeInternal _Skillrequired_item_default_instance_;
@@ -489,30 +489,30 @@ class Skillrequired_item final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull Skillrequired_item_class_data_;
 // -------------------------------------------------------------------
 
-class Skillrequest_resource final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:Skillrequest_resource) */ {
+class Skillcost_resource final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:Skillcost_resource) */ {
  public:
-  inline Skillrequest_resource() : Skillrequest_resource(nullptr) {}
-  ~Skillrequest_resource() PROTOBUF_FINAL;
+  inline Skillcost_resource() : Skillcost_resource(nullptr) {}
+  ~Skillcost_resource() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(Skillrequest_resource* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(Skillcost_resource* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(Skillrequest_resource));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(Skillcost_resource));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR Skillrequest_resource(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR Skillcost_resource(::google::protobuf::internal::ConstantInitialized);
 
-  inline Skillrequest_resource(const Skillrequest_resource& from) : Skillrequest_resource(nullptr, from) {}
-  inline Skillrequest_resource(Skillrequest_resource&& from) noexcept
-      : Skillrequest_resource(nullptr, ::std::move(from)) {}
-  inline Skillrequest_resource& operator=(const Skillrequest_resource& from) {
+  inline Skillcost_resource(const Skillcost_resource& from) : Skillcost_resource(nullptr, from) {}
+  inline Skillcost_resource(Skillcost_resource&& from) noexcept
+      : Skillcost_resource(nullptr, ::std::move(from)) {}
+  inline Skillcost_resource& operator=(const Skillcost_resource& from) {
     CopyFrom(from);
     return *this;
   }
-  inline Skillrequest_resource& operator=(Skillrequest_resource&& from) noexcept {
+  inline Skillcost_resource& operator=(Skillcost_resource&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -540,13 +540,13 @@ class Skillrequest_resource final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const Skillrequest_resource& default_instance() {
-    return *reinterpret_cast<const Skillrequest_resource*>(
-        &_Skillrequest_resource_default_instance_);
+  static const Skillcost_resource& default_instance() {
+    return *reinterpret_cast<const Skillcost_resource*>(
+        &_Skillcost_resource_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(Skillrequest_resource& a, Skillrequest_resource& b) { a.Swap(&b); }
-  inline void Swap(Skillrequest_resource* PROTOBUF_NONNULL other) {
+  friend void swap(Skillcost_resource& a, Skillcost_resource& b) { a.Swap(&b); }
+  inline void Swap(Skillcost_resource* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -554,7 +554,7 @@ class Skillrequest_resource final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(Skillrequest_resource* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(Skillcost_resource* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -562,13 +562,13 @@ class Skillrequest_resource final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  Skillrequest_resource* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<Skillrequest_resource>(arena);
+  Skillcost_resource* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<Skillcost_resource>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const Skillrequest_resource& from);
+  void CopyFrom(const Skillcost_resource& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const Skillrequest_resource& from) { Skillrequest_resource::MergeImpl(*this, from); }
+  void MergeFrom(const Skillcost_resource& from) { Skillcost_resource::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -604,18 +604,18 @@ class Skillrequest_resource final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(Skillrequest_resource* PROTOBUF_NONNULL other);
+  void InternalSwap(Skillcost_resource* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "Skillrequest_resource"; }
+  static ::absl::string_view FullMessageName() { return "Skillcost_resource"; }
 
  protected:
-  explicit Skillrequest_resource(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  Skillrequest_resource(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Skillrequest_resource& from);
-  Skillrequest_resource(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, Skillrequest_resource&& from) noexcept
-      : Skillrequest_resource(arena) {
+  explicit Skillcost_resource(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  Skillcost_resource(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Skillcost_resource& from);
+  Skillcost_resource(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, Skillcost_resource&& from) noexcept
+      : Skillcost_resource(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -632,30 +632,30 @@ class Skillrequest_resource final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kRequestResourceIdFieldNumber = 1,
-    kRequestResourceCostFieldNumber = 2,
+    kCostResourceIdFieldNumber = 1,
+    kCostResourceCostFieldNumber = 2,
   };
-  // uint32 request_resource_id = 1;
-  void clear_request_resource_id() ;
-  ::uint32_t request_resource_id() const;
-  void set_request_resource_id(::uint32_t value);
+  // uint32 cost_resource_id = 1;
+  void clear_cost_resource_id() ;
+  ::uint32_t cost_resource_id() const;
+  void set_cost_resource_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_request_resource_id() const;
-  void _internal_set_request_resource_id(::uint32_t value);
+  ::uint32_t _internal_cost_resource_id() const;
+  void _internal_set_cost_resource_id(::uint32_t value);
 
   public:
-  // uint32 request_resource_cost = 2;
-  void clear_request_resource_cost() ;
-  ::uint32_t request_resource_cost() const;
-  void set_request_resource_cost(::uint32_t value);
+  // uint32 cost_resource_cost = 2;
+  void clear_cost_resource_cost() ;
+  ::uint32_t cost_resource_cost() const;
+  void set_cost_resource_cost(::uint32_t value);
 
   private:
-  ::uint32_t _internal_request_resource_cost() const;
-  void _internal_set_request_resource_cost(::uint32_t value);
+  ::uint32_t _internal_cost_resource_cost() const;
+  void _internal_set_cost_resource_cost(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:Skillrequest_resource)
+  // @@protoc_insertion_point(class_scope:Skillcost_resource)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -678,18 +678,18 @@ class Skillrequest_resource final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const Skillrequest_resource& from_msg);
+        const Skillcost_resource& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint32_t request_resource_id_;
-    ::uint32_t request_resource_cost_;
+    ::uint32_t cost_resource_id_;
+    ::uint32_t cost_resource_cost_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
   friend struct ::TableStruct_skill_5ftable_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull Skillrequest_resource_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull Skillcost_resource_class_data_;
 // -------------------------------------------------------------------
 
 class SkillTable final : public ::google::protobuf::Message
@@ -840,7 +840,7 @@ class SkillTable final : public ::google::protobuf::Message
     kEffectFieldNumber = 9,
     kRequiredItemFieldNumber = 21,
     kRequiredResourceFieldNumber = 22,
-    kRequestResourceFieldNumber = 23,
+    kCostResourceFieldNumber = 23,
     kDamageFieldNumber = 20,
     kIdFieldNumber = 1,
     kRequireTargetFieldNumber = 4,
@@ -947,23 +947,23 @@ class SkillTable final : public ::google::protobuf::Message
   const ::Skillrequired_resource& required_resource(int index) const;
   ::Skillrequired_resource* PROTOBUF_NONNULL add_required_resource();
   const ::google::protobuf::RepeatedPtrField<::Skillrequired_resource>& required_resource() const;
-  // repeated .Skillrequest_resource request_resource = 23;
-  int request_resource_size() const;
+  // repeated .Skillcost_resource cost_resource = 23;
+  int cost_resource_size() const;
   private:
-  int _internal_request_resource_size() const;
+  int _internal_cost_resource_size() const;
 
   public:
-  void clear_request_resource() ;
-  ::Skillrequest_resource* PROTOBUF_NONNULL mutable_request_resource(int index);
-  ::google::protobuf::RepeatedPtrField<::Skillrequest_resource>* PROTOBUF_NONNULL mutable_request_resource();
+  void clear_cost_resource() ;
+  ::Skillcost_resource* PROTOBUF_NONNULL mutable_cost_resource(int index);
+  ::google::protobuf::RepeatedPtrField<::Skillcost_resource>* PROTOBUF_NONNULL mutable_cost_resource();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::Skillrequest_resource>& _internal_request_resource() const;
-  ::google::protobuf::RepeatedPtrField<::Skillrequest_resource>* PROTOBUF_NONNULL _internal_mutable_request_resource();
+  const ::google::protobuf::RepeatedPtrField<::Skillcost_resource>& _internal_cost_resource() const;
+  ::google::protobuf::RepeatedPtrField<::Skillcost_resource>* PROTOBUF_NONNULL _internal_mutable_cost_resource();
   public:
-  const ::Skillrequest_resource& request_resource(int index) const;
-  ::Skillrequest_resource* PROTOBUF_NONNULL add_request_resource();
-  const ::google::protobuf::RepeatedPtrField<::Skillrequest_resource>& request_resource() const;
+  const ::Skillcost_resource& cost_resource(int index) const;
+  ::Skillcost_resource* PROTOBUF_NONNULL add_cost_resource();
+  const ::google::protobuf::RepeatedPtrField<::Skillcost_resource>& cost_resource() const;
   // string damage = 20;
   void clear_damage() ;
   const ::std::string& damage() const;
@@ -1173,7 +1173,7 @@ class SkillTable final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _effect_cached_byte_size_;
     ::google::protobuf::RepeatedPtrField< ::Skillrequired_item > required_item_;
     ::google::protobuf::RepeatedPtrField< ::Skillrequired_resource > required_resource_;
-    ::google::protobuf::RepeatedPtrField< ::Skillrequest_resource > request_resource_;
+    ::google::protobuf::RepeatedPtrField< ::Skillcost_resource > cost_resource_;
     ::google::protobuf::internal::ArenaStringPtr damage_;
     ::uint32_t id_;
     ::uint32_t require_target_;
@@ -1514,54 +1514,54 @@ inline void Skillrequired_resource::_internal_set_required_resource_value(::uint
 
 // -------------------------------------------------------------------
 
-// Skillrequest_resource
+// Skillcost_resource
 
-// uint32 request_resource_id = 1;
-inline void Skillrequest_resource::clear_request_resource_id() {
+// uint32 cost_resource_id = 1;
+inline void Skillcost_resource::clear_cost_resource_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.request_resource_id_ = 0u;
+  _impl_.cost_resource_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint32_t Skillrequest_resource::request_resource_id() const {
-  // @@protoc_insertion_point(field_get:Skillrequest_resource.request_resource_id)
-  return _internal_request_resource_id();
+inline ::uint32_t Skillcost_resource::cost_resource_id() const {
+  // @@protoc_insertion_point(field_get:Skillcost_resource.cost_resource_id)
+  return _internal_cost_resource_id();
 }
-inline void Skillrequest_resource::set_request_resource_id(::uint32_t value) {
-  _internal_set_request_resource_id(value);
+inline void Skillcost_resource::set_cost_resource_id(::uint32_t value) {
+  _internal_set_cost_resource_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:Skillrequest_resource.request_resource_id)
+  // @@protoc_insertion_point(field_set:Skillcost_resource.cost_resource_id)
 }
-inline ::uint32_t Skillrequest_resource::_internal_request_resource_id() const {
+inline ::uint32_t Skillcost_resource::_internal_cost_resource_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.request_resource_id_;
+  return _impl_.cost_resource_id_;
 }
-inline void Skillrequest_resource::_internal_set_request_resource_id(::uint32_t value) {
+inline void Skillcost_resource::_internal_set_cost_resource_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.request_resource_id_ = value;
+  _impl_.cost_resource_id_ = value;
 }
 
-// uint32 request_resource_cost = 2;
-inline void Skillrequest_resource::clear_request_resource_cost() {
+// uint32 cost_resource_cost = 2;
+inline void Skillcost_resource::clear_cost_resource_cost() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.request_resource_cost_ = 0u;
+  _impl_.cost_resource_cost_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t Skillrequest_resource::request_resource_cost() const {
-  // @@protoc_insertion_point(field_get:Skillrequest_resource.request_resource_cost)
-  return _internal_request_resource_cost();
+inline ::uint32_t Skillcost_resource::cost_resource_cost() const {
+  // @@protoc_insertion_point(field_get:Skillcost_resource.cost_resource_cost)
+  return _internal_cost_resource_cost();
 }
-inline void Skillrequest_resource::set_request_resource_cost(::uint32_t value) {
-  _internal_set_request_resource_cost(value);
+inline void Skillcost_resource::set_cost_resource_cost(::uint32_t value) {
+  _internal_set_cost_resource_cost(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:Skillrequest_resource.request_resource_cost)
+  // @@protoc_insertion_point(field_set:Skillcost_resource.cost_resource_cost)
 }
-inline ::uint32_t Skillrequest_resource::_internal_request_resource_cost() const {
+inline ::uint32_t Skillcost_resource::_internal_cost_resource_cost() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.request_resource_cost_;
+  return _impl_.cost_resource_cost_;
 }
-inline void Skillrequest_resource::_internal_set_request_resource_cost(::uint32_t value) {
+inline void Skillcost_resource::_internal_set_cost_resource_cost(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.request_resource_cost_ = value;
+  _impl_.cost_resource_cost_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -2255,54 +2255,54 @@ SkillTable::_internal_mutable_required_resource() {
   return &_impl_.required_resource_;
 }
 
-// repeated .Skillrequest_resource request_resource = 23;
-inline int SkillTable::_internal_request_resource_size() const {
-  return _internal_request_resource().size();
+// repeated .Skillcost_resource cost_resource = 23;
+inline int SkillTable::_internal_cost_resource_size() const {
+  return _internal_cost_resource().size();
 }
-inline int SkillTable::request_resource_size() const {
-  return _internal_request_resource_size();
+inline int SkillTable::cost_resource_size() const {
+  return _internal_cost_resource_size();
 }
-inline void SkillTable::clear_request_resource() {
+inline void SkillTable::clear_cost_resource() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.request_resource_.Clear();
+  _impl_.cost_resource_.Clear();
 }
-inline ::Skillrequest_resource* PROTOBUF_NONNULL SkillTable::mutable_request_resource(int index)
+inline ::Skillcost_resource* PROTOBUF_NONNULL SkillTable::mutable_cost_resource(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:SkillTable.request_resource)
-  return _internal_mutable_request_resource()->Mutable(index);
+  // @@protoc_insertion_point(field_mutable:SkillTable.cost_resource)
+  return _internal_mutable_cost_resource()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::Skillrequest_resource>* PROTOBUF_NONNULL SkillTable::mutable_request_resource()
+inline ::google::protobuf::RepeatedPtrField<::Skillcost_resource>* PROTOBUF_NONNULL SkillTable::mutable_cost_resource()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SkillTable.request_resource)
+  // @@protoc_insertion_point(field_mutable_list:SkillTable.cost_resource)
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_request_resource();
+  return _internal_mutable_cost_resource();
 }
-inline const ::Skillrequest_resource& SkillTable::request_resource(int index) const
+inline const ::Skillcost_resource& SkillTable::cost_resource(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:SkillTable.request_resource)
-  return _internal_request_resource().Get(index);
+  // @@protoc_insertion_point(field_get:SkillTable.cost_resource)
+  return _internal_cost_resource().Get(index);
 }
-inline ::Skillrequest_resource* PROTOBUF_NONNULL SkillTable::add_request_resource()
+inline ::Skillcost_resource* PROTOBUF_NONNULL SkillTable::add_cost_resource()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::Skillrequest_resource* _add = _internal_mutable_request_resource()->Add();
-  // @@protoc_insertion_point(field_add:SkillTable.request_resource)
+  ::Skillcost_resource* _add = _internal_mutable_cost_resource()->Add();
+  // @@protoc_insertion_point(field_add:SkillTable.cost_resource)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::Skillrequest_resource>& SkillTable::request_resource() const
+inline const ::google::protobuf::RepeatedPtrField<::Skillcost_resource>& SkillTable::cost_resource() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SkillTable.request_resource)
-  return _internal_request_resource();
+  // @@protoc_insertion_point(field_list:SkillTable.cost_resource)
+  return _internal_cost_resource();
 }
-inline const ::google::protobuf::RepeatedPtrField<::Skillrequest_resource>&
-SkillTable::_internal_request_resource() const {
+inline const ::google::protobuf::RepeatedPtrField<::Skillcost_resource>&
+SkillTable::_internal_cost_resource() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.request_resource_;
+  return _impl_.cost_resource_;
 }
-inline ::google::protobuf::RepeatedPtrField<::Skillrequest_resource>* PROTOBUF_NONNULL
-SkillTable::_internal_mutable_request_resource() {
+inline ::google::protobuf::RepeatedPtrField<::Skillcost_resource>* PROTOBUF_NONNULL
+SkillTable::_internal_mutable_cost_resource() {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.request_resource_;
+  return &_impl_.cost_resource_;
 }
 
 // -------------------------------------------------------------------
