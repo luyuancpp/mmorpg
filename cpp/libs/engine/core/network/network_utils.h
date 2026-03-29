@@ -9,13 +9,11 @@
 constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
 using SessionIdGenerator = TransientNodeCompositeIdGenerator<uint64_t, 32>;
 
-void ParseIpPort(const std::string& input, std::string& ip, uint16_t& port);
+void ParseIpPort(const std::string &input, std::string &ip, uint16_t &port);
 
-std::string FormatIpAndPort(const std::string& ip, uint32_t port);
-
-bool IsZoneSingletonNodeType(uint32_t nodeType);
+std::string FormatIpAndPort(const std::string &ip, uint32_t port);
 
 class SessionDetails;
-std::vector<std::string> SerializeSessionDetails(const SessionDetails& sessionDetails) ;
+std::vector<std::string> SerializeSessionDetails(const SessionDetails &sessionDetails);
 
 NodeId GetGateNodeId(Guid session_id);

@@ -57,21 +57,7 @@ static inline NodeId GetEffectiveNodeId(
 	const SessionInfo &session,
 	uint32_t nodeType)
 {
-	if (IsZoneSingletonNodeType(nodeType))
-	{
-		auto node = FindZoneUniqueNodeInfo(gNode->GetNodeInfo().zone_id(), nodeType);
-		if (node == nullptr)
-		{
-			LOG_ERROR << "Node not found for type: " << nodeType;
-			return kInvalidNodeId;
-		}
-
-		return node->node_id();
-	}
-	else
-	{
-		return session.GetNodeId(nodeType);
-	}
+	return session.GetNodeId(nodeType);
 }
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
@@ -88,32 +74,9 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
 	tlsEcs.dispatcher.sink<OnNodeRemovePbEvent>().connect<&RpcClientSessionHandler::OnNodeRemovePbEventHandler>(*this);
 }
 
-// TODO: Handle login service shutdown mid-request; replacement node can't resume
+// OnNodeRemovePbEvent invalidates stale binding → next call re-binds via PickRandomNode.
 std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_t nodeType)
 {
-	// Zone-singleton node type: single instance per zone
-	if (IsZoneSingletonNodeType(nodeType))
-	{
-		auto nodeInfo = FindZoneUniqueNodeInfo(gNode->GetNodeInfo().zone_id(), nodeType);
-		if (!nodeInfo)
-		{
-			LOG_ERROR << "Singleton node not found for nodeType: " << nodeType;
-			return std::nullopt;
-		}
-
-		const auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-		auto entity = entt::entity{nodeInfo->node_id()};
-
-		if (!registry.valid(entity))
-		{
-			LOG_ERROR << "[SingletonNode] Entity invalid. nodeType: " << nodeType;
-			return std::nullopt;
-		}
-
-		return entity;
-	}
-
-	// Regular node: requires session binding
 	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 	if (sessionIt == tlsSessionManager.sessions().end())
 	{
@@ -128,7 +91,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 		auto randomNode = PickRandomNode(nodeType);
 		if (!randomNode)
 		{
-			LOG_ERROR << "[LoginNode] No available login node for session id: " << sessionId;
+			LOG_ERROR << "No available node for nodeType: " << nodeType << ", session id: " << sessionId;
 			return std::nullopt;
 		}
 		session.SetNodeId(nodeType, entt::to_integral(*randomNode));
@@ -138,7 +101,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 	entt::entity nodeEntity = entt::entity{GetEffectiveNodeId(session, nodeType)};
 	if (!registry.valid(nodeEntity))
 	{
-		LOG_ERROR << "[LoginNode] Bound login node is invalid. session id: " << sessionId;
+		LOG_ERROR << "Bound node is invalid. nodeType: " << nodeType << ", session id: " << sessionId;
 		session.SetNodeId(nodeType, kInvalidNodeId);
 		return std::nullopt;
 	}
@@ -357,7 +320,7 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr &request, c
 		if (!node)
 		{
 			LOG_ERROR << "Node not found for session id: " << sessionId << ", message id: " << request->message_id();
-			// TODO: Handle connection closure logic here.
+			RpcClientSessionHandler::SendTipToClient(conn, kServiceUnavailable);
 			return;
 		}
 

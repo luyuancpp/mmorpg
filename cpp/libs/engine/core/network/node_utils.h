@@ -4,6 +4,5 @@
 
 using ServiceNodeList = std::array<NodeInfoListComp, eNodeType_ARRAYSIZE>;
 
-NodeInfo* FindZoneUniqueNodeInfo(uint32_t zoneId, uint32_t nodeType);
-NodeInfo& GetNodeInfo();
+NodeInfo &GetNodeInfo();
 uint32_t GetZoneId();
