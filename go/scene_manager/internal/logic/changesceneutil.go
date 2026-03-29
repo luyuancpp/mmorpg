@@ -15,6 +15,11 @@ func getPlayerLocationKey(playerId uint64) string {
 	return fmt.Sprintf("player:%d:location", playerId)
 }
 
+// GateTopicName returns the Kafka topic name for a gate node.
+func GateTopicName(gateId string) string {
+	return fmt.Sprintf("gate-%s", gateId)
+}
+
 
 // GetPlayerLocation retrieves the current scene and node for a player
 func GetPlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) (*storage.PlayerLocation, error) {

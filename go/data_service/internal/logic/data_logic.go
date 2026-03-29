@@ -118,31 +118,46 @@ type SavePlayerDataResp struct {
 	NewVersion uint64
 }
 
-func SavePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *SavePlayerDataReq) (*SavePlayerDataResp, error) {
-	client, err := svcCtx.Router.ClientForPlayer(ctx, req.PlayerID)
+// acquirePlayerLock acquires a per-player lock, returning the Redis client for that player.
+// On failure it returns a non-nil error code. Caller must defer ReleasePlayerLock.
+func acquirePlayerLock(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64) (goredis.Cmdable, uint32, error) {
+	client, err := svcCtx.Router.ClientForPlayer(ctx, playerID)
 	if err != nil {
-		return &SavePlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
+		return nil, constants.ErrCodeRedis, err
 	}
-
-	// Acquire per-player lock
-	locked, err := svcCtx.Router.AcquirePlayerLock(ctx, req.PlayerID)
+	locked, err := svcCtx.Router.AcquirePlayerLock(ctx, playerID)
 	if err != nil {
-		return &SavePlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
+		return nil, constants.ErrCodeRedis, err
 	}
 	if !locked {
-		logx.Errorf("player %d data is being written by another process", req.PlayerID)
-		return &SavePlayerDataResp{ErrorCode: constants.ErrCodeLockConflict}, nil
+		logx.Errorf("player %d data is being written by another process", playerID)
+		return nil, constants.ErrCodeLockConflict, nil
+	}
+	return client, 0, nil
+}
+
+// checkVersion validates expectedVersion against Redis; returns 0 on success or the current version on mismatch.
+func checkVersion(ctx context.Context, client goredis.Cmdable, playerID uint64, expectedVersion uint64) (mismatch bool, curVer uint64) {
+	if expectedVersion == 0 {
+		return false, 0
+	}
+	curVer = readVersion(ctx, client, playerID)
+	if curVer != expectedVersion {
+		logx.Errorf("version mismatch for player %d: expected %d, got %d", playerID, expectedVersion, curVer)
+		return true, curVer
+	}
+	return false, curVer
+}
+
+func SavePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *SavePlayerDataReq) (*SavePlayerDataResp, error) {
+	client, errCode, err := acquirePlayerLock(ctx, svcCtx, req.PlayerID)
+	if errCode != 0 {
+		return &SavePlayerDataResp{ErrorCode: errCode}, err
 	}
 	defer svcCtx.Router.ReleasePlayerLock(ctx, req.PlayerID)
 
-	// Version check
-	if req.ExpectedVersion > 0 {
-		curVer := readVersion(ctx, client, req.PlayerID)
-		if curVer != req.ExpectedVersion {
-			logx.Errorf("version mismatch for player %d: expected %d, got %d",
-				req.PlayerID, req.ExpectedVersion, curVer)
-			return &SavePlayerDataResp{ErrorCode: constants.ErrCodeVersionMismatch, NewVersion: curVer}, nil
-		}
+	if mismatch, curVer := checkVersion(ctx, client, req.PlayerID, req.ExpectedVersion); mismatch {
+		return &SavePlayerDataResp{ErrorCode: constants.ErrCodeVersionMismatch, NewVersion: curVer}, nil
 	}
 
 	// Write fields via pipeline
@@ -150,16 +165,13 @@ func SavePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *SavePl
 	for field, val := range req.Data {
 		pipe.Set(ctx, playerField(req.PlayerID, field), val, 0)
 	}
-	// Increment version
-	vk := versionKey(req.PlayerID)
-	incrCmd := pipe.Incr(ctx, vk)
+	incrCmd := pipe.Incr(ctx, versionKey(req.PlayerID))
 	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return &SavePlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
 	}
 
-	newVer := uint64(incrCmd.Val())
-	return &SavePlayerDataResp{NewVersion: newVer}, nil
+	return &SavePlayerDataResp{NewVersion: uint64(incrCmd.Val())}, nil
 }
 
 // ── GetPlayerField ─────────────────────────────────────────────
@@ -184,25 +196,14 @@ type SetPlayerFieldResp struct {
 }
 
 func SetPlayerField(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64, field string, value []byte, expectedVersion uint64) (*SetPlayerFieldResp, error) {
-	client, err := svcCtx.Router.ClientForPlayer(ctx, playerID)
-	if err != nil {
-		return &SetPlayerFieldResp{ErrorCode: constants.ErrCodeRedis}, err
-	}
-
-	locked, err := svcCtx.Router.AcquirePlayerLock(ctx, playerID)
-	if err != nil {
-		return &SetPlayerFieldResp{ErrorCode: constants.ErrCodeRedis}, err
-	}
-	if !locked {
-		return &SetPlayerFieldResp{ErrorCode: constants.ErrCodeLockConflict}, nil
+	client, errCode, err := acquirePlayerLock(ctx, svcCtx, playerID)
+	if errCode != 0 {
+		return &SetPlayerFieldResp{ErrorCode: errCode}, err
 	}
 	defer svcCtx.Router.ReleasePlayerLock(ctx, playerID)
 
-	if expectedVersion > 0 {
-		curVer := readVersion(ctx, client, playerID)
-		if curVer != expectedVersion {
-			return &SetPlayerFieldResp{ErrorCode: constants.ErrCodeVersionMismatch, NewVersion: curVer}, nil
-		}
+	if mismatch, curVer := checkVersion(ctx, client, playerID, expectedVersion); mismatch {
+		return &SetPlayerFieldResp{ErrorCode: constants.ErrCodeVersionMismatch, NewVersion: curVer}, nil
 	}
 
 	pipe := pipeline(client)
@@ -216,7 +217,19 @@ func SetPlayerField(ctx context.Context, svcCtx *svc.ServiceContext, playerID ui
 	return &SetPlayerFieldResp{NewVersion: uint64(incrCmd.Val())}, nil
 }
 
-// ── Helpers: abstract over Client vs ClusterClient ─────────────
+// ── Redis helper interfaces ────────────────────────────────────
+// go-redis Cmdable doesn't expose Scan/Pipeline; define minimal interfaces
+// so callers don't need type switches.
+
+type redisScanner interface {
+	Scan(ctx context.Context, cursor uint64, match string, count int64) *goredis.ScanCmd
+}
+
+type redisPipeliner interface {
+	Pipeline() goredis.Pipeliner
+}
+
+// ── Helpers ────────────────────────────────────────────────────
 
 func readVersion(ctx context.Context, client goredis.Cmdable, playerID uint64) uint64 {
 	val, err := getString(ctx, client, versionKey(playerID))
@@ -242,25 +255,19 @@ func mget(ctx context.Context, c goredis.Cmdable, keys ...string) ([]interface{}
 func scan(ctx context.Context, c goredis.Cmdable, cursor uint64, pattern string, count int64) ([]string, uint64, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
-	switch cc := c.(type) {
-	case *goredis.Client:
-		return cc.Scan(ctx, cursor, pattern, count).Result()
-	case *goredis.ClusterClient:
-		return cc.Scan(ctx, cursor, pattern, count).Result()
-	default:
-		return nil, 0, fmt.Errorf("unsupported redis client type")
+	s, ok := c.(redisScanner)
+	if !ok {
+		return nil, 0, fmt.Errorf("redis client %T does not support Scan", c)
 	}
+	return s.Scan(ctx, cursor, pattern, count).Result()
 }
 
 func pipeline(c goredis.Cmdable) goredis.Pipeliner {
-	switch cc := c.(type) {
-	case *goredis.Client:
-		return cc.Pipeline()
-	case *goredis.ClusterClient:
-		return cc.Pipeline()
-	default:
-		panic("unsupported redis client type for pipeline")
+	p, ok := c.(redisPipeliner)
+	if !ok {
+		panic(fmt.Sprintf("redis client %T does not support Pipeline", c))
 	}
+	return p.Pipeline()
 }
 
 // ── DeletePlayerData ───────────────────────────────────────────
@@ -276,17 +283,9 @@ type DeletePlayerDataResp struct {
 }
 
 func DeletePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *DeletePlayerDataReq) (*DeletePlayerDataResp, error) {
-	client, err := svcCtx.Router.ClientForPlayer(ctx, req.PlayerID)
-	if err != nil {
-		return &DeletePlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
-	}
-
-	locked, err := svcCtx.Router.AcquirePlayerLock(ctx, req.PlayerID)
-	if err != nil {
-		return &DeletePlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
-	}
-	if !locked {
-		return &DeletePlayerDataResp{ErrorCode: constants.ErrCodeLockConflict}, nil
+	client, errCode, err := acquirePlayerLock(ctx, svcCtx, req.PlayerID)
+	if errCode != 0 {
+		return &DeletePlayerDataResp{ErrorCode: errCode}, err
 	}
 	defer svcCtx.Router.ReleasePlayerLock(ctx, req.PlayerID)
 

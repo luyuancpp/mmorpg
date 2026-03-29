@@ -105,6 +105,43 @@ bin/stop_server.*
 tools/contracts/
 tools/data_service/
 tools/scene_manager/
+
+# Java build output
+java/config_node/target/
+
+# Dead Go stub directories (no service code, only generated pb.go)
+go/chat/
+go/common/
+go/contracts/
+go/etcd/
+go/github.com/
+
+# Build / debug output files
+go/build_output.txt
+tools/docs/protogen/fatal_lines.txt
+tools/docs/protogen/pbgen_out2.txt
+tools/docs/cpptree.txt
+tools/docs/tree.txt
+
+# AI chat transcripts in source tree
+cpp/libs/engine/core/time/system/chatgpt.txt
+
+# Stale robot proto duplicate (canonical: robot/proto/)
+tools/robot/
+
+# Unreferenced generated Go module
+generated/code/go/
+
+# Muduo tests and examples (not used in game build)
+cpp/libs/engine/muduo_windows/src/examples/
+cpp/libs/engine/muduo_windows/src/muduo/base/tests/
+cpp/libs/engine/muduo_windows/src/muduo/net/tests/
+third_party/muduo/muduo/base/tests/
+third_party/muduo/muduo/net/tests/
+
+# Lua reference manual (not needed for build)
+third_party/lua/manual/
+
 tools/github.com/
 tools/bin/
 
