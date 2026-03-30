@@ -224,6 +224,8 @@ int main(int argc, char** argv) {
     if (!test_config::FindAndLoadTestConfig(argc, argv))
         return 1;
 
+    EventLoop loop;
+
     ::testing::InitGoogleTest(&argc, argv);
     CooldownTableManager::Instance().Load();
     SkillTableManager::Instance().Load();
