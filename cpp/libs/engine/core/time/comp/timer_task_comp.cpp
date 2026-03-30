@@ -8,7 +8,6 @@ static inline muduo::net::EventLoop* GetThreadEventLoop() {
 }
 
 TimerTaskComp::TimerTaskComp() {
-    Cancel();
 }
 
 TimerTaskComp::~TimerTaskComp() {
@@ -17,12 +16,10 @@ TimerTaskComp::~TimerTaskComp() {
 
 TimerTaskComp::TimerTaskComp(const TimerTaskComp& param) {
     const_cast<TimerTaskComp&>(param).Cancel();
-    Cancel();
 }
 
 TimerTaskComp::TimerTaskComp(TimerTaskComp&& param) noexcept {
     param.Cancel();
-    Cancel();
 }
 
 TimerTaskComp& TimerTaskComp::operator=(TimerTaskComp&& param) noexcept
@@ -58,7 +55,10 @@ void TimerTaskComp::Run() const
 }
 
 void TimerTaskComp::Cancel() {
-    GetThreadEventLoop()->cancel(timerId);
+    auto* loop = GetThreadEventLoop();
+    if (loop != nullptr) {
+        loop->cancel(timerId);
+    }
     timerId = TimerId();
     callback = TimerCallback();
     assert(timerId.GetTimer() == nullptr);
