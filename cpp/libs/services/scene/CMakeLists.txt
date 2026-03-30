@@ -69,7 +69,6 @@ set(SOURCE_FILES
     generated/attribute/attributedelta60framess2c_attribute_sync.cpp
     kafka/system/kafka.cpp
     mount/system/mount.cpp
-    player/system/player_database_loader.cpp
     player/system/player_lifecycle.cpp
     player/system/player_scene.cpp
     player/system/player_skill.cpp

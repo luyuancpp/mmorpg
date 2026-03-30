@@ -21,6 +21,7 @@ import (
 	"friend/internal/svc"
 	base "proto/common/base"
 	pb "proto/friend"
+	"shared/grpcstats"
 )
 
 var configFile = flag.String("f", "etc/friend.yaml", "config file path")
@@ -62,6 +63,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
 	logx.Infof("Starting Friend RPC server at %s...", config.AppConfig.ListenOn)

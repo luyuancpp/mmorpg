@@ -5,11 +5,12 @@ import (
 	"flag"
 	"fmt"
 
+	"proto/scene_manager"
 	"scene_manager/internal/config"
 	"scene_manager/internal/logic"
 	"scene_manager/internal/server"
 	"scene_manager/internal/svc"
-	"proto/scene_manager"
+	"shared/grpcstats"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
@@ -37,6 +38,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)

@@ -34,6 +34,7 @@
     <ClCompile Include="utils\registry\game_registry.cpp" />
     <ClCompile Include="utils\stat\stat.cpp" />
     <ClCompile Include="utils\proto\message_util.cpp" />
+    <ClCompile Include="network\traffic_statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="type_alias\player_session_type_alias.h" />
@@ -98,6 +99,7 @@
     <ClInclude Include="node\system\node\simple_node.h" />
     <ClInclude Include="node\system\node\node_entry.h" />
     <ClInclude Include="node\system\node\thread_observability.h" />
+    <ClInclude Include="network\traffic_statistics.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="network\autogen.bat" />

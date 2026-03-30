@@ -21,6 +21,7 @@ import (
 	"player_locator/internal/svc"
 	proto_common "proto/common/base"
 	pb "proto/player_locator"
+	"shared/grpcstats"
 )
 
 var configFile = flag.String("f", "etc/player_locator.yaml", "config file path")
@@ -69,6 +70,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
 	logx.Infof("Starting player_locator RPC server at %s...", config.AppConfig.ListenOn)

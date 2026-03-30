@@ -36,7 +36,6 @@
     <ClInclude Include="mount\system\mount.h" />
     <ClInclude Include="player\constants\player.h" />
     <ClInclude Include="player\system\player_data_loader.h" />
-    <ClInclude Include="player\system\player_database_loader.h" />
     <ClInclude Include="player\system\player_lifecycle.h" />
     <ClInclude Include="player\system\player_scene.h" />
     <ClInclude Include="player\system\player_skill.h" />
@@ -83,9 +82,6 @@
     <ClCompile Include="generated\attribute\attributedelta30framess2c_attribute_sync.cpp" />
     <ClCompile Include="generated\attribute\attributedelta60framess2c_attribute_sync.cpp" />
     <ClCompile Include="kafka\system\kafka.cpp" />
-    <ClCompile Include="mount\system\mount.cpp" />
-    <ClCompile Include="player\system\player_database_loader.cpp" />
-    <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_scene.cpp" />
     <ClCompile Include="player\system\player_skill.cpp" />
     <ClCompile Include="player\system\player_tip.cpp" />
@@ -99,5 +95,6 @@
     <ClCompile Include="spatial\system\scene_crowd.cpp" />
     <ClCompile Include="spatial\system\view.cpp" />
     <ClCompile Include="world\world.cpp" />
+    <ClCompile Include="player\system\player_lifecycle.cpp" />
   </ItemGroup>
 </Project>

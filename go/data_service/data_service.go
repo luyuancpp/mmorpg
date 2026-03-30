@@ -4,10 +4,11 @@ import (
 	"flag"
 	"fmt"
 
-	"proto/data_service"
 	"data_service/internal/config"
 	"data_service/internal/server"
 	"data_service/internal/svc"
+	"proto/data_service"
+	"shared/grpcstats"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
@@ -36,6 +37,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
 	fmt.Printf("Starting data service at %s...\n", c.ListenOn)

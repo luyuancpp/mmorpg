@@ -22,6 +22,7 @@ import (
 	"guild/internal/svc"
 	base "proto/common/base"
 	pb "proto/guild"
+	"shared/grpcstats"
 )
 
 var configFile = flag.String("f", "etc/guild.yaml", "config file path")
@@ -69,6 +70,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
 	logx.Infof("Starting Guild RPC server at %s...", config.AppConfig.ListenOn)
