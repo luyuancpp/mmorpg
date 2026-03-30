@@ -15,6 +15,7 @@ import (
 	"net"
 	login_proto "proto/common/base"
 	login_proto_login "proto/login"
+	"shared/grpcstats"
 	"strconv"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -142,7 +143,10 @@ func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 		}
 	})
 
-	server.AddUnaryInterceptors(SessionInterceptor)
+	server.AddUnaryInterceptors(
+		SessionInterceptor,
+		grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor(),
+	)
 
 	defer server.Stop()
 

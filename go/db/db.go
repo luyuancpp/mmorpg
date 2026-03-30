@@ -6,11 +6,12 @@ import (
 	"db/internal/logic/pkg/proto_sql"
 	server "db/internal/server/db"
 	"db/internal/svc"
-	db_grpc "proto/db"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
+	db_grpc "proto/db"
+	"shared/grpcstats"
 	"syscall"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -54,6 +55,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
 	// Wait for shutdown signal
