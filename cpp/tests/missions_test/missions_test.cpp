@@ -273,7 +273,8 @@ TEST(MissionsComp, OnCompleteMission)
 	EXPECT_EQ(1, missions.TypeSetSize());
 
 	// Complete mission 7, triggering next mission in chain
-	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
+	// amount must satisfy mission target_count (highest in chain is 12)
+	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 12);
 	condEv.add_condtion_ids(1);
 	MissionSystem::HandleMissionConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
@@ -315,8 +316,8 @@ TEST(MissionsComp, AcceptNextMirroMission)
 	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptEv, missions, MissionConfig::GetSingleton()));
 	EXPECT_EQ(1, missions.TypeSetSize());
 
-	// Complete mission 7
-	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
+	// Complete mission 7 (target_count=8)
+	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 8);
 	condEv.add_condtion_ids(1);
 	MissionSystem::HandleMissionConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 

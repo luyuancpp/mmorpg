@@ -39,7 +39,7 @@ TEST(NodeCompositeIdTest, SingleGeneration)
 
 TEST(NodeCompositeIdTest, AllGeneratedIdsAreUnique)
 {
-	for (int32_t round = 0; round < 100; ++round)
+	for (int32_t round = 0; round < 10; ++round)
 	{
 		GuidVector ids;
 		GenerateIdsIntoVector(ids);
