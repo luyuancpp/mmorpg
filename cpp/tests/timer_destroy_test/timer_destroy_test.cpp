@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+﻿#include <gtest/gtest.h>
 
 #include <iostream>
 #include <unordered_map>
@@ -159,16 +159,16 @@ struct CastingTimerCompTest
 // 场景: entity 在定时器回调中被销毁，接着重新创建 → 验证不崩溃
 void TestScenario() {
 
-    auto entity = tlsEcs.actorRegistry.create();
+    const entt::entity targetEntity = tlsEcs.actorRegistry.create();
 
-    auto& t = tlsEcs.actorRegistry.emplace<CastingTimerCompTest>(entity);
+    auto& t = tlsEcs.actorRegistry.emplace<CastingTimerCompTest>(targetEntity);
 
-    auto fn = [entity]() {
-        std::cout << "CastingTimerCompTest: callback — destroy entity and recreate." << std::endl;
+    auto fn = [targetEntity = targetEntity]() {
+        std::cout << "CastingTimerCompTest: callback -- destroy entity and recreate." << std::endl;
 
-        tlsEcs.actorRegistry.destroy(entity);
+        tlsEcs.actorRegistry.destroy(targetEntity);
 
-        auto newEntity = tlsEcs.actorRegistry.create();
+        entt::entity newEntity = tlsEcs.actorRegistry.create();
         tlsEcs.actorRegistry.get_or_emplace<CastingTimerCompTest>(newEntity);
     };
 
@@ -177,7 +177,7 @@ void TestScenario() {
 
 
 // 场景: 对象1 在定时器回调中为对象2 注册新回调，然后对象2 被销毁
-// → 验证悬空回调不会引发崩溃
+// -> 验证悬空回调不会引发崩溃
 void TestScenario1() {
 
     using DestroyObjType = std::shared_ptr<TestCoreDump>;
@@ -185,7 +185,7 @@ void TestScenario1() {
     TimerTaskComp obj1;
     DestroyObjType obj2 = std::make_shared<DestroyObjType::element_type>();
 
-    obj1.RunAfter(1.0, [&obj1, &obj2]() {
+    obj1.RunAfter(0.1, [&obj1, &obj2]() {
         std::cout << "Callback from obj2 executed." << obj2->id << std::endl;
 
         // 对象1 在回调中为对象2 注册新的定时回调
@@ -195,16 +195,14 @@ void TestScenario1() {
             obj2->TestTimer();
         });
 
-        // 对象2 随后被销毁（reset）
+        // 对象2 随后被销毁 (reset)
         obj1.RunAfter(0.15, [&obj2]() {
             std::cout << "reset ." << &obj2->timer << std::endl;
             obj2.reset();
         });
 
-        // 此时对象1 设置的对象2 回调可能悬空 → 验证不崩溃
+        // 此时对象1 设置的对象2 回调可能悬空 -> 验证不崩溃
     });
-
-    g_loop->loop();
 }
 
 // 副本定时器链式调用测试：准备→结算→强退→准备 循环
@@ -256,54 +254,53 @@ TEST(TimerDestroyTest, TimerDestroyDoesNotCrash)
 {
     EventLoop loop;
     g_loop = &loop;
-    while (true)
+
+    TestScenario();
+
     {
-        TestScenario();
-
-        {
-            DungeonTimerTest t;
-            t.Init();
-        }
-
-        GameTimerTest a1;
-        loop.loop();
-
-        GameTimerTest a;
-        a.RunAfter();
-
-        GameTimerTest g;
-        g.RunEvery();
-
-        GameTimerTest c;
-        c.RunEvery();
-
-        // 定时器在作用域结束时被销毁 → 验证不崩溃
-        { GameTimerTest t; t.RunAfter(); }
-        { GameTimerTest t; t.RunAfter(); }
-        { GameTimerTest t; t.RunEvery(); }
-        { GameTimerTest t; t.RunEvery(); }
-
-        RecursionTimerTest r;
-        r.RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
-        GameTimerTestMap v;
-
-        {
-            GameTimerTestPtr p(new GameTimerTest);
-            p->RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-
-        TestScenario1();
+        DungeonTimerTest t;
+        t.Init();
     }
+
+    GameTimerTest a1;
+
+    GameTimerTest a;
+    a.RunAfter();
+
+    GameTimerTest g;
+    g.RunEvery();
+
+    GameTimerTest c;
+    c.RunEvery();
+
+    // 定时器在作用域结束时被销毁 -> 验证不崩溃
+    { GameTimerTest t; t.RunAfter(); }
+    { GameTimerTest t; t.RunAfter(); }
+    { GameTimerTest t; t.RunEvery(); }
+    { GameTimerTest t; t.RunEvery(); }
+
+    RecursionTimerTest r;
+    r.RunAt(Timestamp::fromUnixTime(time(NULL) + 1));
+    GameTimerTestMap v;
+
+    {
+        GameTimerTestPtr p(new GameTimerTest);
+        p->RunAt(Timestamp::fromUnixTime(time(NULL) + 1));
+    }
+
+    TestScenario1();
+
+    // 让事件循环运行 3 秒后自动退出
+    loop.runAfter(3.0, [&loop]() { loop.quit(); });
+    loop.loop();
+
+    // loop 结束后清理 registry 中残留的定时器组件，
+    // 避免 EventLoop 销毁后 registry 析构触发 Cancel() 空指针
+    tlsEcs.actorRegistry.clear();
 }
 
 int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
-    int32_t nRet = RUN_ALL_TESTS();
-    while (true)
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-    return nRet;
+    return RUN_ALL_TESTS();
 }
