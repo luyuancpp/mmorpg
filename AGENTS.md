@@ -166,6 +166,8 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -ZoneName yesterday 
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-up -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml -OpsProfile managed-cloud -NodeImage <image> -WaitReady
 
 # Go services (local dev)
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build
+pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build -GoServices login,db
 pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-start
 pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-stop
 pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-status
