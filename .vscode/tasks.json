@@ -212,6 +212,19 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "go-svc: build",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-File",
+				"${workspaceFolder}/tools/scripts/dev_tools.ps1",
+				"-Command",
+				"go-svc-build"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
 			"label": "go-svc: build images",
 			"type": "shell",
 			"command": "pwsh",

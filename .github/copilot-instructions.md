@@ -60,6 +60,8 @@
 - **Run a single Java test**: `cd java\sa_token_node && mvn -Dtest=GrpcServerApplicationTests#contextLoads test`
 
 ### Go Services (Local Dev)
+- **Build all binaries**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build`
+- **Build selected binaries**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build -GoServices login,db`
 - **Start all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-start`
 - **Stop all**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-stop`
 - **Status**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-status`
