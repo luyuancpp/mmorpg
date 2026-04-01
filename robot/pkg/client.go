@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luyuancpp/muduoclient/muduo"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 
 	"robot/proto/common/base"
 )
