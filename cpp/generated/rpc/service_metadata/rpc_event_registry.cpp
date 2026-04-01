@@ -140,7 +140,7 @@ namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 118> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 119> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {

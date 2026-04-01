@@ -8,6 +8,15 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <!-- Suppress C4996 from gRPC v1.80 deprecated-but-still-used types in headers
+       (IdentityKeyCertPair, set_certificate_provider, etc.). -->
+  <ItemDefinitionGroup
+      Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
+    <ClCompile>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <Target Name="NoRawPointerMemberCheck" BeforeTargets="PreBuildEvent"
           Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and $([System.String]::Copy('$(MSBuildProjectDirectory)').Contains('\third_party\')) != 'True'">
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)tools\scripts\check_no_raw_pointer_member.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -ProjectName &quot;$(ProjectName)&quot;" />

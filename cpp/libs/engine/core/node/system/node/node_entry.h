@@ -7,6 +7,7 @@
 #endif
 #include "muduo/net/EventLoop.h"
 #include "node/system/node/simple_node.h"
+#include "thread_context/ecs_context.h"
 
 #include <google/protobuf/stubs/common.h>
 
@@ -22,6 +23,10 @@ int RunNodeMain(StartNodeFn&& startNode)
     absl::InitializeLog();
     muduo::net::EventLoop loop;
     startNode(loop);
+    // Clear all registries while the EventLoop is still alive so that
+    // TimerTaskComp destructors can safely cancel their timers.
+    // After ~EventLoop, getEventLoopOfCurrentThread() returns nullptr.
+    tlsEcs.Clear();
     google::protobuf::ShutdownProtobufLibrary();
     return 0;
 }
