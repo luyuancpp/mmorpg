@@ -15,9 +15,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
 
 	"robot/config"
 	"robot/generated/pb/game"
@@ -104,127 +104,34 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 	defer stats.Disconnected()
 
 	gc.Account = account
-
-	// Give the connection time to establish.
 	time.Sleep(500 * time.Millisecond)
 
-	// --- Gate token handshake (if token was provided by AssignGate) ---
+	// Gate token handshake (if token was provided by AssignGate).
 	if len(tokenPayload) > 0 {
 		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
-			zap.L().Error("gate token verification failed", zap.String("account", account), zap.Error(err))
+			zap.L().Error("gate token failed", zap.String("account", account), zap.Error(err))
 			stats.LoginFail()
 			return
 		}
 	}
 
-	// --- Login flow ---
+	// Login → create player if needed → enter game.
 	loginStart := time.Now()
-
-	if err := gc.SendRequest(game.ClientPlayerLoginLoginMessageId, &login.LoginRequest{
-		Account:  account,
-		Password: cfg.Password,
-	}); err != nil {
-		zap.L().Error("send login", zap.String("account", account), zap.Error(err))
-		stats.LoginFail()
-		return
-	}
-	stats.MsgSent()
-
-	loginResp, err := waitForMessage(gc, game.ClientPlayerLoginLoginMessageId, stats)
-	if err != nil {
-		zap.L().Error("login response", zap.String("account", account), zap.Error(err))
-		stats.LoginFail()
-		return
-	}
-	var lr login.LoginResponse
-	if err := proto.Unmarshal(loginResp.SerializedMessage, &lr); err != nil {
-		zap.L().Error("unmarshal login response", zap.Error(err))
-		stats.LoginFail()
-		return
-	}
-	if lr.ErrorMessage != nil {
-		zap.L().Error("login error", zap.String("account", account), zap.Any("tip", lr.ErrorMessage))
-		stats.LoginFail()
+	if err := loginAndEnter(gc, cfg, stats); err != nil {
+		zap.L().Error("login flow failed", zap.String("account", account), zap.Error(err))
 		return
 	}
 
-	// --- Create player if needed ---
-	if len(lr.Players) == 0 {
-		if err := gc.SendRequest(game.ClientPlayerLoginCreatePlayerMessageId, &login.CreatePlayerRequest{}); err != nil {
-			zap.L().Error("send create player", zap.Error(err))
-			stats.LoginFail()
-			return
-		}
-		stats.MsgSent()
-		createResp, err := waitForMessage(gc, game.ClientPlayerLoginCreatePlayerMessageId, stats)
-		if err != nil {
-			zap.L().Error("create player response", zap.Error(err))
-			stats.LoginFail()
-			return
-		}
-		var cr login.CreatePlayerResponse
-		if err := proto.Unmarshal(createResp.SerializedMessage, &cr); err != nil {
-			zap.L().Error("unmarshal create response", zap.Error(err))
-			stats.LoginFail()
-			return
-		}
-		if cr.ErrorMessage != nil {
-			zap.L().Error("create error", zap.Any("tip", cr.ErrorMessage))
-			stats.LoginFail()
-			return
-		}
-		lr.Players = cr.Players
-	}
-
-	if len(lr.Players) == 0 {
-		zap.L().Error("no players after create", zap.String("account", account))
-		stats.LoginFail()
-		return
-	}
-
-	playerId := lr.Players[0].GetPlayer().GetPlayerId()
-
-	// --- Enter game ---
-	if err := gc.SendRequest(game.ClientPlayerLoginEnterGameMessageId, &login.EnterGameRequest{
-		PlayerId: playerId,
-	}); err != nil {
-		zap.L().Error("send enter game", zap.Error(err))
-		stats.EnterFail()
-		return
-	}
-	stats.MsgSent()
-	enterResp, err := waitForMessage(gc, game.ClientPlayerLoginEnterGameMessageId, stats)
-	if err != nil {
-		zap.L().Error("enter game response", zap.Error(err))
-		stats.EnterFail()
-		return
-	}
-	var er login.EnterGameResponse
-	if err := proto.Unmarshal(enterResp.SerializedMessage, &er); err != nil {
-		zap.L().Error("unmarshal enter response", zap.Error(err))
-		stats.EnterFail()
-		return
-	}
-	if er.ErrorMessage != nil {
-		zap.L().Error("enter game error", zap.Any("tip", er.ErrorMessage))
-		stats.EnterFail()
-		return
-	}
-
-	gc.PlayerId = er.PlayerId
 	loginDuration := time.Since(loginStart)
 	stats.LoginOK(loginDuration)
 	stats.EnterOK()
-
 	zap.L().Info("entered game",
 		zap.String("account", account),
 		zap.Uint64("player_id", gc.PlayerId),
 		zap.Duration("login_time", loginDuration),
 	)
 
-	handler.RegisterPlayer(gc)
-
-	// --- Start AI loop in a separate goroutine ---
+	// AI loop in a separate goroutine.
 	robotAI := ai.NewRobotAI(gc, stats)
 	if len(cfg.SkillIDs) > 0 {
 		robotAI.SetSkillIDs(cfg.SkillIDs)
@@ -234,27 +141,92 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 	}
 	go robotAI.RunLoop(stop)
 
-	// --- Dispatch incoming messages ---
+	// Dispatch incoming messages (blocks until connection closes).
 	gc.RecvLoop(func(client *pkg.GameClient, msg *base.MessageContent) {
 		stats.MsgRecv()
-		handler.MessageBodyHandler(client, msg)
+		handler.HandleMessage(client, msg)
 	})
 }
 
-// waitForMessage blocks until a MessageContent with the given messageId arrives.
-func waitForMessage(gc *pkg.GameClient, messageId uint32, stats *metrics.Stats) (*base.MessageContent, error) {
+// loginAndEnter performs: login → create player (if needed) → enter game.
+func loginAndEnter(gc *pkg.GameClient, cfg *config.Config, stats *metrics.Stats) error {
+	// 1. Login
+	var lr login.LoginResponse
+	if err := sendAndRecv(gc, stats,
+		game.ClientPlayerLoginLoginMessageId,
+		&login.LoginRequest{Account: gc.Account, Password: cfg.Password},
+		&lr,
+	); err != nil {
+		stats.LoginFail()
+		return fmt.Errorf("login: %w", err)
+	}
+	if lr.ErrorMessage != nil {
+		stats.LoginFail()
+		return fmt.Errorf("login: server error %v", lr.ErrorMessage)
+	}
+
+	// 2. Create player if needed
+	if len(lr.Players) == 0 {
+		var cr login.CreatePlayerResponse
+		if err := sendAndRecv(gc, stats,
+			game.ClientPlayerLoginCreatePlayerMessageId,
+			&login.CreatePlayerRequest{},
+			&cr,
+		); err != nil {
+			stats.LoginFail()
+			return fmt.Errorf("create player: %w", err)
+		}
+		if cr.ErrorMessage != nil {
+			stats.LoginFail()
+			return fmt.Errorf("create player: server error %v", cr.ErrorMessage)
+		}
+		lr.Players = cr.Players
+	}
+	if len(lr.Players) == 0 {
+		stats.LoginFail()
+		return fmt.Errorf("no players after create")
+	}
+
+	// 3. Enter game
+	playerId := lr.Players[0].GetPlayer().GetPlayerId()
+	var er login.EnterGameResponse
+	if err := sendAndRecv(gc, stats,
+		game.ClientPlayerLoginEnterGameMessageId,
+		&login.EnterGameRequest{PlayerId: playerId},
+		&er,
+	); err != nil {
+		stats.EnterFail()
+		return fmt.Errorf("enter game: %w", err)
+	}
+	if er.ErrorMessage != nil {
+		stats.EnterFail()
+		return fmt.Errorf("enter game: server error %v", er.ErrorMessage)
+	}
+
+	gc.PlayerId = er.PlayerId
+	return nil
+}
+
+// sendAndRecv sends a request and blocks until the matching response arrives,
+// then unmarshals it into resp.
+func sendAndRecv(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, req, resp proto.Message) error {
+	if err := gc.SendRequest(msgId, req); err != nil {
+		return err
+	}
+	stats.MsgSent()
+
 	for {
 		raw, err := gc.RecvOne()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		stats.MsgRecv()
-		if raw.MessageId == messageId {
-			return raw, nil
+		if raw.MessageId == msgId {
+			return proto.Unmarshal(raw.SerializedMessage, resp)
 		}
-		zap.L().Debug("skipping unexpected msg during login",
+		zap.L().Debug("skipping msg during login",
 			zap.Uint32("got", raw.MessageId),
-			zap.Uint32("want", messageId),
+			zap.Uint32("want", msgId),
 		)
 	}
 }
