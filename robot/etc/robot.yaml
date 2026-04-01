@@ -9,3 +9,19 @@ password: "123456"
 skill_ids: [1001]
 action_interval: 3   # seconds between AI actions
 report_interval: 5   # seconds between stats prints
+
+# Behavior profile: "stress" (pure skill spam), "fighter", "explorer", "chatter"
+# stress = backward-compatible, only casts skills (good for load testing)
+# fighter = 60% skill, 25% move, 10% idle, 5% chat
+# explorer = 50% move, 20% idle, 20% skill, 10% chat
+# chatter = 40% chat, 30% idle, 20% move, 10% skill
+profile: "stress"
+
+# LLM-driven behavior (optional).
+# Best for 1-10 robots for realistic player simulation. Not for mass load testing.
+# Works with OpenAI, Ollama (http://localhost:11434/v1/chat/completions), vLLM, etc.
+llm:
+  enabled: false
+  endpoint: "http://localhost:11434/v1/chat/completions"
+  api_key: ""         # optional, for OpenAI/Azure
+  model: "qwen2"      # model name
