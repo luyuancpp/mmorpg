@@ -13,6 +13,9 @@ import (
 
 type handlerFunc func(*pkg.GameClient, []byte)
 
+// noopHandler silently discards the message body (for high-frequency pushes).
+var noopHandler handlerFunc = func(*pkg.GameClient, []byte) {}
+
 // unmarshalAndCall creates a handlerFunc that unmarshals body into a new
 // message of type PT and forwards it to the typed handler function.
 func unmarshalAndCall[PT proto.Message](fn func(*pkg.GameClient, PT)) handlerFunc {
@@ -55,6 +58,13 @@ var messageHandlers = map[uint32]handlerFunc{
 	game.SceneSkillClientPlayerNotifySkillUsedMessageId:         unmarshalAndCall(handleNotifySkillUsed),
 	game.SceneSkillClientPlayerNotifySkillInterruptedMessageId:  unmarshalAndCall(handleNotifySkillInterrupted),
 	game.SceneSkillClientPlayerGetSkillListMessageId:            unmarshalAndCall(handleGetSkillList),
+	// Attribute sync (high-frequency, no-op to avoid debug noise)
+	game.ScenePlayerSyncSyncBaseAttributeMessageId:        noopHandler,
+	game.ScenePlayerSyncSyncAttribute2FramesMessageId:     noopHandler,
+	game.ScenePlayerSyncSyncAttribute5FramesMessageId:     noopHandler,
+	game.ScenePlayerSyncSyncAttribute10FramesMessageId:    noopHandler,
+	game.ScenePlayerSyncSyncAttribute30FramesMessageId:    noopHandler,
+	game.ScenePlayerSyncSyncAttribute60FramesMessageId:    noopHandler,
 }
 
 func HandleMessage(gc *pkg.GameClient, msg *base.MessageContent) {
