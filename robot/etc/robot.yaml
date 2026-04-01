@@ -7,8 +7,12 @@ robot_count: 10
 account_fmt: "robot_%04d"
 password: "123456"
 skill_ids: [1001]
-action_interval: 3   # seconds between AI actions
-report_interval: 5   # seconds between stats prints
+action_interval: 3 # seconds between AI actions
+report_interval: 5 # seconds between stats prints
+
+# Mode: "stress" (default) = mass concurrent bots doing AI actions
+#        "login-test"       = run login test suite (10 scenarios) then exit
+mode: "stress"
 
 # Behavior profile: "stress" (pure skill spam), "fighter", "explorer", "chatter"
 # stress = backward-compatible, only casts skills (good for load testing)
@@ -17,11 +21,18 @@ report_interval: 5   # seconds between stats prints
 # chatter = 40% chat, 30% idle, 20% move, 10% skill
 profile: "stress"
 
+# Or define custom weights (overrides profile when set):
+# custom_weights:
+#   cast_skill: 50
+#   move: 30
+#   idle: 15
+#   chat: 5
+
 # LLM-driven behavior (optional).
 # Best for 1-10 robots for realistic player simulation. Not for mass load testing.
 # Works with OpenAI, Ollama (http://localhost:11434/v1/chat/completions), vLLM, etc.
 llm:
   enabled: false
   endpoint: "http://localhost:11434/v1/chat/completions"
-  api_key: ""         # optional, for OpenAI/Azure
-  model: "qwen2"      # model name
+  api_key: "" # optional, for OpenAI/Azure
+  model: "qwen2" # model name

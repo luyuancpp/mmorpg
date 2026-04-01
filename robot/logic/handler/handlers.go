@@ -39,7 +39,13 @@ func handleDisconnect(gc *pkg.GameClient, resp *login.LoginNodeDisconnectRequest
 
 func handleSendTip(gc *pkg.GameClient, resp *base.TipInfoMessage) {}
 
-func handleKickPlayer(gc *pkg.GameClient, resp *scene.GameKickPlayerRequest) {}
+func handleKickPlayer(gc *pkg.GameClient, resp *scene.GameKickPlayerRequest) {
+	zap.L().Warn("kicked by server",
+		zap.Uint64("player", gc.PlayerId),
+		zap.String("reason", resp.GetReason().String()),
+		zap.String("operator", resp.GetOperator()),
+	)
+}
 
 func handleEnterScene(gc *pkg.GameClient, resp *scene.EnterSceneC2SResponse) {
 	zap.L().Info("entered scene", zap.Uint64("player", gc.PlayerId))

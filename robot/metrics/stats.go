@@ -27,10 +27,14 @@ type Stats struct {
 	loginTotalNs   int64         // guarded by mu — sum in nanoseconds
 	loginMaxNs     int64         // guarded by mu
 	reportStart    time.Time
+	prevMsgSent    int64         // guarded by mu — snapshot for rate calc
+	prevMsgRecv    int64         // guarded by mu
+	prevReportTime time.Time     // guarded by mu
 }
 
 func NewStats() *Stats {
-	return &Stats{reportStart: time.Now()}
+	now := time.Now()
+	return &Stats{reportStart: now, prevReportTime: now}
 }
 
 func (s *Stats) LoginOK(d time.Duration) {
@@ -70,12 +74,31 @@ func (s *Stats) StartReporter(interval time.Duration, stop <-chan struct{}) {
 }
 
 func (s *Stats) report() {
-	elapsed := time.Since(s.reportStart).Truncate(time.Second)
+	now := time.Now()
+	elapsed := now.Sub(s.reportStart).Truncate(time.Second)
 
 	s.mu.Lock()
 	count := s.loginCount
 	totalNs := s.loginTotalNs
 	maxNs := s.loginMaxNs
+	prevSent := s.prevMsgSent
+	prevRecv := s.prevMsgRecv
+	prevTime := s.prevReportTime
+	s.mu.Unlock()
+
+	curSent := s.msgSent.Load()
+	curRecv := s.msgRecv.Load()
+
+	var sendRate, recvRate float64
+	if dt := now.Sub(prevTime).Seconds(); dt > 0 {
+		sendRate = float64(curSent-prevSent) / dt
+		recvRate = float64(curRecv-prevRecv) / dt
+	}
+
+	s.mu.Lock()
+	s.prevMsgSent = curSent
+	s.prevMsgRecv = curRecv
+	s.prevReportTime = now
 	s.mu.Unlock()
 
 	var avg, max time.Duration
@@ -85,12 +108,12 @@ func (s *Stats) report() {
 	}
 
 	zap.L().Info(fmt.Sprintf("[stats %s] conn=%d login_ok=%d login_fail=%d enter_ok=%d enter_fail=%d "+
-		"msg_sent=%d msg_recv=%d skill=%d avg_login=%s max_login=%s",
+		"msg_sent=%d(%.0f/s) msg_recv=%d(%.0f/s) skill=%d avg_login=%s max_login=%s",
 		elapsed,
 		s.connected.Load(),
 		s.loginOK.Load(), s.loginFail.Load(),
 		s.enterOK.Load(), s.enterFail.Load(),
-		s.msgSent.Load(), s.msgRecv.Load(),
+		curSent, sendRate, curRecv, recvRate,
 		s.skillSent.Load(),
 		avg.Truncate(time.Millisecond),
 		max.Truncate(time.Millisecond),

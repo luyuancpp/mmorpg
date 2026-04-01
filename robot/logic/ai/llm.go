@@ -32,7 +32,7 @@ func NewLLMAdvisor(endpoint, apiKey, model string) *LLMAdvisor {
 		endpoint: endpoint,
 		apiKey:   apiKey,
 		model:    model,
-		client:   &http.Client{Timeout: 10 * time.Second},
+		client:   &http.Client{Timeout: 5 * time.Second},
 	}
 }
 
@@ -80,7 +80,7 @@ func (a *LLMAdvisor) chatCompletion(userPrompt string) (Action, string, error) {
 		return ActionIdle, "", err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, a.endpoint, bytes.NewReader(bodyBytes))

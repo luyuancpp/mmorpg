@@ -14,15 +14,16 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"robot/config"
+	"robot/generated/pb/game"
 	"robot/logic/ai"
 	"robot/logic/handler"
 	"robot/metrics"
 	"robot/pkg"
 	"robot/proto/common/base"
+	"robot/proto/login"
 
 	// Blank-import proto packages so they register with protoregistry.
 	_ "robot/proto/chat"
-	_ "robot/proto/login"
 	_ "robot/proto/scene"
 )
 
@@ -44,6 +45,13 @@ func main() {
 	port, _ := strconv.Atoi(portStr)
 
 	stats := metrics.NewStats()
+
+	// Login-test mode: run the test suite and exit.
+	if cfg.Mode == "login-test" {
+		runLoginTests(host, port, cfg, stats, tokenPayload, tokenSig)
+		return
+	}
+
 	stopReport := make(chan struct{})
 	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	if reportInterval <= 0 {
@@ -63,7 +71,12 @@ func main() {
 		account := fmt.Sprintf(cfg.AccountFmt, i)
 		wg.Add(1)
 		go func(account string) {
-			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					zap.L().Error("robot panic", zap.String("account", account), zap.Any("panic", r))
+				}
+				wg.Done()
+			}()
 			runRobot(host, port, account, cfg, stats, stopAll, tokenPayload, tokenSig)
 		}(account)
 		time.Sleep(50 * time.Millisecond) // stagger to avoid thundering herd
@@ -123,8 +136,9 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 	if cfg.ActionInterval > 0 {
 		robotAI.SetInterval(time.Duration(cfg.ActionInterval) * time.Second)
 	}
-	if p, ok := ai.BuiltinProfiles[cfg.Profile]; ok {
-		robotAI.SetProfile(&p)
+	profile := cfg.ResolveProfile()
+	if profile != nil {
+		robotAI.SetProfile(profile)
 	}
 	if cfg.LLM.Enabled {
 		robotAI.SetLLM(ai.NewLLMAdvisor(cfg.LLM.Endpoint, cfg.LLM.APIKey, cfg.LLM.Model))
@@ -135,6 +149,9 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 		stats.MsgRecv()
 		handler.HandleMessage(client, msg)
 	})
+
+	// Graceful shutdown: send LeaveGame so server cleans up session.
+	_ = gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
 }
 
 func initLogger() {
