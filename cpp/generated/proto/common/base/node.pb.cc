@@ -39,7 +39,7 @@ static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2fnode_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\034proto/common/base/node.proto\022\013common.b"
-    "ase*\223\005\n\teNodeType\022\026\n\022UnknownNodeService\020"
+    "ase*\324\005\n\teNodeType\022\026\n\022UnknownNodeService\020"
     "\000\022\024\n\020SceneNodeService\020\003\022\023\n\017GateNodeServi"
     "ce\020\004\022\024\n\020LoginNodeService\020\005\022\024\n\020RedisNodeS"
     "ervice\020\006\022\023\n\017EtcdNodeService\020\007\022\023\n\017MailNod"
@@ -55,18 +55,20 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fnode_2eproto[] ABSL
     "torNodeService\020\030\022\033\n\027SceneManagerNodeServ"
     "ice\020\031\022\032\n\026DataServiceNodeService\020\032\022\025\n\021Fri"
     "endNodeService\020\033\022\025\n\021SlgMapNodeService\020\034\022"
-    "\030\n\024SlgBattleNodeService\020\035*g\n\016eSceneNodeT"
-    "ype\022\022\n\016kMainSceneNode\020\000\022\016\n\nkSceneNode\020\001\022"
-    "\027\n\023kMainSceneCrossNode\020\002\022\030\n\024kSceneSceneC"
-    "rossNode\020\003*K\n\021eNodeProtocolType\022\020\n\014PROTO"
-    "COL_TCP\020\000\022\021\n\rPROTOCOL_GRPC\020\001\022\021\n\rPROTOCOL"
-    "_HTTP\020\002B\rZ\013common/baseb\006proto3"
+    "\030\n\024SlgBattleNodeService\020\035\022\036\n\032TurnBasedBa"
+    "ttleNodeService\020\036\022\037\n\033TurnBasedDungeonNod"
+    "eService\020\037*g\n\016eSceneNodeType\022\022\n\016kMainSce"
+    "neNode\020\000\022\016\n\nkSceneNode\020\001\022\027\n\023kMainSceneCr"
+    "ossNode\020\002\022\030\n\024kSceneSceneCrossNode\020\003*K\n\021e"
+    "NodeProtocolType\022\020\n\014PROTOCOL_TCP\020\000\022\021\n\rPR"
+    "OTOCOL_GRPC\020\001\022\021\n\rPROTOCOL_HTTP\020\002B\rZ\013comm"
+    "on/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto = {
     false,
     false,
-    910,
+    975,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fnode_2eproto,
     "proto/common/base/node.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto_once,
@@ -86,7 +88,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eNodeType_descriptor(
   return file_level_enum_descriptors_proto_2fcommon_2fbase_2fnode_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t eNodeType_internal_data_[] = {
-    65536u, 32u, 536870908u, };
+    65536u, 32u, 2147483644u, };
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL eSceneNodeType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fbase_2fnode_2eproto);
   return file_level_enum_descriptors_proto_2fcommon_2fbase_2fnode_2eproto[1];

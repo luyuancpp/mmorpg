@@ -32,6 +32,8 @@ enum eNodeType {
 	FriendNodeService       = 27; // Friend system service (Go-Zero)
 	SlgMapNodeService       = 28; // SLG big-world map service (C++)
 	SlgBattleNodeService    = 29; // SLG battle simulation worker (C++)
+	TurnBasedBattleNodeService = 30; // Turn-based battle service (C++)
+	TurnBasedDungeonNodeService = 31; // Turn-based dungeon/PvE service (C++)
 };
 
 enum eSceneNodeType

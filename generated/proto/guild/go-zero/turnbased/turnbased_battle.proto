@@ -1,0 +1,180 @@
+syntax = "proto3";
+option go_package = "turnbased";
+
+import "proto/db/proto_option.proto";
+import "proto/common/base/empty.proto";
+import "proto/common/base/common.proto";
+import "proto/common/base/message.proto";
+
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_TURNBASED_BATTLE;
+
+// ============================================================================
+// Character & Skill Messages
+// ============================================================================
+
+enum ElementType {
+  ELEMENT_NONE  = 0;
+  ELEMENT_FIRE  = 1;
+  ELEMENT_WATER = 2;
+  ELEMENT_EARTH = 3;
+  ELEMENT_WIND  = 4;
+  ELEMENT_LIGHT = 5;
+  ELEMENT_DARK  = 6;
+}
+
+message SkillInfo {
+  uint32 skill_id      = 1;
+  string skill_name    = 2;
+  ElementType element  = 3;
+  int32  power         = 4;  // base damage multiplier (100 = 1x)
+  int32  mp_cost       = 5;
+  uint32 target_type   = 6;  // 0=single_enemy, 1=all_enemies, 2=single_ally, 3=all_allies, 4=self
+  uint32 effect_type   = 7;  // 0=damage, 1=heal, 2=buff, 3=debuff, 4=status
+  uint32 buff_id       = 8;  // if effect_type is buff/debuff/status
+  int32  buff_duration = 9;
+}
+
+message CharacterSnapshot {
+  uint64 character_id    = 1;
+  string name            = 2;
+  uint32 level           = 3;
+  uint32 class_type      = 4;  // warrior=0, mage=1, priest=2, thief=3, archer=4
+  ElementType element    = 5;
+
+  // Current stats
+  int32 hp               = 6;
+  int32 max_hp           = 7;
+  int32 mp               = 8;
+  int32 max_mp           = 9;
+  int32 atk              = 10;
+  int32 def              = 11;
+  int32 mag              = 12;  // magic attack
+  int32 mdef             = 13;  // magic defense
+  int32 spd              = 14;
+  int32 crit_rate        = 15;  // 0-1000
+  int32 dodge_rate       = 16;  // 0-1000
+
+  repeated SkillInfo skills = 17;
+}
+
+message PartySnapshot {
+  uint64 player_id                    = 1;
+  repeated CharacterSnapshot members  = 2;
+}
+
+// ============================================================================
+// Battle Action & Result Messages
+// ============================================================================
+
+message BuffState {
+  uint32 buff_id    = 1;
+  int32  remaining  = 2;  // turns remaining
+  int32  value      = 3;  // effect magnitude
+}
+
+enum TurnActionType {
+  TURN_ACTION_ATTACK     = 0;
+  TURN_ACTION_SKILL      = 1;
+  TURN_ACTION_DEFEND     = 2;
+  TURN_ACTION_ITEM       = 3;
+  TURN_ACTION_FLEE       = 4;
+}
+
+message TurnAction {
+  uint64 actor_id           = 1;
+  TurnActionType action     = 2;
+  uint32 skill_id           = 3;  // if action=SKILL
+  uint32 item_id            = 4;  // if action=ITEM
+  repeated uint64 target_ids = 5;
+}
+
+message ActionResult {
+  uint64 actor_id        = 1;
+  TurnActionType action  = 2;
+  uint32 skill_id        = 3;
+  repeated uint64 target_ids = 4;
+  repeated int32 damages = 5;  // per target (negative = heal)
+  repeated int32 target_hp_after = 6;
+  bool is_critical       = 7;
+  bool is_dodged         = 8;
+  bool is_effective      = 9;  // elemental advantage
+  repeated BuffState applied_buffs = 10;
+}
+
+message TurnData {
+  uint32 turn_number              = 1;
+  repeated ActionResult actions   = 2;
+  repeated uint64 turn_order      = 3;  // character_ids in action order
+}
+
+enum BattleOutcome {
+  OUTCOME_UNKNOWN      = 0;
+  OUTCOME_PLAYER_WIN   = 1;
+  OUTCOME_ENEMY_WIN    = 2;
+  OUTCOME_DRAW         = 3;
+  OUTCOME_FLED         = 4;
+}
+
+message BattleRewardInfo {
+  uint32 exp_gained     = 1;
+  uint32 gold_gained    = 2;
+  repeated uint32 item_drops = 3;
+}
+
+message TurnBasedBattleReport {
+  uint64 battle_id              = 1;
+  uint64 random_seed            = 2;
+  PartySnapshot player_party    = 3;
+  PartySnapshot enemy_party     = 4;
+  repeated TurnData turns       = 5;
+  BattleOutcome outcome         = 6;
+  BattleRewardInfo rewards      = 7;
+  uint32 checksum               = 8;
+}
+
+// ============================================================================
+// Service RPCs
+// ============================================================================
+
+message StartBattleRequest {
+  uint64 player_id         = 1;
+  PartySnapshot player_party = 2;
+  PartySnapshot enemy_party  = 3;
+  uint64 random_seed       = 4;
+  uint32 dungeon_floor     = 5;  // 0 if not dungeon
+}
+
+message StartBattleResponse {
+  uint64 battle_id         = 1;
+  uint32 error_code        = 2;
+  repeated uint64 turn_order = 3;  // first turn's action order
+}
+
+message ExecuteActionRequest {
+  uint64 battle_id     = 1;
+  uint64 player_id     = 2;
+  TurnAction action    = 3;
+}
+
+message ExecuteActionResponse {
+  uint32 error_code          = 1;
+  TurnData turn_result       = 2;
+  BattleOutcome outcome      = 3;  // UNKNOWN if battle continues
+  BattleRewardInfo rewards   = 4;  // populated only on win
+}
+
+message QueryBattleRequest {
+  uint64 battle_id = 1;
+}
+
+message QueryBattleResponse {
+  TurnBasedBattleReport report = 1;
+}
+
+service TurnBasedBattle {
+  rpc StartBattle (StartBattleRequest) returns (StartBattleResponse);
+  rpc ExecuteAction (ExecuteActionRequest) returns (ExecuteActionResponse);
+  rpc QueryBattle (QueryBattleRequest) returns (QueryBattleResponse);
+  rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
+}
