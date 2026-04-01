@@ -5,6 +5,21 @@
 - Avoid static usage in code where possible. Prefer stateful components like gRPC channel cache to be owned by Node rather than implemented with static storage.
 - Kubernetes external gate exposure guidance: managed cloud K8s should generally prefer `LoadBalancer`; self-hosted / bare metal K8s should generally prefer `NodePort` behind an external L4 load balancer. Do not recommend `LoadBalancer` as a one-size-fits-all default when the cluster lacks a mature LB implementation.
 
+## C++ Source File Encoding (MSVC / Code Page 936)
+- MSVC on Windows with code page 936 (GBK) reads source files without BOM using the system codepage, **not** UTF-8.
+- **Always add a UTF-8 BOM** (`EF BB BF`) to `.cpp`/`.h` files containing non-ASCII characters (Chinese comments, special symbols like `→` `—`). Without BOM, multi-byte UTF-8 sequences (e.g., `→` = `E2 86 92`) get misinterpreted as GBK, corrupting the C++ parser and causing cascading errors on later lines.
+- Prefer ASCII-only characters in string literals. Use `--` instead of `—`, `->` instead of `→`, etc.
+
+## MSVC Lambda Capture with entt::entity
+- MSVC (`/std:c++latest`) has a known issue (C3495) capturing `entt::entity` (enum class) variables in lambdas via simple capture `[entity]`.
+- **Workaround**: Use init-capture syntax: `[entity = entity]()` instead of `[entity]()`.
+
+## TimerTaskComp Lifecycle & EventLoop Destruction Order
+- `TimerTaskComp::Cancel()` must null-check `GetThreadEventLoop()` before calling `loop->cancel()`. The EventLoop destructor sets `t_loopInThisThread = NULL` **before** entt registry cleanup destroys entity components.
+- **Rule**: `Cancel()` must skip `loop->cancel()` when the loop is already gone to prevent nullptr crashes. 
+- **Rule**: Constructors should not call `Cancel()` — `timerId` is already default-initialized.
+- **Test pattern**: After `loop.loop()` returns, call `tlsEcs.actorRegistry.clear()` while the loop is still alive to cancel all entity timers cleanly. Tests using `EventLoop` must use `loop.runAfter(duration, quit)` instead of infinite `while(true)` loops.
+
 ## Reward System Design (Claimed-Status Ownership)
 1. **Problem**: `RewardBitset` bit index was keyed by `reward_table_id`. Changing/deleting reward table entries would corrupt saved player claim data.
 2. **Solution**: Each business system (quest, achievement, daily-login, etc.) owns its own bitset for claimed status. The bit index comes from that system's own table (e.g., `quest_table_id_bit_index.h`), **not** from the reward table.
