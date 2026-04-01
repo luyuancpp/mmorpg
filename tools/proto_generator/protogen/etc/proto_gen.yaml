@@ -415,3 +415,12 @@ domain_meta:
         proto: "go/generated/friend/proto"
         handler: "go/generated/friend/handler"
         grpc: "go/generated/friend/grpc"
+
+  slg:
+    source: "{{proto_dir}}slg/"
+    rpc:
+      type: rpc
+    outputs:
+      cpp:
+        proto: "cpp/generated/slg/proto"
+        handler: "cpp/generated/slg/handler"
