@@ -21,8 +21,10 @@ void OnSlgBattleSimulateBattleReply(const muduo::net::TcpConnectionPtr& conn, co
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnSlgBattleQueryBattleReportReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::QueryBattleReportResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}

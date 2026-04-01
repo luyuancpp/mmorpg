@@ -50,6 +50,10 @@ enum NodeType {
 	// SLG nodes
 	NODE_SLG_MAP = 30;                         // SLG big-world map service (C++)
 	NODE_SLG_BATTLE = 31;                      // SLG battle simulation worker (C++)
+
+	// Turn-based RPG nodes
+	NODE_TURNBASED_BATTLE = 32;                // Turn-based battle service (C++)
+	NODE_TURNBASED_DUNGEON = 33;               // Turn-based dungeon/PvE service (C++)
 }
 
 // ==============================================================================

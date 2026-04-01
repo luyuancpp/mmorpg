@@ -23,6 +23,8 @@
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "proto/slg/slg_battle.pb.h"
 #include "proto/slg/slg_map.pb.h"
+#include "proto/turnbased/turnbased_battle.pb.h"
+#include "proto/turnbased/turnbased_dungeon.pb.h"
 
 #include "rpc/service_metadata/chat_service_metadata.h"
 #include "rpc/service_metadata/data_service_service_metadata.h"
@@ -44,6 +46,8 @@
 #include "rpc/service_metadata/scene_manager_service_service_metadata.h"
 #include "rpc/service_metadata/slg_battle_service_metadata.h"
 #include "rpc/service_metadata/slg_map_service_metadata.h"
+#include "rpc/service_metadata/turnbased_battle_service_metadata.h"
+#include "rpc/service_metadata/turnbased_dungeon_service_metadata.h"
 
 #include "proto/common/event/mission_event.pb.h"
 #include "proto/common/event/scene_event.pb.h"
@@ -87,6 +91,8 @@ class ScenePlayerSyncImpl final : public ScenePlayerSync {};
 class SceneImpl final : public Scene {};
 class SlgBattleImpl final : public SlgBattle {};
 class SlgMapImpl final : public SlgMap {};
+class TurnBasedBattleImpl final : public TurnBasedBattle {};
+class TurnBasedDungeonImpl final : public TurnBasedDungeon {};
 
 namespace chatpb{void SendClientPlayerChatSendChat(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace chatpb{void SendClientPlayerChatPullChatHistory(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -146,7 +152,7 @@ namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 127> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 134> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -827,6 +833,60 @@ void InitMessageInfo()
         std::make_unique<::NodeHandshakeRequest>(),
         std::make_unique<::NodeHandshakeResponse>(),
         std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+
+    // --- TurnBasedBattle ---
+    gRpcMethodRegistry[TurnBasedBattleStartBattleMessageId] = RpcMethodMeta{
+        "TurnBasedBattle", "StartBattle",
+        std::make_unique<::StartBattleRequest>(),
+        std::make_unique<::StartBattleResponse>(),
+        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+    gRpcMethodRegistry[TurnBasedBattleExecuteActionMessageId] = RpcMethodMeta{
+        "TurnBasedBattle", "ExecuteAction",
+        std::make_unique<::ExecuteActionRequest>(),
+        std::make_unique<::ExecuteActionResponse>(),
+        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+    gRpcMethodRegistry[TurnBasedBattleQueryBattleMessageId] = RpcMethodMeta{
+        "TurnBasedBattle", "QueryBattle",
+        std::make_unique<::QueryBattleRequest>(),
+        std::make_unique<::QueryBattleResponse>(),
+        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+    gRpcMethodRegistry[TurnBasedBattleNodeHandshakeMessageId] = RpcMethodMeta{
+        "TurnBasedBattle", "NodeHandshake",
+        std::make_unique<::NodeHandshakeRequest>(),
+        std::make_unique<::NodeHandshakeResponse>(),
+        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+
+    // --- TurnBasedDungeon ---
+    gRpcMethodRegistry[TurnBasedDungeonEnterDungeonMessageId] = RpcMethodMeta{
+        "TurnBasedDungeon", "EnterDungeon",
+        std::make_unique<::EnterDungeonRequest>(),
+        std::make_unique<::EnterDungeonResponse>(),
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+    gRpcMethodRegistry[TurnBasedDungeonMoveInDungeonMessageId] = RpcMethodMeta{
+        "TurnBasedDungeon", "MoveInDungeon",
+        std::make_unique<::MoveInDungeonRequest>(),
+        std::make_unique<::MoveInDungeonResponse>(),
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+    gRpcMethodRegistry[TurnBasedDungeonNextFloorMessageId] = RpcMethodMeta{
+        "TurnBasedDungeon", "NextFloor",
+        std::make_unique<::NextFloorRequest>(),
+        std::make_unique<::NextFloorResponse>(),
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+    gRpcMethodRegistry[TurnBasedDungeonQueryDungeonMessageId] = RpcMethodMeta{
+        "TurnBasedDungeon", "QueryDungeon",
+        std::make_unique<::QueryDungeonRequest>(),
+        std::make_unique<::QueryDungeonResponse>(),
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+    gRpcMethodRegistry[TurnBasedDungeonLeaveDungeonMessageId] = RpcMethodMeta{
+        "TurnBasedDungeon", "LeaveDungeon",
+        std::make_unique<::LeaveDungeonRequest>(),
+        std::make_unique<::LeaveDungeonResponse>(),
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+    gRpcMethodRegistry[TurnBasedDungeonNodeHandshakeMessageId] = RpcMethodMeta{
+        "TurnBasedDungeon", "NodeHandshake",
+        std::make_unique<::NodeHandshakeRequest>(),
+        std::make_unique<::NodeHandshakeResponse>(),
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
 }
 
 bool IsClientMessageId(uint32_t messageId)
