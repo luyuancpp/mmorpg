@@ -11,6 +11,7 @@
     stop    – gracefully stop running services launched by this script
     status  – show which services are currently running
     list    – print the available service catalogue
+    build   – compile native binaries for selected services -> bin\go_services\
 
 .PARAMETER Services
     Comma-separated service names to start (e.g. "login,db").
@@ -31,7 +32,7 @@
 #>
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("start", "stop", "status", "list")]
+    [ValidateSet("start", "stop", "status", "list", "build")]
     [string]$Command,
 
     [string[]]$Services = @()
@@ -200,10 +201,51 @@ function Invoke-List {
     Write-Host ""
 }
 
+function Invoke-Build {
+    $names = Resolve-ServiceList -Requested $Services
+    $outDir = Join-Path $RepoRoot "bin\go_services"
+    if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
+
+    $failed = @()
+    foreach ($name in $names) {
+        $info   = $ServiceCatalogue[$name]
+        $svcDir = Join-Path $GoRoot $info.Dir
+
+        if (-not (Test-Path $svcDir)) {
+            Write-Warning "Skipping '$name': directory $svcDir does not exist."
+            $failed += $name
+            continue
+        }
+
+        $outExe = Join-Path $outDir "$name.exe"
+        Write-Host "[build] $name -> bin\go_services\$name.exe" -ForegroundColor Cyan
+
+        Push-Location $svcDir
+        try {
+            go build -o $outExe "./$($info.Entry)"
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "[FAIL]  $name" -ForegroundColor Red
+                $failed += $name
+            } else {
+                Write-Host "[ok]    $name" -ForegroundColor Green
+            }
+        } finally {
+            Pop-Location
+        }
+    }
+
+    if ($failed.Count -gt 0) {
+        throw "Build failed for: $($failed -join ', ')"
+    }
+
+    Write-Host "`nAll requested services built -> bin\go_services\" -ForegroundColor Green
+}
+
 # ── Dispatch ─────────────────────────────────────────────────────────
 switch ($Command) {
     "start"  { Invoke-Start }
     "stop"   { Invoke-Stop }
     "status" { Invoke-Status }
     "list"   { Invoke-List }
+    "build"  { Invoke-Build }
 }
