@@ -125,3 +125,13 @@
 124=SlgBattleQueryBattleReport
 125=SlgMapUpgradeBuilding
 126=SlgBattleSimulateBattle
+127=TurnBasedBattleStartBattle
+128=TurnBasedBattleExecuteAction
+129=TurnBasedBattleQueryBattle
+130=TurnBasedDungeonEnterDungeon
+131=TurnBasedDungeonMoveInDungeon
+132=TurnBasedBattleNodeHandshake
+133=TurnBasedDungeonNodeHandshake
+134=TurnBasedDungeonNextFloor
+135=TurnBasedDungeonQueryDungeon
+136=TurnBasedDungeonLeaveDungeon

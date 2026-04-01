@@ -424,3 +424,12 @@ domain_meta:
       cpp:
         proto: "cpp/generated/slg/proto"
         handler: "cpp/generated/slg/handler"
+
+  turnbased:
+    source: "{{proto_dir}}turnbased/"
+    rpc:
+      type: rpc
+    outputs:
+      cpp:
+        proto: "cpp/generated/turnbased/proto"
+        handler: "cpp/generated/turnbased/handler"
