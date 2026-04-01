@@ -41,6 +41,9 @@ using common::base::GmNodeService;
 using common::base::PlayerLocatorNodeService;
 using common::base::SceneManagerNodeService;
 using common::base::DataServiceNodeService;
+using common::base::FriendNodeService;
+using common::base::SlgMapNodeService;
+using common::base::SlgBattleNodeService;
 
 // Re-export eSceneNodeType enumerator values.
 using common::base::kMainSceneNode;
