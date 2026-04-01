@@ -21,6 +21,8 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/scene/scene.pb.h"
 #include "proto/scene_manager/scene_manager_service.pb.h"
+#include "proto/slg/slg_battle.pb.h"
+#include "proto/slg/slg_map.pb.h"
 
 #include "rpc/service_metadata/chat_service_metadata.h"
 #include "rpc/service_metadata/data_service_service_metadata.h"
@@ -40,6 +42,8 @@
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/scene_manager_service_service_metadata.h"
+#include "rpc/service_metadata/slg_battle_service_metadata.h"
+#include "rpc/service_metadata/slg_map_service_metadata.h"
 
 #include "proto/common/event/mission_event.pb.h"
 #include "proto/common/event/scene_event.pb.h"
@@ -81,6 +85,8 @@ class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer {};
 class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
 class ScenePlayerSyncImpl final : public ScenePlayerSync {};
 class SceneImpl final : public Scene {};
+class SlgBattleImpl final : public SlgBattle {};
+class SlgMapImpl final : public SlgMap {};
 
 namespace chatpb{void SendClientPlayerChatSendChat(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace chatpb{void SendClientPlayerChatPullChatHistory(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -140,7 +146,7 @@ namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 119> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 127> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -777,6 +783,50 @@ void InitMessageInfo()
         std::make_unique<::scene_manager::LeaveSceneRequest>(),
         std::make_unique<::Empty>(),
         nullptr, 0, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveScene};
+
+    // --- SlgBattle ---
+    gRpcMethodRegistry[SlgBattleSimulateBattleMessageId] = RpcMethodMeta{
+        "SlgBattle", "SimulateBattle",
+        std::make_unique<::SimulateBattleRequest>(),
+        std::make_unique<::SimulateBattleResponse>(),
+        std::make_unique<SlgBattleImpl>(), 0, common::base::eNodeType::SlgNodeService};
+    gRpcMethodRegistry[SlgBattleQueryBattleReportMessageId] = RpcMethodMeta{
+        "SlgBattle", "QueryBattleReport",
+        std::make_unique<::QueryBattleReportRequest>(),
+        std::make_unique<::QueryBattleReportResponse>(),
+        std::make_unique<SlgBattleImpl>(), 0, common::base::eNodeType::SlgNodeService};
+
+    // --- SlgMap ---
+    gRpcMethodRegistry[SlgMapStartMarchMessageId] = RpcMethodMeta{
+        "SlgMap", "StartMarch",
+        std::make_unique<::StartMarchRequest>(),
+        std::make_unique<::StartMarchResponse>(),
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+    gRpcMethodRegistry[SlgMapCancelMarchMessageId] = RpcMethodMeta{
+        "SlgMap", "CancelMarch",
+        std::make_unique<::CancelMarchRequest>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+    gRpcMethodRegistry[SlgMapQueryViewportMessageId] = RpcMethodMeta{
+        "SlgMap", "QueryViewport",
+        std::make_unique<::ViewportRequest>(),
+        std::make_unique<::ViewportResponse>(),
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+    gRpcMethodRegistry[SlgMapBuildMessageId] = RpcMethodMeta{
+        "SlgMap", "Build",
+        std::make_unique<::BuildRequest>(),
+        std::make_unique<::BuildResponse>(),
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+    gRpcMethodRegistry[SlgMapUpgradeBuildingMessageId] = RpcMethodMeta{
+        "SlgMap", "UpgradeBuilding",
+        std::make_unique<::UpgradeBuildingRequest>(),
+        std::make_unique<::UpgradeBuildingResponse>(),
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+    gRpcMethodRegistry[SlgMapNodeHandshakeMessageId] = RpcMethodMeta{
+        "SlgMap", "NodeHandshake",
+        std::make_unique<::NodeHandshakeRequest>(),
+        std::make_unique<::NodeHandshakeResponse>(),
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
 }
 
 bool IsClientMessageId(uint32_t messageId)

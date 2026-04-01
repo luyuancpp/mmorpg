@@ -117,3 +117,11 @@
 116=SceneRollbackClientPlayerGmPreviewRollback
 117=SceneRollbackClientPlayerGmQueryTransactionLog
 118=LoginPreGateAssignGate
+119=SlgMapQueryViewport
+120=SlgMapNodeHandshake
+121=SlgMapBuild
+122=SlgMapStartMarch
+123=SlgMapCancelMarch
+124=SlgBattleQueryBattleReport
+125=SlgMapUpgradeBuilding
+126=SlgBattleSimulateBattle
