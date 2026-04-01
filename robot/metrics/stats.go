@@ -22,9 +22,11 @@ type Stats struct {
 	connected    atomic.Int64
 	disconnected atomic.Int64
 
-	mu          sync.Mutex
-	loginTimes  []time.Duration // guarded by mu
-	reportStart time.Time
+	mu             sync.Mutex
+	loginCount     int64         // guarded by mu
+	loginTotalNs   int64         // guarded by mu — sum in nanoseconds
+	loginMaxNs     int64         // guarded by mu
+	reportStart    time.Time
 }
 
 func NewStats() *Stats {
@@ -34,7 +36,11 @@ func NewStats() *Stats {
 func (s *Stats) LoginOK(d time.Duration) {
 	s.loginOK.Add(1)
 	s.mu.Lock()
-	s.loginTimes = append(s.loginTimes, d)
+	s.loginCount++
+	s.loginTotalNs += int64(d)
+	if int64(d) > s.loginMaxNs {
+		s.loginMaxNs = int64(d)
+	}
 	s.mu.Unlock()
 }
 func (s *Stats) LoginFail()    { s.loginFail.Add(1) }
@@ -67,21 +73,19 @@ func (s *Stats) report() {
 	elapsed := time.Since(s.reportStart).Truncate(time.Second)
 
 	s.mu.Lock()
-	latencies := make([]time.Duration, len(s.loginTimes))
-	copy(latencies, s.loginTimes)
+	count := s.loginCount
+	totalNs := s.loginTotalNs
+	maxNs := s.loginMaxNs
 	s.mu.Unlock()
 
-	var avg time.Duration
-	if len(latencies) > 0 {
-		var total time.Duration
-		for _, d := range latencies {
-			total += d
-		}
-		avg = total / time.Duration(len(latencies))
+	var avg, max time.Duration
+	if count > 0 {
+		avg = time.Duration(totalNs / count)
+		max = time.Duration(maxNs)
 	}
 
 	zap.L().Info(fmt.Sprintf("[stats %s] conn=%d login_ok=%d login_fail=%d enter_ok=%d enter_fail=%d "+
-		"msg_sent=%d msg_recv=%d skill=%d avg_login=%s",
+		"msg_sent=%d msg_recv=%d skill=%d avg_login=%s max_login=%s",
 		elapsed,
 		s.connected.Load(),
 		s.loginOK.Load(), s.loginFail.Load(),
@@ -89,5 +93,6 @@ func (s *Stats) report() {
 		s.msgSent.Load(), s.msgRecv.Load(),
 		s.skillSent.Load(),
 		avg.Truncate(time.Millisecond),
+		max.Truncate(time.Millisecond),
 	))
 }
