@@ -1,0 +1,122 @@
+syntax = "proto3";
+option go_package = "common/proto/slg";
+
+import "proto/db/proto_option.proto";
+import "proto/common/base/empty.proto";
+import "proto/common/base/common.proto";
+import "proto/common/base/message.proto";
+
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_SLG_MAP;
+
+// ============================================================================
+// Tile & Map Messages
+// ============================================================================
+
+message TileCoord {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message TileData {
+  TileCoord coord        = 1;
+  uint32 terrain_type    = 2;  // terrain enum
+  uint64 owner_player_id = 3;  // 0 = unowned
+  uint32 building_id     = 4;  // 0 = empty
+  uint32 building_level  = 5;
+}
+
+message RegionData {
+  int32 region_x               = 1;
+  int32 region_y               = 2;
+  repeated TileData tiles      = 3;
+}
+
+// ============================================================================
+// March Messages
+// ============================================================================
+
+message MarchInfo {
+  uint64 march_id          = 1;
+  uint64 player_id         = 2;
+  uint64 army_id           = 3;
+  repeated TileCoord path  = 4;
+  double start_time        = 5;
+  double speed             = 6;  // tiles per second
+  uint32 march_type        = 7;  // attack, reinforce, gather, scout, recall
+}
+
+message StartMarchRequest {
+  uint64 player_id     = 1;
+  uint64 army_id       = 2;
+  TileCoord target     = 3;
+  uint32 march_type    = 4;
+}
+
+message StartMarchResponse {
+  uint32 error_code    = 1;
+  MarchInfo march_info = 2;
+}
+
+message CancelMarchRequest {
+  uint64 player_id = 1;
+  uint64 march_id  = 2;
+}
+
+// ============================================================================
+// Vision Messages
+// ============================================================================
+
+message ViewportRequest {
+  uint64 player_id = 1;
+  int32 region_x   = 2;
+  int32 region_y   = 3;
+}
+
+message ViewportResponse {
+  RegionData region        = 1;
+  repeated MarchInfo marches = 2;  // visible marches in region
+}
+
+// ============================================================================
+// Building Messages
+// ============================================================================
+
+message BuildRequest {
+  uint64 player_id   = 1;
+  TileCoord coord    = 2;
+  uint32 building_id = 3;
+}
+
+message BuildResponse {
+  uint32 error_code = 1;
+}
+
+message UpgradeBuildingRequest {
+  uint64 player_id = 1;
+  TileCoord coord  = 2;
+}
+
+message UpgradeBuildingResponse {
+  uint32 error_code = 1;
+}
+
+// ============================================================================
+// SLG Map Service
+// ============================================================================
+
+service SlgMap {
+  // March operations
+  rpc StartMarch (StartMarchRequest) returns (StartMarchResponse);
+  rpc CancelMarch (CancelMarchRequest) returns (Empty);
+
+  // Vision / viewport
+  rpc QueryViewport (ViewportRequest) returns (ViewportResponse);
+
+  // Building operations
+  rpc Build (BuildRequest) returns (BuildResponse);
+  rpc UpgradeBuilding (UpgradeBuildingRequest) returns (UpgradeBuildingResponse);
+
+  // Node lifecycle
+  rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
+}

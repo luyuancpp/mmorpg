@@ -50,6 +50,8 @@ const (
 	ENodeType_SceneManagerNodeService  ENodeType = 25 // Scene manager service (Go-Zero)
 	ENodeType_DataServiceNodeService   ENodeType = 26 // Cross-server data proxy service (Go-Zero)
 	ENodeType_FriendNodeService        ENodeType = 27 // Friend system service (Go-Zero)
+	ENodeType_SlgMapNodeService        ENodeType = 28 // SLG big-world map service (C++)
+	ENodeType_SlgBattleNodeService     ENodeType = 29 // SLG battle simulation worker (C++)
 )
 
 // Enum value maps for ENodeType.
@@ -81,6 +83,8 @@ var (
 		25: "SceneManagerNodeService",
 		26: "DataServiceNodeService",
 		27: "FriendNodeService",
+		28: "SlgMapNodeService",
+		29: "SlgBattleNodeService",
 	}
 	ENodeType_value = map[string]int32{
 		"UnknownNodeService":       0,
@@ -109,6 +113,8 @@ var (
 		"SceneManagerNodeService":  25,
 		"DataServiceNodeService":   26,
 		"FriendNodeService":        27,
+		"SlgMapNodeService":        28,
+		"SlgBattleNodeService":     29,
 	}
 )
 
@@ -245,7 +251,7 @@ var File_proto_common_base_node_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_node_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/common/base/node.proto\x12\vcommon.base*\xe2\x04\n" +
+	"\x1cproto/common/base/node.proto\x12\vcommon.base*\x93\x05\n" +
 	"\teNodeType\x12\x16\n" +
 	"\x12UnknownNodeService\x10\x00\x12\x14\n" +
 	"\x10SceneNodeService\x10\x03\x12\x13\n" +
@@ -273,7 +279,9 @@ const file_proto_common_base_node_proto_rawDesc = "" +
 	"\x18PlayerLocatorNodeService\x10\x18\x12\x1b\n" +
 	"\x17SceneManagerNodeService\x10\x19\x12\x1a\n" +
 	"\x16DataServiceNodeService\x10\x1a\x12\x15\n" +
-	"\x11FriendNodeService\x10\x1b*g\n" +
+	"\x11FriendNodeService\x10\x1b\x12\x15\n" +
+	"\x11SlgMapNodeService\x10\x1c\x12\x18\n" +
+	"\x14SlgBattleNodeService\x10\x1d*g\n" +
 	"\x0eeSceneNodeType\x12\x12\n" +
 	"\x0ekMainSceneNode\x10\x00\x12\x0e\n" +
 	"\n" +

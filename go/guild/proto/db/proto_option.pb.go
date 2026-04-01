@@ -62,6 +62,9 @@ const (
 	NodeType_NODE_ANALYTICS      NodeType = 27 // Analytics service
 	NodeType_NODE_GM             NodeType = 28 // GM tool service (admin/CS commands)
 	NodeType_NODE_PLAYER_LOCATOR NodeType = 29 // Cross-server player locator service
+	// SLG nodes
+	NodeType_NODE_SLG_MAP    NodeType = 30 // SLG big-world map service (C++)
+	NodeType_NODE_SLG_BATTLE NodeType = 31 // SLG battle simulation worker (C++)
 )
 
 // Enum value maps for NodeType.
@@ -97,6 +100,8 @@ var (
 		27: "NODE_ANALYTICS",
 		28: "NODE_GM",
 		29: "NODE_PLAYER_LOCATOR",
+		30: "NODE_SLG_MAP",
+		31: "NODE_SLG_BATTLE",
 	}
 	NodeType_value = map[string]int32{
 		"NODE_UNSPECIFIED":    0,
@@ -129,6 +134,8 @@ var (
 		"NODE_ANALYTICS":      27,
 		"NODE_GM":             28,
 		"NODE_PLAYER_LOCATOR": 29,
+		"NODE_SLG_MAP":        30,
+		"NODE_SLG_BATTLE":     31,
 	}
 )
 
@@ -649,7 +656,7 @@ var File_proto_db_proto_option_proto protoreflect.FileDescriptor
 
 const file_proto_db_proto_option_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/db/proto_option.proto\x1a google/protobuf/descriptor.proto*\x91\x04\n" +
+	"\x1bproto/db/proto_option.proto\x1a google/protobuf/descriptor.proto*\xb8\x04\n" +
 	"\bNodeType\x12\x14\n" +
 	"\x10NODE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vNODE_CLIENT\x10\x01\x12\r\n" +
@@ -687,7 +694,9 @@ const file_proto_db_proto_option_proto_rawDesc = "" +
 	"\x11NODE_CROSS_SERVER\x10\x1a\x12\x12\n" +
 	"\x0eNODE_ANALYTICS\x10\x1b\x12\v\n" +
 	"\aNODE_GM\x10\x1c\x12\x17\n" +
-	"\x13NODE_PLAYER_LOCATOR\x10\x1d*\xcf\x01\n" +
+	"\x13NODE_PLAYER_LOCATOR\x10\x1d\x12\x10\n" +
+	"\fNODE_SLG_MAP\x10\x1e\x12\x13\n" +
+	"\x0fNODE_SLG_BATTLE\x10\x1f*\xcf\x01\n" +
 	"\fOPERATE_TYPE\x12\x10\n" +
 	"\fOPERATE_NONE\x10\x00\x12\x12\n" +
 	"\x0eOPERATE_INSERT\x10\x01\x12\x12\n" +

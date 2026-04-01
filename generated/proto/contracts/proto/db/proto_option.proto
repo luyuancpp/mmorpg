@@ -46,6 +46,10 @@ enum NodeType {
 	NODE_ANALYTICS = 27;                       // Analytics service
 	NODE_GM = 28;                              // GM tool service (admin/CS commands)
 	NODE_PLAYER_LOCATOR = 29;                  // Cross-server player locator service
+
+	// SLG nodes
+	NODE_SLG_MAP = 30;                         // SLG big-world map service (C++)
+	NODE_SLG_BATTLE = 31;                      // SLG battle simulation worker (C++)
 }
 
 // ==============================================================================
