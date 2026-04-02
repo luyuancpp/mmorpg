@@ -41,6 +41,7 @@ func GenNodeUtil(wg *sync.WaitGroup) {
 						nodeEnumCppQualified = cppPkg + "::" + _config.Global.Naming.NodeEnumName
 					}
 					for _, val := range enumDesc.Value {
+						internal.NodeEnumValueSet[val.GetName()] = true
 						nodeName := strings.ReplaceAll(strings.ToLower(val.GetName()), _config.Global.Naming.NodeServiceSuffix, "")
 						if !IsTcpNodeByEnum(nodeName) {
 							continue

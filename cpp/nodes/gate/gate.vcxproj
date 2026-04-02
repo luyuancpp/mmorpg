@@ -33,6 +33,10 @@
     <ClCompile Include="rpc_replies\register_handler.cpp" />
     <ClCompile Include="rpc_replies\register_response_handler.cpp" />
     <ClCompile Include="rpc_replies\route_message_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\slg_battle_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\slg_map_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\turnbased_battle_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\turnbased_dungeon_response_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="src\grpc\" />
@@ -47,6 +51,10 @@
     <ClInclude Include="handler\rpc\gate_service_handler.h" />
     <ClInclude Include="rpc_replies\game_scene_response_handler.h" />
     <ClInclude Include="rpc_replies\scene_response_handler.h" />
+    <ClInclude Include="rpc_replies\slg_battle_response_handler.h" />
+    <ClInclude Include="rpc_replies\slg_map_response_handler.h" />
+    <ClInclude Include="rpc_replies\turnbased_battle_response_handler.h" />
+    <ClInclude Include="rpc_replies\turnbased_dungeon_response_handler.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
