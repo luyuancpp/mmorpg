@@ -29,28 +29,34 @@ void OnTurnBasedDungeonEnterDungeonReply(const muduo::net::TcpConnectionPtr& con
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnTurnBasedDungeonMoveInDungeonReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::MoveInDungeonResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnTurnBasedDungeonNextFloorReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NextFloorResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnTurnBasedDungeonQueryDungeonReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::QueryDungeonResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnTurnBasedDungeonLeaveDungeonReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::LeaveDungeonResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnTurnBasedDungeonNodeHandshakeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}

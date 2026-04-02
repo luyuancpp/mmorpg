@@ -25,18 +25,22 @@ void OnTurnBasedBattleStartBattleReply(const muduo::net::TcpConnectionPtr& conn,
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnTurnBasedBattleExecuteActionReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::ExecuteActionResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnTurnBasedBattleQueryBattleReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::QueryBattleResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnTurnBasedBattleNodeHandshakeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}

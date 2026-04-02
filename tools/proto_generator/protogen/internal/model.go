@@ -143,6 +143,10 @@ var FileMaxMessageId = uint64(0)
 // Set during GenNodeUtil when the enum is discovered.
 var NodeEnumCppQualifiedType string
 
+// NodeEnumValueSet holds the set of all eNodeType enum value names (e.g. "SceneNodeService").
+// Populated during GenNodeUtil.
+var NodeEnumValueSet = map[string]bool{}
+
 var (
 	ActiveMsgDescCache = make(map[protoreflect.FullName]protoreflect.MessageDescriptor)
 	FileDescCache      = make(map[string]protoreflect.FileDescriptor)
@@ -153,6 +157,17 @@ func (info *RPCServiceInfo) IncludeName() string {
 }
 
 func (info *RPCServiceInfo) BasePathForCpp() string {
+	return strcase.ToCamel(path.Base(info.Path()))
+}
+
+// NodeServiceForCpp resolves the eNodeType enum prefix for this service.
+// It first checks if {ServiceName}NodeService exists in the enum; if so, uses the service name.
+// Otherwise, it falls back to the directory-based derivation.
+func (info *RPCServiceInfo) NodeServiceForCpp() string {
+	candidate := info.Service() + "NodeService"
+	if NodeEnumValueSet[candidate] {
+		return info.Service()
+	}
 	return strcase.ToCamel(path.Base(info.Path()))
 }
 
