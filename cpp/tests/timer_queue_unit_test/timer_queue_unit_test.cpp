@@ -1,59 +1,34 @@
 #include <gtest/gtest.h>
 
 #include "muduo/net/EventLoopThread.h"
-#include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <atomic>
+#include <cassert>
+#include <chrono>
+#include <utility>
 
 #include "time/comp/timer_task_comp.h"
-
-#include <stdio.h>
 
 using namespace muduo;
 using namespace muduo::net;
 
-int cnt = 0;
-EventLoop* g_loop = nullptr;
-
-/// 打印当前线程时间戳
-void printTid()
-{
-	printf("now %s\n", Timestamp::now().toString().c_str());
-}
-
-/// 打印消息并计数
-void print(const char* msg)
-{
-	printf("msg %s %s\n", Timestamp::now().toString().c_str(), msg);
-	++cnt;
-}
-
-/// 取消定时器
-void cancel(TimerId timer)
-{
-	g_loop->cancel(timer);
-	printf("cancelled at %s\n", Timestamp::now().toString().c_str());
-}
-
-
-class GameTimerTest 
+class GameTimerTest
 {
 public:
+	GameTimerTest(std::atomic<int>& afterCount, std::atomic<int>& everyCount)
+		: afterCount_(afterCount), everyCount_(everyCount) {}
 
 	void RunAfter()
 	{
-		m_Timer.RunAfter(0.001, std::bind(&GameTimerTest::AfterCallBack, this));
-		m_TimerActiveTest.RunAfter(1, std::bind(&GameTimerTest::AfterCallBackActiveTest, this));
+		m_Timer.RunAfter(0.01, std::bind(&GameTimerTest::AfterCallBack, this));
+		m_TimerActiveTest.RunAfter(0.05, std::bind(&GameTimerTest::AfterCallBackActiveTest, this));
 	}
 
 
 	void RunEvery()
 	{
-		m_Timer.RunEvery(0.001, std::bind(&GameTimerTest::RunEveryCallBack, this));
+		m_Timer.RunEvery(0.01, std::bind(&GameTimerTest::RunEveryCallBack, this));
 	}
-
-    void RunAt(const Timestamp& time)
-    {
-        m_Timer.RunAt(time, std::bind(&GameTimerTest::RunAtCallBack, this));
-    }
 
 	void Cancel()
 	{
@@ -65,7 +40,7 @@ private:
 
 	void AfterCallBack()
 	{
-		std::cout << "AfterCallBack" << this << std::endl;
+		++afterCount_;
 	}
 
 	void AfterCallBackActiveTest()
@@ -76,126 +51,71 @@ private:
 
 	void RunEveryCallBack()
 	{
-		std::cout << "runEveryCallBack" << this  << std::endl;
-	}
-
-    void RunAtCallBack()
-    {
-        std::cout << "RunAtCallBack" << this << std::endl;
+		++everyCount_;
     }
 private:
+	std::atomic<int>& afterCount_;
+	std::atomic<int>& everyCount_;
 	TimerTaskComp m_Timer;
 	TimerTaskComp m_TimerActiveTest;
 
 };
 
-/// 测试：在 RunAt 回调中再次注册下一次 RunAt（递归调度）
-class RecursionTimerTest
-{
-public:
-
-    void RunAt(const Timestamp& time)
-    {
-        m_Timer.RunAt(time, std::bind(&RecursionTimerTest::RunAtCallBack, this));
-    }
-
-private:
-
-    void RunAtCallBack()
-    {
-        std::cout << "RunAtCallBack" << this << std::endl;
-        RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
-    }
-private:
-    TimerTaskComp m_Timer;
-};
-
-using GameTimerTestPtr = std::shared_ptr<GameTimerTest>;
-
-using GameTimerTestMap = std::unordered_map<int32_t, GameTimerTestPtr>;
-
-// ---------------------------------------------------------------------------
-// 定时器队列基本功能测试（无断言，仅验证不崩溃）
-// ---------------------------------------------------------------------------
-
 TEST(TimerQueueTest, BasicTimerOperations)
 {
-	printTid();
+	std::atomic<int> afterCount{0};
+	std::atomic<int> everyCount{0};
 
-	sleep(1);
-	{
-		EventLoop loop;
-		g_loop = &loop;
+	EventLoop loop;
+	GameTimerTest oneShot(afterCount, everyCount);
+	oneShot.RunAfter();
 
-		// --- RunAfter / RunEvery / Cancel 基本操作 ---
-		GameTimerTest a;
-		a.RunAfter();
+	GameTimerTest periodic(afterCount, everyCount);
+	periodic.RunEvery();
 
-		GameTimerTest g;
-		g.RunEvery();
+	loop.runAfter(0.08, [&periodic]() {
+		periodic.Cancel();
+	});
 
-		GameTimerTest c;
-		c.RunEvery();
-		c.Cancel(); // 立即取消
+	loop.runAfter(0.12, [&loop]() {
+		loop.quit();
+	});
 
-		// --- 生命周期结束后定时器自动失效（不崩溃） ---
-		{
-			GameTimerTest t;
-			t.RunAfter();
-		}
+	loop.loop();
 
-		{
-			GameTimerTest t;
-			t.RunEvery();
-		}
+	EXPECT_GE(afterCount.load(), 1);
+	EXPECT_GE(everyCount.load(), 1);
+}
 
-		// --- EventLoop 原生定时器 ---
-		print("main");
-		loop.runAfter(0.1, std::bind(print, "once0.1"));
-		loop.runAfter(1, std::bind(print, "once1"));
-		loop.runAfter(1.5, std::bind(print, "once1.5"));
-		loop.runAfter(2.5, std::bind(print, "once2.5"));
-		loop.runAfter(3.5, std::bind(print, "once3.5"));
-		TimerId t45 = loop.runAfter(4.5, std::bind(print, "once4.5"));
-		loop.runAfter(4.2, std::bind(cancel, t45));
-		loop.runAfter(4.8, std::bind(cancel, t45));
-		loop.runEvery(2, std::bind(print, "every2"));
-		TimerId t3 = loop.runEvery(3, std::bind(print, "every3"));
-		loop.runAfter(9.001, std::bind(cancel, t3));
-		// --- 递归调度 + 循环中创建/销毁定时器（压力测试，需手动中断）---
-        RecursionTimerTest r;
-        r.RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
-        GameTimerTestMap v;
-		// 注意：以下是无限循环，仅用于手动观察输出
-		while (true)
-		{
-            GameTimerTestPtr p(new GameTimerTest);
-            p->RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
-            v.emplace(1, p);
-            v.erase(1);
-            
-			loop.loop();
-		}
-		
-		print("main loop exits");
-	}
-	sleep(1);
-	{
-		EventLoopThread loopThread;
-		EventLoop* loop = loopThread.startLoop();
-		loop->runAfter(2, printTid);
-		sleep(3);
-		print("thread loop exits");
-	}
+TEST(TimerQueueTest, SafeWithoutEventLoop)
+{
+	TimerTaskComp timer;
+
+	timer.RunAfter(0.01, []() {});
+	timer.RunEvery(0.01, []() {});
+	timer.RunAt(Timestamp::now(), []() {});
+	timer.Cancel();
+
+	EXPECT_FALSE(timer.IsActive());
+	EXPECT_EQ(timer.GetEndTime(), 0U);
+}
+
+TEST(TimerQueueTest, MoveAndCopyAreSafe)
+{
+	TimerTaskComp source;
+	source.SetCallBack([]() {});
+
+	TimerTaskComp copied(source);
+	EXPECT_FALSE(copied.IsActive());
+	EXPECT_EQ(copied.GetEndTime(), 0U);
+
+	TimerTaskComp moved(std::move(source));
+	EXPECT_FALSE(moved.IsActive());
+	EXPECT_EQ(moved.GetEndTime(), 0U);
 }
 
 int main(int argc, char **argv)
 {
 	testing::InitGoogleTest(&argc, argv);
-	int32_t nRet =  RUN_ALL_TESTS();
-	while (true)
-	{
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
-	return nRet;
+	return RUN_ALL_TESTS();
 }

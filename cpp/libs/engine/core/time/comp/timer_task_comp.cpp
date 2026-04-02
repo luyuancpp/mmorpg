@@ -3,6 +3,8 @@
 #include "muduo/net/TimerId.h"
 #include "time/system/time.h"
 
+#include <cassert>
+
 static inline muduo::net::EventLoop* GetThreadEventLoop() {
     return muduo::net::EventLoop::getEventLoopOfCurrentThread();
 }
@@ -15,7 +17,7 @@ TimerTaskComp::~TimerTaskComp() {
 }
 
 TimerTaskComp::TimerTaskComp(const TimerTaskComp& param) {
-    const_cast<TimerTaskComp&>(param).Cancel();
+    (void)param;
 }
 
 TimerTaskComp::TimerTaskComp(TimerTaskComp&& param) noexcept {
@@ -30,21 +32,54 @@ TimerTaskComp& TimerTaskComp::operator=(TimerTaskComp&& param) noexcept
 }
 
 void TimerTaskComp::RunAt(const Timestamp& time, const TimerCallback& cb) {
+    if (!cb) {
+        Cancel();
+        return;
+    }
+
+    auto* loop = GetThreadEventLoop();
+    if (loop == nullptr) {
+        Cancel();
+        return;
+    }
+
     Cancel();
     callback = cb;
-    timerId = GetThreadEventLoop()->runAt(time, std::bind(&TimerTaskComp::OnTimer, this));
+    timerId = loop->runAt(time, std::bind(&TimerTaskComp::OnTimer, this));
 }
 
 void TimerTaskComp::RunAfter(const double delay, const TimerCallback& cb) {
+    if (!cb) {
+        Cancel();
+        return;
+    }
+
+    auto* loop = GetThreadEventLoop();
+    if (loop == nullptr) {
+        Cancel();
+        return;
+    }
+
     Cancel();
     callback = cb;
-    timerId = GetThreadEventLoop()->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
+    timerId = loop->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
 }
 
 void TimerTaskComp::RunEvery(const double interval, const TimerCallback& cb) {
+    if (!cb) {
+        Cancel();
+        return;
+    }
+
+    auto* loop = GetThreadEventLoop();
+    if (loop == nullptr) {
+        Cancel();
+        return;
+    }
+
     Cancel();
     callback = cb;
-    timerId = GetThreadEventLoop()->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
+    timerId = loop->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
 }
 
 void TimerTaskComp::Run() const
@@ -76,7 +111,12 @@ bool TimerTaskComp::IsActive() {
 }
 
 uint64_t TimerTaskComp::GetEndTime() {
-    return timerId.GetTimer()->expiration().secondsSinceEpoch();
+    auto timer = timerId.GetTimer();
+    if (!timer) {
+        return 0;
+    }
+
+    return timer->expiration().secondsSinceEpoch();
 }
 
 void TimerTaskComp::SetCallBack(const TimerCallback& cb) {
@@ -84,6 +124,11 @@ void TimerTaskComp::SetCallBack(const TimerCallback& cb) {
 }
 
 void TimerTaskComp::OnTimer() {
+    auto timer = timerId.GetTimer();
+    if (!timer || !timer->repeat()) {
+        timerId = TimerId();
+    }
+
     if (callback) {
         const TimerCallback copycb = callback;
         copycb();
