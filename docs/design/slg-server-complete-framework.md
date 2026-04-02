@@ -239,12 +239,21 @@ struct March {
 **不需要逐帧 tick！** 这是 SLG 和 MMORPG 最大的架构差异。
 
 ```
+前置条件:
+  行军注册时，A* 已算出完整路径并存储:
+  path = [tile_3, tile_7, tile_11, tile_15, ...]   // 起点到终点的格子序列
+  每个元素是一个 tile_id (tile_id = y * MAP_WIDTH + x)
+
 位置公式:
   elapsed = now - start_time
   tiles_traveled = floor(elapsed * speed)
   current_tile = path[min(tiles_traveled, path.length - 1)]
 
-任何时刻都能直接算出当前位置，无需逐帧推进。
+  公式做的是"查表"而非寻路:
+  - path[] 是预计算好的完整格子序列（包含起点和终点）
+  - tiles_traveled 是"走过了几个格子"的下标偏移
+  - path[tiles_traveled] 直接取出当前所在的格子 tile_id
+  → 任何时刻 O(1) 算出当前位置，无需逐帧推进
 
 客户端同步:
   服务器只发送 {path, start_time, speed}
