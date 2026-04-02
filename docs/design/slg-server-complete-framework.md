@@ -225,16 +225,71 @@ struct March {
     uint64_t army_id;
     uint64_t player_id;
     MarchState state;          // MARCHING, GATHERING, RETURNING, BATTLING
-    std::vector<uint32_t> path; // 完整路径 tile_id 序列
+    std::vector<uint32_t> path; // 完整路径 tile_id 序列 (受行军距离上限约束)
     int64_t start_time_ms;     // 出发时间戳
     int32_t speed;             // 格/秒 × 1000 (毫秒精度)
     uint32_t current_path_idx; // 当前在 path 中的 index (懒计算)
     uint32_t dest_tile_id;
     MarchPurpose purpose;      // ATTACK, REINFORCE, GATHER, SCOUT, RETURN
 };
+
+// 行军距离上限（非常重要的设计约束）:
+// path.size() 不会无限大，受 max_march_range 约束
+// 典型范围: 初始 ~20 格，满级/满科技 ~150 格
+// 1200×1200 地图对角线 ~1700，但玩家永远达不到这个长度
 ```
 
-### 4.2 懒计算位置模型 (核心！)
+### 4.2 行军距离上限 (March Range Limit)
+
+**率土之滨的核心设计**: 玩家不能无限远行军，有一个 `max_march_range` 上限。
+
+```
+行军距离上限的来源:
+├── 基础值: ~20 格 (新手)
+├── 领地加成: 只能向自己领地/盟友领地相邻 N 格范围行军
+├── 科技研究: "行军距离" 科技每级 +5 格
+├── 武将技能: 某些武将被动增加行军距离
+├── VIP 等级: VIP 等级加成
+├── 道具/buff: 临时增加行军距离
+└── 上限: ~100-150 格 (满级满科技)
+
+验证 (服务端, 发起行军时):
+  CalcMaxMarchRange(player):
+    base = 20
+    base += tech_level[TECH_MARCH_RANGE] * 5
+    base += general_passive_bonus(army.main_general)
+    base += vip_bonus[player.vip_level]
+    base += buff_bonus(player, BUFF_MARCH_RANGE)
+    return min(base, HARD_CAP)  // 硬上限 ~150-200
+
+  ValidateMarch(player, path):
+    if path.size() > CalcMaxMarchRange(player):
+      return ERROR_MARCH_TOO_FAR  // 拒绝
+    // 还要检查: 目的地是否在领地扩展范围内
+    if not IsInMarchableArea(player, path.back()):
+      return ERROR_OUT_OF_TERRITORY
+
+领地规则 (率土之滨特色):
+  - 只能向自己/盟友已占领土地的相邻格子行军
+  - 不能跳过空白区域直接飞到远处
+  - 因此实际可行军范围 = 领地边界向外延伸 max_march_range 格
+  - 这天然限制了 path 长度：即使上限 150 格，实际很多行军只有 10-30 格
+```
+
+**性能意义**:
+
+| 指标 | 无上限 (理论最坏) | 有上限 (实际) |
+|------|-------------------|---------------|
+| path.size() | ~1700 (对角线) | ≤ 150 |
+| 单次碰撞检测 | ~1700 × N | ≤ 150 × N |
+| occupant 注册 | ~1700 条 | ≤ 150 条 |
+| 单行军内存 | ~7KB | ≤ 600B |
+| 50K 行军总 path 内存 | ~340MB | ≤ 30MB |
+| 视野事件数 | ~1700 | ≤ 150 |
+
+行军距离上限同时解决了**游戏设计**（逼迫扩张领地才能远征）和**性能**（路径长度有界）两个问题。
+
+### 4.3 懒计算位置模型 (核心！)
 
 **不需要逐帧 tick！** 这是 SLG 和 MMORPG 最大的架构差异。
 
@@ -261,7 +316,7 @@ struct March {
   仅在速度变化/召回时重新下发
 ```
 
-### 4.3 时空碰撞检测 (Spatiotemporal Collision)
+### 4.4 时空碰撞检测 (Spatiotemporal Collision)
 
 **问题**：没有逐帧 tick，如何检测两支军队在路径上相遇？
 
@@ -285,7 +340,7 @@ occupants[tile_id] = [{army_id, enter_time, leave_time}, ...]
 
 **复杂度**：O(path_length × avg_occupants_per_tile)，注册时一次性完成，无运行时开销。
 
-### 4.4 召回/变速处理
+### 4.5 召回/变速处理
 
 ```
 MarchManager.RecallMarch(army_id):
@@ -296,7 +351,7 @@ MarchManager.RecallMarch(army_id):
   5. 注册新的 March（RETURN 状态），重新检测碰撞
 ```
 
-### 4.5 行军事件时间线
+### 4.6 行军事件时间线
 
 ```
 行军注册时预先注册以下定时器:
@@ -309,7 +364,7 @@ MarchManager.RecallMarch(army_id):
 注意：这些定时器都是一次性注册，不需要每帧检查。
 ```
 
-### 4.6 行军持久化与崩溃恢复
+### 4.7 行军持久化与崩溃恢复
 
 ```
 持久化数据: {army_id, path, start_time, speed, state, purpose}
@@ -1177,8 +1232,9 @@ MapService (有状态, 最关键):
 | 同时在线 | 5K~10K | 单赛季服 |
 | 总注册 | 50K~200K | 单赛季 |
 | 并发行军 | 10K~50K | 峰值 |
-| 单行军数据 | ~200 B + path | path 平均 ~100 tiles |
-| 行军总内存 | ~50 MB | 50K 行军 |
+| 行军距离上限 | 20~150 格 | 初始~满级, 天然限制 path 长度 |
+| 单行军数据 | ~120-600 B | 结构体 + path 平均 10~30 tiles |
+| 行军总内存 | ~6-30 MB | 50K 行军, 有距离上限 |
 | 视野总内存 | ~100 MB | 按需分配 |
 | 进程总内存 | < 1 GB | MapService |
 | 单次战斗 | < 1 ms | CPU 时间 |
