@@ -152,7 +152,7 @@ namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 134> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 137> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -795,98 +795,98 @@ void InitMessageInfo()
         "SlgBattle", "SimulateBattle",
         std::make_unique<::SimulateBattleRequest>(),
         std::make_unique<::SimulateBattleResponse>(),
-        std::make_unique<SlgBattleImpl>(), 0, common::base::eNodeType::SlgNodeService};
+        std::make_unique<SlgBattleImpl>(), 0, common::base::eNodeType::SlgBattleNodeService};
     gRpcMethodRegistry[SlgBattleQueryBattleReportMessageId] = RpcMethodMeta{
         "SlgBattle", "QueryBattleReport",
         std::make_unique<::QueryBattleReportRequest>(),
         std::make_unique<::QueryBattleReportResponse>(),
-        std::make_unique<SlgBattleImpl>(), 0, common::base::eNodeType::SlgNodeService};
+        std::make_unique<SlgBattleImpl>(), 0, common::base::eNodeType::SlgBattleNodeService};
 
     // --- SlgMap ---
     gRpcMethodRegistry[SlgMapStartMarchMessageId] = RpcMethodMeta{
         "SlgMap", "StartMarch",
         std::make_unique<::StartMarchRequest>(),
         std::make_unique<::StartMarchResponse>(),
-        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgMapNodeService};
     gRpcMethodRegistry[SlgMapCancelMarchMessageId] = RpcMethodMeta{
         "SlgMap", "CancelMarch",
         std::make_unique<::CancelMarchRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgMapNodeService};
     gRpcMethodRegistry[SlgMapQueryViewportMessageId] = RpcMethodMeta{
         "SlgMap", "QueryViewport",
         std::make_unique<::ViewportRequest>(),
         std::make_unique<::ViewportResponse>(),
-        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgMapNodeService};
     gRpcMethodRegistry[SlgMapBuildMessageId] = RpcMethodMeta{
         "SlgMap", "Build",
         std::make_unique<::BuildRequest>(),
         std::make_unique<::BuildResponse>(),
-        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgMapNodeService};
     gRpcMethodRegistry[SlgMapUpgradeBuildingMessageId] = RpcMethodMeta{
         "SlgMap", "UpgradeBuilding",
         std::make_unique<::UpgradeBuildingRequest>(),
         std::make_unique<::UpgradeBuildingResponse>(),
-        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgMapNodeService};
     gRpcMethodRegistry[SlgMapNodeHandshakeMessageId] = RpcMethodMeta{
         "SlgMap", "NodeHandshake",
         std::make_unique<::NodeHandshakeRequest>(),
         std::make_unique<::NodeHandshakeResponse>(),
-        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgNodeService};
+        std::make_unique<SlgMapImpl>(), 0, common::base::eNodeType::SlgMapNodeService};
 
     // --- TurnBasedBattle ---
     gRpcMethodRegistry[TurnBasedBattleStartBattleMessageId] = RpcMethodMeta{
         "TurnBasedBattle", "StartBattle",
         std::make_unique<::StartBattleRequest>(),
         std::make_unique<::StartBattleResponse>(),
-        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnBasedBattleNodeService};
     gRpcMethodRegistry[TurnBasedBattleExecuteActionMessageId] = RpcMethodMeta{
         "TurnBasedBattle", "ExecuteAction",
         std::make_unique<::ExecuteActionRequest>(),
         std::make_unique<::ExecuteActionResponse>(),
-        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnBasedBattleNodeService};
     gRpcMethodRegistry[TurnBasedBattleQueryBattleMessageId] = RpcMethodMeta{
         "TurnBasedBattle", "QueryBattle",
         std::make_unique<::QueryBattleRequest>(),
         std::make_unique<::QueryBattleResponse>(),
-        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnBasedBattleNodeService};
     gRpcMethodRegistry[TurnBasedBattleNodeHandshakeMessageId] = RpcMethodMeta{
         "TurnBasedBattle", "NodeHandshake",
         std::make_unique<::NodeHandshakeRequest>(),
         std::make_unique<::NodeHandshakeResponse>(),
-        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedBattleImpl>(), 0, common::base::eNodeType::TurnBasedBattleNodeService};
 
     // --- TurnBasedDungeon ---
     gRpcMethodRegistry[TurnBasedDungeonEnterDungeonMessageId] = RpcMethodMeta{
         "TurnBasedDungeon", "EnterDungeon",
         std::make_unique<::EnterDungeonRequest>(),
         std::make_unique<::EnterDungeonResponse>(),
-        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnBasedDungeonNodeService};
     gRpcMethodRegistry[TurnBasedDungeonMoveInDungeonMessageId] = RpcMethodMeta{
         "TurnBasedDungeon", "MoveInDungeon",
         std::make_unique<::MoveInDungeonRequest>(),
         std::make_unique<::MoveInDungeonResponse>(),
-        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnBasedDungeonNodeService};
     gRpcMethodRegistry[TurnBasedDungeonNextFloorMessageId] = RpcMethodMeta{
         "TurnBasedDungeon", "NextFloor",
         std::make_unique<::NextFloorRequest>(),
         std::make_unique<::NextFloorResponse>(),
-        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnBasedDungeonNodeService};
     gRpcMethodRegistry[TurnBasedDungeonQueryDungeonMessageId] = RpcMethodMeta{
         "TurnBasedDungeon", "QueryDungeon",
         std::make_unique<::QueryDungeonRequest>(),
         std::make_unique<::QueryDungeonResponse>(),
-        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnBasedDungeonNodeService};
     gRpcMethodRegistry[TurnBasedDungeonLeaveDungeonMessageId] = RpcMethodMeta{
         "TurnBasedDungeon", "LeaveDungeon",
         std::make_unique<::LeaveDungeonRequest>(),
         std::make_unique<::LeaveDungeonResponse>(),
-        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnBasedDungeonNodeService};
     gRpcMethodRegistry[TurnBasedDungeonNodeHandshakeMessageId] = RpcMethodMeta{
         "TurnBasedDungeon", "NodeHandshake",
         std::make_unique<::NodeHandshakeRequest>(),
         std::make_unique<::NodeHandshakeResponse>(),
-        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnbasedNodeService};
+        std::make_unique<TurnBasedDungeonImpl>(), 0, common::base::eNodeType::TurnBasedDungeonNodeService};
 }
 
 bool IsClientMessageId(uint32_t messageId)

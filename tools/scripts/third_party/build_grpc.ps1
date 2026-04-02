@@ -291,7 +291,7 @@ if ($UseVSGenerator) {
     $CommonArgs = @(
         "-G", "Visual Studio 18 2026",
         "-A", "x64",
-        "-DCMAKE_CXX_FLAGS=/std:c++latest",
+        "-DCMAKE_CXX_FLAGS=/std:c++20 /DGRPC_NO_FILTER_FUSION",
         "-DgRPC_BUILD_TESTS=OFF",
         "-DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=OFF",
         "-Dprotobuf_BUILD_TESTS=OFF",
@@ -306,7 +306,7 @@ if ($UseVSGenerator) {
         "-DCMAKE_C_COMPILER=cl",
         "-DCMAKE_CXX_COMPILER=cl",
         "-DCMAKE_MAKE_PROGRAM=$NinjaCMakePath",
-        "-DCMAKE_CXX_FLAGS=/std:c++latest",
+        "-DCMAKE_CXX_FLAGS=/std:c++20 /DGRPC_NO_FILTER_FUSION",
         "-DgRPC_BUILD_TESTS=OFF",
         "-DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=OFF",
         "-Dprotobuf_BUILD_TESTS=OFF",
@@ -338,7 +338,7 @@ function Invoke-GrpcBuild {
     }
 
     $cachePath = Join-Path $buildPath 'CMakeCache.txt'
-    $expectedCxxFlags = '/std:c++latest'
+    $expectedCxxFlags = '/std:c++20 /DGRPC_NO_FILTER_FUSION'
     if (Test-Path $cachePath) {
         $cacheCompilerLine = Select-String -Path $cachePath -Pattern '^CMAKE_C_COMPILER:FILEPATH=' -SimpleMatch:$false | Select-Object -First 1
         $cacheCxxFlagsLine = Select-String -Path $cachePath -Pattern '^CMAKE_CXX_FLAGS:STRING=' -SimpleMatch:$false | Select-Object -First 1

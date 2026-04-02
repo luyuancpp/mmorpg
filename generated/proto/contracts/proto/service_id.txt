@@ -128,7 +128,10 @@
 127=TurnBasedBattleStartBattle
 128=TurnBasedBattleExecuteAction
 129=TurnBasedBattleQueryBattle
-130=TurnBasedDungeonEnterFloor
-131=TurnBasedDungeonQueryState
+130=TurnBasedDungeonEnterDungeon
+131=TurnBasedDungeonMoveInDungeon
 132=TurnBasedBattleNodeHandshake
 133=TurnBasedDungeonNodeHandshake
+134=TurnBasedDungeonNextFloor
+135=TurnBasedDungeonQueryDungeon
+136=TurnBasedDungeonLeaveDungeon

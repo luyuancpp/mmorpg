@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -15,7 +14,6 @@ import (
 	"sync/atomic"
 	"text/template"
 
-	"github.com/iancoleman/strcase"
 	messageoption "github.com/luyuancpp/protooption"
 
 	"go.uber.org/zap"
@@ -377,11 +375,10 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		initLines = append(initLines, fmt.Sprintf("// --- %s ---", service.Service()))
 
 		for _, method := range service.Methods {
-			basePath := strings.ToLower(path.Base(method.Path()))
 			messageId := method.KeyName() + _config.Global.Naming.MessageId
 
 			isClientMessage := internal.IsClientProtocolService(service.ServiceDescriptorProto)
-			nodeType := fmt.Sprintf("%s::%sNodeService", internal.NodeEnumCppQualifiedType, strcase.ToCamel(basePath))
+			nodeType := fmt.Sprintf("%s::%sNodeService", internal.NodeEnumCppQualifiedType, service.NodeServiceForCpp())
 
 			// Emit multi-line RpcMethodMeta initialization grouped by field role:
 			//   line 1: assignment + opening brace
@@ -554,7 +551,7 @@ void InitPlayerService()
 
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, data); err != nil {
-logger.Global.Fatal("Failed to generate player service instance: template execution failed",
+		logger.Global.Fatal("Failed to generate player service instance: template execution failed",
 			zap.String("template_name", "playerInstance"),
 			zap.String("service_name", serviceName),
 			zap.Error(err),
