@@ -60,11 +60,11 @@ void HandleCompletedQueueMessage(entt::registry& registry){
 
 {{- range $index, $m := .ServiceInfo }}
     {{- if eq $index 0 }}
-            if ({{$.NodeEnumCppType}}::{{$m.BasePathForCpp}}NodeService == nodeType) {
+            if ({{$.NodeEnumCppType}}::{{$m.NodeServiceForCpp}}NodeService == nodeType) {
                 {{$m.CppPackage}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
     {{- else }}
-            else if ({{$.NodeEnumCppType}}::{{$m.BasePathForCpp}}NodeService == nodeType) {
+            else if ({{$.NodeEnumCppType}}::{{$m.NodeServiceForCpp}}NodeService == nodeType) {
                 {{$m.CppPackage}}::Handle{{$m.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
     {{- end }}
@@ -79,11 +79,11 @@ void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, ent
     registry.emplace<grpc::CompletionQueue>(nodeEntity);
 {{- range $index, $m := .ServiceInfo }}
     {{- if eq $index 0 }}
-    if ({{$.NodeEnumCppType}}::{{$m.BasePathForCpp}}NodeService == nodeType) {
+    if ({{$.NodeEnumCppType}}::{{$m.NodeServiceForCpp}}NodeService == nodeType) {
         {{$m.CppPackage}}::Init{{$m.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
     }
     {{- else }}
-    else if ({{$.NodeEnumCppType}}::{{$m.BasePathForCpp}}NodeService == nodeType) {
+    else if ({{$.NodeEnumCppType}}::{{$m.NodeServiceForCpp}}NodeService == nodeType) {
         {{$m.CppPackage}}::Init{{$m.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
     }
     {{- end }}
