@@ -45,82 +45,99 @@
 #include <cerrno>
 #include <optional>
 
-namespace {
-std::atomic<Node*> gNodeAtomic{ nullptr };
+namespace
+{
+	std::atomic<Node *> gNodeAtomic{nullptr};
 
-const char* GetNonEmptyEnv(const char* name) {
-	const char* value = std::getenv(name);
-	if (value == nullptr || value[0] == '\0') {
-		return nullptr;
-	}
-	return value;
-}
-
-std::string ResolveNodeIp() {
-	// Prefer K8s Downward API pod IP, then explicit override, then legacy hostname resolve.
-	if (const char* podIp = GetNonEmptyEnv("POD_IP")) {
-		return podIp;
+	const char *GetNonEmptyEnv(const char *name)
+	{
+		const char *value = std::getenv(name);
+		if (value == nullptr || value[0] == '\0')
+		{
+			return nullptr;
+		}
+		return value;
 	}
 
-	if (const char* nodeIp = GetNonEmptyEnv("NODE_IP")) {
-		return nodeIp;
+	std::string ResolveNodeIp()
+	{
+		// Prefer K8s Downward API pod IP, then explicit override, then legacy hostname resolve.
+		if (const char *podIp = GetNonEmptyEnv("POD_IP"))
+		{
+			return podIp;
+		}
+
+		if (const char *nodeIp = GetNonEmptyEnv("NODE_IP"))
+		{
+			return nodeIp;
+		}
+
+		return localip();
 	}
 
-	return localip();
-}
+	std::optional<uint16_t> TryResolveNodePortFromEnv()
+	{
+		const char *rawPort = GetNonEmptyEnv("RPC_PORT");
+		if (rawPort == nullptr)
+		{
+			rawPort = GetNonEmptyEnv("NODE_PORT");
+		}
 
-std::optional<uint16_t> TryResolveNodePortFromEnv() {
-	const char* rawPort = GetNonEmptyEnv("RPC_PORT");
-	if (rawPort == nullptr) {
-		rawPort = GetNonEmptyEnv("NODE_PORT");
+		if (rawPort == nullptr)
+		{
+			return std::nullopt;
+		}
+
+		errno = 0;
+		char *endPtr = nullptr;
+		const long parsedPort = std::strtol(rawPort, &endPtr, 10);
+		if (errno != 0 || endPtr == rawPort || *endPtr != '\0' || parsedPort <= 0 || parsedPort > 65535)
+		{
+			LOG_WARN << "Ignore invalid env port value. RPC_PORT/NODE_PORT=" << rawPort;
+			return std::nullopt;
+		}
+
+		return static_cast<uint16_t>(parsedPort);
 	}
 
-	if (rawPort == nullptr) {
-		return std::nullopt;
+	void StdoutOutput(const char *msg, int len)
+	{
+		std::fwrite(msg, 1, static_cast<size_t>(len), stdout);
 	}
 
-	errno = 0;
-	char* endPtr = nullptr;
-	const long parsedPort = std::strtol(rawPort, &endPtr, 10);
-	if (errno != 0 || endPtr == rawPort || *endPtr != '\0' || parsedPort <= 0 || parsedPort > 65535) {
-		LOG_WARN << "Ignore invalid env port value. RPC_PORT/NODE_PORT=" << rawPort;
-		return std::nullopt;
+	std::string FormatKafkaPartitions(const std::vector<int32_t> &partitions)
+	{
+		if (partitions.empty())
+		{
+			return "all";
+		}
+
+		std::vector<std::string> partitionTokens;
+		partitionTokens.reserve(partitions.size());
+		for (int32_t partition : partitions)
+		{
+			partitionTokens.emplace_back(std::to_string(partition));
+		}
+
+		return boost::algorithm::join(partitionTokens, ",");
 	}
-
-	return static_cast<uint16_t>(parsedPort);
-}
-
-void StdoutOutput(const char* msg, int len) {
-	std::fwrite(msg, 1, static_cast<size_t>(len), stdout);
-}
-
-std::string FormatKafkaPartitions(const std::vector<int32_t>& partitions) {
-	if (partitions.empty()) {
-		return "all";
-	}
-
-	std::vector<std::string> partitionTokens;
-	partitionTokens.reserve(partitions.size());
-	for (int32_t partition : partitions) {
-		partitionTokens.emplace_back(std::to_string(partition));
-	}
-
-	return boost::algorithm::join(partitionTokens, ",");
-}
 }
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
-Node* gNode;
+Node *gNode;
 
-Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
-	: eventLoop(loop), logSystem(logFilePath, kMaxLogFileRollSize, 1) {
-	if (eventLoop == nullptr) {
+Node::Node(muduo::net::EventLoop *loop, const std::string &logFilePath)
+	: eventLoop(loop), logSystem(logFilePath, kMaxLogFileRollSize, 1)
+{
+	if (eventLoop == nullptr)
+	{
 		LOG_FATAL << "Node requires a valid EventLoop pointer.";
 	}
 
 	LOG_INFO << "Node created, log file: " << logFilePath;
-	if (gNode != nullptr && gNode != this) {
+	if (gNode != nullptr && gNode != this)
+	{
 		LOG_FATAL << "Multiple Node instances detected. existing=" << gNode << ", new=" << this;
 	}
 
@@ -129,9 +146,11 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 	tlsEcs.nodeGlobalRegistry.emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 }
 
-Node::~Node() {
+Node::~Node()
+{
 	Shutdown();
-	if (gNode == this) {
+	if (gNode == this)
+	{
 		gNodeAtomic.store(nullptr, std::memory_order_release);
 		gNode = nullptr;
 	}
@@ -142,11 +161,13 @@ int64_t Node::GetLeaseId() const
 	return serviceDiscoveryManager.etcdService.GetLeaseId();
 }
 
-NodeInfo& Node::GetNodeInfo() const {
+NodeInfo &Node::GetNodeInfo() const
+{
 	return tlsEcs.globalRegistry.get_or_emplace<NodeInfo>(tlsEcs.GlobalEntity());
 }
 
-void Node::Initialize() {
+void Node::Initialize()
+{
 	eventLoop->assertInLoopThread();
 	LOG_DEBUG << "Node initializing...";
 	SetupTimeZone();
@@ -161,13 +182,15 @@ void Node::Initialize() {
 	LOG_DEBUG << "Node initialization complete.";
 }
 
-void Node::InitRpcServer() {
-	NodeInfo& localNodeInfo = GetNodeInfo();
+void Node::InitRpcServer()
+{
+	NodeInfo &localNodeInfo = GetNodeInfo();
 	const std::string endpointIp = ResolveNodeIp();
 	localNodeInfo.mutable_endpoint()->set_ip(endpointIp);
 
 	// Port is resolved later by AcquireNodePort() via etcd, unless overridden by env.
-	if (const auto envPort = TryResolveNodePortFromEnv(); envPort) {
+	if (const auto envPort = TryResolveNodePortFromEnv(); envPort)
+	{
 		localNodeInfo.mutable_endpoint()->set_port(*envPort);
 		LOG_INFO << "Node port from environment: " << *envPort;
 	}
@@ -181,10 +204,11 @@ void Node::InitRpcServer() {
 
 	localNodeInfo.set_node_uuid(boost::uuids::to_string(uuidGenerator()));
 
-	const auto& redisHost = tlsNodeConfigManager.GetGameConfig().zone_redis().host();
+	const auto &redisHost = tlsNodeConfigManager.GetGameConfig().zone_redis().host();
 	const auto redisPort = static_cast<uint16_t>(tlsNodeConfigManager.GetGameConfig().zone_redis().port());
 	muduo::net::InetAddress zoneRedisAddress(redisPort);
-	if (!muduo::net::InetAddress::resolve(redisHost, &zoneRedisAddress)) {
+	if (!muduo::net::InetAddress::resolve(redisHost, &zoneRedisAddress))
+	{
 		LOG_WARN << "DNS resolve failed for Redis host '" << redisHost << "', treating as literal IP";
 		zoneRedisAddress = muduo::net::InetAddress(redisHost, redisPort);
 	}
@@ -202,35 +226,40 @@ void Node::InitKafka()
 
 void Node::StartKafkaPolling()
 {
-	kafkaConsumerTimer.RunEvery(0.1, [this] { kafkaManager.Poll(); });
+	kafkaConsumerTimer.RunEvery(0.1, [this]
+								{ kafkaManager.Poll(); });
 }
 
-bool Node::RegisterKafkaMessageHandler(const std::vector<std::string>& topics,
-	const std::string& groupId,
-	KafkaMessageHandler handler,
-	const std::vector<int32_t>& partitions)
+bool Node::RegisterKafkaMessageHandler(const std::vector<std::string> &topics,
+									   const std::string &groupId,
+									   KafkaMessageHandler handler,
+									   const std::vector<int32_t> &partitions)
 {
-	if (topics.empty()) {
+	if (topics.empty())
+	{
 		LOG_ERROR << "RegisterKafkaMessageHandler failed: topics is empty.";
 		return false;
 	}
 
-	if (!handler) {
+	if (!handler)
+	{
 		LOG_ERROR << "RegisterKafkaMessageHandler failed: handler is null.";
 		return false;
 	}
 
-	auto& kafkaConfig = tlsNodeConfigManager.GetBaseDeployConfig().kafka();
-	if (!GetKafkaManager().Subscribe(kafkaConfig, topics, groupId, partitions, std::move(handler))) {
+	auto &kafkaConfig = tlsNodeConfigManager.GetBaseDeployConfig().kafka();
+	if (!GetKafkaManager().Subscribe(kafkaConfig, topics, groupId, partitions, std::move(handler)))
+	{
 		LOG_ERROR << "Kafka subscribe failed. group_id=" << groupId;
 		return false;
 	}
 
 	LOG_INFO << "Kafka subscribe succeeded. group_id=" << groupId
-		<< ", topics=" << boost::algorithm::join(topics, ",")
-		<< ", partitions=" << FormatKafkaPartitions(partitions);
+			 << ", topics=" << boost::algorithm::join(topics, ",")
+			 << ", partitions=" << FormatKafkaPartitions(partitions);
 
-	if (!kafkaPollingStarted) {
+	if (!kafkaPollingStarted)
+	{
 		StartKafkaPolling();
 		kafkaPollingStarted = true;
 	}
@@ -243,37 +272,44 @@ void Node::InitEtcdService()
 	serviceDiscoveryManager.Init();
 }
 
-void Node::OnNodeIdConflictShutdown(NodeIdConflictReason reason) {
+void Node::OnNodeIdConflictShutdown(NodeIdConflictReason reason)
+{
 	LOG_WARN << "Node identity conflict detected (reason="
-		<< static_cast<int>(reason) << "), node_id=" << GetNodeId()
-		<< ". Override OnNodeIdConflictShutdown() to flush players before termination.";
+			 << static_cast<int>(reason) << "), node_id=" << GetNodeId()
+			 << ". Override OnNodeIdConflictShutdown() to flush players before termination.";
 	// Base implementation: no-op. Subclasses (SceneNode, GateNode, etc.)
 	// should override to: save player data, migrate/kick players, etc.
 	// For instance nodes: notify players that the dungeon is lost.
 }
 
-void Node::StartRpcServer() {
+void Node::StartRpcServer()
+{
 	eventLoop->assertInLoopThread();
-	if (rpcServer) {
+	if (rpcServer)
+	{
 		LOG_TRACE << "RPC server already started, skipping.";
 		return;
 	}
 
-	NodeInfo& localNodeInfo = GetNodeInfo();
+	NodeInfo &localNodeInfo = GetNodeInfo();
 	muduo::net::InetAddress rpcListenAddress(localNodeInfo.endpoint().ip(), localNodeInfo.endpoint().port());
 
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, rpcListenAddress);
 	rpcServer->start();
-	auto* nodeReplyService = GetNodeReplyService();
-	if (nodeReplyService != nullptr) {
+	auto *nodeReplyService = GetNodeReplyService();
+	if (nodeReplyService != nullptr)
+	{
 		rpcServer->registerService(nodeReplyService);
 	}
-	else {
+	else
+	{
 		LOG_WARN << "Node reply service is null, skip registerService for node_type=" << GetNodeInfo().node_type();
 	}
 
-	for (auto& [serviceName, service] : gNodeService) {
-		if (service == nullptr) {
+	for (auto &[serviceName, service] : gNodeService)
+	{
+		if (service == nullptr)
+		{
 			LOG_WARN << "Skip null node service registration for key=" << serviceName;
 			continue;
 		}
@@ -283,7 +319,8 @@ void Node::StartRpcServer() {
 
 	NodeConnector::ConnectAllNodes();
 
-	if (!RegisterKafkaHandlers()) {
+	if (!RegisterKafkaHandlers())
+	{
 		LOG_FATAL << "RegisterKafkaHandlers failed for node_type=" << GetNodeInfo().node_type();
 	}
 
@@ -293,38 +330,45 @@ void Node::StartRpcServer() {
 
 	auto nodeTypeName = boost::to_upper_copy(eNodeType_Name(GetNodeInfo().node_type()));
 	LOG_INFO << "\n\n"
-		<< "=============================================================\n"
-		<< "	" << nodeTypeName << " NODE STARTED SUCCESSFULLY\n"
-		<< "	Node Info:\n" << GetNodeInfo().DebugString() << "\n"
-		<< "=============================================================\n";
+			 << "=============================================================\n"
+			 << "	" << nodeTypeName << " NODE STARTED SUCCESSFULLY\n"
+			 << "	Node Info:\n"
+			 << GetNodeInfo().DebugString() << "\n"
+			 << "=============================================================\n";
 }
 
-void Node::Shutdown() {
-	if (eventLoop == nullptr) {
+void Node::Shutdown()
+{
+	if (eventLoop == nullptr)
+	{
 		return;
 	}
 
-	if (eventLoop->isInLoopThread()) {
+	if (eventLoop->isInLoopThread())
+	{
 		ShutdownInLoop();
 		return;
 	}
 
 	std::promise<void> shutdownPromise;
 	auto shutdownFuture = shutdownPromise.get_future();
-	eventLoop->runInLoop([this, &shutdownPromise]() {
+	eventLoop->runInLoop([this, &shutdownPromise]()
+						 {
 		ShutdownInLoop();
-		shutdownPromise.set_value();
-	});
+		shutdownPromise.set_value(); });
 	constexpr auto kShutdownWaitTimeout = std::chrono::seconds(5);
-	if (shutdownFuture.wait_for(kShutdownWaitTimeout) != std::future_status::ready) {
+	if (shutdownFuture.wait_for(kShutdownWaitTimeout) != std::future_status::ready)
+	{
 		LOG_ERROR << "Node shutdown timed out waiting for loop thread. timeout_s="
-			<< std::chrono::duration_cast<std::chrono::seconds>(kShutdownWaitTimeout).count();
+				  << std::chrono::duration_cast<std::chrono::seconds>(kShutdownWaitTimeout).count();
 	}
 }
 
-void Node::ShutdownInLoop() {
+void Node::ShutdownInLoop()
+{
 	eventLoop->assertInLoopThread();
-	if (shutdownStarted.exchange(true, std::memory_order_acq_rel)) {
+	if (shutdownStarted.exchange(true, std::memory_order_acq_rel))
+	{
 		return;
 	}
 
@@ -345,31 +389,35 @@ void Node::ShutdownInLoop() {
 	LOG_DEBUG << "Node shutdown complete.";
 }
 
-void Node::InitLogSystem() {
+void Node::InitLogSystem()
+{
 	auto logLevel = static_cast<muduo::Logger::LogLevel>(
-		tlsNodeConfigManager.GetBaseDeployConfig().log_level()
-		);
+		tlsNodeConfigManager.GetBaseDeployConfig().log_level());
 	muduo::Logger::setLogLevel(logLevel);
 	muduo::Logger::setOutput(AsyncOutput);
 	logSystem.start();
 }
 
-void Node::RegisterEventHandlers() {
+void Node::RegisterEventHandlers()
+{
 	tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnServerConnected>(*this);
 }
 
-void Node::LoadConfigs() {
+void Node::LoadConfigs()
+{
 	tlsNodeConfigManager = NodeConfigManager();
 	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig());
 	readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig());
 	gNodeConfigManager = tlsNodeConfigManager;
 }
 
-void Node::LoadAllConfigData() {
+void Node::LoadAllConfigData()
+{
 	LoadTablesAsync();
 }
 
-void Node::SetupTimeZone() {
+void Node::SetupTimeZone()
+{
 #ifdef __linux__
 	const muduo::TimeZone hkTz = muduo::TimeZone::loadZoneFile("zoneinfo/Asia/Hong_Kong");
 #else
@@ -378,11 +426,13 @@ void Node::SetupTimeZone() {
 	muduo::Logger::setTimeZone(hkTz);
 }
 
-void Node::StopWatchingServiceNodes() {
+void Node::StopWatchingServiceNodes()
+{
 	EtcdHelper::StopAllWatching();
 }
 
-void Node::ReleaseNodeId() {
+void Node::ReleaseNodeId()
+{
 	EtcdHelper::RevokeLeaseAndCleanup(serviceDiscoveryManager.etcdService.GetLeaseId());
 }
 
@@ -391,7 +441,8 @@ void InitReply();
 void InitPlayerService();
 void InitPlayerServiceReplied();
 void InitServiceHandler();
-void Node::RegisterHandlers() {
+void Node::RegisterHandlers()
+{
 	InitMessageInfo();
 	InitReply();
 	InitPlayerService();
@@ -399,9 +450,11 @@ void Node::RegisterHandlers() {
 	InitServiceHandler();
 }
 
-void Node::AsyncOutput(const char* msg, int len) {
-	Node* activeNode = gNodeAtomic.load(std::memory_order_acquire);
-	if (activeNode != nullptr) {
+void Node::AsyncOutput(const char *msg, int len)
+{
+	Node *activeNode = gNodeAtomic.load(std::memory_order_acquire);
+	if (activeNode != nullptr)
+	{
 		activeNode->Log().append(msg, len);
 		return;
 	}
@@ -411,42 +464,48 @@ void Node::AsyncOutput(const char* msg, int len) {
 #endif
 }
 
-bool Node::IsCurrentNode(const NodeInfo& candidateNode) const
+bool Node::IsCurrentNode(const NodeInfo &candidateNode) const
 {
 	return NodeUtils::IsSameNode(candidateNode.node_uuid(), GetNodeInfo().node_uuid());
 }
 
-void Node::HandleServiceNodeStop(const std::string& key, const std::string& nodeJson) {
+void Node::HandleServiceNodeStop(const std::string &key, const std::string &nodeJson)
+{
 	eventLoop->assertInLoopThread();
 	LOG_INFO << "Service node stop, key: " << key << ", value: " << nodeJson;
 
 	NodeInfo stoppedNode;
 	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &stoppedNode);
-	if (!parseResult.ok()) {
+	if (!parseResult.ok())
+	{
 		LOG_ERROR << "Parse node JSON failed, key: " << key
-			<< ", JSON: " << nodeJson
-			<< ", Error: " << parseResult.message().data();
+				  << ", JSON: " << nodeJson
+				  << ", Error: " << parseResult.message().data();
 		return;
 	}
 
-	if (!eNodeType_IsValid(stoppedNode.node_type())) {
+	if (!eNodeType_IsValid(stoppedNode.node_type()))
+	{
 		LOG_TRACE << "Unknown service type for key: " << key;
 		return;
 	}
 
-	if (stoppedNode.node_uuid().empty()) {
+	if (stoppedNode.node_uuid().empty())
+	{
 		LOG_WARN << "Ignore service node stop with empty node_uuid. key=" << key;
 		return;
 	}
 
-	auto& serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
-	auto& nodesOfStoppedType = *serviceNodesByType[stoppedNode.node_type()].mutable_node_list();
+	auto &serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
+	auto &nodesOfStoppedType = *serviceNodesByType[stoppedNode.node_type()].mutable_node_list();
 
 	// Remove stale node snapshot first so service discovery state stays consistent.
 	int removedSnapshotCount = 0;
-	for (int i = nodesOfStoppedType.size() - 1; i >= 0; --i) {
-		const auto& cachedNodeSnapshot = nodesOfStoppedType.Get(i);
-		if (!NodeUtils::IsSameNode(cachedNodeSnapshot.node_uuid(), stoppedNode.node_uuid())) {
+	for (int i = nodesOfStoppedType.size() - 1; i >= 0; --i)
+	{
+		const auto &cachedNodeSnapshot = nodesOfStoppedType.Get(i);
+		if (!NodeUtils::IsSameNode(cachedNodeSnapshot.node_uuid(), stoppedNode.node_uuid()))
+		{
 			continue;
 		}
 
@@ -454,25 +513,49 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		++removedSnapshotCount;
 	}
 
-	if (removedSnapshotCount == 0) {
+	if (removedSnapshotCount == 0)
+	{
 		LOG_WARN << "Service node stop did not match local cache. node_id=" << stoppedNode.node_id()
-			<< ", node_uuid=" << stoppedNode.node_uuid()
-			<< ", node_type=" << stoppedNode.node_type();
+				 << ", node_uuid=" << stoppedNode.node_uuid()
+				 << ", node_type=" << stoppedNode.node_type();
 	}
-	else {
+	else
+	{
 		LOG_INFO << "Removed " << removedSnapshotCount << " stale node record(s) for uuid=" << stoppedNode.node_uuid();
 	}
 
 	const auto stoppedNodeType = stoppedNode.node_type();
 	const auto stoppedNodeId = stoppedNode.node_id();
 	const auto stoppedNodeUuid = stoppedNode.node_uuid();
+	const auto stoppedProtocolType = stoppedNode.protocol_type();
 
 	// Important: destroy network entities after current channel dispatch cycle.
 	// Direct destroy inside etcd watch callback can invalidate activeChannels_.
-	GetLoop()->queueInLoop([stoppedNodeType, stoppedNodeId, stoppedNodeUuid]() {
-		auto stoppedNodeEntity = entt::entity{ stoppedNodeId };
+	GetLoop()->queueInLoop([stoppedNodeType, stoppedNodeId, stoppedNodeUuid, stoppedProtocolType]()
+						   {
 		entt::registry& nodeRegistry = tlsNodeContextManager.GetRegistry(stoppedNodeType);
 
+		// GRPC nodes use auto-generated entity IDs (not node_id), so look up by uuid.
+		if (stoppedProtocolType == PROTOCOL_GRPC) {
+			for (const auto& [entity, nodeInfo] : nodeRegistry.view<NodeInfo>().each()) {
+				if (!NodeUtils::IsSameNode(nodeInfo.node_uuid(), stoppedNodeUuid)) {
+					continue;
+				}
+
+				OnNodeRemovePbEvent nodeRemovedEvent;
+				nodeRemovedEvent.set_entity(entt::to_integral(entity));
+				nodeRemovedEvent.set_node_type(stoppedNodeType);
+				tlsEcs.dispatcher.trigger(nodeRemovedEvent);
+
+				DestroyEntity(nodeRegistry, entity);
+				return;
+			}
+			LOG_WARN << "GRPC node entity not found for uuid=" << stoppedNodeUuid
+				<< ", node_type=" << stoppedNodeType;
+			return;
+		}
+
+		auto stoppedNodeEntity = entt::entity{ stoppedNodeId };
 		if (nodeRegistry.valid(stoppedNodeEntity)) {
 			auto* currentNodeInfo = nodeRegistry.try_get<NodeInfo>(stoppedNodeEntity);
 			if (currentNodeInfo && !NodeUtils::IsSameNode(currentNodeInfo->node_uuid(), stoppedNodeUuid)) {
@@ -488,19 +571,21 @@ void Node::HandleServiceNodeStop(const std::string& key, const std::string& node
 		nodeRemovedEvent.set_node_type(stoppedNodeType);
 		tlsEcs.dispatcher.trigger(nodeRemovedEvent);
 
-		DestroyEntity(nodeRegistry, stoppedNodeEntity);
-	});
+		DestroyEntity(nodeRegistry, stoppedNodeEntity); });
 	LOG_INFO << "Service node stopped : " << stoppedNode.DebugString();
 }
 
-void Node::OnServerConnected(const OnConnected2TcpServerEvent& connectedEvent) {
+void Node::OnServerConnected(const OnConnected2TcpServerEvent &connectedEvent)
+{
 	eventLoop->assertInLoopThread();
-	if (rpcServer == nullptr) {
+	if (rpcServer == nullptr)
+	{
 		return;
 	}
 
-	auto& connection = connectedEvent.conn_;
-	if (!connection->connected()) {
+	auto &connection = connectedEvent.conn_;
+	if (!connection->connected())
+	{
 		LOG_INFO << "Client disconnected: " << connection->peerAddress().toIpPort();
 		return;
 	}
@@ -511,48 +596,51 @@ void Node::OnServerConnected(const OnConnected2TcpServerEvent& connectedEvent) {
 	}
 }
 
-void Node::StartNodeRegistrationHealthMonitor() {
+void Node::StartNodeRegistrationHealthMonitor()
+{
 	serviceHealthMonitorTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().health_check_interval(),
-		[this, reRegistrationRequested = false]() mutable {
-		if (rpcServer == nullptr)
-		{
-			return;
-		}
+									   [this, reRegistrationRequested = false]() mutable
+									   {
+										   if (rpcServer == nullptr)
+										   {
+											   return;
+										   }
 
-		// Check lease deadline first — this catches network partitions where
-		// the watch stream is dead and the local ServiceNodeList is stale.
-		if (serviceDiscoveryManager.etcdService.IsLeasePresumablyExpired()) {
-			OnNodeIdConflictShutdown(NodeIdConflictReason::kLeaseDeadlineExceeded);
-			LOG_FATAL << "Lease deadline exceeded: no keepalive ACK from etcd within TTL. "
-				"node_id=" << GetNodeInfo().node_id()
-				<< ". Etcd has likely expired our lease; another node may claim this ID. "
-				   "Terminating to prevent SnowFlake collision. "
-				   "Active players will reconnect through the normal login flow.";
-			return;
-		}
+										   // Check lease deadline first — this catches network partitions where
+										   // the watch stream is dead and the local ServiceNodeList is stale.
+										   if (serviceDiscoveryManager.etcdService.IsLeasePresumablyExpired())
+										   {
+											   OnNodeIdConflictShutdown(NodeIdConflictReason::kLeaseDeadlineExceeded);
+											   LOG_FATAL << "Lease deadline exceeded: no keepalive ACK from etcd within TTL. "
+															"node_id="
+														 << GetNodeInfo().node_id()
+														 << ". Etcd has likely expired our lease; another node may claim this ID. "
+															"Terminating to prevent SnowFlake collision. "
+															"Active players will reconnect through the normal login flow.";
+											   return;
+										   }
 
-		auto& currentNode = GetNodeInfo();
+										   auto &currentNode = GetNodeInfo();
 
-		auto& serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
-		auto& registeredNodesForType = *serviceNodesByType[currentNode.node_type()].mutable_node_list();
-		for (const auto& registeredNode : registeredNodesForType) {
-			if (IsCurrentNode(registeredNode)) {
-				reRegistrationRequested = false;
-				return;
-			}
-		}
+										   auto &serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
+										   auto &registeredNodesForType = *serviceNodesByType[currentNode.node_type()].mutable_node_list();
+										   for (const auto &registeredNode : registeredNodesForType)
+										   {
+											   if (IsCurrentNode(registeredNode))
+											   {
+												   reRegistrationRequested = false;
+												   return;
+											   }
+										   }
 
-		// Node snapshot disappeared from service discovery.
-		// Re-register with the same node_id; do not run full re-allocation flow.
-		if (reRegistrationRequested) {
-			return;
-		}
+										   // Node snapshot disappeared from service discovery.
+										   // Re-register with the same node_id; do not run full re-allocation flow.
+										   if (reRegistrationRequested)
+										   {
+											   return;
+										   }
 
-		serviceDiscoveryManager.etcdService.RequestReRegistration();
-		reRegistrationRequested = true;
-		}
-	);
+										   serviceDiscoveryManager.etcdService.RequestReRegistration();
+										   reRegistrationRequested = true;
+									   });
 }
-
-
-

@@ -3,12 +3,13 @@ package handler
 import (
 	"reflect"
 
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 	"robot/generated/pb/game"
 	"robot/logic/gameobject"
 	"robot/pkg"
 	base "robot/proto/common/base"
+
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 type handlerFunc func(*gameobject.Player, []byte)
@@ -58,6 +59,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {
 	player, ok := gameobject.PlayerList.Get(client.PlayerId)
 	if !ok {
 		zap.L().Error("Player not found", zap.Uint64("player_id", client.PlayerId))
+
 		return
 	}
 
@@ -66,4 +68,9 @@ func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {
 	} else {
 		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId))
 	}
+}
+
+// HandleMessage is the public entry point called from main.go RecvLoop.
+func HandleMessage(client *pkg.GameClient, response *base.MessageContent) {
+	MessageBodyHandler(client, response)
 }

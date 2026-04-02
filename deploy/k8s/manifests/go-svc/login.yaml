@@ -38,6 +38,10 @@ spec:
           env:
             - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
               value: warn
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           args: ["-loginService", "/app/etc/login.yaml"]
           ports:
             - containerPort: 50000

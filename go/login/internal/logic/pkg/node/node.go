@@ -34,7 +34,7 @@ func GetRpcPrefix(nodeType uint32) string {
 
 // BuildRpcPrefix generates the path without node_id.
 func BuildRpcPrefix(serviceName string, zoneId, nodeType uint32) string {
-	return fmt.Sprintf("%s.rpc/zone/%d/node_type/%d/", serviceName, zoneId, nodeType)
+	return fmt.Sprintf("%s/zone/%d/node_type/%d/", serviceName, zoneId, nodeType)
 }
 
 // BuildRpcPath generates the full path including node_id.

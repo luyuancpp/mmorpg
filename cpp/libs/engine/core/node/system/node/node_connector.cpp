@@ -14,12 +14,15 @@
 #include <thread_context/entity_manager.h>
 #include "node/system/grpc_channel_cache.h"
 
-void NodeConnector::ConnectToNode(const NodeInfo& nodeInfo) {
-	if (gNode->IsCurrentNode(nodeInfo)) {
+void NodeConnector::ConnectToNode(const NodeInfo &nodeInfo)
+{
+	if (gNode->IsCurrentNode(nodeInfo))
+	{
 		LOG_INFO << "Skipping connection to self node: " << nodeInfo.DebugString();
 		return;
 	}
-	switch (nodeInfo.protocol_type()) {
+	switch (nodeInfo.protocol_type())
+	{
 	case PROTOCOL_GRPC:
 		ConnectToGrpcNode(nodeInfo);
 		break;
@@ -31,113 +34,118 @@ void NodeConnector::ConnectToNode(const NodeInfo& nodeInfo) {
 		break;
 	default:
 		LOG_ERROR << "Unsupported protocol: " << nodeInfo.protocol_type()
-			<< " node: " << nodeInfo.DebugString();
+				  << " node: " << nodeInfo.DebugString();
 		break;
 	}
 }
 
-void NodeConnector::ConnectToGrpcNode(const NodeInfo& nodeInfo) {
-	auto& targetRegistry = NodeUtils::GetRegistryForNodeType(nodeInfo.node_type());
+void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
+{
+	auto &targetRegistry = NodeUtils::GetRegistryForNodeType(nodeInfo.node_type());
 
-	const entt::entity nodeEntity{ nodeInfo.node_id() };
-	if (targetRegistry.valid(nodeEntity)) {
-		if (auto* existingNodeInfo = targetRegistry.try_get<NodeInfo>(nodeEntity);
-			existingNodeInfo != nullptr) {
-			if (NodeUtils::IsSameNode(nodeInfo.node_uuid(), existingNodeInfo->node_uuid())) {
-				LOG_INFO << "GRPC node already registered, IP: " << nodeInfo.endpoint().ip()
-					<< ", Port: " << nodeInfo.endpoint().port();
-				return;
-			}
-
-			LOG_WARN << "GRPC node id reused by new uuid, recreate entity. node_id=" << nodeInfo.node_id()
-				<< ", old_uuid=" << existingNodeInfo->node_uuid()
-				<< ", new_uuid=" << nodeInfo.node_uuid();
+	// GRPC node_id is only unique within a zone, not globally across zones.
+	// Use uuid-based dedup and auto-generated entity IDs to avoid collisions
+	// when the gate discovers GRPC nodes from multiple zones (e.g. login nodes
+	// with node_id 1..3 in each of 10 zones sharing the same etcd).
+	for (const auto &[entity, existing] : targetRegistry.view<NodeInfo>().each())
+	{
+		if (NodeUtils::IsSameNode(nodeInfo.node_uuid(), existing.node_uuid()))
+		{
+			LOG_INFO << "GRPC node already registered, IP: " << nodeInfo.endpoint().ip()
+					 << ", Port: " << nodeInfo.endpoint().port();
+			return;
 		}
 	}
 
-	auto createdId = RecreateEntity(targetRegistry, nodeEntity);
-	if (createdId == entt::null) {
-		LOG_ERROR << "Login node not found: " << entt::to_integral(createdId);
-		return;
-	}
+	auto createdId = targetRegistry.create();
 
 	const auto target = ::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
 	auto cachedChannel = gNode->GetGrpcChannelCache().GetOrCreateChannel(target);
-	const auto& grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(createdId, std::move(cachedChannel));
+	const auto &grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(createdId, std::move(cachedChannel));
 
 	InitGrpcNode(grpcChannel, targetRegistry, createdId);
 	targetRegistry.emplace<NodeInfo>(createdId, nodeInfo);
 
 	LOG_INFO << "Connecting to GRPC node, ID: " << nodeInfo.node_id()
-		<< ", IP: " << nodeInfo.endpoint().ip()
-		<< ", Port: " << nodeInfo.endpoint().port()
-		<< ", NodeType: " << nodeInfo.node_type();
-
-	//todo potential async issue if reconnect reaches a different gate
+			 << ", IP: " << nodeInfo.endpoint().ip()
+			 << ", Port: " << nodeInfo.endpoint().port()
+			 << ", NodeType: " << nodeInfo.node_type()
+			 << ", Entity: " << entt::to_integral(createdId);
 }
 
-void NodeConnector::ConnectToTcpNode(const NodeInfo& nodeInfo) {
-	auto& targetRegistry = tlsNodeContextManager.GetRegistry(nodeInfo.node_type());
-	entt::entity nodeEntity{ nodeInfo.node_id() };
+void NodeConnector::ConnectToTcpNode(const NodeInfo &nodeInfo)
+{
+	auto &targetRegistry = tlsNodeContextManager.GetRegistry(nodeInfo.node_type());
+	entt::entity nodeEntity{nodeInfo.node_id()};
 
-	if (targetRegistry.valid(nodeEntity)) {
-		if (auto* existingNodeInfo = targetRegistry.try_get<NodeInfo>(nodeEntity);
-			existingNodeInfo) {
+	if (targetRegistry.valid(nodeEntity))
+	{
+		if (auto *existingNodeInfo = targetRegistry.try_get<NodeInfo>(nodeEntity);
+			existingNodeInfo)
+		{
 
-			if (NodeUtils::IsSameNode(nodeInfo.node_uuid(), existingNodeInfo->node_uuid())) {
+			if (NodeUtils::IsSameNode(nodeInfo.node_uuid(), existingNodeInfo->node_uuid()))
+			{
 				LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()
-					<< ", Port: " << nodeInfo.endpoint().port();
+						 << ", Port: " << nodeInfo.endpoint().port();
 				return;
 			}
 
-			if (auto* existingClient = targetRegistry.try_get<RpcClientPtr>(nodeEntity)) {
+			if (auto *existingClient = targetRegistry.try_get<RpcClientPtr>(nodeEntity))
+			{
 				gNode->GetDisconnectedClientList().push_back(*existingClient);
 			}
 		}
 	}
 
 	const auto createdId = RecreateEntity(targetRegistry, nodeEntity);
-	if (createdId == entt::null) {
+	if (createdId == entt::null)
+	{
 		LOG_ERROR << "Failed to create node entity: " << entt::to_integral(nodeEntity);
 		return;
 	}
 
 	muduo::net::InetAddress remoteEndpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
-	auto& client = targetRegistry.emplace<RpcClientPtr>(
+	auto &client = targetRegistry.emplace<RpcClientPtr>(
 		createdId,
-		std::make_shared<RpcClientPtr::element_type>(gNode->GetLoop(), remoteEndpoint)
-	);
+		std::make_shared<RpcClientPtr::element_type>(gNode->GetLoop(), remoteEndpoint));
 
 	targetRegistry.emplace<NodeInfo>(createdId, nodeInfo);
 
-	auto* replyService = gNode->GetNodeReplyService();
-	if (replyService != nullptr) {
+	auto *replyService = gNode->GetNodeReplyService();
+	if (replyService != nullptr)
+	{
 		client->registerService(replyService);
 	}
-	else {
+	else
+	{
 		LOG_WARN << "Node reply service is null, skip client registerService. node_type=" << gNode->GetNodeType();
 	}
 	client->connect();
 
 	LOG_INFO << "Connecting to TCP node, Uuid: " << nodeInfo.node_uuid()
-		<< ", IP: " << nodeInfo.endpoint().ip()
-		<< ", Port: " << nodeInfo.endpoint().port();
-
+			 << ", IP: " << nodeInfo.endpoint().ip()
+			 << ", Port: " << nodeInfo.endpoint().port();
 }
 
-void NodeConnector::ConnectToHttpNode(const NodeInfo&) {
+void NodeConnector::ConnectToHttpNode(const NodeInfo &)
+{
 	// HTTP connection — extensible
 }
 
-void NodeConnector::ConnectAllNodes() {
-	auto& serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
+void NodeConnector::ConnectAllNodes()
+{
+	auto &serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 
 	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
 	{
-		if (!gNode->GetTargetNodeTypeWhitelist().contains(nodeType)) continue;
+		if (!gNode->GetTargetNodeTypeWhitelist().contains(nodeType))
+			continue;
 
-		for (const auto& serviceNode : serviceNodesByType[nodeType].node_list()) {
-			if (NodeUtils::IsNodeConnected(nodeType, serviceNode)) continue;
+		for (const auto &serviceNode : serviceNodesByType[nodeType].node_list())
+		{
+			if (NodeUtils::IsNodeConnected(nodeType, serviceNode))
+				continue;
 
 			ConnectToNode(serviceNode);
 			LOG_INFO << "Connected to node from ConnectAllNodes: " << serviceNode.DebugString();

@@ -481,6 +481,13 @@ PlayerLocatorRpc:
       - "etcd.${InfraNamespace}:2379"
     Key: playerlocator.rpc
   Timeout: 5000
+SceneManagerRpc:
+  Etcd:
+    Hosts:
+      - "etcd.${InfraNamespace}:2379"
+    Key: scenemanagerservice.rpc
+  Timeout: 5000
+GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
@@ -497,7 +504,7 @@ Kafka:
   SyncInterval: 30s
   StatsInterval: 5m
   CompressionType: 0
-  Idempotent: true
+  Idempotent: false
   MaxOpenRequests: 1
 "@
 		}
