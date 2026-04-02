@@ -22,20 +22,42 @@ type gateAssignment struct {
 
 // resolveGateAddr picks the best gate endpoint.
 // If login_addr is configured, calls LoginPreGate.AssignGate to get the
-// assigned gate + signed HMAC token. Otherwise falls back to static gate_addr.
+// assigned gate + signed HMAC token with retry. Otherwise falls back to static gate_addr.
 func resolveGateAddr(cfg *config.Config) (host, port string, payload, signature []byte, err error) {
 	if cfg.LoginAddr != "" {
-		result, assignErr := assignGate(cfg.LoginAddr, 0)
-		if assignErr != nil {
-			zap.L().Warn("AssignGate failed, falling back to gate_addr",
+		const maxRetries = 30
+		backoff := 2 * time.Second
+
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			result, assignErr := assignGate(cfg.LoginAddr, 0)
+			if assignErr == nil {
+				zap.L().Info("assigned gate", zap.String("gate", result.addr), zap.Int("attempt", attempt))
+				h, p, splitErr := net.SplitHostPort(result.addr)
+				return h, p, result.payload, result.signature, splitErr
+			}
+
+			zap.L().Warn("AssignGate failed, retrying",
 				zap.String("login_addr", cfg.LoginAddr),
+				zap.Int("attempt", attempt),
+				zap.Int("max", maxRetries),
 				zap.Error(assignErr),
 			)
-		} else {
-			zap.L().Info("assigned gate", zap.String("gate", result.addr))
-			h, p, splitErr := net.SplitHostPort(result.addr)
-			return h, p, result.payload, result.signature, splitErr
+
+			if attempt < maxRetries {
+				time.Sleep(backoff)
+				if backoff < 10*time.Second {
+					backoff = backoff * 3 / 2 // 2s → 3s → 4.5s → 6.75s → 10s cap
+				}
+			}
 		}
+
+		// All retries exhausted; fall back to static gate_addr if available.
+		if cfg.GateAddr == "" {
+			return "", "", nil, nil, fmt.Errorf("AssignGate failed after %d retries and no static gate_addr configured", maxRetries)
+		}
+		zap.L().Warn("AssignGate retries exhausted, falling back to gate_addr",
+			zap.String("gate_addr", cfg.GateAddr),
+		)
 	}
 	h, p, splitErr := net.SplitHostPort(cfg.GateAddr)
 	return h, p, nil, nil, splitErr

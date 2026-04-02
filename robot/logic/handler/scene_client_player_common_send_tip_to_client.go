@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"robot/proto/proto/common/base"
+	"robot/proto/common/base"
 	"robot/logic/gameobject"
 )
 

@@ -13,6 +13,7 @@ import (
 	loginpregateserver "login/internal/server/loginpregate"
 	"login/internal/svc"
 	"net"
+	"os"
 	login_proto "proto/common/base"
 	login_proto_login "proto/login"
 	"shared/grpcstats"
@@ -56,6 +57,11 @@ func startGRPCServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	if err != nil {
 		logx.Errorf("Failed to parse listen address: %v", err)
 		return err
+	}
+
+	// In K8s, 0.0.0.0 is not routable from other pods — use POD_IP if available.
+	if podIP := os.Getenv("POD_IP"); podIP != "" && (host == "0.0.0.0" || host == "::") {
+		host = podIP
 	}
 
 	// Register node to etcd

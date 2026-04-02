@@ -78,79 +78,280 @@
 #include "common_event_player_migration_event_event_id.h"
 #include "common_event_skill_event_event_id.h"
 
-class GateImpl final : public Gate {};
-class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon {};
-class ScenePlayerImpl final : public ScenePlayer {};
-class SceneScenePlayerImpl final : public SceneScenePlayer {};
-class SceneSceneImpl final : public SceneScene {};
-class SceneCurrencyClientPlayerImpl final : public SceneCurrencyClientPlayer {};
-class SceneRollbackClientPlayerImpl final : public SceneRollbackClientPlayer {};
-class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer {};
-class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
-class ScenePlayerSyncImpl final : public ScenePlayerSync {};
-class SceneImpl final : public Scene {};
-class SlgBattleImpl final : public SlgBattle {};
-class SlgMapImpl final : public SlgMap {};
-class TurnBasedBattleImpl final : public TurnBasedBattle {};
-class TurnBasedDungeonImpl final : public TurnBasedDungeon {};
+class GateImpl final : public Gate
+{
+};
+class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon
+{
+};
+class ScenePlayerImpl final : public ScenePlayer
+{
+};
+class SceneScenePlayerImpl final : public SceneScenePlayer
+{
+};
+class SceneSceneImpl final : public SceneScene
+{
+};
+class SceneCurrencyClientPlayerImpl final : public SceneCurrencyClientPlayer
+{
+};
+class SceneRollbackClientPlayerImpl final : public SceneRollbackClientPlayer
+{
+};
+class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer
+{
+};
+class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer
+{
+};
+class ScenePlayerSyncImpl final : public ScenePlayerSync
+{
+};
+class SceneImpl final : public Scene
+{
+};
+class SlgBattleImpl final : public SlgBattle
+{
+};
+class SlgMapImpl final : public SlgMap
+{
+};
+class TurnBasedBattleImpl final : public TurnBasedBattle
+{
+};
+class TurnBasedDungeonImpl final : public TurnBasedDungeon
+{
+};
 
-namespace chatpb{void SendClientPlayerChatSendChat(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace chatpb{void SendClientPlayerChatPullChatHistory(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceLoadPlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceSavePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceGetPlayerField(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceSetPlayerField(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRegisterPlayerZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceBatchGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceDeletePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceCreatePlayerSnapshot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceListPlayerSnapshots(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceGetPlayerSnapshotDiff(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRollbackPlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRollbackZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRollbackAll(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceBatchRecallItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceQueryTransactionLog(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceCreateEventSnapshot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVTxn(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVCompact(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendWatchWatch(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseGrant(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseRevoke(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseKeepAlive(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseTimeToLive(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseLeases(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendFriendServiceAddFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendFriendServiceAcceptFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendFriendServiceRejectFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendFriendServiceRemoveFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendFriendServiceGetFriendList(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendFriendServiceGetPendingRequests(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceCreateGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetPlayerGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceJoinGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceLeaveGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceDisbandGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceSetAnnouncement(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceUpdateGuildScore(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuildRank(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuildRankByGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginLogin(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginPreGateAssignGate(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace chatpb
+{
+    void SendClientPlayerChatSendChat(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace chatpb
+{
+    void SendClientPlayerChatPullChatHistory(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceLoadPlayerData(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceSavePlayerData(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceGetPlayerField(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceSetPlayerField(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceRegisterPlayerZone(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceGetPlayerHomeZone(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceBatchGetPlayerHomeZone(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceDeletePlayerData(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceCreatePlayerSnapshot(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceListPlayerSnapshots(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceGetPlayerSnapshotDiff(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceRollbackPlayer(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceRollbackZone(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceRollbackAll(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceBatchRecallItems(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceQueryTransactionLog(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace data_service
+{
+    void SendDataServiceCreateEventSnapshot(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendKVRange(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendKVPut(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendKVDeleteRange(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendKVTxn(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendKVCompact(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendWatchWatch(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendLeaseLeaseGrant(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendLeaseLeaseRevoke(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendLeaseLeaseKeepAlive(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendLeaseLeaseTimeToLive(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace etcdserverpb
+{
+    void SendLeaseLeaseLeases(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace friendpb
+{
+    void SendFriendServiceAddFriend(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace friendpb
+{
+    void SendFriendServiceAcceptFriend(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace friendpb
+{
+    void SendFriendServiceRejectFriend(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace friendpb
+{
+    void SendFriendServiceRemoveFriend(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace friendpb
+{
+    void SendFriendServiceGetFriendList(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace friendpb
+{
+    void SendFriendServiceGetPendingRequests(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceCreateGuild(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceGetGuild(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceGetPlayerGuild(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceJoinGuild(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceLeaveGuild(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceDisbandGuild(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceSetAnnouncement(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceUpdateGuildScore(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceGetGuildRank(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace guildpb
+{
+    void SendGuildServiceGetGuildRankByGuild(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace loginpb
+{
+    void SendClientPlayerLoginLogin(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace loginpb
+{
+    void SendClientPlayerLoginCreatePlayer(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace loginpb
+{
+    void SendClientPlayerLoginEnterGame(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace loginpb
+{
+    void SendClientPlayerLoginLeaveGame(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace loginpb
+{
+    void SendClientPlayerLoginDisconnect(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace loginpb
+{
+    void SendLoginPreGateAssignGate(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace loginpb
+{
+    void SendLoginAdminRemovePlayersFromAccounts(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace scene_manager
+{
+    void SendSceneManagerCreateScene(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace scene_manager
+{
+    void SendSceneManagerDestroyScene(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace scene_manager
+{
+    void SendSceneManagerEnterScene(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
+namespace scene_manager
+{
+    void SendSceneManagerLeaveScene(entt::registry &, entt::entity, const google::protobuf::Message &, const std::vector<std::string> &, const std::vector<std::string> &);
+}
 
 std::array<RpcMethodMeta, 137> gRpcMethodRegistry;
 
@@ -442,27 +643,27 @@ void InitMessageInfo()
         "ClientPlayerLogin", "Login",
         std::make_unique<::loginpb::LoginRequest>(),
         std::make_unique<::loginpb::LoginResponse>(),
-        nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLogin};
+        nullptr, common::base::PROTOCOL_GRPC, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLogin};
     gRpcMethodRegistry[ClientPlayerLoginCreatePlayerMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "CreatePlayer",
         std::make_unique<::loginpb::CreatePlayerRequest>(),
         std::make_unique<::loginpb::CreatePlayerResponse>(),
-        nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayer};
+        nullptr, common::base::PROTOCOL_GRPC, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayer};
     gRpcMethodRegistry[ClientPlayerLoginEnterGameMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "EnterGame",
         std::make_unique<::loginpb::EnterGameRequest>(),
         std::make_unique<::loginpb::EnterGameResponse>(),
-        nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
+        nullptr, common::base::PROTOCOL_GRPC, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
     gRpcMethodRegistry[ClientPlayerLoginLeaveGameMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "LeaveGame",
         std::make_unique<::loginpb::LeaveGameRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
-        nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
+        nullptr, common::base::PROTOCOL_GRPC, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
     gRpcMethodRegistry[ClientPlayerLoginDisconnectMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "Disconnect",
         std::make_unique<::loginpb::LoginNodeDisconnectRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
-        nullptr, 0, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
+        nullptr, common::base::PROTOCOL_GRPC, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
 
     // --- LoginPreGate ---
     gRpcMethodRegistry[LoginPreGateAssignGateMessageId] = RpcMethodMeta{
@@ -891,331 +1092,405 @@ void InitMessageInfo()
 
 bool IsClientMessageId(uint32_t messageId)
 {
-	switch (messageId) {
-	case ClientPlayerChatSendChatMessageId:
-	case ClientPlayerChatPullChatHistoryMessageId:
-	case ClientPlayerLoginLoginMessageId:
-	case ClientPlayerLoginCreatePlayerMessageId:
-	case ClientPlayerLoginEnterGameMessageId:
-	case ClientPlayerLoginLeaveGameMessageId:
-	case ClientPlayerLoginDisconnectMessageId:
-	case SceneClientPlayerCommonSendTipToClientMessageId:
-	case SceneClientPlayerCommonKickPlayerMessageId:
-	case SceneSceneClientPlayerEnterSceneMessageId:
-	case SceneSceneClientPlayerNotifyEnterSceneMessageId:
-	case SceneSceneClientPlayerSceneInfoC2SMessageId:
-	case SceneSceneClientPlayerNotifySceneInfoMessageId:
-	case SceneSceneClientPlayerNotifyActorCreateMessageId:
-	case SceneSceneClientPlayerNotifyActorDestroyMessageId:
-	case SceneSceneClientPlayerNotifyActorListCreateMessageId:
-	case SceneSceneClientPlayerNotifyActorListDestroyMessageId:
-	case SceneSkillClientPlayerReleaseSkillMessageId:
-	case SceneSkillClientPlayerNotifySkillUsedMessageId:
-	case SceneSkillClientPlayerNotifySkillInterruptedMessageId:
-	case SceneSkillClientPlayerGetSkillListMessageId:
-		return true;
-	default:
-		return false;
-	}
+    switch (messageId)
+    {
+    case ClientPlayerChatSendChatMessageId:
+    case ClientPlayerChatPullChatHistoryMessageId:
+    case ClientPlayerLoginLoginMessageId:
+    case ClientPlayerLoginCreatePlayerMessageId:
+    case ClientPlayerLoginEnterGameMessageId:
+    case ClientPlayerLoginLeaveGameMessageId:
+    case ClientPlayerLoginDisconnectMessageId:
+    case SceneClientPlayerCommonSendTipToClientMessageId:
+    case SceneClientPlayerCommonKickPlayerMessageId:
+    case SceneSceneClientPlayerEnterSceneMessageId:
+    case SceneSceneClientPlayerNotifyEnterSceneMessageId:
+    case SceneSceneClientPlayerSceneInfoC2SMessageId:
+    case SceneSceneClientPlayerNotifySceneInfoMessageId:
+    case SceneSceneClientPlayerNotifyActorCreateMessageId:
+    case SceneSceneClientPlayerNotifyActorDestroyMessageId:
+    case SceneSceneClientPlayerNotifyActorListCreateMessageId:
+    case SceneSceneClientPlayerNotifyActorListDestroyMessageId:
+    case SceneSkillClientPlayerReleaseSkillMessageId:
+    case SceneSkillClientPlayerNotifySkillUsedMessageId:
+    case SceneSkillClientPlayerNotifySkillInterruptedMessageId:
+    case SceneSkillClientPlayerGetSkillListMessageId:
+        return true;
+    default:
+        return false;
+    }
 }
 
 bool IsValidEventId(uint32_t eventId)
 {
-	return eventId < kMaxEventCount;
+    return eventId < kMaxEventCount;
 }
 
-bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
+bool DispatchProtoEvent(uint32_t eventId, const std::string &payload)
 {
-	switch (eventId) {
-	case AcceptMissionEventEventId: {
-		AcceptMissionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case AfterEnterSceneEventId: {
-		AfterEnterScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case AfterLeaveSceneEventId: {
-		AfterLeaveScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case BeKillEventEventId: {
-		BeKillEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case BeforeEnterSceneEventId: {
-		BeforeEnterScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case BeforeLeaveSceneEventId: {
-		BeforeLeaveScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case BuffTestEventEventId: {
-		BuffTestEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case CombatStateAddedPbEventEventId: {
-		CombatStateAddedPbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case CombatStateRemovedPbEventEventId: {
-		CombatStateRemovedPbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case ConnectToNodePbEventEventId: {
-		ConnectToNodePbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case ContractsKafkaBindSessionEventEventId: {
-		contracts::kafka::BindSessionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case ContractsKafkaKickPlayerEventEventId: {
-		contracts::kafka::KickPlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case ContractsKafkaPlayerDisconnectedEventEventId: {
-		contracts::kafka::PlayerDisconnectedEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case ContractsKafkaPlayerLeaseExpiredEventEventId: {
-		contracts::kafka::PlayerLeaseExpiredEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case ContractsKafkaPlayerLifecycleCommandEventId: {
-		contracts::kafka::PlayerLifecycleCommand event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case ContractsKafkaRoutePlayerEventEventId: {
-		contracts::kafka::RoutePlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case InitializeActorComponentsEventEventId: {
-		InitializeActorComponentsEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case InitializeNpcComponentsEventEventId: {
-		InitializeNpcComponentsEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case InitializePlayerComponentsEventEventId: {
-		InitializePlayerComponentsEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case InterruptCurrentStatePbEventEventId: {
-		InterruptCurrentStatePbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case MissionConditionEventEventId: {
-		MissionConditionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnAcceptedMissionEventEventId: {
-		OnAcceptedMissionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnConnect2CentrePbEventEventId: {
-		OnConnect2CentrePbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnConnect2LoginEventId: {
-		OnConnect2Login event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnMissionAwardEventEventId: {
-		OnMissionAwardEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnNodeAddPbEventEventId: {
-		OnNodeAddPbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnNodeConnectedPbEventEventId: {
-		OnNodeConnectedPbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnNodeRemovePbEventEventId: {
-		OnNodeRemovePbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnSceneCreatedEventId: {
-		OnSceneCreated event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnSceneDestroyedEventId: {
-		OnSceneDestroyed event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case OnServerStartEventId: {
-		OnServerStart event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case PlayerMigrationPbEventEventId: {
-		PlayerMigrationPbEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case PlayerUpgradeEventEventId: {
-		PlayerUpgradeEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case RegisterPlayerEventEventId: {
-		RegisterPlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case S2CEnterSceneEventId: {
-		S2CEnterScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	case SkillExecutedEventEventId: {
-		SkillExecutedEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.enqueue(event);
-		return true;
-	}
-	default:
-		return false;
-	}
+    switch (eventId)
+    {
+    case AcceptMissionEventEventId:
+    {
+        AcceptMissionEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case AfterEnterSceneEventId:
+    {
+        AfterEnterScene event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case AfterLeaveSceneEventId:
+    {
+        AfterLeaveScene event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case BeKillEventEventId:
+    {
+        BeKillEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case BeforeEnterSceneEventId:
+    {
+        BeforeEnterScene event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case BeforeLeaveSceneEventId:
+    {
+        BeforeLeaveScene event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case BuffTestEventEventId:
+    {
+        BuffTestEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case CombatStateAddedPbEventEventId:
+    {
+        CombatStateAddedPbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case CombatStateRemovedPbEventEventId:
+    {
+        CombatStateRemovedPbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case ConnectToNodePbEventEventId:
+    {
+        ConnectToNodePbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case ContractsKafkaBindSessionEventEventId:
+    {
+        contracts::kafka::BindSessionEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case ContractsKafkaKickPlayerEventEventId:
+    {
+        contracts::kafka::KickPlayerEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case ContractsKafkaPlayerDisconnectedEventEventId:
+    {
+        contracts::kafka::PlayerDisconnectedEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case ContractsKafkaPlayerLeaseExpiredEventEventId:
+    {
+        contracts::kafka::PlayerLeaseExpiredEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case ContractsKafkaPlayerLifecycleCommandEventId:
+    {
+        contracts::kafka::PlayerLifecycleCommand event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case ContractsKafkaRoutePlayerEventEventId:
+    {
+        contracts::kafka::RoutePlayerEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case InitializeActorComponentsEventEventId:
+    {
+        InitializeActorComponentsEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case InitializeNpcComponentsEventEventId:
+    {
+        InitializeNpcComponentsEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case InitializePlayerComponentsEventEventId:
+    {
+        InitializePlayerComponentsEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case InterruptCurrentStatePbEventEventId:
+    {
+        InterruptCurrentStatePbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case MissionConditionEventEventId:
+    {
+        MissionConditionEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnAcceptedMissionEventEventId:
+    {
+        OnAcceptedMissionEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnConnect2CentrePbEventEventId:
+    {
+        OnConnect2CentrePbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnConnect2LoginEventId:
+    {
+        OnConnect2Login event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnMissionAwardEventEventId:
+    {
+        OnMissionAwardEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnNodeAddPbEventEventId:
+    {
+        OnNodeAddPbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnNodeConnectedPbEventEventId:
+    {
+        OnNodeConnectedPbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnNodeRemovePbEventEventId:
+    {
+        OnNodeRemovePbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnSceneCreatedEventId:
+    {
+        OnSceneCreated event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnSceneDestroyedEventId:
+    {
+        OnSceneDestroyed event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case OnServerStartEventId:
+    {
+        OnServerStart event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case PlayerMigrationPbEventEventId:
+    {
+        PlayerMigrationPbEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case PlayerUpgradeEventEventId:
+    {
+        PlayerUpgradeEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case RegisterPlayerEventEventId:
+    {
+        RegisterPlayerEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case S2CEnterSceneEventId:
+    {
+        S2CEnterScene event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    case SkillExecutedEventEventId:
+    {
+        SkillExecutedEvent event;
+        if (!event.ParseFromString(payload))
+        {
+            return false;
+        }
+        tlsEcs.dispatcher.enqueue(event);
+        return true;
+    }
+    default:
+        return false;
+    }
 }
