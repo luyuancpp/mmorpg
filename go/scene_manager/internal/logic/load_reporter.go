@@ -2,12 +2,15 @@ package logic
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 const (
@@ -16,24 +19,74 @@ const (
 	LoadReportInterval = 5 * time.Second
 )
 
-// StartLoadReporter starts a background task to report this node's load to Redis
+// sceneNodeRegistration mirrors the JSON that C++ scene nodes write to etcd.
+type sceneNodeRegistration struct {
+	NodeId   uint32 `json:"nodeId"`
+	NodeType uint32 `json:"nodeType"`
+	Endpoint struct {
+		IP   string `json:"ip"`
+		Port uint32 `json:"port"`
+	} `json:"endpoint"`
+	ZoneId uint32 `json:"zoneId"`
+}
+
+// StartLoadReporter discovers C++ scene nodes from etcd and publishes their
+// availability to the Redis sorted-set used by GetBestNode.
 func StartLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
 	ticker := time.NewTicker(LoadReportInterval)
 	defer ticker.Stop()
 
-	// Initial report
-	reportLoad(ctx, svcCtx)
+	syncSceneNodes(ctx, svcCtx)
 
 	for {
 		select {
 		case <-ctx.Done():
-			// Remove node from the load set on shutdown
-			if _, err := svcCtx.Redis.Zrem(NodeLoadKey, svcCtx.Config.NodeID); err != nil {
-				logx.Errorf("Failed to remove node %s from load set on shutdown: %v", svcCtx.Config.NodeID, err)
-			}
 			return
 		case <-ticker.C:
-			reportLoad(ctx, svcCtx)
+			syncSceneNodes(ctx, svcCtx)
+		}
+	}
+}
+
+// syncSceneNodes reads SceneNodeService entries from etcd for this zone and
+// updates the Redis sorted set with numeric node IDs.
+func syncSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) {
+	prefix := fmt.Sprintf("SceneNodeService.rpc/zone/%d/", svcCtx.Config.ZoneID)
+	resp, err := svcCtx.Etcd.Get(ctx, prefix, clientv3.WithPrefix())
+	if err != nil {
+		logx.Errorf("etcd get %s failed: %v", prefix, err)
+		return
+	}
+
+	seen := make(map[string]struct{})
+	for _, kv := range resp.Kvs {
+		var reg sceneNodeRegistration
+		if err := json.Unmarshal(kv.Value, &reg); err != nil {
+			logx.Errorf("failed to parse scene node registration %s: %v", string(kv.Key), err)
+			continue
+		}
+		nodeIDStr := strconv.FormatUint(uint64(reg.NodeId), 10)
+		seen[nodeIDStr] = struct{}{}
+
+		// Read scene count as load indicator (0 if not set).
+		sceneCountKey := fmt.Sprintf(NodeSceneCountKey, nodeIDStr)
+		var load int64
+		if s, e := svcCtx.Redis.Get(sceneCountKey); e == nil && s != "" {
+			fmt.Sscanf(s, "%d", &load)
+		}
+
+		if _, err := svcCtx.Redis.Zadd(NodeLoadKey, load, nodeIDStr); err != nil {
+			logx.Errorf("failed to update load for node %s: %v", nodeIDStr, err)
+		}
+	}
+
+	// Remove stale entries from the ZSet that are no longer in etcd.
+	pairs, err := svcCtx.Redis.ZrangeWithScores(NodeLoadKey, 0, -1)
+	if err == nil {
+		for _, p := range pairs {
+			if _, ok := seen[p.Key]; !ok {
+				svcCtx.Redis.Zrem(NodeLoadKey, p.Key)
+			}
 		}
 	}
 }
@@ -59,18 +112,14 @@ func reportLoad(ctx context.Context, svcCtx *svc.ServiceContext) {
 
 // GetBestNode selects the node with the lowest load from Redis
 func GetBestNode(ctx context.Context, svcCtx *svc.ServiceContext) (string, error) {
-	// Get the node with the lowest score (load)
-	// ZRANGE key 0 0 WITHSCORES
 	pairs, err := svcCtx.Redis.ZrangeWithScores(NodeLoadKey, 0, 0)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("redis zrange failed: %w", err)
 	}
 
 	if len(pairs) == 0 {
-		// If no nodes are reporting, fallback to self
-		return svcCtx.Config.NodeID, nil
+		return "", fmt.Errorf("no scene nodes available for zone %d", svcCtx.Config.ZoneID)
 	}
 
-	bestNode := pairs[0].Key
-	return bestNode, nil
+	return pairs[0].Key, nil
 }

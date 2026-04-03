@@ -42,7 +42,8 @@ class TimerId : public muduo::copyable
 
   friend class TimerQueue;
 
-  const Timer* GetTimer() { return timer_; }
+  const Timer* GetTimer() const { return timer_; }
+  Timer* GetTimer() { return timer_; }
 
  private:
   Timer* timer_;

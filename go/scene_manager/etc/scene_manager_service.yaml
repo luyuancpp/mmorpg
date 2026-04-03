@@ -12,4 +12,4 @@ Redis:
 Kafka:
   Brokers:
     - 127.0.0.1:9092
-NodeID: "node-1"
+ZoneID: 1

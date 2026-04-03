@@ -1,0 +1,430 @@
+---
+# Zone 1 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-1
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-1.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-1.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z1_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z1
+  namespace: mmorpg-zone-zone-1
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 2 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-2
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-2.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-2.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z2_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z2
+  namespace: mmorpg-zone-zone-2
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 3 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-3
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-3.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-3.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z3_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z3
+  namespace: mmorpg-zone-zone-3
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 4 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-4
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-4.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-4.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z4_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z4
+  namespace: mmorpg-zone-zone-4
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 5 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-5
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-5.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-5.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z5_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z5
+  namespace: mmorpg-zone-zone-5
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 6 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-6
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-6.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-6.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z6_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z6
+  namespace: mmorpg-zone-zone-6
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 7 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-7
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-7.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-7.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z7_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z7
+  namespace: mmorpg-zone-zone-7
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 8 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-8
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-8.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-8.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z8_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z8
+  namespace: mmorpg-zone-zone-8
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 9 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-9
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-9.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-9.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z9_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z9
+  namespace: mmorpg-zone-zone-9
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress
+---
+# Zone 10 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robot-config-stress
+  namespace: mmorpg-zone-zone-10
+data:
+  robot.yaml: |
+    login_addr: "login.mmorpg-zone-zone-10.svc.cluster.local:50000"
+    gate_addr: "gate.mmorpg-zone-zone-10.svc.cluster.local:10001"
+    robot_count: 100
+    account_fmt: "robot_z10_%04d"
+    password: "123456"
+    skill_ids: [1001]
+    action_interval: 3
+    report_interval: 5
+    mode: "stress"
+    profile: "stress"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-stress-z10
+  namespace: mmorpg-zone-zone-10
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-stress

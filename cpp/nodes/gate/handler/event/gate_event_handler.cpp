@@ -13,7 +13,7 @@
 #include "node/system/node/node_util.h"
 
 // Forward login notification from Gate to Scene via gRPC.
-static void ForwardLoginToScene(uint64_t sessionId, uint32_t enterGsType, NodeId sceneNodeId)
+static void ForwardLoginToScene(uint64_t sessionId, uint32_t enterGsType, uint64_t sceneNodeId)
 {
     if (enterGsType == 0) return; // LOGIN_NONE, nothing to forward
 
@@ -161,7 +161,7 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
 
     // Forward login notification to Scene if scene node is already assigned.
     const auto sceneNodeId = existingIt->second.GetNodeId(SceneNodeService);
-    if (sceneNodeId != kInvalidNodeId && event.enter_gs_type() != 0) {
+    if (sceneNodeId != SessionInfo::kInvalidEntityId && event.enter_gs_type() != 0) {
         ForwardLoginToScene(event.session_id(), event.enter_gs_type(), sceneNodeId);
     } else if (event.enter_gs_type() != 0) {
         // Scene not yet assigned (e.g. FirstLogin) — store for deferred forwarding.

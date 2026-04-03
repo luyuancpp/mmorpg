@@ -29,13 +29,17 @@ public:
 
     void Cancel();
 
-    bool IsActive();
+    bool IsActive() const;
 
-    uint64_t GetEndTime();
+    uint64_t GetEndTime() const;
 
     void SetCallBack(const TimerCallback &cb);
 
 private:
+    // Common guard + schedule logic shared by RunAt/RunAfter/RunEvery.
+    template <typename ScheduleFn>
+    void ScheduleTimer(const TimerCallback &cb, ScheduleFn &&schedule);
+
     void OnTimer();
 
     TimerId timerId;

@@ -57,11 +57,12 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
 	}
 
-	// 4. Send Route Command to Gate (via Kafka)
+	// 4. Send Route Command to Gate (via Kafka) — best-effort notification.
+	// The gate Kafka consumer may not be implemented yet; location in Redis
+	// is the source of truth so we log but do not fail the request.
 	if in.GateId != "" {
 		if err := l.routePlayerToGate(in, nodeId); err != nil {
-			l.Logger.Errorf("Failed to route player %d to gate: %v", in.PlayerId, err)
-			return errResp(constants.ErrKafkaRoute, err.Error()), nil
+			l.Logger.Errorf("Failed to route player %d to gate (non-fatal): %v", in.PlayerId, err)
 		}
 	} else {
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
