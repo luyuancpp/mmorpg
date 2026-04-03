@@ -5,12 +5,16 @@
 #include <muduo/base/Logging.h>
 #include "thread_context/node_context_manager.h"
 
-void EtcdHelper::PutServiceNodeInfo(const NodeInfo &nodeInfo, const std::string &key)
+void EtcdHelper::PutServiceNodeInfo(const NodeInfo &nodeInfo, const std::string &key, int64_t lease)
 {
 	etcdserverpb::PutRequest request;
 
 	request.set_key(key);
 	request.set_prev_kv(true);
+	if (lease > 0)
+	{
+		request.set_lease(lease);
+	}
 
 	std::string jsonValue;
 	auto status = google::protobuf::util::MessageToJsonString(nodeInfo, &jsonValue);
