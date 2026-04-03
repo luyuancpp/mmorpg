@@ -55,7 +55,7 @@ void EtcdManager::RegisterNodeService()
 void EtcdManager::UpdateNodeInfo()
 {
 	const auto serviceKey = MakeNodeEtcdKey(gNode->GetNodeInfo());
-	EtcdHelper::PutServiceNodeInfo(gNode->GetNodeInfo(), serviceKey);
+	EtcdHelper::PutServiceNodeInfo(gNode->GetNodeInfo(), serviceKey, gNode->GetLeaseId());
 }
 
 void EtcdManager::RegisterNodePort()

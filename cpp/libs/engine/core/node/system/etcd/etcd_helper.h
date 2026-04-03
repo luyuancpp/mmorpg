@@ -5,7 +5,7 @@
 
 namespace EtcdHelper
 {
-	void PutServiceNodeInfo(const NodeInfo &nodeInfo, const std::string &key);
+	void PutServiceNodeInfo(const NodeInfo &nodeInfo, const std::string &key, int64_t lease = 0);
 	void RangeQuery(const std::string &prefix);
 	void StartWatchingPrefix(const std::string &prefix, int64_t revision);
 	void StopAllWatching(); // placeholder — extensible
