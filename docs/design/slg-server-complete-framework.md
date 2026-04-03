@@ -413,13 +413,146 @@ occupants[tile_id] = [{army_id, enter_time, leave_time}, ...]
 
 ### 4.5 召回/变速处理
 
+召回和变速本质上是同一类操作：**销毁旧行军 + 创建新行军**。不存在"修改正在行军的 March 对象"的操作。
+
+#### 为什么不能原地修改？
+
+懒计算模型依赖 `{path, start_time, speed}` 三元组不变：
+- `occupants[tile]` 里记录的时间窗口是根据旧三元组算的
+- 已注册的定时器（碰撞、到达、视野）也绑定旧时间
+- 如果原地改 speed，所有已注册数据全部失效 → 不如销毁重建
+
+#### 4.5.1 召回流程
+
 ```
 MarchManager.RecallMarch(army_id):
-  1. 计算当前位置（懒计算公式）
-  2. 清除该 army 在所有 remaining path tiles 的 occupant 记录
-  3. 取消已注册的定时器（到达事件、碰撞事件）
-  4. 生成反向路径（当前位置 → 出发城池）
-  5. 注册新的 March（RETURN 状态），重新检测碰撞
+
+  // ① 确定当前位置
+  march = marches[army_id]
+  elapsed = now - march.start_time
+  tiles_traveled = floor(elapsed * march.speed)
+  current_idx = min(tiles_traveled, march.path.length - 1)
+  current_tile = march.path[current_idx]
+
+  // ② 清除旧行军在未来格子的 occupant 记录
+  //    只需清除 current_idx+1 到 path.end 的格子
+  //    已经走过的格子 (0..current_idx) 的 occupant 已自然过期
+  for i in [current_idx + 1, path.length):
+    occupants[path[i]].remove(army_id)
+
+  // ③ 取消所有已注册的定时器
+  //    包括: 到达事件、碰撞事件、视野进出事件、超时定时器
+  cancel_timers(army_id)    // 一个 army 可能有几十到上百个定时器
+
+  // ④ 标记旧 March 为 CANCELLED（不复用）
+  march.state = CANCELLED
+
+  // ⑤ 生成返程路径
+  //    方案 A (简单): 反转已走过的路径 reverse(path[0..current_idx])
+  //    方案 B (精确): 从 current_tile A* 重新寻路到 home_tile
+  //    率土之滨用方案 A: 来时的路保证在领地内, 反转即可
+  return_path = reverse(march.path[0..current_idx])
+
+  // ⑥ 创建新行军 (RETURN 状态)
+  new_march = CreateMarch(
+    army_id   = army_id,
+    path      = return_path,
+    start_time = now,
+    speed     = march.speed * return_speed_multiplier,  // 有些游戏回城加速
+    state     = RETURNING,
+    purpose   = RETURN
+  )
+
+  // ⑦ 新行军走完整注册流程
+  //    → 注册 occupant 时间窗口
+  //    → 碰撞检测 (返程路上也可能撞到敌军!)
+  //    → 注册定时器 (到达、视野)
+  RegisterMarch(new_march)
+
+  // ⑧ 通知客户端
+  send_to_client(army_id.player, MarchRecalled{
+    army_id, return_path, now, new_march.speed
+  })
+```
+
+**关键细节**：
+- 步骤 ②③ 必须在 ⑥⑦ 之前完成，否则新旧 occupant 会冲突
+- 返程也要做碰撞检测 — 敌军在你回家路上也能拦截你
+- `return_speed_multiplier` 是游戏设计参数（率土之滨返程速度 = 去程速度）
+
+#### 4.5.2 变速处理（加速道具 / buff）
+
+```
+MarchManager.ChangeSpeed(army_id, new_speed):
+
+  // 与召回一样: 定位当前位置
+  march = marches[army_id]
+  elapsed = now - march.start_time
+  current_idx = min(floor(elapsed * march.speed), march.path.length - 1)
+
+  // 清除 remaining occupant + 取消 remaining 定时器
+  for i in [current_idx + 1, path.length):
+    occupants[path[i]].remove(army_id)
+  cancel_timers(army_id)   // 只取消未来的定时器
+
+  // 创建新 March: 路径 = 剩余路径, 新速度
+  remaining_path = march.path[current_idx .. end]
+  new_march = CreateMarch(
+    army_id    = army_id,
+    path       = remaining_path,
+    start_time = now,            // 关键: 以现在为新起点
+    speed      = new_speed,
+    state      = march.state,
+    purpose    = march.purpose
+  )
+
+  // 完整注册 (occupant + 碰撞检测 + 定时器)
+  RegisterMarch(new_march)
+
+  // 通知客户端重新插值
+  send_to_client(army_id.player, MarchSpeedChanged{
+    army_id, remaining_path, now, new_speed
+  })
+```
+
+**对比召回和变速**：
+
+| 步骤 | 召回 | 变速 |
+|------|------|------|
+| 定位当前位置 | 相同 | 相同 |
+| 清除旧 occupant/timer | 相同 | 相同 |
+| 新路径 | reverse(已走路径) | 剩余路径不变 |
+| 新 start_time | now | now |
+| 新 speed | 可能有返程加速 | 新速度值 |
+| 碰撞重检测 | 是 | 是 |
+| 客户端通知 | MarchRecalled | MarchSpeedChanged |
+
+本质上两者都是 **"在当前位置切一刀，旧行军销毁，新行军重建"**。
+
+#### 4.5.3 边界情况
+
+```
+1. 召回瞬间刚好碰撞:
+   if march.state == BATTLING:
+     return ERROR_CANNOT_RECALL_IN_BATTLE
+
+2. 连续多次加速:
+   每次加速都是完整的销毁+重建
+   性能: O(remaining_path × occupants) 每次
+   频率: 极低（加速道具有 CD），不是性能瓶颈
+
+3. 行军刚出发就召回 (current_idx == 0):
+   return_path = [home_tile]   // 原地返回，长度 1
+   RegisterMarch 会直接触发到达事件 → 军队立即回城
+
+4. 行军已到达目的地 (state != MARCHING):
+   如果在采集/驻防中, 召回走不同逻辑:
+   → 先 cancel 采集/驻防
+   → 然后从 dest_tile 直接寻路回城 (不是反转)
+
+5. 服务器崩溃恢复后变速:
+   与正常变速一样 — 公式算出当前位置, 然后销毁重建
+   因为恢复时已经重建了所有 occupant/timer
 ```
 
 ### 4.6 行军事件时间线

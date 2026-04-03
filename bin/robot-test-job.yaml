@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robot-test-z1
+  namespace: mmorpg-zone-zone-1
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: robot
+          image: ghcr.io/luyuancpp/mmorpg-robot:latest
+          imagePullPolicy: Never
+          command: ["/app/robot", "-c", "/app/etc/robot.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+      volumes:
+        - name: config
+          configMap:
+            name: robot-config-z1-test

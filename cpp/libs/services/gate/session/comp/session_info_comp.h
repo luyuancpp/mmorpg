@@ -9,23 +9,27 @@
 
 struct SessionInfo
 {
-	using NodeMap = std::unordered_map<uint32_t, NodeId>;
+	// Entity IDs are uint64_t (ENTT_ID_TYPE=uint64_t with version bits).
+	// Using uint64_t avoids truncation that loses entity version/generation,
+	// which causes registry.valid() to reject recycled entities.
+	static constexpr uint64_t kInvalidEntityId{UINT64_MAX};
+	using NodeEntityMap = std::unordered_map<uint32_t, uint64_t>;
 
 	SessionInfo() = default;
 
-	void SetNodeId(uint32_t nodeType, NodeId nodeId)
+	void SetNodeId(uint32_t nodeType, uint64_t entityId)
 	{
-		nodeIds[nodeType] = nodeId;
+		nodeIds[nodeType] = entityId;
 	}
 
-	NodeId GetNodeId(uint32_t nodeType) const
+	uint64_t GetNodeId(uint32_t nodeType) const
 	{
 		auto it = nodeIds.find(nodeType);
 		if (it != nodeIds.end())
 		{
 			return it->second;
 		}
-		return kInvalidNodeId;
+		return kInvalidEntityId;
 	}
 
 	bool HasNodeId(uint32_t nodeType) const
@@ -35,7 +39,7 @@ struct SessionInfo
 		{
 			return false;
 		}
-		return it->second != kInvalidNodeId;
+		return it->second != kInvalidEntityId;
 	}
 
 	Guid playerId{kInvalidGuid};
@@ -45,5 +49,5 @@ struct SessionInfo
 	uint32_t pendingEnterGsType{0}; // Pending login type to forward to Scene once scene node is assigned
 	bool verified{false};			// True after client passes Gate connection token verification
 private:
-	NodeMap nodeIds; // Sparse map, only stores assigned nodes
+	NodeEntityMap nodeIds; // Sparse map, only stores assigned node entities
 };

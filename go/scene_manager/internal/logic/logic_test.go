@@ -117,50 +117,49 @@ func TestGetBestNode_SelectsLowestLoad(t *testing.T) {
 	sc, mr := newTestSvcCtx(t, "node-self")
 	ctx := context.Background()
 
-	// Register 3 nodes with different loads
-	mr.ZAdd(NodeLoadKey, 50, "node-heavy")
-	mr.ZAdd(NodeLoadKey, 5, "node-light")
-	mr.ZAdd(NodeLoadKey, 20, "node-medium")
+	// Register 3 nodes with different loads (numeric IDs)
+	mr.ZAdd(NodeLoadKey, 50, "3")
+	mr.ZAdd(NodeLoadKey, 5, "1")
+	mr.ZAdd(NodeLoadKey, 20, "2")
 
 	best, err := GetBestNode(ctx, sc)
 	require.NoError(t, err)
-	assert.Equal(t, "node-light", best)
+	assert.Equal(t, "1", best)
 }
 
-func TestGetBestNode_NoNodes_FallbackToSelf(t *testing.T) {
+func TestGetBestNode_NoNodes_ReturnsError(t *testing.T) {
 	sc, _ := newTestSvcCtx(t, "node-fallback")
 	ctx := context.Background()
 
 	// No nodes registered in the ZSet
-	best, err := GetBestNode(ctx, sc)
-	require.NoError(t, err)
-	assert.Equal(t, "node-fallback", best)
+	_, err := GetBestNode(ctx, sc)
+	assert.Error(t, err)
 }
 
 func TestGetBestNode_TiedLoad(t *testing.T) {
 	sc, mr := newTestSvcCtx(t, "node-self")
 	ctx := context.Background()
 
-	// All nodes have same load
-	mr.ZAdd(NodeLoadKey, 10, "node-a")
-	mr.ZAdd(NodeLoadKey, 10, "node-b")
-	mr.ZAdd(NodeLoadKey, 10, "node-c")
+	// All nodes have same load (numeric IDs)
+	mr.ZAdd(NodeLoadKey, 10, "10")
+	mr.ZAdd(NodeLoadKey, 10, "20")
+	mr.ZAdd(NodeLoadKey, 10, "30")
 
 	best, err := GetBestNode(ctx, sc)
 	require.NoError(t, err)
 	// Should return one of the tied nodes (Redis ZRANGE returns lexicographic order on tie)
-	assert.Contains(t, []string{"node-a", "node-b", "node-c"}, best)
+	assert.Contains(t, []string{"10", "20", "30"}, best)
 }
 
 func TestGetBestNode_SingleNode(t *testing.T) {
 	sc, mr := newTestSvcCtx(t, "node-self")
 	ctx := context.Background()
 
-	mr.ZAdd(NodeLoadKey, 99, "the-only-node")
+	mr.ZAdd(NodeLoadKey, 99, "42")
 
 	best, err := GetBestNode(ctx, sc)
 	require.NoError(t, err)
-	assert.Equal(t, "the-only-node", best)
+	assert.Equal(t, "42", best)
 }
 
 // ---------------------------------------------------------------------------

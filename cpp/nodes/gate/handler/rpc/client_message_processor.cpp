@@ -88,7 +88,7 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
 	return candidates[dis(gen)];
 }
 
-static inline NodeId GetEffectiveNodeId(
+static inline uint64_t GetEffectiveNodeId(
 	const SessionInfo &session,
 	uint32_t nodeType)
 {
@@ -137,7 +137,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 	if (!registry.valid(nodeEntity))
 	{
 		LOG_ERROR << "Bound node is invalid. nodeType: " << nodeType << ", session id: " << sessionId;
-		session.SetNodeId(nodeType, kInvalidNodeId);
+		session.SetNodeId(nodeType, SessionInfo::kInvalidEntityId);
 		return std::nullopt;
 	}
 
@@ -518,6 +518,6 @@ void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEve
 	{
 		if (session.second.GetNodeId(pb.node_type()) != pb.entity())
 			continue;
-		session.second.SetNodeId(pb.node_type(), kInvalidNodeId);
+		session.second.SetNodeId(pb.node_type(), SessionInfo::kInvalidEntityId);
 	}
 }

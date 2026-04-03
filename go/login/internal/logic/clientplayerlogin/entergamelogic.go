@@ -2,6 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"fmt"
 	"login/data"
 	"login/generated/pb/table"
 	"login/internal/config"
@@ -86,14 +87,24 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	flowState := buildEnterGameSessionState(in, sessionDetails, session.Account)
+
+	// Channel to synchronously wait for the async task callback to complete.
+	callbackDone := make(chan error, 1)
 	taskCallback := func(taskKey string, taskSuccess bool, err error) {
+		if err != nil || !taskSuccess {
+			logx.Errorf("Task failed for player %d: success=%v err=%v", in.PlayerId, taskSuccess, err)
+			callbackDone <- fmt.Errorf("task failed: %w", err)
+			return
+		}
 		decision, applyErr := l.applyLoadedPlayerSession(ctx, flowState)
 		if applyErr != nil {
 			logx.Errorf("Failed to apply loaded player session for player %d: %v", in.PlayerId, applyErr)
+			callbackDone <- applyErr
 			return
 		}
 
 		logx.Infof("All tasks completed (decision=%d). playerId=%d", decision, in.PlayerId)
+		callbackDone <- nil
 	}
 
 	defer func() {
@@ -148,18 +159,32 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 6. Load Player data (core refactor: sync wait for task completion)
-
+	// 6. Load Player data and wait for task completion
 	err = l.ensurePlayerDataInRedis(ctx, in.PlayerId, taskCallback)
 	if err != nil {
 		logx.Errorf("failed to ensure player data in redis [PlayerId=%d, error=%v]", in.PlayerId, err)
-	} else {
-		logx.Debugf("succeeded in ensuring player data in redis [PlayerId=%d]", in.PlayerId)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginUnknownError)
+		return resp, nil
+	}
+
+	// Wait for the async callback to finish (keeps ctx alive for gRPC calls inside callback)
+	select {
+	case cbErr := <-callbackDone:
+		if cbErr != nil {
+			logx.Errorf("EnterGame callback failed for player %d: %v", in.PlayerId, cbErr)
+			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginUnknownError)
+			return resp, nil
+		}
+	case <-ctx.Done():
+		logx.Errorf("EnterGame timed out waiting for player data: playerId=%d err=%v", in.PlayerId, ctx.Err())
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginTimeout)
+		return resp, nil
 	}
 
 	// 7. Clean up Session and FSM
 	cleanupLoginSessionState(ctx, l.svcCtx, sessionDetails.SessionId, "enterGame")
 
+	resp.ErrorMessage = nil
 	resp.PlayerId = in.PlayerId
 	return resp, nil
 }

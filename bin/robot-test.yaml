@@ -1,0 +1,10 @@
+login_addr: "login.mmorpg-zone-zone-1.svc.cluster.local:50000"
+gate_addr: "gate.mmorpg-zone-zone-1.svc.cluster.local:10001"
+robot_count: 10
+account_fmt: "robot_z1_%04d"
+password: "123456"
+skill_ids: [1001]
+action_interval: 3
+report_interval: 5
+mode: "stress"
+profile: "stress"
