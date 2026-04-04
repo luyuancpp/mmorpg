@@ -412,6 +412,65 @@
 				"& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-stop; & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "dev: infra up (docker compose)",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/deploy/docker-compose.yml",
+				"up",
+				"-d"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: infra down (docker compose)",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"-f",
+				"${workspaceFolder}/deploy/docker-compose.yml",
+				"down"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: build (C++ + Go)",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"${workspaceFolder}/dev.bat",
+				"build"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: proto (regenerate)",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"${workspaceFolder}/dev.bat",
+				"proto"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: robot (build + run)",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"${workspaceFolder}/dev.bat",
+				"robot"
+			],
+			"problemMatcher": []
 		}
 	],
 	"inputs": [

@@ -16,11 +16,15 @@ if /I "%CMD%"=="stop"      goto :stop
 if /I "%CMD%"=="status"    goto :status
 if /I "%CMD%"=="restart"   goto :restart
 if /I "%CMD%"=="logs"      goto :logs
-if /I "%CMD%"=="robot"     goto :robot
-if /I "%CMD%"=="ui"        goto :ui
-if /I "%CMD%"=="ui-cpp"    goto :ui_cpp
-if /I "%CMD%"=="ui-go"     goto :ui_go
-if /I "%CMD%"=="help"      goto :help
+if /I "%CMD%"=="robot"      goto :robot
+if /I "%CMD%"=="infra"      goto :infra
+if /I "%CMD%"=="infra-down"  goto :infra_down
+if /I "%CMD%"=="build"      goto :build
+if /I "%CMD%"=="proto"      goto :proto
+if /I "%CMD%"=="ui"         goto :ui
+if /I "%CMD%"=="ui-cpp"     goto :ui_cpp
+if /I "%CMD%"=="ui-go"      goto :ui_go
+if /I "%CMD%"=="help"       goto :help
 
 echo Unknown command: %CMD%
 echo.
@@ -44,11 +48,15 @@ echo     6.  Restart     (stop + build + start)
 echo     7.  Logs        (pick a process to tail)
 echo     8.  Logs all    (dump last 60 lines)
 echo     9.  Robot       (build + run load-test client)
-echo     10. UI          (mprocs TUI dashboard)
+echo     10. Infra       (docker-compose up: Kafka/Redis/MySQL/etcd)
+echo     11. Infra down  (docker-compose down)
+echo     12. Build       (compile C++ + Go, no launch)
+echo     13. Proto       (regenerate proto code)
+echo     14. UI          (mprocs TUI dashboard)
 echo.
 echo     0.  Exit
 echo.
-set /p "CHOICE=  Pick [0-10]: "
+set /p "CHOICE=  Pick [0-14]: "
 
 if "%CHOICE%"=="1" goto :start
 if "%CHOICE%"=="2" goto :start_cpp
@@ -59,7 +67,11 @@ if "%CHOICE%"=="6" goto :restart
 if "%CHOICE%"=="7" goto :logs
 if "%CHOICE%"=="8" goto :logs_all
 if "%CHOICE%"=="9" goto :robot
-if "%CHOICE%"=="10" goto :ui
+if "%CHOICE%"=="10" goto :infra
+if "%CHOICE%"=="11" goto :infra_down
+if "%CHOICE%"=="12" goto :build
+if "%CHOICE%"=="13" goto :proto
+if "%CHOICE%"=="14" goto :ui
 if "%CHOICE%"=="0" exit /b 0
 
 echo   Invalid choice.
@@ -256,6 +268,48 @@ echo Robot launched in new window.
 exit /b 0
 
 :: ================================================================
+:infra
+echo Starting local infrastructure (docker-compose)...
+docker compose -f deploy\docker-compose.yml up -d
+if errorlevel 1 ( echo docker-compose up failed. & pause & exit /b 1 )
+echo.
+echo Infrastructure running (Kafka, Redis, MySQL, etcd).
+exit /b 0
+
+:: ================================================================
+:infra_down
+echo Stopping local infrastructure...
+docker compose -f deploy\docker-compose.yml down
+if errorlevel 1 ( echo docker-compose down failed. & pause & exit /b 1 )
+echo Infrastructure stopped.
+exit /b 0
+
+:: ================================================================
+:build
+echo [1/2] Building C++ (game.sln Debug x64)...
+msbuild game.sln /m /p:Configuration=Debug /p:Platform=x64 /v:minimal
+if errorlevel 1 (
+    echo.
+    echo C++ build failed. Check errors above.
+    pause & exit /b 1
+)
+echo.
+echo [2/2] Building Go service executables...
+%PS% -File tools\scripts\dev_tools.ps1 -Command go-svc-build
+if errorlevel 1 ( echo Go build failed. & pause & exit /b 1 )
+echo.
+echo All builds succeeded.
+exit /b 0
+
+:: ================================================================
+:proto
+echo Regenerating proto code...
+%PS% -File tools\scripts\dev_tools.ps1 -Command proto-gen-run -ConfigPath tools\proto_generator\protogen\etc\proto_gen.yaml
+if errorlevel 1 ( echo Proto generation failed. & pause & exit /b 1 )
+echo Proto generation complete.
+exit /b 0
+
+:: ================================================================
 ::  mprocs TUI dashboard — all processes in one terminal with UI
 :: ================================================================
 :ui
@@ -302,15 +356,20 @@ echo     logs ^<name^>    Tail a specific process (e.g. dev logs login)
 echo     logs all       Dump last 60 lines of every process
 echo     robot          Build + run robot load-test client
 echo     robot ^<cfg^>    Use custom config (default: robot\etc\robot.yaml)
+echo     infra          Start local infra (Kafka/Redis/MySQL/etcd)
+echo     infra-down     Stop local infra
+echo     build          Compile C++ + Go (no launch)
+echo     proto          Regenerate proto code
 echo     ui             mprocs TUI dashboard (all processes)
 echo     ui-cpp         mprocs TUI (C++ nodes only)
 echo     ui-go          mprocs TUI (Go services only)
 echo     help           Show this message
 echo.
 echo   Example:
-echo     dev start
+echo     dev infra ^& dev start
+echo     dev build
+echo     dev proto
 echo     dev robot
-echo     dev ui
 echo     dev logs login
 echo.
 pause
