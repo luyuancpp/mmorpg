@@ -147,11 +147,11 @@ bool MissionSystem::AreAllConditionsFulfilled(const MissionComp &mission, uint32
 	}
 	return true;
 }
-void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent &conditionEvent, MissionsComp &comp, const IMissionConfig &config)
+void MissionSystem::HandleConditionEvent(const ConditionEvent &conditionEvent, MissionsComp &comp, const IMissionConfig &config)
 {
-	if (conditionEvent.condtion_ids().empty())
+	if (conditionEvent.condition_ids().empty())
 	{
-		LOG_ERROR << "HandleMissionConditionEvent: empty condition IDs for entity = " << conditionEvent.entity();
+		LOG_ERROR << "HandleConditionEvent: empty condition IDs for entity = " << conditionEvent.entity();
 		return;
 	}
 
@@ -212,9 +212,9 @@ void MissionSystem::DeleteMissionClassification(MissionsComp &missionComp, uint3
 	}
 }
 
-bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent &conditionEvent, MissionComp &mission, const IMissionConfig &config)
+bool MissionSystem::UpdateMissionProgress(const ConditionEvent &conditionEvent, MissionComp &mission, const IMissionConfig &config)
 {
-	if (conditionEvent.condtion_ids().empty())
+	if (conditionEvent.condition_ids().empty())
 	{
 		return false;
 	}
@@ -240,7 +240,7 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent &condition
 	return updated;
 }
 
-bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent &conditionEvent, MissionComp &mission, int index, const ConditionTable *conditionTable, uint32_t targetCount)
+bool MissionSystem::UpdateProgressIfConditionMatches(const ConditionEvent &conditionEvent, MissionComp &mission, int index, const ConditionTable *conditionTable, uint32_t targetCount)
 {
 	const auto oldProgress = mission.progress(index);
 	const bool alreadyFulfilled = (targetCount > 0)
@@ -254,7 +254,7 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 	{
 		return false;
 	}
-	if (!condition_util::MatchesEventSlots(conditionTable, conditionEvent))
+	if (!condition_util::MatchesEventSlots(conditionTable, conditionEvent.condition_ids()))
 	{
 		return false;
 	}
@@ -314,11 +314,11 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 		}
 
 		// Notify condition system so "complete mission X" conditions can trigger
-		MissionConditionEvent conditionEvent;
+		ConditionEvent conditionEvent;
 		conditionEvent.set_entity(entt::to_integral(playerEntity));
 		conditionEvent.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionCompleteMission));
 		conditionEvent.set_amount(1);
-		conditionEvent.mutable_condtion_ids()->Add(missionId);
+		conditionEvent.mutable_condition_ids()->Add(missionId);
 		tlsEcs.dispatcher.enqueue(conditionEvent);
 	}
 }

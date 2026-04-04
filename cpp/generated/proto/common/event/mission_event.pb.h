@@ -56,10 +56,10 @@ class AcceptMissionEvent;
 struct AcceptMissionEventDefaultTypeInternal;
 extern AcceptMissionEventDefaultTypeInternal _AcceptMissionEvent_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull AcceptMissionEvent_class_data_;
-class MissionConditionEvent;
-struct MissionConditionEventDefaultTypeInternal;
-extern MissionConditionEventDefaultTypeInternal _MissionConditionEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull MissionConditionEvent_class_data_;
+class ConditionEvent;
+struct ConditionEventDefaultTypeInternal;
+extern ConditionEventDefaultTypeInternal _ConditionEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ConditionEvent_class_data_;
 class OnAcceptedMissionEvent;
 struct OnAcceptedMissionEventDefaultTypeInternal;
 extern OnAcceptedMissionEventDefaultTypeInternal _OnAcceptedMissionEvent_default_instance_;
@@ -485,30 +485,30 @@ class OnAcceptedMissionEvent final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull OnAcceptedMissionEvent_class_data_;
 // -------------------------------------------------------------------
 
-class MissionConditionEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:MissionConditionEvent) */ {
+class ConditionEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ConditionEvent) */ {
  public:
-  inline MissionConditionEvent() : MissionConditionEvent(nullptr) {}
-  ~MissionConditionEvent() PROTOBUF_FINAL;
+  inline ConditionEvent() : ConditionEvent(nullptr) {}
+  ~ConditionEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(MissionConditionEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(ConditionEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(MissionConditionEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ConditionEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MissionConditionEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR ConditionEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline MissionConditionEvent(const MissionConditionEvent& from) : MissionConditionEvent(nullptr, from) {}
-  inline MissionConditionEvent(MissionConditionEvent&& from) noexcept
-      : MissionConditionEvent(nullptr, ::std::move(from)) {}
-  inline MissionConditionEvent& operator=(const MissionConditionEvent& from) {
+  inline ConditionEvent(const ConditionEvent& from) : ConditionEvent(nullptr, from) {}
+  inline ConditionEvent(ConditionEvent&& from) noexcept
+      : ConditionEvent(nullptr, ::std::move(from)) {}
+  inline ConditionEvent& operator=(const ConditionEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline MissionConditionEvent& operator=(MissionConditionEvent&& from) noexcept {
+  inline ConditionEvent& operator=(ConditionEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -536,13 +536,13 @@ class MissionConditionEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const MissionConditionEvent& default_instance() {
-    return *reinterpret_cast<const MissionConditionEvent*>(
-        &_MissionConditionEvent_default_instance_);
+  static const ConditionEvent& default_instance() {
+    return *reinterpret_cast<const ConditionEvent*>(
+        &_ConditionEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(MissionConditionEvent& a, MissionConditionEvent& b) { a.Swap(&b); }
-  inline void Swap(MissionConditionEvent* PROTOBUF_NONNULL other) {
+  friend void swap(ConditionEvent& a, ConditionEvent& b) { a.Swap(&b); }
+  inline void Swap(ConditionEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -550,7 +550,7 @@ class MissionConditionEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(MissionConditionEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(ConditionEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -558,13 +558,13 @@ class MissionConditionEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  MissionConditionEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<MissionConditionEvent>(arena);
+  ConditionEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ConditionEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MissionConditionEvent& from);
+  void CopyFrom(const ConditionEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MissionConditionEvent& from) { MissionConditionEvent::MergeImpl(*this, from); }
+  void MergeFrom(const ConditionEvent& from) { ConditionEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -600,18 +600,18 @@ class MissionConditionEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(MissionConditionEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(ConditionEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "MissionConditionEvent"; }
+  static ::absl::string_view FullMessageName() { return "ConditionEvent"; }
 
  protected:
-  explicit MissionConditionEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  MissionConditionEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MissionConditionEvent& from);
-  MissionConditionEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MissionConditionEvent&& from) noexcept
-      : MissionConditionEvent(arena) {
+  explicit ConditionEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ConditionEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ConditionEvent& from);
+  ConditionEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ConditionEvent&& from) noexcept
+      : ConditionEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -628,27 +628,27 @@ class MissionConditionEvent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kCondtionIdsFieldNumber = 3,
+    kConditionIdsFieldNumber = 3,
     kEntityFieldNumber = 1,
     kConditionTypeFieldNumber = 2,
     kAmountFieldNumber = 4,
   };
-  // repeated uint32 condtion_ids = 3;
-  int condtion_ids_size() const;
+  // repeated uint32 condition_ids = 3;
+  int condition_ids_size() const;
   private:
-  int _internal_condtion_ids_size() const;
+  int _internal_condition_ids_size() const;
 
   public:
-  void clear_condtion_ids() ;
-  ::uint32_t condtion_ids(int index) const;
-  void set_condtion_ids(int index, ::uint32_t value);
-  void add_condtion_ids(::uint32_t value);
-  const ::google::protobuf::RepeatedField<::uint32_t>& condtion_ids() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_condtion_ids();
+  void clear_condition_ids() ;
+  ::uint32_t condition_ids(int index) const;
+  void set_condition_ids(int index, ::uint32_t value);
+  void add_condition_ids(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& condition_ids() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_condition_ids();
 
   private:
-  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_condtion_ids() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_condtion_ids();
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_condition_ids() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_condition_ids();
 
   public:
   // uint64 entity = 1;
@@ -681,7 +681,7 @@ class MissionConditionEvent final : public ::google::protobuf::Message
   void _internal_set_amount(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:MissionConditionEvent)
+  // @@protoc_insertion_point(class_scope:ConditionEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -704,11 +704,11 @@ class MissionConditionEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const MissionConditionEvent& from_msg);
+        const ConditionEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedField<::uint32_t> condtion_ids_;
-    ::google::protobuf::internal::CachedSize _condtion_ids_cached_byte_size_;
+    ::google::protobuf::RepeatedField<::uint32_t> condition_ids_;
+    ::google::protobuf::internal::CachedSize _condition_ids_cached_byte_size_;
     ::uint64_t entity_;
     ::uint32_t condition_type_;
     ::uint32_t amount_;
@@ -718,7 +718,7 @@ class MissionConditionEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2fmission_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull MissionConditionEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull ConditionEvent_class_data_;
 // -------------------------------------------------------------------
 
 class AcceptMissionEvent final : public ::google::protobuf::Message
@@ -989,122 +989,122 @@ inline void AcceptMissionEvent::_internal_set_mission_id(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// MissionConditionEvent
+// ConditionEvent
 
 // uint64 entity = 1;
-inline void MissionConditionEvent::clear_entity() {
+inline void ConditionEvent::clear_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t MissionConditionEvent::entity() const {
-  // @@protoc_insertion_point(field_get:MissionConditionEvent.entity)
+inline ::uint64_t ConditionEvent::entity() const {
+  // @@protoc_insertion_point(field_get:ConditionEvent.entity)
   return _internal_entity();
 }
-inline void MissionConditionEvent::set_entity(::uint64_t value) {
+inline void ConditionEvent::set_entity(::uint64_t value) {
   _internal_set_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:MissionConditionEvent.entity)
+  // @@protoc_insertion_point(field_set:ConditionEvent.entity)
 }
-inline ::uint64_t MissionConditionEvent::_internal_entity() const {
+inline ::uint64_t ConditionEvent::_internal_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.entity_;
 }
-inline void MissionConditionEvent::_internal_set_entity(::uint64_t value) {
+inline void ConditionEvent::_internal_set_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_ = value;
 }
 
 // uint32 condition_type = 2;
-inline void MissionConditionEvent::clear_condition_type() {
+inline void ConditionEvent::clear_condition_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.condition_type_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t MissionConditionEvent::condition_type() const {
-  // @@protoc_insertion_point(field_get:MissionConditionEvent.condition_type)
+inline ::uint32_t ConditionEvent::condition_type() const {
+  // @@protoc_insertion_point(field_get:ConditionEvent.condition_type)
   return _internal_condition_type();
 }
-inline void MissionConditionEvent::set_condition_type(::uint32_t value) {
+inline void ConditionEvent::set_condition_type(::uint32_t value) {
   _internal_set_condition_type(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:MissionConditionEvent.condition_type)
+  // @@protoc_insertion_point(field_set:ConditionEvent.condition_type)
 }
-inline ::uint32_t MissionConditionEvent::_internal_condition_type() const {
+inline ::uint32_t ConditionEvent::_internal_condition_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.condition_type_;
 }
-inline void MissionConditionEvent::_internal_set_condition_type(::uint32_t value) {
+inline void ConditionEvent::_internal_set_condition_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.condition_type_ = value;
 }
 
-// repeated uint32 condtion_ids = 3;
-inline int MissionConditionEvent::_internal_condtion_ids_size() const {
-  return _internal_condtion_ids().size();
+// repeated uint32 condition_ids = 3;
+inline int ConditionEvent::_internal_condition_ids_size() const {
+  return _internal_condition_ids().size();
 }
-inline int MissionConditionEvent::condtion_ids_size() const {
-  return _internal_condtion_ids_size();
+inline int ConditionEvent::condition_ids_size() const {
+  return _internal_condition_ids_size();
 }
-inline void MissionConditionEvent::clear_condtion_ids() {
+inline void ConditionEvent::clear_condition_ids() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.condtion_ids_.Clear();
+  _impl_.condition_ids_.Clear();
 }
-inline ::uint32_t MissionConditionEvent::condtion_ids(int index) const {
-  // @@protoc_insertion_point(field_get:MissionConditionEvent.condtion_ids)
-  return _internal_condtion_ids().Get(index);
+inline ::uint32_t ConditionEvent::condition_ids(int index) const {
+  // @@protoc_insertion_point(field_get:ConditionEvent.condition_ids)
+  return _internal_condition_ids().Get(index);
 }
-inline void MissionConditionEvent::set_condtion_ids(int index, ::uint32_t value) {
-  _internal_mutable_condtion_ids()->Set(index, value);
-  // @@protoc_insertion_point(field_set:MissionConditionEvent.condtion_ids)
+inline void ConditionEvent::set_condition_ids(int index, ::uint32_t value) {
+  _internal_mutable_condition_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:ConditionEvent.condition_ids)
 }
-inline void MissionConditionEvent::add_condtion_ids(::uint32_t value) {
+inline void ConditionEvent::add_condition_ids(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _internal_mutable_condtion_ids()->Add(value);
-  // @@protoc_insertion_point(field_add:MissionConditionEvent.condtion_ids)
+  _internal_mutable_condition_ids()->Add(value);
+  // @@protoc_insertion_point(field_add:ConditionEvent.condition_ids)
 }
-inline const ::google::protobuf::RepeatedField<::uint32_t>& MissionConditionEvent::condtion_ids() const
+inline const ::google::protobuf::RepeatedField<::uint32_t>& ConditionEvent::condition_ids() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:MissionConditionEvent.condtion_ids)
-  return _internal_condtion_ids();
+  // @@protoc_insertion_point(field_list:ConditionEvent.condition_ids)
+  return _internal_condition_ids();
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL MissionConditionEvent::mutable_condtion_ids()
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL ConditionEvent::mutable_condition_ids()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:MissionConditionEvent.condtion_ids)
+  // @@protoc_insertion_point(field_mutable_list:ConditionEvent.condition_ids)
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_condtion_ids();
+  return _internal_mutable_condition_ids();
 }
 inline const ::google::protobuf::RepeatedField<::uint32_t>&
-MissionConditionEvent::_internal_condtion_ids() const {
+ConditionEvent::_internal_condition_ids() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.condtion_ids_;
+  return _impl_.condition_ids_;
 }
 inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
-MissionConditionEvent::_internal_mutable_condtion_ids() {
+ConditionEvent::_internal_mutable_condition_ids() {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.condtion_ids_;
+  return &_impl_.condition_ids_;
 }
 
 // uint32 amount = 4;
-inline void MissionConditionEvent::clear_amount() {
+inline void ConditionEvent::clear_amount() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.amount_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint32_t MissionConditionEvent::amount() const {
-  // @@protoc_insertion_point(field_get:MissionConditionEvent.amount)
+inline ::uint32_t ConditionEvent::amount() const {
+  // @@protoc_insertion_point(field_get:ConditionEvent.amount)
   return _internal_amount();
 }
-inline void MissionConditionEvent::set_amount(::uint32_t value) {
+inline void ConditionEvent::set_amount(::uint32_t value) {
   _internal_set_amount(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:MissionConditionEvent.amount)
+  // @@protoc_insertion_point(field_set:ConditionEvent.amount)
 }
-inline ::uint32_t MissionConditionEvent::_internal_amount() const {
+inline ::uint32_t ConditionEvent::_internal_amount() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.amount_;
 }
-inline void MissionConditionEvent::_internal_set_amount(::uint32_t value) {
+inline void ConditionEvent::_internal_set_amount(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.amount_ = value;
 }

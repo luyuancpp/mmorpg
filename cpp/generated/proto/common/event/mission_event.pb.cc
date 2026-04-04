@@ -77,34 +77,34 @@ struct OnAcceptedMissionEventDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnAcceptedMissionEventDefaultTypeInternal _OnAcceptedMissionEvent_default_instance_;
 
-inline constexpr MissionConditionEvent::Impl_::Impl_(
+inline constexpr ConditionEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        condtion_ids_{},
-        _condtion_ids_cached_byte_size_{0},
+        condition_ids_{},
+        _condition_ids_cached_byte_size_{0},
         entity_{::uint64_t{0u}},
         condition_type_{0u},
         amount_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR MissionConditionEvent::MissionConditionEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ConditionEvent::ConditionEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(MissionConditionEvent_class_data_.base()),
+    : ::google::protobuf::Message(ConditionEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct MissionConditionEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionConditionEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionConditionEventDefaultTypeInternal() {}
+struct ConditionEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ConditionEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ConditionEventDefaultTypeInternal() {}
   union {
-    MissionConditionEvent _instance;
+    ConditionEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionConditionEventDefaultTypeInternal _MissionConditionEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConditionEventDefaultTypeInternal _ConditionEvent_default_instance_;
 
 inline constexpr AcceptMissionEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -146,12 +146,12 @@ const ::uint32_t
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::MissionConditionEvent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ConditionEvent, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::MissionConditionEvent, _impl_.entity_),
-        PROTOBUF_FIELD_OFFSET(::MissionConditionEvent, _impl_.condition_type_),
-        PROTOBUF_FIELD_OFFSET(::MissionConditionEvent, _impl_.condtion_ids_),
-        PROTOBUF_FIELD_OFFSET(::MissionConditionEvent, _impl_.amount_),
+        PROTOBUF_FIELD_OFFSET(::ConditionEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::ConditionEvent, _impl_.condition_type_),
+        PROTOBUF_FIELD_OFFSET(::ConditionEvent, _impl_.condition_ids_),
+        PROTOBUF_FIELD_OFFSET(::ConditionEvent, _impl_.amount_),
         0,
         1,
         ~0u,
@@ -175,13 +175,13 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::AcceptMissionEvent)},
-        {7, sizeof(::MissionConditionEvent)},
+        {7, sizeof(::ConditionEvent)},
         {18, sizeof(::OnAcceptedMissionEvent)},
         {25, sizeof(::OnMissionAwardEvent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_AcceptMissionEvent_default_instance_._instance,
-    &::_MissionConditionEvent_default_instance_._instance,
+    &::_ConditionEvent_default_instance_._instance,
     &::_OnAcceptedMissionEvent_default_instance_._instance,
     &::_OnMissionAwardEvent_default_instance_._instance,
 };
@@ -189,19 +189,19 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fmission_5fevent_2e
     protodesc_cold) = {
     "\n&proto/common/event/mission_event.proto"
     "\"8\n\022AcceptMissionEvent\022\016\n\006entity\030\001 \001(\004\022\022"
-    "\n\nmission_id\030\002 \001(\r\"e\n\025MissionConditionEv"
-    "ent\022\016\n\006entity\030\001 \001(\004\022\026\n\016condition_type\030\002 "
-    "\001(\r\022\024\n\014condtion_ids\030\003 \003(\r\022\016\n\006amount\030\004 \001("
-    "\r\"<\n\026OnAcceptedMissionEvent\022\016\n\006entity\030\001 "
-    "\001(\004\022\022\n\nmission_id\030\002 \001(\r\"9\n\023OnMissionAwar"
-    "dEvent\022\016\n\006entity\030\001 \001(\004\022\022\n\nmission_id\030\002 \001"
-    "(\rB\016Z\014common/eventb\006proto3"
+    "\n\nmission_id\030\002 \001(\r\"_\n\016ConditionEvent\022\016\n\006"
+    "entity\030\001 \001(\004\022\026\n\016condition_type\030\002 \001(\r\022\025\n\r"
+    "condition_ids\030\003 \003(\r\022\016\n\006amount\030\004 \001(\r\"<\n\026O"
+    "nAcceptedMissionEvent\022\016\n\006entity\030\001 \001(\004\022\022\n"
+    "\nmission_id\030\002 \001(\r\"9\n\023OnMissionAwardEvent"
+    "\022\016\n\006entity\030\001 \001(\004\022\022\n\nmission_id\030\002 \001(\rB\016Z\014"
+    "common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fmission_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fmission_5fevent_2eproto = {
     false,
     false,
-    346,
+    340,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fmission_5fevent_2eproto,
     "proto/common/event/mission_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fmission_5fevent_2eproto_once,
@@ -496,41 +496,41 @@ void AcceptMissionEvent::InternalSwap(AcceptMissionEvent* PROTOBUF_RESTRICT PROT
 }
 // ===================================================================
 
-class MissionConditionEvent::_Internal {
+class ConditionEvent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<MissionConditionEvent>()._impl_._has_bits_);
+      decltype(::std::declval<ConditionEvent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_._has_bits_);
 };
 
-MissionConditionEvent::MissionConditionEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ConditionEvent::ConditionEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MissionConditionEvent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ConditionEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:MissionConditionEvent)
+  // @@protoc_insertion_point(arena_constructor:ConditionEvent)
 }
-PROTOBUF_NDEBUG_INLINE MissionConditionEvent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ConditionEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::MissionConditionEvent& from_msg)
+    const ::ConditionEvent& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        condtion_ids_{visibility, arena, from.condtion_ids_},
-        _condtion_ids_cached_byte_size_{0} {}
+        condition_ids_{visibility, arena, from.condition_ids_},
+        _condition_ids_cached_byte_size_{0} {}
 
-MissionConditionEvent::MissionConditionEvent(
+ConditionEvent::ConditionEvent(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const MissionConditionEvent& from)
+    const ConditionEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, MissionConditionEvent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ConditionEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  MissionConditionEvent* const _this = this;
+  ConditionEvent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -543,16 +543,16 @@ MissionConditionEvent::MissionConditionEvent(
                offsetof(Impl_, entity_) +
                sizeof(Impl_::amount_));
 
-  // @@protoc_insertion_point(copy_constructor:MissionConditionEvent)
+  // @@protoc_insertion_point(copy_constructor:ConditionEvent)
 }
-PROTOBUF_NDEBUG_INLINE MissionConditionEvent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ConditionEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
-        condtion_ids_{visibility, arena},
-        _condtion_ids_cached_byte_size_{0} {}
+        condition_ids_{visibility, arena},
+        _condition_ids_cached_byte_size_{0} {}
 
-inline void MissionConditionEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ConditionEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, entity_),
@@ -561,76 +561,76 @@ inline void MissionConditionEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE ar
                offsetof(Impl_, entity_) +
                sizeof(Impl_::amount_));
 }
-MissionConditionEvent::~MissionConditionEvent() {
-  // @@protoc_insertion_point(destructor:MissionConditionEvent)
+ConditionEvent::~ConditionEvent() {
+  // @@protoc_insertion_point(destructor:ConditionEvent)
   SharedDtor(*this);
 }
-inline void MissionConditionEvent::SharedDtor(MessageLite& self) {
-  MissionConditionEvent& this_ = static_cast<MissionConditionEvent&>(self);
+inline void ConditionEvent::SharedDtor(MessageLite& self) {
+  ConditionEvent& this_ = static_cast<ConditionEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL MissionConditionEvent::PlacementNew_(
+inline void* PROTOBUF_NONNULL ConditionEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) MissionConditionEvent(arena);
+  return ::new (mem) ConditionEvent(arena);
 }
-constexpr auto MissionConditionEvent::InternalNewImpl_() {
+constexpr auto ConditionEvent::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
-      PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.condtion_ids_) +
-          decltype(MissionConditionEvent::_impl_.condtion_ids_)::
+      PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.condition_ids_) +
+          decltype(ConditionEvent::_impl_.condition_ids_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
     return ::google::protobuf::internal::MessageCreator::ZeroInit(
-        sizeof(MissionConditionEvent), alignof(MissionConditionEvent), *arena_bits);
+        sizeof(ConditionEvent), alignof(ConditionEvent), *arena_bits);
   } else {
-    return ::google::protobuf::internal::MessageCreator(&MissionConditionEvent::PlacementNew_,
-                                 sizeof(MissionConditionEvent),
-                                 alignof(MissionConditionEvent));
+    return ::google::protobuf::internal::MessageCreator(&ConditionEvent::PlacementNew_,
+                                 sizeof(ConditionEvent),
+                                 alignof(ConditionEvent));
   }
 }
-constexpr auto MissionConditionEvent::InternalGenerateClassData_() {
+constexpr auto ConditionEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_MissionConditionEvent_default_instance_._instance,
+          &_ConditionEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &MissionConditionEvent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<MissionConditionEvent>(),
+          &ConditionEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ConditionEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &MissionConditionEvent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<MissionConditionEvent>(), &MissionConditionEvent::ByteSizeLong,
-              &MissionConditionEvent::_InternalSerialize,
+          &ConditionEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ConditionEvent>(), &ConditionEvent::ByteSizeLong,
+              &ConditionEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_._cached_size_),
           false,
       },
-      &MissionConditionEvent::kDescriptorMethods,
+      &ConditionEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2fmission_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull MissionConditionEvent_class_data_ =
-        MissionConditionEvent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ConditionEvent_class_data_ =
+        ConditionEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-MissionConditionEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&MissionConditionEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(MissionConditionEvent_class_data_.tc_table);
-  return MissionConditionEvent_class_data_.base();
+ConditionEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ConditionEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ConditionEvent_class_data_.tc_table);
+  return ConditionEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 4, 0, 0, 2>
-MissionConditionEvent::_table_ = {
+ConditionEvent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_._has_bits_),
     0, // no _extensions_
     4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -639,53 +639,53 @@ MissionConditionEvent::_table_ = {
     4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    MissionConditionEvent_class_data_.base(),
+    ConditionEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MissionConditionEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ConditionEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 amount = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionConditionEvent, _impl_.amount_), 2>(),
-     {32, 2, 0, PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.amount_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionEvent, _impl_.amount_), 2>(),
+     {32, 2, 0, PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.amount_)}},
     // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MissionConditionEvent, _impl_.entity_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ConditionEvent, _impl_.entity_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.entity_)}},
     // uint32 condition_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionConditionEvent, _impl_.condition_type_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.condition_type_)}},
-    // repeated uint32 condtion_ids = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConditionEvent, _impl_.condition_type_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.condition_type_)}},
+    // repeated uint32 condition_ids = 3;
     {::_pbi::TcParser::FastV32P1,
-     {26, 63, 0, PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.condtion_ids_)}},
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.condition_ids_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 condition_type = 2;
-    {PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.condition_type_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.condition_type_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // repeated uint32 condtion_ids = 3;
-    {PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.condtion_ids_), -1, 0,
+    // repeated uint32 condition_ids = 3;
+    {PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.condition_ids_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
     // uint32 amount = 4;
-    {PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.amount_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.amount_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void MissionConditionEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:MissionConditionEvent)
+PROTOBUF_NOINLINE void ConditionEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:ConditionEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.condtion_ids_.Clear();
+  _impl_.condition_ids_.Clear();
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
     ::memset(&_impl_.entity_, 0, static_cast<::size_t>(
@@ -697,17 +697,17 @@ PROTOBUF_NOINLINE void MissionConditionEvent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL MissionConditionEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ConditionEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const MissionConditionEvent& this_ = static_cast<const MissionConditionEvent&>(base);
+  const ConditionEvent& this_ = static_cast<const ConditionEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL MissionConditionEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ConditionEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const MissionConditionEvent& this_ = *this;
+  const ConditionEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:MissionConditionEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:ConditionEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -729,12 +729,12 @@ PROTOBUF_NOINLINE void MissionConditionEvent::Clear() {
     }
   }
 
-  // repeated uint32 condtion_ids = 3;
+  // repeated uint32 condition_ids = 3;
   {
-    int byte_size = this_._impl_._condtion_ids_cached_byte_size_.Get();
+    int byte_size = this_._impl_._condition_ids_cached_byte_size_.Get();
     if (byte_size > 0) {
       target = stream->WriteUInt32Packed(
-          3, this_._internal_condtion_ids(), byte_size, target);
+          3, this_._internal_condition_ids(), byte_size, target);
     }
   }
 
@@ -752,18 +752,18 @@ PROTOBUF_NOINLINE void MissionConditionEvent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:MissionConditionEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:ConditionEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t MissionConditionEvent::ByteSizeLong(const MessageLite& base) {
-  const MissionConditionEvent& this_ = static_cast<const MissionConditionEvent&>(base);
+::size_t ConditionEvent::ByteSizeLong(const MessageLite& base) {
+  const ConditionEvent& this_ = static_cast<const ConditionEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t MissionConditionEvent::ByteSizeLong() const {
-  const MissionConditionEvent& this_ = *this;
+::size_t ConditionEvent::ByteSizeLong() const {
+  const ConditionEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:MissionConditionEvent)
+  // @@protoc_insertion_point(message_byte_size_start:ConditionEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -772,12 +772,12 @@ PROTOBUF_NOINLINE void MissionConditionEvent::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
    {
-    // repeated uint32 condtion_ids = 3;
+    // repeated uint32 condition_ids = 3;
     {
       total_size +=
           ::_pbi::WireFormatLite::UInt32SizeWithPackedTagSize(
-              this_._internal_condtion_ids(), 1,
-              this_._impl_._condtion_ids_cached_byte_size_);
+              this_._internal_condition_ids(), 1,
+              this_._impl_._condition_ids_cached_byte_size_);
     }
   }
   cached_has_bits = this_._impl_._has_bits_[0];
@@ -808,15 +808,15 @@ PROTOBUF_NOINLINE void MissionConditionEvent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void MissionConditionEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<MissionConditionEvent*>(&to_msg);
-  auto& from = static_cast<const MissionConditionEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:MissionConditionEvent)
+void ConditionEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ConditionEvent*>(&to_msg);
+  auto& from = static_cast<const ConditionEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ConditionEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  _this->_internal_mutable_condtion_ids()->MergeFrom(from._internal_condtion_ids());
+  _this->_internal_mutable_condition_ids()->MergeFrom(from._internal_condition_ids());
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
@@ -839,28 +839,28 @@ void MissionConditionEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MissionConditionEvent::CopyFrom(const MissionConditionEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:MissionConditionEvent)
+void ConditionEvent::CopyFrom(const ConditionEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ConditionEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void MissionConditionEvent::InternalSwap(MissionConditionEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ConditionEvent::InternalSwap(ConditionEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  _impl_.condtion_ids_.InternalSwap(&other->_impl_.condtion_ids_);
+  _impl_.condition_ids_.InternalSwap(&other->_impl_.condition_ids_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.amount_)
-      + sizeof(MissionConditionEvent::_impl_.amount_)
-      - PROTOBUF_FIELD_OFFSET(MissionConditionEvent, _impl_.entity_)>(
+      PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.amount_)
+      + sizeof(ConditionEvent::_impl_.amount_)
+      - PROTOBUF_FIELD_OFFSET(ConditionEvent, _impl_.entity_)>(
           reinterpret_cast<char*>(&_impl_.entity_),
           reinterpret_cast<char*>(&other->_impl_.entity_));
 }
 
-::google::protobuf::Metadata MissionConditionEvent::GetMetadata() const {
+::google::protobuf::Metadata ConditionEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

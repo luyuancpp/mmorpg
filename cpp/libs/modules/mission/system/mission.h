@@ -27,7 +27,7 @@ struct CompleteMissionParam {
 };
 
 class AcceptMissionEvent;
-class MissionConditionEvent;
+class ConditionEvent;
 class MissionComp;
 class MissionsComp;
 
@@ -41,12 +41,12 @@ public:
 	static uint32_t AcceptMission(const AcceptMissionEvent& acceptEvent, MissionsComp& comp, const IMissionConfig& config);
 	static uint32_t AbandonMission(const AbandonParam& param, MissionsComp& comp, const IMissionConfig& config);
 	static void CompleteAllMissions(entt::entity player, uint32_t op, MissionsComp& comp);
-	static void HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent, MissionsComp& comp, const IMissionConfig& config);
+	static void HandleConditionEvent(const ConditionEvent& conditionEvent, MissionsComp& comp, const IMissionConfig& config);
 
 private:
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp& missionComp, const IMissionConfig& config);
-	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionComp& mission, const IMissionConfig& config);
-	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionComp& mission, int index, const ConditionTable* conditionRow, uint32_t targetCount);
+	static bool UpdateMissionProgress(const ConditionEvent& conditionEvent, MissionComp& mission, const IMissionConfig& config);
+	static bool UpdateProgressIfConditionMatches(const ConditionEvent& conditionEvent, MissionComp& mission, int index, const ConditionTable* conditionRow, uint32_t targetCount);
 	static void UpdateMissionStatus(MissionComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions, const google::protobuf::RepeatedField<uint32_t>& targetCounts);
 	static bool AreAllConditionsFulfilled(const MissionComp& mission, uint32_t missionId, MissionsComp& missionComp, const IMissionConfig& config);
 	static void OnMissionCompletion(entt::entity player, const std::unordered_set<uint32_t>& completedMissions, MissionsComp& comp, const IMissionConfig& config);

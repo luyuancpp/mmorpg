@@ -9,7 +9,7 @@ public:
 
     static void UnRegister();
     static void AcceptMissionEventHandler(const AcceptMissionEvent& event);
-    static void MissionConditionEventHandler(const MissionConditionEvent& event);
+    static void ConditionEventHandler(const ConditionEvent& event);
     static void OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& event);
     static void OnMissionAwardEventHandler(const OnMissionAwardEvent& event);
 };

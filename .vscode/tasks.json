@@ -372,6 +372,69 @@
 				"${workspaceFolder}/tools/dev/mprocs.cpp-only.yaml"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "dev: build + start (exe)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy", "Bypass",
+				"-Command",
+				"& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: tail log",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$f = Get-ChildItem '${workspaceFolder}/bin/logs/go_services/${input:processName}.stderr.log','${workspaceFolder}/bin/logs/cpp_nodes/${input:processName}.stderr.log' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($f) { Get-Content $f.FullName -Tail 100 -Wait } else { Write-Host 'Log not found for: ${input:processName}'; pause }"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true
+			}
+		},
+		{
+			"label": "dev: restart (exe)",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy", "Bypass",
+				"-Command",
+				"& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-stop; & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
+			],
+			"problemMatcher": []
+		}
+	],
+	"inputs": [
+		{
+			"id": "processName",
+			"type": "pickString",
+			"description": "Select process to tail log",
+			"options": [
+				"login",
+				"db",
+				"data_service",
+				"player_locator",
+				"scene_manager",
+				"gate",
+				"gate_1",
+				"gate_2",
+				"scene",
+				"scene_1",
+				"scene_2",
+				"scene_3",
+				"scene_4"
+			],
+			"default": "login"
 		}
 	]
 }

@@ -11,7 +11,7 @@
 void MissionEventHandler::Register()
 {
     tlsEcs.dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventHandler::AcceptMissionEventHandler>();
-    tlsEcs.dispatcher.sink<MissionConditionEvent>().connect<&MissionEventHandler::MissionConditionEventHandler>();
+    tlsEcs.dispatcher.sink<ConditionEvent>().connect<&MissionEventHandler::ConditionEventHandler>();
     tlsEcs.dispatcher.sink<OnAcceptedMissionEvent>().connect<&MissionEventHandler::OnAcceptedMissionEventHandler>();
     tlsEcs.dispatcher.sink<OnMissionAwardEvent>().connect<&MissionEventHandler::OnMissionAwardEventHandler>();
 }
@@ -19,7 +19,7 @@ void MissionEventHandler::Register()
 void MissionEventHandler::UnRegister()
 {
     tlsEcs.dispatcher.sink<AcceptMissionEvent>().disconnect<&MissionEventHandler::AcceptMissionEventHandler>();
-    tlsEcs.dispatcher.sink<MissionConditionEvent>().disconnect<&MissionEventHandler::MissionConditionEventHandler>();
+    tlsEcs.dispatcher.sink<ConditionEvent>().disconnect<&MissionEventHandler::ConditionEventHandler>();
     tlsEcs.dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventHandler::OnAcceptedMissionEventHandler>();
     tlsEcs.dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventHandler::OnMissionAwardEventHandler>();
 }
@@ -32,13 +32,13 @@ void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& ev
 	MissionSystem::AcceptMission(event, comp, MissionConfig::GetSingleton());
 ///<<< END WRITING YOUR CODE
 }
-void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& event)
+void MissionEventHandler::ConditionEventHandler(const ConditionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	entt::entity entity = entt::to_entity(event.entity());
 	auto& container = tlsEcs.actorRegistry.get_or_emplace<MissionsContainerComp>(entity);
 	auto& comp = container.GetOrCreate(MissionListComp::kPlayerMission);
-    MissionSystem::HandleMissionConditionEvent(event, comp, MissionConfig::GetSingleton());
+    MissionSystem::HandleConditionEvent(event, comp, MissionConfig::GetSingleton());
 ///<<< END WRITING YOUR CODE
 }
 void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& event)

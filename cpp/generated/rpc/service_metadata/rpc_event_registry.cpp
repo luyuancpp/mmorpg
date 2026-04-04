@@ -1330,9 +1330,9 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string &payload)
         tlsEcs.dispatcher.enqueue(event);
         return true;
     }
-    case MissionConditionEventEventId:
+    case ConditionEventEventId:
     {
-        MissionConditionEvent event;
+        ConditionEvent event;
         if (!event.ParseFromString(payload))
         {
             return false;

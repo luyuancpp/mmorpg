@@ -36,7 +36,9 @@
 *.suo
 *.db*
 .vs/
+!.vs/tasks.vs.json
 .vscode/
+!.vscode/tasks.json
 .idea/
 game.slnLaunch.user
 *.slnLaunch.user
