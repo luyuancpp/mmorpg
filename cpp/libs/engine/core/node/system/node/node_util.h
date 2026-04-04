@@ -2,7 +2,9 @@
 #include "proto/common/base/node.pb.h"
 #include "proto/common/base/common.pb.h"
 #include "entt/src/entt/entt.hpp"
+#include <algorithm>
 #include <cstdint>
+#include <string>
 
 // Re-export common::base types at global scope for backward compatibility.
 using common::base::eNodeProtocolType;
@@ -60,6 +62,20 @@ using common::base::PROTOCOL_TCP;
 
 namespace NodeUtils
 {
+	// GateNodeService -> "gate", SceneNodeService -> "scene", etc.
+	inline std::string NodeTypeToShortName(uint32_t nodeType)
+	{
+		std::string name = eNodeType_Name(static_cast<eNodeType>(nodeType));
+		const std::string suffix = "NodeService";
+		if (name.size() > suffix.size() &&
+			name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+			name.resize(name.size() - suffix.size());
+		}
+		std::transform(name.begin(), name.end(), name.begin(),
+					   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+		return name;
+	}
+
 	eNodeType GetServiceTypeFromPrefix(const std::string &prefix);
 	entt::registry &GetRegistryForNodeType(uint32_t nodeType);
 	std::string GetRegistryName(const entt::registry &registry);

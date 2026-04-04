@@ -29,7 +29,6 @@ struct SceneNodeHooks {
 int main(int argc, char* argv[])
 {
     return node::entry::RunSimpleNodeMainWithOwnedContext<SceneHandler, SceneRuntimeContext, SceneNodeHooks>(
-        "logs/scene",
         SceneNodeService,
         Node::CanConnectNodeTypeList{ SceneManagerNodeService },
         [](Node& node, SceneRuntimeContext& context) {

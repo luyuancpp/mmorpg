@@ -21,7 +21,6 @@ struct YourNodeContext {};
 int main(int argc, char* argv[])
 {
     return node::entry::RunSimpleNodeMainWithOwnedContext<YourNodeHandler, YourNodeContext, YourNodeHooks>(
-        "logs/your_node",
         YourNodeService,
         Node::CanConnectNodeTypeList{ /* SceneNodeService, LoginNodeService, ... */ },
         [](Node& node, YourNodeContext&) {

@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/zrpc"
 )
 
 type EnterGameLogic struct {
@@ -256,16 +257,15 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	if existing != nil {
 		sceneID = existing.SceneID
 	}
-	enterCtx, enterCancel := context.WithTimeout(ctx, time.Duration(config.AppConfig.SceneManagerRpc.Timeout)*time.Millisecond)
-	defer enterCancel()
-	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(enterCtx, &smpb.EnterSceneRequest{
+	smTimeout := time.Duration(config.AppConfig.SceneManagerRpc.Timeout) * time.Millisecond
+	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(ctx, &smpb.EnterSceneRequest{
 		PlayerId:       state.playerID,
 		SceneId:        sceneID,
 		SessionId:      state.sessionID,
 		RequestId:      state.requestID,
 		GateId:         state.gateID,
 		GateInstanceId: state.gateInstanceID,
-	})
+	}, zrpc.WithCallTimeout(smTimeout))
 	if err != nil {
 		logx.Errorf("SceneManager.EnterScene failed for player %d: %v", state.playerID, err)
 		return decision, err

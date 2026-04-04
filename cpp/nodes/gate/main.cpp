@@ -50,7 +50,6 @@ namespace
 int main(int argc, char *argv[])
 {
     return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext, GateNodeHooks>(
-        "logs/gate",
         GateNodeService,
         Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService},
         [](Node &node, GateRuntimeContext &context)
