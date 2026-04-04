@@ -27,14 +27,7 @@ struct KafkaCommandHandlerOptions {
 //      nodeIdFieldNames={"target_gate_id","target_node_id"}.
 inline KafkaCommandHandlerOptions BuildDefaultKafkaOptions(uint32_t nodeType)
 {
-    std::string name = eNodeType_Name(static_cast<eNodeType>(nodeType));
-    const std::string suffix = "NodeService";
-    if (name.size() > suffix.size() &&
-        name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0) {
-        name.resize(name.size() - suffix.size());
-    }
-    std::transform(name.begin(), name.end(), name.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    const std::string name = NodeUtils::NodeTypeToShortName(nodeType);
 
     KafkaCommandHandlerOptions options;
     options.topicPrefix = name;

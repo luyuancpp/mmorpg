@@ -44,10 +44,9 @@ public:
 
 	explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
 
-	// Full construction: sets type/whitelist/handler, calls Initialize(),
-	// registers thread observability.  Preferred for production nodes.
+	// Full construction: derives log dir from nodeType (e.g. GateNodeService -> "logs/gate").
+	// Calls Initialize() and registers thread observability.
 	Node(muduo::net::EventLoop* loop,
-		 const std::string& logFilePath,
 		 uint32_t nodeType,
 		 CanConnectNodeTypeList connectTo,
 		 ::google::protobuf::Service* replyService = nullptr);

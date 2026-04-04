@@ -148,17 +148,16 @@ Node::Node(muduo::net::EventLoop *loop, const std::string &logFilePath)
 }
 
 Node::Node(muduo::net::EventLoop* loop,
-		   const std::string& logFilePath,
 		   uint32_t nodeType,
 		   CanConnectNodeTypeList connectTo,
 		   ::google::protobuf::Service* replyService)
-	: Node(loop, logFilePath)
+	: Node(loop, "logs/" + NodeUtils::NodeTypeToShortName(nodeType))
 {
 	replyService_ = replyService;
 	GetNodeInfo().set_node_type(nodeType);
 	targetNodeTypeWhitelist = std::move(connectTo);
 	Initialize();
-	node::observability::RegisterThreadObservability(*eventLoop, logFilePath);
+	node::observability::RegisterThreadObservability(*eventLoop, "logs/" + NodeUtils::NodeTypeToShortName(nodeType));
 }
 
 Node::~Node()
@@ -350,11 +349,12 @@ void Node::StartRpcServer()
 	tlsEcs.dispatcher.trigger<OnServerStart>();
 
 	auto nodeTypeName = boost::to_upper_copy(eNodeType_Name(GetNodeInfo().node_type()));
+	const auto& ep = GetNodeInfo().endpoint();
 	LOG_INFO << "\n\n"
 			 << "=============================================================\n"
-			 << "	" << nodeTypeName << " NODE STARTED SUCCESSFULLY\n"
-			 << "	Node Info:\n"
-			 << GetNodeInfo().DebugString() << "\n"
+			 << "  " << nodeTypeName << " NODE STARTED SUCCESSFULLY\n"
+			 << "  Listening on " << ep.ip() << ":" << ep.port() << "\n"
+			 << "  node_id=" << GetNodeId() << "  zone_id=" << GetNodeInfo().zone_id() << "\n"
 			 << "=============================================================\n";
 
 	if (afterStartFn_) afterStartFn_(*this);
