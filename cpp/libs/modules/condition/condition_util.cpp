@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "table/code/condition_table.h"
-#include "proto/common/event/mission_event.pb.h"
 
 namespace {
 
@@ -38,7 +37,7 @@ bool IsFulfilled(uint32_t conditionId, uint32_t progressValue, uint32_t targetCo
 }
 
 bool MatchesEventSlots(const ConditionTable* conditionRow,
-                       const MissionConditionEvent& conditionEvent) {
+                       const google::protobuf::RepeatedField<uint32_t>& eventConditionIds) {
 	size_t configSlotCount = 0;
 	size_t matchedSlotCount = 0;
 
@@ -47,10 +46,10 @@ bool MatchesEventSlots(const ConditionTable* conditionRow,
 			return;
 		}
 		++configSlotCount;
-		if (slotIndex >= static_cast<size_t>(conditionEvent.condtion_ids().size())) {
+		if (slotIndex >= static_cast<size_t>(eventConditionIds.size())) {
 			return;
 		}
-		const auto eventId = conditionEvent.condtion_ids(static_cast<int>(slotIndex));
+		const auto eventId = eventConditionIds.Get(static_cast<int>(slotIndex));
 		for (int32_t ci = 0; ci < slotValues.size(); ++ci) {
 			if (slotValues.Get(ci) == eventId) {
 				++matchedSlotCount;

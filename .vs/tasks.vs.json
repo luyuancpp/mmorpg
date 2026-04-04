@@ -1,0 +1,90 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskLabel": "dev: start all (build+exe)",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "start",
+      "inheritEnvironments": [ "msvc_x64" ]
+    },
+    {
+      "taskLabel": "dev: start C++ only",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "start-cpp"
+    },
+    {
+      "taskLabel": "dev: start Go only",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "start-go"
+    },
+    {
+      "taskLabel": "dev: stop all",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "stop"
+    },
+    {
+      "taskLabel": "dev: status",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "status"
+    },
+    {
+      "taskLabel": "dev: restart (exe)",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "restart"
+    },
+    {
+      "taskLabel": "dev: logs (pick process)",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "logs"
+    },
+    {
+      "taskLabel": "dev: logs all",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "logs all"
+    },
+    {
+      "taskLabel": "dev: tail login",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "logs login"
+    },
+    {
+      "taskLabel": "dev: tail gate_1",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "logs gate_1"
+    },
+    {
+      "taskLabel": "dev: tail scene_1",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "logs scene_1"
+    },
+    {
+      "taskLabel": "dev: tail db",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "logs db"
+    }
+  ]
+}

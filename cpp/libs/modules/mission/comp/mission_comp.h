@@ -11,7 +11,7 @@
 #include "table/code/bit_index/mission_table_id_bit_index.h"
 
 class AcceptMissionEvent;
-class MissionConditionEvent;
+class ConditionEvent;
 
 using MissionsBits = std::bitset<kMissionMaxBitIndex>;
 

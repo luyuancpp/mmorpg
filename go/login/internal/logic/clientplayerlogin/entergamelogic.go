@@ -256,7 +256,9 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	if existing != nil {
 		sceneID = existing.SceneID
 	}
-	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(ctx, &smpb.EnterSceneRequest{
+	enterCtx, enterCancel := context.WithTimeout(ctx, time.Duration(config.AppConfig.SceneManagerRpc.Timeout)*time.Millisecond)
+	defer enterCancel()
+	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(enterCtx, &smpb.EnterSceneRequest{
 		PlayerId:       state.playerID,
 		SceneId:        sceneID,
 		SessionId:      state.sessionID,

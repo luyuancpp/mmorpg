@@ -18,6 +18,13 @@ void ConditionTableManager::Load() {
     for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
+
+        if (row_data.comparison_op() > 4) {
+            LOG_FATAL << "Condition table id=" << row_data.id()
+                      << " has invalid comparison_op=" << row_data.comparison_op()
+                      << " (valid range: 0-4)";
+        }
+
         for (const auto& elem : row_data.condition1()) {
             idx_condition1_.emplace(elem, &row_data);
         }
