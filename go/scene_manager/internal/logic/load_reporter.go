@@ -14,10 +14,15 @@ import (
 )
 
 const (
-	NodeLoadKey        = "scene_nodes:load"
+	NodeLoadKeyFmt     = "scene_nodes:zone:%d:load"
 	NodeSceneCountKey  = "node:%s:scene_count"
 	LoadReportInterval = 5 * time.Second
 )
+
+// nodeLoadKey returns the zone-scoped Redis sorted-set key.
+func nodeLoadKey(zoneID uint32) string {
+	return fmt.Sprintf(NodeLoadKeyFmt, zoneID)
+}
 
 // sceneNodeRegistration mirrors the JSON that C++ scene nodes write to etcd.
 type sceneNodeRegistration struct {
@@ -75,17 +80,19 @@ func syncSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) {
 			fmt.Sscanf(s, "%d", &load)
 		}
 
-		if _, err := svcCtx.Redis.Zadd(NodeLoadKey, load, nodeIDStr); err != nil {
+		loadKey := nodeLoadKey(svcCtx.Config.ZoneID)
+		if _, err := svcCtx.Redis.Zadd(loadKey, load, nodeIDStr); err != nil {
 			logx.Errorf("failed to update load for node %s: %v", nodeIDStr, err)
 		}
 	}
 
 	// Remove stale entries from the ZSet that are no longer in etcd.
-	pairs, err := svcCtx.Redis.ZrangeWithScores(NodeLoadKey, 0, -1)
+	loadKey := nodeLoadKey(svcCtx.Config.ZoneID)
+	pairs, err := svcCtx.Redis.ZrangeWithScores(loadKey, 0, -1)
 	if err == nil {
 		for _, p := range pairs {
 			if _, ok := seen[p.Key]; !ok {
-				svcCtx.Redis.Zrem(NodeLoadKey, p.Key)
+				svcCtx.Redis.Zrem(loadKey, p.Key)
 			}
 		}
 	}
@@ -104,7 +111,7 @@ func reportLoad(ctx context.Context, svcCtx *svc.ServiceContext) {
 	}
 
 	// Update Redis ZSet with score = load
-	_, err = svcCtx.Redis.Zadd(NodeLoadKey, currentLoad, svcCtx.Config.NodeID)
+	_, err = svcCtx.Redis.Zadd(nodeLoadKey(svcCtx.Config.ZoneID), currentLoad, svcCtx.Config.NodeID)
 	if err != nil {
 		logx.Errorf("Failed to update node load for %s: %v", svcCtx.Config.NodeID, err)
 	}
@@ -112,7 +119,7 @@ func reportLoad(ctx context.Context, svcCtx *svc.ServiceContext) {
 
 // GetBestNode selects the node with the lowest load from Redis
 func GetBestNode(ctx context.Context, svcCtx *svc.ServiceContext) (string, error) {
-	pairs, err := svcCtx.Redis.ZrangeWithScores(NodeLoadKey, 0, 0)
+	pairs, err := svcCtx.Redis.ZrangeWithScores(nodeLoadKey(svcCtx.Config.ZoneID), 0, 0)
 	if err != nil {
 		return "", fmt.Errorf("redis zrange failed: %w", err)
 	}
