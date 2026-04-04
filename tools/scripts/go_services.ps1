@@ -32,7 +32,7 @@
 #>
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("start", "stop", "status", "list", "build")]
+    [ValidateSet("start", "start-exe", "stop", "status", "list", "build")]
     [string]$Command,
 
     [string[]]$Services = @()
@@ -45,13 +45,14 @@ $RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
 $GoRoot     = Join-Path $RepoRoot "go"
 $PidFile    = Join-Path $RepoRoot "bin\go_services.pid.json"
 $LogDir     = Join-Path $RepoRoot "bin\logs\go_services"
+$GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 
 # ── Service catalogue ────────────────────────────────────────────────
 # Order matters: infrastructure-layer services first, then domain services.
 $ServiceCatalogue = [ordered]@{
     db              = @{ Dir = "db";              Entry = "db.go";                     Port = 6000;  Desc = "DB (Kafka consumer + MySQL)" }
     data_service    = @{ Dir = "data_service";    Entry = "data_service.go";            Port = 9000;  Desc = "Data Service (multi-zone Redis)" }
-    player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";         Port = 50100; Desc = "Player Locator (Redis cache)" }
+    player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";         Port = 50200; Desc = "Player Locator (Redis cache)" }
     login           = @{ Dir = "login";           Entry = "login.go";                  Port = 50000; Desc = "Login (gRPC + etcd)" }
     scene_manager   = @{ Dir = "scene_manager";   Entry = "scene_manager_service.go";    Port = 60300; Desc = "Scene Manager (Kafka + Redis)" }
 }
@@ -87,7 +88,32 @@ function Write-PidFile {
 }
 
 # ── Commands ─────────────────────────────────────────────────────────
+function Resolve-GoExecutablePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ServiceName,
+        [Parameter(Mandatory = $true)]
+        [string]$ServiceDir
+    )
+
+    $preferred = Join-Path $GoBinDir "$ServiceName.exe"
+    if (Test-Path $preferred) {
+        return $preferred
+    }
+
+    $fallback = Join-Path $ServiceDir "$ServiceName.exe"
+    if (Test-Path $fallback) {
+        return $fallback
+    }
+
+    return $null
+}
+
 function Invoke-Start {
+    param(
+        [switch]$UseExe
+    )
+
     $names = Resolve-ServiceList -Requested $Services
     $pids  = Read-PidFile
 
@@ -116,19 +142,36 @@ function Invoke-Start {
             }
         }
 
-        $entry   = Join-Path $svcDir $info.Entry
         $logOut  = Join-Path $LogDir "$name.stdout.log"
         $logErr  = Join-Path $LogDir "$name.stderr.log"
 
-        Write-Host "[start] $name  :$($info.Port)  ($($info.Desc))" -ForegroundColor Cyan
+        if ($UseExe) {
+            $exePath = Resolve-GoExecutablePath -ServiceName $name -ServiceDir $svcDir
+            if (-not $exePath) {
+                Write-Warning "Skipping '$name': executable not found. Run -Command build first or place $name.exe in bin\\go_services\\ or $svcDir."
+                continue
+            }
 
-        $proc = Start-Process -FilePath "go" `
-            -ArgumentList "run", $info.Entry `
-            -WorkingDirectory $svcDir `
-            -RedirectStandardOutput $logOut `
-            -RedirectStandardError  $logErr `
-            -PassThru `
-            -WindowStyle Hidden
+            Write-Host "[start-exe] $name  :$($info.Port)  ($($info.Desc))" -ForegroundColor Cyan
+
+            $proc = Start-Process -FilePath $exePath `
+                -WorkingDirectory $svcDir `
+                -RedirectStandardOutput $logOut `
+                -RedirectStandardError  $logErr `
+                -PassThru `
+                -WindowStyle Hidden
+        }
+        else {
+            Write-Host "[start] $name  :$($info.Port)  ($($info.Desc))" -ForegroundColor Cyan
+
+            $proc = Start-Process -FilePath "go" `
+                -ArgumentList "run", $info.Entry `
+                -WorkingDirectory $svcDir `
+                -RedirectStandardOutput $logOut `
+                -RedirectStandardError  $logErr `
+                -PassThru `
+                -WindowStyle Hidden
+        }
 
         $pids | Add-Member -NotePropertyName $name -NotePropertyValue $proc.Id -Force
         Write-Host "        PID $($proc.Id)  logs -> bin\logs\go_services\$name.*.log" -ForegroundColor DarkGray
@@ -243,7 +286,8 @@ function Invoke-Build {
 
 # ── Dispatch ─────────────────────────────────────────────────────────
 switch ($Command) {
-    "start"  { Invoke-Start }
+    "start"      { Invoke-Start }
+    "start-exe"  { Invoke-Start -UseExe }
     "stop"   { Invoke-Stop }
     "status" { Invoke-Status }
     "list"   { Invoke-List }

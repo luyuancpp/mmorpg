@@ -32,6 +32,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 $GoRoot = Join-Path $RepoRoot "go"
 $BinRoot = Join-Path $RepoRoot "bin"
+$GoBinRoot = Join-Path $RepoRoot "bin\go_services"
 
 function Invoke-GoService {
     param(
@@ -39,7 +40,10 @@ function Invoke-GoService {
         [string]$Dir,
 
         [Parameter(Mandatory = $true)]
-        [string]$Entry
+        [string]$Entry,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ExeName
     )
 
     $svcDir = Join-Path $GoRoot $Dir
@@ -47,8 +51,36 @@ function Invoke-GoService {
         throw "Go service directory not found: $svcDir"
     }
 
+    $preferredExe = Join-Path $GoBinRoot "$ExeName.exe"
+    $fallbackExe = Join-Path $svcDir "$ExeName.exe"
+
+    if (Test-Path $preferredExe) {
+        Push-Location $svcDir
+        try {
+            & $preferredExe
+            $code = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+            exit $code
+        }
+        finally {
+            Pop-Location
+        }
+    }
+
+    if (Test-Path $fallbackExe) {
+        Push-Location $svcDir
+        try {
+            & $fallbackExe
+            $code = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+            exit $code
+        }
+        finally {
+            Pop-Location
+        }
+    }
+
     Push-Location $svcDir
     try {
+        Write-Host "[warn] Go exe not found for $ExeName, fallback to go run $Entry" -ForegroundColor Yellow
         & go run $Entry
         $code = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
         exit $code
@@ -81,11 +113,11 @@ function Invoke-CppNode {
 }
 
 switch ($Command) {
-    "go-db" { Invoke-GoService -Dir "db" -Entry "db.go" }
-    "go-data-service" { Invoke-GoService -Dir "data_service" -Entry "data_service.go" }
-    "go-player-locator" { Invoke-GoService -Dir "player_locator" -Entry "player_locator.go" }
-    "go-login" { Invoke-GoService -Dir "login" -Entry "login.go" }
-    "go-scene-manager" { Invoke-GoService -Dir "scene_manager" -Entry "scene_manager_service.go" }
+    "go-db" { Invoke-GoService -Dir "db" -Entry "db.go" -ExeName "db" }
+    "go-data-service" { Invoke-GoService -Dir "data_service" -Entry "data_service.go" -ExeName "data_service" }
+    "go-player-locator" { Invoke-GoService -Dir "player_locator" -Entry "player_locator.go" -ExeName "player_locator" }
+    "go-login" { Invoke-GoService -Dir "login" -Entry "login.go" -ExeName "login" }
+    "go-scene-manager" { Invoke-GoService -Dir "scene_manager" -Entry "scene_manager_service.go" -ExeName "scene_manager" }
     "cpp-gate" { Invoke-CppNode -Exe "gate.exe" }
     "cpp-scene" { Invoke-CppNode -Exe "scene.exe" }
     default { throw "Unsupported command: $Command" }

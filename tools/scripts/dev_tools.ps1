@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-stop", "dev-status", "merge-zone")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-stop", "dev-status", "merge-zone")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -444,6 +444,7 @@ Useful proto-gen flags:
 
 Go micro-service commands (local dev):
     -Command go-svc-start [-GoServices login,db,...]
+    -Command go-svc-start-exe [-GoServices login,db,...]
     -Command go-svc-stop  [-GoServices login,...]
     -Command go-svc-status
     -Command go-svc-list
@@ -468,6 +469,7 @@ C++ node commands (local dev):
 
 Unified dev commands (C++ nodes + Go services):
     -Command dev-start  [-GateCount N] [-SceneCount N]
+    -Command dev-start-exe  [-GateCount N] [-SceneCount N]
     -Command dev-stop
     -Command dev-status
 
@@ -525,6 +527,7 @@ switch ($Command) {
     "k8s-release-zone" { Invoke-K8sImage -ImageCommand "release-zone" }
     "k8s-release-all" { Invoke-K8sImage -ImageCommand "release-all" }
     "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices }
+    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices }
     "go-svc-stop"   { & (Join-Path $ScriptDir "go_services.ps1") -Command stop   -Services $GoServices }
     "go-svc-status" { & (Join-Path $ScriptDir "go_services.ps1") -Command status }
     "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
@@ -542,6 +545,12 @@ switch ($Command) {
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount
         Write-Host "`n=== Starting Go services ===" -ForegroundColor Cyan
         & (Join-Path $ScriptDir "go_services.ps1") -Command start -Services $GoServices
+    }
+    "dev-start-exe" {
+        Write-Host "=== Starting C++ nodes ==="  -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount
+        Write-Host "`n=== Starting Go services (exe) ===" -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices
     }
     "dev-stop" {
         Write-Host "=== Stopping Go services ===" -ForegroundColor Cyan
