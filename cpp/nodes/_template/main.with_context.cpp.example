@@ -27,13 +27,9 @@ int main(int argc, char* argv[])
         "logs/your_node",
         YourNodeService,
         Node::CanConnectNodeTypeList{ /* SceneNodeService, LoginNodeService, ... */ },
-        [](EventLoop&, YourNodeRuntimeContext& context) {
-            // Optional: initialize runtime context and global bridges.
-            // (void)context;
-        },
-        [](SimpleNode<YourNodeHandler>& node, YourNodeRuntimeContext& context) {
+        [](Node& node, YourNodeRuntimeContext& context) {
             // Optional: node lifecycle callbacks.
-            node.SetAfterStart([&context](SimpleNode<YourNodeHandler>& n) {
+            node.SetAfterStart([&context](Node& n) {
                 // Example: context.timer.RunEvery(1.0, [] {});
                 // (void)n;
             });

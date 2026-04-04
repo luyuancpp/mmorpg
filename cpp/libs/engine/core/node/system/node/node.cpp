@@ -28,6 +28,7 @@
 #include "proto_helpers/proto_util.h"
 #include "core/utils/debug/stacktrace_system.h"
 #include "network/node_utils.h"
+#include "node/system/node/thread_observability.h"
 #include <boost/algorithm/string.hpp>
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/node/node_connector.h"
@@ -144,6 +145,20 @@ Node::Node(muduo::net::EventLoop *loop, const std::string &logFilePath)
 	gNode = this;
 	gNodeAtomic.store(this, std::memory_order_release);
 	tlsEcs.nodeGlobalRegistry.emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
+}
+
+Node::Node(muduo::net::EventLoop* loop,
+		   const std::string& logFilePath,
+		   uint32_t nodeType,
+		   CanConnectNodeTypeList connectTo,
+		   ::google::protobuf::Service* replyService)
+	: Node(loop, logFilePath)
+{
+	replyService_ = replyService;
+	GetNodeInfo().set_node_type(nodeType);
+	targetNodeTypeWhitelist = std::move(connectTo);
+	Initialize();
+	node::observability::RegisterThreadObservability(*eventLoop, logFilePath);
 }
 
 Node::~Node()
@@ -341,6 +356,8 @@ void Node::StartRpcServer()
 			 << "	Node Info:\n"
 			 << GetNodeInfo().DebugString() << "\n"
 			 << "=============================================================\n";
+
+	if (afterStartFn_) afterStartFn_(*this);
 }
 
 void Node::Shutdown()

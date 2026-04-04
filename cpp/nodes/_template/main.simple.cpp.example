@@ -22,9 +22,9 @@ int main(int argc, char* argv[])
         "logs/your_node",
         YourNodeService,
         Node::CanConnectNodeTypeList{ /* SceneNodeService, LoginNodeService, ... */ },
-        [](SimpleNode<YourNodeHandler>& node) {
+        [](Node& node) {
             // Optional: node lifecycle callbacks.
-            node.SetAfterStart([](SimpleNode<YourNodeHandler>& n) {
+            node.SetAfterStart([](Node& n) {
                 // (void)n;
             });
         });

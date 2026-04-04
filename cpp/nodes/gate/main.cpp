@@ -7,7 +7,6 @@
 #include "handler/rpc/client_message_processor.h"
 #include "gate_codec.h"
 #include "grpc_client/grpc_init_client.h"
-#include "node/system/grpc_channel_cache.h"
 #include "session/system/session.h"
 #include "session/manager/session_manager.h"
 #include <node_config_manager.h>
@@ -46,14 +45,6 @@ namespace
         using KafkaCommandType = contracts::kafka::GateCommand;
     };
 
-    void LogGrpcThreadConfig()
-    {
-        LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
-                 << ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs()
-                 << ", EventEngine pool reserve=" << (grpc_channel_cache::ConfiguredThreadPoolReserveThreads() > 0 ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolReserveThreads()) : std::string("default"))
-                 << ", EventEngine pool max=" << (grpc_channel_cache::ConfiguredThreadPoolMaxThreads() > 0 ? std::to_string(grpc_channel_cache::ConfiguredThreadPoolMaxThreads()) : std::string("unlimited"));
-    }
-
 } // namespace
 
 int main(int argc, char *argv[])
@@ -62,11 +53,7 @@ int main(int argc, char *argv[])
         "logs/gate",
         GateNodeService,
         Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService},
-        [](EventLoop &, GateRuntimeContext &context)
-        {
-            LogGrpcThreadConfig();
-        },
-        [](SimpleNode<GateHandler> &node, GateRuntimeContext &context)
+        [](Node &node, GateRuntimeContext &context)
         {
             InitGateCodec(context.codec);
 
@@ -107,8 +94,8 @@ int main(int argc, char *argv[])
                 context.rpcClientHandler.SendMessageToClient(it->second.conn, mc); });
 
             // Post-startup: attach client TCP callbacks + initialize session ID generator
-            node.SetAfterStart([&context](SimpleNode<GateHandler> &n)
-                               { context.dependencyGate.WaitAndRun(n, {LoginNodeService, SceneNodeService}, [&context](SimpleNode<GateHandler> &n)
+            node.SetAfterStart([&context](Node &n)
+                               { context.dependencyGate.WaitAndRun(n, {LoginNodeService, SceneNodeService}, [&context](Node &n)
                                                                    {
                         n.GetTcpServer().setConnectionCallback(
                             [&context](const TcpConnectionPtr& conn) {

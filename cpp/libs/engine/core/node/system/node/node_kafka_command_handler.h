@@ -9,7 +9,7 @@
 
 #include "muduo/base/Logging.h"
 #include "messaging/kafka/kafka_proto_decoder.h"
-#include "node/system/node/simple_node.h"
+#include "node/system/node/node.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include <node_config_manager.h>
 
@@ -146,8 +146,8 @@ bool ValidateCommandTarget(const std::string& topic,
 
 } // namespace detail
 
-template <typename CommandT, typename THandler, typename DispatchFn>
-bool RegisterKafkaCommandHandler(SimpleNode<THandler>& node,
+template <typename CommandT, typename DispatchFn>
+bool RegisterKafkaCommandHandler(Node& node,
     const KafkaCommandHandlerOptions& options,
     DispatchFn&& dispatchFn)
 {
@@ -177,8 +177,8 @@ bool RegisterKafkaCommandHandler(SimpleNode<THandler>& node,
 }
 
 // Convenience overload: auto-derive options from node type.
-template <typename CommandT, typename THandler, typename DispatchFn>
-bool RegisterKafkaCommandHandler(SimpleNode<THandler>& node,
+template <typename CommandT, typename DispatchFn>
+bool RegisterKafkaCommandHandler(Node& node,
     DispatchFn&& dispatchFn)
 {
     return RegisterKafkaCommandHandler<CommandT>(
@@ -207,8 +207,8 @@ void DefaultKafkaCommandDispatch(const std::string& topic, const CommandT& comma
 }
 
 // Fully-automatic overload: auto-derive options + use default dispatch.
-template <typename CommandT, typename THandler>
-bool RegisterKafkaCommandHandler(SimpleNode<THandler>& node)
+template <typename CommandT>
+bool RegisterKafkaCommandHandler(Node& node)
 {
     return RegisterKafkaCommandHandler<CommandT>(
         node, BuildDefaultKafkaOptions(node.GetNodeType()),
