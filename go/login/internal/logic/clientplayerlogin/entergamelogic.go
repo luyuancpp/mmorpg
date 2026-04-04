@@ -70,18 +70,31 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 3. Lock to prevent concurrent login for the same player
+	// 3. Lock to prevent concurrent login for the same player (retry up to 12 times, total ~6s > TTL 5s)
 	playerLocker := locker.NewRedisLocker(l.svcCtx.RedisClient)
 	key := "player_locker:" + strconv.FormatUint(in.PlayerId, 10)
-	tryLocker, err := playerLocker.TryLock(ctx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
+	const maxLockRetries = 12
+	var tryLocker *locker.Lock
+	for attempt := 1; attempt <= maxLockRetries; attempt++ {
+		tryLocker, err = playerLocker.TryLock(ctx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
+		if err == nil && tryLocker.IsLocked() {
+			break
+		}
+		if attempt < maxLockRetries {
+			// Debug: check who holds the lock and TTL remaining
+			ttl, _ := l.svcCtx.RedisClient.TTL(ctx, key).Result()
+			logx.Infof("EnterGame lock retry %d/%d for playerId=%d (err=%v locked=%v ttl=%v)",
+				attempt, maxLockRetries, in.PlayerId, err, tryLocker != nil && tryLocker.IsLocked(), ttl)
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
 	if err != nil {
-		logx.Errorf("EnterGame lock acquire failed for playerId=%d: %v", in.PlayerId, err)
+		logx.Errorf("EnterGame lock acquire failed for playerId=%d after %d retries: %v", in.PlayerId, maxLockRetries, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-
-	if !tryLocker.IsLocked() {
-		logx.Errorf("EnterGame lock acquire failed for playerId=%d: lock not held", in.PlayerId)
+	if tryLocker == nil || !tryLocker.IsLocked() {
+		logx.Errorf("EnterGame lock not held for playerId=%d after %d retries", in.PlayerId, maxLockRetries)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
@@ -108,11 +121,14 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	defer func() {
-		released, releaseErr := tryLocker.Release(ctx)
+		// Use background context for lock release to avoid failure when gRPC ctx is cancelled
+		releaseCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		released, releaseErr := tryLocker.Release(releaseCtx)
 		if releaseErr != nil {
-			logx.Errorf("Failed to release lock: %v", releaseErr)
+			logx.Errorf("Failed to release lock for playerId=%d: %v", in.PlayerId, releaseErr)
 		} else if !released {
-			logx.Infof("Lock was not held by us (possibly expired)")
+			logx.Infof("Lock was not held by us (possibly expired) for playerId=%d", in.PlayerId)
 		}
 	}()
 
@@ -144,7 +160,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 5. FSM state management (by sessionId)
+	// 5. FSM state management (by sessionId, retry once on failure)
 	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
 	playerFSM := data.InitPlayerFSM()
 	if err := fsmstore.LoadFSMState(ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); err != nil {
@@ -154,9 +170,20 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 
 	if err := playerFSM.Event(ctx, data.EventEnterGame); err != nil {
-		logx.Errorf("FSM Event failed: %v", err)
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
-		return resp, nil
+		// Retry: reload FSM state from Redis after a short delay
+		logx.Infof("FSM EventEnterGame failed (state=%s), retrying after 100ms for playerId=%d", playerFSM.Current(), in.PlayerId)
+		time.Sleep(100 * time.Millisecond)
+		playerFSM = data.InitPlayerFSM()
+		if loadErr := fsmstore.LoadFSMState(ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); loadErr != nil {
+			logx.Errorf("FSM retry load failed: %v", loadErr)
+			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginFsmFailed)
+			return resp, nil
+		}
+		if retryErr := playerFSM.Event(ctx, data.EventEnterGame); retryErr != nil {
+			logx.Errorf("FSM EventEnterGame failed after retry (state=%s) for playerId=%d: %v", playerFSM.Current(), in.PlayerId, retryErr)
+			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
+			return resp, nil
+		}
 	}
 
 	// 6. Load Player data and wait for task completion
