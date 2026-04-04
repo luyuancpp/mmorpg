@@ -84,6 +84,8 @@ func NewServiceContext() *ServiceContext {
 	plClient := plpb.NewPlayerLocatorClient(plConn.Conn())
 
 	// Initialize scene_manager gRPC client (discovered via etcd)
+	logx.Infof("[config-debug] SceneManagerRpc.Timeout=%d, PlayerLocatorRpc.Timeout=%d, ServerTimeout=%d",
+		config.AppConfig.SceneManagerRpc.Timeout, config.AppConfig.PlayerLocatorRpc.Timeout, config.AppConfig.Timeout)
 	smConn := zrpc.MustNewClient(config.AppConfig.SceneManagerRpc)
 	smClient := smpb.NewSceneManagerClient(smConn.Conn())
 
