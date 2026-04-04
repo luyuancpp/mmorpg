@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -9,6 +10,7 @@
 #include "muduo/base/Logging.h"
 #include "messaging/kafka/kafka_proto_decoder.h"
 #include "node/system/node/simple_node.h"
+#include "rpc/service_metadata/rpc_event_registry.h"
 #include <node_config_manager.h>
 
 namespace node::kafka {
@@ -19,6 +21,28 @@ struct KafkaCommandHandlerOptions {
     std::vector<std::string> nodeIdFieldNames{ "target_node_id" };
     std::vector<std::string> instanceIdFieldNames{ "target_instance_id" };
 };
+
+// Derive KafkaCommandHandlerOptions from node type.
+// e.g. GateNodeService -> topicPrefix="gate", groupPrefix="gate-group",
+//      nodeIdFieldNames={"target_gate_id","target_node_id"}.
+inline KafkaCommandHandlerOptions BuildDefaultKafkaOptions(uint32_t nodeType)
+{
+    std::string name = eNodeType_Name(static_cast<eNodeType>(nodeType));
+    const std::string suffix = "NodeService";
+    if (name.size() > suffix.size() &&
+        name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+        name.resize(name.size() - suffix.size());
+    }
+    std::transform(name.begin(), name.end(), name.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    KafkaCommandHandlerOptions options;
+    options.topicPrefix = name;
+    options.groupPrefix = name + "-group";
+    options.nodeIdFieldNames = { "target_" + name + "_id", "target_node_id" };
+    options.instanceIdFieldNames = { "target_instance_id" };
+    return options;
+}
 
 namespace detail {
 
@@ -150,6 +174,45 @@ bool RegisterKafkaCommandHandler(SimpleNode<THandler>& node,
 
             dispatch(t, *command);
         });
+}
+
+// Convenience overload: auto-derive options from node type.
+template <typename CommandT, typename THandler, typename DispatchFn>
+bool RegisterKafkaCommandHandler(SimpleNode<THandler>& node,
+    DispatchFn&& dispatchFn)
+{
+    return RegisterKafkaCommandHandler<CommandT>(
+        node, BuildDefaultKafkaOptions(node.GetNodeType()),
+        std::forward<DispatchFn>(dispatchFn));
+}
+
+// Default dispatch: validate event_id + payload, then DispatchProtoEvent.
+// Works for any command proto with event_id() and payload() accessors.
+template <typename CommandT>
+void DefaultKafkaCommandDispatch(const std::string& topic, const CommandT& command)
+{
+    if (command.event_id() == 0) {
+        LOG_WARN << "Kafka command missing event_id, topic=" << topic;
+        return;
+    }
+    if (command.payload().empty()) {
+        LOG_WARN << "Kafka command payload is empty, topic=" << topic
+                 << ", event_id=" << command.event_id();
+        return;
+    }
+    if (!DispatchProtoEvent(command.event_id(), command.payload())) {
+        LOG_WARN << "Kafka command dispatch failed, topic=" << topic
+                 << ", event_id=" << command.event_id();
+    }
+}
+
+// Fully-automatic overload: auto-derive options + use default dispatch.
+template <typename CommandT, typename THandler>
+bool RegisterKafkaCommandHandler(SimpleNode<THandler>& node)
+{
+    return RegisterKafkaCommandHandler<CommandT>(
+        node, BuildDefaultKafkaOptions(node.GetNodeType()),
+        DefaultKafkaCommandDispatch<CommandT>);
 }
 
 } // namespace node::kafka

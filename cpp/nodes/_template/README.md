@@ -19,7 +19,7 @@ This folder provides starter templates for new C++ node `main.cpp` files.
   - `YourNodeHandler`
   - `YourNodeService`
   - log dir `logs/your_node`
-  - Kafka command proto and router names
+  - Kafka command proto and router names in the `YourNodeHooks` struct
 - [ ] Add or confirm node type in `proto/common/base/node.proto`.
 - [ ] Add or confirm node type mapping in `cpp/libs/engine/core/node/system/node/node_util.cpp`.
 - [ ] Implement RPC handler(s) in `handler/rpc/*`.
@@ -27,12 +27,31 @@ This folder provides starter templates for new C++ node `main.cpp` files.
 - [ ] Add Kafka route dispatch function in `handler/event/*_kafka_command_router.*`.
 - [ ] Rebuild the target node.
 
+## THooks Convention
+
+Define a `YourNodeHooks` struct with optional nested types:
+
+```cpp
+struct YourNodeHooks {
+    using EventHandlerType = EventHandler;  // static Register() — called after node init
+    struct TableLoadHandler {               // (optional) called after tables load
+        static void OnLoaded();
+    };
+    struct KafkaHandler {                   // auto-configures Kafka consumer
+        using CommandType = contracts::kafka::YourNodeCommand;
+        static void Dispatch(const std::string& topic, const CommandType& cmd);
+    };
+};
+```
+
+Omit any member to skip that hook.  Kafka topic/group/field names are
+auto-derived from the node type (e.g. `GateNodeService` -> topic `gate-{id}`).
+
 ## PR Self-Check
 
 - [ ] New node `main.cpp` uses one of the entry helpers from `node/system/node/node_entry.h`.
 - [ ] Node startup logic stays thin; business logic remains in systems/services.
 - [ ] Thread monitor logs appear at runtime, or `NODE_THREAD_MONITOR_ENABLED=0` is intentionally set.
-- [ ] Kafka topic/group and routing field names match the node contract.
 - [ ] No generated outputs were edited manually.
 
 ## Runtime Notes
@@ -47,9 +66,9 @@ This folder provides starter templates for new C++ node `main.cpp` files.
 
 ## Entry Helpers
 
-- `RunSimpleNodeMain<THandler>(...)`
+- `RunSimpleNodeMain<THandler, THooks>(...)`
   - For simple setup without owned context.
 
-- `RunSimpleNodeMainWithOwnedContext<THandler, TContext>(...)`
+- `RunSimpleNodeMainWithOwnedContext<THandler, TContext, THooks>(...)`
   - For setup that needs owned context with clear lifecycle.
 

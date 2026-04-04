@@ -13,6 +13,8 @@
 #include "server_event_handler.h"
 #include "skill_event_handler.h"
 
+void RegisterNodeEvents() { EventHandler::Register(); }
+
 void EventHandler::Register()
 {
 ActorCombatStateEventHandler::Register();
