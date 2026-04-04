@@ -68,8 +68,7 @@ void ApplyPostConstructionHooks(Node& node)
 
 } // namespace detail
 
-// ── Entry helpers ─────────────────────────────────────────────────
-// Each calls RunNodeMain directly — no intermediate template hops.
+// ── Entry helper ──────────────────────────────────────────────────
 
 template <typename StartNodeFn>
 int RunNodeMain(StartNodeFn&& startNode)
@@ -82,28 +81,6 @@ int RunNodeMain(StartNodeFn&& startNode)
     return 0;
 }
 
-// No runtime context.
-template <typename THandler, typename THooks = void, typename ConfigureFn>
-int RunSimpleNodeMain(const std::string& logDir,
-                      uint32_t nodeType,
-                      Node::CanConnectNodeTypeList connectTo,
-                      ConfigureFn&& configure)
-{
-    return RunNodeMain([
-        logDir, nodeType,
-        connectTo = std::move(connectTo),
-        configure = std::forward<ConfigureFn>(configure)
-    ](muduo::net::EventLoop& loop) mutable {
-        detail::ApplyPreConstructionHooks<THooks>();
-        THandler handler;
-        Node node(&loop, logDir, nodeType, std::move(connectTo), &handler);
-        detail::ApplyPostConstructionHooks<THooks>(node);
-        configure(node);
-        loop.loop();
-    });
-}
-
-// With owned TContext (default-constructed).
 template <typename THandler, typename TContext, typename THooks = void, typename ConfigureFn>
 int RunSimpleNodeMainWithOwnedContext(const std::string& logDir,
                                       uint32_t nodeType,
@@ -116,31 +93,6 @@ int RunSimpleNodeMainWithOwnedContext(const std::string& logDir,
         configure = std::forward<ConfigureFn>(configure)
     ](muduo::net::EventLoop& loop) mutable {
         auto context = std::make_unique<TContext>();
-        detail::ApplyPreConstructionHooks<THooks>();
-        THandler handler;
-        Node node(&loop, logDir, nodeType, std::move(connectTo), &handler);
-        detail::ApplyPostConstructionHooks<THooks>(node);
-        configure(node, *context);
-        loop.loop();
-    });
-}
-
-// With owned TContext + explicit init step.
-template <typename THandler, typename TContext, typename THooks = void, typename InitContextFn, typename ConfigureFn>
-int RunSimpleNodeMainWithOwnedContext(const std::string& logDir,
-                                      uint32_t nodeType,
-                                      Node::CanConnectNodeTypeList connectTo,
-                                      InitContextFn&& initContext,
-                                      ConfigureFn&& configure)
-{
-    return RunNodeMain([
-        logDir, nodeType,
-        connectTo = std::move(connectTo),
-        initContext = std::forward<InitContextFn>(initContext),
-        configure = std::forward<ConfigureFn>(configure)
-    ](muduo::net::EventLoop& loop) mutable {
-        auto context = std::make_unique<TContext>();
-        initContext(loop, *context);
         detail::ApplyPreConstructionHooks<THooks>();
         THandler handler;
         Node node(&loop, logDir, nodeType, std::move(connectTo), &handler);

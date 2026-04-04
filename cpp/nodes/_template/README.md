@@ -64,11 +64,9 @@ auto-derived from the node type (e.g. `GateNodeService` -> topic `gate-{id}`).
   - `NODE_THREAD_MONITOR_GROWTH_WARN_CONSECUTIVE_SAMPLES`
   - `NODE_THREAD_MONITOR_GROWTH_WARN_ABSOLUTE_INCREASE`
 
-## Entry Helpers
-
-- `RunSimpleNodeMain<THandler, THooks>(...)`
-  - For simple setup without owned context.
+## Entry Helper
 
 - `RunSimpleNodeMainWithOwnedContext<THandler, TContext, THooks>(...)`
-  - For setup that needs owned context with clear lifecycle.
+  - Single entry point for all nodes.  Use an empty `struct` for TContext
+    if no runtime state is needed.
 
