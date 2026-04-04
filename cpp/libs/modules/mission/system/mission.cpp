@@ -136,11 +136,8 @@ bool MissionSystem::AreAllConditionsFulfilled(const MissionComp &mission, uint32
 	const auto &targetCounts = config.GetTargetCounts(missionId);
 	for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
 	{
-		const uint32_t tc = (i < targetCounts.size() && targetCounts.at(i) > 0) ? targetCounts.at(i) : 0;
-		const bool fulfilled = (tc > 0)
-			? condition_util::IsFulfilled(conditions.at(i), mission.progress(i), tc)
-			: condition_util::IsFulfilled(conditions.at(i), mission.progress(i));
-		if (!fulfilled)
+		const uint32_t tc = (i < targetCounts.size()) ? targetCounts.at(i) : 0;
+		if (!condition_util::IsFulfilled(conditions.at(i), mission.progress(i), tc))
 		{
 			return false;
 		}
@@ -226,7 +223,7 @@ bool MissionSystem::UpdateMissionProgress(const ConditionEvent &conditionEvent, 
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i)
 	{
 		FetchConditionTableOrContinue(missionConditions.at(i));
-		const uint32_t tc = (i < targetCounts.size() && targetCounts.at(i) > 0) ? targetCounts.at(i) : 0;
+		const uint32_t tc = (i < targetCounts.size()) ? targetCounts.at(i) : 0;
 		if (UpdateProgressIfConditionMatches(conditionEvent, mission, i, conditionTable, tc))
 		{
 			updated = true;
@@ -243,10 +240,7 @@ bool MissionSystem::UpdateMissionProgress(const ConditionEvent &conditionEvent, 
 bool MissionSystem::UpdateProgressIfConditionMatches(const ConditionEvent &conditionEvent, MissionComp &mission, int index, const ConditionTable *conditionTable, uint32_t targetCount)
 {
 	const auto oldProgress = mission.progress(index);
-	const bool alreadyFulfilled = (targetCount > 0)
-		? condition_util::IsFulfilled(conditionTable->id(), oldProgress, targetCount)
-		: condition_util::IsFulfilled(conditionTable->id(), oldProgress);
-	if (alreadyFulfilled)
+	if (condition_util::IsFulfilled(conditionTable->id(), oldProgress, targetCount))
 	{
 		return false;
 	}
@@ -267,11 +261,8 @@ void MissionSystem::UpdateMissionStatus(MissionComp &mission, const google::prot
 {
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i)
 	{
-		const uint32_t tc = (i < targetCounts.size() && targetCounts.at(i) > 0) ? targetCounts.at(i) : 0;
-		const auto clamped = (tc > 0)
-			? condition_util::ClampIfFulfilled(missionConditions.at(i), mission.progress(i), tc)
-			: condition_util::ClampIfFulfilled(missionConditions.at(i), mission.progress(i));
-		mission.set_progress(i, clamped);
+		const uint32_t tc = (i < targetCounts.size()) ? targetCounts.at(i) : 0;
+		mission.set_progress(i, condition_util::ClampIfFulfilled(missionConditions.at(i), mission.progress(i), tc));
 	}
 }
 

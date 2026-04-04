@@ -85,6 +85,41 @@
       "type": "launch",
       "command": "${SolutionDir}dev.bat",
       "args": "logs db"
+    },
+    {
+      "taskLabel": "dev: infra up (docker compose)",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "infra"
+    },
+    {
+      "taskLabel": "dev: infra down",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "infra-down"
+    },
+    {
+      "taskLabel": "dev: build (C++ + Go)",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "build"
+    },
+    {
+      "taskLabel": "dev: proto (regenerate)",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "proto"
+    },
+    {
+      "taskLabel": "dev: robot (build + run)",
+      "appliesTo": "/",
+      "type": "launch",
+      "command": "${SolutionDir}dev.bat",
+      "args": "robot"
     }
   ]
 }
