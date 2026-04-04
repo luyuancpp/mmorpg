@@ -208,6 +208,12 @@ Kubernetes-only deployment entrypoint used by `dev_tools.ps1`.
 - Prefer passing `-OpsProfile managed-cloud` or `-OpsProfile bare-metal` so the exposure choice is explicit in commands and change records.
 - In `custom` mode, the default `-GateServiceType` baseline is `NodePort` (safer for clusters without mature LB support).
 
+Quick exposure preflight (dry-run + assertions):
+
+```powershell
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-exposure-preflight
+```
+
 See `deploy/k8s/README.md` for full usage and behavior details.
 Ops runbook: `docs/ops/k8s-open-server-runbook.md`.
 
