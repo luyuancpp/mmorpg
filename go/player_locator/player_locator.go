@@ -73,7 +73,18 @@ func main() {
 	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
-	logx.Infof("Starting player_locator RPC server at %s...", config.AppConfig.ListenOn)
+	fmt.Println("\n=============================================================")
+	fmt.Println("  PLAYER_LOCATOR SERVICE STARTED SUCCESSFULLY")
+	fmt.Println("=============================================================")
+	fmt.Printf("  Listen:      %s\n", config.AppConfig.ListenOn)
+	fmt.Printf("  Mode:        %s\n", config.AppConfig.Mode)
+	fmt.Printf("  zone_id:     %d\n", config.AppConfig.Node.ZoneId)
+	if len(config.AppConfig.Etcd.Hosts) > 0 {
+		fmt.Printf("  etcd:        %v\n", config.AppConfig.Etcd.Hosts)
+	}
+	fmt.Printf("  kafka:       %v\n", config.AppConfig.Kafka.Brokers)
+	fmt.Printf("  redis:       %s\n", config.AppConfig.RedisClient.Host)
+	fmt.Println("=============================================================")
 	s.Start()
 }
 

@@ -59,7 +59,18 @@ func main() {
 	defer s.Stop()
 
 	// Wait for shutdown signal
-	fmt.Printf("Starting rpc server at %s...\n", config.AppConfig.ListenOn)
+	fmt.Println("\n=============================================================")
+	fmt.Println("  DB SERVICE STARTED SUCCESSFULLY")
+	fmt.Println("=============================================================")
+	fmt.Printf("  Listen:      %s\n", config.AppConfig.ListenOn)
+	fmt.Printf("  Mode:        %s\n", config.AppConfig.Mode)
+	if len(config.AppConfig.Etcd.Hosts) > 0 {
+		fmt.Printf("  etcd:        %v\n", config.AppConfig.Etcd.Hosts)
+	}
+	fmt.Printf("  redis:       %s\n", config.AppConfig.ServerConfig.RedisClient.Hosts)
+	fmt.Printf("  kafka:       %v\n", config.AppConfig.ServerConfig.Kafka.Brokers)
+	fmt.Printf("  mysql:       %s@%s/%s\n", config.AppConfig.ServerConfig.Database.User, config.AppConfig.ServerConfig.Database.Hosts, config.AppConfig.ServerConfig.Database.DBName)
+	fmt.Println("=============================================================")
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

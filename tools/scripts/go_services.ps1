@@ -87,6 +87,41 @@ function Write-PidFile {
     $Map | ConvertTo-Json | Set-Content $PidFile -Encoding UTF8
 }
 
+# ── Helpers (startup monitoring) ──────────────────────────────────────
+function Wait-ForStartupBanner {
+    param(
+        [string]$LogFile,
+        [string]$ServiceName,
+        [int]$TimeoutSeconds = 30
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        if (Test-Path $LogFile) {
+            $content = Get-Content $LogFile -Raw
+            if ($content -match "STARTED SUCCESSFULLY") {
+                $lines = $content -split "`n"
+                $inBanner = $false
+                foreach ($line in $lines) {
+                    $trimmed = $line.Trim()
+                    if ($trimmed -match '^={5,}') {
+                        if ($inBanner) {
+                            Write-Host "        $trimmed" -ForegroundColor Green
+                            break
+                        }
+                        $inBanner = $true
+                    }
+                    if ($inBanner -and $trimmed.Length -gt 0) {
+                        Write-Host "        $trimmed" -ForegroundColor Green
+                    }
+                }
+                return
+            }
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    Write-Host "        [timeout] $ServiceName did not report startup within ${TimeoutSeconds}s - check logs" -ForegroundColor Yellow
+}
+
 # ── Commands ─────────────────────────────────────────────────────────
 function Resolve-GoExecutablePath {
     param(
@@ -116,6 +151,7 @@ function Invoke-Start {
 
     $names = Resolve-ServiceList -Requested $Services
     $pids  = Read-PidFile
+    $launchedServices = @()
 
     if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
 
@@ -175,9 +211,18 @@ function Invoke-Start {
 
         $pids | Add-Member -NotePropertyName $name -NotePropertyValue $proc.Id -Force
         Write-Host "        PID $($proc.Id)  logs -> bin\logs\go_services\$name.*.log" -ForegroundColor DarkGray
+        $launchedServices += @{ Name = $name; LogFile = $logOut }
     }
 
     Write-PidFile $pids
+
+    if ($launchedServices.Count -gt 0) {
+        Write-Host "`nWaiting for startup confirmation..." -ForegroundColor DarkGray
+        foreach ($svc in $launchedServices) {
+            Wait-ForStartupBanner -LogFile $svc.LogFile -ServiceName $svc.Name
+        }
+    }
+
     Write-Host "`nAll requested services launched. Use -Command status to check health." -ForegroundColor Green
 }
 

@@ -86,6 +86,41 @@ function Get-InstanceCount {
     }
 }
 
+function Wait-ForStartupBanner {
+    param(
+        [string]$LogFile,
+        [string]$InstanceKey,
+        [int]$TimeoutSeconds = 30
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        if (Test-Path $LogFile) {
+            $content = Get-Content $LogFile -Raw
+            if ($content -match "STARTED SUCCESSFULLY") {
+                # Extract lines between the first and last ===== separator
+                $lines = $content -split "`n"
+                $inBanner = $false
+                foreach ($line in $lines) {
+                    $trimmed = $line.Trim()
+                    if ($trimmed -match '^={5,}') {
+                        if ($inBanner) {
+                            Write-Host "        $trimmed" -ForegroundColor Green
+                            break
+                        }
+                        $inBanner = $true
+                    }
+                    if ($inBanner -and $trimmed.Length -gt 0) {
+                        Write-Host "        $trimmed" -ForegroundColor Green
+                    }
+                }
+                return
+            }
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    Write-Host "        [timeout] $InstanceKey did not report startup within ${TimeoutSeconds}s - check logs" -ForegroundColor Yellow
+}
+
 function Read-PidFile {
     if (Test-Path $PidFile) {
         return Get-Content $PidFile -Raw | ConvertFrom-Json
@@ -104,6 +139,7 @@ function Write-PidFile {
 function Invoke-Start {
     $names = Resolve-NodeList -Requested $Nodes
     $pids  = Read-PidFile
+    $launchedInstances = @()
 
     if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
 
@@ -149,6 +185,7 @@ function Invoke-Start {
 
             $pids | Add-Member -NotePropertyName $instanceKey -NotePropertyValue $proc.Id -Force
             Write-Host "        PID $($proc.Id)  logs -> bin\logs\cpp_nodes\$instanceKey.*.log" -ForegroundColor DarkGray
+            $launchedInstances += @{ Key = $instanceKey; LogFile = $logOut }
 
             # Small delay between launches (same pattern as original start_server.bat)
             if ($i -lt $count) {
@@ -161,6 +198,14 @@ function Invoke-Start {
     }
 
     Write-PidFile $pids
+
+    if ($launchedInstances.Count -gt 0) {
+        Write-Host "`nWaiting for startup confirmation..." -ForegroundColor DarkGray
+        foreach ($inst in $launchedInstances) {
+            Wait-ForStartupBanner -LogFile $inst.LogFile -InstanceKey $inst.Key
+        }
+    }
+
     Write-Host "`nAll requested nodes launched. Use -Command status to check." -ForegroundColor Green
 }
 
