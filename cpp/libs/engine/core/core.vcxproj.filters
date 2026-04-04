@@ -96,7 +96,6 @@
     <ClInclude Include="utils\proto\message_util.h" />
     <ClInclude Include="node\system\grpc_channel_cache.h" />
     <ClInclude Include="node\system\node\node_kafka_command_handler.h" />
-    <ClInclude Include="node\system\node\simple_node.h" />
     <ClInclude Include="node\system\node\node_entry.h" />
     <ClInclude Include="node\system\node\thread_observability.h" />
     <ClInclude Include="network\traffic_statistics.h" />

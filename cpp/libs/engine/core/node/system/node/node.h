@@ -32,15 +32,27 @@ enum class NodeIdConflictReason
 
 class Node : muduo::noncopyable {
 public:
-    using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
-    using ServiceList = std::vector<::google::protobuf::Service*>;
-    using CanConnectNodeTypeList = std::set<uint32_t>;
+	using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
+	using ServiceList = std::vector<::google::protobuf::Service*>;
+	using CanConnectNodeTypeList = std::set<uint32_t>;
 	using ClientList = std::vector<RpcClientPtr>;
 
-    using PartitionClassIds = std::vector<int32_t>;
+	using PartitionClassIds = std::vector<int32_t>;
 
-    explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
-    virtual ~Node();
+	using AfterStartFn    = std::function<void(Node&)>;
+	using KafkaHandlersFn = std::function<bool(Node&)>;
+
+	explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
+
+	// Full construction: sets type/whitelist/handler, calls Initialize(),
+	// registers thread observability.  Preferred for production nodes.
+	Node(muduo::net::EventLoop* loop,
+		 const std::string& logFilePath,
+		 uint32_t nodeType,
+		 CanConnectNodeTypeList connectTo,
+		 ::google::protobuf::Service* replyService = nullptr);
+
+	virtual ~Node();
 
     // Basic information accessors
     int64_t GetLeaseId() const;
@@ -49,14 +61,21 @@ public:
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     NodeInfo& GetNodeInfo() const;
 	KafkaManager& GetKafkaManager() { return kafkaManager; }
-    virtual google::protobuf::Service* GetNodeReplyService() { return nullptr; }
-    muduo::AsyncLogging& Log() { return logSystem; }
-    ClientList& GetDisconnectedClientList() { return disconnectedClientList; }
-    CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
+	virtual google::protobuf::Service* GetNodeReplyService() { return replyService_; }
+	muduo::AsyncLogging& Log() { return logSystem; }
+	ClientList& GetDisconnectedClientList() { return disconnectedClientList; }
+	CanConnectNodeTypeList& GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
 	NodeHandshakeManager& GetNodeRegistrationManager() { return nodeRegistrationManager; }
-    ServiceDiscoveryManager& GetServiceDiscoveryManager() { return serviceDiscoveryManager; }
+	ServiceDiscoveryManager& GetServiceDiscoveryManager() { return serviceDiscoveryManager; }
 	EtcdManager& GetEtcdManager() { return etcdManager; }
 	grpc_channel_cache::GrpcChannelCache& GetGrpcChannelCache() { return grpcChannelCache; }
+
+	// Only valid after StartRpcServer().
+	muduo::net::TcpServer& GetTcpServer() { return rpcServer->GetTcpServer(); }
+
+	// Go-style: register hooks before start instead of subclassing.
+	Node& SetAfterStart(AfterStartFn fn)      { afterStartFn_    = std::move(fn); return *this; }
+	Node& SetKafkaHandlers(KafkaHandlersFn fn) { kafkaHandlersFn_ = std::move(fn); return *this; }
     bool HasDiscoveredServiceNode(uint32_t nodeType) const {
         auto& allNodes = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
         if (nodeType >= allNodes.size()) {
@@ -118,7 +137,7 @@ protected:
     void SetupTimeZone();
     void InitKafka();
     void StartKafkaPolling();
-    virtual bool RegisterKafkaHandlers() { return true; }
+    virtual bool RegisterKafkaHandlers() { return kafkaHandlersFn_ ? kafkaHandlersFn_(*this) : true; }
     void InitEtcdService();
 
     void ReleaseNodeId();
@@ -156,6 +175,10 @@ protected:
     grpc_channel_cache::GrpcChannelCache grpcChannelCache;
     std::atomic<bool> shutdownStarted{ false };
     bool kafkaPollingStarted{ false };
+
+    ::google::protobuf::Service* replyService_{ nullptr };
+    AfterStartFn    afterStartFn_;
+    KafkaHandlersFn kafkaHandlersFn_;
 };
 
 // DependencyGate — polls for required service-discovery dependencies before

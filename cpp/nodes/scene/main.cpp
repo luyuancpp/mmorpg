@@ -32,12 +32,11 @@ int main(int argc, char* argv[])
         "logs/scene",
         SceneNodeService,
         Node::CanConnectNodeTypeList{ SceneManagerNodeService },
-        [](EventLoop&, SceneRuntimeContext&) {},
-        [](SimpleNode<SceneHandler>& node, SceneRuntimeContext& context) {
+        [](Node& node, SceneRuntimeContext& context) {
             tlsRedisSystem.Initialize();
             World::InitializeSystemBeforeConnect();
 
-            node.SetAfterStart([&context](SimpleNode<SceneHandler>& n) {
+            node.SetAfterStart([&context](Node& n) {
                 context.dependencyGate.WaitAndRun(n, { SceneManagerNodeService },
                     [&context](auto&) {
                         context.worldTimer.RunEvery(tlsFrameTimeManager.frameTime.delta_time(), World::Update);
