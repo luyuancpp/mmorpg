@@ -57,7 +57,7 @@ function Invoke-GoService {
     if (Test-Path $preferredExe) {
         Push-Location $svcDir
         try {
-            & $preferredExe
+            & $preferredExe 2>&1
             $code = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
             exit $code
         }
@@ -69,7 +69,7 @@ function Invoke-GoService {
     if (Test-Path $fallbackExe) {
         Push-Location $svcDir
         try {
-            & $fallbackExe
+            & $fallbackExe 2>&1
             $code = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
             exit $code
         }
@@ -81,7 +81,7 @@ function Invoke-GoService {
     Push-Location $svcDir
     try {
         Write-Host "[warn] Go exe not found for $ExeName, fallback to go run $Entry" -ForegroundColor Yellow
-        & go run $Entry
+        & go run $Entry 2>&1
         $code = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
         exit $code
     }
@@ -103,7 +103,7 @@ function Invoke-CppNode {
 
     Push-Location $BinRoot
     try {
-        & $exePath
+        & $exePath 2>&1
         $code = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
         exit $code
     }
