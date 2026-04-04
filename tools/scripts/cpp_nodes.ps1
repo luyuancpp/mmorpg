@@ -94,27 +94,31 @@ function Wait-ForStartupBanner {
     )
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
-        if (Test-Path $LogFile) {
-            $content = Get-Content $LogFile -Raw
-            if ($content -match "STARTED SUCCESSFULLY") {
-                # Extract lines between the first and last ===== separator
-                $lines = $content -split "`n"
-                $inBanner = $false
-                foreach ($line in $lines) {
-                    $trimmed = $line.Trim()
-                    if ($trimmed -match '^={5,}') {
-                        if ($inBanner) {
-                            Write-Host "        $trimmed" -ForegroundColor Green
-                            break
+        try {
+            if (Test-Path $LogFile) {
+                $content = Get-Content $LogFile -Raw -ErrorAction SilentlyContinue
+                if ($content -and ($content -match "STARTED SUCCESSFULLY")) {
+                    # Extract lines between the first and last ===== separator
+                    $lines = $content -split "`n"
+                    $inBanner = $false
+                    foreach ($line in $lines) {
+                        $trimmed = $line.Trim()
+                        if ($trimmed -match '^={5,}') {
+                            if ($inBanner) {
+                                Write-Host "        $trimmed" -ForegroundColor Green
+                                break
+                            }
+                            $inBanner = $true
                         }
-                        $inBanner = $true
+                        if ($inBanner -and $trimmed.Length -gt 0) {
+                            Write-Host "        $trimmed" -ForegroundColor Green
+                        }
                     }
-                    if ($inBanner -and $trimmed.Length -gt 0) {
-                        Write-Host "        $trimmed" -ForegroundColor Green
-                    }
+                    return
                 }
-                return
             }
+        } catch {
+            # File might be locked briefly; retry on next iteration
         }
         Start-Sleep -Milliseconds 500
     }

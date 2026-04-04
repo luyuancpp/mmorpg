@@ -357,43 +357,54 @@ void Node::StartRpcServer()
 	std::string connectsTo;
 	for (auto nodeType : targetNodeTypeWhitelist)
 	{
-		if (!connectsTo.empty()) connectsTo += ", ";
+		if (!connectsTo.empty())
+			connectsTo += ", ";
 		connectsTo += eNodeType_Name(nodeType);
 	}
-	if (connectsTo.empty()) connectsTo = "(none)";
+	if (connectsTo.empty())
+		connectsTo = "(none)";
 
 	// Build Kafka brokers string
 	std::string kafkaBrokers = boost::algorithm::join(
 		std::vector<std::string>(deployConfig.kafka().brokers().begin(), deployConfig.kafka().brokers().end()), ", ");
-	if (kafkaBrokers.empty()) kafkaBrokers = "(not configured)";
+	if (kafkaBrokers.empty())
+		kafkaBrokers = "(not configured)";
 
 	// Build etcd hosts string
 	std::string etcdHosts = boost::algorithm::join(
 		std::vector<std::string>(deployConfig.etcd_hosts().begin(), deployConfig.etcd_hosts().end()), ", ");
-	if (etcdHosts.empty()) etcdHosts = "(not configured)";
+	if (etcdHosts.empty())
+		etcdHosts = "(not configured)";
 
 	// Print startup banner to both log file and stdout/console so it is always visible.
 	const std::string banner =
 		"\n\n"
 		"=============================================================\n"
-		"  " + nodeTypeName + " NODE STARTED SUCCESSFULLY\n"
-		"=============================================================\n"
-		"  Listen:      " + ep.ip() + ":" + std::to_string(ep.port()) + "\n"
-		"  node_id:     " + std::to_string(GetNodeId()) + "\n"
-		"  node_uuid:   " + GetNodeInfo().node_uuid() + "\n"
-		"  zone_id:     " + std::to_string(gameConfig.zone_id()) + "\n"
-		"  etcd:        " + etcdHosts + "\n"
-		"  kafka:       " + kafkaBrokers + "\n"
-		"  redis:       " + gameConfig.zone_redis().host() + ":" + std::to_string(gameConfig.zone_redis().port()) + "\n"
-		"  connects_to: " + connectsTo + "\n"
-		"  log_level:   " + std::to_string(deployConfig.log_level()) + "\n"
-		"=============================================================\n";
+		"  " +
+		nodeTypeName + " NODE STARTED SUCCESSFULLY\n"
+					   "=============================================================\n"
+					   "  Listen:      " +
+		ep.ip() + ":" + std::to_string(ep.port()) + "\n"
+													"  node_id:     " +
+		std::to_string(GetNodeId()) + "\n"
+									  "  node_uuid:   " +
+		GetNodeInfo().node_uuid() + "\n"
+									"  zone_id:     " +
+		std::to_string(gameConfig.zone_id()) + "\n"
+											   "  etcd:        " +
+		etcdHosts + "\n"
+					"  kafka:       " +
+		kafkaBrokers + "\n"
+					   "  redis:       " +
+		gameConfig.zone_redis().host() + ":" + std::to_string(gameConfig.zone_redis().port()) + "\n"
+																								"  connects_to: " +
+		connectsTo + "\n"
+					 "  log_level:   " +
+		std::to_string(deployConfig.log_level()) + "\n"
+												   "=============================================================\n";
 	LOG_INFO << banner;
 	StdoutOutput(banner.c_str(), static_cast<int>(banner.size()));
 	std::fflush(stdout);
-#ifdef WIN32
-	LogToConsole(banner.c_str(), static_cast<int>(banner.size()));
-#endif
 
 	if (afterStartFn_)
 		afterStartFn_(*this);
@@ -518,6 +529,9 @@ void Node::AsyncOutput(const char *msg, int len)
 	if (activeNode != nullptr)
 	{
 		activeNode->Log().append(msg, len);
+#ifdef WIN32
+		LogToConsole(msg, len);
+#endif
 		return;
 	}
 	StdoutOutput(msg, len);
