@@ -300,18 +300,6 @@
     <ClCompile Include="common\rollback\transaction_log.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="slg\slg_battle.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="slg\slg_map.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="turnbased\turnbased_battle.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="turnbased\turnbased_dungeon.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="etcd\etcd.pb.h">
@@ -597,18 +585,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\rollback\transaction_log.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="slg\slg_battle.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="slg\slg_map.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="turnbased\turnbased_battle.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="turnbased\turnbased_dungeon.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -114,10 +114,6 @@
     <ClCompile Include="scene_manager\scene_manager_service.pb.cc" />
     <ClCompile Include="scene_manager\storage.grpc.pb.cc" />
     <ClCompile Include="scene_manager\storage.pb.cc" />
-    <ClCompile Include="slg\slg_battle.pb.cc" />
-    <ClCompile Include="slg\slg_map.pb.cc" />
-    <ClCompile Include="turnbased\turnbased_battle.pb.cc" />
-    <ClCompile Include="turnbased\turnbased_dungeon.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="chat\chat.pb.h" />
@@ -215,10 +211,6 @@
     <ClInclude Include="scene_manager\scene_manager_service.pb.h" />
     <ClInclude Include="scene_manager\storage.grpc.pb.h" />
     <ClInclude Include="scene_manager\storage.pb.h" />
-    <ClInclude Include="slg\slg_battle.pb.h" />
-    <ClInclude Include="slg\slg_map.pb.h" />
-    <ClInclude Include="turnbased\turnbased_battle.pb.h" />
-    <ClInclude Include="turnbased\turnbased_dungeon.pb.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
