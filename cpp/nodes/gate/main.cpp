@@ -2,19 +2,14 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoopThreadPool.h"
 
-#include "node/system/node/simple_node.h"
-#include "node/system/node/node.h"
 #include "node/system/node/node_entry.h"
 #include "handler/rpc/gate_service_handler.h"
 #include "handler/rpc/client_message_processor.h"
-#include "handler/event/event_handler.h"
-#include "handler/event/gate_kafka_command_router.h"
 #include "gate_codec.h"
 #include "grpc_client/grpc_init_client.h"
 #include "node/system/grpc_channel_cache.h"
 #include "session/system/session.h"
 #include "session/manager/session_manager.h"
-#include "node/system/node/node_kafka_command_handler.h"
 #include <node_config_manager.h>
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "proto/contracts/kafka/gate_command.pb.h"
@@ -47,6 +42,10 @@ namespace
         }
     };
 
+    struct GateNodeHooks {
+        using KafkaCommandType = contracts::kafka::GateCommand;
+    };
+
     void LogGrpcThreadConfig()
     {
         LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
@@ -59,7 +58,7 @@ namespace
 
 int main(int argc, char *argv[])
 {
-    return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext>(
+    return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext, GateNodeHooks>(
         "logs/gate",
         GateNodeService,
         Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService},
@@ -107,8 +106,6 @@ int main(int argc, char *argv[])
                 mc.set_message_id(typeIt->second);
                 context.rpcClientHandler.SendMessageToClient(it->second.conn, mc); });
 
-            EventHandler::Register();
-
             // Post-startup: attach client TCP callbacks + initialize session ID generator
             node.SetAfterStart([&context](SimpleNode<GateHandler> &n)
                                { context.dependencyGate.WaitAndRun(n, {LoginNodeService, SceneNodeService}, [&context](SimpleNode<GateHandler> &n)
@@ -129,21 +126,5 @@ int main(int argc, char *argv[])
                             n.GetNodeInfo().set_player_count(count);
                             n.GetEtcdManager().UpdateNodeInfo();
                         }); }, "Gate"); });
-
-            // Kafka: unified registration path for all node command-consumers.
-            node.SetKafkaHandlers([](SimpleNode<GateHandler> &n)
-                                  {
-                node::kafka::KafkaCommandHandlerOptions options;
-                options.topicPrefix = "gate";
-                options.groupPrefix = "gate-group";
-                options.nodeIdFieldNames = { "target_gate_id", "target_node_id" };
-                options.instanceIdFieldNames = { "target_instance_id" };
-
-                return node::kafka::RegisterKafkaCommandHandler<contracts::kafka::GateCommand>(
-                    n,
-                    options,
-                    [](const std::string& topic, const contracts::kafka::GateCommand& command) {
-                        DispatchGateKafkaCommand(topic, command);
-                    }); });
         });
 }

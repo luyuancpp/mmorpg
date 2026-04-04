@@ -3,6 +3,8 @@
 #include "gate_event_handler.h"
 #include "player_event_handler.h"
 
+void RegisterNodeEvents() { EventHandler::Register(); }
+
 void EventHandler::Register()
 {
 GateEventHandler::Register();
