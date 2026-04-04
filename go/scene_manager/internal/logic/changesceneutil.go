@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"scene_manager/internal/storage"
 	"scene_manager/internal/svc"
+	smpb "proto/scene_manager"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -22,7 +22,7 @@ func GateTopicName(gateId string) string {
 
 
 // GetPlayerLocation retrieves the current scene and node for a player
-func GetPlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) (*storage.PlayerLocation, error) {
+func GetPlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) (*smpb.PlayerLocation, error) {
 	key := getPlayerLocationKey(playerId)
 	val, err := svcCtx.Redis.Get(key)
 	if err != nil {
@@ -32,7 +32,7 @@ func GetPlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId
 		return nil, nil
 	}
 	
-	loc := &storage.PlayerLocation{}
+	loc := &smpb.PlayerLocation{}
 	if err := proto.Unmarshal([]byte(val), loc); err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func GetPlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId
 func UpdatePlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, sceneId uint64, nodeId string) error {
 	key := getPlayerLocationKey(playerId)
 	
-	loc := &storage.PlayerLocation{
+	loc := &smpb.PlayerLocation{
 		SceneId:    sceneId,
 		NodeId:     nodeId,
 		UpdateTime: uint64(time.Now().Unix()),

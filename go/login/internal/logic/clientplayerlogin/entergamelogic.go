@@ -14,10 +14,10 @@ import (
 	"login/internal/logic/pkg/loginsessionstore"
 	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/svc"
-	smpb "login/proto/scene_manager"
 	login_proto_common "proto/common/base"
 	login_proto_database "proto/common/database"
 	login_proto "proto/login"
+	smpb "proto/scene_manager"
 	"strconv"
 	"time"
 

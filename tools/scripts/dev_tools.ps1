@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-stop", "dev-status", "merge-zone")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-stop", "dev-status", "merge-zone")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -357,6 +357,81 @@ function Invoke-K8sBuildAll {
     Write-Host "`nAll images built successfully." -ForegroundColor Green
 }
 
+function Invoke-K8sExposurePreflight {
+    $scriptPath = Join-Path $ScriptDir "k8s_deploy.ps1"
+    if (-not (Test-Path $scriptPath)) {
+        throw "k8s_deploy.ps1 not found: $scriptPath"
+    }
+
+    function Invoke-PreflightCase {
+        param(
+            [Parameter(Mandatory = $true)][string]$Title,
+            [Parameter(Mandatory = $true)][string]$CaseZoneName,
+            [Parameter(Mandatory = $true)][int]$CaseZoneId,
+            [Parameter(Mandatory = $true)][string]$CaseOpsProfile,
+            [Parameter(Mandatory = $true)][string]$ExpectedServiceType,
+            [bool]$ExpectWarning = $false,
+            [string]$CaseGateServiceType = ""
+        )
+
+        $caseArgs = @{
+            Command = "zone-up"
+            ZoneName = $CaseZoneName
+            ZoneId = $CaseZoneId
+            NamespacePrefix = $NamespacePrefix
+            InfraNamespace = $InfraNamespace
+            NodeImage = $NodeImage
+            OpsProfile = $CaseOpsProfile
+            CentreReplicas = $CentreReplicas
+            GateReplicas = $GateReplicas
+            SceneReplicas = $SceneReplicas
+            GateServicePort = $GateServicePort
+            WaitTimeoutSeconds = $WaitTimeoutSeconds
+            DryRun = $true
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($CaseGateServiceType)) {
+            $caseArgs.GateServiceType = $CaseGateServiceType
+        }
+        if (-not [string]::IsNullOrWhiteSpace($KubeContext)) {
+            $caseArgs.KubeContext = $KubeContext
+        }
+        if (-not [string]::IsNullOrWhiteSpace($KubeConfig)) {
+            $caseArgs.KubeConfig = $KubeConfig
+        }
+
+        Write-Host "--- $Title ---" -ForegroundColor Cyan
+        $output = & $scriptPath @caseArgs 2>&1
+        $text = ($output | Out-String)
+        $output | ForEach-Object { Write-Host $_ }
+
+        $expectedMarker = "Ops profile resolved: profile=$CaseOpsProfile gate_service_type=$ExpectedServiceType"
+        if ($text -notmatch [regex]::Escape($expectedMarker)) {
+            throw "Preflight case '$Title' failed: expected marker not found -> $expectedMarker"
+        }
+
+        $warningMarker = "Using OpsProfile=custom with GateServiceType=LoadBalancer"
+        if ($ExpectWarning) {
+            if ($text -notmatch [regex]::Escape($warningMarker)) {
+                throw "Preflight case '$Title' failed: expected warning not found."
+            }
+        }
+        else {
+            if ($text -match [regex]::Escape($warningMarker)) {
+                throw "Preflight case '$Title' failed: unexpected warning found."
+            }
+        }
+
+        Write-Host "PASS: $Title" -ForegroundColor Green
+    }
+
+    Invoke-PreflightCase -Title "CASE1 custom default" -CaseZoneName "preflight-a" -CaseZoneId 201 -CaseOpsProfile "custom" -ExpectedServiceType "NodePort"
+    Invoke-PreflightCase -Title "CASE2 managed-cloud" -CaseZoneName "preflight-b" -CaseZoneId 202 -CaseOpsProfile "managed-cloud" -ExpectedServiceType "LoadBalancer"
+    Invoke-PreflightCase -Title "CASE3 custom + LoadBalancer" -CaseZoneName "preflight-c" -CaseZoneId 203 -CaseOpsProfile "custom" -ExpectedServiceType "LoadBalancer" -CaseGateServiceType "LoadBalancer" -ExpectWarning $true
+
+    Write-Host "k8s exposure preflight passed." -ForegroundColor Green
+}
+
 function Invoke-K8sImage {
     param(
         [Parameter(Mandatory = $true)]
@@ -485,6 +560,7 @@ Other common commands:
         Manage shared infrastructure (etcd/redis/kafka/mysql) in the mmorpg-infra namespace.
     -Command k8s-zone-up | k8s-zone-down | k8s-zone-status
     -Command k8s-all-up | k8s-all-down | k8s-all-status
+    -Command k8s-exposure-preflight
     -Command k8s-stage-runtime
     -Command k8s-image-preflight | k8s-build-image | k8s-push-image | k8s-release-zone | k8s-release-all
 
@@ -520,6 +596,7 @@ switch ($Command) {
     "k8s-all-down" { Invoke-K8sDeploy -K8sCommand "all-down" }
     "k8s-all-status" { Invoke-K8sDeploy -K8sCommand "all-status" }
     "k8s-build-all" { Invoke-K8sBuildAll }
+    "k8s-exposure-preflight" { Invoke-K8sExposurePreflight }
     "k8s-stage-runtime" { Invoke-K8sStageRuntime }
     "k8s-image-preflight" { Invoke-K8sImage -ImageCommand "preflight" }
     "k8s-build-image" { Invoke-K8sImage -ImageCommand "build-image" }

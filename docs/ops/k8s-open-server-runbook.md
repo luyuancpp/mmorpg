@@ -57,7 +57,7 @@ Expected results:
 3. `custom + LoadBalancer` prints a warning so the operator explicitly confirms cluster LB capability.
 
 ```powershell
-pwsh -NoProfile -Command "Set-Location 'F:\work\mmorpg'; Write-Host '--- CASE1 custom default ---'; pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -DryRun -ZoneName testa -ZoneId 201; Write-Host '--- CASE2 managed-cloud ---'; pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -DryRun -ZoneName testb -ZoneId 202 -OpsProfile managed-cloud; Write-Host '--- CASE3 custom + LoadBalancer ---'; pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -DryRun -ZoneName testc -ZoneId 203 -OpsProfile custom -GateServiceType LoadBalancer"
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-exposure-preflight
 ```
 
 If the output does not match the expected service type resolution, stop before deployment and correct the command profile or service type.

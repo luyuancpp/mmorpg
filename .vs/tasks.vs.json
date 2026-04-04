@@ -7,7 +7,9 @@
       "type": "launch",
       "command": "${SolutionDir}dev.bat",
       "args": "start",
-      "inheritEnvironments": [ "msvc_x64" ]
+      "inheritEnvironments": [
+        "msvc_x64"
+      ]
     },
     {
       "taskLabel": "dev: start C++ only",
