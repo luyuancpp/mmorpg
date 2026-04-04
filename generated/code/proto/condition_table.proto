@@ -15,8 +15,9 @@ message ConditionTable {
 	repeated uint32 condition2 = 4;
 	repeated uint32 condition3 = 5;
 	repeated uint32 condition4 = 6;
-	reserved 7, 8, 9;
-	reserved "valid_duration", "quantity_type", "target_count";
+	uint64 valid_duration = 7;
+	uint32 quantity_type = 8;
+	uint32 target_count = 9;
 	uint32 comparison_op = 10;
 }
 

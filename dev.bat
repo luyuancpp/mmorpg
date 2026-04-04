@@ -21,6 +21,7 @@ if /I "%CMD%"=="infra"      goto :infra
 if /I "%CMD%"=="infra-down"  goto :infra_down
 if /I "%CMD%"=="build"      goto :build
 if /I "%CMD%"=="proto"      goto :proto
+if /I "%CMD%"=="export"     goto :export
 if /I "%CMD%"=="ui"         goto :ui
 if /I "%CMD%"=="ui-cpp"     goto :ui_cpp
 if /I "%CMD%"=="ui-go"      goto :ui_go
@@ -52,11 +53,12 @@ echo     10. Infra       (docker-compose up: Kafka/Redis/MySQL/etcd)
 echo     11. Infra down  (docker-compose down)
 echo     12. Build       (compile C++ + Go, no launch)
 echo     13. Proto       (regenerate proto code)
-echo     14. UI          (mprocs TUI dashboard)
+echo     14. Export      (Excel data table export)
+echo     15. UI          (mprocs TUI dashboard)
 echo.
 echo     0.  Exit
 echo.
-set /p "CHOICE=  Pick [0-14]: "
+set /p "CHOICE=  Pick [0-15]: "
 
 if "%CHOICE%"=="1" goto :start
 if "%CHOICE%"=="2" goto :start_cpp
@@ -71,7 +73,8 @@ if "%CHOICE%"=="10" goto :infra
 if "%CHOICE%"=="11" goto :infra_down
 if "%CHOICE%"=="12" goto :build
 if "%CHOICE%"=="13" goto :proto
-if "%CHOICE%"=="14" goto :ui
+if "%CHOICE%"=="14" goto :export
+if "%CHOICE%"=="15" goto :ui
 if "%CHOICE%"=="0" exit /b 0
 
 echo   Invalid choice.
@@ -310,6 +313,19 @@ echo Proto generation complete.
 exit /b 0
 
 :: ================================================================
+:export
+set "EXPORT_CFG=%~2"
+if "%EXPORT_CFG%"=="" set "EXPORT_CFG=tools\data_table_exporter\exporter_config.yaml"
+echo Installing Python dependencies...
+pip install -q -r tools\data_table_exporter\requirements.txt
+if errorlevel 1 ( echo pip install failed. & pause & exit /b 1 )
+echo Running data table exporter  [config: %EXPORT_CFG%]
+python tools\data_table_exporter\run.py "%EXPORT_CFG%"
+if errorlevel 1 ( echo Export failed. & pause & exit /b 1 )
+echo Data table export complete.
+exit /b 0
+
+:: ================================================================
 ::  mprocs TUI dashboard — all processes in one terminal with UI
 :: ================================================================
 :ui
@@ -360,6 +376,8 @@ echo     infra          Start local infra (Kafka/Redis/MySQL/etcd)
 echo     infra-down     Stop local infra
 echo     build          Compile C++ + Go (no launch)
 echo     proto          Regenerate proto code
+echo     export         Run Excel data table exporter (Python)
+echo     export ^<cfg^>   Use custom config (default: exporter_config.yaml)
 echo     ui             mprocs TUI dashboard (all processes)
 echo     ui-cpp         mprocs TUI (C++ nodes only)
 echo     ui-go          mprocs TUI (Go services only)

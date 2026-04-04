@@ -40,13 +40,9 @@ using common::base::RedisNodeService;
 using common::base::SceneManagerNodeService;
 using common::base::SceneNodeService;
 using common::base::SecurityNodeService;
-using common::base::SlgBattleNodeService;
-using common::base::SlgMapNodeService;
 using common::base::TaskNodeService;
 using common::base::TeamNodeService;
 using common::base::TradeNodeService;
-using common::base::TurnBasedBattleNodeService;
-using common::base::TurnBasedDungeonNodeService;
 using common::base::UnknownNodeService;
 
 // Re-export eSceneNodeType enumerator values.
@@ -68,11 +64,13 @@ namespace NodeUtils
 		std::string name = eNodeType_Name(static_cast<eNodeType>(nodeType));
 		const std::string suffix = "NodeService";
 		if (name.size() > suffix.size() &&
-			name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+			name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0)
+		{
 			name.resize(name.size() - suffix.size());
 		}
 		std::transform(name.begin(), name.end(), name.begin(),
-					   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+					   [](unsigned char c)
+					   { return static_cast<char>(std::tolower(c)); });
 		return name;
 	}
 

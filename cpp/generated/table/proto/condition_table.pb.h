@@ -220,6 +220,9 @@ class ConditionTable final : public ::google::protobuf::Message
     kCondition4FieldNumber = 6,
     kIdFieldNumber = 1,
     kConditionCategoryFieldNumber = 2,
+    kValidDurationFieldNumber = 7,
+    kQuantityTypeFieldNumber = 8,
+    kTargetCountFieldNumber = 9,
     kComparisonOpFieldNumber = 10,
   };
   // repeated uint32 condition1 = 3;
@@ -314,6 +317,36 @@ class ConditionTable final : public ::google::protobuf::Message
   void _internal_set_condition_category(::uint32_t value);
 
   public:
+  // uint64 valid_duration = 7;
+  void clear_valid_duration() ;
+  ::uint64_t valid_duration() const;
+  void set_valid_duration(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_valid_duration() const;
+  void _internal_set_valid_duration(::uint64_t value);
+
+  public:
+  // uint32 quantity_type = 8;
+  void clear_quantity_type() ;
+  ::uint32_t quantity_type() const;
+  void set_quantity_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_quantity_type() const;
+  void _internal_set_quantity_type(::uint32_t value);
+
+  public:
+  // uint32 target_count = 9;
+  void clear_target_count() ;
+  ::uint32_t target_count() const;
+  void set_target_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_target_count() const;
+  void _internal_set_target_count(::uint32_t value);
+
+  public:
   // uint32 comparison_op = 10;
   void clear_comparison_op() ;
   ::uint32_t comparison_op() const;
@@ -328,7 +361,7 @@ class ConditionTable final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 7,
+  static const ::google::protobuf::internal::TcParseTable<4, 10,
                                    0, 0,
                                    2>
       _table_;
@@ -360,6 +393,9 @@ class ConditionTable final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _condition4_cached_byte_size_;
     ::uint32_t id_;
     ::uint32_t condition_category_;
+    ::uint64_t valid_duration_;
+    ::uint32_t quantity_type_;
+    ::uint32_t target_count_;
     ::uint32_t comparison_op_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -814,11 +850,83 @@ ConditionTable::_internal_mutable_condition4() {
   return &_impl_.condition4_;
 }
 
+// uint64 valid_duration = 7;
+inline void ConditionTable::clear_valid_duration() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.valid_duration_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint64_t ConditionTable::valid_duration() const {
+  // @@protoc_insertion_point(field_get:ConditionTable.valid_duration)
+  return _internal_valid_duration();
+}
+inline void ConditionTable::set_valid_duration(::uint64_t value) {
+  _internal_set_valid_duration(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:ConditionTable.valid_duration)
+}
+inline ::uint64_t ConditionTable::_internal_valid_duration() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.valid_duration_;
+}
+inline void ConditionTable::_internal_set_valid_duration(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.valid_duration_ = value;
+}
+
+// uint32 quantity_type = 8;
+inline void ConditionTable::clear_quantity_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.quantity_type_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t ConditionTable::quantity_type() const {
+  // @@protoc_insertion_point(field_get:ConditionTable.quantity_type)
+  return _internal_quantity_type();
+}
+inline void ConditionTable::set_quantity_type(::uint32_t value) {
+  _internal_set_quantity_type(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:ConditionTable.quantity_type)
+}
+inline ::uint32_t ConditionTable::_internal_quantity_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.quantity_type_;
+}
+inline void ConditionTable::_internal_set_quantity_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.quantity_type_ = value;
+}
+
+// uint32 target_count = 9;
+inline void ConditionTable::clear_target_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_count_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::uint32_t ConditionTable::target_count() const {
+  // @@protoc_insertion_point(field_get:ConditionTable.target_count)
+  return _internal_target_count();
+}
+inline void ConditionTable::set_target_count(::uint32_t value) {
+  _internal_set_target_count(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:ConditionTable.target_count)
+}
+inline ::uint32_t ConditionTable::_internal_target_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_count_;
+}
+inline void ConditionTable::_internal_set_target_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_count_ = value;
+}
+
 // uint32 comparison_op = 10;
 inline void ConditionTable::clear_comparison_op() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.comparison_op_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline ::uint32_t ConditionTable::comparison_op() const {
   // @@protoc_insertion_point(field_get:ConditionTable.comparison_op)
@@ -826,7 +934,7 @@ inline ::uint32_t ConditionTable::comparison_op() const {
 }
 inline void ConditionTable::set_comparison_op(::uint32_t value) {
   _internal_set_comparison_op(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:ConditionTable.comparison_op)
 }
 inline ::uint32_t ConditionTable::_internal_comparison_op() const {
