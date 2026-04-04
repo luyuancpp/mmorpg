@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"flag"
+	"fmt"
 	"login/internal/config"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/node"
@@ -157,7 +158,18 @@ func startServer(cfg config.Config, ctx *svc.ServiceContext) error {
 	defer server.Stop()
 
 	// Start the gRPC server
-	logx.Infof("Starting Login RPC server at %s...", cfg.ListenOn)
+	fmt.Println("\n=============================================================")
+	fmt.Println("  LOGIN SERVICE STARTED SUCCESSFULLY")
+	fmt.Println("=============================================================")
+	fmt.Printf("  Listen:      %s\n", cfg.ListenOn)
+	fmt.Printf("  Mode:        %s\n", cfg.Mode)
+	fmt.Printf("  zone_id:     %d\n", cfg.Node.ZoneId)
+	if len(cfg.Etcd.Hosts) > 0 {
+		fmt.Printf("  etcd:        %v\n", cfg.Etcd.Hosts)
+	}
+	fmt.Printf("  kafka:       %v\n", cfg.Kafka.Brokers)
+	fmt.Printf("  redis:       %s\n", cfg.Node.RedisClient.Host)
+	fmt.Println("=============================================================")
 	server.Start()
 
 	return nil

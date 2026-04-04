@@ -40,6 +40,15 @@ func main() {
 	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
-	fmt.Printf("Starting data service at %s...\n", c.ListenOn)
+	fmt.Println("\n=============================================================")
+	fmt.Println("  DATA_SERVICE STARTED SUCCESSFULLY")
+	fmt.Println("=============================================================")
+	fmt.Printf("  Listen:      %s\n", c.ListenOn)
+	fmt.Printf("  Mode:        %s\n", c.Mode)
+	if len(c.Etcd.Hosts) > 0 {
+		fmt.Printf("  etcd:        %v\n", c.Etcd.Hosts)
+	}
+	fmt.Printf("  redis:       %s\n", c.MappingRedis.Host)
+	fmt.Println("=============================================================")
 	s.Start()
 }

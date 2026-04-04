@@ -41,6 +41,16 @@ func main() {
 	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
-	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
+	fmt.Println("\n=============================================================")
+	fmt.Println("  SCENE_MANAGER SERVICE STARTED SUCCESSFULLY")
+	fmt.Println("=============================================================")
+	fmt.Printf("  Listen:      %s\n", c.ListenOn)
+	fmt.Printf("  Mode:        %s\n", c.Mode)
+	fmt.Printf("  zone_id:     %d\n", c.ZoneID)
+	if len(c.Etcd.Hosts) > 0 {
+		fmt.Printf("  etcd:        %v\n", c.Etcd.Hosts)
+	}
+	fmt.Printf("  kafka:       %v\n", c.Kafka.Brokers)
+	fmt.Println("=============================================================")
 	s.Start()
 }
