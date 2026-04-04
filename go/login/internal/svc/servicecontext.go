@@ -16,7 +16,7 @@ import (
 	"login/internal/kafka"
 	"login/internal/logic/pkg/node"
 	"login/internal/logic/pkg/taskmanager"
-	smpb "login/proto/scene_manager"
+	smpb "proto/scene_manager"
 	login_proto "proto/common/base"
 	kafkapb "proto/contracts/kafka"
 	plpb "proto/player_locator"

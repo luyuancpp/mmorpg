@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
@@ -12,6 +14,9 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
 
 	"robot/config"
 	"robot/generated/pb/game"
@@ -38,7 +43,7 @@ func main() {
 		zap.L().Fatal("load config", zap.Error(err))
 	}
 
-	host, portStr, tokenPayload, tokenSig, err := resolveGateAddr(cfg)
+	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
 	if err != nil {
 		zap.L().Fatal("resolve gate address", zap.Error(err))
 	}
@@ -48,7 +53,7 @@ func main() {
 
 	// Login-test mode: run the test suite and exit.
 	if cfg.Mode == "login-test" {
-		runLoginTests(host, port, cfg, stats, tokenPayload, tokenSig)
+		runLoginTestsLocal(host, port, cfg, stats, tokenPayload, tokenSig)
 		return
 	}
 
@@ -117,7 +122,7 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 	}
 
 	loginStart := time.Now()
-	if err := loginAndEnter(gc, cfg.Password, stats); err != nil {
+	if err := loginAndEnterLocal(gc, cfg.Password, stats); err != nil {
 		zap.L().Error("login flow failed", zap.String("account", account), zap.Error(err))
 		return
 	}
@@ -163,4 +168,164 @@ func initLogger() {
 		panic(err)
 	}
 	zap.ReplaceGlobals(logger)
+}
+
+type gateAssignmentLocal struct {
+	addr      string
+	payload   []byte
+	signature []byte
+}
+
+// resolveGateAddrLocal keeps main.go runnable as a single-file command.
+func resolveGateAddrLocal(cfg *config.Config) (host, port string, payload, signature []byte, err error) {
+	if cfg.LoginAddr != "" {
+		const maxRetries = 30
+		backoff := 2 * time.Second
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			result, assignErr := assignGateLocal(cfg.LoginAddr, 0)
+			if assignErr == nil {
+				h, p, splitErr := net.SplitHostPort(result.addr)
+				return h, p, result.payload, result.signature, splitErr
+			}
+			if attempt < maxRetries {
+				time.Sleep(backoff)
+				if backoff < 10*time.Second {
+					backoff = backoff * 3 / 2
+				}
+			}
+		}
+		if cfg.GateAddr == "" {
+			return "", "", nil, nil, fmt.Errorf("AssignGate failed after retries and no static gate_addr configured")
+		}
+	}
+	h, p, splitErr := net.SplitHostPort(cfg.GateAddr)
+	return h, p, nil, nil, splitErr
+}
+
+func assignGateLocal(loginAddr string, zoneId uint32) (*gateAssignmentLocal, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	conn, err := grpc.NewClient(loginAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("grpc dial %s: %w", loginAddr, err)
+	}
+	defer func() { _ = conn.Close() }()
+
+	resp, err := login.NewLoginPreGateClient(conn).AssignGate(ctx, &login.AssignGateRequest{ZoneId: zoneId})
+	if err != nil {
+		return nil, fmt.Errorf("AssignGate: %w", err)
+	}
+	if resp.Error != "" {
+		return nil, fmt.Errorf("AssignGate: %s", resp.Error)
+	}
+	if resp.Ip == "" || resp.Port == 0 {
+		return nil, fmt.Errorf("AssignGate returned empty address")
+	}
+
+	return &gateAssignmentLocal{
+		addr:      fmt.Sprintf("%s:%d", resp.Ip, resp.Port),
+		payload:   resp.TokenPayload,
+		signature: resp.TokenSignature,
+	}, nil
+}
+
+func runLoginTestsLocal(host string, port int, cfg *config.Config, stats *metrics.Stats, tokenPayload, tokenSig []byte) {
+	account := fmt.Sprintf(cfg.AccountFmt, 1)
+	gc, err := pkg.NewGameClient(host, port)
+	if err != nil {
+		zap.L().Error("login-test connect failed", zap.Error(err))
+		return
+	}
+	defer gc.Close()
+
+	gc.Account = account
+	time.Sleep(200 * time.Millisecond)
+	if len(tokenPayload) > 0 {
+		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
+			zap.L().Error("login-test gate token failed", zap.Error(err))
+			return
+		}
+	}
+
+	if err := loginAndEnterLocal(gc, cfg.Password, stats); err != nil {
+		zap.L().Error("login-test failed", zap.Error(err))
+		return
+	}
+
+	zap.L().Info("login-test passed", zap.String("account", account), zap.Uint64("player_id", gc.PlayerId))
+	_ = gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
+}
+
+func loginAndEnterLocal(gc *pkg.GameClient, password string, stats *metrics.Stats) error {
+	var lr login.LoginResponse
+	if err := sendAndRecvLocal(gc, stats,
+		game.ClientPlayerLoginLoginMessageId,
+		&login.LoginRequest{Account: gc.Account, Password: password},
+		&lr,
+	); err != nil {
+		stats.LoginFail()
+		return fmt.Errorf("login: %w", err)
+	}
+	if lr.ErrorMessage != nil {
+		stats.LoginFail()
+		return fmt.Errorf("login: server error %v", lr.ErrorMessage)
+	}
+
+	if len(lr.Players) == 0 {
+		var cr login.CreatePlayerResponse
+		if err := sendAndRecvLocal(gc, stats,
+			game.ClientPlayerLoginCreatePlayerMessageId,
+			&login.CreatePlayerRequest{},
+			&cr,
+		); err != nil {
+			stats.LoginFail()
+			return fmt.Errorf("create player: %w", err)
+		}
+		if cr.ErrorMessage != nil {
+			stats.LoginFail()
+			return fmt.Errorf("create player: server error %v", cr.ErrorMessage)
+		}
+		lr.Players = cr.Players
+	}
+	if len(lr.Players) == 0 {
+		stats.LoginFail()
+		return fmt.Errorf("no players after create")
+	}
+
+	playerId := lr.Players[0].GetPlayer().GetPlayerId()
+	var er login.EnterGameResponse
+	if err := sendAndRecvLocal(gc, stats,
+		game.ClientPlayerLoginEnterGameMessageId,
+		&login.EnterGameRequest{PlayerId: playerId},
+		&er,
+	); err != nil {
+		stats.EnterFail()
+		return fmt.Errorf("enter game: %w", err)
+	}
+	if er.ErrorMessage != nil {
+		stats.EnterFail()
+		return fmt.Errorf("enter game: server error %v", er.ErrorMessage)
+	}
+
+	gc.PlayerId = er.PlayerId
+	return nil
+}
+
+func sendAndRecvLocal(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, req, resp proto.Message) error {
+	if err := gc.SendRequest(msgId, req); err != nil {
+		return err
+	}
+	stats.MsgSent()
+
+	for {
+		raw, err := gc.RecvOne()
+		if err != nil {
+			return err
+		}
+		stats.MsgRecv()
+		if raw.MessageId == msgId {
+			return proto.Unmarshal(raw.SerializedMessage, resp)
+		}
+	}
 }

@@ -379,7 +379,8 @@
 			"command": "pwsh",
 			"args": [
 				"-NoProfile",
-				"-ExecutionPolicy", "Bypass",
+				"-ExecutionPolicy",
+				"Bypass",
 				"-Command",
 				"& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
 			],
@@ -407,7 +408,8 @@
 			"command": "pwsh",
 			"args": [
 				"-NoProfile",
-				"-ExecutionPolicy", "Bypass",
+				"-ExecutionPolicy",
+				"Bypass",
 				"-Command",
 				"& '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-stop; & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command go-svc-build; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/tools/scripts/dev_tools.ps1' -Command dev-start-exe -GateCount 2 -SceneCount 4 }"
 			],
