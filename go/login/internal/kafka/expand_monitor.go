@@ -65,14 +65,14 @@ func (m *ExpandMonitor) Start() {
 	logx.Infof("expand monitor started: topic=%s, checkInterval=%v, initialPartitionCount=%d",
 		m.topic, m.checkInterval, m.oldPartitionCount)
 
-	ticker := time.NewTicker(m.checkInterval)
-	defer ticker.Stop()
-
 	go func() {
+		ticker := time.NewTicker(m.checkInterval)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-m.ctx.Done():
-				logx.Info("expand monitor stopped: topic=%s", m.topic)
+				logx.Infof("expand monitor stopped: topic=%s", m.topic)
 				return
 			case <-ticker.C:
 				m.checkAndHandleExpand()

@@ -103,11 +103,6 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	payloadPool := sync.Pool{
-		New: func() interface{} {
-			return make([]byte, 0, 1024)
-		},
-	}
 
 	unavailableParts := make(map[int32]time.Time)
 	retryInterval := 10 * time.Second
@@ -121,9 +116,11 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 		cancel:                cancel,
 		consistent:            consistentHash,
 		closed:                false,
-		payloadPool:           payloadPool,
 		unavailablePartitions: unavailableParts,
 		retryInterval:         retryInterval,
+	}
+	kp.payloadPool.New = func() interface{} {
+		return make([]byte, 0, 1024)
 	}
 
 	go kp.syncPartitions(cfg.SyncInterval)
@@ -213,6 +210,7 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 			}
 		}
 
+		p.recycleMessages(msgs)
 		atomic.AddInt64(&p.successCount, int64(len(msgs)))
 		return nil
 	}
@@ -544,10 +542,10 @@ func isPartitionUnavailableErr(err error) bool {
 		errMsg := prodErr.Error()
 		if strings.Contains(errMsg, "partition") {
 			switch prodErr.Err {
-			case sarama.ErrUnknownTopicOrPartition:
-			case sarama.ErrLeaderNotAvailable:
-			case sarama.ErrOffsetNotAvailable:
-			case sarama.ErrReplicaNotAvailable:
+			case sarama.ErrUnknownTopicOrPartition,
+				sarama.ErrLeaderNotAvailable,
+				sarama.ErrOffsetNotAvailable,
+				sarama.ErrReplicaNotAvailable:
 				return true
 			}
 			return strings.Contains(errMsg, "unavailable")

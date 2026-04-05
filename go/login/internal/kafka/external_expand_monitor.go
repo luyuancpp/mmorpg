@@ -70,10 +70,10 @@ func (m *ExternalExpandMonitor) Start() {
 	logx.Infof("external expand monitor started | topic: %s | initialPartitions: %d | checkInterval: %v",
 		m.topic, m.lastPartCount, m.checkInterval)
 
-	ticker := time.NewTicker(m.checkInterval)
-	defer ticker.Stop()
-
 	go func() {
+		ticker := time.NewTicker(m.checkInterval)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-m.ctx.Done():

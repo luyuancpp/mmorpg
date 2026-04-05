@@ -235,6 +235,7 @@ void Node::InitRpcServer()
 	LOG_INFO << "Zone Redis address: " << zoneRedisAddress.toIpPort();
 	tlsRedis.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, zoneRedisAddress);
 	tlsRedis.GetZoneRedis()->connect();
+	tlsRedis.SetupReconnect(eventLoop, zoneRedisAddress);
 
 	LOG_DEBUG << "Node info: " << localNodeInfo.DebugString();
 }
@@ -403,8 +404,6 @@ void Node::StartRpcServer()
 		std::to_string(deployConfig.log_level()) + "\n"
 												   "=============================================================\n";
 	LOG_INFO << banner;
-	StdoutOutput(banner.c_str(), static_cast<int>(banner.size()));
-	std::fflush(stdout);
 
 	if (afterStartFn_)
 		afterStartFn_(*this);

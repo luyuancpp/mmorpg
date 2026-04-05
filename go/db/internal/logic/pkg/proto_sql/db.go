@@ -3,12 +3,13 @@ package proto_sql
 import (
 	"database/sql"
 	"db/internal/config"
-	_ "proto/common/database"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	_ "proto/common/database"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/luyuancpp/proto2mysql"
@@ -107,6 +108,7 @@ func openDB() error {
 
 	DB.DB.SetMaxOpenConns(config.AppConfig.ServerConfig.Database.MaxOpenConn)
 	DB.DB.SetMaxIdleConns(config.AppConfig.ServerConfig.Database.MaxIdleConn)
+	DB.DB.SetConnMaxLifetime(5 * time.Minute)
 
 	err = DB.SqlModel.OpenDB(DB.DB, mysqlConfig.DBName)
 	if err != nil {

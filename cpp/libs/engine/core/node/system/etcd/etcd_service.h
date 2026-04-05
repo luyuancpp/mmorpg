@@ -50,6 +50,7 @@ private:
     void InitWatchHandlers();
     void InitLeaseHandlers();
     void InitTxnHandlers();
+    void ScheduleWatchReconnect();
 private:
     bool hasSentWatch = false;
     bool hasSentRange = false;
@@ -62,4 +63,5 @@ private:
     TimerTaskComp grpcHandlerTimer;
     TimerTaskComp acquireNodeTimer;
 	TimerTaskComp acquirePortTimer;
+	TimerTaskComp watchReconnectTimer;
 };

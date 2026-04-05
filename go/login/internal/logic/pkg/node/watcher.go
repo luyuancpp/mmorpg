@@ -76,7 +76,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 					continue
 				}
 
-				logx.Infof("Event Type: %s, Key: %s, NodeInfo: %+v", ev.Type, key, info)
+				logx.Infof("Event Type: %s, Key: %s, NodeInfo: %+v", ev.Type, key, &info)
 
 				// Send event to channel
 				switch ev.Type {
@@ -93,7 +93,7 @@ func (nw *NodeWatcher) Watch(ctx context.Context) <-chan NodeEvent {
 }
 
 // Range retrieves all node data under the configured prefix.
-func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
+func (nw *NodeWatcher) Range() ([]*login_proto.NodeInfo, error) {
 	kv := namespace.NewKV(nw.client, nw.prefix)
 
 	// Timeout context to avoid blocking indefinitely
@@ -106,21 +106,21 @@ func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
 		return nil, err
 	}
 
-	var nodes []login_proto.NodeInfo
+	var nodes []*login_proto.NodeInfo
 	var wg sync.WaitGroup
 
 	// Parse nodes concurrently
-	nodeChan := make(chan login_proto.NodeInfo, len(resp.Kvs))
+	nodeChan := make(chan *login_proto.NodeInfo, len(resp.Kvs))
 
 	for _, kv := range resp.Kvs {
 		wg.Add(1)
 		go func(kv *mvccpb.KeyValue) {
 			defer wg.Done()
 
-			var nodeInfo login_proto.NodeInfo
+			nodeInfo := &login_proto.NodeInfo{}
 			logx.Debugf("Parsing node data: %s", string(kv.Value))
 
-			if err := protojson.Unmarshal(kv.Value, &nodeInfo); err != nil {
+			if err := protojson.Unmarshal(kv.Value, nodeInfo); err != nil {
 				logx.Errorf("Invalid NodeInfo JSON for key=%s: %v", string(kv.Key), err)
 				return
 			}
@@ -144,7 +144,7 @@ func (nw *NodeWatcher) Range() ([]login_proto.NodeInfo, error) {
 }
 
 // FetchAllNodes retrieves all registered node info.
-func (nw *NodeWatcher) FetchAllNodes() ([]login_proto.NodeInfo, error) {
+func (nw *NodeWatcher) FetchAllNodes() ([]*login_proto.NodeInfo, error) {
 	nodes, err := nw.Range()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch nodes: %v", err)
