@@ -77,7 +77,9 @@ public:
 	using EventCallback = std::function<void(MessageKey, MessageValue&)>;
 	using EventCallbackWithExtra = std::function<void(MessageKey, MessageValue&, const std::any&)>;
 
-	explicit MessageAsyncClient(hiredis::Hiredis& hiredis)
+	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
+
+	explicit MessageAsyncClient(HiredisPtr& hiredis)
 		: hiredis_(hiredis)
 	{
 	}
@@ -91,6 +93,12 @@ public:
 
 	void Save(const MessageValuePtr& message, const MessageKey& key)
 	{
+		if (!hiredis_ || !hiredis_->connected())
+		{
+			LOG_WARN << "Redis not connected, dropping Save for key " << key;
+			return;
+		}
+
 		ElementPtr element = std::make_shared<Element>();
 		element->message_key = key;
 		element->redis_key = full_name() + ":" + std::to_string(key);
@@ -105,7 +113,7 @@ public:
 		}
 
 		// Atomically SET and SADD via Lua script
-		hiredis_.command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
+		hiredis_->command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
 			"EVAL %s 1 %b %b",
 			kSaveAndMarkLuaScript,
 			element->redis_key.c_str(), element->redis_key.length(),
@@ -115,6 +123,12 @@ public:
 
 	void AsyncLoad(const MessageKey& key, std::any extra_data = {})
 	{
+		if (!hiredis_ || !hiredis_->connected())
+		{
+			LOG_WARN << "Redis not connected, dropping AsyncLoad for key " << key;
+			return;
+		}
+
 		std::string redis_key = full_name() + ":" + std::to_string(key);
 		if (loading_queue_.find(redis_key) != loading_queue_.end())
 		{
@@ -129,7 +143,7 @@ public:
 		loading_queue_.emplace(redis_key, element);
 
 		const std::string format = "GET " + redis_key;
-		hiredis_.command(std::bind(&MessageAsyncClient::OnLoaded, this, std::placeholders::_1, std::placeholders::_2, element),
+		hiredis_->command(std::bind(&MessageAsyncClient::OnLoaded, this, std::placeholders::_1, std::placeholders::_2, element),
 			format.c_str());
 	}
 
@@ -193,7 +207,7 @@ private:
 
 
 private:
-	hiredis::Hiredis& hiredis_;
+	HiredisPtr& hiredis_;
 	LoadingQueue loading_queue_;
 	EventCallback save_callback_;
 	EventCallback load_callback_;

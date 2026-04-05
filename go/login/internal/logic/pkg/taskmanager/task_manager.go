@@ -469,7 +469,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 			if err != nil {
 				batchErr = fmt.Errorf("aggregation failed: taskKey=%s, aggregatorKey=%s, err=%w", taskKey, aggregator.ParentKey(), err)
 				allSuccess = false
-				logx.Errorf(batchErr.Error())
+				logx.Error(batchErr)
 				continue
 			}
 
@@ -483,7 +483,7 @@ func (tm *TaskManager) ProcessBatch(taskKey string, redisClient redis.Cmdable) {
 			); err != nil {
 				batchErr = fmt.Errorf("aggregated result caching failed: taskKey=%s, aggregatorKey=%s, err=%w", taskKey, aggregator.ParentKey(), err)
 				allSuccess = false
-				logx.Errorf(batchErr.Error())
+				logx.Error(batchErr)
 				continue
 			}
 

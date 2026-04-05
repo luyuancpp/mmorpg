@@ -90,14 +90,14 @@ func (n *Node) Close() error {
 	key := BuildRpcPath(GetRpcPrefix(n.Info.NodeType), n.Info.ZoneId, n.Info.NodeType, n.Info.NodeId)
 	_, err := n.Client.Delete(context.Background(), key)
 	if err != nil {
-		logx.Error("Failed to delete node key from etcd: %v", err)
+		logx.Errorf("Failed to delete node key from etcd: %v", err)
 		return fmt.Errorf("failed to delete node key: %v", err)
 	}
 
 	// Revoke the lease
 	err = n.reg.RevokeLease()
 	if err != nil {
-		logx.Error("Failed to revoke lease: %v", err)
+		logx.Errorf("Failed to revoke lease: %v", err)
 		return fmt.Errorf("failed to revoke lease: %v", err)
 	}
 

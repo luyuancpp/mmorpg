@@ -223,8 +223,18 @@ void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse& response) {
 	}
 
 	if (response.canceled()) {
-		LOG_INFO << "Watch canceled: " << response.cancel_reason();
+		LOG_WARN << "Watch canceled: " << response.cancel_reason() << ", will re-establish watches";
+		ScheduleWatchReconnect();
 		return;
+	}
+
+	// Track revision for reconnect
+	if (response.header().revision() > 0) {
+		for (auto& [prefix, rev] : revision) {
+			if (response.header().revision() + 1 > rev) {
+				rev = response.header().revision() + 1;
+			}
+		}
 	}
 
 	for (const auto& event : response.events()) {
@@ -235,6 +245,14 @@ void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse& response) {
 			HandleDeleteEvent(event.kv().key(), event.prev_kv().value());
 		}
 	}
+}
+
+void EtcdService::ScheduleWatchReconnect() {
+	static constexpr double kWatchReconnectDelaySec = 2.0;
+	watchReconnectTimer.RunAfter(kWatchReconnectDelaySec, [this] {
+		LOG_INFO << "Re-establishing etcd watches after stream break";
+		StartWatchingPrefixes();
+	});
 }
 
 void EtcdService::RequestNodeLease() {
@@ -261,6 +279,7 @@ void EtcdService::Shutdown() {
 	grpcHandlerTimer.Cancel();
 	acquireNodeTimer.Cancel();
 	acquirePortTimer.Cancel();
+	watchReconnectTimer.Cancel();
 	leaseRequestInFlight_ = false;
 	SetRegistrationMode(RegistrationMode::kInitialBoot, "service shutdown");
 

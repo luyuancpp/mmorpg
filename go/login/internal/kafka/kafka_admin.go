@@ -64,12 +64,11 @@ func (a *KafkaAdmin) ExpandPartitions(ctx context.Context, targetTotalPartitions
 	logx.Infof("start active expand: topic=%s, current=%d, target=%d",
 		a.topic, currentPartitionCount, targetTotalPartitions)
 
-	partitionCountToAdd := targetTotalPartitions - currentPartitionCount
-	err = a.adminClient.CreatePartitions(a.topic, partitionCountToAdd, nil, false)
+	err = a.adminClient.CreatePartitions(a.topic, targetTotalPartitions, nil, false)
 	if err != nil {
-		return fmt.Errorf("create partitions failed: addCount=%d, err=%w", partitionCountToAdd, err)
+		return fmt.Errorf("create partitions failed: target=%d, err=%w", targetTotalPartitions, err)
 	}
-	logx.Infof("create partitions success: topic=%s, addCount=%d", a.topic, partitionCountToAdd)
+	logx.Infof("create partitions success: topic=%s, newTotal=%d", a.topic, targetTotalPartitions)
 
 	if err := kafkautil.SetExpandStatus(ctx, a.redisClient, a.topic, kafkautil.ExpandStatusExpanding, targetTotalPartitions); err != nil {
 		return fmt.Errorf("set expanding status failed: err=%w", err)
