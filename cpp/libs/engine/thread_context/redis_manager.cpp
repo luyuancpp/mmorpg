@@ -5,7 +5,7 @@
 
 thread_local RedisManager tlsRedis;
 
-void RedisManager::SetupReconnect(muduo::net::EventLoop* loop, const muduo::net::InetAddress& addr)
+void RedisManager::SetupReconnect(muduo::net::EventLoop *loop, const muduo::net::InetAddress &addr)
 {
 	loop_ = loop;
 	redisAddr_ = addr;
@@ -15,18 +15,29 @@ void RedisManager::SetupReconnect(muduo::net::EventLoop* loop, const muduo::net:
 		return;
 	}
 
-	zoneRedis_->setDisconnectCallback([this](hiredis::Hiredis*, int status) {
+	zoneRedis_->setDisconnectCallback([this](hiredis::Hiredis *, int status)
+									  {
 		LOG_ERROR << "Redis disconnected (status=" << status << "), scheduling reconnect to "
 				  << redisAddr_.toIpPort();
-		ScheduleReconnect();
-	});
+		ScheduleReconnect(); });
 }
 
 void RedisManager::ScheduleReconnect()
 {
 	static constexpr double kReconnectIntervalSec = 3.0;
-	reconnectTimer_.Cancel();
-	reconnectTimer_.RunEvery(kReconnectIntervalSec, [this] { DoReconnect(); });
+	CancelReconnectTimer();
+	reconnectTimerId_ = loop_->runEvery(kReconnectIntervalSec, [this]
+										{ DoReconnect(); });
+	reconnectTimerActive_ = true;
+}
+
+void RedisManager::CancelReconnectTimer()
+{
+	if (reconnectTimerActive_)
+	{
+		loop_->cancel(reconnectTimerId_);
+		reconnectTimerActive_ = false;
+	}
 }
 
 void RedisManager::DoReconnect()
@@ -39,23 +50,22 @@ void RedisManager::DoReconnect()
 	// Create a new Hiredis and connect
 	zoneRedis_ = std::make_unique<HiredisPtr::element_type>(loop_, redisAddr_);
 
-	zoneRedis_->setConnectCallback([this](hiredis::Hiredis*, int status) {
+	zoneRedis_->setConnectCallback([this](hiredis::Hiredis *, int status)
+								   {
 		if (status == REDIS_OK)
 		{
 			LOG_INFO << "Redis reconnected successfully to " << redisAddr_.toIpPort();
-			reconnectTimer_.Cancel();
+			CancelReconnectTimer();
 		}
 		else
 		{
 			LOG_WARN << "Redis reconnect attempt failed (status=" << status << "), will retry";
-		}
-	});
+		} });
 
-	zoneRedis_->setDisconnectCallback([this](hiredis::Hiredis*, int status) {
+	zoneRedis_->setDisconnectCallback([this](hiredis::Hiredis *, int status)
+									  {
 		LOG_ERROR << "Redis disconnected again (status=" << status << "), scheduling reconnect";
-		ScheduleReconnect();
-	});
+		ScheduleReconnect(); });
 
 	zoneRedis_->connect();
 }
-

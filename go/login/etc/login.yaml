@@ -69,6 +69,8 @@ PlayerLocatorRpc:
       - 127.0.0.1:2379
     Key: playerlocator.rpc
   Timeout: 5000
+  Middlewares:
+    Breaker: false
 
 # SceneManager gRPC client (discovered via etcd)
 SceneManagerRpc:
@@ -77,6 +79,8 @@ SceneManagerRpc:
       - 127.0.0.1:2379
     Key: scenemanagerservice.rpc
   Timeout: 5000
+  Middlewares:
+    Breaker: false
 
 # Shared HMAC secret for Gate connection tokens.
 # Login signs tokens with this secret; Gate verifies them.

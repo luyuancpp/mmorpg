@@ -44,9 +44,10 @@ func NewServiceContext() *ServiceContext {
 	redisDB := int(config.AppConfig.Node.RedisClient.DB)
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     redisHost,
-		Password: redisPassword,
-		DB:       redisDB,
+		Addr:            redisHost,
+		Password:        redisPassword,
+		DB:              redisDB,
+		DisableIndentity: true, // suppress CLIENT SETINFO on Redis < 7.2
 	})
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {

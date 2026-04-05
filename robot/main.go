@@ -100,11 +100,43 @@ func main() {
 
 // runRobot is the full lifecycle for one robot (one goroutine).
 func runRobot(host string, port int, account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, tokenPayload, tokenSig []byte) {
+	const maxRetries = 5
+	backoff := 3 * time.Second
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		select {
+		case <-stop:
+			return
+		default:
+		}
+
+		if attempt > 1 {
+			zap.L().Info("retrying login", zap.String("account", account), zap.Int("attempt", attempt), zap.Duration("backoff", backoff))
+			select {
+			case <-stop:
+				return
+			case <-time.After(backoff):
+			}
+			backoff = backoff * 2
+			if backoff > 30*time.Second {
+				backoff = 30 * time.Second
+			}
+		}
+
+		if runRobotOnce(host, port, account, cfg, stats, stop, tokenPayload, tokenSig) {
+			return // played successfully (or stop signal)
+		}
+	}
+	zap.L().Error("robot gave up after retries", zap.String("account", account), zap.Int("maxRetries", maxRetries))
+}
+
+// runRobotOnce attempts a single connect→login→play cycle. Returns true if it should not retry.
+func runRobotOnce(host string, port int, account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, tokenPayload, tokenSig []byte) bool {
 	gc, err := pkg.NewGameClient(host, port)
 	if err != nil {
 		zap.L().Error("connect failed", zap.String("account", account), zap.Error(err))
 		stats.LoginFail()
-		return
+		return false // retry
 	}
 	defer gc.Close()
 	stats.Connected()
@@ -117,14 +149,14 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
 			zap.L().Error("gate token failed", zap.String("account", account), zap.Error(err))
 			stats.LoginFail()
-			return
+			return false
 		}
 	}
 
 	loginStart := time.Now()
 	if err := loginAndEnterLocal(gc, cfg.Password, stats); err != nil {
 		zap.L().Error("login flow failed", zap.String("account", account), zap.Error(err))
-		return
+		return false
 	}
 	stats.LoginOK(time.Since(loginStart))
 	stats.EnterOK()
@@ -152,11 +184,12 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 
 	gc.RecvLoop(func(client *pkg.GameClient, msg *base.MessageContent) {
 		stats.MsgRecv()
-		handler.HandleMessage(client, msg)
+		handler.MessageBodyHandler(client, msg)
 	})
 
 	// Graceful shutdown: send LeaveGame so server cleans up session.
 	_ = gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
+	return true
 }
 
 func initLogger() {
