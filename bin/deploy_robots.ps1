@@ -2,6 +2,7 @@
 # Uses hostNetwork + ConfigMap for config
 
 param(
+    [int]$StartZone = 1,
     [int]$Zones = 10,
     [int]$Batches = 10,
     [int]$RobotsPerBatch = 1000,
@@ -15,7 +16,7 @@ New-Item -ItemType Directory -Path $tmpDir | Out-Null
 
 $totalJobs = 0
 
-foreach ($z in 1..$Zones) {
+foreach ($z in $StartZone..$Zones) {
     $ns = "mmorpg-zone-zone-$z"
     $loginAddr = "login.${ns}.svc.cluster.local:50000"
 
@@ -82,11 +83,11 @@ spec:
           mountPath: /app/etc
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "50m"
+            memory: "32Mi"
+            cpu: "10m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "200m"
 "@
 
         $jobFile = Join-Path $tmpDir "${name}-job.yaml"
@@ -100,4 +101,5 @@ spec:
 
 # Cleanup temp files
 Remove-Item $tmpDir -Recurse -Force
-Write-Host "=== Deployed $totalJobs robot jobs ($Zones zones x $Batches batches x $RobotsPerBatch robots) ==="
+$deployedZones = $Zones - $StartZone + 1
+Write-Host "=== Deployed $totalJobs robot jobs ($deployedZones zones x $Batches batches x $RobotsPerBatch robots) ==="

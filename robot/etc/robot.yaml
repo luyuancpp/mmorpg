@@ -2,7 +2,7 @@
 # If login_addr is set, robot calls GetGateList to auto-select the least-loaded gate.
 # If login_addr is empty, falls back to gate_addr (hardcoded).
 login_addr: "127.0.0.1:50000"
-gate_addr: "127.0.0.1:10000"
+gate_addr: "127.0.0.1:10003"
 robot_count: 10
 account_fmt: "robot_%04d"
 password: "123456"

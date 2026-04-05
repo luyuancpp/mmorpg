@@ -29,7 +29,7 @@ void ServiceDiscoveryManager::FetchServiceNodes() {
 }
 
 void ServiceDiscoveryManager::AddServiceNode(const std::string& nodeJson, uint32_t nodeType) {
-	LOG_INFO << "Add service node type " << nodeType << " JSON: " << nodeJson;
+	LOG_TRACE << "Add service node type " << nodeType << " JSON: " << nodeJson;
 
 	if (!eNodeType_IsValid(static_cast<int32_t>(nodeType))) {
 		LOG_ERROR << "Invalid node type: " << nodeType;
