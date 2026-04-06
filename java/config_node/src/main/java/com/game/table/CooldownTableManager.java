@@ -27,10 +27,15 @@ public class CooldownTableManager {
         return INSTANCE;
     }
 
-    public void load(String configDir) throws Exception {
-        String json = Files.readString(Path.of(configDir, "cooldown.json"));
+    public void load(String configDir, boolean useBinary) throws Exception {
         CooldownTableData.Builder builder = CooldownTableData.newBuilder();
-        JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        if (useBinary) {
+            byte[] raw = Files.readAllBytes(Path.of(configDir, "cooldown.pb"));
+            builder.mergeFrom(raw);
+        } else {
+            String json = Files.readString(Path.of(configDir, "cooldown.json"));
+            JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        }
         this.data = builder.build();
 
         for (CooldownTable row : data.getDataList()) {

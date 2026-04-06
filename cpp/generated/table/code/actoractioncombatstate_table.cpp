@@ -5,21 +5,29 @@
 #include "table/code/actoractioncombatstate_table.h"
 
 std::string GetConfigDir();
+bool UseProtoBinaryTables();
 
 void ActorActionCombatStateTableManager::Load() {
     data_.Clear();
 
-    std::string path = GetConfigDir() + "actoractioncombatstate.json";
-    const auto contents = File2String(path);
-    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
-        LOG_FATAL << "ActorActionCombatState" << result.message().data();
+    if (UseProtoBinaryTables()) {
+        const std::string path = GetConfigDir() + "actoractioncombatstate.pb";
+        const auto contents = File2String(path);
+        if (!data_.ParseFromString(contents)) {
+            LOG_FATAL << "ActorActionCombatState binary parse failed: " << path;
+        }
+    } else {
+        const std::string path = GetConfigDir() + "actoractioncombatstate.json";
+        const auto contents = File2String(path);
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+            LOG_FATAL << "ActorActionCombatState" << result.message().data();
+        }
     }
 
     for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-
 }
 
 std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateTableManager::GetTable(const uint32_t tableId) {
@@ -38,4 +46,3 @@ std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateTa
     }
     return {it->second, kSuccess};
 }
-

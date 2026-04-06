@@ -5,14 +5,23 @@
 #include "table/code/testmultikey_table.h"
 
 std::string GetConfigDir();
+bool UseProtoBinaryTables();
 
 void TestMultiKeyTableManager::Load() {
     data_.Clear();
 
-    std::string path = GetConfigDir() + "testmultikey.json";
-    const auto contents = File2String(path);
-    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
-        LOG_FATAL << "TestMultiKey" << result.message().data();
+    if (UseProtoBinaryTables()) {
+        const std::string path = GetConfigDir() + "testmultikey.pb";
+        const auto contents = File2String(path);
+        if (!data_.ParseFromString(contents)) {
+            LOG_FATAL << "TestMultiKey binary parse failed: " << path;
+        }
+    } else {
+        const std::string path = GetConfigDir() + "testmultikey.json";
+        const auto contents = File2String(path);
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+            LOG_FATAL << "TestMultiKey" << result.message().data();
+        }
     }
 
     for (int32_t i = 0; i < data_.data_size(); ++i) {
@@ -28,7 +37,6 @@ void TestMultiKeyTableManager::Load() {
             idx_effect_.emplace(elem, &row_data);
         }
     }
-
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::GetTable(const uint32_t tableId) {
@@ -101,4 +109,3 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::GetByM_i
     }
     return {it->second, kSuccess};
 }
-

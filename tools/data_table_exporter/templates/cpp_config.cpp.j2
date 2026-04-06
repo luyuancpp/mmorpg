@@ -37,12 +37,13 @@ void {{ sheetname }}TableManager::Load() {
 {%- endfor %}
     }
 {% for col in table.expression_columns if col.expression_params %}
+
     expression_{{ col.name }}_.Init({
 {%- for p in col.expression_params %}
         "{{ p }}"{% if not loop.last %}, {% endif %}
 {%- endfor %}
     });
-{% endfor %}
+{% endfor -%}
 }
 
 std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetTable(const uint32_t tableId) {

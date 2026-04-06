@@ -5,14 +5,23 @@
 #include "table/code/test_table.h"
 
 std::string GetConfigDir();
+bool UseProtoBinaryTables();
 
 void TestTableManager::Load() {
     data_.Clear();
 
-    std::string path = GetConfigDir() + "test.json";
-    const auto contents = File2String(path);
-    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
-        LOG_FATAL << "Test" << result.message().data();
+    if (UseProtoBinaryTables()) {
+        const std::string path = GetConfigDir() + "test.pb";
+        const auto contents = File2String(path);
+        if (!data_.ParseFromString(contents)) {
+            LOG_FATAL << "Test binary parse failed: " << path;
+        }
+    } else {
+        const std::string path = GetConfigDir() + "test.json";
+        const auto contents = File2String(path);
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+            LOG_FATAL << "Test" << result.message().data();
+        }
     }
 
     for (int32_t i = 0; i < data_.data_size(); ++i) {
@@ -22,7 +31,6 @@ void TestTableManager::Load() {
             idx_effect_.emplace(elem, &row_data);
         }
     }
-
 }
 
 std::pair<const TestTable*, uint32_t> TestTableManager::GetTable(const uint32_t tableId) {
@@ -41,4 +49,3 @@ std::pair<const TestTable*, uint32_t> TestTableManager::GetTableWithoutErrorLogg
     }
     return {it->second, kSuccess};
 }
-

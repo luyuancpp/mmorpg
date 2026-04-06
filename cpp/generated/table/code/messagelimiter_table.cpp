@@ -5,21 +5,29 @@
 #include "table/code/messagelimiter_table.h"
 
 std::string GetConfigDir();
+bool UseProtoBinaryTables();
 
 void MessageLimiterTableManager::Load() {
     data_.Clear();
 
-    std::string path = GetConfigDir() + "messagelimiter.json";
-    const auto contents = File2String(path);
-    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
-        LOG_FATAL << "MessageLimiter" << result.message().data();
+    if (UseProtoBinaryTables()) {
+        const std::string path = GetConfigDir() + "messagelimiter.pb";
+        const auto contents = File2String(path);
+        if (!data_.ParseFromString(contents)) {
+            LOG_FATAL << "MessageLimiter binary parse failed: " << path;
+        }
+    } else {
+        const std::string path = GetConfigDir() + "messagelimiter.json";
+        const auto contents = File2String(path);
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+            LOG_FATAL << "MessageLimiter" << result.message().data();
+        }
     }
 
     for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-
 }
 
 std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterTableManager::GetTable(const uint32_t tableId) {
@@ -38,4 +46,3 @@ std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterTableManager::GetT
     }
     return {it->second, kSuccess};
 }
-

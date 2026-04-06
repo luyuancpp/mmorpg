@@ -5,21 +5,29 @@
 #include "table/code/reward_table.h"
 
 std::string GetConfigDir();
+bool UseProtoBinaryTables();
 
 void RewardTableManager::Load() {
     data_.Clear();
 
-    std::string path = GetConfigDir() + "reward.json";
-    const auto contents = File2String(path);
-    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
-        LOG_FATAL << "Reward" << result.message().data();
+    if (UseProtoBinaryTables()) {
+        const std::string path = GetConfigDir() + "reward.pb";
+        const auto contents = File2String(path);
+        if (!data_.ParseFromString(contents)) {
+            LOG_FATAL << "Reward binary parse failed: " << path;
+        }
+    } else {
+        const std::string path = GetConfigDir() + "reward.json";
+        const auto contents = File2String(path);
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+            LOG_FATAL << "Reward" << result.message().data();
+        }
     }
 
     for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-
 }
 
 std::pair<const RewardTable*, uint32_t> RewardTableManager::GetTable(const uint32_t tableId) {
@@ -38,4 +46,3 @@ std::pair<const RewardTable*, uint32_t> RewardTableManager::GetTableWithoutError
     }
     return {it->second, kSuccess};
 }
-

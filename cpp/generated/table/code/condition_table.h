@@ -31,36 +31,19 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-
-
-
-
-
-
     const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition1Index() const { return idx_condition1_; }
-
     const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition2Index() const { return idx_condition2_; }
-
     const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition3Index() const { return idx_condition3_; }
-
     const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition4Index() const { return idx_condition4_; }
-
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
     ConditionTableData data_;
     KeyValueDataType kv_data_;
-
-
-
     std::unordered_multimap<uint32_t, const ConditionTable*> idx_condition1_;
-
     std::unordered_multimap<uint32_t, const ConditionTable*> idx_condition2_;
-
     std::unordered_multimap<uint32_t, const ConditionTable*> idx_condition3_;
-
     std::unordered_multimap<uint32_t, const ConditionTable*> idx_condition4_;
-
 };
 
 inline const ConditionTableData& GetConditionAllTable() {

@@ -5,21 +5,29 @@
 #include "table/code/cooldown_table.h"
 
 std::string GetConfigDir();
+bool UseProtoBinaryTables();
 
 void CooldownTableManager::Load() {
     data_.Clear();
 
-    std::string path = GetConfigDir() + "cooldown.json";
-    const auto contents = File2String(path);
-    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
-        LOG_FATAL << "Cooldown" << result.message().data();
+    if (UseProtoBinaryTables()) {
+        const std::string path = GetConfigDir() + "cooldown.pb";
+        const auto contents = File2String(path);
+        if (!data_.ParseFromString(contents)) {
+            LOG_FATAL << "Cooldown binary parse failed: " << path;
+        }
+    } else {
+        const std::string path = GetConfigDir() + "cooldown.json";
+        const auto contents = File2String(path);
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+            LOG_FATAL << "Cooldown" << result.message().data();
+        }
     }
 
     for (int32_t i = 0; i < data_.data_size(); ++i) {
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
     }
-
 }
 
 std::pair<const CooldownTable*, uint32_t> CooldownTableManager::GetTable(const uint32_t tableId) {
@@ -38,4 +46,3 @@ std::pair<const CooldownTable*, uint32_t> CooldownTableManager::GetTableWithoutE
     }
     return {it->second, kSuccess};
 }
-

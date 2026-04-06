@@ -27,10 +27,15 @@ public class ActorActionCombatStateTableManager {
         return INSTANCE;
     }
 
-    public void load(String configDir) throws Exception {
-        String json = Files.readString(Path.of(configDir, "actoractioncombatstate.json"));
+    public void load(String configDir, boolean useBinary) throws Exception {
         ActorActionCombatStateTableData.Builder builder = ActorActionCombatStateTableData.newBuilder();
-        JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        if (useBinary) {
+            byte[] raw = Files.readAllBytes(Path.of(configDir, "actoractioncombatstate.pb"));
+            builder.mergeFrom(raw);
+        } else {
+            String json = Files.readString(Path.of(configDir, "actoractioncombatstate.json"));
+            JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        }
         this.data = builder.build();
 
         for (ActorActionCombatStateTable row : data.getDataList()) {
