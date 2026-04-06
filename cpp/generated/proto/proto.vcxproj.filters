@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="源文件">
@@ -51,7 +51,7 @@
     <ClCompile Include="common\base\empty.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="common\base\game_rpc.pb.cc">
+    <ClCompile Include="common\base\rpc_message.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common\base\message.pb.cc">
@@ -84,13 +84,13 @@
     <ClCompile Include="common\component\buff_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="common\component\comp.pb.cc">
+    <ClCompile Include="common\component\base_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common\component\frame_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="common\component\game_node_comp.pb.cc">
+    <ClCompile Include="common\component\node_player_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common\component\item_base_comp.pb.cc">
@@ -213,16 +213,16 @@
     <ClCompile Include="scene_manager\scene_manager_service.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="scene\game_client_player.pb.cc">
+    <ClCompile Include="scene\client_player_common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="scene\game_player.pb.cc">
+    <ClCompile Include="scene\player_lifecycle.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="scene\game_player_scene.pb.cc">
+    <ClCompile Include="scene\s2s_player_scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="scene\game_scene.pb.cc">
+    <ClCompile Include="scene\scene_admin.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="scene\player_scene.pb.cc">
@@ -341,7 +341,7 @@
     <ClInclude Include="common\base\empty.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="common\base\game_rpc.pb.h">
+    <ClInclude Include="common\base\rpc_message.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\base\message.pb.h">
@@ -371,13 +371,13 @@
     <ClInclude Include="common\component\buff_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="common\component\comp.pb.h">
+    <ClInclude Include="common\component\base_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\component\frame_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="common\component\game_node_comp.pb.h">
+    <ClInclude Include="common\component\node_player_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\component\item_base_comp.pb.h">
@@ -500,16 +500,16 @@
     <ClInclude Include="scene_manager\scene_manager_service.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="scene\game_client_player.pb.h">
+    <ClInclude Include="scene\client_player_common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="scene\game_player.pb.h">
+    <ClInclude Include="scene\player_lifecycle.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="scene\game_player_scene.pb.h">
+    <ClInclude Include="scene\s2s_player_scene.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="scene\game_scene.pb.h">
+    <ClInclude Include="scene\scene_admin.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="scene\player_scene.pb.h">

@@ -38,10 +38,10 @@
     <ClInclude Include="service_metadata\db_service_metadata.h" />
     <ClInclude Include="service_metadata\etcd_service_metadata.h" />
     <ClInclude Include="service_metadata\friend_service_metadata.h" />
-    <ClInclude Include="service_metadata\game_client_player_service_metadata.h" />
-    <ClInclude Include="service_metadata\game_player_scene_service_metadata.h" />
-    <ClInclude Include="service_metadata\game_player_service_metadata.h" />
-    <ClInclude Include="service_metadata\game_scene_service_metadata.h" />
+    <ClInclude Include="service_metadata\client_player_common_service_metadata.h" />
+    <ClInclude Include="service_metadata\s2s_player_scene_service_metadata.h" />
+    <ClInclude Include="service_metadata\player_lifecycle_service_metadata.h" />
+    <ClInclude Include="service_metadata\scene_admin_service_metadata.h" />
     <ClInclude Include="service_metadata\guild_service_metadata.h" />
     <ClInclude Include="service_metadata\player_currency_service_metadata.h" />
     <ClInclude Include="service_metadata\player_rollback_service_metadata.h" />

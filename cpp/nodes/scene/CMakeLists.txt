@@ -57,13 +57,13 @@ set(SOURCE_FILES
     handler/event/scene_event_handler.cpp
     handler/event/server_event_handler.cpp
     handler/event/skill_event_handler.cpp
-    handler/rpc/game_scene_handler.cpp
+    handler/rpc/scene_admin_handler.cpp
     handler/rpc/player/player_currency_handler.cpp
     handler/rpc/player/player_rollback_handler.cpp
     handler/rpc/scene_handler.cpp
-    handler/rpc/player/game_client_player_handler.cpp
-    handler/rpc/player/game_player_handler.cpp
-    handler/rpc/player/game_player_scene_handler.cpp
+    handler/rpc/player/client_player_common_handler.cpp
+    handler/rpc/player/player_lifecycle_handler.cpp
+    handler/rpc/player/s2s_player_scene_handler.cpp
     handler/rpc/player/player_scene_handler.cpp
     handler/rpc/player/player_service_interface.cpp
     handler/rpc/player/player_skill_handler.cpp
@@ -71,8 +71,8 @@ set(SOURCE_FILES
     handler/rpc/register_handler.cpp
     main.cpp
     rpc_replies/gate_service_response_handler.cpp
-    rpc_replies/player/game_player_response_handler.cpp
-    rpc_replies/player/game_player_scene_response_handler.cpp
+    rpc_replies/player/player_lifecycle_response_handler.cpp
+    rpc_replies/player/s2s_player_scene_response_handler.cpp
     rpc_replies/player/player_currency_response_handler.cpp
     rpc_replies/player/player_rollback_response_handler.cpp
     rpc_replies/player/player_rpc_response_handler.cpp

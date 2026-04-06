@@ -439,34 +439,34 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'proto/common/component/actor_comp.prot"
-    "o\032!proto/common/component/comp.proto\"+\n\010"
-    "Location\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001("
-    "\001\"+\n\010Rotation\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z"
-    "\030\003 \001(\001\"(\n\005Scale\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n"
-    "\001z\030\003 \001(\001\"[\n\tTransform\022\032\n\010location\030\001 \001(\0132"
-    "\010.Vector3\022\033\n\010rotation\030\002 \001(\0132\t.Rotation\022\025"
-    "\n\005scale\030\003 \001(\0132\006.Scale\"+\n\010Velocity\022\t\n\001x\030\001"
-    " \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Accelerati"
-    "on\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"\034\n\nV"
-    "iewRadius\022\016\n\006radius\030\001 \001(\001\"\214\001\n\022BaseAttrib"
-    "utesComp\022\020\n\010strength\030\001 \001(\004\022\017\n\007stamina\030\002 "
-    "\001(\004\022\016\n\006health\030\003 \001(\004\022\014\n\004mana\030\004 \001(\004\022\022\n\ncri"
-    "tchance\030\005 \001(\004\022\r\n\005armor\030\006 \001(\004\022\022\n\nresistan"
-    "ce\030\007 \001(\004\"\032\n\tLevelComp\022\r\n\005level\030\001 \001(\r\"v\n\016"
-    "ActorStateComp\0222\n\nstate_list\030\001 \003(\0132\036.Act"
-    "orStateComp.StateListEntry\0320\n\016StateListE"
-    "ntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001B\022Z\020"
-    "common/componentb\006proto3"
+    "o\032&proto/common/component/base_comp.prot"
+    "o\"+\n\010Location\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z"
+    "\030\003 \001(\001\"+\n\010Rotation\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001"
+    "\022\t\n\001z\030\003 \001(\001\"(\n\005Scale\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001"
+    "(\001\022\t\n\001z\030\003 \001(\001\"[\n\tTransform\022\032\n\010location\030\001"
+    " \001(\0132\010.Vector3\022\033\n\010rotation\030\002 \001(\0132\t.Rotat"
+    "ion\022\025\n\005scale\030\003 \001(\0132\006.Scale\"+\n\010Velocity\022\t"
+    "\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Accel"
+    "eration\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001"
+    "\"\034\n\nViewRadius\022\016\n\006radius\030\001 \001(\001\"\214\001\n\022BaseA"
+    "ttributesComp\022\020\n\010strength\030\001 \001(\004\022\017\n\007stami"
+    "na\030\002 \001(\004\022\016\n\006health\030\003 \001(\004\022\014\n\004mana\030\004 \001(\004\022\022"
+    "\n\ncritchance\030\005 \001(\004\022\r\n\005armor\030\006 \001(\004\022\022\n\nres"
+    "istance\030\007 \001(\004\"\032\n\tLevelComp\022\r\n\005level\030\001 \001("
+    "\r\"v\n\016ActorStateComp\0222\n\nstate_list\030\001 \003(\0132"
+    "\036.ActorStateComp.StateListEntry\0320\n\016State"
+    "ListEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028"
+    "\001B\022Z\020common/componentb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto_deps[1] = {
-        &::descriptor_table_proto_2fcommon_2fcomponent_2fcomp_2eproto,
+        &::descriptor_table_proto_2fcommon_2fcomponent_2fbase_5fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    744,
+    749,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
     "proto/common/component/actor_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto_once,

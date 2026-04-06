@@ -51,7 +51,7 @@ set(SOURCE_FILES
     handler/rpc/gate_service_handler.cpp
     handler/rpc/player/player_service_interface.cpp
     main.cpp
-    rpc_replies/game_scene_response_handler.cpp
+    rpc_replies/scene_admin_response_handler.cpp
     rpc_replies/scene_response_handler.cpp
     rpc_replies/player/player_rpc_response_handler.cpp
     rpc_replies/register_handler.cpp

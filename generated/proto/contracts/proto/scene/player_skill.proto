@@ -3,7 +3,7 @@ option go_package = "contracts/proto/scene";
 
 import "proto/db/proto_option.proto";
 import "proto/common/base/tip.proto";
-import "proto/common/component/comp.proto";
+import "proto/common/component/base_comp.proto";
 import "proto/common/base/empty.proto";
 import "proto/common/component/player_skill_comp.proto";
 import "proto/common/component/actor_comp.proto";

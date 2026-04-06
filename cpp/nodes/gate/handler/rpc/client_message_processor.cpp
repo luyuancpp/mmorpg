@@ -20,7 +20,7 @@
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
-#include "rpc/service_metadata/game_client_player_service_metadata.h"
+#include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "proto/common/base/node.pb.h"
 #include "node/system/node/node_util.h"
 #include "google/protobuf/descriptor.h"
@@ -31,35 +31,36 @@
 #include <network/node_utils.h>
 #include <node_config_manager.h>
 
-namespace {
-std::string BytesToHex(const unsigned char* data, unsigned int size)
+namespace
 {
-	std::ostringstream stream;
-	stream << std::hex << std::setfill('0');
-	for (unsigned int index = 0; index < size; ++index)
+	std::string BytesToHex(const unsigned char *data, unsigned int size)
 	{
-		stream << std::setw(2) << static_cast<unsigned int>(data[index]);
+		std::ostringstream stream;
+		stream << std::hex << std::setfill('0');
+		for (unsigned int index = 0; index < size; ++index)
+		{
+			stream << std::setw(2) << static_cast<unsigned int>(data[index]);
+		}
+		return stream.str();
 	}
-	return stream.str();
-}
 
-std::string HmacSha256Hex(std::string_view secret, std::string_view payload)
-{
-	unsigned char digest[EVP_MAX_MD_SIZE];
-	unsigned int digestLength = 0;
-	const auto* result = HMAC(EVP_sha256(),
-		secret.data(),
-		static_cast<int>(secret.size()),
-		reinterpret_cast<const unsigned char*>(payload.data()),
-		payload.size(),
-		digest,
-		&digestLength);
-	if (result == nullptr)
+	std::string HmacSha256Hex(std::string_view secret, std::string_view payload)
 	{
-		return {};
+		unsigned char digest[EVP_MAX_MD_SIZE];
+		unsigned int digestLength = 0;
+		const auto *result = HMAC(EVP_sha256(),
+								  secret.data(),
+								  static_cast<int>(secret.size()),
+								  reinterpret_cast<const unsigned char *>(payload.data()),
+								  payload.size(),
+								  digest,
+								  &digestLength);
+		if (result == nullptr)
+		{
+			return {};
+		}
+		return BytesToHex(digest, digestLength);
 	}
-	return BytesToHex(digest, digestLength);
-}
 }
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)

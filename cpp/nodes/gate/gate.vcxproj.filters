@@ -36,7 +36,7 @@
     <ClCompile Include="handler\rpc\gate_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\game_scene_response_handler.cpp">
+    <ClCompile Include="rpc_replies\scene_admin_response_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="rpc_replies\scene_response_handler.cpp">
@@ -77,7 +77,7 @@
     <ClInclude Include="handler\rpc\gate_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rpc_replies\game_scene_response_handler.h">
+    <ClInclude Include="rpc_replies\scene_admin_response_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="rpc_replies\scene_response_handler.h">

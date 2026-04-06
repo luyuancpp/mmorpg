@@ -2,16 +2,16 @@
 #include <unordered_map>
 #include <memory>
 #include <google/protobuf/service.h>
-#include "game_scene_handler.h"
-
 #include "scene_handler.h"
+
+#include "scene_admin_handler.h"
 
 extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
 
 void InitServiceHandler()
 {
- gNodeService.emplace("SceneScene", std::make_unique<SceneSceneHandler>());
-
  gNodeService.emplace("Scene", std::make_unique<SceneHandler>());
+
+ gNodeService.emplace("SceneScene", std::make_unique<SceneSceneHandler>());
 
 }
