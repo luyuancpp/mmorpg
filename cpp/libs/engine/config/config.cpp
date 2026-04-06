@@ -3,75 +3,101 @@
 #include <muduo/base/Logging.h>
 #include <node_config_manager.h>
 
-bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseConfig) {
+bool readBaseDeployConfig(const std::string &filename, BaseDeployConfig &baseConfig)
+{
 	YAML::Node root = YAML::LoadFile(filename);
 
 	// Parse Etcd config
-	if (root["Etcd"]["Hosts"]) {
-		for (const auto& host : root["Etcd"]["Hosts"]) {
+	if (root["Etcd"]["Hosts"])
+	{
+		for (const auto &host : root["Etcd"]["Hosts"])
+		{
 			baseConfig.add_etcd_hosts(host.as<std::string>());
 		}
 	}
-	if (root["Etcd"]["KeepaliveInterval"]) {
+	if (root["Etcd"]["KeepaliveInterval"])
+	{
 		baseConfig.set_keep_alive_interval(root["Etcd"]["KeepaliveInterval"].as<uint32_t>());
 	}
-	if (root["Etcd"]["NodeTTLSeconds"]) {
+	if (root["Etcd"]["NodeTTLSeconds"])
+	{
 		baseConfig.set_node_ttl_seconds(root["Etcd"]["NodeTTLSeconds"].as<uint32_t>());
 	}
 
-	if (root["LogLevel"]) {
+	if (root["LogLevel"])
+	{
 		baseConfig.set_log_level(root["LogLevel"].as<uint32_t>());
 	}
 
-	if (root["HealthCheckInterval"]) {
+	if (root["HealthCheckInterval"])
+	{
 		baseConfig.set_health_check_interval(root["HealthCheckInterval"].as<uint32_t>());
 	}
 
-	if (root["services"]) {
-		for (const auto& service : root["services"]) {
-			auto& s = *baseConfig.add_services();
+	if (root["services"])
+	{
+		for (const auto &service : root["services"])
+		{
+			auto &s = *baseConfig.add_services();
 			s.set_name(service["name"].as<std::string>());
 			s.set_url(service["url"].as<std::string>());
 		}
 	}
 
-	if (root["service_discovery_prefixes"]) {
-		for (const auto& prefix : root["service_discovery_prefixes"]) {
+	if (root["service_discovery_prefixes"])
+	{
+		for (const auto &prefix : root["service_discovery_prefixes"])
+		{
 			baseConfig.add_service_discovery_prefixes(prefix.as<std::string>());
 		}
 	}
 
 	// deployservice_prefix
-	if (root["deployservice_prefix"]) {
+	if (root["deployservice_prefix"])
+	{
 		baseConfig.set_deployservice_prefix(root["deployservice_prefix"].as<std::string>());
 	}
 
-	if (root["TableDataDirectory"]) {
+	if (root["TableDataDirectory"])
+	{
 		baseConfig.set_table_data_directory(root["TableDataDirectory"].as<std::string>());
 	}
 
-	// Kafka config
-	if (root["Kafka"]) {
-		const YAML::Node& kafkaNode = root["Kafka"];
-		KafkaConfig& kafkaConfig = *baseConfig.mutable_kafka();
+	if (root["TableDataFormat"])
+	{
+		baseConfig.set_table_data_format(root["TableDataFormat"].as<std::string>());
+	}
 
-		if (kafkaNode["Brokers"]) {
-			for (const auto& broker : kafkaNode["Brokers"]) {
+	// Kafka config
+	if (root["Kafka"])
+	{
+		const YAML::Node &kafkaNode = root["Kafka"];
+		KafkaConfig &kafkaConfig = *baseConfig.mutable_kafka();
+
+		if (kafkaNode["Brokers"])
+		{
+			for (const auto &broker : kafkaNode["Brokers"])
+			{
 				kafkaConfig.add_brokers(broker.as<std::string>());
 			}
 		}
-		if (kafkaNode["Topics"]) {
-			for (const auto& topic : kafkaNode["Topics"]) {
+		if (kafkaNode["Topics"])
+		{
+			for (const auto &topic : kafkaNode["Topics"])
+			{
 				kafkaConfig.add_topics(topic.as<std::string>());
 			}
 		}
-		if (kafkaNode["GroupID"]) {
+		if (kafkaNode["GroupID"])
+		{
 			kafkaConfig.set_group_id(kafkaNode["GroupID"].as<std::string>());
 		}
-		if (kafkaNode["EnableAutoCommit"]) {
+		if (kafkaNode["EnableAutoCommit"])
+		{
 			kafkaConfig.set_enable_auto_commit(kafkaNode["EnableAutoCommit"].as<bool>());
 		}
-		if (kafkaNode["AutoOffsetReset"]) {
+		if (kafkaNode["AutoOffsetReset"])
+		{
 			kafkaConfig.set_auto_offset_reset(kafkaNode["AutoOffsetReset"].as<std::string>());
 		}
 	}
@@ -79,35 +105,44 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 	return true;
 }
 
-bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {
+bool readGameConfig(const std::string &filename, GameConfig &gameConfig)
+{
 	YAML::Node root = YAML::LoadFile(filename);
 
-	if (root["SceneNodeType"]) {
+	if (root["SceneNodeType"])
+	{
 		gameConfig.set_scene_node_type(root["SceneNodeType"].as<uint32_t>());
 	}
 
-	if (root["ZoneId"]) {
+	if (root["ZoneId"])
+	{
 		gameConfig.set_zone_id(root["ZoneId"].as<uint32_t>());
 	}
 
 	// Parse zone Redis config
-	if (root["zoneredis"]) {
+	if (root["zoneredis"])
+	{
 		YAML::Node zoneredisNode = root["zoneredis"];
 
-		if (zoneredisNode["host"]) {
+		if (zoneredisNode["host"])
+		{
 			gameConfig.mutable_zone_redis()->set_host(zoneredisNode["host"].as<std::string>());
 		}
-		if (zoneredisNode["port"]) {
+		if (zoneredisNode["port"])
+		{
 			gameConfig.mutable_zone_redis()->set_port(zoneredisNode["port"].as<uint32_t>());
 		}
-		if (zoneredisNode["password"]) {
+		if (zoneredisNode["password"])
+		{
 			gameConfig.mutable_zone_redis()->set_password(zoneredisNode["password"].as<std::string>());
 		}
-		if (zoneredisNode["db"]) {
+		if (zoneredisNode["db"])
+		{
 			gameConfig.mutable_zone_redis()->set_db(zoneredisNode["db"].as<uint32_t>());
 		}
 	}
-	else {
+	else
+	{
 		LOG_ERROR << "Warning: zoneredis configuration not found in config file.";
 		return false;
 	}
@@ -115,10 +150,17 @@ bool readGameConfig(const std::string& filename, GameConfig& gameConfig) {
 	return true;
 }
 
-void InitThreadLocalConfig() {
+void InitThreadLocalConfig()
+{
 	tlsNodeConfigManager = gNodeConfigManager;
 }
 
-std::string GetConfigDir() {
+std::string GetConfigDir()
+{
 	return tlsNodeConfigManager.GetBaseDeployConfig().table_data_directory();
+}
+
+bool UseProtoBinaryTables()
+{
+	return tlsNodeConfigManager.GetBaseDeployConfig().table_data_format() == "binary";
 }

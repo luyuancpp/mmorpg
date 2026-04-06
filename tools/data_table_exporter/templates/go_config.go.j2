@@ -7,6 +7,7 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
+    "google.golang.org/protobuf/proto"
     pb "{{ proto_import_path }}"
 )
 
@@ -35,16 +36,27 @@ func New{{ sheetname }}TableManager() *{{ sheetname }}TableManager {
     }
 }
 
-func (m *{{ sheetname }}TableManager) Load(configDir string) error {
-    path := filepath.Join(configDir, "{{ sheetname | lower }}.json")
-    raw, err := os.ReadFile(path)
-    if err != nil {
-        return fmt.Errorf("failed to read file: %w", err)
-    }
-
+func (m *{{ sheetname }}TableManager) Load(configDir string, useBinary bool) error {
     var container pb.{{ sheetname }}TableData
-    if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %w", err)
+
+    if useBinary {
+        path := filepath.Join(configDir, "{{ sheetname | lower }}.pb")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := proto.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse binary: %w", err)
+        }
+    } else {
+        path := filepath.Join(configDir, "{{ sheetname | lower }}.json")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := protojson.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse json: %w", err)
+        }
     }
 
     for _, row := range container.Data {

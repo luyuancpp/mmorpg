@@ -10,9 +10,10 @@ import (
 var loadSuccessCallback func()
 
 // LoadTables loads all config tables synchronously.
-func LoadTables(configDir string) {
+// useBinary: true loads .pb (proto binary), false loads .json.
+func LoadTables(configDir string, useBinary bool) {
 {%- for item in sheetnames %}
-    if err := {{ item }}TableManagerInstance.Load(configDir); err != nil {
+    if err := {{ item }}TableManagerInstance.Load(configDir, useBinary); err != nil {
         log.Fatalf("failed to load {{ item }} table: %v", err)
     }
 {%- endfor %}
@@ -23,14 +24,15 @@ func LoadTables(configDir string) {
 }
 
 // LoadTablesAsync loads all config tables using goroutines.
-func LoadTablesAsync(configDir string) {
+// useBinary: true loads .pb (proto binary), false loads .json.
+func LoadTablesAsync(configDir string, useBinary bool) {
     var wg sync.WaitGroup
     wg.Add({{ sheetnames | length }})
 
 {%- for item in sheetnames %}
     go func() {
         defer wg.Done()
-        if err := {{ item }}TableManagerInstance.Load(configDir); err != nil {
+        if err := {{ item }}TableManagerInstance.Load(configDir, useBinary); err != nil {
             log.Fatalf("failed to load {{ item }} table: %v", err)
         }
     }()
@@ -50,10 +52,10 @@ func OnTablesLoadSuccess(cb func()) {
 
 // ReloadTables re-creates all table managers and loads fresh data.
 // Safe for hot-reload: replaces the global instances atomically.
-func ReloadTables(configDir string) error {
+func ReloadTables(configDir string, useBinary bool) error {
 {%- for item in sheetnames %}
     new{{ item }} := New{{ item }}TableManager()
-    if err := new{{ item }}.Load(configDir); err != nil {
+    if err := new{{ item }}.Load(configDir, useBinary); err != nil {
         return fmt.Errorf("reload {{ item }} failed: %w", err)
     }
 {%- endfor %}

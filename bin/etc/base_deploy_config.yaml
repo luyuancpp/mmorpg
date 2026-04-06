@@ -9,6 +9,9 @@ Etcd:
 TableDataDirectory: "../generated/tables/" # 路径可自定义（相对路径/绝对路径均可）
 # 示例说明：若配置为 "./data/table"，则角色配置表可能存于 "./data/table/role_config.xlsx"，道具表存于 "./data/table/item_config.json"
 
+# 表格数据加载格式: "json" (默认) 或 "binary" (加载 .pb 文件，启动更快)
+TableDataFormat: "binary"
+
 # 日志配置（控制日志输出级别）
 LogLevel: 2 # 日志级别编码（通常约定：0=DEBUG，1=INFO，2=WARN，3=ERROR，4=FATAL，具体需结合业务代码定义）
 

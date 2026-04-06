@@ -50,6 +50,12 @@ def _gen_one_proto(table: TableSchema, template, cfg: ExporterConfig, java_packa
 # protoc compilation
 # ---------------------------------------------------------------------------
 
+def compile_proto_python(cfg: ExporterConfig) -> None:
+    """Compile all ``.proto`` -> Python ``*_pb2.py`` for binary serialisation."""
+    ensure_dirs(cfg.proto_python_output_dir)
+    _compile(cfg.proto_dir, cfg.proto_python_output_dir, "python_out", cfg)
+
+
 def compile_proto_cpp(cfg: ExporterConfig) -> None:
     """Compile all ``.proto`` → C++ using *protoc*."""
     if not cfg.cpp.enabled:
