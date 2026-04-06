@@ -149,6 +149,11 @@ void KafkaConsumer::poll()
 		case RdKafka::ERR__TIMED_OUT:
 			return;
 
+		case RdKafka::ERR__UNKNOWN_TOPIC:
+		case RdKafka::ERR_UNKNOWN_TOPIC_OR_PART:
+			LOG_WARN << "[KafkaConsumer] Subscribed topic not available yet: " << msg->errstr();
+			return;
+
 		default:
 			LOG_ERROR << "[KafkaConsumer] Error: " << msg->errstr();
 			break;
