@@ -44,7 +44,8 @@ _RE_EXCESS_BLANKS = re.compile(r'\n{3,}')
 
 
 def _clean_output(text: str) -> str:
-    """Collapse runs of 3+ newlines into 2 (at most one blank line) and trim trailing whitespace."""
+    """Collapse runs of 3+ newlines into 2 (at most one blank line) and strip leading/trailing whitespace."""
+    text = text.lstrip('\n')
     text = _RE_EXCESS_BLANKS.sub('\n\n', text)
     return text.rstrip() + '\n'
 

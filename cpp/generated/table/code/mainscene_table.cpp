@@ -1,4 +1,3 @@
-
 #include "google/protobuf/util/json_util.h"
 #include "core/utils/file/file2string.h"
 #include "table/proto/tip/common_error_tip.pb.h"
