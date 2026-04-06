@@ -31,20 +31,10 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-
-
-
-
-
-
-
 private:
     LoadSuccessCallback loadSuccessCallback_;
     SceneTableData data_;
     KeyValueDataType kv_data_;
-
-
-
 };
 
 inline const SceneTableData& GetSceneAllTable() {

@@ -1176,6 +1176,7 @@ class BaseDeployConfig final : public ::google::protobuf::Message
     kDeployservicePrefixFieldNumber = 6,
     kTableDataDirectoryFieldNumber = 10,
     kGateTokenSecretFieldNumber = 11,
+    kTableDataFormatFieldNumber = 12,
     kKafkaFieldNumber = 9,
     kLogLevelFieldNumber = 2,
     kKeepAliveIntervalFieldNumber = 5,
@@ -1288,6 +1289,21 @@ class BaseDeployConfig final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_gate_token_secret();
 
   public:
+  // string table_data_format = 12;
+  void clear_table_data_format() ;
+  const ::std::string& table_data_format() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_table_data_format(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_table_data_format();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_table_data_format();
+  void set_allocated_table_data_format(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_table_data_format() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_table_data_format(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_table_data_format();
+
+  public:
   // .KafkaConfig kafka = 9;
   bool has_kafka() const;
   void clear_kafka() ;
@@ -1347,8 +1363,8 @@ class BaseDeployConfig final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 11,
-                                   2, 126,
+  static const ::google::protobuf::internal::TcParseTable<4, 12,
+                                   2, 143,
                                    2>
       _table_;
 
@@ -1375,6 +1391,7 @@ class BaseDeployConfig final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr deployservice_prefix_;
     ::google::protobuf::internal::ArenaStringPtr table_data_directory_;
     ::google::protobuf::internal::ArenaStringPtr gate_token_secret_;
+    ::google::protobuf::internal::ArenaStringPtr table_data_format_;
     ::KafkaConfig* PROTOBUF_NULLABLE kafka_;
     ::uint32_t log_level_;
     ::uint32_t keep_alive_interval_;
@@ -1892,7 +1909,7 @@ BaseDeployConfig::_internal_mutable_etcd_hosts() {
 inline void BaseDeployConfig::clear_log_level() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.log_level_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline ::uint32_t BaseDeployConfig::log_level() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.log_level)
@@ -1900,7 +1917,7 @@ inline ::uint32_t BaseDeployConfig::log_level() const {
 }
 inline void BaseDeployConfig::set_log_level(::uint32_t value) {
   _internal_set_log_level(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.log_level)
 }
 inline ::uint32_t BaseDeployConfig::_internal_log_level() const {
@@ -2030,7 +2047,7 @@ BaseDeployConfig::_internal_mutable_service_discovery_prefixes() {
 inline void BaseDeployConfig::clear_keep_alive_interval() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.keep_alive_interval_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
 }
 inline ::uint32_t BaseDeployConfig::keep_alive_interval() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.keep_alive_interval)
@@ -2038,7 +2055,7 @@ inline ::uint32_t BaseDeployConfig::keep_alive_interval() const {
 }
 inline void BaseDeployConfig::set_keep_alive_interval(::uint32_t value) {
   _internal_set_keep_alive_interval(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000040u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.keep_alive_interval)
 }
 inline ::uint32_t BaseDeployConfig::_internal_keep_alive_interval() const {
@@ -2119,7 +2136,7 @@ inline void BaseDeployConfig::set_allocated_deployservice_prefix(::std::string* 
 inline void BaseDeployConfig::clear_node_ttl_seconds() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.node_ttl_seconds_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000080u;
 }
 inline ::uint32_t BaseDeployConfig::node_ttl_seconds() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.node_ttl_seconds)
@@ -2127,7 +2144,7 @@ inline ::uint32_t BaseDeployConfig::node_ttl_seconds() const {
 }
 inline void BaseDeployConfig::set_node_ttl_seconds(::uint32_t value) {
   _internal_set_node_ttl_seconds(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000080u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.node_ttl_seconds)
 }
 inline ::uint32_t BaseDeployConfig::_internal_node_ttl_seconds() const {
@@ -2143,7 +2160,7 @@ inline void BaseDeployConfig::_internal_set_node_ttl_seconds(::uint32_t value) {
 inline void BaseDeployConfig::clear_health_check_interval() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.health_check_interval_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000080u;
+  _impl_._has_bits_[0] &= ~0x00000100u;
 }
 inline ::uint32_t BaseDeployConfig::health_check_interval() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.health_check_interval)
@@ -2151,7 +2168,7 @@ inline ::uint32_t BaseDeployConfig::health_check_interval() const {
 }
 inline void BaseDeployConfig::set_health_check_interval(::uint32_t value) {
   _internal_set_health_check_interval(value);
-  _impl_._has_bits_[0] |= 0x00000080u;
+  _impl_._has_bits_[0] |= 0x00000100u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.health_check_interval)
 }
 inline ::uint32_t BaseDeployConfig::_internal_health_check_interval() const {
@@ -2165,14 +2182,14 @@ inline void BaseDeployConfig::_internal_set_health_check_interval(::uint32_t val
 
 // .KafkaConfig kafka = 9;
 inline bool BaseDeployConfig::has_kafka() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000008u) != 0;
+  bool value = (_impl_._has_bits_[0] & 0x00000010u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.kafka_ != nullptr);
   return value;
 }
 inline void BaseDeployConfig::clear_kafka() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.kafka_ != nullptr) _impl_.kafka_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
 inline const ::KafkaConfig& BaseDeployConfig::_internal_kafka() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2191,16 +2208,16 @@ inline void BaseDeployConfig::unsafe_arena_set_allocated_kafka(
   }
   _impl_.kafka_ = reinterpret_cast<::KafkaConfig*>(value);
   if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000008u;
+    _impl_._has_bits_[0] |= 0x00000010u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000008u;
+    _impl_._has_bits_[0] &= ~0x00000010u;
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseDeployConfig.kafka)
 }
 inline ::KafkaConfig* PROTOBUF_NULLABLE BaseDeployConfig::release_kafka() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
   ::KafkaConfig* released = _impl_.kafka_;
   _impl_.kafka_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -2220,7 +2237,7 @@ inline ::KafkaConfig* PROTOBUF_NULLABLE BaseDeployConfig::unsafe_arena_release_k
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:BaseDeployConfig.kafka)
 
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
   ::KafkaConfig* temp = _impl_.kafka_;
   _impl_.kafka_ = nullptr;
   return temp;
@@ -2235,7 +2252,7 @@ inline ::KafkaConfig* PROTOBUF_NONNULL BaseDeployConfig::_internal_mutable_kafka
 }
 inline ::KafkaConfig* PROTOBUF_NONNULL BaseDeployConfig::mutable_kafka()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   ::KafkaConfig* _msg = _internal_mutable_kafka();
   // @@protoc_insertion_point(field_mutable:BaseDeployConfig.kafka)
   return _msg;
@@ -2252,9 +2269,9 @@ inline void BaseDeployConfig::set_allocated_kafka(::KafkaConfig* PROTOBUF_NULLAB
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    _impl_._has_bits_[0] |= 0x00000008u;
+    _impl_._has_bits_[0] |= 0x00000010u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000008u;
+    _impl_._has_bits_[0] &= ~0x00000010u;
   }
 
   _impl_.kafka_ = reinterpret_cast<::KafkaConfig*>(value);
@@ -2389,6 +2406,71 @@ inline void BaseDeployConfig::set_allocated_gate_token_secret(::std::string* PRO
     _impl_.gate_token_secret_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:BaseDeployConfig.gate_token_secret)
+}
+
+// string table_data_format = 12;
+inline void BaseDeployConfig::clear_table_data_format() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.table_data_format_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline const ::std::string& BaseDeployConfig::table_data_format() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.table_data_format)
+  return _internal_table_data_format();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void BaseDeployConfig::set_table_data_format(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_.table_data_format_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BaseDeployConfig.table_data_format)
+}
+inline ::std::string* PROTOBUF_NONNULL BaseDeployConfig::mutable_table_data_format()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_table_data_format();
+  // @@protoc_insertion_point(field_mutable:BaseDeployConfig.table_data_format)
+  return _s;
+}
+inline const ::std::string& BaseDeployConfig::_internal_table_data_format() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.table_data_format_.Get();
+}
+inline void BaseDeployConfig::_internal_set_table_data_format(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_.table_data_format_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL BaseDeployConfig::_internal_mutable_table_data_format() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  return _impl_.table_data_format_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE BaseDeployConfig::release_table_data_format() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BaseDeployConfig.table_data_format)
+  if ((_impl_._has_bits_[0] & 0x00000008u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000008u;
+  auto* released = _impl_.table_data_format_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.table_data_format_.Set("", GetArena());
+  }
+  return released;
+}
+inline void BaseDeployConfig::set_allocated_table_data_format(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000008u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000008u;
+  }
+  _impl_.table_data_format_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.table_data_format_.IsDefault()) {
+    _impl_.table_data_format_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BaseDeployConfig.table_data_format)
 }
 
 // -------------------------------------------------------------------

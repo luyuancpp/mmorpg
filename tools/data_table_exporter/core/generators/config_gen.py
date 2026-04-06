@@ -7,6 +7,7 @@ Java) using Jinja2 templates, plus aggregated "all_table" files.
 from __future__ import annotations
 
 import logging
+import re
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -36,6 +37,19 @@ def generate_config_classes(cfg: ExporterConfig, tables: list[TableSchema]) -> N
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+_RE_EXCESS_BLANKS = re.compile(r'\n{3,}')
+
+
+def _clean_output(text: str) -> str:
+    """Collapse runs of 3+ newlines into 2 (at most one blank line) and trim trailing whitespace."""
+    text = _RE_EXCESS_BLANKS.sub('\n\n', text)
+    return text.rstrip() + '\n'
+
+
+# ---------------------------------------------------------------------------
 # C++
 # ---------------------------------------------------------------------------
 
@@ -45,8 +59,8 @@ def _gen_all_cpp(tables: list[TableSchema], env: Environment, cfg: ExporterConfi
 
     for t in tables:
         ctx = _cpp_ctx(t)
-        write_file(cfg.cpp.code_dir / f"{t.name.lower()}_table.h", h_tpl.render(**ctx))
-        write_file(cfg.cpp.code_dir / f"{t.name.lower()}_table.cpp", cpp_tpl.render(**ctx))
+        write_file(cfg.cpp.code_dir / f"{t.name.lower()}_table.h", _clean_output(h_tpl.render(**ctx)))
+        write_file(cfg.cpp.code_dir / f"{t.name.lower()}_table.cpp", _clean_output(cpp_tpl.render(**ctx)))
         logger.info("Generated C++ config: %s", t.name)
 
     # all_table aggregator

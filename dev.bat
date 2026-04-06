@@ -22,6 +22,7 @@ if /I "%CMD%"=="infra-down"  goto :infra_down
 if /I "%CMD%"=="build"      goto :build
 if /I "%CMD%"=="proto"      goto :proto
 if /I "%CMD%"=="export"     goto :export
+if /I "%CMD%"=="gen"        goto :gen
 if /I "%CMD%"=="ui"         goto :ui
 if /I "%CMD%"=="ui-cpp"     goto :ui_cpp
 if /I "%CMD%"=="ui-go"      goto :ui_go
@@ -54,30 +55,39 @@ echo     11. Infra down  (docker-compose down)
 echo     12. Build       (compile C++ + Go, no launch)
 echo     13. Proto       (regenerate proto code)
 echo     14. Export      (Excel data table export)
-echo     15. UI          (mprocs TUI dashboard)
+echo     15. Gen         (Export tables + regenerate proto)
+echo     16. UI          (mprocs TUI dashboard)
 echo.
 echo     0.  Exit
 echo.
-set /p "CHOICE=  Pick [0-15]: "
+set /p "CHOICE=  Pick [0-16]: "
 
-if "%CHOICE%"=="1" goto :start
-if "%CHOICE%"=="2" goto :start_cpp
-if "%CHOICE%"=="3" goto :start_go
-if "%CHOICE%"=="4" goto :stop
-if "%CHOICE%"=="5" goto :status
-if "%CHOICE%"=="6" goto :restart
-if "%CHOICE%"=="7" goto :logs
-if "%CHOICE%"=="8" goto :logs_all
-if "%CHOICE%"=="9" goto :robot
-if "%CHOICE%"=="10" goto :infra
-if "%CHOICE%"=="11" goto :infra_down
-if "%CHOICE%"=="12" goto :build
-if "%CHOICE%"=="13" goto :proto
-if "%CHOICE%"=="14" goto :export
-if "%CHOICE%"=="15" goto :ui
 if "%CHOICE%"=="0" exit /b 0
 
+if "%CHOICE%"=="1"  call :start      & goto :menu_return
+if "%CHOICE%"=="2"  call :start_cpp  & goto :menu_return
+if "%CHOICE%"=="3"  call :start_go   & goto :menu_return
+if "%CHOICE%"=="4"  call :stop       & goto :menu_return
+if "%CHOICE%"=="5"  call :status     & goto :menu_return
+if "%CHOICE%"=="6"  call :restart    & goto :menu_return
+if "%CHOICE%"=="7"  call :logs       & goto :menu_return
+if "%CHOICE%"=="8"  call :logs_all   & goto :menu_return
+if "%CHOICE%"=="9"  call :robot      & goto :menu_return
+if "%CHOICE%"=="10" call :infra      & goto :menu_return
+if "%CHOICE%"=="11" call :infra_down & goto :menu_return
+if "%CHOICE%"=="12" call :build      & goto :menu_return
+if "%CHOICE%"=="13" call :proto      & goto :menu_return
+if "%CHOICE%"=="14" call :export     & goto :menu_return
+if "%CHOICE%"=="15" call :gen        & goto :menu_return
+if "%CHOICE%"=="16" call :ui         & goto :menu_return
+
 echo   Invalid choice.
+goto :menu
+
+:menu_return
+echo.
+echo   Press any key to return to menu...
+pause >nul
 goto :menu
 
 :: ================================================================
@@ -124,8 +134,6 @@ exit /b 0
 :: ================================================================
 :status
 %PS% -File tools\scripts\dev_tools.ps1 -Command dev-status
-echo.
-pause
 exit /b 0
 
 :: ================================================================
@@ -250,7 +258,6 @@ if exist "%CPP_LOG%" (
     )
 ) else ( echo No C++ logs found. )
 echo.
-pause
 exit /b 0
 
 :: ================================================================
@@ -310,6 +317,19 @@ echo Regenerating proto code...
 %PS% -File tools\scripts\dev_tools.ps1 -Command proto-gen-run -ConfigPath tools\proto_generator\protogen\etc\proto_gen.yaml
 if errorlevel 1 ( echo Proto generation failed. & pause & exit /b 1 )
 echo Proto generation complete.
+exit /b 0
+
+:: ================================================================
+:gen
+echo [1/2] Exporting data tables...
+call :export
+if errorlevel 1 ( echo Export step failed. & exit /b 1 )
+echo.
+echo [2/2] Regenerating proto code...
+call :proto
+if errorlevel 1 ( echo Proto step failed. & exit /b 1 )
+echo.
+echo All generation complete (tables + proto).
 exit /b 0
 
 :: ================================================================
@@ -378,6 +398,7 @@ echo     build          Compile C++ + Go (no launch)
 echo     proto          Regenerate proto code
 echo     export         Run Excel data table exporter (Python)
 echo     export ^<cfg^>   Use custom config (default: exporter_config.yaml)
+echo     gen            Export tables + regenerate proto (both)
 echo     ui             mprocs TUI dashboard (all processes)
 echo     ui-cpp         mprocs TUI (C++ nodes only)
 echo     ui-go          mprocs TUI (Go services only)
@@ -390,5 +411,4 @@ echo     dev proto
 echo     dev robot
 echo     dev logs login
 echo.
-pause
 exit /b 0

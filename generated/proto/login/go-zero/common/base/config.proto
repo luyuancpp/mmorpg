@@ -34,6 +34,10 @@ message BaseDeployConfig {
     // Shared HMAC secret for Gate connection tokens (Login signs, Gate verifies).
     // If empty, Gate skips token verification (dev/test mode).
     string gate_token_secret = 11;
+
+    // Table data loading format: "json" (default) or "binary".
+    // "binary" loads .pb files (proto wire format) for faster startup.
+    string table_data_format = 12;
 }
 
 // Game config

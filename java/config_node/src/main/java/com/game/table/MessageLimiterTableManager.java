@@ -27,10 +27,15 @@ public class MessageLimiterTableManager {
         return INSTANCE;
     }
 
-    public void load(String configDir) throws Exception {
-        String json = Files.readString(Path.of(configDir, "messagelimiter.json"));
+    public void load(String configDir, boolean useBinary) throws Exception {
         MessageLimiterTableData.Builder builder = MessageLimiterTableData.newBuilder();
-        JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        if (useBinary) {
+            byte[] raw = Files.readAllBytes(Path.of(configDir, "messagelimiter.pb"));
+            builder.mergeFrom(raw);
+        } else {
+            String json = Files.readString(Path.of(configDir, "messagelimiter.json"));
+            JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        }
         this.data = builder.build();
 
         for (MessageLimiterTable row : data.getDataList()) {

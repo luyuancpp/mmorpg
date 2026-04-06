@@ -31,9 +31,6 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-
-
-
     double GetDamage(uint32_t tableId) {
         auto [table, ok] = GetTable(tableId);
         if (!ok || table == nullptr) {
@@ -46,31 +43,18 @@ public:
         expression_damage_.SetParam(paramList);
     }
 
-
-
-
     const std::unordered_multimap<uint32_t, const SkillTable*>& GetSkill_typeIndex() const { return idx_skill_type_; }
-
     const std::unordered_multimap<uint32_t, const SkillTable*>& GetTargeting_modeIndex() const { return idx_targeting_mode_; }
-
     const std::unordered_multimap<uint32_t, const SkillTable*>& GetEffectIndex() const { return idx_effect_; }
-
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
     SkillTableData data_;
     KeyValueDataType kv_data_;
-
-
     ExcelExpression<double> expression_damage_;
-
-
     std::unordered_multimap<uint32_t, const SkillTable*> idx_skill_type_;
-
     std::unordered_multimap<uint32_t, const SkillTable*> idx_targeting_mode_;
-
     std::unordered_multimap<uint32_t, const SkillTable*> idx_effect_;
-
 };
 
 inline const SkillTableData& GetSkillAllTable() {

@@ -31,7 +31,6 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-
     std::pair<const TestMultiKeyTable*, uint32_t> GetByString_key(const std::string& tableId) const;
     const std::unordered_map<std::string, const TestMultiKeyTable*>& GetString_keyData() const { return kv_string_keydata_; }
 
@@ -50,35 +49,19 @@ public:
     std::pair<const TestMultiKeyTable*, uint32_t> GetByM_int32_key(int32_t tableId) const;
     const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetM_int32_keyData() const { return kv_m_int32_keydata_; }
 
-
-
-
-
-
     const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetEffectIndex() const { return idx_effect_; }
-
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
     TestMultiKeyTableData data_;
     KeyValueDataType kv_data_;
-
     std::unordered_map<std::string, const TestMultiKeyTable*> kv_string_keydata_;
-
     std::unordered_map<uint32_t, const TestMultiKeyTable*> kv_uint32_keydata_;
-
     std::unordered_map<int32_t, const TestMultiKeyTable*> kv_int32_keydata_;
-
     std::unordered_multimap<std::string, const TestMultiKeyTable*> kv_m_string_keydata_;
-
     std::unordered_multimap<uint32_t, const TestMultiKeyTable*> kv_m_uint32_keydata_;
-
     std::unordered_multimap<int32_t, const TestMultiKeyTable*> kv_m_int32_keydata_;
-
-
-
     std::unordered_multimap<uint32_t, const TestMultiKeyTable*> idx_effect_;
-
 };
 
 inline const TestMultiKeyTableData& GetTestMultiKeyAllTable() {

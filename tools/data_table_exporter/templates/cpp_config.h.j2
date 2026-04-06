@@ -50,26 +50,26 @@ public:
     }
 {% endfor %}
 
-{% for col in table.foreign_key_columns %}
+{%- for col in table.foreign_key_columns %}
     // FK: {{ col.name }} → {{ col.foreign_key.target_table }}.{{ col.foreign_key.target_column }}
-{% endfor %}
-{% for arr in table.repeated_comp_arrays %}
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %}
     const std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*>& Get{{ arr.name | title }}Index() const { return idx_{{ arr.name }}_; }
-{% endfor %}
+{%- endfor %}
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
     {{ sheetname }}TableData data_;
     KeyValueDataType kv_data_;
-{% for col in table.table_keys %}
+{%- for col in table.table_keys %}
     std::{{ cpp_map_type(col.is_multi_key) }}<{{ to_cpp_type(col.data_type) }}, const {{ sheetname }}Table*> kv_{{ col.name }}data_;
-{% endfor %}
-{% for col in table.expression_columns %}
+{%- endfor %}
+{%- for col in table.expression_columns %}
     ExcelExpression<{{ col.expression_type }}> expression_{{ col.name }}_;
-{% endfor %}
-{% for arr in table.repeated_comp_arrays %}
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %}
     std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*> idx_{{ arr.name }}_;
-{% endfor %}
+{%- endfor %}
 };
 
 inline const {{ sheetname }}TableData& Get{{ sheetname }}AllTable() {

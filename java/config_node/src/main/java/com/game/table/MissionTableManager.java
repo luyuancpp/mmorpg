@@ -33,10 +33,15 @@ public class MissionTableManager {
         return INSTANCE;
     }
 
-    public void load(String configDir) throws Exception {
-        String json = Files.readString(Path.of(configDir, "mission.json"));
+    public void load(String configDir, boolean useBinary) throws Exception {
         MissionTableData.Builder builder = MissionTableData.newBuilder();
-        JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        if (useBinary) {
+            byte[] raw = Files.readAllBytes(Path.of(configDir, "mission.pb"));
+            builder.mergeFrom(raw);
+        } else {
+            String json = Files.readString(Path.of(configDir, "mission.json"));
+            JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        }
         this.data = builder.build();
 
         for (MissionTable row : data.getDataList()) {

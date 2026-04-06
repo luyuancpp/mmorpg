@@ -31,24 +31,13 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-
-
-
-
-
-
     const std::unordered_multimap<uint32_t, const TestTable*>& GetEffectIndex() const { return idx_effect_; }
-
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
     TestTableData data_;
     KeyValueDataType kv_data_;
-
-
-
     std::unordered_multimap<uint32_t, const TestTable*> idx_effect_;
-
 };
 
 inline const TestTableData& GetTestAllTable() {
