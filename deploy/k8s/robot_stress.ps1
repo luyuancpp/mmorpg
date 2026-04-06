@@ -77,8 +77,11 @@ for ($i = 0; $i -lt $zoneNames.Count; $i++) {
     $loginAddr = "login.$($ns):50000"
 
     $configYaml = @"
+gate_mode: "grpc"
 login_addr: "$loginAddr"
+gateway_addr: ""
 gate_addr: ""
+zone_id: 0
 robot_count: $count
 account_fmt: "${AccountFmt}_zone${i}_"
 password: "$Password"

@@ -44,6 +44,7 @@ $Catalogue = [ordered]@{
     login           = @{ Dir = "login";           Entry = "login.go";               ImageName = "mmorpg-login" }
     "player-locator"= @{ Dir = "player_locator";  Entry = "player_locator.go";      ImageName = "mmorpg-player-locator" }
     "scene-manager" = @{ Dir = "scene_manager";   Entry = "scene_manager_service.go"; ImageName = "mmorpg-scene-manager" }
+    gateway         = @{ Dir = "gateway";          Entry = "gateway.go";              ImageName = "mmorpg-gateway" }
 }
 
 function Get-ImageFullName {

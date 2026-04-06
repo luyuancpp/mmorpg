@@ -55,6 +55,7 @@ $ServiceCatalogue = [ordered]@{
     player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";         Port = 50200; Desc = "Player Locator (Redis cache)" }
     login           = @{ Dir = "login";           Entry = "login.go";                  Port = 50000; Desc = "Login (gRPC + etcd)" }
     scene_manager   = @{ Dir = "scene_manager";   Entry = "scene_manager_service.go";    Port = 60300; Desc = "Scene Manager (Kafka + Redis)" }
+    gateway         = @{ Dir = "gateway";          Entry = "gateway.go";                  Port = 8080;  Desc = "Gateway (HTTP REST API)" }
 }
 
 # ── Helpers ──────────────────────────────────────────────────────────
