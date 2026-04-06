@@ -47,7 +47,9 @@ class ExporterConfig:
     # Output
     generated_dir: Path = field(default_factory=Path)
     json_dir: Path = field(default_factory=Path)
+    binary_dir: Path = field(default_factory=Path)
     proto_dir: Path = field(default_factory=Path)
+    proto_python_output_dir: Path = field(default_factory=Path)
     state_dir: Path = field(default_factory=Path)
 
     # Protoc
@@ -118,7 +120,9 @@ def load_config(config_path: str | Path | None = None) -> ExporterConfig:
 
         generated_dir=_resolve(base, output.get("generated_dir")),
         json_dir=_resolve(base, output.get("json_dir")),
+        binary_dir=_resolve(base, output.get("binary_dir", output.get("json_dir", ""))),
         proto_dir=_resolve(base, output.get("proto_dir")),
+        proto_python_output_dir=_resolve(base, output.get("proto_python_output_dir", "../../generated/code/proto/python")),
         state_dir=_resolve(base, output.get("state_dir")),
 
         protoc_command=protoc.get("command", "protoc"),

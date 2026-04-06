@@ -15,10 +15,12 @@ from core.generators.config_gen import generate_config_classes
 from core.generators.constants_gen import generate_constants
 from core.generators.enum_gen import generate_operator_enums, generate_tip_enums
 from core.generators.json_gen import generate_json
+from core.generators.binary_gen import generate_binary
 from core.generators.proto_gen import (
     compile_proto_cpp,
     compile_proto_go,
     compile_proto_java,
+    compile_proto_python,
     generate_proto_files,
 )
 from core.generators.table_id_gen import generate_table_ids
@@ -51,6 +53,8 @@ def run(cfg: ExporterConfig) -> None:
     compile_proto_cpp(cfg)
     compile_proto_go(cfg)
     compile_proto_java(cfg)
+    compile_proto_python(cfg)
+    generate_binary(cfg, tables)
     generate_config_classes(cfg, tables)
     generate_comp_headers(cfg, tables)
     generate_table_ids(cfg, tables)
@@ -67,7 +71,7 @@ def run(cfg: ExporterConfig) -> None:
 # ---------------------------------------------------------------------------
 
 def _ensure_output_dirs(cfg: ExporterConfig) -> None:
-    dirs = [cfg.json_dir, cfg.proto_dir, cfg.state_dir]
+    dirs = [cfg.json_dir, cfg.binary_dir, cfg.proto_dir, cfg.proto_python_output_dir, cfg.state_dir]
     for lang in (cfg.cpp, cfg.go, cfg.java):
         if lang.enabled:
             dirs.extend([

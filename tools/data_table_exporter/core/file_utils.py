@@ -19,6 +19,14 @@ def write_file(path: Path | str, content: str) -> None:
         f.write(content)
 
 
+def write_file_bytes(path: Path | str, data: bytes) -> None:
+    """Write binary *data* to *path*, creating parent directories as needed."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(data)
+
+
 def md5_hash(file_path: Path | str, block_size: int = 2 ** 20) -> str | None:
     """Return the hex MD5 digest of a file, or ``None`` on error."""
     try:

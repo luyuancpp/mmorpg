@@ -21,7 +21,9 @@ excel:
 output:
   generated_dir: ../../generated
   json_dir: ../../generated/tables
+  binary_dir: ../../generated/tables # .pb files go alongside .json files
   proto_dir: ../../generated/code/proto
+  proto_python_output_dir: ../../generated/code/proto/python # *_pb2.py for binary gen
   state_dir: ./state
 
 # --- Protoc compiler ---
