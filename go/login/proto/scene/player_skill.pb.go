@@ -382,7 +382,7 @@ var File_proto_scene_player_skill_proto protoreflect.FileDescriptor
 
 const file_proto_scene_player_skill_proto_rawDesc = "" +
 	"\n" +
-	"\x1eproto/scene/player_skill.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a!proto/common/component/comp.proto\x1a\x1dproto/common/base/empty.proto\x1a.proto/common/component/player_skill_comp.proto\x1a'proto/common/component/actor_comp.proto\"\xa5\x01\n" +
+	"\x1eproto/scene/player_skill.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a&proto/common/component/base_comp.proto\x1a\x1dproto/common/base/empty.proto\x1a.proto/common/component/player_skill_comp.proto\x1a'proto/common/component/actor_comp.proto\"\xa5\x01\n" +
 	"\x13ReleaseSkillRequest\x12$\n" +
 	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\x12\x1b\n" +
 	"\ttarget_id\x18\x02 \x01(\x04R\btargetId\x12$\n" +

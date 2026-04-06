@@ -260,39 +260,39 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fskill_2eproto[] AB
     protodesc_cold) = {
     "\n\036proto/scene/player_skill.proto\032\033proto/"
     "db/proto_option.proto\032\033proto/common/base"
-    "/tip.proto\032!proto/common/component/comp."
-    "proto\032\035proto/common/base/empty.proto\032.pr"
-    "oto/common/component/player_skill_comp.p"
-    "roto\032\'proto/common/component/actor_comp."
-    "proto\"y\n\023ReleaseSkillRequest\022\026\n\016skill_ta"
-    "ble_id\030\001 \001(\r\022\021\n\ttarget_id\030\002 \001(\004\022\032\n\010posit"
-    "ion\030\003 \001(\0132\010.Vector3\022\033\n\010rotation\030\004 \001(\0132\t."
-    "Rotation\">\n\024ReleaseSkillResponse\022&\n\rerro"
-    "r_message\030\001 \001(\0132\017.TipInfoMessage\"{\n\023Skil"
-    "lInterruptedS2C\022\016\n\006entity\030\001 \001(\004\022\025\n\rtarge"
-    "t_entity\030\002 \001(\004\022\026\n\016skill_table_id\030\003 \001(\r\022\023"
-    "\n\013reason_code\030\004 \001(\r\022\020\n\010skill_id\030\005 \001(\004\"}\n"
-    "\014SkillUsedS2C\022\016\n\006entity\030\001 \001(\004\022\025\n\rtarget_"
-    "entity\030\002 \003(\004\022\026\n\016skill_table_id\030\003 \001(\r\022\032\n\010"
-    "position\030\004 \001(\0132\010.Vector3\022\022\n\ntime_stamp\030\005"
-    " \001(\004\"\025\n\023GetSkillListRequest\"h\n\024GetSkillL"
-    "istResponse\022&\n\rerror_message\030\001 \001(\0132\017.Tip"
-    "InfoMessage\022(\n\nskill_list\030\002 \001(\0132\024.Player"
-    "SkillListComp2\200\002\n\026SceneSkillClientPlayer"
-    "\022;\n\014ReleaseSkill\022\024.ReleaseSkillRequest\032\025"
-    ".ReleaseSkillResponse\022(\n\017NotifySkillUsed"
-    "\022\r.SkillUsedS2C\032\006.Empty\0226\n\026NotifySkillIn"
-    "terrupted\022\024.SkillInterruptedS2C\032\006.Empty\022"
-    ";\n\014GetSkillList\022\024.GetSkillListRequest\032\025."
-    "GetSkillListResponse\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scen"
-    "e\200\001\001\230\324a\003b\006proto3"
+    "/tip.proto\032&proto/common/component/base_"
+    "comp.proto\032\035proto/common/base/empty.prot"
+    "o\032.proto/common/component/player_skill_c"
+    "omp.proto\032\'proto/common/component/actor_"
+    "comp.proto\"y\n\023ReleaseSkillRequest\022\026\n\016ski"
+    "ll_table_id\030\001 \001(\r\022\021\n\ttarget_id\030\002 \001(\004\022\032\n\010"
+    "position\030\003 \001(\0132\010.Vector3\022\033\n\010rotation\030\004 \001"
+    "(\0132\t.Rotation\">\n\024ReleaseSkillResponse\022&\n"
+    "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\"{\n"
+    "\023SkillInterruptedS2C\022\016\n\006entity\030\001 \001(\004\022\025\n\r"
+    "target_entity\030\002 \001(\004\022\026\n\016skill_table_id\030\003 "
+    "\001(\r\022\023\n\013reason_code\030\004 \001(\r\022\020\n\010skill_id\030\005 \001"
+    "(\004\"}\n\014SkillUsedS2C\022\016\n\006entity\030\001 \001(\004\022\025\n\rta"
+    "rget_entity\030\002 \003(\004\022\026\n\016skill_table_id\030\003 \001("
+    "\r\022\032\n\010position\030\004 \001(\0132\010.Vector3\022\022\n\ntime_st"
+    "amp\030\005 \001(\004\"\025\n\023GetSkillListRequest\"h\n\024GetS"
+    "killListResponse\022&\n\rerror_message\030\001 \001(\0132"
+    "\017.TipInfoMessage\022(\n\nskill_list\030\002 \001(\0132\024.P"
+    "layerSkillListComp2\200\002\n\026SceneSkillClientP"
+    "layer\022;\n\014ReleaseSkill\022\024.ReleaseSkillRequ"
+    "est\032\025.ReleaseSkillResponse\022(\n\017NotifySkil"
+    "lUsed\022\r.SkillUsedS2C\032\006.Empty\0226\n\026NotifySk"
+    "illInterrupted\022\024.SkillInterruptedS2C\032\006.E"
+    "mpty\022;\n\014GetSkillList\022\024.GetSkillListReque"
+    "st\032\025.GetSkillListResponse\032\n\200\250\303\001\001\210\250\303\001\001B\016Z"
+    "\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto_deps[6] = {
         &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
-        &::descriptor_table_proto_2fcommon_2fcomponent_2fcomp_2eproto,
+        &::descriptor_table_proto_2fcommon_2fcomponent_2fbase_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
@@ -300,7 +300,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto = {
     false,
     false,
-    1096,
+    1101,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fskill_2eproto,
     "proto/scene/player_skill.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto_once,

@@ -135,7 +135,7 @@ naming:
   db_proto_file: "db_base.proto"
   db_table_file: "mysql_database_table.proto"
   db_table_list_json: "mysql_database_table_list.json"
-  game_rpc_proto: "game_rpc.proto"
+  game_rpc_proto: "rpc_message.proto"
   grpc_name: "grpc"
 
   # Original config naming constants

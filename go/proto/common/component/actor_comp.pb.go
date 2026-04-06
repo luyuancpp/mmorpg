@@ -613,7 +613,7 @@ var File_proto_common_component_actor_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_actor_comp_proto_rawDesc = "" +
 	"\n" +
-	"'proto/common/component/actor_comp.proto\x1a!proto/common/component/comp.proto\"4\n" +
+	"'proto/common/component/actor_comp.proto\x1a&proto/common/component/base_comp.proto\"4\n" +
 	"\bLocation\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x01R\x01x\x12\f\n" +
 	"\x01y\x18\x02 \x01(\x01R\x01y\x12\f\n" +
@@ -706,7 +706,7 @@ func file_proto_common_component_actor_comp_proto_init() {
 	if File_proto_common_component_actor_comp_proto != nil {
 		return
 	}
-	file_proto_common_component_comp_proto_init()
+	file_proto_common_component_base_comp_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

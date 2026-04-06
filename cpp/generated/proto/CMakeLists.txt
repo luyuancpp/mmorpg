@@ -31,7 +31,7 @@ set(SOURCE_FILES
     common/base/common.pb.cc
     common/base/config.pb.cc
     common/base/empty.pb.cc
-    common/base/game_rpc.pb.cc
+    common/base/rpc_message.pb.cc
     common/base/message.pb.cc
     common/base/node.pb.cc
     common/base/session.pb.cc
@@ -42,10 +42,10 @@ set(SOURCE_FILES
     common/component/actor_combat_state_comp.pb.cc
     common/component/actor_comp.pb.cc
     common/component/buff_comp.pb.cc
-    common/component/comp.pb.cc
+    common/component/base_comp.pb.cc
     common/component/currency_comp.pb.cc
     common/component/frame_comp.pb.cc
-    common/component/game_node_comp.pb.cc
+    common/component/node_player_comp.pb.cc
     common/component/item_base_comp.pb.cc
     common/component/item_comp.pb.cc
     common/component/mission_comp.pb.cc
@@ -107,10 +107,10 @@ set(SOURCE_FILES
     login/login.grpc.pb.cc
     login/login.pb.cc
     player/player.pb.cc
-    scene/game_client_player.pb.cc
-    scene/game_player.pb.cc
-    scene/game_player_scene.pb.cc
-    scene/game_scene.pb.cc
+    scene/client_player_common.pb.cc
+    scene/player_lifecycle.pb.cc
+    scene/s2s_player_scene.pb.cc
+    scene/scene_admin.pb.cc
     scene/player_currency.pb.cc
     scene/player_rollback.pb.cc
     scene/player_scene.pb.cc

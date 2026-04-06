@@ -503,7 +503,7 @@
   <ItemGroup>
     <None Include="network\autogen.bat" />
     <None Include="network\autogen.sh" />
-    <None Include="network\game_rpc.proto" />
+    <None Include="network\rpc_message.proto" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

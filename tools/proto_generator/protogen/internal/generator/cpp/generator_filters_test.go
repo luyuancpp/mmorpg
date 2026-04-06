@@ -58,7 +58,7 @@ func TestSceneNodeHostedProtocolHandler(t *testing.T) {
 		t.Fatalf("expected scene normal service to be hosted by scene node")
 	}
 
-	scenePlayer := asMethods(buildMethod("proto/scene/game_player.proto", messageoption.NodeType_NODE_SCENE, true, true, false))
+	scenePlayer := asMethods(buildMethod("proto/scene/player_lifecycle.proto", messageoption.NodeType_NODE_SCENE, true, true, false))
 	if IsSceneNodeHostedProtocolHandler(&scenePlayer) {
 		t.Fatalf("did not expect scene player service in non-player hosted filter")
 	}

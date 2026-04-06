@@ -2,7 +2,7 @@ syntax = "proto3";
 option go_package = "friend/proto/common/component";
 
 
-import "proto/common/component/comp.proto";
+import "proto/common/component/base_comp.proto";
 
 message Location
 {

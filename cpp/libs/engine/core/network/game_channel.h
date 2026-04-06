@@ -9,7 +9,7 @@
 #include <map>
 #include <memory>
 
-#include "proto/common/base/game_rpc.pb.h"
+#include "proto/common/base/rpc_message.pb.h"
 
 using RpcMessagePtr = std::shared_ptr<GameRpcMessage>;
 
@@ -27,61 +27,62 @@ using muduo::net::TcpConnectionPtr;
 using ProtobufService = ::google::protobuf::Service;
 using ProtobufMessage = ::google::protobuf::Message;
 
-class GameChannel {
+class GameChannel
+{
 public:
     GameChannel();
-    explicit GameChannel(const TcpConnectionPtr& connection);
+    explicit GameChannel(const TcpConnectionPtr &connection);
 
     ~GameChannel();
 
-    void SetConnection(const TcpConnectionPtr& connection) { connection_ = connection; }
+    void SetConnection(const TcpConnectionPtr &connection) { connection_ = connection; }
 
-    void SetServiceMap(const std::map<std::string, ProtobufService*>* services) { services_ = services; }
+    void SetServiceMap(const std::map<std::string, ProtobufService *> *services) { services_ = services; }
 
     inline bool IsValidMessageId(uint32_t messageId) const;
 
-    ProtobufDispatcher& GetDispatcher() { return dispatcher_; }
+    ProtobufDispatcher &GetDispatcher() { return dispatcher_; }
 
-    void CallRemoteMethod(uint32_t messageId, const ProtobufMessage& request);
+    void CallRemoteMethod(uint32_t messageId, const ProtobufMessage &request);
 
     // Fire-and-forget request (no response expected)
-    void SendRequest(uint32_t messageId, const ProtobufMessage& message);
+    void SendRequest(uint32_t messageId, const ProtobufMessage &message);
 
-    void RouteMessageToNode(uint32_t messageId, const ProtobufMessage& request);
+    void RouteMessageToNode(uint32_t messageId, const ProtobufMessage &request);
 
-    void SendRouteResponse(uint32_t messageId, uint64_t routeId, const std::string& responseData);
+    void SendRouteResponse(uint32_t messageId, uint64_t routeId, const std::string &responseData);
 
-    void HandleIncomingMessage(const TcpConnectionPtr& connection,
-        muduo::net::Buffer* buffer,
-        muduo::Timestamp receiveTime);
+    void HandleIncomingMessage(const TcpConnectionPtr &connection,
+                               muduo::net::Buffer *buffer,
+                               muduo::Timestamp receiveTime);
 
 private:
-    void SendErrorResponse(const GameRpcMessage& message, GameErrorCode errorCode);
+    void SendErrorResponse(const GameRpcMessage &message, GameErrorCode errorCode);
 
-    void HandleRpcMessage(const TcpConnectionPtr& connection, const RpcMessagePtr& message, muduo::Timestamp receiveTime);
-    void HandleResponseMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
-    void HandleRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
-    void HandleNodeRouteMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
-    void HandleClientRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
+    void HandleRpcMessage(const TcpConnectionPtr &connection, const RpcMessagePtr &message, muduo::Timestamp receiveTime);
+    void HandleResponseMessage(const TcpConnectionPtr &connection, const GameRpcMessage &message, muduo::Timestamp receiveTime);
+    void HandleRequestMessage(const TcpConnectionPtr &connection, const GameRpcMessage &message, muduo::Timestamp receiveTime);
+    void HandleNodeRouteMessage(const TcpConnectionPtr &connection, const GameRpcMessage &message, muduo::Timestamp receiveTime);
+    void HandleClientRequestMessage(const TcpConnectionPtr &connection, const GameRpcMessage &message, muduo::Timestamp receiveTime);
 
-    void SendRpcRequestMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content);
-    void SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content);
+    void SendRpcRequestMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage *content);
+    void SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage *content);
 
-    void ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime);
+    void ProcessMessage(const TcpConnectionPtr &conn, const GameRpcMessage &rpcMessage, muduo::Timestamp receiveTime);
 
-    bool SerializeMessage(const ProtobufMessage& message, std::string* output) const;
+    bool SerializeMessage(const ProtobufMessage &message, std::string *output) const;
 
-    void LogMessageStatistics(const GameRpcMessage& message) const;
+    void LogMessageStatistics(const GameRpcMessage &message) const;
 
     void StartMessageStatistics();
 
     void StopMessageStatistics();
 
-    void SendGameRpcMessage(const GameRpcMessage& message);
+    void SendGameRpcMessage(const GameRpcMessage &message);
 
     RpcCodec codec_;
     TcpConnectionPtr connection_;
-    const std::map<std::string, ProtobufService*>* services_ = nullptr;
+    const std::map<std::string, ProtobufService *> *services_ = nullptr;
     ProtobufDispatcher dispatcher_;
 };
 

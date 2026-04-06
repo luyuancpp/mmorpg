@@ -1,7 +1,7 @@
 #include "view.h"
 
 #include "grid.h"
-#include "proto/common/component/comp.pb.h"
+#include "proto/common/component/base_comp.pb.h"
 #include "Detour/DetourCommon.h"
 #include "core/network/message_system.h"
 #include "spatial/constants/view.h"
@@ -19,106 +19,105 @@
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
 {
-	return !BothAreNpcs(observer, entrant);
+    return !BothAreNpcs(observer, entrant);
 }
 
 bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
 {
-	return tlsEcs.actorRegistry.any_of<Npc>(observer) && tlsEcs.actorRegistry.any_of<Npc>(entrant);
+    return tlsEcs.actorRegistry.any_of<Npc>(observer) && tlsEcs.actorRegistry.any_of<Npc>(entrant);
 }
 
 double ViewSystem::GetMaxViewRadius(entt::entity observer)
 {
-	double viewRadius = kMaxViewRadius;
+    double viewRadius = kMaxViewRadius;
 
-	if (const auto observerViewRadius = tlsEcs.actorRegistry.try_get<ViewRadius>(observer)) {
-		viewRadius = observerViewRadius->radius();
-	}
+    if (const auto observerViewRadius = tlsEcs.actorRegistry.try_get<ViewRadius>(observer))
+    {
+        viewRadius = observerViewRadius->radius();
+    }
 
-	return viewRadius;
+    return viewRadius;
 }
 
 bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
 {
-	const auto& viewerTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(viewer);
-	const auto& targetTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(targetEntity);
+    const auto &viewerTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(viewer);
+    const auto &targetTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(targetEntity);
 
-	const dtReal viewerLocation[] = {
-		viewerTransform.location().x(),
-		viewerTransform.location().y(),
-		viewerTransform.location().z()
-	};
-	const dtReal targetLocation[] = {
-		targetTransform.location().x(),
-		targetTransform.location().y(),
-		targetTransform.location().z()
-	};
+    const dtReal viewerLocation[] = {
+        viewerTransform.location().x(),
+        viewerTransform.location().y(),
+        viewerTransform.location().z()};
+    const dtReal targetLocation[] = {
+        targetTransform.location().x(),
+        targetTransform.location().y(),
+        targetTransform.location().z()};
 
-	// Compute distance and check whether it's within view range
-	return dtVdist(viewerLocation, targetLocation) <= visionRadius;
+    // Compute distance and check whether it's within view range
+    return dtVdist(viewerLocation, targetLocation) <= visionRadius;
 }
 
 bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 {
-	const double viewRadius = GetMaxViewRadius(observer);
+    const double viewRadius = GetMaxViewRadius(observer);
 
-	return IsWithinViewRadius(observer, entrant, viewRadius);
+    return IsWithinViewRadius(observer, entrant, viewRadius);
 }
 
 double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
 {
-	auto& transform1 = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity1);
-	auto& transform2 = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity2);
+    auto &transform1 = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity1);
+    auto &transform2 = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity2);
 
-	const dtReal location1[] = {
-		transform1.location().x(),
-		transform1.location().y(),
-		transform1.location().z()
-	};
-	const dtReal location2[] = {
-		transform2.location().x(),
-		transform2.location().y(),
-		transform2.location().z()
-	};
+    const dtReal location1[] = {
+        transform1.location().x(),
+        transform1.location().y(),
+        transform1.location().z()};
+    const dtReal location2[] = {
+        transform2.location().x(),
+        transform2.location().y(),
+        transform2.location().z()};
 
-	return dtVdist(location1, location2);
+    return dtVdist(location1, location2);
 }
 
-void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& createMessage)
+void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C &createMessage)
 {
-	createMessage.set_entity(entt::to_integral(entrant));
+    createMessage.set_entity(entt::to_integral(entrant));
 
-	auto& entrantTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(entrant);
-	createMessage.mutable_transform()->CopyFrom(entrantTransform);
+    auto &entrantTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(entrant);
+    createMessage.mutable_transform()->CopyFrom(entrantTransform);
 }
 
 void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
-	const google::protobuf::Message& message)
+                                                  const google::protobuf::Message &message)
 {
-	EntityUnorderedSet entities;
-	GridSystem::GetEntitiesInViewAndNearby(entity, entities);
-	BroadcastMessageToPlayers(message_id, message, entities);
+    EntityUnorderedSet entities;
+    GridSystem::GetEntitiesInViewAndNearby(entity, entities);
+    BroadcastMessageToPlayers(message_id, message, entities);
 }
 
-void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
-    auto& transform = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity);
+void ViewSystem::LookAtPosition(entt::entity entity, const Vector3 &pos)
+{
+    auto &transform = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity);
 
     // Compute direction towards target
-    dtReal targetLocation[] = { pos.x(), pos.y(), pos.z() };
-    dtReal location[] = { transform.location().x(), transform.location().y(), transform.location().z() };
-    dtReal direction[3] = { 0, 0, 0 };
+    dtReal targetLocation[] = {pos.x(), pos.y(), pos.z()};
+    dtReal location[] = {transform.location().x(), transform.location().y(), transform.location().z()};
+    dtReal direction[3] = {0, 0, 0};
     dtVsub(direction, targetLocation, location);
 
     // Zero-length direction means entity is already at target — nothing to face
-    if (dtVlenSqr(direction) < 1e-12f) {
+    if (dtVlenSqr(direction) < 1e-12f)
+    {
         return;
     }
 
     dtVnormalize(direction);
 
     // Compute rotation Euler angles (radians)
-    float yaw = atan2(direction[0], direction[2]);   // Rotation around Y axis
-    float pitch = asin(direction[1]);                 // Rotation around X axis
+    float yaw = atan2(direction[0], direction[2]); // Rotation around Y axis
+    float pitch = asin(direction[1]);              // Rotation around X axis
 
     // Update transform rotation
     transform.mutable_rotation()->set_x(pitch);
@@ -128,10 +127,11 @@ void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
 
 bool ViewSystem::IsStealthed(entt::entity entity)
 {
-    const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(entity);
-    if (buffList == nullptr) return false;
+    const auto *buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(entity);
+    if (buffList == nullptr)
+        return false;
 
-    for (const auto& [_, buffEntry] : *buffList)
+    for (const auto &[_, buffEntry] : *buffList)
     {
         const auto [table, result] = BuffTableManager::Instance().GetTable(buffEntry.buffPb.buff_table_id());
         if (table && table->buff_type() == kBuffTypeStealth)
@@ -145,15 +145,17 @@ bool ViewSystem::IsStealthed(entt::entity entity)
 bool ViewSystem::CanSee(entt::entity observer, entt::entity target)
 {
     // Distance check first (cheapest).
-    if (!IsWithinViewRadius(observer, target)) return false;
+    if (!IsWithinViewRadius(observer, target))
+        return false;
 
     // Stealth check: stealthed targets are invisible unless observer
     // has a pinned interest in them (e.g. skill/buff forced visibility).
     if (IsStealthed(target))
     {
         // Check if observer has the target pinned in its interest list.
-        const auto* aoiList = tlsEcs.actorRegistry.try_get<AoiListComp>(observer);
-        if (aoiList == nullptr) return false;
+        const auto *aoiList = tlsEcs.actorRegistry.try_get<AoiListComp>(observer);
+        if (aoiList == nullptr)
+            return false;
 
         auto it = aoiList->entries.find(target);
         if (it == aoiList->entries.end() || it->second.priority < AoiPriority::kPinned)
@@ -164,4 +166,3 @@ bool ViewSystem::CanSee(entt::entity observer, entt::entity target)
 
     return true;
 }
-

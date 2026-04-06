@@ -4,7 +4,7 @@
 #include "engine/core/type_define/type_define.h"
 #include "engine/core/node/constants/node_constants.h"
 
-#include "proto/common/component/game_node_comp.pb.h"
+#include "proto/common/component/node_player_comp.pb.h"
 
 using ScenePlayers = EntityUnorderedSet; // weak refs; decouples players from scenes
 
@@ -24,21 +24,24 @@ struct CrossSceneSceneNode
 {
 };
 
-class SceneRegistryComp {
+class SceneRegistryComp
+{
 public:
 	// type alias
 	using SceneList = std::unordered_map<uint32_t, EntityUnorderedSet>;
 
-	[[nodiscard]] const SceneList& GetSceneMap() const { return scenesByConfigId; }
+	[[nodiscard]] const SceneList &GetSceneMap() const { return scenesByConfigId; }
 
-	std::size_t GetTotalSceneCount() const {
+	std::size_t GetTotalSceneCount() const
+	{
 		std::size_t total = 0;
-		for (const auto& [_, sceneSet] : scenesByConfigId)
+		for (const auto &[_, sceneSet] : scenesByConfigId)
 			total += sceneSet.size();
 		return total;
 	}
 
-	[[nodiscard]] const EntityUnorderedSet& GetScenesByConfig(uint32_t configId) const {
+	[[nodiscard]] const EntityUnorderedSet &GetScenesByConfig(uint32_t configId) const
+	{
 		static const EntityUnorderedSet emptySet;
 		auto it = scenesByConfigId.find(configId);
 		return it != scenesByConfigId.end() ? it->second : emptySet;
@@ -48,38 +51,44 @@ private:
 	SceneList scenesByConfigId;
 };
 
-
-struct NodeStateComp {
-	explicit operator NodeState() const {
+struct NodeStateComp
+{
+	explicit operator NodeState() const
+	{
 		return state;
 	}
 
-	bool IsNormal() const {
+	bool IsNormal() const
+	{
 		return state == NodeState::kNormal;
 	}
 
 	NodeState state = NodeState::kNormal;
 };
 
-struct NodePressureComp {
-	explicit operator NodePressureState() const {
+struct NodePressureComp
+{
+	explicit operator NodePressureState() const
+	{
 		return state;
 	}
 
 	// convenience comparison operators
-	bool operator==(NodePressureState other) const {
+	bool operator==(NodePressureState other) const
+	{
 		return state == other;
 	}
-	bool operator!=(NodePressureState other) const {
+	bool operator!=(NodePressureState other) const
+	{
 		return state != other;
 	}
 
-	bool IsPressure() const {
+	bool IsPressure() const
+	{
 		return state == NodePressureState::kPressure;
 	}
 
 	NodePressureState state = NodePressureState::kNoPressure;
 };
-
 
 using SceneNodePlayerStatsPtrComp = std::shared_ptr<GameNodePlayerInfoComp>;
