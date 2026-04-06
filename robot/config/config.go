@@ -13,6 +13,9 @@ import (
 type Config struct {
 	GateAddr       string   `yaml:"gate_addr"`       // e.g. "127.0.0.1:6000" (fallback if login_addr is empty)
 	LoginAddr      string   `yaml:"login_addr"`      // e.g. "127.0.0.1:50000" (gRPC, for GetGateList)
+	GatewayAddr    string   `yaml:"gateway_addr"`    // e.g. "http://127.0.0.1:8080" (Gateway HTTP API, for /api/assign-gate)
+	GateMode       string   `yaml:"gate_mode"`       // "grpc" (default, legacy) or "http" (industry-standard HTTP API)
+	ZoneID         uint32   `yaml:"zone_id"`         // target zone (0 = auto-select from server-list)
 	RobotCount     int      `yaml:"robot_count"`     // number of concurrent robots
 	AccountFmt     string   `yaml:"account_fmt"`     // printf pattern, e.g. "robot_%04d"
 	Password       string   `yaml:"password"`        // shared password for all robots
@@ -84,8 +87,17 @@ func (c *Config) ResolveProfile() *ai.Profile {
 }
 
 func (c *Config) validate() error {
-	if c.GateAddr == "" && c.LoginAddr == "" {
-		return fmt.Errorf("gate_addr or login_addr must be set")
+	if c.GateAddr == "" && c.LoginAddr == "" && c.GatewayAddr == "" {
+		return fmt.Errorf("gate_addr, login_addr, or gateway_addr must be set")
+	}
+	switch c.GateMode {
+	case "", "grpc", "http":
+		// valid
+	default:
+		return fmt.Errorf("unknown gate_mode %q (expected grpc or http)", c.GateMode)
+	}
+	if c.GateMode == "http" && c.GatewayAddr == "" {
+		return fmt.Errorf("gateway_addr must be set when gate_mode is http")
 	}
 	if c.RobotCount <= 0 {
 		return fmt.Errorf("robot_count must be > 0")

@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -211,11 +215,25 @@ type gateAssignmentLocal struct {
 
 // resolveGateAddrLocal keeps main.go runnable as a single-file command.
 func resolveGateAddrLocal(cfg *config.Config) (host, port string, payload, signature []byte, err error) {
+	mode := cfg.GateMode
+	if mode == "" {
+		if cfg.GatewayAddr != "" {
+			mode = "http"
+		} else {
+			mode = "grpc"
+		}
+	}
+
+	if mode == "http" {
+		return resolveGateViaHTTPLocal(cfg)
+	}
+
+	// grpc mode
 	if cfg.LoginAddr != "" {
 		const maxRetries = 30
 		backoff := 2 * time.Second
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			result, assignErr := assignGateLocal(cfg.LoginAddr, 0)
+			result, assignErr := assignGateLocal(cfg.LoginAddr, cfg.ZoneID)
 			if assignErr == nil {
 				h, p, splitErr := net.SplitHostPort(result.addr)
 				return h, p, result.payload, result.signature, splitErr
@@ -258,6 +276,133 @@ func assignGateLocal(loginAddr string, zoneId uint32) (*gateAssignmentLocal, err
 
 	return &gateAssignmentLocal{
 		addr:      fmt.Sprintf("%s:%d", resp.Ip, resp.Port),
+		payload:   resp.TokenPayload,
+		signature: resp.TokenSignature,
+	}, nil
+}
+
+// resolveGateViaHTTPLocal calls POST /api/assign-gate (HTTP mode) with retry.
+func resolveGateViaHTTPLocal(cfg *config.Config) (host, port string, payload, signature []byte, err error) {
+	if cfg.GatewayAddr == "" {
+		h, p, splitErr := net.SplitHostPort(cfg.GateAddr)
+		return h, p, nil, nil, splitErr
+	}
+
+	zoneID := cfg.ZoneID
+	if zoneID == 0 {
+		zoneID, err = resolveZoneIDLocal(cfg.GatewayAddr)
+		if err != nil {
+			zoneID = 0
+		}
+	}
+
+	const maxRetries = 30
+	backoff := 2 * time.Second
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		result, assignErr := assignGateHTTPLocal(cfg.GatewayAddr, zoneID)
+		if assignErr == nil {
+			h, p, splitErr := net.SplitHostPort(result.addr)
+			return h, p, result.payload, result.signature, splitErr
+		}
+		if attempt < maxRetries {
+			time.Sleep(backoff)
+			if backoff < 10*time.Second {
+				backoff = backoff * 3 / 2
+			}
+		}
+	}
+	if cfg.GateAddr == "" {
+		return "", "", nil, nil, fmt.Errorf("HTTP AssignGate failed after retries and no static gate_addr configured")
+	}
+	h, p, splitErr := net.SplitHostPort(cfg.GateAddr)
+	return h, p, nil, nil, splitErr
+}
+
+func resolveZoneIDLocal(gatewayAddr string) (uint32, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, gatewayAddr+"/api/server-list", nil)
+	if err != nil {
+		return 0, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+
+	var result struct {
+		Zones []struct {
+			ZoneID      uint32 `json:"zone_id"`
+			Recommended bool   `json:"recommended"`
+		} `json:"zones"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0, err
+	}
+	if len(result.Zones) == 0 {
+		return 0, fmt.Errorf("no zones")
+	}
+	for _, z := range result.Zones {
+		if z.Recommended {
+			return z.ZoneID, nil
+		}
+	}
+	return result.Zones[0].ZoneID, nil
+}
+
+func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignmentLocal, error) {
+	reqBody, _ := json.Marshal(map[string]uint32{"zone_id": zoneId})
+
+	url := gatewayAddr + "/api/assign-gate"
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	httpResp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("HTTP POST %s: %w", url, err)
+	}
+	defer httpResp.Body.Close()
+
+	body, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response: %w", err)
+	}
+	if httpResp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d: %s", httpResp.StatusCode, string(body))
+	}
+
+	var resp struct {
+		GateIP         string `json:"gate_ip"`
+		GatePort       uint32 `json:"gate_port"`
+		TokenPayload   []byte `json:"token_payload"`
+		TokenSignature []byte `json:"token_signature"`
+		Error          string `json:"error,omitempty"`
+	}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
+	if resp.Error != "" {
+		return nil, fmt.Errorf("AssignGate: %s", resp.Error)
+	}
+	if resp.GateIP == "" || resp.GatePort == 0 {
+		return nil, fmt.Errorf("AssignGate returned empty address")
+	}
+
+	return &gateAssignmentLocal{
+		addr:      fmt.Sprintf("%s:%d", resp.GateIP, resp.GatePort),
 		payload:   resp.TokenPayload,
 		signature: resp.TokenSignature,
 	}, nil

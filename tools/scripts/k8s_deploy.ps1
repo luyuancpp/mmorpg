@@ -52,6 +52,7 @@ $GoSvcCatalogue = @{
 	login           = @{ ConfigMap = "go-svc-login-config";           Manifest = "login.yaml";           Port = 50000; ConfigFlag = "-loginService";   ConfigFile = "login.yaml";                  ImageName = "mmorpg-login" }
 	"player-locator"= @{ ConfigMap = "go-svc-player-locator-config";  Manifest = "player-locator.yaml";  Port = 50100; ConfigFlag = "-f";              ConfigFile = "player_locator.yaml";           ImageName = "mmorpg-player-locator" }
 	"scene-manager" = @{ ConfigMap = "go-svc-scene-manager-config";   Manifest = "scene-manager.yaml";   Port = 60000; ConfigFlag = "-f";              ConfigFile = "scene_manager_service.yaml";    ImageName = "mmorpg-scene-manager" }
+	gateway         = @{ ConfigMap = "go-svc-gateway-config";         Manifest = "gateway.yaml";         Port = 8080;  ConfigFlag = "-f";              ConfigFile = "gateway.yaml";                  ImageName = "mmorpg-gateway" }
 }
 
 # Java service catalogue
@@ -481,12 +482,16 @@ PlayerLocatorRpc:
       - "etcd.${InfraNamespace}:2379"
     Key: playerlocator.rpc
   Timeout: 5000
+  Middlewares:
+    Breaker: false
 SceneManagerRpc:
   Etcd:
     Hosts:
       - "etcd.${InfraNamespace}:2379"
     Key: scenemanagerservice.rpc
   Timeout: 5000
+  Middlewares:
+    Breaker: false
 GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 Kafka:
   Brokers:
@@ -554,6 +559,22 @@ Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
 NodeID: "node-1"
+"@
+		}
+		"gateway" {
+@"
+RestConf:
+  Name: gateway
+  Host: 0.0.0.0
+  Port: 8080
+  Timeout: 10000
+Etcd:
+  Hosts:
+    - "etcd.${InfraNamespace}:2379"
+  DialTimeout: 5s
+Gate:
+  TokenSecret: "change-me-in-production-use-a-strong-random-key"
+  DiscoveryTimeout: 5s
 "@
 		}
 		default {

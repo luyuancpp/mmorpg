@@ -20,6 +20,7 @@ param(
         "go-player-locator",
         "go-login",
         "go-scene-manager",
+        "go-gateway",
         "cpp-gate",
         "cpp-scene"
     )]
@@ -118,6 +119,7 @@ switch ($Command) {
     "go-player-locator" { Invoke-GoService -Dir "player_locator" -Entry "player_locator.go" -ExeName "player_locator" }
     "go-login" { Invoke-GoService -Dir "login" -Entry "login.go" -ExeName "login" }
     "go-scene-manager" { Invoke-GoService -Dir "scene_manager" -Entry "scene_manager_service.go" -ExeName "scene_manager" }
+    "go-gateway" { Invoke-GoService -Dir "gateway" -Entry "gateway.go" -ExeName "gateway" }
     "cpp-gate" { Invoke-CppNode -Exe "gate.exe" }
     "cpp-scene" { Invoke-CppNode -Exe "scene.exe" }
     default { throw "Unsupported command: $Command" }
