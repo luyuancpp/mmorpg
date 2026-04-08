@@ -4,10 +4,10 @@ import (
 	"go.uber.org/zap"
 
 	"robot/pkg"
-	"robot/proto/chat"
-	"robot/proto/common/base"
-	"robot/proto/login"
-	"robot/proto/scene"
+	"proto/chat"
+	"proto/common/base"
+	"proto/login"
+	"proto/scene"
 )
 
 // --- Chat ---

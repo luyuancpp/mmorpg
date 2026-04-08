@@ -467,23 +467,5 @@ func BuildGrpcServiceProto(wg *sync.WaitGroup) {
 		}(dirName)
 	}
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		robotProtoDir := _config.Global.Paths.RobotGeneratedProto
-		robotRootDir := _config.Global.Paths.RobotGenerated
-		if err := GenerateRobotGoProto(robotProtoDir, robotRootDir); err != nil {
-			logger.Global.Warn("gRPC service build: failed to process robot directory",
-				zap.String("robot_proto_dir", robotProtoDir),
-				zap.String("robot_root_dir", robotRootDir),
-				zap.Error(err),
-			)
-		} else {
-			logger.Global.Info("gRPC service build: robot directory processed",
-				zap.String("robot_proto_dir", robotProtoDir),
-				zap.String("robot_root_dir", robotRootDir),
-			)
-		}
-	}()
+	// Robot gRPC generation removed: robot now uses go/proto via replace directive.
 }

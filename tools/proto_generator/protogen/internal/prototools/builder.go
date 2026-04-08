@@ -66,17 +66,7 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		destDir := _config.Global.Paths.RobotGeneratedProto
-		if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
-		logger.Global.Warn("Failed to copy robot proto files",
-			zap.String("dir", _config.Global.Paths.Robot),
-				zap.Error(err),
-			)
-		}
-	}()
+	// Robot proto copy removed: robot now uses go/proto via replace directive.
 }
 
 // copyProtoToDir copies proto files from a single source directory to the destination.

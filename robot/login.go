@@ -9,7 +9,7 @@ import (
 	"robot/generated/pb/game"
 	"robot/metrics"
 	"robot/pkg"
-	"robot/proto/login"
+	"proto/login"
 )
 
 // loginAndEnter performs: login → create player (if needed) → enter game.

@@ -18,7 +18,7 @@ import (
 const handlerTemplate = `package handler
 
 import (
-	"robot/proto/{{.ImportDir}}"
+	"proto/{{.ImportDir}}"
 	"robot/logic/gameobject"
 )
 

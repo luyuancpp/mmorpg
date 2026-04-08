@@ -593,6 +593,19 @@ func resolveAbsolutePaths() error {
 		return err
 	}
 
+	// Convert DomainMeta.Source paths to absolute paths
+	for domain, meta := range Global.DomainMeta {
+		if meta.Source == "" {
+			continue
+		}
+		absPath, err := filepath.Abs(meta.Source)
+		if err != nil {
+			return fmt.Errorf("failed to resolve DomainMeta[%s].Source path '%s': %w", domain, meta.Source, err)
+		}
+		meta.Source = formatPathWithSlash(absPath, meta.Source)
+		Global.DomainMeta[domain] = meta
+	}
+
 	return nil
 }
 

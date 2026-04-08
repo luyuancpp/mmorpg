@@ -2,18 +2,31 @@ package utils
 
 import (
 	"path"
+	"path/filepath"
 	_config "protogen/internal/config"
 	"strings"
 )
 
 func GetDomainByProtoPath(protoPath string) (string, bool) {
+	// protoPath is relative to OutputRoot (from protoc --proto_path).
+	// Resolve it to absolute so it can be compared with the absolute
+	// DomainMeta.Source paths produced by resolveAbsolutePaths().
+	absProto := strings.ToLower(filepath.ToSlash(
+		filepath.Join(_config.Global.Paths.OutputRoot, protoPath)))
+	if !strings.HasSuffix(absProto, "/") {
+		absProto += "/"
+	}
+
 	for domain, meta := range _config.Global.DomainMeta {
 		if meta.Source == "" {
 			continue
 		}
 
-		key := "/" + strings.ToLower(meta.Source) + "/"
-		if strings.Contains(strings.ToLower(protoPath), key) {
+		source := strings.ToLower(filepath.ToSlash(meta.Source))
+		if !strings.HasSuffix(source, "/") {
+			source += "/"
+		}
+		if strings.HasPrefix(absProto, source) {
 			return domain, true
 		}
 	}
