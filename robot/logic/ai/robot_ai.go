@@ -10,9 +10,9 @@ import (
 	"robot/generated/pb/game"
 	"robot/metrics"
 	"robot/pkg"
-	"robot/proto/chat"
-	"robot/proto/common/component"
-	"robot/proto/scene"
+	"proto/chat"
+	"proto/common/component"
+	"proto/scene"
 )
 
 // RobotAI drives a single robot's in-game behavior after login+enter.

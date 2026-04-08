@@ -13,7 +13,7 @@ import (
 	"robot/generated/pb/game"
 	"robot/metrics"
 	"robot/pkg"
-	"robot/proto/login"
+	"proto/login"
 )
 
 // testResult records the outcome of one test scenario.

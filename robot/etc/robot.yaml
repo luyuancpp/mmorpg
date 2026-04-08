@@ -11,7 +11,7 @@ login_addr: "127.0.0.1:50000" # gRPC endpoint (used when gate_mode=grpc)
 gateway_addr: "http://127.0.0.1:8080" # Gateway HTTP endpoint (used when gate_mode=http)
 gate_addr: "127.0.0.1:10003" # static fallback (used when login service unavailable)
 zone_id: 0 # target zone (0 = auto-select recommended zone from /api/server-list)
-robot_count: 10
+robot_count: 1
 account_fmt: "robot_%04d"
 password: "123456"
 skill_ids: [1001]
@@ -20,7 +20,7 @@ report_interval: 5 # seconds between stats prints
 
 # Mode: "stress" (default) = mass concurrent bots doing AI actions
 #        "login-test"       = run login test suite (10 scenarios) then exit
-mode: "stress"
+mode: "login-test"
 
 # Behavior profile: "stress" (pure skill spam), "fighter", "explorer", "chatter"
 # stress = backward-compatible, only casts skills (good for load testing)

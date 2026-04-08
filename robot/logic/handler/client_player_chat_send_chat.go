@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"robot/proto/chat"
+	"proto/chat"
 	"robot/logic/gameobject"
 )
 

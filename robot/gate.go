@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"robot/config"
-	"robot/proto/login"
+	"proto/login"
 )
 
 type gateAssignment struct {

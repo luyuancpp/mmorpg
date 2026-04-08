@@ -23,7 +23,7 @@ import (
 	"robot/generated/pb/game"
 	"robot/logic/gameobject"
 	"robot/pkg"
-	base "robot/proto/common/base"
+	base "proto/common/base"
 )
 
 type handlerFunc func(*gameobject.Player, []byte)

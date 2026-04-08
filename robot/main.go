@@ -28,12 +28,12 @@ import (
 	"robot/logic/handler"
 	"robot/metrics"
 	"robot/pkg"
-	"robot/proto/common/base"
-	"robot/proto/login"
+	"proto/common/base"
+	"proto/login"
 
 	// Blank-import proto packages so they register with protoregistry.
-	_ "robot/proto/chat"
-	_ "robot/proto/scene"
+	_ "proto/chat"
+	_ "proto/scene"
 )
 
 func main() {

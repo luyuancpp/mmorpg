@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
-	"robot/proto/common/base"
+	"proto/common/base"
 )
 
 // GameClient wraps a muduo TCP connection to a gate node.
