@@ -540,6 +540,25 @@ MapService (有状态)           BattleService (无状态)
 - 不能独立扩容
 - 适合单场战斗 <1ms 且并发不高的场景
 
+### 为什么战报必须返回给 MapService？
+
+BattleService 是**无状态纯函数**，只负责计算，不持有任何地图/玩家/连接数据。战报必须回到 MapService 才能产生实际效果：
+
+| MapService 拿到战报后做的事 | 为什么 BattleService 做不了 |
+|---|---|
+| 扣双方兵力 | 不持有行军/驻军数据 |
+| 改格子控制权（攻方胜 → 城池易主） | 不持有地图格子状态 |
+| 重算领地连通性、视野 observer_count | 不持有视野表 |
+| 更新行军状态（残兵返回/驻防/全灭销毁） | 不持有行军表 |
+| 推送战报给双方玩家 | 不持有玩家连接（连接在 Gate） |
+| 写 Kafka → DB 持久化 | 不负责持久化 |
+
+**架构本质是关注点分离：**
+- BattleService = 纯计算层（"给我输入，还你结果"）
+- MapService = 状态层（"我管地图上所有因果关系"）
+
+如果让 BattleService 直接改地图状态，它就变成有状态服务，失去水平扩容能力，也违背了"MapService 是地图唯一权威"的架构原则。
+
 ---
 
 ## Q11: 如何处理"同时到达"同一格子的多支军队？
@@ -705,14 +724,73 @@ dead = total_loss - wounded          // 40% 永久损失
 
 **A:**
 
-### 存储方案
-```
-战斗结束
-  → Protobuf 序列化 BattleReport (~1-5KB)
-  → Zstd 压缩 (~500B-2KB)
-  → 写入 MySQL (battle_reports 表) + Redis 缓存最近 N 条
+### 战报保存完整流程
 
-表结构:
+```
+BattleService 返回 BattleReport
+        ↓
+MapService 处理战斗结果（扣兵/易主/行军状态）
+        ↓
+   ┌────┴────────────────────────────┐
+   ↓                                 ↓
+推送给双方玩家（实时）           持久化（异步）
+   ↓                                 ↓
+MapService → Kafka              MapService → Kafka
+topic: gate-{gate_id}           topic: db-write
+msg: PushBattleReport           msg: SaveBattleReport
+   ↓                                 ↓
+Gate Node → TCP → 客户端        DB Service 消费
+客户端加入本地战报列表               ↓
+                              1. protobuf 序列化 → zstd 压缩
+                              2. INSERT battle_reports 表
+                              3. Redis LPUSH player:{id}:reports (最近N条ID)
+                              4. Redis SET report:{id} (带 TTL 缓存)
+```
+
+**关键：实时推送和持久化是两条独立的 Kafka 路径，互不阻塞。**
+
+### DB Service 消费代码
+```go
+func handleSaveBattleReport(msg kafka.Message) {
+    var report pb.BattleReportStorage
+    proto.Unmarshal(msg.Value, &report)
+    
+    // 1. 压缩
+    blob := zstdCompress(report.ReportData)
+    
+    // 2. MySQL 写入
+    db.Exec(`INSERT INTO battle_reports 
+        (report_id, attacker_id, defender_id, result, report_blob, created_at) 
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        report.ReportId, report.AttackerId, report.DefenderId,
+        report.Result, blob, time.Now())
+    
+    // 3. Redis 缓存战报内容 (7天TTL)
+    rdb.Set(ctx, fmt.Sprintf("report:%d", report.ReportId), blob, 7*24*time.Hour)
+    
+    // 4. 双方战报列表各加一条
+    for _, pid := range []int64{report.AttackerId, report.DefenderId} {
+        key := fmt.Sprintf("player:%d:reports", pid)
+        rdb.LPush(ctx, key, report.ReportId)
+        rdb.LTrim(ctx, key, 0, 99)  // 只保留最近100条
+    }
+}
+```
+
+### 玩家查看历史战报
+```
+客户端请求"我的战报列表"
+  → Gate → DataService
+  → Redis LRANGE player:{id}:reports 0 49  (取最近50条ID)
+  → 批量 Redis MGET report:{id1}, report:{id2}, ...
+  → cache miss 的去 MySQL 查 → 回填 Redis
+  → 返回给客户端
+```
+
+### 存储方案
+
+#### MySQL 表结构
+```sql
 CREATE TABLE battle_reports (
     report_id    BIGINT PRIMARY KEY,
     attacker_id  BIGINT,
@@ -728,10 +806,18 @@ CREATE TABLE battle_reports (
 );
 ```
 
+#### Redis 数据结构
+```
+player:{id}:reports   → List (最近100条 report_id, LPUSH+LTRIM)
+report:{id}           → String (zstd blob, TTL 7天)
+alliance:{id}:reports → List (联盟战报, 最近200条)
+```
+
 ### 查询场景
-- 玩家查看"我的战报"：按 `attacker_id` 或 `defender_id` 查最近 N 条
-- 联盟战报：按联盟事件关联查
-- 历史回放：按 `report_id` 精确查询
+- 玩家查看"我的战报"：Redis LRANGE → 批量 MGET → cache miss 回源 MySQL
+- 联盟战报：Redis LRANGE alliance:{id}:reports
+- 历史回放：按 `report_id` 精确查询 → Redis GET → miss → MySQL SELECT
+- GM 仲裁：MySQL 精确查 + 反序列化 BattleInput → 重跑验证
 
 ### 容量估算
 ```
@@ -740,6 +826,10 @@ CREATE TABLE battle_reports (
 30 天 = 6GB
 保留 90 天热数据 = ~18GB → MySQL 轻松承受
 90 天后归档到 S3 冷存储
+
+Redis 内存:
+  100K 战报列表 × 100 ID × 8B = ~80MB (列表)
+  热战报缓存 (7天) = 700K × 2KB = ~1.4GB (可调 TTL 控制)
 ```
 
 ---
