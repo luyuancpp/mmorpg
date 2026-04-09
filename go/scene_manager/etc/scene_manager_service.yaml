@@ -3,14 +3,18 @@ ListenOn: 127.0.0.1:60300
 Timeout: 5000
 Etcd:
   Hosts:
-  - 127.0.0.1:2379
+    - 127.0.0.1:2379
   Key: scenemanagerservice.rpc
 Redis:
   Host: 127.0.0.1:6379
   Type: node
   Key: scenemanagerservice
-  
+
 Kafka:
   Brokers:
     - 127.0.0.1:9092
 ZoneID: 1
+# Grace period (seconds) before removing a scene node that disappeared from etcd.
+# During this window, a breakpoint-paused node can re-register without being evicted.
+# Set to 0 for immediate removal in production.
+NodeRemovalGraceSeconds: 300

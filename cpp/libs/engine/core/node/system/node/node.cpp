@@ -571,6 +571,65 @@ void Node::HandleServiceNodeStop(const std::string &key, const std::string &node
 		return;
 	}
 
+	const auto graceSeconds = tlsNodeConfigManager.GetBaseDeployConfig().node_removal_grace_seconds();
+
+	// --- Grace period path: defer removal so breakpoint-paused nodes can re-register ---
+	if (graceSeconds > 0)
+	{
+		const auto &nodeUuid = stoppedNode.node_uuid();
+
+		// Already pending? Reset timer.
+		if (pendingNodeRemovals_.count(nodeUuid))
+		{
+			LOG_INFO << "Node removal already pending, resetting grace timer. uuid=" << nodeUuid;
+			pendingNodeRemovals_.erase(nodeUuid);
+		}
+
+		auto pending = std::make_unique<PendingNodeRemoval>();
+		pending->nodeInfo.CopyFrom(stoppedNode);
+
+		// Capture uuid by value for the timer callback.
+		std::string capturedUuid = nodeUuid;
+		pending->timer.RunAfter(static_cast<double>(graceSeconds), [this, capturedUuid]()
+								{
+			auto it = pendingNodeRemovals_.find(capturedUuid);
+			if (it == pendingNodeRemovals_.end())
+			{
+				return; // Already cancelled by a re-register PUT event.
+			}
+
+			LOG_WARN << "Grace period expired, removing node. uuid=" << capturedUuid;
+			NodeInfo expiredNode;
+			expiredNode.CopyFrom(it->second->nodeInfo);
+			pendingNodeRemovals_.erase(it);
+
+			// Execute the actual removal (same logic as the immediate path below).
+			ExecuteNodeRemoval(expiredNode); });
+
+		pendingNodeRemovals_[nodeUuid] = std::move(pending);
+		LOG_INFO << "Node removal deferred for " << graceSeconds << "s grace period. uuid=" << nodeUuid;
+		return;
+	}
+
+	// --- Immediate removal path (production: grace_seconds == 0) ---
+	ExecuteNodeRemoval(stoppedNode);
+}
+
+void Node::CancelPendingNodeRemoval(const std::string &nodeUuid)
+{
+	auto it = pendingNodeRemovals_.find(nodeUuid);
+	if (it == pendingNodeRemovals_.end())
+	{
+		return;
+	}
+
+	LOG_INFO << "Node re-registered during grace period, cancelling pending removal. uuid=" << nodeUuid;
+	it->second->timer.Cancel();
+	pendingNodeRemovals_.erase(it);
+}
+
+void Node::ExecuteNodeRemoval(const NodeInfo &stoppedNode)
+{
 	auto &serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 	auto &nodesOfStoppedType = *serviceNodesByType[stoppedNode.node_type()].mutable_node_list();
 

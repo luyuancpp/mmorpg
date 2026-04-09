@@ -1182,6 +1182,7 @@ class BaseDeployConfig final : public ::google::protobuf::Message
     kKeepAliveIntervalFieldNumber = 5,
     kNodeTtlSecondsFieldNumber = 7,
     kHealthCheckIntervalFieldNumber = 8,
+    kNodeRemovalGraceSecondsFieldNumber = 13,
   };
   // repeated string etcd_hosts = 1;
   int etcd_hosts_size() const;
@@ -1359,11 +1360,21 @@ class BaseDeployConfig final : public ::google::protobuf::Message
   void _internal_set_health_check_interval(::uint32_t value);
 
   public:
+  // uint32 node_removal_grace_seconds = 13;
+  void clear_node_removal_grace_seconds() ;
+  ::uint32_t node_removal_grace_seconds() const;
+  void set_node_removal_grace_seconds(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_node_removal_grace_seconds() const;
+  void _internal_set_node_removal_grace_seconds(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BaseDeployConfig)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 12,
+  static const ::google::protobuf::internal::TcParseTable<4, 13,
                                    2, 143,
                                    2>
       _table_;
@@ -1397,6 +1408,7 @@ class BaseDeployConfig final : public ::google::protobuf::Message
     ::uint32_t keep_alive_interval_;
     ::uint32_t node_ttl_seconds_;
     ::uint32_t health_check_interval_;
+    ::uint32_t node_removal_grace_seconds_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2471,6 +2483,30 @@ inline void BaseDeployConfig::set_allocated_table_data_format(::std::string* PRO
     _impl_.table_data_format_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:BaseDeployConfig.table_data_format)
+}
+
+// uint32 node_removal_grace_seconds = 13;
+inline void BaseDeployConfig::clear_node_removal_grace_seconds() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_removal_grace_seconds_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000200u;
+}
+inline ::uint32_t BaseDeployConfig::node_removal_grace_seconds() const {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.node_removal_grace_seconds)
+  return _internal_node_removal_grace_seconds();
+}
+inline void BaseDeployConfig::set_node_removal_grace_seconds(::uint32_t value) {
+  _internal_set_node_removal_grace_seconds(value);
+  _impl_._has_bits_[0] |= 0x00000200u;
+  // @@protoc_insertion_point(field_set:BaseDeployConfig.node_removal_grace_seconds)
+}
+inline ::uint32_t BaseDeployConfig::_internal_node_removal_grace_seconds() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.node_removal_grace_seconds_;
+}
+inline void BaseDeployConfig::_internal_set_node_removal_grace_seconds(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.node_removal_grace_seconds_ = value;
 }
 
 // -------------------------------------------------------------------

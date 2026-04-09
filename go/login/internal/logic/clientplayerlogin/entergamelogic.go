@@ -2,7 +2,6 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"fmt"
 	"login/data"
 	"login/generated/pb/table"
 	"login/internal/config"
@@ -102,25 +101,6 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 
 	flowState := buildEnterGameSessionState(in, sessionDetails, session.Account)
 
-	// Channel to synchronously wait for the async task callback to complete.
-	callbackDone := make(chan error, 1)
-	taskCallback := func(taskKey string, taskSuccess bool, err error) {
-		if err != nil || !taskSuccess {
-			logx.Errorf("Task failed for player %d: success=%v err=%v", in.PlayerId, taskSuccess, err)
-			callbackDone <- fmt.Errorf("task failed: %w", err)
-			return
-		}
-		decision, applyErr := l.applyLoadedPlayerSession(ctx, flowState)
-		if applyErr != nil {
-			logx.Errorf("Failed to apply loaded player session for player %d: %v", in.PlayerId, applyErr)
-			callbackDone <- applyErr
-			return
-		}
-
-		logx.Infof("All tasks completed (decision=%d). playerId=%d", decision, in.PlayerId)
-		callbackDone <- nil
-	}
-
 	defer func() {
 		// Use background context for lock release to avoid failure when gRPC ctx is cancelled
 		releaseCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -187,29 +167,23 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		}
 	}
 
-	// 6. Load Player data and wait for task completion
-	err = l.ensurePlayerDataInRedis(ctx, in.PlayerId, taskCallback)
-	if err != nil {
-		logx.Errorf("failed to ensure player data in redis [PlayerId=%d, error=%v]", in.PlayerId, err)
+	// 6. Load Player data (synchronous)
+	if err := l.ensurePlayerDataInRedis(ctx, in.PlayerId); err != nil {
+		logx.Errorf("failed to load player data [PlayerId=%d, error=%v]", in.PlayerId, err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginUnknownError)
 		return resp, nil
 	}
 
-	// Wait for the async callback to finish (keeps ctx alive for gRPC calls inside callback)
-	select {
-	case cbErr := <-callbackDone:
-		if cbErr != nil {
-			logx.Errorf("EnterGame callback failed for player %d: %v", in.PlayerId, cbErr)
-			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginUnknownError)
-			return resp, nil
-		}
-	case <-ctx.Done():
-		logx.Errorf("EnterGame timed out waiting for player data: playerId=%d err=%v", in.PlayerId, ctx.Err())
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginTimeout)
+	// 7. Apply session (bind gate + route to scene)
+	decision, applyErr := l.applyLoadedPlayerSession(ctx, flowState)
+	if applyErr != nil {
+		logx.Errorf("Failed to apply player session [PlayerId=%d, error=%v]", in.PlayerId, applyErr)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginUnknownError)
 		return resp, nil
 	}
+	logx.Infof("Player data loaded and session applied (decision=%d). playerId=%d", decision, in.PlayerId)
 
-	// 7. Clean up Session and FSM
+	// 8. Clean up Session and FSM
 	cleanupLoginSessionState(ctx, l.svcCtx, sessionDetails.SessionId, "enterGame")
 
 	resp.ErrorMessage = nil
@@ -341,27 +315,19 @@ func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSess
 	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID)
 }
 
-// ensurePlayerDataInRedis loads player data using the task-based callback pattern.
-func (l *EnterGameLogic) ensurePlayerDataInRedis(
-	ctx context.Context,
-	playerId uint64,
-	taskCallback func(taskKey string, taskSuccess bool, err error),
-) error {
-	messagesToLoad := []proto.Message{
-		&login_proto_database.PlayerAllData{
-			PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
-			PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
-		},
-		&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
-	}
-
-	// Invoke data load with the provided callback
-	return dataloader.LoadWithPlayerId(
+// ensurePlayerDataInRedis loads player data from cache or DB synchronously.
+func (l *EnterGameLogic) ensurePlayerDataInRedis(ctx context.Context, playerId uint64) error {
+	return dataloader.LoadPlayerDataSync(
 		ctx,
 		l.svcCtx.RedisClient,
 		l.svcCtx.KafkaClient,
-		l.svcCtx.TaskExecutor,
-		messagesToLoad,
-		taskCallback,
+		playerId,
+		[]proto.Message{
+			&login_proto_database.PlayerAllData{
+				PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
+				PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
+			},
+			&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
+		},
 	)
 }
