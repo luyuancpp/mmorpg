@@ -50,6 +50,9 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string &nodeJson, uint32
 		return;
 	}
 
+	// Cancel any pending grace-period removal for this node.
+	gNode->CancelPendingNodeRemoval(discoveredNode.node_uuid());
+
 	auto &serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 	auto &cachedNodesOfType = *serviceNodesByType[nodeType].mutable_node_list();
 

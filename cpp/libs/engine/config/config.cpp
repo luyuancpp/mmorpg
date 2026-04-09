@@ -23,6 +23,10 @@ bool readBaseDeployConfig(const std::string &filename, BaseDeployConfig &baseCon
 	{
 		baseConfig.set_node_ttl_seconds(root["Etcd"]["NodeTTLSeconds"].as<uint32_t>());
 	}
+	if (root["Etcd"]["NodeRemovalGraceSeconds"])
+	{
+		baseConfig.set_node_removal_grace_seconds(root["Etcd"]["NodeRemovalGraceSeconds"].as<uint32_t>());
+	}
 
 	if (root["LogLevel"])
 	{

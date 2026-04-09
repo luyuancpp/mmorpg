@@ -38,6 +38,12 @@ message BaseDeployConfig {
     // Table data loading format: "json" (default) or "binary".
     // "binary" loads .pb files (proto wire format) for faster startup.
     string table_data_format = 12;
+
+    // Grace period (seconds) before actually removing a node after etcd DELETE.
+    // During this window, if the node re-registers (PUT), the removal is cancelled.
+    // 0 = immediate removal (production default).
+    // 300+ = recommended for dev/debug to survive breakpoint pauses.
+    uint32 node_removal_grace_seconds = 13;
 }
 
 // Game config
