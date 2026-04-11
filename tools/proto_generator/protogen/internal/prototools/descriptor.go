@@ -84,25 +84,23 @@ func collectUniqueProtoFiles() ([]string, error) {
 
 	for _, key := range domainKeys {
 		meta := _config.Global.DomainMeta[key]
-		fileEntries, err := os.ReadDir(meta.Source)
-		if err != nil {
-			logger.Global.Warn("Descriptor generation: failed to read directory, skipping",
-				zap.String("dir", meta.Source),
-				zap.Error(err),
-			)
-			continue
-		}
-
-		for _, entry := range fileEntries {
-			if utils2.IsProtoFile(entry) {
-				absPath, err := filepath.Abs(filepath.Join(meta.Source, entry.Name()))
+		err := filepath.WalkDir(meta.Source, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				logger.Global.Warn("Descriptor generation: failed to access path, skipping",
+					zap.String("path", path),
+					zap.Error(err),
+				)
+				return nil
+			}
+			if utils2.IsProtoFile(d) {
+				absPath, err := filepath.Abs(path)
 				if err != nil {
 					logger.Global.Warn("Descriptor generation: failed to get absolute path, skipping",
-						zap.String("file_name", entry.Name()),
+						zap.String("file_name", d.Name()),
 						zap.String("dir", meta.Source),
 						zap.Error(err),
 					)
-					continue
+					return nil
 				}
 				absPath = filepath.ToSlash(absPath)
 
@@ -111,6 +109,13 @@ func collectUniqueProtoFiles() ([]string, error) {
 					allProtoFiles = append(allProtoFiles, absPath)
 				}
 			}
+			return nil
+		})
+		if err != nil {
+			logger.Global.Warn("Descriptor generation: failed to walk directory, skipping",
+				zap.String("dir", meta.Source),
+				zap.Error(err),
+			)
 		}
 	}
 
