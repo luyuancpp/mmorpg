@@ -80,6 +80,20 @@ class FriendService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::GetPendingRequestsResponse>> PrepareAsyncGetPendingRequests(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::GetPendingRequestsResponse>>(PrepareAsyncGetPendingRequestsRaw(context, request, cq));
     }
+    virtual ::grpc::Status NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::friendpb::NotifyOnlineResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOnlineResponse>> AsyncNotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOnlineResponse>>(AsyncNotifyOnlineRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOnlineResponse>> PrepareAsyncNotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOnlineResponse>>(PrepareAsyncNotifyOnlineRaw(context, request, cq));
+    }
+    virtual ::grpc::Status NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::friendpb::NotifyOfflineResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOfflineResponse>> AsyncNotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOfflineResponse>>(AsyncNotifyOfflineRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOfflineResponse>> PrepareAsyncNotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOfflineResponse>>(PrepareAsyncNotifyOfflineRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -95,6 +109,10 @@ class FriendService final {
       virtual void GetFriendList(::grpc::ClientContext* context, const ::friendpb::GetFriendListRequest* request, ::friendpb::GetFriendListResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void GetPendingRequests(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest* request, ::friendpb::GetPendingRequestsResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void GetPendingRequests(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest* request, ::friendpb::GetPendingRequestsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -112,6 +130,10 @@ class FriendService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::GetFriendListResponse>* PrepareAsyncGetFriendListRaw(::grpc::ClientContext* context, const ::friendpb::GetFriendListRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::GetPendingRequestsResponse>* AsyncGetPendingRequestsRaw(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::GetPendingRequestsResponse>* PrepareAsyncGetPendingRequestsRaw(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOnlineResponse>* AsyncNotifyOnlineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOnlineResponse>* PrepareAsyncNotifyOnlineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOfflineResponse>* AsyncNotifyOfflineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::friendpb::NotifyOfflineResponse>* PrepareAsyncNotifyOfflineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -158,6 +180,20 @@ class FriendService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::GetPendingRequestsResponse>> PrepareAsyncGetPendingRequests(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::GetPendingRequestsResponse>>(PrepareAsyncGetPendingRequestsRaw(context, request, cq));
     }
+    ::grpc::Status NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::friendpb::NotifyOnlineResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOnlineResponse>> AsyncNotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOnlineResponse>>(AsyncNotifyOnlineRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOnlineResponse>> PrepareAsyncNotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOnlineResponse>>(PrepareAsyncNotifyOnlineRaw(context, request, cq));
+    }
+    ::grpc::Status NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::friendpb::NotifyOfflineResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOfflineResponse>> AsyncNotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOfflineResponse>>(AsyncNotifyOfflineRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOfflineResponse>> PrepareAsyncNotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOfflineResponse>>(PrepareAsyncNotifyOfflineRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -173,6 +209,10 @@ class FriendService final {
       void GetFriendList(::grpc::ClientContext* context, const ::friendpb::GetFriendListRequest* request, ::friendpb::GetFriendListResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void GetPendingRequests(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest* request, ::friendpb::GetPendingRequestsResponse* response, std::function<void(::grpc::Status)>) override;
       void GetPendingRequests(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest* request, ::friendpb::GetPendingRequestsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response, std::function<void(::grpc::Status)>) override;
+      void NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response, std::function<void(::grpc::Status)>) override;
+      void NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -196,12 +236,18 @@ class FriendService final {
     ::grpc::ClientAsyncResponseReader< ::friendpb::GetFriendListResponse>* PrepareAsyncGetFriendListRaw(::grpc::ClientContext* context, const ::friendpb::GetFriendListRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::friendpb::GetPendingRequestsResponse>* AsyncGetPendingRequestsRaw(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::friendpb::GetPendingRequestsResponse>* PrepareAsyncGetPendingRequestsRaw(::grpc::ClientContext* context, const ::friendpb::GetPendingRequestsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOnlineResponse>* AsyncNotifyOnlineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOnlineResponse>* PrepareAsyncNotifyOnlineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOfflineResponse>* AsyncNotifyOfflineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOfflineResponse>* PrepareAsyncNotifyOfflineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_AddFriend_;
     const ::grpc::internal::RpcMethod rpcmethod_AcceptFriend_;
     const ::grpc::internal::RpcMethod rpcmethod_RejectFriend_;
     const ::grpc::internal::RpcMethod rpcmethod_RemoveFriend_;
     const ::grpc::internal::RpcMethod rpcmethod_GetFriendList_;
     const ::grpc::internal::RpcMethod rpcmethod_GetPendingRequests_;
+    const ::grpc::internal::RpcMethod rpcmethod_NotifyOnline_;
+    const ::grpc::internal::RpcMethod rpcmethod_NotifyOffline_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -215,6 +261,8 @@ class FriendService final {
     virtual ::grpc::Status RemoveFriend(::grpc::ServerContext* context, const ::friendpb::RemoveFriendRequest* request, ::friendpb::RemoveFriendResponse* response);
     virtual ::grpc::Status GetFriendList(::grpc::ServerContext* context, const ::friendpb::GetFriendListRequest* request, ::friendpb::GetFriendListResponse* response);
     virtual ::grpc::Status GetPendingRequests(::grpc::ServerContext* context, const ::friendpb::GetPendingRequestsRequest* request, ::friendpb::GetPendingRequestsResponse* response);
+    virtual ::grpc::Status NotifyOnline(::grpc::ServerContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response);
+    virtual ::grpc::Status NotifyOffline(::grpc::ServerContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_AddFriend : public BaseClass {
@@ -336,7 +384,47 @@ class FriendService final {
       ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_AddFriend<WithAsyncMethod_AcceptFriend<WithAsyncMethod_RejectFriend<WithAsyncMethod_RemoveFriend<WithAsyncMethod_GetFriendList<WithAsyncMethod_GetPendingRequests<Service > > > > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_NotifyOnline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_NotifyOnline() {
+      ::grpc::Service::MarkMethodAsync(6);
+    }
+    ~WithAsyncMethod_NotifyOnline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOnline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOnlineRequest* /*request*/, ::friendpb::NotifyOnlineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestNotifyOnline(::grpc::ServerContext* context, ::friendpb::NotifyOnlineRequest* request, ::grpc::ServerAsyncResponseWriter< ::friendpb::NotifyOnlineResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_NotifyOffline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_NotifyOffline() {
+      ::grpc::Service::MarkMethodAsync(7);
+    }
+    ~WithAsyncMethod_NotifyOffline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOffline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOfflineRequest* /*request*/, ::friendpb::NotifyOfflineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestNotifyOffline(::grpc::ServerContext* context, ::friendpb::NotifyOfflineRequest* request, ::grpc::ServerAsyncResponseWriter< ::friendpb::NotifyOfflineResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_AddFriend<WithAsyncMethod_AcceptFriend<WithAsyncMethod_RejectFriend<WithAsyncMethod_RemoveFriend<WithAsyncMethod_GetFriendList<WithAsyncMethod_GetPendingRequests<WithAsyncMethod_NotifyOnline<WithAsyncMethod_NotifyOffline<Service > > > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_AddFriend : public BaseClass {
    private:
@@ -499,7 +587,61 @@ class FriendService final {
     virtual ::grpc::ServerUnaryReactor* GetPendingRequests(
       ::grpc::CallbackServerContext* /*context*/, const ::friendpb::GetPendingRequestsRequest* /*request*/, ::friendpb::GetPendingRequestsResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_AddFriend<WithCallbackMethod_AcceptFriend<WithCallbackMethod_RejectFriend<WithCallbackMethod_RemoveFriend<WithCallbackMethod_GetFriendList<WithCallbackMethod_GetPendingRequests<Service > > > > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_NotifyOnline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_NotifyOnline() {
+      ::grpc::Service::MarkMethodCallback(6,
+          new ::grpc::internal::CallbackUnaryHandler< ::friendpb::NotifyOnlineRequest, ::friendpb::NotifyOnlineResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response) { return this->NotifyOnline(context, request, response); }));}
+    void SetMessageAllocatorFor_NotifyOnline(
+        ::grpc::MessageAllocator< ::friendpb::NotifyOnlineRequest, ::friendpb::NotifyOnlineResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(6);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::friendpb::NotifyOnlineRequest, ::friendpb::NotifyOnlineResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_NotifyOnline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOnline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOnlineRequest* /*request*/, ::friendpb::NotifyOnlineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* NotifyOnline(
+      ::grpc::CallbackServerContext* /*context*/, const ::friendpb::NotifyOnlineRequest* /*request*/, ::friendpb::NotifyOnlineResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_NotifyOffline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_NotifyOffline() {
+      ::grpc::Service::MarkMethodCallback(7,
+          new ::grpc::internal::CallbackUnaryHandler< ::friendpb::NotifyOfflineRequest, ::friendpb::NotifyOfflineResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response) { return this->NotifyOffline(context, request, response); }));}
+    void SetMessageAllocatorFor_NotifyOffline(
+        ::grpc::MessageAllocator< ::friendpb::NotifyOfflineRequest, ::friendpb::NotifyOfflineResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::friendpb::NotifyOfflineRequest, ::friendpb::NotifyOfflineResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_NotifyOffline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOffline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOfflineRequest* /*request*/, ::friendpb::NotifyOfflineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* NotifyOffline(
+      ::grpc::CallbackServerContext* /*context*/, const ::friendpb::NotifyOfflineRequest* /*request*/, ::friendpb::NotifyOfflineResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_AddFriend<WithCallbackMethod_AcceptFriend<WithCallbackMethod_RejectFriend<WithCallbackMethod_RemoveFriend<WithCallbackMethod_GetFriendList<WithCallbackMethod_GetPendingRequests<WithCallbackMethod_NotifyOnline<WithCallbackMethod_NotifyOffline<Service > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_AddFriend : public BaseClass {
@@ -599,6 +741,40 @@ class FriendService final {
     }
     // disable synchronous version of this method
     ::grpc::Status GetPendingRequests(::grpc::ServerContext* /*context*/, const ::friendpb::GetPendingRequestsRequest* /*request*/, ::friendpb::GetPendingRequestsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_NotifyOnline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_NotifyOnline() {
+      ::grpc::Service::MarkMethodGeneric(6);
+    }
+    ~WithGenericMethod_NotifyOnline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOnline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOnlineRequest* /*request*/, ::friendpb::NotifyOnlineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_NotifyOffline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_NotifyOffline() {
+      ::grpc::Service::MarkMethodGeneric(7);
+    }
+    ~WithGenericMethod_NotifyOffline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOffline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOfflineRequest* /*request*/, ::friendpb::NotifyOfflineResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -721,6 +897,46 @@ class FriendService final {
     }
     void RequestGetPendingRequests(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_NotifyOnline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_NotifyOnline() {
+      ::grpc::Service::MarkMethodRaw(6);
+    }
+    ~WithRawMethod_NotifyOnline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOnline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOnlineRequest* /*request*/, ::friendpb::NotifyOnlineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestNotifyOnline(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_NotifyOffline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_NotifyOffline() {
+      ::grpc::Service::MarkMethodRaw(7);
+    }
+    ~WithRawMethod_NotifyOffline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOffline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOfflineRequest* /*request*/, ::friendpb::NotifyOfflineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestNotifyOffline(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -853,6 +1069,50 @@ class FriendService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* GetPendingRequests(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_NotifyOnline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_NotifyOnline() {
+      ::grpc::Service::MarkMethodRawCallback(6,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->NotifyOnline(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_NotifyOnline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOnline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOnlineRequest* /*request*/, ::friendpb::NotifyOnlineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* NotifyOnline(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_NotifyOffline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_NotifyOffline() {
+      ::grpc::Service::MarkMethodRawCallback(7,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->NotifyOffline(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_NotifyOffline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status NotifyOffline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOfflineRequest* /*request*/, ::friendpb::NotifyOfflineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* NotifyOffline(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -1017,9 +1277,63 @@ class FriendService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedGetPendingRequests(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::friendpb::GetPendingRequestsRequest,::friendpb::GetPendingRequestsResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_AddFriend<WithStreamedUnaryMethod_AcceptFriend<WithStreamedUnaryMethod_RejectFriend<WithStreamedUnaryMethod_RemoveFriend<WithStreamedUnaryMethod_GetFriendList<WithStreamedUnaryMethod_GetPendingRequests<Service > > > > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_NotifyOnline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_NotifyOnline() {
+      ::grpc::Service::MarkMethodStreamed(6,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::friendpb::NotifyOnlineRequest, ::friendpb::NotifyOnlineResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::friendpb::NotifyOnlineRequest, ::friendpb::NotifyOnlineResponse>* streamer) {
+                       return this->StreamedNotifyOnline(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_NotifyOnline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status NotifyOnline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOnlineRequest* /*request*/, ::friendpb::NotifyOnlineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedNotifyOnline(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::friendpb::NotifyOnlineRequest,::friendpb::NotifyOnlineResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_NotifyOffline : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_NotifyOffline() {
+      ::grpc::Service::MarkMethodStreamed(7,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::friendpb::NotifyOfflineRequest, ::friendpb::NotifyOfflineResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::friendpb::NotifyOfflineRequest, ::friendpb::NotifyOfflineResponse>* streamer) {
+                       return this->StreamedNotifyOffline(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_NotifyOffline() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status NotifyOffline(::grpc::ServerContext* /*context*/, const ::friendpb::NotifyOfflineRequest* /*request*/, ::friendpb::NotifyOfflineResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedNotifyOffline(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::friendpb::NotifyOfflineRequest,::friendpb::NotifyOfflineResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_AddFriend<WithStreamedUnaryMethod_AcceptFriend<WithStreamedUnaryMethod_RejectFriend<WithStreamedUnaryMethod_RemoveFriend<WithStreamedUnaryMethod_GetFriendList<WithStreamedUnaryMethod_GetPendingRequests<WithStreamedUnaryMethod_NotifyOnline<WithStreamedUnaryMethod_NotifyOffline<Service > > > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_AddFriend<WithStreamedUnaryMethod_AcceptFriend<WithStreamedUnaryMethod_RejectFriend<WithStreamedUnaryMethod_RemoveFriend<WithStreamedUnaryMethod_GetFriendList<WithStreamedUnaryMethod_GetPendingRequests<Service > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_AddFriend<WithStreamedUnaryMethod_AcceptFriend<WithStreamedUnaryMethod_RejectFriend<WithStreamedUnaryMethod_RemoveFriend<WithStreamedUnaryMethod_GetFriendList<WithStreamedUnaryMethod_GetPendingRequests<WithStreamedUnaryMethod_NotifyOnline<WithStreamedUnaryMethod_NotifyOffline<Service > > > > > > > > StreamedService;
 };
 
 }  // namespace friendpb

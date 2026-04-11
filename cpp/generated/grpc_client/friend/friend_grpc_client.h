@@ -127,6 +127,44 @@ void SendFriendServiceGetPendingRequests(entt::registry& registry, entt::entity 
 void SendFriendServiceGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetPendingRequestsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendFriendServiceGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+#pragma region FriendServiceNotifyOnline
+
+struct AsyncFriendServiceNotifyOnlineGrpcClient {
+    uint32_t messageId{ FriendServiceNotifyOnlineMessageId };
+    ClientContext context;
+    Status status;
+    ::friendpb::NotifyOnlineResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::friendpb::NotifyOnlineResponse>> response_reader;
+};
+
+class ::friendpb::NotifyOnlineRequest;
+using AsyncFriendServiceNotifyOnlineHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::friendpb::NotifyOnlineResponse&)>;
+extern AsyncFriendServiceNotifyOnlineHandlerFunctionType AsyncFriendServiceNotifyOnlineHandler;
+
+void SendFriendServiceNotifyOnline(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::NotifyOnlineRequest& request);
+void SendFriendServiceNotifyOnline(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::NotifyOnlineRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendFriendServiceNotifyOnline(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+#pragma region FriendServiceNotifyOffline
+
+struct AsyncFriendServiceNotifyOfflineGrpcClient {
+    uint32_t messageId{ FriendServiceNotifyOfflineMessageId };
+    ClientContext context;
+    Status status;
+    ::friendpb::NotifyOfflineResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::friendpb::NotifyOfflineResponse>> response_reader;
+};
+
+class ::friendpb::NotifyOfflineRequest;
+using AsyncFriendServiceNotifyOfflineHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::friendpb::NotifyOfflineResponse&)>;
+extern AsyncFriendServiceNotifyOfflineHandlerFunctionType AsyncFriendServiceNotifyOfflineHandler;
+
+void SendFriendServiceNotifyOffline(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::NotifyOfflineRequest& request);
+void SendFriendServiceNotifyOffline(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::NotifyOfflineRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendFriendServiceNotifyOffline(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 void SetFriendHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetFriendIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void HandleFriendCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);

@@ -25,6 +25,8 @@ const (
 	FriendService_RemoveFriend_FullMethodName       = "/friendpb.FriendService/RemoveFriend"
 	FriendService_GetFriendList_FullMethodName      = "/friendpb.FriendService/GetFriendList"
 	FriendService_GetPendingRequests_FullMethodName = "/friendpb.FriendService/GetPendingRequests"
+	FriendService_NotifyOnline_FullMethodName       = "/friendpb.FriendService/NotifyOnline"
+	FriendService_NotifyOffline_FullMethodName      = "/friendpb.FriendService/NotifyOffline"
 )
 
 // FriendServiceClient is the client API for FriendService service.
@@ -37,6 +39,8 @@ type FriendServiceClient interface {
 	RemoveFriend(ctx context.Context, in *RemoveFriendRequest, opts ...grpc.CallOption) (*RemoveFriendResponse, error)
 	GetFriendList(ctx context.Context, in *GetFriendListRequest, opts ...grpc.CallOption) (*GetFriendListResponse, error)
 	GetPendingRequests(ctx context.Context, in *GetPendingRequestsRequest, opts ...grpc.CallOption) (*GetPendingRequestsResponse, error)
+	NotifyOnline(ctx context.Context, in *NotifyOnlineRequest, opts ...grpc.CallOption) (*NotifyOnlineResponse, error)
+	NotifyOffline(ctx context.Context, in *NotifyOfflineRequest, opts ...grpc.CallOption) (*NotifyOfflineResponse, error)
 }
 
 type friendServiceClient struct {
@@ -107,6 +111,26 @@ func (c *friendServiceClient) GetPendingRequests(ctx context.Context, in *GetPen
 	return out, nil
 }
 
+func (c *friendServiceClient) NotifyOnline(ctx context.Context, in *NotifyOnlineRequest, opts ...grpc.CallOption) (*NotifyOnlineResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NotifyOnlineResponse)
+	err := c.cc.Invoke(ctx, FriendService_NotifyOnline_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *friendServiceClient) NotifyOffline(ctx context.Context, in *NotifyOfflineRequest, opts ...grpc.CallOption) (*NotifyOfflineResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NotifyOfflineResponse)
+	err := c.cc.Invoke(ctx, FriendService_NotifyOffline_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FriendServiceServer is the server API for FriendService service.
 // All implementations must embed UnimplementedFriendServiceServer
 // for forward compatibility.
@@ -117,6 +141,8 @@ type FriendServiceServer interface {
 	RemoveFriend(context.Context, *RemoveFriendRequest) (*RemoveFriendResponse, error)
 	GetFriendList(context.Context, *GetFriendListRequest) (*GetFriendListResponse, error)
 	GetPendingRequests(context.Context, *GetPendingRequestsRequest) (*GetPendingRequestsResponse, error)
+	NotifyOnline(context.Context, *NotifyOnlineRequest) (*NotifyOnlineResponse, error)
+	NotifyOffline(context.Context, *NotifyOfflineRequest) (*NotifyOfflineResponse, error)
 	mustEmbedUnimplementedFriendServiceServer()
 }
 
@@ -144,6 +170,12 @@ func (UnimplementedFriendServiceServer) GetFriendList(context.Context, *GetFrien
 }
 func (UnimplementedFriendServiceServer) GetPendingRequests(context.Context, *GetPendingRequestsRequest) (*GetPendingRequestsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPendingRequests not implemented")
+}
+func (UnimplementedFriendServiceServer) NotifyOnline(context.Context, *NotifyOnlineRequest) (*NotifyOnlineResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method NotifyOnline not implemented")
+}
+func (UnimplementedFriendServiceServer) NotifyOffline(context.Context, *NotifyOfflineRequest) (*NotifyOfflineResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method NotifyOffline not implemented")
 }
 func (UnimplementedFriendServiceServer) mustEmbedUnimplementedFriendServiceServer() {}
 func (UnimplementedFriendServiceServer) testEmbeddedByValue()                       {}
@@ -274,6 +306,42 @@ func _FriendService_GetPendingRequests_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FriendService_NotifyOnline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyOnlineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FriendServiceServer).NotifyOnline(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FriendService_NotifyOnline_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FriendServiceServer).NotifyOnline(ctx, req.(*NotifyOnlineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FriendService_NotifyOffline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyOfflineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FriendServiceServer).NotifyOffline(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FriendService_NotifyOffline_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FriendServiceServer).NotifyOffline(ctx, req.(*NotifyOfflineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FriendService_ServiceDesc is the grpc.ServiceDesc for FriendService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +372,14 @@ var FriendService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPendingRequests",
 			Handler:    _FriendService_GetPendingRequests_Handler,
+		},
+		{
+			MethodName: "NotifyOnline",
+			Handler:    _FriendService_NotifyOnline_Handler,
+		},
+		{
+			MethodName: "NotifyOffline",
+			Handler:    _FriendService_NotifyOffline_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

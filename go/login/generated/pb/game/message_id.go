@@ -119,3 +119,5 @@ const SceneRollbackClientPlayerGmListSnapshotsMessageId = 115
 const SceneRollbackClientPlayerGmPreviewRollbackMessageId = 116
 const SceneRollbackClientPlayerGmQueryTransactionLogMessageId = 117
 const LoginPreGateAssignGateMessageId = 118
+const FriendServiceNotifyOnlineMessageId = 119
+const FriendServiceNotifyOfflineMessageId = 120

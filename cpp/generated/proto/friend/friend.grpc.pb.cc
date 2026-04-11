@@ -29,6 +29,8 @@ static const char* FriendService_method_names[] = {
   "/friendpb.FriendService/RemoveFriend",
   "/friendpb.FriendService/GetFriendList",
   "/friendpb.FriendService/GetPendingRequests",
+  "/friendpb.FriendService/NotifyOnline",
+  "/friendpb.FriendService/NotifyOffline",
 };
 
 std::unique_ptr< FriendService::Stub> FriendService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -44,6 +46,8 @@ FriendService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& chan
   , rpcmethod_RemoveFriend_(FriendService_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_GetFriendList_(FriendService_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_GetPendingRequests_(FriendService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_NotifyOnline_(FriendService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_NotifyOffline_(FriendService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status FriendService::Stub::AddFriend(::grpc::ClientContext* context, const ::friendpb::AddFriendRequest& request, ::friendpb::AddFriendResponse* response) {
@@ -184,6 +188,52 @@ void FriendService::Stub::async::GetPendingRequests(::grpc::ClientContext* conte
   return result;
 }
 
+::grpc::Status FriendService::Stub::NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::friendpb::NotifyOnlineResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::friendpb::NotifyOnlineRequest, ::friendpb::NotifyOnlineResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_NotifyOnline_, context, request, response);
+}
+
+void FriendService::Stub::async::NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::friendpb::NotifyOnlineRequest, ::friendpb::NotifyOnlineResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_NotifyOnline_, context, request, response, std::move(f));
+}
+
+void FriendService::Stub::async::NotifyOnline(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_NotifyOnline_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOnlineResponse>* FriendService::Stub::PrepareAsyncNotifyOnlineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::friendpb::NotifyOnlineResponse, ::friendpb::NotifyOnlineRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_NotifyOnline_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOnlineResponse>* FriendService::Stub::AsyncNotifyOnlineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOnlineRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncNotifyOnlineRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status FriendService::Stub::NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::friendpb::NotifyOfflineResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::friendpb::NotifyOfflineRequest, ::friendpb::NotifyOfflineResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_NotifyOffline_, context, request, response);
+}
+
+void FriendService::Stub::async::NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::friendpb::NotifyOfflineRequest, ::friendpb::NotifyOfflineResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_NotifyOffline_, context, request, response, std::move(f));
+}
+
+void FriendService::Stub::async::NotifyOffline(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_NotifyOffline_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOfflineResponse>* FriendService::Stub::PrepareAsyncNotifyOfflineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::friendpb::NotifyOfflineResponse, ::friendpb::NotifyOfflineRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_NotifyOffline_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::friendpb::NotifyOfflineResponse>* FriendService::Stub::AsyncNotifyOfflineRaw(::grpc::ClientContext* context, const ::friendpb::NotifyOfflineRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncNotifyOfflineRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 FriendService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       FriendService_method_names[0],
@@ -245,6 +295,26 @@ FriendService::Service::Service() {
              ::friendpb::GetPendingRequestsResponse* resp) {
                return service->GetPendingRequests(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      FriendService_method_names[6],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< FriendService::Service, ::friendpb::NotifyOnlineRequest, ::friendpb::NotifyOnlineResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](FriendService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::friendpb::NotifyOnlineRequest* req,
+             ::friendpb::NotifyOnlineResponse* resp) {
+               return service->NotifyOnline(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      FriendService_method_names[7],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< FriendService::Service, ::friendpb::NotifyOfflineRequest, ::friendpb::NotifyOfflineResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](FriendService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::friendpb::NotifyOfflineRequest* req,
+             ::friendpb::NotifyOfflineResponse* resp) {
+               return service->NotifyOffline(ctx, req, resp);
+             }, this)));
 }
 
 FriendService::Service::~Service() {
@@ -286,6 +356,20 @@ FriendService::Service::~Service() {
 }
 
 ::grpc::Status FriendService::Service::GetPendingRequests(::grpc::ServerContext* context, const ::friendpb::GetPendingRequestsRequest* request, ::friendpb::GetPendingRequestsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status FriendService::Service::NotifyOnline(::grpc::ServerContext* context, const ::friendpb::NotifyOnlineRequest* request, ::friendpb::NotifyOnlineResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status FriendService::Service::NotifyOffline(::grpc::ServerContext* context, const ::friendpb::NotifyOfflineRequest* request, ::friendpb::NotifyOfflineResponse* response) {
   (void) context;
   (void) request;
   (void) response;

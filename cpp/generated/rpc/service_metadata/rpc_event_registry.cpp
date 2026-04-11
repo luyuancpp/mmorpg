@@ -118,6 +118,8 @@ namespace friendpb{void SendFriendServiceRejectFriend(entt::registry& , entt::en
 namespace friendpb{void SendFriendServiceRemoveFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace friendpb{void SendFriendServiceGetFriendList(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace friendpb{void SendFriendServiceGetPendingRequests(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace friendpb{void SendFriendServiceNotifyOnline(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace friendpb{void SendFriendServiceNotifyOffline(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace guildpb{void SendGuildServiceCreateGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace guildpb{void SendGuildServiceGetGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace guildpb{void SendGuildServiceGetPlayerGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -140,7 +142,7 @@ namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 119> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 121> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -335,6 +337,16 @@ void InitMessageInfo()
         std::make_unique<::friendpb::GetPendingRequestsRequest>(),
         std::make_unique<::friendpb::GetPendingRequestsResponse>(),
         nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendFriendServiceGetPendingRequests};
+    gRpcMethodRegistry[FriendServiceNotifyOnlineMessageId] = RpcMethodMeta{
+        "FriendService", "NotifyOnline",
+        std::make_unique<::friendpb::NotifyOnlineRequest>(),
+        std::make_unique<::friendpb::NotifyOnlineResponse>(),
+        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendFriendServiceNotifyOnline};
+    gRpcMethodRegistry[FriendServiceNotifyOfflineMessageId] = RpcMethodMeta{
+        "FriendService", "NotifyOffline",
+        std::make_unique<::friendpb::NotifyOfflineRequest>(),
+        std::make_unique<::friendpb::NotifyOfflineResponse>(),
+        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendFriendServiceNotifyOffline};
 
     // --- Gate ---
     gRpcMethodRegistry[GatePlayerEnterGameNodeMessageId] = RpcMethodMeta{

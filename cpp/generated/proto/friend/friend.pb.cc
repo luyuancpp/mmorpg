@@ -77,6 +77,93 @@ struct RejectFriendRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RejectFriendRequestDefaultTypeInternal _RejectFriendRequest_default_instance_;
+template <typename>
+PROTOBUF_CONSTEXPR NotifyOnlineResponse::NotifyOnlineResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(NotifyOnlineResponse_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct NotifyOnlineResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NotifyOnlineResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NotifyOnlineResponseDefaultTypeInternal() {}
+  union {
+    NotifyOnlineResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NotifyOnlineResponseDefaultTypeInternal _NotifyOnlineResponse_default_instance_;
+
+inline constexpr NotifyOnlineRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_{::uint64_t{0u}},
+        gate_node_id_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR NotifyOnlineRequest::NotifyOnlineRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(NotifyOnlineRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct NotifyOnlineRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NotifyOnlineRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NotifyOnlineRequestDefaultTypeInternal() {}
+  union {
+    NotifyOnlineRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NotifyOnlineRequestDefaultTypeInternal _NotifyOnlineRequest_default_instance_;
+template <typename>
+PROTOBUF_CONSTEXPR NotifyOfflineResponse::NotifyOfflineResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(NotifyOfflineResponse_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct NotifyOfflineResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NotifyOfflineResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NotifyOfflineResponseDefaultTypeInternal() {}
+  union {
+    NotifyOfflineResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NotifyOfflineResponseDefaultTypeInternal _NotifyOfflineResponse_default_instance_;
+
+inline constexpr NotifyOfflineRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR NotifyOfflineRequest::NotifyOfflineRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(NotifyOfflineRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct NotifyOfflineRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NotifyOfflineRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NotifyOfflineRequestDefaultTypeInternal() {}
+  union {
+    NotifyOfflineRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NotifyOfflineRequestDefaultTypeInternal _NotifyOfflineRequest_default_instance_;
 
 inline constexpr GetPendingRequestsRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -161,7 +248,8 @@ inline constexpr FriendEntry::Impl_::Impl_(
       : _cached_size_{0},
         friend_player_id_{::uint64_t{0u}},
         since_ms_{::int64_t{0}},
-        last_active_ms_{::int64_t{0}} {}
+        last_active_ms_{::int64_t{0}},
+        is_online_{false} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR FriendEntry::FriendEntry(::_pbi::ConstantInitialized)
@@ -396,13 +484,15 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.friend_player_id_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.since_ms_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.last_active_ms_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.is_online_),
         0,
         1,
         2,
+        3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequest, _impl_._has_bits_),
         7, // hasbit index offset
@@ -486,24 +576,42 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::friendpb::GetPendingRequestsResponse, _impl_.requests_),
         0,
         ~0u,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::friendpb::NotifyOnlineRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::friendpb::NotifyOnlineRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::NotifyOnlineRequest, _impl_.gate_node_id_),
+        0,
+        1,
+        0x000, // bitmap
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::friendpb::NotifyOfflineRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::friendpb::NotifyOfflineRequest, _impl_.player_id_),
+        0,
+        0x000, // bitmap
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::friendpb::FriendEntry)},
-        {9, sizeof(::friendpb::FriendRequest)},
-        {20, sizeof(::friendpb::AddFriendRequest)},
-        {27, sizeof(::friendpb::AddFriendResponse)},
-        {32, sizeof(::friendpb::AcceptFriendRequest)},
-        {39, sizeof(::friendpb::AcceptFriendResponse)},
-        {44, sizeof(::friendpb::RejectFriendRequest)},
-        {51, sizeof(::friendpb::RejectFriendResponse)},
-        {56, sizeof(::friendpb::RemoveFriendRequest)},
-        {63, sizeof(::friendpb::RemoveFriendResponse)},
-        {68, sizeof(::friendpb::GetFriendListRequest)},
-        {73, sizeof(::friendpb::GetFriendListResponse)},
-        {80, sizeof(::friendpb::GetPendingRequestsRequest)},
-        {85, sizeof(::friendpb::GetPendingRequestsResponse)},
+        {11, sizeof(::friendpb::FriendRequest)},
+        {22, sizeof(::friendpb::AddFriendRequest)},
+        {29, sizeof(::friendpb::AddFriendResponse)},
+        {34, sizeof(::friendpb::AcceptFriendRequest)},
+        {41, sizeof(::friendpb::AcceptFriendResponse)},
+        {46, sizeof(::friendpb::RejectFriendRequest)},
+        {53, sizeof(::friendpb::RejectFriendResponse)},
+        {58, sizeof(::friendpb::RemoveFriendRequest)},
+        {65, sizeof(::friendpb::RemoveFriendResponse)},
+        {70, sizeof(::friendpb::GetFriendListRequest)},
+        {75, sizeof(::friendpb::GetFriendListResponse)},
+        {82, sizeof(::friendpb::GetPendingRequestsRequest)},
+        {87, sizeof(::friendpb::GetPendingRequestsResponse)},
+        {94, sizeof(::friendpb::NotifyOnlineRequest)},
+        {101, sizeof(::friendpb::NotifyOnlineResponse)},
+        {102, sizeof(::friendpb::NotifyOfflineRequest)},
+        {107, sizeof(::friendpb::NotifyOfflineResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::friendpb::_FriendEntry_default_instance_._instance,
@@ -520,54 +628,67 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::friendpb::_GetFriendListResponse_default_instance_._instance,
     &::friendpb::_GetPendingRequestsRequest_default_instance_._instance,
     &::friendpb::_GetPendingRequestsResponse_default_instance_._instance,
+    &::friendpb::_NotifyOnlineRequest_default_instance_._instance,
+    &::friendpb::_NotifyOnlineResponse_default_instance_._instance,
+    &::friendpb::_NotifyOfflineRequest_default_instance_._instance,
+    &::friendpb::_NotifyOfflineResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\031proto/friend/friend.proto\022\010friendpb\032\033p"
-    "roto/common/base/tip.proto\"Q\n\013FriendEntr"
+    "roto/common/base/tip.proto\"d\n\013FriendEntr"
     "y\022\030\n\020friend_player_id\030\001 \001(\004\022\020\n\010since_ms\030"
-    "\002 \001(\003\022\026\n\016last_active_ms\030\003 \001(\003\"\205\001\n\rFriend"
-    "Request\022\026\n\016from_player_id\030\001 \001(\004\022\024\n\014to_pl"
-    "ayer_id\030\002 \001(\004\022\027\n\017request_time_ms\030\003 \001(\003\022-"
-    "\n\006status\030\004 \001(\0162\035.friendpb.FriendRequestS"
-    "tatus\"\?\n\020AddFriendRequest\022\021\n\tplayer_id\030\001"
-    " \001(\004\022\030\n\020target_player_id\030\002 \001(\004\";\n\021AddFri"
-    "endResponse\022&\n\rerror_message\030\001 \001(\0132\017.Tip"
-    "InfoMessage\"@\n\023AcceptFriendRequest\022\021\n\tpl"
-    "ayer_id\030\001 \001(\004\022\026\n\016from_player_id\030\002 \001(\004\">\n"
-    "\024AcceptFriendResponse\022&\n\rerror_message\030\001"
-    " \001(\0132\017.TipInfoMessage\"@\n\023RejectFriendReq"
-    "uest\022\021\n\tplayer_id\030\001 \001(\004\022\026\n\016from_player_i"
-    "d\030\002 \001(\004\">\n\024RejectFriendResponse\022&\n\rerror"
-    "_message\030\001 \001(\0132\017.TipInfoMessage\"B\n\023Remov"
-    "eFriendRequest\022\021\n\tplayer_id\030\001 \001(\004\022\030\n\020tar"
-    "get_player_id\030\002 \001(\004\">\n\024RemoveFriendRespo"
-    "nse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMess"
-    "age\")\n\024GetFriendListRequest\022\021\n\tplayer_id"
-    "\030\001 \001(\004\"g\n\025GetFriendListResponse\022&\n\rerror"
-    "_message\030\001 \001(\0132\017.TipInfoMessage\022&\n\007frien"
-    "ds\030\002 \003(\0132\025.friendpb.FriendEntry\".\n\031GetPe"
-    "ndingRequestsRequest\022\021\n\tplayer_id\030\001 \001(\004\""
-    "o\n\032GetPendingRequestsResponse\022&\n\rerror_m"
-    "essage\030\001 \001(\0132\017.TipInfoMessage\022)\n\010request"
-    "s\030\002 \003(\0132\027.friendpb.FriendRequest*\207\001\n\023Fri"
-    "endRequestStatus\022\032\n\026FRIEND_REQUEST_UNKNO"
-    "WN\020\000\022\032\n\026FRIEND_REQUEST_PENDING\020\001\022\033\n\027FRIE"
-    "ND_REQUEST_ACCEPTED\020\002\022\033\n\027FRIEND_REQUEST_"
-    "REJECTED\020\0032\365\003\n\rFriendService\022D\n\tAddFrien"
-    "d\022\032.friendpb.AddFriendRequest\032\033.friendpb"
-    ".AddFriendResponse\022M\n\014AcceptFriend\022\035.fri"
-    "endpb.AcceptFriendRequest\032\036.friendpb.Acc"
-    "eptFriendResponse\022M\n\014RejectFriend\022\035.frie"
-    "ndpb.RejectFriendRequest\032\036.friendpb.Reje"
-    "ctFriendResponse\022M\n\014RemoveFriend\022\035.frien"
-    "dpb.RemoveFriendRequest\032\036.friendpb.Remov"
-    "eFriendResponse\022P\n\rGetFriendList\022\036.frien"
-    "dpb.GetFriendListRequest\032\037.friendpb.GetF"
-    "riendListResponse\022_\n\022GetPendingRequests\022"
-    "#.friendpb.GetPendingRequestsRequest\032$.f"
-    "riendpb.GetPendingRequestsResponseB\025Z\023fr"
-    "iend/proto/friendb\006proto3"
+    "\002 \001(\003\022\026\n\016last_active_ms\030\003 \001(\003\022\021\n\tis_onli"
+    "ne\030\004 \001(\010\"\205\001\n\rFriendRequest\022\026\n\016from_playe"
+    "r_id\030\001 \001(\004\022\024\n\014to_player_id\030\002 \001(\004\022\027\n\017requ"
+    "est_time_ms\030\003 \001(\003\022-\n\006status\030\004 \001(\0162\035.frie"
+    "ndpb.FriendRequestStatus\"\?\n\020AddFriendReq"
+    "uest\022\021\n\tplayer_id\030\001 \001(\004\022\030\n\020target_player"
+    "_id\030\002 \001(\004\";\n\021AddFriendResponse\022&\n\rerror_"
+    "message\030\001 \001(\0132\017.TipInfoMessage\"@\n\023Accept"
+    "FriendRequest\022\021\n\tplayer_id\030\001 \001(\004\022\026\n\016from"
+    "_player_id\030\002 \001(\004\">\n\024AcceptFriendResponse"
+    "\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage"
+    "\"@\n\023RejectFriendRequest\022\021\n\tplayer_id\030\001 \001"
+    "(\004\022\026\n\016from_player_id\030\002 \001(\004\">\n\024RejectFrie"
+    "ndResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipI"
+    "nfoMessage\"B\n\023RemoveFriendRequest\022\021\n\tpla"
+    "yer_id\030\001 \001(\004\022\030\n\020target_player_id\030\002 \001(\004\">"
+    "\n\024RemoveFriendResponse\022&\n\rerror_message\030"
+    "\001 \001(\0132\017.TipInfoMessage\")\n\024GetFriendListR"
+    "equest\022\021\n\tplayer_id\030\001 \001(\004\"g\n\025GetFriendLi"
+    "stResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipI"
+    "nfoMessage\022&\n\007friends\030\002 \003(\0132\025.friendpb.F"
+    "riendEntry\".\n\031GetPendingRequestsRequest\022"
+    "\021\n\tplayer_id\030\001 \001(\004\"o\n\032GetPendingRequests"
+    "Response\022&\n\rerror_message\030\001 \001(\0132\017.TipInf"
+    "oMessage\022)\n\010requests\030\002 \003(\0132\027.friendpb.Fr"
+    "iendRequest\">\n\023NotifyOnlineRequest\022\021\n\tpl"
+    "ayer_id\030\001 \001(\004\022\024\n\014gate_node_id\030\002 \001(\r\"\026\n\024N"
+    "otifyOnlineResponse\")\n\024NotifyOfflineRequ"
+    "est\022\021\n\tplayer_id\030\001 \001(\004\"\027\n\025NotifyOfflineR"
+    "esponse*\207\001\n\023FriendRequestStatus\022\032\n\026FRIEN"
+    "D_REQUEST_UNKNOWN\020\000\022\032\n\026FRIEND_REQUEST_PE"
+    "NDING\020\001\022\033\n\027FRIEND_REQUEST_ACCEPTED\020\002\022\033\n\027"
+    "FRIEND_REQUEST_REJECTED\020\0032\226\005\n\rFriendServ"
+    "ice\022D\n\tAddFriend\022\032.friendpb.AddFriendReq"
+    "uest\032\033.friendpb.AddFriendResponse\022M\n\014Acc"
+    "eptFriend\022\035.friendpb.AcceptFriendRequest"
+    "\032\036.friendpb.AcceptFriendResponse\022M\n\014Reje"
+    "ctFriend\022\035.friendpb.RejectFriendRequest\032"
+    "\036.friendpb.RejectFriendResponse\022M\n\014Remov"
+    "eFriend\022\035.friendpb.RemoveFriendRequest\032\036"
+    ".friendpb.RemoveFriendResponse\022P\n\rGetFri"
+    "endList\022\036.friendpb.GetFriendListRequest\032"
+    "\037.friendpb.GetFriendListResponse\022_\n\022GetP"
+    "endingRequests\022#.friendpb.GetPendingRequ"
+    "estsRequest\032$.friendpb.GetPendingRequest"
+    "sResponse\022M\n\014NotifyOnline\022\035.friendpb.Not"
+    "ifyOnlineRequest\032\036.friendpb.NotifyOnline"
+    "Response\022P\n\rNotifyOffline\022\036.friendpb.Not"
+    "ifyOfflineRequest\032\037.friendpb.NotifyOffli"
+    "neResponseB\025Z\023friend/proto/friendb\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2ffriend_2ffriend_2eproto_deps[1] = {
@@ -577,13 +698,13 @@ static ::absl::once_flag descriptor_table_proto_2ffriend_2ffriend_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2ffriend_2ffriend_2eproto = {
     false,
     false,
-    1785,
+    2121,
     descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto,
     "proto/friend/friend.proto",
     &descriptor_table_proto_2ffriend_2ffriend_2eproto_once,
     descriptor_table_proto_2ffriend_2ffriend_2eproto_deps,
     1,
-    14,
+    18,
     schemas,
     file_default_instances,
     TableStruct_proto_2ffriend_2ffriend_2eproto::offsets,
@@ -637,9 +758,9 @@ inline void FriendEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, friend_player_id_),
            0,
-           offsetof(Impl_, last_active_ms_) -
+           offsetof(Impl_, is_online_) -
                offsetof(Impl_, friend_player_id_) +
-               sizeof(Impl_::last_active_ms_));
+               sizeof(Impl_::is_online_));
 }
 FriendEntry::~FriendEntry() {
   // @@protoc_insertion_point(destructor:friendpb.FriendEntry)
@@ -695,16 +816,16 @@ FriendEntry::GetClassData() const {
   return FriendEntry_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+const ::_pbi::TcParseTable<2, 4, 0, 0, 2>
 FriendEntry::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
+    4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     FriendEntry_class_data_.base(),
@@ -714,7 +835,9 @@ FriendEntry::_table_ = {
     ::_pbi::TcParser::GetTable<::friendpb::FriendEntry>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // bool is_online = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(FriendEntry, _impl_.is_online_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.is_online_)}},
     // uint64 friend_player_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendEntry, _impl_.friend_player_id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.friend_player_id_)}},
@@ -736,6 +859,9 @@ FriendEntry::_table_ = {
     // int64 last_active_ms = 3;
     {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.last_active_ms_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // bool is_online = 4;
+    {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.is_online_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   // no aux_entries
   {{
@@ -749,10 +875,10 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     ::memset(&_impl_.friend_player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.last_active_ms_) -
-        reinterpret_cast<char*>(&_impl_.friend_player_id_)) + sizeof(_impl_.last_active_ms_));
+        reinterpret_cast<char*>(&_impl_.is_online_) -
+        reinterpret_cast<char*>(&_impl_.friend_player_id_)) + sizeof(_impl_.is_online_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -800,6 +926,15 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
     }
   }
 
+  // bool is_online = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_is_online() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          4, this_._internal_is_online(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -825,7 +960,7 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     // uint64 friend_player_id = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_friend_player_id() != 0) {
@@ -847,6 +982,12 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
             this_._internal_last_active_ms());
       }
     }
+    // bool is_online = 4;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_is_online() != 0) {
+        total_size += 2;
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -861,7 +1002,7 @@ void FriendEntry::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (from._internal_friend_player_id() != 0) {
         _this->_impl_.friend_player_id_ = from._impl_.friend_player_id_;
@@ -875,6 +1016,11 @@ void FriendEntry::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
     if ((cached_has_bits & 0x00000004u) != 0) {
       if (from._internal_last_active_ms() != 0) {
         _this->_impl_.last_active_ms_ = from._impl_.last_active_ms_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_is_online() != 0) {
+        _this->_impl_.is_online_ = from._impl_.is_online_;
       }
     }
   }
@@ -895,8 +1041,8 @@ void FriendEntry::InternalSwap(FriendEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL o
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.last_active_ms_)
-      + sizeof(FriendEntry::_impl_.last_active_ms_)
+      PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.is_online_)
+      + sizeof(FriendEntry::_impl_.is_online_)
       - PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.friend_player_id_)>(
           reinterpret_cast<char*>(&_impl_.friend_player_id_),
           reinterpret_cast<char*>(&other->_impl_.friend_player_id_));
@@ -4504,6 +4650,739 @@ void GetPendingRequestsResponse::InternalSwap(GetPendingRequestsResponse* PROTOB
 
 ::google::protobuf::Metadata GetPendingRequestsResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class NotifyOnlineRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<NotifyOnlineRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_._has_bits_);
+};
+
+NotifyOnlineRequest::NotifyOnlineRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, NotifyOnlineRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:friendpb.NotifyOnlineRequest)
+}
+NotifyOnlineRequest::NotifyOnlineRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const NotifyOnlineRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, NotifyOnlineRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE NotifyOnlineRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void NotifyOnlineRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           0,
+           offsetof(Impl_, gate_node_id_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::gate_node_id_));
+}
+NotifyOnlineRequest::~NotifyOnlineRequest() {
+  // @@protoc_insertion_point(destructor:friendpb.NotifyOnlineRequest)
+  SharedDtor(*this);
+}
+inline void NotifyOnlineRequest::SharedDtor(MessageLite& self) {
+  NotifyOnlineRequest& this_ = static_cast<NotifyOnlineRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL NotifyOnlineRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) NotifyOnlineRequest(arena);
+}
+constexpr auto NotifyOnlineRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(NotifyOnlineRequest),
+                                            alignof(NotifyOnlineRequest));
+}
+constexpr auto NotifyOnlineRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_NotifyOnlineRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &NotifyOnlineRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<NotifyOnlineRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &NotifyOnlineRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<NotifyOnlineRequest>(), &NotifyOnlineRequest::ByteSizeLong,
+              &NotifyOnlineRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_._cached_size_),
+          false,
+      },
+      &NotifyOnlineRequest::kDescriptorMethods,
+      &descriptor_table_proto_2ffriend_2ffriend_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull NotifyOnlineRequest_class_data_ =
+        NotifyOnlineRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+NotifyOnlineRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&NotifyOnlineRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(NotifyOnlineRequest_class_data_.tc_table);
+  return NotifyOnlineRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+NotifyOnlineRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    NotifyOnlineRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::friendpb::NotifyOnlineRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 gate_node_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NotifyOnlineRequest, _impl_.gate_node_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_.gate_node_id_)}},
+    // uint64 player_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(NotifyOnlineRequest, _impl_.player_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_.player_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 gate_node_id = 2;
+    {PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_.gate_node_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void NotifyOnlineRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:friendpb.NotifyOnlineRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.gate_node_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.gate_node_id_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL NotifyOnlineRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const NotifyOnlineRequest& this_ = static_cast<const NotifyOnlineRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL NotifyOnlineRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const NotifyOnlineRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:friendpb.NotifyOnlineRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 player_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_player_id(), target);
+    }
+  }
+
+  // uint32 gate_node_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_gate_node_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_gate_node_id(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:friendpb.NotifyOnlineRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t NotifyOnlineRequest::ByteSizeLong(const MessageLite& base) {
+  const NotifyOnlineRequest& this_ = static_cast<const NotifyOnlineRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t NotifyOnlineRequest::ByteSizeLong() const {
+  const NotifyOnlineRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:friendpb.NotifyOnlineRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // uint64 player_id = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+    // uint32 gate_node_id = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_gate_node_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_gate_node_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void NotifyOnlineRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<NotifyOnlineRequest*>(&to_msg);
+  auto& from = static_cast<const NotifyOnlineRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:friendpb.NotifyOnlineRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_gate_node_id() != 0) {
+        _this->_impl_.gate_node_id_ = from._impl_.gate_node_id_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void NotifyOnlineRequest::CopyFrom(const NotifyOnlineRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:friendpb.NotifyOnlineRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void NotifyOnlineRequest::InternalSwap(NotifyOnlineRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_.gate_node_id_)
+      + sizeof(NotifyOnlineRequest::_impl_.gate_node_id_)
+      - PROTOBUF_FIELD_OFFSET(NotifyOnlineRequest, _impl_.player_id_)>(
+          reinterpret_cast<char*>(&_impl_.player_id_),
+          reinterpret_cast<char*>(&other->_impl_.player_id_));
+}
+
+::google::protobuf::Metadata NotifyOnlineRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class NotifyOnlineResponse::_Internal {
+ public:
+};
+
+NotifyOnlineResponse::NotifyOnlineResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, NotifyOnlineResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:friendpb.NotifyOnlineResponse)
+}
+NotifyOnlineResponse::NotifyOnlineResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const NotifyOnlineResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, NotifyOnlineResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  NotifyOnlineResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:friendpb.NotifyOnlineResponse)
+}
+
+inline void* PROTOBUF_NONNULL NotifyOnlineResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) NotifyOnlineResponse(arena);
+}
+constexpr auto NotifyOnlineResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(NotifyOnlineResponse),
+                                            alignof(NotifyOnlineResponse));
+}
+constexpr auto NotifyOnlineResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_NotifyOnlineResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &NotifyOnlineResponse::MergeImpl,
+          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<NotifyOnlineResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &NotifyOnlineResponse::SharedDtor,
+          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<NotifyOnlineResponse>(), &NotifyOnlineResponse::ByteSizeLong,
+              &NotifyOnlineResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(NotifyOnlineResponse, _impl_._cached_size_),
+          false,
+      },
+      &NotifyOnlineResponse::kDescriptorMethods,
+      &descriptor_table_proto_2ffriend_2ffriend_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull NotifyOnlineResponse_class_data_ =
+        NotifyOnlineResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+NotifyOnlineResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&NotifyOnlineResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(NotifyOnlineResponse_class_data_.tc_table);
+  return NotifyOnlineResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 0, 0, 0, 2>
+NotifyOnlineResponse::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    0, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967295,  // skipmap
+    offsetof(decltype(_table_), field_names),  // no field_entries
+    0,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    NotifyOnlineResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::friendpb::NotifyOnlineResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, // no field_entries, or aux_entries
+  {{
+  }},
+};
+
+
+
+
+
+
+
+::google::protobuf::Metadata NotifyOnlineResponse::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class NotifyOfflineRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<NotifyOfflineRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(NotifyOfflineRequest, _impl_._has_bits_);
+};
+
+NotifyOfflineRequest::NotifyOfflineRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, NotifyOfflineRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:friendpb.NotifyOfflineRequest)
+}
+NotifyOfflineRequest::NotifyOfflineRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const NotifyOfflineRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, NotifyOfflineRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE NotifyOfflineRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void NotifyOfflineRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.player_id_ = {};
+}
+NotifyOfflineRequest::~NotifyOfflineRequest() {
+  // @@protoc_insertion_point(destructor:friendpb.NotifyOfflineRequest)
+  SharedDtor(*this);
+}
+inline void NotifyOfflineRequest::SharedDtor(MessageLite& self) {
+  NotifyOfflineRequest& this_ = static_cast<NotifyOfflineRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL NotifyOfflineRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) NotifyOfflineRequest(arena);
+}
+constexpr auto NotifyOfflineRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(NotifyOfflineRequest),
+                                            alignof(NotifyOfflineRequest));
+}
+constexpr auto NotifyOfflineRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_NotifyOfflineRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &NotifyOfflineRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<NotifyOfflineRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &NotifyOfflineRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<NotifyOfflineRequest>(), &NotifyOfflineRequest::ByteSizeLong,
+              &NotifyOfflineRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(NotifyOfflineRequest, _impl_._cached_size_),
+          false,
+      },
+      &NotifyOfflineRequest::kDescriptorMethods,
+      &descriptor_table_proto_2ffriend_2ffriend_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull NotifyOfflineRequest_class_data_ =
+        NotifyOfflineRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+NotifyOfflineRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&NotifyOfflineRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(NotifyOfflineRequest_class_data_.tc_table);
+  return NotifyOfflineRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+NotifyOfflineRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(NotifyOfflineRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    NotifyOfflineRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::friendpb::NotifyOfflineRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 player_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(NotifyOfflineRequest, _impl_.player_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(NotifyOfflineRequest, _impl_.player_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(NotifyOfflineRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void NotifyOfflineRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:friendpb.NotifyOfflineRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.player_id_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL NotifyOfflineRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const NotifyOfflineRequest& this_ = static_cast<const NotifyOfflineRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL NotifyOfflineRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const NotifyOfflineRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:friendpb.NotifyOfflineRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 player_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_player_id(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:friendpb.NotifyOfflineRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t NotifyOfflineRequest::ByteSizeLong(const MessageLite& base) {
+  const NotifyOfflineRequest& this_ = static_cast<const NotifyOfflineRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t NotifyOfflineRequest::ByteSizeLong() const {
+  const NotifyOfflineRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:friendpb.NotifyOfflineRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // uint64 player_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void NotifyOfflineRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<NotifyOfflineRequest*>(&to_msg);
+  auto& from = static_cast<const NotifyOfflineRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:friendpb.NotifyOfflineRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    if (from._internal_player_id() != 0) {
+      _this->_impl_.player_id_ = from._impl_.player_id_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void NotifyOfflineRequest::CopyFrom(const NotifyOfflineRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:friendpb.NotifyOfflineRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void NotifyOfflineRequest::InternalSwap(NotifyOfflineRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.player_id_, other->_impl_.player_id_);
+}
+
+::google::protobuf::Metadata NotifyOfflineRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class NotifyOfflineResponse::_Internal {
+ public:
+};
+
+NotifyOfflineResponse::NotifyOfflineResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, NotifyOfflineResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:friendpb.NotifyOfflineResponse)
+}
+NotifyOfflineResponse::NotifyOfflineResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const NotifyOfflineResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, NotifyOfflineResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  NotifyOfflineResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:friendpb.NotifyOfflineResponse)
+}
+
+inline void* PROTOBUF_NONNULL NotifyOfflineResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) NotifyOfflineResponse(arena);
+}
+constexpr auto NotifyOfflineResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(NotifyOfflineResponse),
+                                            alignof(NotifyOfflineResponse));
+}
+constexpr auto NotifyOfflineResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_NotifyOfflineResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &NotifyOfflineResponse::MergeImpl,
+          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<NotifyOfflineResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &NotifyOfflineResponse::SharedDtor,
+          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<NotifyOfflineResponse>(), &NotifyOfflineResponse::ByteSizeLong,
+              &NotifyOfflineResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(NotifyOfflineResponse, _impl_._cached_size_),
+          false,
+      },
+      &NotifyOfflineResponse::kDescriptorMethods,
+      &descriptor_table_proto_2ffriend_2ffriend_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull NotifyOfflineResponse_class_data_ =
+        NotifyOfflineResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+NotifyOfflineResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&NotifyOfflineResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(NotifyOfflineResponse_class_data_.tc_table);
+  return NotifyOfflineResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 0, 0, 0, 2>
+NotifyOfflineResponse::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    0, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967295,  // skipmap
+    offsetof(decltype(_table_), field_names),  // no field_entries
+    0,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    NotifyOfflineResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::friendpb::NotifyOfflineResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, // no field_entries, or aux_entries
+  {{
+  }},
+};
+
+
+
+
+
+
+
+::google::protobuf::Metadata NotifyOfflineResponse::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace friendpb
