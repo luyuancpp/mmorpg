@@ -17,8 +17,8 @@ ServerConfig:
     IsOfflineExpand: false # Default false; dynamic expansion mode
   Database:
     Hosts: "127.0.0.1:3306"
-    User: "appuser"
-    Passwd: "apppass123"
+    User: "root"
+    Passwd: "Mmorpg#2026db"
     MaxOpenConn: 10
     MaxIdleConn: 3
     Net: ""
