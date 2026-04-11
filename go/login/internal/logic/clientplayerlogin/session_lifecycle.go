@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"login/internal/logic/pkg/ctxkeys"
+	"login/internal/logic/pkg/loginsession"
 	"login/internal/logic/pkg/sessionmanager"
-	"login/internal/logic/utils/sessioncleaner"
 	"login/internal/svc"
 	login_proto_common "proto/common/base"
 
@@ -23,9 +23,7 @@ func getSessionDetailsForAction(ctx context.Context, action string) (*login_prot
 }
 
 func cleanupLoginSessionState(ctx context.Context, svcCtx *svc.ServiceContext, sessionID uint64, logicTag string) {
-	if err := sessioncleaner.CleanupSession(ctx, svcCtx.RedisClient, sessionID, logicTag); err != nil {
-		logx.Errorf("%s cleanup failed: %v", logicTag, err)
-	}
+	loginsession.Cleanup(ctx, svcCtx.RedisClient, sessionID, logicTag)
 }
 
 func deletePlayerSession(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64) {

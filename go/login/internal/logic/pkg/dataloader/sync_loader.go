@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"login/internal/config"
 	"login/internal/kafka"
-	"login/internal/logic/pkg/cache"
 	login_proto "proto/db"
 	"strconv"
 	"time"
@@ -74,7 +73,7 @@ func LoadPlayerDataSync(
 		}
 
 		for _, sub := range subMsgs {
-			subKey := cache.BuildRedisKey(sub, playerIdStr)
+			subKey := fmt.Sprintf("%s:%s", sub.ProtoReflect().Descriptor().FullName(), playerIdStr)
 
 			// Try sub-message cache
 			if val, _ := redisClient.Get(ctx, subKey).Bytes(); val != nil {

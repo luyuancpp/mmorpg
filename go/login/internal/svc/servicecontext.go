@@ -15,11 +15,10 @@ import (
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/node"
-	"login/internal/logic/pkg/taskmanager"
-	smpb "proto/scene_manager"
 	login_proto "proto/common/base"
 	kafkapb "proto/contracts/kafka"
 	plpb "proto/player_locator"
+	smpb "proto/scene_manager"
 	"time"
 )
 
@@ -28,7 +27,6 @@ type ServiceContext struct {
 	SnowFlake           *snowflake.Node
 	NodeInfo            login_proto.NodeInfo
 	KafkaClient         *kafka.KeyOrderedKafkaProducer
-	TaskExecutor        *taskmanager.TaskExecutor
 	ExpandMonitor       *kafka.ExpandMonitor
 	PlayerLocatorClient plpb.PlayerLocatorClient
 	SceneManagerClient  smpb.SceneManagerClient
@@ -74,12 +72,6 @@ func NewServiceContext() *ServiceContext {
 		panic(err)
 	}
 
-	// Initialize TaskExecutor
-	taskExecutor, err := taskmanager.NewTaskExecutor(100, redisClient)
-	if err != nil {
-		panic(fmt.Errorf("failed to init TaskExecutor: %w", err))
-	}
-
 	// Initialize player_locator gRPC client (discovered via etcd)
 	plConn := zrpc.MustNewClient(config.AppConfig.PlayerLocatorRpc)
 	plClient := plpb.NewPlayerLocatorClient(plConn.Conn())
@@ -106,7 +98,6 @@ func NewServiceContext() *ServiceContext {
 	return &ServiceContext{
 		RedisClient:         redisClient,
 		KafkaClient:         kafkaClient,
-		TaskExecutor:        taskExecutor,
 		ExpandMonitor:       monitor,
 		PlayerLocatorClient: plClient,
 		SceneManagerClient:  smClient,

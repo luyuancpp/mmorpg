@@ -2,15 +2,13 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"login/data"
 	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/dataloader"
-	"login/internal/logic/pkg/fsmstore"
 	"login/internal/logic/pkg/locker"
-	"login/internal/logic/pkg/loginsessionstore"
+	"login/internal/logic/pkg/loginsession"
 	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/svc"
 	login_proto_common "proto/common/base"
@@ -51,7 +49,6 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 
 func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_proto.EnterGameResponse, error) {
 	resp := &login_proto.EnterGameResponse{ErrorMessage: &login_proto_common.TipInfoMessage{}}
-	// 1. Create timeout context (supports cancellation, preserves existing timeout config)
 	ctx := l.ctx
 
 	// 1. Get Session
@@ -62,44 +59,26 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 2. Get LoginSessionInfo
-	session, err := loginsessionstore.GetLoginSession(ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
+	// 2. Get account
+	account, err := loginsession.GetAccount(ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
 	if err != nil {
-		logx.Errorf("GetLoginSession failed: %v", err)
+		logx.Errorf("GetAccount failed: %v", err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginSessionNotFound)
 		return resp, nil
 	}
 
-	// 3. Lock to prevent concurrent login for the same player (retry up to 12 times, total ~6s > TTL 5s)
+	// 3. Lock to prevent concurrent login for the same player
 	playerLocker := locker.NewRedisLocker(l.svcCtx.RedisClient)
 	key := "player_locker:" + strconv.FormatUint(in.PlayerId, 10)
-	const maxLockRetries = 12
-	var tryLocker *locker.Lock
-	for attempt := 1; attempt <= maxLockRetries; attempt++ {
-		tryLocker, err = playerLocker.TryLock(ctx, key, time.Duration(config.AppConfig.Locker.PlayerLockTTL)*time.Second)
-		if err == nil && tryLocker.IsLocked() {
-			break
-		}
-		if attempt < maxLockRetries {
-			// Debug: check who holds the lock and TTL remaining
-			ttl, _ := l.svcCtx.RedisClient.TTL(ctx, key).Result()
-			logx.Infof("EnterGame lock retry %d/%d for playerId=%d (err=%v locked=%v ttl=%v)",
-				attempt, maxLockRetries, in.PlayerId, err, tryLocker != nil && tryLocker.IsLocked(), ttl)
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
+	lockTTL := time.Duration(config.AppConfig.Locker.PlayerLockTTL) * time.Second
+	tryLocker, err := playerLocker.TryLockWithRetry(ctx, key, lockTTL, 12, 500*time.Millisecond)
 	if err != nil {
-		logx.Errorf("EnterGame lock acquire failed for playerId=%d after %d retries: %v", in.PlayerId, maxLockRetries, err)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
-		return resp, nil
-	}
-	if tryLocker == nil || !tryLocker.IsLocked() {
-		logx.Errorf("EnterGame lock not held for playerId=%d after %d retries", in.PlayerId, maxLockRetries)
+		logx.Errorf("EnterGame lock failed for playerId=%d: %v", in.PlayerId, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 
-	flowState := buildEnterGameSessionState(in, sessionDetails, session.Account)
+	flowState := buildEnterGameSessionState(in, sessionDetails, account)
 
 	defer func() {
 		// Use background context for lock release to avoid failure when gRPC ctx is cancelled
@@ -114,7 +93,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}()
 
 	// 4. Load account data and verify player ownership
-	accountKey := constants.GetAccountDataKey(session.Account)
+	accountKey := constants.GetAccountDataKey(account)
 	dataBytes, err := l.svcCtx.RedisClient.Get(ctx, accountKey).Bytes()
 	if err != nil {
 		logx.Errorf("RedisClient Get user account failed: %v", err)
@@ -141,30 +120,11 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 5. FSM state management (by sessionId, retry once on failure)
-	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
-	playerFSM := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); err != nil {
-		logx.Errorf("FSM Load failed: %v", err)
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginFsmFailed)
+	// 5. Step validation: logged_in/creating_char -> entering_game
+	if err := loginsession.Advance(ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, loginsession.StepEnteringGame); err != nil {
+		logx.Errorf("EnterGame step failed: sessionId=%d playerId=%d err=%v", sessionDetails.SessionId, in.PlayerId, err)
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
 		return resp, nil
-	}
-
-	if err := playerFSM.Event(ctx, data.EventEnterGame); err != nil {
-		// Retry: reload FSM state from Redis after a short delay
-		logx.Infof("FSM EventEnterGame failed (state=%s), retrying after 100ms for playerId=%d", playerFSM.Current(), in.PlayerId)
-		time.Sleep(100 * time.Millisecond)
-		playerFSM = data.InitPlayerFSM()
-		if loadErr := fsmstore.LoadFSMState(ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); loadErr != nil {
-			logx.Errorf("FSM retry load failed: %v", loadErr)
-			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginFsmFailed)
-			return resp, nil
-		}
-		if retryErr := playerFSM.Event(ctx, data.EventEnterGame); retryErr != nil {
-			logx.Errorf("FSM EventEnterGame failed after retry (state=%s) for playerId=%d: %v", playerFSM.Current(), in.PlayerId, retryErr)
-			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
-			return resp, nil
-		}
 	}
 
 	// 6. Load Player data (synchronous)
@@ -183,7 +143,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	}
 	logx.Infof("Player data loaded and session applied (decision=%d). playerId=%d", decision, in.PlayerId)
 
-	// 8. Clean up Session and FSM
+	// 8. Clean up session state
 	cleanupLoginSessionState(ctx, l.svcCtx, sessionDetails.SessionId, "enterGame")
 
 	resp.ErrorMessage = nil

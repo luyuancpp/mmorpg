@@ -2,15 +2,22 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
+	"proto/common/base"
+	"proto/login"
 	"robot/generated/pb/game"
 	"robot/metrics"
 	"robot/pkg"
-	"proto/login"
 )
+
+// defaultLoginTimeout is the maximum time to wait for any single login-flow
+// request/response. If a response is not received within this duration, the
+// login is considered "stuck" and the attempt fails with a timeout error.
+const defaultLoginTimeout = 15 * time.Second
 
 // loginAndEnter performs: login → create player (if needed) → enter game.
 func loginAndEnter(gc *pkg.GameClient, password string, stats *metrics.Stats) error {
@@ -74,24 +81,51 @@ func loginAndEnter(gc *pkg.GameClient, password string, stats *metrics.Stats) er
 // sendAndRecv sends a request and blocks until the matching response arrives,
 // then unmarshals it into resp.
 func sendAndRecv(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, req, resp proto.Message) error {
+	return sendAndRecvTimeout(gc, stats, msgId, req, resp, defaultLoginTimeout)
+}
+
+// sendAndRecvTimeout is like sendAndRecv but with an explicit timeout.
+// If the response is not received within the timeout, it returns an error
+// indicating the login is stuck.
+func sendAndRecvTimeout(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, req, resp proto.Message, timeout time.Duration) error {
 	if err := gc.SendRequest(msgId, req); err != nil {
 		return err
 	}
 	stats.MsgSent()
 
-	for {
-		raw, err := gc.RecvOne()
-		if err != nil {
-			return err
+	type recvResult struct {
+		msg *base.MessageContent
+		err error
+	}
+	ch := make(chan recvResult, 1)
+
+	go func() {
+		for {
+			raw, err := gc.RecvOne()
+			if err != nil {
+				ch <- recvResult{err: err}
+				return
+			}
+			stats.MsgRecv()
+			if raw.MessageId == msgId {
+				ch <- recvResult{msg: raw}
+				return
+			}
+			zap.L().Debug("skipping msg during login",
+				zap.Uint32("got", raw.MessageId),
+				zap.Uint32("want", msgId),
+			)
 		}
-		stats.MsgRecv()
-		if raw.MessageId == msgId {
-			return proto.Unmarshal(raw.SerializedMessage, resp)
+	}()
+
+	select {
+	case r := <-ch:
+		if r.err != nil {
+			return r.err
 		}
-		// During login handshake the server may push notifications — skip them.
-		zap.L().Debug("skipping msg during login",
-			zap.Uint32("got", raw.MessageId),
-			zap.Uint32("want", msgId),
-		)
+		return proto.Unmarshal(r.msg.SerializedMessage, resp)
+	case <-time.After(timeout):
+		stats.LoginStuck()
+		return fmt.Errorf("STUCK: no response for msg_id=%d within %s", msgId, timeout)
 	}
 }
