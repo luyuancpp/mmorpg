@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -73,8 +74,20 @@ func (l *FriendLogic) AddFriend(ctx context.Context, req *pb.AddFriendRequest) (
 }
 
 func (l *FriendLogic) AcceptFriend(ctx context.Context, req *pb.AcceptFriendRequest) (*pb.AcceptFriendResponse, error) {
-	if err := l.repo.AcceptFriend(ctx, req.FromPlayerId, req.PlayerId); err != nil {
-		return nil, fmt.Errorf("accept friend: %w", err)
+	err := l.repo.AcceptFriend(ctx, req.FromPlayerId, req.PlayerId, config.AppConfig.Cache.MaxFriends)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrSenderFriendsFull):
+			return &pb.AcceptFriendResponse{
+				ErrorMessage: tipErr(constants.ErrTargetFriendListFull, "sender's friend list full"),
+			}, nil
+		case errors.Is(err, data.ErrAcceptorFriendsFull):
+			return &pb.AcceptFriendResponse{
+				ErrorMessage: tipErr(constants.ErrFriendListFull, "your friend list full"),
+			}, nil
+		default:
+			return nil, fmt.Errorf("accept friend: %w", err)
+		}
 	}
 	logx.Infof("Player %d accepted friend request from %d", req.PlayerId, req.FromPlayerId)
 	return &pb.AcceptFriendResponse{}, nil
@@ -101,12 +114,24 @@ func (l *FriendLogic) GetFriendList(ctx context.Context, req *pb.GetFriendListRe
 		return nil, fmt.Errorf("get friend list: %w", err)
 	}
 
+	// Batch query online status via Redis pipeline
+	friendIDs := make([]uint64, len(friends))
+	for i, f := range friends {
+		friendIDs[i] = f.FriendPlayerID
+	}
+	onlineMap, err := l.repo.BatchGetOnlineStatus(ctx, friendIDs)
+	if err != nil {
+		logx.Errorf("batch online status failed, continuing without: %v", err)
+		onlineMap = map[uint64]bool{}
+	}
+
 	pbFriends := make([]*pb.FriendEntry, 0, len(friends))
 	for _, f := range friends {
 		pbFriends = append(pbFriends, &pb.FriendEntry{
 			FriendPlayerId: f.FriendPlayerID,
 			SinceMs:        f.SinceMs,
 			LastActiveMs:   f.LastActiveMs,
+			IsOnline:       onlineMap[f.FriendPlayerID],
 		})
 	}
 	return &pb.GetFriendListResponse{Friends: pbFriends}, nil
@@ -128,4 +153,18 @@ func (l *FriendLogic) GetPendingRequests(ctx context.Context, req *pb.GetPending
 		})
 	}
 	return &pb.GetPendingRequestsResponse{Requests: pbRequests}, nil
+}
+
+func (l *FriendLogic) NotifyOnline(ctx context.Context, req *pb.NotifyOnlineRequest) (*pb.NotifyOnlineResponse, error) {
+	if err := l.repo.SetPlayerOnline(ctx, req.PlayerId, req.GateNodeId); err != nil {
+		return nil, fmt.Errorf("set player online: %w", err)
+	}
+	return &pb.NotifyOnlineResponse{}, nil
+}
+
+func (l *FriendLogic) NotifyOffline(ctx context.Context, req *pb.NotifyOfflineRequest) (*pb.NotifyOfflineResponse, error) {
+	if err := l.repo.SetPlayerOffline(ctx, req.PlayerId); err != nil {
+		return nil, fmt.Errorf("set player offline: %w", err)
+	}
+	return &pb.NotifyOfflineResponse{}, nil
 }

@@ -110,7 +110,8 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
 	tlsEcs.dispatcher.sink<OnNodeRemovePbEvent>().connect<&RpcClientSessionHandler::OnNodeRemovePbEventHandler>(*this);
 }
 
-// OnNodeRemovePbEvent invalidates stale binding → next call re-binds via PickRandomNode.
+// Scene node binding must be set explicitly by scene manager (e.g. EnterScene).
+// Do NOT pick randomly -- a random scene node has no player entity.
 std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_t nodeType)
 {
 	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
@@ -124,13 +125,8 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 
 	if (!session.HasNodeId(nodeType))
 	{
-		auto randomNode = PickRandomNode(nodeType);
-		if (!randomNode)
-		{
-			LOG_ERROR << "No available node for nodeType: " << nodeType << ", session id: " << sessionId;
-			return std::nullopt;
-		}
-		session.SetNodeId(nodeType, entt::to_integral(*randomNode));
+		LOG_ERROR << "No node bound for nodeType: " << nodeType << ", session id: " << sessionId;
+		return std::nullopt;
 	}
 
 	const auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
@@ -243,8 +239,8 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 
 	const auto sessionId = entt::to_integral(GetSessionId(conn));
 
-	// Notify login node of disconnection
-	const auto &loginNode = ResolveSessionTargetNode(sessionId, eNodeType::LoginNodeService);
+	// Login nodes are stateless -- pick any available node, no session affinity needed.
+	const auto loginNode = PickRandomNode(eNodeType::LoginNodeService);
 	if (loginNode)
 	{
 		loginpb::LoginNodeDisconnectRequest request;
@@ -352,7 +348,17 @@ void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr &request, c
 
 	if (rpcHandlerMeta.sender)
 	{
-		auto node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta.targetNodeType);
+		// Scene nodes hold player entities in memory -- require session affinity binding.
+		// All Go microservices (login, guild, friend, chat, etc.) are stateless -- pick any available node.
+		std::optional<entt::entity> node;
+		if (rpcHandlerMeta.targetNodeType == eNodeType::SceneNodeService)
+		{
+			node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta.targetNodeType);
+		}
+		else
+		{
+			node = PickRandomNode(rpcHandlerMeta.targetNodeType);
+		}
 		if (!node)
 		{
 			LOG_ERROR << "Node not found for session id: " << sessionId << ", message id: " << request->message_id();

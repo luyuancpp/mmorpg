@@ -18,7 +18,7 @@ Kafka:
     - 127.0.0.1:9092
 
 Node:
-  ZoneId: 0
+  ZoneId: 1
   LeaseTTL: 500
 
 Registry:

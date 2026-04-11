@@ -4,12 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"golang.org/x/sync/singleflight"
+)
+
+var (
+	ErrSenderFriendsFull   = errors.New("sender friend list full")
+	ErrAcceptorFriendsFull = errors.New("acceptor friend list full")
 )
 
 type FriendEntry struct {
@@ -50,6 +56,12 @@ func friendListKey(playerID uint64) string {
 func pendingRequestsKey(playerID uint64) string {
 	return fmt.Sprintf("friend_req:%d", playerID)
 }
+
+func onlineKey(playerID uint64) string {
+	return fmt.Sprintf("friend:online:%d", playerID)
+}
+
+const onlineTTL = 60 * time.Second
 
 // ── Read (cache-aside + singleflight) ──────────────────────────
 
@@ -126,12 +138,32 @@ func (r *FriendRepo) AddFriendRequest(ctx context.Context, fromPlayerID, toPlaye
 	return nil
 }
 
-func (r *FriendRepo) AcceptFriend(ctx context.Context, fromPlayerID, toPlayerID uint64) error {
+func (r *FriendRepo) AcceptFriend(ctx context.Context, fromPlayerID, toPlayerID uint64, maxFriends uint32) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+
+	// Atomic check: sender's friend count (FOR UPDATE prevents concurrent accept exceeding limit)
+	var fromCount int
+	if err := tx.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM friend WHERE player_id = ? FOR UPDATE", fromPlayerID).Scan(&fromCount); err != nil {
+		return err
+	}
+	if uint32(fromCount) >= maxFriends {
+		return ErrSenderFriendsFull
+	}
+
+	// Atomic check: acceptor's friend count
+	var toCount int
+	if err := tx.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM friend WHERE player_id = ? FOR UPDATE", toPlayerID).Scan(&toCount); err != nil {
+		return err
+	}
+	if uint32(toCount) >= maxFriends {
+		return ErrAcceptorFriendsFull
+	}
 
 	// Update request status
 	if _, err := tx.ExecContext(ctx,
@@ -203,6 +235,35 @@ func (r *FriendRepo) HasPendingRequest(ctx context.Context, fromID, toID uint64)
 		return false, err
 	}
 	return count > 0, nil
+}
+
+// ── Online status (Redis key with TTL) ─────────────────────────
+
+func (r *FriendRepo) SetPlayerOnline(ctx context.Context, playerID uint64, gateNodeID uint32) error {
+	return r.rdb.Set(ctx, onlineKey(playerID), gateNodeID, onlineTTL).Err()
+}
+
+func (r *FriendRepo) SetPlayerOffline(ctx context.Context, playerID uint64) error {
+	return r.rdb.Del(ctx, onlineKey(playerID)).Err()
+}
+
+func (r *FriendRepo) BatchGetOnlineStatus(ctx context.Context, playerIDs []uint64) (map[uint64]bool, error) {
+	if len(playerIDs) == 0 {
+		return map[uint64]bool{}, nil
+	}
+	pipe := r.rdb.Pipeline()
+	cmds := make(map[uint64]*redis.IntCmd, len(playerIDs))
+	for _, id := range playerIDs {
+		cmds[id] = pipe.Exists(ctx, onlineKey(id))
+	}
+	if _, err := pipe.Exec(ctx); err != nil && err != redis.Nil {
+		return nil, fmt.Errorf("batch online status: %w", err)
+	}
+	result := make(map[uint64]bool, len(playerIDs))
+	for id, cmd := range cmds {
+		result[id] = cmd.Val() > 0
+	}
+	return result, nil
 }
 
 // ── Cache helpers ──────────────────────────────────────────────

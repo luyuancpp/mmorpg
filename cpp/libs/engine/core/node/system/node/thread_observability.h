@@ -257,12 +257,18 @@ inline void RegisterThreadObservability(muduo::net::EventLoop& loop, const std::
         << ", growth_warn_consecutive_samples=" << config.growthWarnConsecutiveSamples
         << ", growth_warn_absolute_increase=" << config.growthWarnAbsoluteIncrease;
 
-    loop.runEvery(static_cast<double>(sampleIntervalSeconds), [threadMonitor, displayName] {
+    auto lastInfoLogTime = std::make_shared<std::chrono::steady_clock::time_point>(std::chrono::steady_clock::time_point::min());
+    loop.runEvery(static_cast<double>(sampleIntervalSeconds), [threadMonitor, displayName, lastInfoLogTime] {
         const auto snapshot = threadMonitor->Sample();
-        LOG_INFO << displayName << " thread metrics: total_threads=" << snapshot.totalThreads
-            << ", delta_threads=" << snapshot.deltaThreads
-            << ", peak_threads=" << snapshot.peakThreads
-            << ", uptime_sec=" << snapshot.uptimeSeconds;
+        const auto now = std::chrono::steady_clock::now();
+        constexpr int kInfoLogIntervalSeconds = 3600;
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - *lastInfoLogTime).count() >= kInfoLogIntervalSeconds) {
+            *lastInfoLogTime = now;
+            LOG_INFO << displayName << " thread metrics: total_threads=" << snapshot.totalThreads
+                << ", delta_threads=" << snapshot.deltaThreads
+                << ", peak_threads=" << snapshot.peakThreads
+                << ", uptime_sec=" << snapshot.uptimeSeconds;
+        }
 
         if (snapshot.baselineJustReady) {
             LOG_INFO << displayName << " thread baseline (stable window reached): total_threads=" << snapshot.totalThreads
