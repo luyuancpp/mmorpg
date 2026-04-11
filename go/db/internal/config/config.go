@@ -26,7 +26,7 @@ type DatabaseConfig struct {
 	Hosts       string `json:"Hosts"`
 	User        string `json:"User"`
 	Passwd      string `json:"Passwd"`
-	DBName      string `json:"DBName"`
+	DBName      string `json:"DBName,optional"` // Derived from ZoneId at startup
 	MaxOpenConn int    `json:"MaxOpenConn"`
 	MaxIdleConn int    `json:"MaxIdleConn"`
 	Net         string `json:"Net"`
@@ -44,7 +44,7 @@ type RedisConfig struct {
 type KafkaConfig struct {
 	Brokers         []string `json:"Brokers"`         // Broker addresses
 	GroupID         string   `json:"GroupID"`         // Consumer group ID
-	Topic           string   `json:"Topic"`           // Topic name
+	Topic           string   `json:"Topic,optional"`  // Derived from ZoneId at startup
 	PartitionCnt    int32    `json:"PartitionCnt"`    // Partition count
 	IsOfflineExpand bool     `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
 }
