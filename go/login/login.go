@@ -41,6 +41,9 @@ func main() {
 	// Load config file
 	conf.MustLoad(*configFile, &config.AppConfig)
 
+	// Derive zone-specific Kafka topic from ZoneId
+	config.AppConfig.Kafka.Topic = config.DbTaskTopic(config.AppConfig.Node.ZoneId)
+
 	ctx := svc.NewServiceContext()
 
 	defer ctx.Stop()

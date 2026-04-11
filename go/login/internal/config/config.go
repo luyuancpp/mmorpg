@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -108,3 +109,8 @@ type TimeoutConf struct {
 }
 
 var AppConfig Config
+
+// DbTaskTopic returns the zone-specific Kafka topic for DB tasks.
+func DbTaskTopic(zoneId uint32) string {
+	return fmt.Sprintf("db_task_zone_%d", zoneId)
+}

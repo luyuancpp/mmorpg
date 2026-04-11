@@ -378,20 +378,19 @@ Etcd:
   Hosts:
     - "etcd.${InfraNamespace}:2379"
   Key: db.rpc
+ZoneId: ${CurrentZoneId}
 ServerConfig:
   JsonPath: "/app/data/mysql_database_table_list.json"
   Kafka:
     Brokers:
       - "kafka.${InfraNamespace}:9092"
     GroupID: "db_rpc_consumer_group"
-    Topic: "db_task_topic"
     PartitionCnt: 5
     IsOfflineExpand: false
   Database:
     Hosts: "mysql.${InfraNamespace}:3306"
     User: "root"
     Passwd: "root"
-    DBName: "game"
     MaxOpenConn: 10
     MaxIdleConn: 3
     Net: ""
@@ -497,7 +496,6 @@ Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
   GroupID: "db_rpc_consumer_group"
-  Topic: "db_task_topic"
   PartitionCnt: 5
   InitialPartition: 5
   DialTimeout: 10s

@@ -382,7 +382,7 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 			return;
 		}
 
-		auto err = KafkaProducer::Instance().send(kDbTaskTopic, dbTaskBytes, playerIdStr);
+		auto err = KafkaProducer::Instance().send(GetDbTaskTopic(GetZoneId()), dbTaskBytes, playerIdStr);
 		if (err != RdKafka::ERR_NO_ERROR)
 		{
 			LOG_ERROR << "[SavePlayerToRedis] Kafka send failed: table=" << tableName

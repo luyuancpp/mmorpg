@@ -92,7 +92,7 @@ Kafka:
   Brokers:
     - "127.0.0.1:9092"
   GroupID: "db_rpc_consumer_group"
-  Topic: "db_task_topic"
+  # Topic is derived from Node.ZoneId at startup (db_task_zone_{ZoneId})
   PartitionCnt: 5
   InitialPartition: 5
   DialTimeout: 10s
