@@ -18,8 +18,6 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 
 	"proto/common/base"
@@ -69,7 +67,7 @@ func main() {
 	stats.StartReporter(reportInterval, stopReport)
 
 	zap.L().Info("starting robots",
-		zap.String("gate", cfg.GateAddr),
+		zap.String("gateway", cfg.GatewayAddr),
 		zap.Int("count", cfg.RobotCount),
 	)
 
@@ -207,87 +205,13 @@ func initLogger() {
 	zap.ReplaceGlobals(logger)
 }
 
-type gateAssignmentLocal struct {
-	addr      string
-	payload   []byte
-	signature []byte
-}
-
 // resolveGateAddrLocal keeps main.go runnable as a single-file command.
 func resolveGateAddrLocal(cfg *config.Config) (host, port string, payload, signature []byte, err error) {
-	mode := cfg.GateMode
-	if mode == "" {
-		if cfg.GatewayAddr != "" {
-			mode = "http"
-		} else {
-			mode = "grpc"
-		}
-	}
-
-	if mode == "http" {
-		return resolveGateViaHTTPLocal(cfg)
-	}
-
-	// grpc mode
-	if cfg.LoginAddr != "" {
-		const maxRetries = 30
-		backoff := 2 * time.Second
-		for attempt := 1; attempt <= maxRetries; attempt++ {
-			result, assignErr := assignGateLocal(cfg.LoginAddr, cfg.ZoneID)
-			if assignErr == nil {
-				h, p, splitErr := net.SplitHostPort(result.addr)
-				return h, p, result.payload, result.signature, splitErr
-			}
-			if attempt < maxRetries {
-				time.Sleep(backoff)
-				if backoff < 10*time.Second {
-					backoff = backoff * 3 / 2
-				}
-			}
-		}
-		if cfg.GateAddr == "" {
-			return "", "", nil, nil, fmt.Errorf("AssignGate failed after retries and no static gate_addr configured")
-		}
-	}
-	h, p, splitErr := net.SplitHostPort(cfg.GateAddr)
-	return h, p, nil, nil, splitErr
-}
-
-func assignGateLocal(loginAddr string, zoneId uint32) (*gateAssignmentLocal, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	conn, err := grpc.NewClient(loginAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("grpc dial %s: %w", loginAddr, err)
-	}
-	defer func() { _ = conn.Close() }()
-
-	resp, err := login.NewLoginPreGateClient(conn).AssignGate(ctx, &login.AssignGateRequest{ZoneId: zoneId})
-	if err != nil {
-		return nil, fmt.Errorf("AssignGate: %w", err)
-	}
-	if resp.Error != "" {
-		return nil, fmt.Errorf("AssignGate: %s", resp.Error)
-	}
-	if resp.Ip == "" || resp.Port == 0 {
-		return nil, fmt.Errorf("AssignGate returned empty address")
-	}
-
-	return &gateAssignmentLocal{
-		addr:      fmt.Sprintf("%s:%d", resp.Ip, resp.Port),
-		payload:   resp.TokenPayload,
-		signature: resp.TokenSignature,
-	}, nil
+	return resolveGateViaHTTPLocal(cfg)
 }
 
 // resolveGateViaHTTPLocal calls POST /api/assign-gate (HTTP mode) with retry.
 func resolveGateViaHTTPLocal(cfg *config.Config) (host, port string, payload, signature []byte, err error) {
-	if cfg.GatewayAddr == "" {
-		h, p, splitErr := net.SplitHostPort(cfg.GateAddr)
-		return h, p, nil, nil, splitErr
-	}
-
 	zoneID := cfg.ZoneID
 	if zoneID == 0 {
 		zoneID, err = resolveZoneIDLocal(cfg.GatewayAddr)
@@ -311,11 +235,7 @@ func resolveGateViaHTTPLocal(cfg *config.Config) (host, port string, payload, si
 			}
 		}
 	}
-	if cfg.GateAddr == "" {
-		return "", "", nil, nil, fmt.Errorf("HTTP AssignGate failed after retries and no static gate_addr configured")
-	}
-	h, p, splitErr := net.SplitHostPort(cfg.GateAddr)
-	return h, p, nil, nil, splitErr
+	return "", "", nil, nil, fmt.Errorf("AssignGate failed after retries")
 }
 
 func resolveZoneIDLocal(gatewayAddr string) (uint32, error) {
@@ -357,7 +277,7 @@ func resolveZoneIDLocal(gatewayAddr string) (uint32, error) {
 	return result.Zones[0].ZoneID, nil
 }
 
-func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignmentLocal, error) {
+func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignment, error) {
 	reqBody, _ := json.Marshal(map[string]uint32{"zone_id": zoneId})
 
 	url := gatewayAddr + "/api/assign-gate"
@@ -401,7 +321,7 @@ func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignmentLoca
 		return nil, fmt.Errorf("AssignGate returned empty address")
 	}
 
-	return &gateAssignmentLocal{
+	return &gateAssignment{
 		addr:      fmt.Sprintf("%s:%d", resp.GateIP, resp.GatePort),
 		payload:   resp.TokenPayload,
 		signature: resp.TokenSignature,
