@@ -1,10 +1,15 @@
 package config
 
-import "github.com/zeromicro/go-zero/zrpc"
+import (
+	"fmt"
+
+	"github.com/zeromicro/go-zero/zrpc"
+)
 
 // Config is the global configuration.
 type Config struct {
 	zrpc.RpcServerConf
+	ZoneId       uint32       `json:"ZoneId"`
 	ServerConfig ServerConfig `json:"ServerConfig"`
 }
 
@@ -45,3 +50,13 @@ type KafkaConfig struct {
 }
 
 var AppConfig Config
+
+// DbTaskTopic returns the zone-specific Kafka topic for DB tasks.
+func DbTaskTopic(zoneId uint32) string {
+	return fmt.Sprintf("db_task_zone_%d", zoneId)
+}
+
+// ZoneDBName returns the zone-specific MySQL database name.
+func ZoneDBName(zoneId uint32) string {
+	return fmt.Sprintf("zone_%d_db", zoneId)
+}

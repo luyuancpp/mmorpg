@@ -28,6 +28,14 @@ func main() {
 
 	// Load config
 	conf.MustLoad(*configFile, &config.AppConfig)
+
+	// Derive zone-specific Kafka topic and MySQL database name from ZoneId
+	if config.AppConfig.ZoneId == 0 {
+		panic("ZoneId must be set in config (> 0)")
+	}
+	config.AppConfig.ServerConfig.Kafka.Topic = config.DbTaskTopic(config.AppConfig.ZoneId)
+	config.AppConfig.ServerConfig.Database.DBName = config.ZoneDBName(config.AppConfig.ZoneId)
+
 	ctx := svc.NewServiceContext()
 
 	// Initialize Kafka consumer
@@ -62,6 +70,7 @@ func main() {
 	fmt.Println("\n=============================================================")
 	fmt.Println("  DB SERVICE STARTED SUCCESSFULLY")
 	fmt.Println("=============================================================")
+	fmt.Printf("  ZoneId:      %d\n", config.AppConfig.ZoneId)
 	fmt.Printf("  Listen:      %s\n", config.AppConfig.ListenOn)
 	fmt.Printf("  Mode:        %s\n", config.AppConfig.Mode)
 	if len(config.AppConfig.Etcd.Hosts) > 0 {
@@ -69,6 +78,7 @@ func main() {
 	}
 	fmt.Printf("  redis:       %s\n", config.AppConfig.ServerConfig.RedisClient.Hosts)
 	fmt.Printf("  kafka:       %v\n", config.AppConfig.ServerConfig.Kafka.Brokers)
+	fmt.Printf("  kafka topic: %s\n", config.AppConfig.ServerConfig.Kafka.Topic)
 	fmt.Printf("  mysql:       %s@%s/%s\n", config.AppConfig.ServerConfig.Database.User, config.AppConfig.ServerConfig.Database.Hosts, config.AppConfig.ServerConfig.Database.DBName)
 	fmt.Println("=============================================================")
 	quit := make(chan os.Signal, 1)

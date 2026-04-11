@@ -4,21 +4,21 @@ Etcd:
   Hosts:
     - 127.0.0.1:2379
   Key: db.rpc
+ZoneId: 1
 ServerConfig:
   JsonPath: "../../generated/data/mysql_database_table_list.json"
   # Kafka config for the Kafka consumer
   Kafka:
     Brokers:
-      - "127.0.0.1:9092"  # Kafka broker address
-    GroupID: "db_rpc_consumer_group"     # Kafka consumer group ID (must be unique)
-    Topic: "db_task_topic"               # Kafka topic name (must match producer topic)
-    PartitionCnt: 5                     # Topic partition count (must match Kafka topic)
-    IsOfflineExpand: false              # Default false; dynamic expansion mode
+      - "127.0.0.1:9092" # Kafka broker address
+    GroupID: "db_rpc_consumer_group" # Kafka consumer group ID (must be unique)
+    # Topic and DBName are derived from ZoneId at startup (db_task_zone_{ZoneId}, zone_{ZoneId}_db)
+    PartitionCnt: 5 # Topic partition count (must match Kafka topic)
+    IsOfflineExpand: false # Default false; dynamic expansion mode
   Database:
     Hosts: "127.0.0.1:3306"
     User: "appuser"
     Passwd: "apppass123"
-    DBName: "testdb"
     MaxOpenConn: 10
     MaxIdleConn: 3
     Net: ""
