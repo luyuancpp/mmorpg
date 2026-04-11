@@ -26,3 +26,11 @@ constexpr uint32_t FriendServiceGetFriendListIndex = 4;
 constexpr uint32_t FriendServiceGetPendingRequestsMessageId = 12;
 constexpr uint32_t FriendServiceGetPendingRequestsIndex = 5;
 #define FriendServiceGetPendingRequestsMethod  ::FriendService_Stub::descriptor()->method(5)
+
+constexpr uint32_t FriendServiceNotifyOnlineMessageId = 119;
+constexpr uint32_t FriendServiceNotifyOnlineIndex = 6;
+#define FriendServiceNotifyOnlineMethod  ::FriendService_Stub::descriptor()->method(6)
+
+constexpr uint32_t FriendServiceNotifyOfflineMessageId = 120;
+constexpr uint32_t FriendServiceNotifyOfflineIndex = 7;
+#define FriendServiceNotifyOfflineMethod  ::FriendService_Stub::descriptor()->method(7)

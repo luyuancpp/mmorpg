@@ -79,6 +79,7 @@ type FriendEntry struct {
 	FriendPlayerId uint64                 `protobuf:"varint,1,opt,name=friend_player_id,json=friendPlayerId,proto3" json:"friend_player_id,omitempty"`
 	SinceMs        int64                  `protobuf:"varint,2,opt,name=since_ms,json=sinceMs,proto3" json:"since_ms,omitempty"` // Friendship start time
 	LastActiveMs   int64                  `protobuf:"varint,3,opt,name=last_active_ms,json=lastActiveMs,proto3" json:"last_active_ms,omitempty"`
+	IsOnline       bool                   `protobuf:"varint,4,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -132,6 +133,13 @@ func (x *FriendEntry) GetLastActiveMs() int64 {
 		return x.LastActiveMs
 	}
 	return 0
+}
+
+func (x *FriendEntry) GetIsOnline() bool {
+	if x != nil {
+		return x.IsOnline
+	}
+	return false
 }
 
 type FriendRequest struct {
@@ -778,15 +786,184 @@ func (x *GetPendingRequestsResponse) GetRequests() []*FriendRequest {
 	return nil
 }
 
+type NotifyOnlineRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	GateNodeId    uint32                 `protobuf:"varint,2,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NotifyOnlineRequest) Reset() {
+	*x = NotifyOnlineRequest{}
+	mi := &file_proto_friend_friend_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotifyOnlineRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyOnlineRequest) ProtoMessage() {}
+
+func (x *NotifyOnlineRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_friend_friend_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyOnlineRequest.ProtoReflect.Descriptor instead.
+func (*NotifyOnlineRequest) Descriptor() ([]byte, []int) {
+	return file_proto_friend_friend_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *NotifyOnlineRequest) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *NotifyOnlineRequest) GetGateNodeId() uint32 {
+	if x != nil {
+		return x.GateNodeId
+	}
+	return 0
+}
+
+type NotifyOnlineResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NotifyOnlineResponse) Reset() {
+	*x = NotifyOnlineResponse{}
+	mi := &file_proto_friend_friend_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotifyOnlineResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyOnlineResponse) ProtoMessage() {}
+
+func (x *NotifyOnlineResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_friend_friend_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyOnlineResponse.ProtoReflect.Descriptor instead.
+func (*NotifyOnlineResponse) Descriptor() ([]byte, []int) {
+	return file_proto_friend_friend_proto_rawDescGZIP(), []int{15}
+}
+
+type NotifyOfflineRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NotifyOfflineRequest) Reset() {
+	*x = NotifyOfflineRequest{}
+	mi := &file_proto_friend_friend_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotifyOfflineRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyOfflineRequest) ProtoMessage() {}
+
+func (x *NotifyOfflineRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_friend_friend_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyOfflineRequest.ProtoReflect.Descriptor instead.
+func (*NotifyOfflineRequest) Descriptor() ([]byte, []int) {
+	return file_proto_friend_friend_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *NotifyOfflineRequest) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+type NotifyOfflineResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NotifyOfflineResponse) Reset() {
+	*x = NotifyOfflineResponse{}
+	mi := &file_proto_friend_friend_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotifyOfflineResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyOfflineResponse) ProtoMessage() {}
+
+func (x *NotifyOfflineResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_friend_friend_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyOfflineResponse.ProtoReflect.Descriptor instead.
+func (*NotifyOfflineResponse) Descriptor() ([]byte, []int) {
+	return file_proto_friend_friend_proto_rawDescGZIP(), []int{17}
+}
+
 var File_proto_friend_friend_proto protoreflect.FileDescriptor
 
 const file_proto_friend_friend_proto_rawDesc = "" +
 	"\n" +
-	"\x19proto/friend/friend.proto\x12\bfriendpb\x1a\x1bproto/common/base/tip.proto\"x\n" +
+	"\x19proto/friend/friend.proto\x12\bfriendpb\x1a\x1bproto/common/base/tip.proto\"\x95\x01\n" +
 	"\vFriendEntry\x12(\n" +
 	"\x10friend_player_id\x18\x01 \x01(\x04R\x0efriendPlayerId\x12\x19\n" +
 	"\bsince_ms\x18\x02 \x01(\x03R\asinceMs\x12$\n" +
-	"\x0elast_active_ms\x18\x03 \x01(\x03R\flastActiveMs\"\xb6\x01\n" +
+	"\x0elast_active_ms\x18\x03 \x01(\x03R\flastActiveMs\x12\x1b\n" +
+	"\tis_online\x18\x04 \x01(\bR\bisOnline\"\xb6\x01\n" +
 	"\rFriendRequest\x12$\n" +
 	"\x0efrom_player_id\x18\x01 \x01(\x04R\ffromPlayerId\x12 \n" +
 	"\fto_player_id\x18\x02 \x01(\x04R\n" +
@@ -822,19 +999,29 @@ const file_proto_friend_friend_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\x87\x01\n" +
 	"\x1aGetPendingRequestsResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x123\n" +
-	"\brequests\x18\x02 \x03(\v2\x17.friendpb.FriendRequestR\brequests*\x87\x01\n" +
+	"\brequests\x18\x02 \x03(\v2\x17.friendpb.FriendRequestR\brequests\"T\n" +
+	"\x13NotifyOnlineRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12 \n" +
+	"\fgate_node_id\x18\x02 \x01(\rR\n" +
+	"gateNodeId\"\x16\n" +
+	"\x14NotifyOnlineResponse\"3\n" +
+	"\x14NotifyOfflineRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\x17\n" +
+	"\x15NotifyOfflineResponse*\x87\x01\n" +
 	"\x13FriendRequestStatus\x12\x1a\n" +
 	"\x16FRIEND_REQUEST_UNKNOWN\x10\x00\x12\x1a\n" +
 	"\x16FRIEND_REQUEST_PENDING\x10\x01\x12\x1b\n" +
 	"\x17FRIEND_REQUEST_ACCEPTED\x10\x02\x12\x1b\n" +
-	"\x17FRIEND_REQUEST_REJECTED\x10\x032\xf5\x03\n" +
+	"\x17FRIEND_REQUEST_REJECTED\x10\x032\x96\x05\n" +
 	"\rFriendService\x12D\n" +
 	"\tAddFriend\x12\x1a.friendpb.AddFriendRequest\x1a\x1b.friendpb.AddFriendResponse\x12M\n" +
 	"\fAcceptFriend\x12\x1d.friendpb.AcceptFriendRequest\x1a\x1e.friendpb.AcceptFriendResponse\x12M\n" +
 	"\fRejectFriend\x12\x1d.friendpb.RejectFriendRequest\x1a\x1e.friendpb.RejectFriendResponse\x12M\n" +
 	"\fRemoveFriend\x12\x1d.friendpb.RemoveFriendRequest\x1a\x1e.friendpb.RemoveFriendResponse\x12P\n" +
 	"\rGetFriendList\x12\x1e.friendpb.GetFriendListRequest\x1a\x1f.friendpb.GetFriendListResponse\x12_\n" +
-	"\x12GetPendingRequests\x12#.friendpb.GetPendingRequestsRequest\x1a$.friendpb.GetPendingRequestsResponseB\x14Z\x12login/proto/friendb\x06proto3"
+	"\x12GetPendingRequests\x12#.friendpb.GetPendingRequestsRequest\x1a$.friendpb.GetPendingRequestsResponse\x12M\n" +
+	"\fNotifyOnline\x12\x1d.friendpb.NotifyOnlineRequest\x1a\x1e.friendpb.NotifyOnlineResponse\x12P\n" +
+	"\rNotifyOffline\x12\x1e.friendpb.NotifyOfflineRequest\x1a\x1f.friendpb.NotifyOfflineResponseB\x14Z\x12login/proto/friendb\x06proto3"
 
 var (
 	file_proto_friend_friend_proto_rawDescOnce sync.Once
@@ -849,7 +1036,7 @@ func file_proto_friend_friend_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_friend_friend_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_friend_friend_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_proto_friend_friend_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_proto_friend_friend_proto_goTypes = []any{
 	(FriendRequestStatus)(0),           // 0: friendpb.FriendRequestStatus
 	(*FriendEntry)(nil),                // 1: friendpb.FriendEntry
@@ -866,17 +1053,21 @@ var file_proto_friend_friend_proto_goTypes = []any{
 	(*GetFriendListResponse)(nil),      // 12: friendpb.GetFriendListResponse
 	(*GetPendingRequestsRequest)(nil),  // 13: friendpb.GetPendingRequestsRequest
 	(*GetPendingRequestsResponse)(nil), // 14: friendpb.GetPendingRequestsResponse
-	(*base.TipInfoMessage)(nil),        // 15: TipInfoMessage
+	(*NotifyOnlineRequest)(nil),        // 15: friendpb.NotifyOnlineRequest
+	(*NotifyOnlineResponse)(nil),       // 16: friendpb.NotifyOnlineResponse
+	(*NotifyOfflineRequest)(nil),       // 17: friendpb.NotifyOfflineRequest
+	(*NotifyOfflineResponse)(nil),      // 18: friendpb.NotifyOfflineResponse
+	(*base.TipInfoMessage)(nil),        // 19: TipInfoMessage
 }
 var file_proto_friend_friend_proto_depIdxs = []int32{
 	0,  // 0: friendpb.FriendRequest.status:type_name -> friendpb.FriendRequestStatus
-	15, // 1: friendpb.AddFriendResponse.error_message:type_name -> TipInfoMessage
-	15, // 2: friendpb.AcceptFriendResponse.error_message:type_name -> TipInfoMessage
-	15, // 3: friendpb.RejectFriendResponse.error_message:type_name -> TipInfoMessage
-	15, // 4: friendpb.RemoveFriendResponse.error_message:type_name -> TipInfoMessage
-	15, // 5: friendpb.GetFriendListResponse.error_message:type_name -> TipInfoMessage
+	19, // 1: friendpb.AddFriendResponse.error_message:type_name -> TipInfoMessage
+	19, // 2: friendpb.AcceptFriendResponse.error_message:type_name -> TipInfoMessage
+	19, // 3: friendpb.RejectFriendResponse.error_message:type_name -> TipInfoMessage
+	19, // 4: friendpb.RemoveFriendResponse.error_message:type_name -> TipInfoMessage
+	19, // 5: friendpb.GetFriendListResponse.error_message:type_name -> TipInfoMessage
 	1,  // 6: friendpb.GetFriendListResponse.friends:type_name -> friendpb.FriendEntry
-	15, // 7: friendpb.GetPendingRequestsResponse.error_message:type_name -> TipInfoMessage
+	19, // 7: friendpb.GetPendingRequestsResponse.error_message:type_name -> TipInfoMessage
 	2,  // 8: friendpb.GetPendingRequestsResponse.requests:type_name -> friendpb.FriendRequest
 	3,  // 9: friendpb.FriendService.AddFriend:input_type -> friendpb.AddFriendRequest
 	5,  // 10: friendpb.FriendService.AcceptFriend:input_type -> friendpb.AcceptFriendRequest
@@ -884,14 +1075,18 @@ var file_proto_friend_friend_proto_depIdxs = []int32{
 	9,  // 12: friendpb.FriendService.RemoveFriend:input_type -> friendpb.RemoveFriendRequest
 	11, // 13: friendpb.FriendService.GetFriendList:input_type -> friendpb.GetFriendListRequest
 	13, // 14: friendpb.FriendService.GetPendingRequests:input_type -> friendpb.GetPendingRequestsRequest
-	4,  // 15: friendpb.FriendService.AddFriend:output_type -> friendpb.AddFriendResponse
-	6,  // 16: friendpb.FriendService.AcceptFriend:output_type -> friendpb.AcceptFriendResponse
-	8,  // 17: friendpb.FriendService.RejectFriend:output_type -> friendpb.RejectFriendResponse
-	10, // 18: friendpb.FriendService.RemoveFriend:output_type -> friendpb.RemoveFriendResponse
-	12, // 19: friendpb.FriendService.GetFriendList:output_type -> friendpb.GetFriendListResponse
-	14, // 20: friendpb.FriendService.GetPendingRequests:output_type -> friendpb.GetPendingRequestsResponse
-	15, // [15:21] is the sub-list for method output_type
-	9,  // [9:15] is the sub-list for method input_type
+	15, // 15: friendpb.FriendService.NotifyOnline:input_type -> friendpb.NotifyOnlineRequest
+	17, // 16: friendpb.FriendService.NotifyOffline:input_type -> friendpb.NotifyOfflineRequest
+	4,  // 17: friendpb.FriendService.AddFriend:output_type -> friendpb.AddFriendResponse
+	6,  // 18: friendpb.FriendService.AcceptFriend:output_type -> friendpb.AcceptFriendResponse
+	8,  // 19: friendpb.FriendService.RejectFriend:output_type -> friendpb.RejectFriendResponse
+	10, // 20: friendpb.FriendService.RemoveFriend:output_type -> friendpb.RemoveFriendResponse
+	12, // 21: friendpb.FriendService.GetFriendList:output_type -> friendpb.GetFriendListResponse
+	14, // 22: friendpb.FriendService.GetPendingRequests:output_type -> friendpb.GetPendingRequestsResponse
+	16, // 23: friendpb.FriendService.NotifyOnline:output_type -> friendpb.NotifyOnlineResponse
+	18, // 24: friendpb.FriendService.NotifyOffline:output_type -> friendpb.NotifyOfflineResponse
+	17, // [17:25] is the sub-list for method output_type
+	9,  // [9:17] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -908,7 +1103,7 @@ func file_proto_friend_friend_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_friend_friend_proto_rawDesc), len(file_proto_friend_friend_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

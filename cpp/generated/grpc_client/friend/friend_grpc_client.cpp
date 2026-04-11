@@ -366,6 +366,124 @@ void SendFriendServiceGetPendingRequests(entt::registry& registry, entt::entity 
     SendFriendServiceGetPendingRequests(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
+#pragma region FriendServiceNotifyOnline
+boost::object_pool<AsyncFriendServiceNotifyOnlineGrpcClient> FriendServiceNotifyOnlinePool;
+using AsyncFriendServiceNotifyOnlineHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::friendpb::NotifyOnlineResponse&)>;
+AsyncFriendServiceNotifyOnlineHandlerFunctionType AsyncFriendServiceNotifyOnlineHandler;
+
+void AsyncCompleteGrpcFriendServiceNotifyOnline(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncFriendServiceNotifyOnlineGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncFriendServiceNotifyOnlineHandler) {
+            AsyncFriendServiceNotifyOnlineHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	FriendServiceNotifyOnlinePool.destroy(call);
+}
+
+void SendFriendServiceNotifyOnline(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::NotifyOnlineRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(FriendServiceNotifyOnlinePool.construct());
+    call->response_reader = registry
+        .get<FriendServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncNotifyOnline(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(FriendServiceNotifyOnlineMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendFriendServiceNotifyOnline(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::NotifyOnlineRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(FriendServiceNotifyOnlinePool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<FriendServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncNotifyOnline(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(FriendServiceNotifyOnlineMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendFriendServiceNotifyOnline(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::friendpb::NotifyOnlineRequest& derived = static_cast<const ::friendpb::NotifyOnlineRequest&>(message);
+    SendFriendServiceNotifyOnline(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
+#pragma region FriendServiceNotifyOffline
+boost::object_pool<AsyncFriendServiceNotifyOfflineGrpcClient> FriendServiceNotifyOfflinePool;
+using AsyncFriendServiceNotifyOfflineHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::friendpb::NotifyOfflineResponse&)>;
+AsyncFriendServiceNotifyOfflineHandlerFunctionType AsyncFriendServiceNotifyOfflineHandler;
+
+void AsyncCompleteGrpcFriendServiceNotifyOffline(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncFriendServiceNotifyOfflineGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncFriendServiceNotifyOfflineHandler) {
+            AsyncFriendServiceNotifyOfflineHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	FriendServiceNotifyOfflinePool.destroy(call);
+}
+
+void SendFriendServiceNotifyOffline(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::NotifyOfflineRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(FriendServiceNotifyOfflinePool.construct());
+    call->response_reader = registry
+        .get<FriendServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncNotifyOffline(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(FriendServiceNotifyOfflineMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendFriendServiceNotifyOffline(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::NotifyOfflineRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(FriendServiceNotifyOfflinePool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<FriendServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncNotifyOffline(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(FriendServiceNotifyOfflineMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendFriendServiceNotifyOffline(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::friendpb::NotifyOfflineRequest& derived = static_cast<const ::friendpb::NotifyOfflineRequest&>(message);
+    SendFriendServiceNotifyOffline(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
 
 void HandleFriendCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
@@ -393,6 +511,14 @@ void HandleFriendCompletedQueueMessage(entt::registry& registry, entt::entity no
             AsyncCompleteGrpcFriendServiceGetPendingRequests(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
+        case FriendServiceNotifyOnlineMessageId:
+            AsyncCompleteGrpcFriendServiceNotifyOnline(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
+        case FriendServiceNotifyOfflineMessageId:
+            AsyncCompleteGrpcFriendServiceNotifyOffline(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
         default:
             break;
         }
@@ -406,6 +532,8 @@ void SetFriendHandler(const std::function<void(const ClientContext&, const ::goo
     AsyncFriendServiceRemoveFriendHandler = handler;
     AsyncFriendServiceGetFriendListHandler = handler;
     AsyncFriendServiceGetPendingRequestsHandler = handler;
+    AsyncFriendServiceNotifyOnlineHandler = handler;
+    AsyncFriendServiceNotifyOfflineHandler = handler;
 }
 
 void SetFriendIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
@@ -427,6 +555,12 @@ void SetFriendIfEmptyHandler(const std::function<void(const ClientContext&, cons
     }
     if (!AsyncFriendServiceGetPendingRequestsHandler) {
         AsyncFriendServiceGetPendingRequestsHandler = handler;
+    }
+    if (!AsyncFriendServiceNotifyOnlineHandler) {
+        AsyncFriendServiceNotifyOnlineHandler = handler;
+    }
+    if (!AsyncFriendServiceNotifyOfflineHandler) {
+        AsyncFriendServiceNotifyOfflineHandler = handler;
     }
 }
 

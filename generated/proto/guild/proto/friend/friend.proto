@@ -18,6 +18,7 @@ message FriendEntry {
   uint64 friend_player_id = 1;
   int64  since_ms         = 2;  // Friendship start time
   int64  last_active_ms   = 3;
+  bool   is_online        = 4;
 }
 
 message FriendRequest {
@@ -83,6 +84,21 @@ message GetPendingRequestsResponse {
   repeated FriendRequest requests = 2;
 }
 
+// ── Online/Offline notifications ──────────────────────────────────────────
+
+message NotifyOnlineRequest {
+  uint64 player_id    = 1;
+  uint32 gate_node_id = 2;
+}
+
+message NotifyOnlineResponse {}
+
+message NotifyOfflineRequest {
+  uint64 player_id = 1;
+}
+
+message NotifyOfflineResponse {}
+
 // ── Service definition ─────────────────────────────────────────────────────
 
 service FriendService {
@@ -92,4 +108,6 @@ service FriendService {
   rpc RemoveFriend (RemoveFriendRequest) returns (RemoveFriendResponse);
   rpc GetFriendList (GetFriendListRequest) returns (GetFriendListResponse);
   rpc GetPendingRequests (GetPendingRequestsRequest) returns (GetPendingRequestsResponse);
+  rpc NotifyOnline (NotifyOnlineRequest) returns (NotifyOnlineResponse);
+  rpc NotifyOffline (NotifyOfflineRequest) returns (NotifyOfflineResponse);
 }
