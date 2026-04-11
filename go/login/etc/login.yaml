@@ -11,7 +11,7 @@ Etcd:
 
 # Node config (with login duration limits)
 Node:
-  ZoneId: 0
+  ZoneId: 1
   SessionExpireMin: 1 # Session idle timeout (expires after 1 min of inactivity)
   MaxLoginDevices: 3 # Max concurrent login devices per account
   LeaseTTL: 500 # Lease TTL (seconds)

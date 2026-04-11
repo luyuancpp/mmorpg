@@ -39,3 +39,11 @@ func (s *FriendServer) GetFriendList(ctx context.Context, req *pb.GetFriendListR
 func (s *FriendServer) GetPendingRequests(ctx context.Context, req *pb.GetPendingRequestsRequest) (*pb.GetPendingRequestsResponse, error) {
 	return s.logic.GetPendingRequests(ctx, req)
 }
+
+func (s *FriendServer) NotifyOnline(ctx context.Context, req *pb.NotifyOnlineRequest) (*pb.NotifyOnlineResponse, error) {
+	return s.logic.NotifyOnline(ctx, req)
+}
+
+func (s *FriendServer) NotifyOffline(ctx context.Context, req *pb.NotifyOfflineRequest) (*pb.NotifyOfflineResponse, error) {
+	return s.logic.NotifyOffline(ctx, req)
+}

@@ -205,6 +205,12 @@ func initLogger() {
 	zap.ReplaceGlobals(logger)
 }
 
+type gateAssignmentLocal struct {
+	addr      string
+	payload   []byte
+	signature []byte
+}
+
 // resolveGateAddrLocal keeps main.go runnable as a single-file command.
 func resolveGateAddrLocal(cfg *config.Config) (host, port string, payload, signature []byte, err error) {
 	return resolveGateViaHTTPLocal(cfg)
@@ -277,7 +283,7 @@ func resolveZoneIDLocal(gatewayAddr string) (uint32, error) {
 	return result.Zones[0].ZoneID, nil
 }
 
-func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignment, error) {
+func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignmentLocal, error) {
 	reqBody, _ := json.Marshal(map[string]uint32{"zone_id": zoneId})
 
 	url := gatewayAddr + "/api/assign-gate"
@@ -321,7 +327,7 @@ func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignment, er
 		return nil, fmt.Errorf("AssignGate returned empty address")
 	}
 
-	return &gateAssignment{
+	return &gateAssignmentLocal{
 		addr:      fmt.Sprintf("%s:%d", resp.GateIP, resp.GatePort),
 		payload:   resp.TokenPayload,
 		signature: resp.TokenSignature,
