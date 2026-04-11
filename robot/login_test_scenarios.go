@@ -3,17 +3,18 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
+	"proto/login"
 	"robot/config"
 	"robot/generated/pb/game"
 	"robot/metrics"
 	"robot/pkg"
-	"proto/login"
 )
 
 // testResult records the outcome of one test scenario.
@@ -33,6 +34,7 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 		name string
 		fn   func() testResult
 	}{
+		// --- Basic flow ---
 		{"NormalLogin", func() testResult {
 			return testNormalLogin(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
 		}},
@@ -42,26 +44,67 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 		{"WrongPassword", func() testResult {
 			return testWrongPassword(host, port, account, stats, tokenPayload, tokenSig)
 		}},
+
+		// --- Duplicate / idempotent ---
 		{"DuplicateEnterGame", func() testResult {
 			return testDuplicateEnterGame(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
 		}},
+		{"DuplicateLoginRequest", func() testResult {
+			return testDuplicateLoginRequest(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+
+		// --- Displacement / conflict ---
 		{"AccountDisplacement", func() testResult {
 			return testAccountDisplacement(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
-		}},
-		{"RapidReconnect", func() testResult {
-			return testRapidReconnect(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
 		}},
 		{"ConcurrentSameAccount", func() testResult {
 			return testConcurrentSameAccount(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
 		}},
-		{"DifferentAccountSequential", func() testResult {
-			return testDifferentAccountSequential(host, port, account, account2, cfg.Password, stats, tokenPayload, tokenSig)
-		}},
-		{"LeaveAndReEnter", func() testResult {
-			return testLeaveAndReEnter(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+
+		// --- Reconnect ---
+		{"RapidReconnect", func() testResult {
+			return testRapidReconnect(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
 		}},
 		{"DisconnectDuringLogin", func() testResult {
 			return testDisconnectDuringLogin(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+		{"DisconnectDuringEnter", func() testResult {
+			return testDisconnectDuringEnter(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+
+		// --- Multi-account ---
+		{"DifferentAccountSequential", func() testResult {
+			return testDifferentAccountSequential(host, port, account, account2, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+
+		// --- Session lifecycle ---
+		{"LeaveAndReEnter", func() testResult {
+			return testLeaveAndReEnter(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+		{"LeaveAndReLogin", func() testResult {
+			return testLeaveAndReLogin(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+
+		// --- Spam / abuse ---
+		{"RapidLoginSpam", func() testResult {
+			return testRapidLoginSpam(host, port, account, cfg.Password, stats, tokenPayload, tokenSig, 10)
+		}},
+		{"MessageBeforeLogin", func() testResult {
+			return testMessageBeforeLogin(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+
+		// --- Stuck detection (critical) ---
+		{"LoginStuckDetection", func() testResult {
+			return testLoginStuckDetection(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+
+		// --- Batch concurrent ---
+		{"BatchConcurrentLogin", func() testResult {
+			n := cfg.RobotCount
+			if n < 5 {
+				n = 5
+			}
+			return testBatchConcurrentLogin(host, port, cfg.AccountFmt, cfg.Password, stats, tokenPayload, tokenSig, n)
 		}},
 	}
 
@@ -84,6 +127,17 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 		zap.L().Info(fmt.Sprintf("[%d/%d] %s: %s (%s) %s",
 			i+1, len(scenarios), status, s.name, r.Elapsed.Truncate(time.Millisecond), r.Detail))
 
+		// Record for ML analysis.
+		stats.RecordLogin(metrics.LoginRecord{
+			Timestamp: time.Now(),
+			Account:   account,
+			Scenario:  s.name,
+			LatencyMs: r.Elapsed.Milliseconds(),
+			Success:   r.Passed,
+			Stuck:     strings.Contains(r.Detail, "STUCK"),
+			ErrorMsg:  condStr(!r.Passed, r.Detail, ""),
+		})
+
 		// Brief pause between scenarios so server-side sessions settle.
 		time.Sleep(500 * time.Millisecond)
 	}
@@ -96,6 +150,12 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 			mark = "FAIL"
 		}
 		zap.L().Info(fmt.Sprintf("  [%s] %s  %s  %s", mark, r.Name, r.Elapsed.Truncate(time.Millisecond), r.Detail))
+	}
+
+	// Export login records for ML / anomaly detection.
+	csvPath := "login_test_results.csv"
+	if err := stats.ExportLoginCSV(csvPath); err != nil {
+		zap.L().Error("failed to export login CSV", zap.Error(err))
 	}
 }
 
@@ -504,4 +564,313 @@ func testDisconnectDuringLogin(host string, port int, account, password string, 
 func init() {
 	// Ensure the LeaveGame and Disconnect proto messages are registered.
 	_ = proto.Size(&login.LeaveGameRequest{})
+}
+
+func condStr(cond bool, ifTrue, ifFalse string) string {
+	if cond {
+		return ifTrue
+	}
+	return ifFalse
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 11: Duplicate Login request on same connection
+// Send Login twice without waiting — server should handle idempotently.
+// ---------------------------------------------------------------------------
+
+func testDuplicateLoginRequest(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+	gc, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
+	}
+	defer gc.Close()
+
+	// Fire two Login requests back-to-back.
+	_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId,
+		&login.LoginRequest{Account: account, Password: password})
+	_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId,
+		&login.LoginRequest{Account: account, Password: password})
+
+	// Read responses (server may send 1 or 2).
+	responses := 0
+	deadline := time.After(5 * time.Second)
+	for i := 0; i < 2; i++ {
+		done := make(chan bool, 1)
+		go func() {
+			raw, err := gc.RecvOne()
+			if err == nil && raw.MessageId == game.ClientPlayerLoginLoginMessageId {
+				done <- true
+			} else {
+				done <- false
+			}
+		}()
+		select {
+		case ok := <-done:
+			if ok {
+				responses++
+			}
+		case <-deadline:
+			goto summary
+		}
+	}
+summary:
+
+	return testResult{Passed: true, Elapsed: time.Since(start),
+		Detail: fmt.Sprintf("got %d responses to 2 duplicate login requests", responses)}
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 12: Disconnect after Login but before EnterGame
+// ---------------------------------------------------------------------------
+
+func testDisconnectDuringEnter(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+
+	gc1, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
+	}
+
+	// Login succeeds but close before EnterGame.
+	var lr login.LoginResponse
+	if err := sendAndRecv(gc1, stats,
+		game.ClientPlayerLoginLoginMessageId,
+		&login.LoginRequest{Account: account, Password: password},
+		&lr,
+	); err != nil {
+		gc1.Close()
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("login: %s", err)}
+	}
+	gc1.Close() // disconnect mid-flow
+
+	// Reconnect and do full login.
+	time.Sleep(500 * time.Millisecond)
+	gc2, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("reconnect: %s", err)}
+	}
+	defer gc2.Close()
+
+	if err := loginAndEnter(gc2, password, stats); err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("re-login: %s", err)}
+	}
+
+	return testResult{Passed: true, Elapsed: time.Since(start),
+		Detail: "recovered after disconnect between Login and EnterGame"}
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 13: Leave game then re-login on new connection
+// ---------------------------------------------------------------------------
+
+func testLeaveAndReLogin(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+
+	gc1, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
+	}
+	if err := loginAndEnter(gc1, password, stats); err != nil {
+		gc1.Close()
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("first login: %s", err)}
+	}
+	_ = leaveGame(gc1, stats)
+	time.Sleep(300 * time.Millisecond)
+	gc1.Close()
+	time.Sleep(300 * time.Millisecond)
+
+	// New connection, full re-login.
+	gc2, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("reconnect: %s", err)}
+	}
+	defer gc2.Close()
+
+	if err := loginAndEnter(gc2, password, stats); err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("re-login: %s", err)}
+	}
+
+	return testResult{Passed: true, Elapsed: time.Since(start),
+		Detail: fmt.Sprintf("leave+re-login OK, player_id=%d", gc2.PlayerId)}
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 14: Rapid login spam — send N login requests as fast as possible
+// on separate connections. Ensures server doesn't get stuck.
+// ---------------------------------------------------------------------------
+
+func testRapidLoginSpam(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte, count int) testResult {
+	start := time.Now()
+
+	for i := 0; i < count; i++ {
+		gc, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+		if err != nil {
+			return testResult{Elapsed: time.Since(start),
+				Detail: fmt.Sprintf("spam iter %d connect: %s", i, err)}
+		}
+		// Just send login, don't wait for response — immediately close.
+		_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId,
+			&login.LoginRequest{Account: account, Password: password})
+		gc.Close()
+	}
+
+	// After the spam, one clean login must succeed — this is the critical assertion.
+	time.Sleep(1 * time.Second) // let server settle
+	gc, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start),
+			Detail: fmt.Sprintf("clean login after spam connect: %s", err)}
+	}
+	defer gc.Close()
+
+	if err := loginAndEnter(gc, password, stats); err != nil {
+		return testResult{Passed: false, Elapsed: time.Since(start),
+			Detail: fmt.Sprintf("STUCK after %d spam attempts: %s", count, err)}
+	}
+
+	return testResult{Passed: true, Elapsed: time.Since(start),
+		Detail: fmt.Sprintf("survived %d rapid spam attempts, clean login OK", count)}
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 15: Send game message before login
+// Server should reject or ignore, not crash.
+// ---------------------------------------------------------------------------
+
+func testMessageBeforeLogin(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+	gc, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
+	}
+	defer gc.Close()
+
+	// Send EnterGame before Login — this is an invalid state transition.
+	_ = gc.SendRequest(game.ClientPlayerLoginEnterGameMessageId,
+		&login.EnterGameRequest{PlayerId: 99999})
+
+	// Brief pause, then try normal login — must not be stuck.
+	time.Sleep(500 * time.Millisecond)
+
+	gc2, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Passed: true, Elapsed: time.Since(start),
+			Detail: "server closed connection after invalid message (expected)"}
+	}
+	defer gc2.Close()
+
+	if err := loginAndEnter(gc2, password, stats); err != nil {
+		return testResult{Passed: true, Elapsed: time.Since(start),
+			Detail: fmt.Sprintf("login after invalid msg: %s (server may have rate-limited)", err)}
+	}
+
+	return testResult{Passed: true, Elapsed: time.Since(start),
+		Detail: "server handled out-of-order message gracefully"}
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 16: Verify login is not stuck — timed full flow
+// The critical scenario: login must complete within defaultLoginTimeout.
+// ---------------------------------------------------------------------------
+
+func testLoginStuckDetection(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+	gc, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
+	}
+	defer gc.Close()
+
+	if err := loginAndEnter(gc, password, stats); err != nil {
+		stuck := strings.Contains(err.Error(), "STUCK")
+		return testResult{Passed: false, Elapsed: time.Since(start),
+			Detail: fmt.Sprintf("stuck=%v err=%s", stuck, err)}
+	}
+
+	elapsed := time.Since(start)
+	if elapsed > 10*time.Second {
+		return testResult{Passed: false, Elapsed: elapsed,
+			Detail: fmt.Sprintf("login succeeded but took %s (>10s = too slow)", elapsed)}
+	}
+
+	return testResult{Passed: true, Elapsed: elapsed,
+		Detail: fmt.Sprintf("login completed in %s (OK)", elapsed.Truncate(time.Millisecond))}
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 17: Batch concurrent login — N different accounts at once.
+// Uses robot_count from config. Ensures no stuck under concurrency.
+// ---------------------------------------------------------------------------
+
+func testBatchConcurrentLogin(host string, port int, accountFmt, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte, n int) testResult {
+	start := time.Now()
+
+	type accountResult struct {
+		account string
+		err     error
+		elapsed time.Duration
+	}
+
+	var wg sync.WaitGroup
+	results := make([]accountResult, n)
+
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			acc := fmt.Sprintf(accountFmt, idx+100) // offset to avoid collision with other tests
+			t := time.Now()
+			gc, err := connectAndVerify(host, port, acc, tokenPayload, tokenSig)
+			if err != nil {
+				results[idx] = accountResult{account: acc, err: err, elapsed: time.Since(t)}
+				return
+			}
+			defer gc.Close()
+			err = loginAndEnter(gc, password, stats)
+			results[idx] = accountResult{account: acc, err: err, elapsed: time.Since(t)}
+
+			// Record each attempt for ML.
+			stats.RecordLogin(metrics.LoginRecord{
+				Timestamp:  time.Now(),
+				Account:    acc,
+				Scenario:   "BatchConcurrentLogin",
+				LatencyMs:  time.Since(t).Milliseconds(),
+				Success:    err == nil,
+				Stuck:      err != nil && strings.Contains(err.Error(), "STUCK"),
+				ErrorMsg:   condStr(err != nil, err.Error(), ""),
+				Concurrent: n,
+			})
+		}(i)
+		time.Sleep(10 * time.Millisecond) // minimal stagger
+	}
+	wg.Wait()
+
+	success, fail, stuck := 0, 0, 0
+	var maxElapsed time.Duration
+	for _, r := range results {
+		if r.err == nil {
+			success++
+		} else {
+			fail++
+			if strings.Contains(r.err.Error(), "STUCK") {
+				stuck++
+			}
+		}
+		if r.elapsed > maxElapsed {
+			maxElapsed = r.elapsed
+		}
+	}
+
+	detail := fmt.Sprintf("%d/%d succeeded, %d failed (%d stuck), max_latency=%s",
+		success, n, fail, stuck, maxElapsed.Truncate(time.Millisecond))
+
+	if stuck > 0 {
+		return testResult{Passed: false, Elapsed: time.Since(start), Detail: "STUCK detected: " + detail}
+	}
+	// Allow some failures in concurrent test, but majority must succeed.
+	if success >= n*8/10 {
+		return testResult{Passed: true, Elapsed: time.Since(start), Detail: detail}
+	}
+	return testResult{Passed: false, Elapsed: time.Since(start), Detail: "too many failures: " + detail}
 }

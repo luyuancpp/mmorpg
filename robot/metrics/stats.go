@@ -1,7 +1,10 @@
 package metrics
 
 import (
+	"encoding/csv"
 	"fmt"
+	"os"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,6 +17,7 @@ import (
 type Stats struct {
 	loginOK      atomic.Int64
 	loginFail    atomic.Int64
+	loginStuck   atomic.Int64
 	enterOK      atomic.Int64
 	enterFail    atomic.Int64
 	msgSent      atomic.Int64
@@ -30,6 +34,8 @@ type Stats struct {
 	prevMsgSent    int64         // guarded by mu — snapshot for rate calc
 	prevMsgRecv    int64         // guarded by mu
 	prevReportTime time.Time     // guarded by mu
+
+	loginRecords []LoginRecord // guarded by mu — per-attempt records for analysis
 }
 
 func NewStats() *Stats {
@@ -48,6 +54,7 @@ func (s *Stats) LoginOK(d time.Duration) {
 	s.mu.Unlock()
 }
 func (s *Stats) LoginFail()    { s.loginFail.Add(1) }
+func (s *Stats) LoginStuck()   { s.loginStuck.Add(1) }
 func (s *Stats) EnterOK()      { s.enterOK.Add(1) }
 func (s *Stats) EnterFail()    { s.enterFail.Add(1) }
 func (s *Stats) MsgSent()      { s.msgSent.Add(1) }
@@ -107,15 +114,80 @@ func (s *Stats) report() {
 		max = time.Duration(maxNs)
 	}
 
-	zap.L().Info(fmt.Sprintf("[stats %s] conn=%d login_ok=%d login_fail=%d enter_ok=%d enter_fail=%d "+
+	zap.L().Info(fmt.Sprintf("[stats %s] conn=%d login_ok=%d login_fail=%d login_stuck=%d enter_ok=%d enter_fail=%d "+
 		"msg_sent=%d(%.0f/s) msg_recv=%d(%.0f/s) skill=%d avg_login=%s max_login=%s",
 		elapsed,
 		s.connected.Load(),
-		s.loginOK.Load(), s.loginFail.Load(),
+		s.loginOK.Load(), s.loginFail.Load(), s.loginStuck.Load(),
 		s.enterOK.Load(), s.enterFail.Load(),
 		curSent, sendRate, curRecv, recvRate,
 		s.skillSent.Load(),
 		avg.Truncate(time.Millisecond),
 		max.Truncate(time.Millisecond),
 	))
+}
+
+// LoginRecord captures one login attempt for post-hoc analysis / ML training.
+type LoginRecord struct {
+	Timestamp  time.Time
+	Account    string
+	Scenario   string // test scenario name or "stress"
+	LatencyMs  int64
+	Success    bool
+	Stuck      bool   // true if the attempt timed out waiting for a response
+	ErrorMsg   string
+	Attempt    int    // retry attempt number (1-based)
+	Concurrent int    // number of concurrent connections at the time
+}
+
+// RecordLogin appends a login attempt record (goroutine-safe).
+func (s *Stats) RecordLogin(r LoginRecord) {
+	s.mu.Lock()
+	s.loginRecords = append(s.loginRecords, r)
+	s.mu.Unlock()
+}
+
+// ExportLoginCSV writes all recorded login attempts to a CSV file for ML analysis.
+// Columns: timestamp, account, scenario, latency_ms, success, stuck, error, attempt, concurrent
+func (s *Stats) ExportLoginCSV(path string) error {
+	s.mu.Lock()
+	records := make([]LoginRecord, len(s.loginRecords))
+	copy(records, s.loginRecords)
+	s.mu.Unlock()
+
+	if len(records) == 0 {
+		zap.L().Info("no login records to export")
+		return nil
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("create csv: %w", err)
+	}
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	defer w.Flush()
+
+	_ = w.Write([]string{
+		"timestamp", "account", "scenario", "latency_ms",
+		"success", "stuck", "error", "attempt", "concurrent",
+	})
+
+	for _, r := range records {
+		_ = w.Write([]string{
+			r.Timestamp.Format(time.RFC3339Nano),
+			r.Account,
+			r.Scenario,
+			strconv.FormatInt(r.LatencyMs, 10),
+			strconv.FormatBool(r.Success),
+			strconv.FormatBool(r.Stuck),
+			r.ErrorMsg,
+			strconv.Itoa(r.Attempt),
+			strconv.Itoa(r.Concurrent),
+		})
+	}
+
+	zap.L().Info("exported login records", zap.String("path", path), zap.Int("count", len(records)))
+	return nil
 }

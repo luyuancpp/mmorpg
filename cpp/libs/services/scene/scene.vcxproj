@@ -100,6 +100,8 @@
     <ClCompile Include="generated\attribute\attributedelta5framess2c_attribute_sync.cpp" />
     <ClCompile Include="generated\attribute\attributedelta60framess2c_attribute_sync.cpp" />
     <ClCompile Include="kafka\system\kafka.cpp" />
+    <ClCompile Include="player\system\player_database_loader.cpp" />
+    <ClCompile Include="player\system\player_database_1_loader.cpp" />
     <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_scene.cpp" />
     <ClCompile Include="player\system\player_skill.cpp" />

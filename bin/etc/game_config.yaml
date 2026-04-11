@@ -2,7 +2,7 @@
 
 # 游戏场景配置
 SceneNodeType: 0  
-ZoneId : 0
+ZoneId : 1
 
 # Zoneredis 配置
 zoneredis:

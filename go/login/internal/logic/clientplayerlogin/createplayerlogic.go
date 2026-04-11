@@ -3,19 +3,16 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
-	"login/data"
 	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
-	"login/internal/logic/pkg/fsmstore"
 	"login/internal/logic/pkg/locker"
-	"login/internal/logic/pkg/loginsessionstore"
+	"login/internal/logic/pkg/loginsession"
 	"login/internal/svc"
 	login_proto_common "proto/common/base"
 	login_data_base "proto/common/database"
 	login_proto "proto/login"
-	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -51,29 +48,37 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
-	// 2. Get LoginSessionInfo (includes account)
-	session, err := loginsessionstore.GetLoginSession(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
+	// 2. Get account
+	account, err := loginsession.GetAccount(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
 	if err != nil {
-		logx.Errorf("GetLoginSession failed: %v", err)
+		logx.Errorf("GetAccount failed: %v", err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionNotFound)}
 		return resp, nil
 	}
-	account := session.Account
 
-	// 3. Lock (prevent concurrent character creation)
-	accountLocker := locker.NewAccountLocker(l.svcCtx.RedisClient, time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second)
-	lockAcquired, err := accountLocker.AcquireCreate(l.ctx, account)
-	if err != nil || !lockAcquired {
+	// 3. Lock (UUID + Lua safe release — prevents concurrent character creation)
+	createLock, err := locker.NewRedisLocker(l.svcCtx.RedisClient).TryLock(
+		l.ctx, "account_lock:create:"+account,
+		time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second,
+	)
+	if err != nil || !createLock.IsLocked() {
 		logx.Errorf("CreatePlayer lock acquire failed for account=%s: %v", account, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-	defer accountLocker.ReleaseCreate(l.ctx, account)
+	defer createLock.Release(l.ctx)
 
-	// 4. Load account data
+	// 4. Step validation: logged_in -> creating_char
+	if err := loginsession.Advance(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, loginsession.StepCreatingChar); err != nil {
+		logx.Errorf("CreatePlayer step failed: sessionId=%d err=%v", sessionDetails.SessionId, err)
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFsmFailed)}
+		return resp, nil
+	}
+
+	// 5. Load + decode account data
 	accountDataKey := constants.GetAccountDataKey(account)
-	cmd := l.svcCtx.RedisClient.Get(l.ctx, accountDataKey)
-	if err := cmd.Err(); err != nil {
+	dataBytes, err := l.svcCtx.RedisClient.Get(l.ctx, accountDataKey).Bytes()
+	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			logx.Infof("Account not found in redis: %s", account)
 			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountNotFound)}
@@ -84,23 +89,8 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, err
 	}
 
-	// 5. FSM state management (by sessionId)
-	sessionIdStr := strconv.FormatUint(sessionDetails.SessionId, 10)
-	playerFSM := data.InitPlayerFSM()
-	if err := fsmstore.LoadFSMState(l.ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); err != nil {
-		logx.Errorf("Failed to load FSM state for session %s: %v", sessionIdStr, err)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMLoadFailed)}
-		return resp, nil
-	}
-	if err := playerFSM.Event(l.ctx, data.EventCreateChar); err != nil {
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFsmFailed)}
-		logx.Errorf("FSM create_char failed, account: %s, err: %v", account, err)
-		return resp, nil
-	}
-
-	// 6. Decode account data
 	userAccount := &login_data_base.UserAccounts{}
-	if err := proto.Unmarshal([]byte(cmd.Val()), userAccount); err != nil {
+	if err := proto.Unmarshal(dataBytes, userAccount); err != nil {
 		logx.Errorf("Failed to unmarshal user account, err: %v", err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataParseFailed)}
 		return resp, nil
@@ -109,7 +99,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		userAccount.SimplePlayers = &login_proto_common.AccountSimplePlayerList{Players: make([]*login_proto_common.AccountSimplePlayer, 0)}
 	}
 
-	// 7. Create character
+	// 6. Create character
 	if len(userAccount.SimplePlayers.Players) >= 5 {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountPlayerFull)}
 		logx.Infof("Account player limit reached: %s", account)
@@ -119,8 +109,8 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	newPlayer := &login_proto_common.AccountSimplePlayer{PlayerId: newPlayerId}
 	userAccount.SimplePlayers.Players = append(userAccount.SimplePlayers.Players, newPlayer)
 
-	// 8. Write back to Redis
-	dataBytes, err := proto.Marshal(userAccount)
+	// 7. Write back to Redis
+	dataBytes, err = proto.Marshal(userAccount)
 	if err != nil {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginDataSerializeFailed)}
 		logx.Errorf("Failed to marshal user account, err: %v", err)
@@ -132,19 +122,19 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
-	// 8b. Write reverse mapping: player_id → account (for rollback orphan cleanup)
+	// 7b. Write reverse mapping: player_id → account (for rollback orphan cleanup)
 	reverseKey := constants.PlayerToAccountKey(newPlayerId)
 	if err := l.svcCtx.RedisClient.Set(l.ctx, reverseKey, account, 0).Err(); err != nil {
 		logx.Errorf("Failed to set player-to-account reverse mapping, playerId: %d, account: %s, err: %v", newPlayerId, account, err)
 		// Non-fatal: player can still play, only rollback cleanup is affected
 	}
 
-	// 9. Save FSM state (by sessionId)
-	if err := fsmstore.SaveFSMState(l.ctx, l.svcCtx.RedisClient, playerFSM, sessionIdStr, ""); err != nil {
-		logx.Errorf("Failed to save FSM state, sessionId: %s, err: %v", sessionIdStr, err)
+	// 8. Step back to logged_in (creating_char -> logged_in)
+	if err := loginsession.Advance(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, loginsession.StepLoggedIn); err != nil {
+		logx.Errorf("Failed to reset step, sessionId: %d, err: %v", sessionDetails.SessionId, err)
 	}
 
-	// 10. Return player info
+	// 9. Return player info
 	for _, p := range userAccount.SimplePlayers.Players {
 		resp.Players = append(resp.Players, &login_proto.AccountSimplePlayerWrapper{Player: p})
 	}

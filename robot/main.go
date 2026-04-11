@@ -20,16 +20,15 @@ import (
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/proto"
 
+	"proto/common/base"
+	"proto/login"
 	"robot/config"
 	"robot/generated/pb/game"
 	"robot/logic/ai"
 	"robot/logic/handler"
 	"robot/metrics"
 	"robot/pkg"
-	"proto/common/base"
-	"proto/login"
 
 	// Blank-import proto packages so they register with protoregistry.
 	_ "proto/chat"
@@ -57,7 +56,7 @@ func main() {
 
 	// Login-test mode: run the test suite and exit.
 	if cfg.Mode == "login-test" {
-		runLoginTestsLocal(host, port, cfg, stats, tokenPayload, tokenSig)
+		runLoginTests(host, port, cfg, stats, tokenPayload, tokenSig)
 		return
 	}
 
@@ -158,7 +157,7 @@ func runRobotOnce(host string, port int, account string, cfg *config.Config, sta
 	}
 
 	loginStart := time.Now()
-	if err := loginAndEnterLocal(gc, cfg.Password, stats); err != nil {
+	if err := loginAndEnter(gc, cfg.Password, stats); err != nil {
 		zap.L().Error("login flow failed", zap.String("account", account), zap.Error(err))
 		return false
 	}
@@ -408,102 +407,4 @@ func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignmentLoca
 	}, nil
 }
 
-func runLoginTestsLocal(host string, port int, cfg *config.Config, stats *metrics.Stats, tokenPayload, tokenSig []byte) {
-	account := fmt.Sprintf(cfg.AccountFmt, 1)
-	gc, err := pkg.NewGameClient(host, port)
-	if err != nil {
-		zap.L().Error("login-test connect failed", zap.Error(err))
-		return
-	}
-	defer gc.Close()
 
-	gc.Account = account
-	time.Sleep(200 * time.Millisecond)
-	if len(tokenPayload) > 0 {
-		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
-			zap.L().Error("login-test gate token failed", zap.Error(err))
-			return
-		}
-	}
-
-	if err := loginAndEnterLocal(gc, cfg.Password, stats); err != nil {
-		zap.L().Error("login-test failed", zap.Error(err))
-		return
-	}
-
-	zap.L().Info("login-test passed", zap.String("account", account), zap.Uint64("player_id", gc.PlayerId))
-	_ = gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
-}
-
-func loginAndEnterLocal(gc *pkg.GameClient, password string, stats *metrics.Stats) error {
-	var lr login.LoginResponse
-	if err := sendAndRecvLocal(gc, stats,
-		game.ClientPlayerLoginLoginMessageId,
-		&login.LoginRequest{Account: gc.Account, Password: password},
-		&lr,
-	); err != nil {
-		stats.LoginFail()
-		return fmt.Errorf("login: %w", err)
-	}
-	if lr.ErrorMessage != nil {
-		stats.LoginFail()
-		return fmt.Errorf("login: server error %v", lr.ErrorMessage)
-	}
-
-	if len(lr.Players) == 0 {
-		var cr login.CreatePlayerResponse
-		if err := sendAndRecvLocal(gc, stats,
-			game.ClientPlayerLoginCreatePlayerMessageId,
-			&login.CreatePlayerRequest{},
-			&cr,
-		); err != nil {
-			stats.LoginFail()
-			return fmt.Errorf("create player: %w", err)
-		}
-		if cr.ErrorMessage != nil {
-			stats.LoginFail()
-			return fmt.Errorf("create player: server error %v", cr.ErrorMessage)
-		}
-		lr.Players = cr.Players
-	}
-	if len(lr.Players) == 0 {
-		stats.LoginFail()
-		return fmt.Errorf("no players after create")
-	}
-
-	playerId := lr.Players[0].GetPlayer().GetPlayerId()
-	var er login.EnterGameResponse
-	if err := sendAndRecvLocal(gc, stats,
-		game.ClientPlayerLoginEnterGameMessageId,
-		&login.EnterGameRequest{PlayerId: playerId},
-		&er,
-	); err != nil {
-		stats.EnterFail()
-		return fmt.Errorf("enter game: %w", err)
-	}
-	if er.ErrorMessage != nil {
-		stats.EnterFail()
-		return fmt.Errorf("enter game: server error %v", er.ErrorMessage)
-	}
-
-	gc.PlayerId = er.PlayerId
-	return nil
-}
-
-func sendAndRecvLocal(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, req, resp proto.Message) error {
-	if err := gc.SendRequest(msgId, req); err != nil {
-		return err
-	}
-	stats.MsgSent()
-
-	for {
-		raw, err := gc.RecvOne()
-		if err != nil {
-			return err
-		}
-		stats.MsgRecv()
-		if raw.MessageId == msgId {
-			return proto.Unmarshal(raw.SerializedMessage, resp)
-		}
-	}
-}
