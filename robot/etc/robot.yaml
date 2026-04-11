@@ -9,7 +9,7 @@
 gate_mode: "grpc" # "grpc" or "http"
 login_addr: "127.0.0.1:50000" # gRPC endpoint (used when gate_mode=grpc)
 gateway_addr: "http://127.0.0.1:8080" # Gateway HTTP endpoint (used when gate_mode=http)
-gate_addr: "127.0.0.1:10003" # static fallback (used when login service unavailable)
+gate_addr: "127.0.0.1:10000" # static fallback (used when login service unavailable)
 zone_id: 0 # target zone (0 = auto-select recommended zone from /api/server-list)
 robot_count: 1
 account_fmt: "robot_%04d"
