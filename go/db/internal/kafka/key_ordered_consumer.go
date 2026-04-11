@@ -46,21 +46,6 @@ func cacheTTL() time.Duration {
 	return time.Duration(sec) * time.Second
 }
 
-// ExpandStatus holds expansion state.
-type ExpandStatus struct {
-	Status         string
-	PartitionCount int32
-	UpdateTime     int64
-}
-
-type KafkaConsumerConfig struct {
-	BootstrapServers string `yaml:"bootstrapServers"`
-	GroupID          string `yaml:"groupID"`
-	Topic            string `yaml:"topic"`
-	PartitionCount   int32  `yaml:"partitionCount"`
-	IsOfflineExpand  bool   `yaml:"isOfflineExpand"`
-}
-
 type KeyOrderedKafkaConsumer struct {
 	consumer             sarama.ConsumerGroup
 	redisClient          redis.Cmdable
@@ -473,7 +458,7 @@ func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, partit
 	expandStatus, err := kafkautil.GetExpandStatus(ctx, w.redisClient, w.topic)
 	if err != nil {
 		logx.Errorf("get expand status failed: key=%s, taskID=%s, err=%v", key, task.TaskId, err)
-		return tryLockAndProcess(ctx, w, key, task, 0)
+		return tryLockAndProcess(ctx, w, key, task)
 	}
 
 	currentTime := time.Now().UnixMilli()
@@ -487,13 +472,13 @@ func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, partit
 
 	if expandStatus.Status == kafkautil.ExpandStatusExpanding {
 		logx.Debugf("expanding mode: try lock for task: taskID=%s, key=%s", task.TaskId, key)
-		return tryLockAndProcess(ctx, w, key, task, 0)
+		return tryLockAndProcess(ctx, w, key, task)
 	}
 
 	return processTaskWithoutLock(ctx, w.redisClient, task)
 }
 
-func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db_proto.DBTask, offset int64) error {
+func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db_proto.DBTask) error {
 	lockKey := fmt.Sprintf("kafka:consumer:lock:%s", key)
 	lockTTL := 5 * time.Second
 
