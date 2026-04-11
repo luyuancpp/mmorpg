@@ -57,7 +57,7 @@ services:
       - "3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=root123
-      - MYSQL_DATABASE=testdb
+      - MYSQL_DATABASE=mmorpg
       - MYSQL_USER=appuser
       - MYSQL_PASSWORD=apppass123
       - MYSQL_INITDB_SKIP_TZINFO=1  # Avoid Windows timezone config warning

@@ -50,7 +50,7 @@ type RedisConf struct {
 type KafkaConfig struct {
 	Brokers          []string                `json:"Brokers"`
 	GroupID          string                  `json:"GroupID"`
-	Topic            string                  `json:"Topic"`
+	Topic            string                  `json:"Topic,optional"` // Derived from Node.ZoneId at startup
 	PartitionCnt     int32                   `json:"PartitionCnt"`
 	InitialPartition int                     `json:"InitialPartition"` // Should match PartitionCnt
 	DialTimeout      time.Duration           `json:"DialTimeout"`
