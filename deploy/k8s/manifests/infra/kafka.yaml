@@ -53,6 +53,19 @@ spec:
               value: "1"
             - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
               value: "0"
+            # --- Retention: broker default is short (5 min) for ephemeral topics.
+            # Persistent topics (db_task_zone_*) override via EnsureTopics at service startup.
+            - name: KAFKA_LOG_RETENTION_MS
+              value: "300000"
+            - name: KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS
+              value: "120000"
+            - name: KAFKA_LOG_RETENTION_BYTES
+              value: "536870912"
+            - name: KAFKA_LOG_SEGMENT_BYTES
+              value: "33554432"
+            # --- JVM heap (production, single-node KRaft)
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xms512m -Xmx1g"
           ports:
             - containerPort: 9092
               name: kafka
@@ -61,6 +74,13 @@ spec:
           volumeMounts:
             - name: kafka-data
               mountPath: /tmp/kafka-logs
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 1536Mi
       volumes:
         - name: kafka-data
           emptyDir: {}
