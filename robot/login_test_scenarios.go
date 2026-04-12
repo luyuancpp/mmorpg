@@ -104,6 +104,9 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 			if n < 5 {
 				n = 5
 			}
+			if n > 50 {
+				n = 50 // login-test is functional, not stress; cap concurrency
+			}
 			return testBatchConcurrentLogin(host, port, cfg.AccountFmt, cfg.Password, stats, tokenPayload, tokenSig, n)
 		}},
 	}
@@ -831,34 +834,47 @@ func testBatchConcurrentLogin(host string, port int, accountFmt, password string
 			results[idx] = accountResult{account: acc, err: err, elapsed: time.Since(t)}
 
 			// Record each attempt for ML.
+			var errMsg string
+			if err != nil {
+				errMsg = err.Error()
+			}
 			stats.RecordLogin(metrics.LoginRecord{
 				Timestamp:  time.Now(),
 				Account:    acc,
 				Scenario:   "BatchConcurrentLogin",
 				LatencyMs:  time.Since(t).Milliseconds(),
 				Success:    err == nil,
-				Stuck:      err != nil && strings.Contains(err.Error(), "STUCK"),
-				ErrorMsg:   condStr(err != nil, err.Error(), ""),
+				Stuck:      err != nil && strings.Contains(errMsg, "STUCK"),
+				ErrorMsg:   errMsg,
 				Concurrent: n,
 			})
 		}(i)
-		time.Sleep(10 * time.Millisecond) // minimal stagger
+		time.Sleep(50 * time.Millisecond) // stagger to avoid thundering herd
 	}
 	wg.Wait()
 
 	success, fail, stuck := 0, 0, 0
 	var maxElapsed time.Duration
+	errCounts := make(map[string]int) // aggregate error messages
 	for _, r := range results {
 		if r.err == nil {
 			success++
 		} else {
 			fail++
+			errCounts[r.err.Error()]++
 			if strings.Contains(r.err.Error(), "STUCK") {
 				stuck++
 			}
 		}
 		if r.elapsed > maxElapsed {
 			maxElapsed = r.elapsed
+		}
+	}
+
+	// Log top error reasons for diagnosis.
+	if len(errCounts) > 0 {
+		for errMsg, cnt := range errCounts {
+			zap.L().Warn("batch login error", zap.Int("count", cnt), zap.String("error", errMsg))
 		}
 	}
 

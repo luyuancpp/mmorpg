@@ -200,8 +200,9 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 		p.markPartitionUnavailable(partition)
 		return fmt.Errorf("batch send timeout: %v", ctx.Err())
 	default:
-		if err := p.producer.SendMessages(msgs); err != nil {
-			p.recycleMessages(msgs)
+		p.mu.Lock()
+		err := p.producer.SendMessages(msgs)
+		if err != nil {
 			atomic.AddInt64(&p.errorCount, int64(len(msgs)))
 			logx.Errorf("batch send failed: partition=%d, err=%v", partition, err)
 
@@ -215,6 +216,8 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 					logx.Errorf("failed to restart transaction: %v", err)
 				}
 			}
+			p.mu.Unlock()
+			p.recycleMessages(msgs)
 			return err
 		}
 
@@ -224,12 +227,15 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 				if err := p.producer.BeginTxn(); err != nil {
 					logx.Errorf("failed to restart transaction after commit failure: %v", err)
 				}
+				p.mu.Unlock()
 				return fmt.Errorf("failed to commit transaction: %w", err)
 			}
 			if err := p.producer.BeginTxn(); err != nil {
+				p.mu.Unlock()
 				return fmt.Errorf("failed to begin new transaction: %w", err)
 			}
 		}
+		p.mu.Unlock()
 
 		p.recycleMessages(msgs)
 		atomic.AddInt64(&p.successCount, int64(len(msgs)))
@@ -277,9 +283,9 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 		p.markPartitionUnavailable(partition)
 		return fmt.Errorf("send timeout: task=%s, %v", task.TaskId, ctx.Err())
 	default:
+		p.mu.Lock()
 		_, _, err := p.producer.SendMessage(msg)
 		if err != nil {
-			p.payloadPool.Put(payload)
 			atomic.AddInt64(&p.errorCount, 1)
 			logx.Errorf("send failed: task=%s, partition=%d, err=%v", task.TaskId, partition, err)
 
@@ -293,6 +299,8 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 					logx.Errorf("failed to restart transaction: %v", err)
 				}
 			}
+			p.mu.Unlock()
+			p.payloadPool.Put(payload)
 			return err
 		}
 
@@ -302,12 +310,15 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 				if err := p.producer.BeginTxn(); err != nil {
 					logx.Errorf("failed to restart transaction after commit failure: %v", err)
 				}
+				p.mu.Unlock()
 				return fmt.Errorf("failed to commit transaction: %w", err)
 			}
 			if err := p.producer.BeginTxn(); err != nil {
+				p.mu.Unlock()
 				return fmt.Errorf("failed to begin new transaction: %w", err)
 			}
 		}
+		p.mu.Unlock()
 
 		p.payloadPool.Put(payload)
 		atomic.AddInt64(&p.successCount, 1)
