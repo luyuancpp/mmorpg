@@ -18,6 +18,7 @@ import (
 	login_proto "proto/common/base"
 	login_proto_login "proto/login"
 	"shared/grpcstats"
+	"shared/kafkautil"
 	"strconv"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -43,6 +44,18 @@ func main() {
 
 	// Derive zone-specific Kafka topic from ZoneId
 	config.AppConfig.Kafka.Topic = config.DbTaskTopic(config.AppConfig.Node.ZoneId)
+
+	// Ensure db_task topic exists with configured retention.
+	// Ephemeral topics (gate-*, scene-*) use broker default (short retention).
+	if err := kafkautil.EnsureTopics(config.AppConfig.Kafka.Brokers, []kafkautil.TopicSpec{
+		{
+			Name:        config.AppConfig.Kafka.Topic,
+			Partitions:  config.AppConfig.Kafka.PartitionCnt,
+			RetentionMs: config.AppConfig.Kafka.RetentionMs,
+		},
+	}); err != nil {
+		logx.Errorf("EnsureTopics: %v (non-fatal, continuing)", err)
+	}
 
 	ctx := svc.NewServiceContext()
 
