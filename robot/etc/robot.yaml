@@ -4,7 +4,7 @@
 
 gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint
 zone_id: 1 # target zone (0 = auto-select recommended zone from /api/server-list)
-robot_count: 1000
+robot_count: 5000
 account_fmt: "robot_%04d"
 password: "123456"
 skill_ids: [1001]
