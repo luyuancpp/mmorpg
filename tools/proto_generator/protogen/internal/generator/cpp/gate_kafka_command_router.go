@@ -16,7 +16,7 @@ import (
 )
 
 type gateKafkaRouterCase struct {
-	EnumName         string
+	EventIdConstant  string
 	EventMessageName string
 	Assignments      []string
 }
@@ -60,21 +60,6 @@ func collectFieldsByName(message *descriptorpb.DescriptorProto) map[string]*desc
 	return fields
 }
 
-func resolveGateEventMessage(commandName string, eventMessageMap map[string]*descriptorpb.DescriptorProto) (string, *descriptorpb.DescriptorProto) {
-	candidates := []string{
-		commandName + "Event",
-		"Player" + commandName + "Event",
-	}
-
-	for _, candidate := range candidates {
-		if msg, ok := eventMessageMap[candidate]; ok {
-			return candidate, msg
-		}
-	}
-
-	return "", nil
-}
-
 func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 	gateCommandFd := findProtoFileBySuffix("contracts.kafka", "gate_command.proto")
 	if gateCommandFd == nil {
@@ -94,39 +79,23 @@ func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 		return nil
 	}
 
-	var commandTypeEnum *descriptorpb.EnumDescriptorProto
-	for _, enum := range gateCommandMsg.GetEnumType() {
-		if enum.GetName() == "CommandType" {
-			commandTypeEnum = enum
-			break
-		}
-	}
-	if commandTypeEnum == nil {
-		logger.Global.Warn("GateCommand.CommandType enum not found, skipping Gate Kafka router file generation")
-		return nil
-	}
-
 	commandFieldMap := collectFieldsByName(gateCommandMsg)
 
-	eventMessageMap := make(map[string]*descriptorpb.DescriptorProto)
-	for _, message := range gateEventFd.GetMessageType() {
-		eventMessageMap[message.GetName()] = message
-	}
-
 	cases := make([]gateKafkaRouterCase, 0)
-	for _, enumValue := range commandTypeEnum.GetValue() {
-		commandName := enumValue.GetName()
-		eventMessageName, eventMsg := resolveGateEventMessage(commandName, eventMessageMap)
-		if eventMsg == nil {
-			continue
-		}
+	for _, eventMsg := range gateEventFd.GetMessageType() {
+		eventMessageName := eventMsg.GetName()
+
+		// Compute the C++ event_id constant name: e.g. "ContractsKafkaKickPlayerEventEventId"
+		eventIdConstant := buildEventIdName("contracts.kafka", eventMessageName) + "EventId"
 
 		caseData := gateKafkaRouterCase{
-			EnumName:         commandName,
+			EventIdConstant:  eventIdConstant,
 			EventMessageName: eventMessageName,
 			Assignments:      make([]string, 0),
 		}
 
+		// Auto-map fields: for each event field, if GateCommand has a field with
+		// the same name and compatible type, generate an assignment.
 		for _, eventField := range eventMsg.GetField() {
 			commandField, exists := commandFieldMap[eventField.GetName()]
 			if !exists {
@@ -138,7 +107,7 @@ func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 			}
 			if commandField.GetType() != eventField.GetType() {
 				logger.Global.Warn("GateCommand and Event field type mismatch, skipping auto-assignment",
-					zap.String("command", commandName),
+					zap.String("event", eventMessageName),
 					zap.String("field", eventField.GetName()),
 				)
 				continue
