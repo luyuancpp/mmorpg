@@ -15,7 +15,7 @@ RedisClient:
   DB: 3
 
 MySQL:
-  DataSource: "root:root123@tcp(127.0.0.1:3306)/mmorpg?charset=utf8mb4&parseTime=true&loc=Local"
+  DataSource: "root:Mmorpg#2026db@tcp(127.0.0.1:3306)/mmorpg?charset=utf8mb4&parseTime=true&loc=Local"
 
 Node:
   ZoneId: 1
