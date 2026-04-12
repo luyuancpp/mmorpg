@@ -104,9 +104,6 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 			if n < 5 {
 				n = 5
 			}
-			if n > 50 {
-				n = 50 // login-test is functional, not stress; cap concurrency
-			}
 			return testBatchConcurrentLogin(host, port, cfg.AccountFmt, cfg.Password, stats, tokenPayload, tokenSig, n)
 		}},
 	}
