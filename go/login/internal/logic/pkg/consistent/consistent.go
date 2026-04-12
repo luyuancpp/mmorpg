@@ -55,31 +55,6 @@ func (c *Consistent) AddPartition(partition int32) {
 	})
 }
 
-// RemovePartition removes a partition and all its virtual nodes from the hash ring.
-// Returns true if the partition existed and was removed.
-func (c *Consistent) RemovePartition(partition int32) bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if _, exists := c.partitionSet[partition]; !exists {
-		return false
-	}
-
-	newSortedHashes := make([]uint32, 0, len(c.sortedHashes)-c.replicaCount)
-	for hashVal, p := range c.ring {
-		if p == partition {
-			delete(c.ring, hashVal)
-		} else {
-			newSortedHashes = append(newSortedHashes, hashVal)
-		}
-	}
-
-	c.sortedHashes = newSortedHashes
-	delete(c.partitionSet, partition)
-
-	return true
-}
-
 // GetPartition routes a key to a partition.
 // Returns the partition ID and true on success, or (0, false) if the ring is empty.
 func (c *Consistent) GetPartition(key string) (int32, bool) {
@@ -109,15 +84,6 @@ func (c *Consistent) GetPartitionCount() int {
 	defer c.mu.RUnlock()
 
 	return len(c.partitionSet)
-}
-
-// HasPartition checks whether a partition exists in the hash ring.
-func (c *Consistent) HasPartition(partition int32) bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	_, exists := c.partitionSet[partition]
-	return exists
 }
 
 // GetPartitions returns a sorted copy of all partition IDs in the hash ring.

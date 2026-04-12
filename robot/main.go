@@ -55,7 +55,7 @@ func main() {
 
 	// Login-test mode: run the test suite and exit.
 	if cfg.Mode == "login-test" {
-		runLoginTestsLocal(host, port, cfg, stats, tokenPayload, tokenSig)
+		runLoginTests(host, port, cfg, stats, tokenPayload, tokenSig)
 		return
 	}
 
@@ -335,39 +335,6 @@ func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignmentLoca
 }
 
 const defaultLoginTimeoutLocal = 15 * time.Second
-
-// runLoginTestsLocal is a single-file fallback for login-test mode.
-func runLoginTestsLocal(host string, port int, cfg *config.Config, stats *metrics.Stats, tokenPayload, tokenSig []byte) {
-	account := fmt.Sprintf(cfg.AccountFmt, 1)
-	gc, err := pkg.NewGameClient(host, port)
-	if err != nil {
-		zap.L().Error("login test connect failed", zap.Error(err))
-		return
-	}
-	defer gc.Close()
-
-	gc.Account = account
-	time.Sleep(300 * time.Millisecond)
-	if len(tokenPayload) > 0 {
-		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
-			zap.L().Error("login test token verify failed", zap.Error(err))
-			return
-		}
-	}
-
-	start := time.Now()
-	if err := loginAndEnterLocal(gc, cfg.Password, stats); err != nil {
-		zap.L().Error("login test failed", zap.String("account", account), zap.Error(err))
-		return
-	}
-
-	zap.L().Info("login test passed",
-		zap.String("account", account),
-		zap.Uint64("player_id", gc.PlayerId),
-		zap.Duration("elapsed", time.Since(start)),
-	)
-	_ = gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
-}
 
 // loginAndEnterLocal performs: login -> create player (if needed) -> enter game.
 func loginAndEnterLocal(gc *pkg.GameClient, password string, stats *metrics.Stats) error {

@@ -82,6 +82,7 @@ type LockerConf struct {
 // AccountConf holds account-related settings.
 type AccountConf struct {
 	MaxDevicesPerAccount int64         `json:"MaxDevicesPerAccount"`
+	MaxPlayersPerAccount int           `json:"MaxPlayersPerAccount,default=5"`
 	CacheExpire          time.Duration `json:"CacheExpire"`
 }
 
@@ -99,13 +100,11 @@ type EtcdRegistryConf struct {
 
 // TimeoutConf holds various timeout settings.
 type TimeoutConf struct {
-	EtcdDialTimeout          time.Duration `json:"EtcdDialTimeout"`
-	ServiceDiscoveryTimeout  time.Duration `json:"ServiceDiscoveryTimeout"`
-	TaskWaitTimeout          time.Duration `json:"TaskWaitTimeout"`
-	LoginTotalTimeout        time.Duration `json:"LoginTotalTimeout"` // Total login timeout including Redis/DB
-	RoleCacheExpire          time.Duration `json:"RoleCacheExpire"`
-	TaskManagerCleanInterval time.Duration `json:"TaskManagerCleanInterval"`
-	TaskBatchExpireTime      time.Duration `json:"TaskBatchExpireTime"`
+	EtcdDialTimeout         time.Duration `json:"EtcdDialTimeout"`
+	ServiceDiscoveryTimeout time.Duration `json:"ServiceDiscoveryTimeout"`
+	TaskWaitTimeout         time.Duration `json:"TaskWaitTimeout"`
+	LoginTotalTimeout       time.Duration `json:"LoginTotalTimeout"` // Total login timeout including Redis/DB
+	RoleCacheExpire         time.Duration `json:"RoleCacheExpire"`
 }
 
 var AppConfig Config

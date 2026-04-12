@@ -120,14 +120,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 5. Step validation: logged_in/creating_char -> entering_game
-	if err := loginsession.Advance(ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, loginsession.StepEnteringGame); err != nil {
-		logx.Errorf("EnterGame step failed: sessionId=%d playerId=%d err=%v", sessionDetails.SessionId, in.PlayerId, err)
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
-		return resp, nil
-	}
-
-	// 6. Load Player data (synchronous)
+	// 5. Load Player data (synchronous)
 	if err := l.ensurePlayerDataInRedis(ctx, in.PlayerId); err != nil {
 		logx.Errorf("failed to load player data [PlayerId=%d, error=%v]", in.PlayerId, err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginUnknownError)

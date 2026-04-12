@@ -42,6 +42,9 @@ type KeyOrderedKafkaProducer struct {
 	// fault-tolerance state
 	unavailablePartitions map[int32]time.Time // partition → time marked unavailable
 	retryInterval         time.Duration       // retry interval for unavailable partitions
+
+	// Separate non-transactional producer for cross-topic fire-and-forget sends (e.g. gate commands).
+	plainProducer sarama.SyncProducer
 }
 
 // NewKeyOrderedKafkaProducer creates an idempotent producer using SyncProducer.
@@ -102,6 +105,23 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 		consistentHash.AddPartition(i)
 	}
 
+	// Create a separate non-transactional producer for cross-topic fire-and-forget sends.
+	plainCfg := sarama.NewConfig()
+	plainCfg.Version = sarama.V3_6_0_0
+	plainCfg.Net.DialTimeout = cfg.DialTimeout
+	plainCfg.Net.ReadTimeout = cfg.ReadTimeout
+	plainCfg.Net.WriteTimeout = cfg.WriteTimeout
+	plainCfg.Producer.Return.Successes = true
+	plainCfg.Producer.Return.Errors = true
+	plainCfg.Producer.RequiredAcks = sarama.WaitForAll
+
+	plainProducer, err := sarama.NewSyncProducer(cfg.Brokers, plainCfg)
+	if err != nil {
+		producer.Close()
+		client.Close()
+		return nil, fmt.Errorf("failed to create plain producer: %w", err)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	unavailableParts := make(map[int32]time.Time)
@@ -118,6 +138,7 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 		closed:                false,
 		unavailablePartitions: unavailableParts,
 		retryInterval:         retryInterval,
+		plainProducer:         plainProducer,
 	}
 	kp.payloadPool.New = func() interface{} {
 		return make([]byte, 0, 1024)
@@ -326,9 +347,9 @@ func (p *KeyOrderedKafkaProducer) AddPartitions(newPartitions []int32) error {
 	return nil
 }
 
-// SendToTopic sends raw bytes to an arbitrary Kafka topic (not the configured topic).
+// SendToTopic sends raw bytes to an arbitrary Kafka topic using the non-transactional producer.
 func (p *KeyOrderedKafkaProducer) SendToTopic(topic string, data []byte) error {
-	_, _, err := p.producer.SendMessage(&sarama.ProducerMessage{
+	_, _, err := p.plainProducer.SendMessage(&sarama.ProducerMessage{
 		Topic: topic,
 		Value: sarama.ByteEncoder(data),
 	})
@@ -354,6 +375,7 @@ func (p *KeyOrderedKafkaProducer) Close() error {
 	}
 
 	producerErr := p.producer.Close()
+	plainErr := p.plainProducer.Close()
 	clientErr := p.client.Close()
 
 	var finalErr error
@@ -365,6 +387,13 @@ func (p *KeyOrderedKafkaProducer) Close() error {
 			finalErr = fmt.Errorf("failed to close producer: %w", producerErr)
 		} else {
 			finalErr = fmt.Errorf("%v; failed to close producer: %w", finalErr, producerErr)
+		}
+	}
+	if plainErr != nil {
+		if finalErr == nil {
+			finalErr = fmt.Errorf("failed to close plain producer: %w", plainErr)
+		} else {
+			finalErr = fmt.Errorf("%v; failed to close plain producer: %w", finalErr, plainErr)
 		}
 	}
 	if clientErr != nil {
@@ -453,27 +482,6 @@ func (p *KeyOrderedKafkaProducer) recycleMessages(msgs []*sarama.ProducerMessage
 			meta.producer.payloadPool.Put(meta.payload)
 		}
 	}
-}
-
-// getTaskID extracts the task ID from a message value.
-func getTaskID(value sarama.Encoder) string {
-	if byteVal, ok := value.(sarama.ByteEncoder); ok {
-		var task db_proto.DBTask
-		err := proto.Unmarshal(byteVal, &task)
-		if err == nil {
-			return task.TaskId
-		}
-		return fmt.Sprintf("unmarshal failed: %v", err)
-	}
-	b, err := value.Encode()
-	if err != nil {
-		return fmt.Sprintf("encode failed: %v", err)
-	}
-	var task db_proto.DBTask
-	if err := proto.Unmarshal(b, &task); err != nil {
-		return fmt.Sprintf("unmarshal failed: %v", err)
-	}
-	return task.TaskId
 }
 
 // markPartitionUnavailable marks a partition as unavailable.

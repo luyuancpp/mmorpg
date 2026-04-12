@@ -64,10 +64,10 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 
 	logx.Infof("Login start: account=%s sessionId=%d", in.Account, sessionDetails.SessionId)
 
-	// 3. Save login session (atomic: validates first-time + stores account + step=logged_in)
+	// 3. Save login session (stores account for this session in Redis)
 	if err := loginsession.Save(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, in.Account); err != nil {
 		logx.Errorf("Login save failed: sessionId=%d account=%s err=%v", sessionDetails.SessionId, in.Account, err)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFSMEventFailed)}
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
 
