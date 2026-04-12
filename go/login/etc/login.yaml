@@ -106,3 +106,4 @@ Kafka:
   CompressionType: 0
   Idempotent: true
   MaxOpenRequests: 1
+  RetentionMs: 300000 # Topic retention: 5 min (enough for DB service restart)

@@ -22,8 +22,20 @@ services:
       - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
       - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
       - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+      - KAFKA_HEAP_OPTS=-Xms256m -Xmx512m
+      - KAFKA_LOG_RETENTION_MS=60000
+      - KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS=30000
+      - KAFKA_LOG_RETENTION_BYTES=134217728
+      - KAFKA_LOG_SEGMENT_BYTES=16777216
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '1.0'
+    tmpfs:
+      - /tmp/kafka-logs:size=256m
     volumes:
-      - kafka-data:/tmp/kafka-logs
+      - kafka-data:/tmp/kraft-combined-logs
     user: "root:root"  # Windows permission workaround
 
   # Kafka UI
@@ -35,6 +47,12 @@ services:
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.5'
     depends_on:
       - kafka
 
