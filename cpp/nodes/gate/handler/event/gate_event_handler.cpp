@@ -4,10 +4,14 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include <session/manager/session_manager.h>
 #include "muduo/base/Logging.h"
+#include "gate_codec.h"
 #include "proto/common/base/node.pb.h"
+#include "proto/scene/client_player_common.pb.h"
 #include "proto/scene/player_lifecycle.pb.h"
+#include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "rpc/service_metadata/player_lifecycle_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
+#include "table/proto/tip/login_error_tip.pb.h"
 #include "thread_context/node_context_manager.h"
 #include "network/rpc_session.h"
 #include "node/system/node/node_util.h"
@@ -64,28 +68,55 @@ void GateEventHandler::UnRegister()
     tlsEcs.dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().disconnect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BindSessionEvent>().disconnect<&GateEventHandler::BindSessionEventHandler>();
 }
-void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
+void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent &event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+    ///<<< BEGIN WRITING YOUR CODE
+    ///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayerEvent& event)
+void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayerEvent &event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+    ///<<< BEGIN WRITING YOUR CODE
+    const auto sessionId = event.session_id();
+    auto &sessions = tlsSessionManager.sessions();
+    auto it = sessions.find(sessionId);
+    if (it == sessions.end())
+    {
+        LOG_INFO << "KickPlayer: session not found, already disconnected. session_id=" << sessionId;
+        return;
+    }
+
+    auto conn = it->second.conn;
+    if (!conn || !conn->connected())
+    {
+        LOG_INFO << "KickPlayer: connection already closed. session_id=" << sessionId;
+        return;
+    }
+
+    // Send kick notification to client before closing.
+    GameKickPlayerRequest kickMsg;
+    kickMsg.mutable_reason()->set_id(kLoginBeKickByAnOtherAccount);
+    MessageContent mc;
+    mc.set_message_id(SceneClientPlayerCommonKickPlayerMessageId);
+    mc.set_serialized_message(kickMsg.SerializeAsString());
+    GetGateCodec().send(conn, mc);
+
+    conn->shutdown();
+    LOG_INFO << "KickPlayer: kicked session_id=" << sessionId
+             << " player_id=" << it->second.playerId;
+    ///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::PlayerDisconnectedEventHandler(const contracts::kafka::PlayerDisconnectedEvent& event)
+void GateEventHandler::PlayerDisconnectedEventHandler(const contracts::kafka::PlayerDisconnectedEvent &event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+    ///<<< BEGIN WRITING YOUR CODE
+    ///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::PlayerLeaseExpiredEvent& event)
+void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::PlayerLeaseExpiredEvent &event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+    ///<<< BEGIN WRITING YOUR CODE
+    ///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessionEvent& event)
+void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessionEvent &event)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+    ///<<< BEGIN WRITING YOUR CODE
+    ///<<< END WRITING YOUR CODE
 }
