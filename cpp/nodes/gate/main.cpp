@@ -14,6 +14,7 @@
 #include "proto/contracts/kafka/gate_command.pb.h"
 #include "proto/common/base/message.pb.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
+#include "handler/event/gate_kafka_command_router.h"
 
 #include <unordered_map>
 #include <utility>
@@ -41,7 +42,8 @@ namespace
         }
     };
 
-    struct GateNodeHooks {
+    struct GateNodeHooks
+    {
         using KafkaCommandType = contracts::kafka::GateCommand;
     };
 
@@ -54,14 +56,23 @@ int main(int argc, char *argv[])
         Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService},
         [](Node &node, GateRuntimeContext &context)
         {
+            // Override the default Kafka dispatch with GateCommand-specific routing
+            // that handles empty-payload events via fallback field mapping.
+            node.SetKafkaHandlers([](Node &n)
+                                  { return node::kafka::RegisterKafkaCommandHandler<contracts::kafka::GateCommand>(
+                                        n, node::kafka::BuildDefaultKafkaOptions(n.GetNodeType()),
+                                        DispatchGateKafkaCommand); });
+
             InitGateCodec(context.codec);
 
             // Build reverse map: response proto full_name -> message_id
             // Used to wrap gRPC replies in MessageContent for the client.
             static std::unordered_map<std::string, uint32_t> sResponseTypeToMsgId;
-            for (uint32_t i = 0; i < kMaxRpcMethodCount; ++i) {
-                const auto& meta = gRpcMethodRegistry[i];
-                if (meta.responseProto) {
+            for (uint32_t i = 0; i < kMaxRpcMethodCount; ++i)
+            {
+                const auto &meta = gRpcMethodRegistry[i];
+                if (meta.responseProto)
+                {
                     sResponseTypeToMsgId[std::string(meta.responseProto->GetDescriptor()->full_name())] = i;
                 }
             }

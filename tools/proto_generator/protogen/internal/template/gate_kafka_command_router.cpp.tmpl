@@ -11,76 +11,36 @@
 #include "thread_context/dispatcher_manager.h"
 #include "muduo/base/Logging.h"
 
-namespace {
-
-template <typename EventT>
-void EnqueueGateKafkaEvent(const EventT& event)
-{
-    tlsEcs.dispatcher.enqueue(event);
-}
-
-template <typename EventT>
-bool DecodeAndEnqueueGateKafkaEvent(const std::string& topic, const std::string& payload)
-{
-    auto event = DecodeKafkaProtoPayload<EventT>(topic, payload);
-    if (!event) {
-        return false;
-    }
-
-    EnqueueGateKafkaEvent(*event);
-    return true;
-}
-
-bool DecodeAndDispatchGateKafkaEventById(const std::string& topic, const contracts::kafka::GateCommand& command)
-{
-    if (!command.has_event_id()) {
-        return false;
-    }
-
-    if (command.payload().empty()) {
-        LOG_WARN << "GateCommand event payload is empty, topic=" << topic << ", event_id=" << command.event_id();
-        return true;
-    }
-
-    if (!DispatchProtoEvent(command.event_id(), command.payload())) {
-        LOG_WARN << "GateCommand payload decode failed, topic=" << topic << ", event_id=" << command.event_id();
-        return true;
-    }
-    return true;
-}
-
-} // namespace
-
 void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::GateCommand& command)
 {
-    if (DecodeAndDispatchGateKafkaEventById(topic, command)) {
+    if (command.event_id() == 0) {
+        LOG_WARN << "GateCommand missing event_id, topic=" << topic;
         return;
     }
 
-    switch (command.command_type()) {
-{{- range .Cases }}
-    case contracts::kafka::GateCommand::{{ .EnumName }}: {
-        if (!command.payload().empty()) {
-            if (!DecodeAndEnqueueGateKafkaEvent<contracts::kafka::{{ .EventMessageName }}>(topic, command.payload())) {
-                LOG_WARN << "{{ .EnumName }} payload decode failed for session " << command.session_id();
-            }
-            return;
+    // If payload is present, decode and dispatch the embedded proto event.
+    if (!command.payload().empty()) {
+        if (!DispatchProtoEvent(command.event_id(), command.payload())) {
+            LOG_WARN << "GateCommand payload decode failed, topic=" << topic
+                     << ", event_id=" << command.event_id();
         }
+        return;
+    }
 
+    // Empty payload: construct event from GateCommand envelope fields.
+    switch (command.event_id()) {
+{{- range .Cases }}
+    case {{ .EventIdConstant }}: {
         contracts::kafka::{{ .EventMessageName }} event;
-{{- if .Assignments }}
 {{- range .Assignments }}
         {{ . }}
 {{- end }}
-{{- else }}
-        LOG_WARN << "{{ .EnumName }} fallback construction has no mapped fields, topic=" << topic;
-{{- end }}
-        EnqueueGateKafkaEvent(event);
+        tlsEcs.dispatcher.trigger(event);
         return;
     }
 {{- end }}
     default:
-        LOG_WARN << "Unknown GateCommand type: " << command.command_type();
+        LOG_WARN << "GateCommand unknown event_id=" << command.event_id() << ", topic=" << topic;
         return;
     }
 }

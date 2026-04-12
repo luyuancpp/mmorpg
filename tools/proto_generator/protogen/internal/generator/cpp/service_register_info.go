@@ -422,7 +422,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 			"\tif (!event.ParseFromString(payload)) {",
 			"\t\treturn false;",
 			"\t}",
-			"\ttlsEcs.dispatcher.enqueue(event);",
+			"\ttlsEcs.dispatcher.trigger(event);",
 			"\treturn true;",
 			"}",
 		)
