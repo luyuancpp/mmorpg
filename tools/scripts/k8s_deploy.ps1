@@ -507,8 +507,9 @@ Kafka:
   SyncInterval: 30s
   StatsInterval: 5m
   CompressionType: 0
-  Idempotent: false
+  Idempotent: true
   MaxOpenRequests: 1
+  RetentionMs: 600000
 "@
 		}
 		"player-locator" {

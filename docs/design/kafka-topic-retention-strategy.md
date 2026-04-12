@@ -6,16 +6,37 @@
 
 Most Kafka messages in this project are fire-and-forget control commands (player routing, session binding, kick, disconnect notifications). They are consumed immediately and have no value after consumption. Only DB write-behind tasks (and future payment-like messages) need disk persistence and longer retention.
 
-## Broker Default
+## Environment-Specific Configuration
+
+### Dev (docker-compose.yml)
 
 | Setting | Value | Purpose |
 |---|---|---|
-| `log.retention.ms` | `60000` (60s) | All auto-created topics expire in 1 minute |
-| `log.retention.check.interval.ms` | `30000` (30s) | Faster cleanup cycle |
+| `log.retention.ms` | `60000` (60s) | Ephemeral topics expire in 1 minute |
+| `log.retention.check.interval.ms` | `120000` (2 min) | Low-frequency cleanup (save CPU) |
 | `log.segment.bytes` | `16777216` (16MB) | Smaller segments → faster expiry |
 | `log.retention.bytes` | `134217728` (128MB) | Hard cap per partition |
+| `KAFKA_HEAP_OPTS` | `-Xms128m -Xmx256m` | Minimal heap for dev |
+| `KAFKA_NUM_IO_THREADS` | `1` | Single IO thread (low traffic) |
+| `KAFKA_NUM_NETWORK_THREADS` | `1` | Single network thread |
+| `KAFKA_BACKGROUND_THREADS` | `2` | Minimal background threads |
+| Container limits | 512MB / 0.5 CPU | Hard cap |
+| Storage | **tmpfs** (`/tmp/kafka-logs`) | Zero disk I/O |
+| `db_task` RetentionMs | `300000` (5 min) | Service-level config |
 
-Dev environment additionally uses **tmpfs** for `/tmp/kafka-logs` to eliminate disk I/O entirely.
+### Production (K8s kafka.yaml)
+
+| Setting | Value | Purpose |
+|---|---|---|
+| `log.retention.ms` | `300000` (5 min) | Ephemeral topics expire in 5 minutes |
+| `log.retention.check.interval.ms` | `120000` (2 min) | Moderate cleanup frequency |
+| `log.segment.bytes` | `33554432` (32MB) | Balanced segment size |
+| `log.retention.bytes` | `536870912` (512MB) | Higher cap for production |
+| `KAFKA_HEAP_OPTS` | `-Xms512m -Xmx1g` | Production heap |
+| Thread counts | Default (IO=8, Net=3, Bg=10) | Full concurrency |
+| Pod resources | 512Mi~1.5Gi / 200m~2 CPU | Production limits |
+| Storage | Persistent volume (emptyDir) | Data survives container restart |
+| `db_task` RetentionMs | `600000` (10 min) | More buffer for pod rescheduling |
 
 ## Per-Topic Retention Matrix
 
@@ -24,7 +45,7 @@ Dev environment additionally uses **tmpfs** for `/tmp/kafka-logs` to eliminate d
 | `gate-{id}` | 60s (broker default) | No | Routing/bind/kick commands — consume immediately |
 | `scene-{id}` | 60s (broker default) | No | Scene commands — consume immediately |
 | `player-events` | 60s (broker default) | No | Disconnect/lease events — consume immediately |
-| `db_task_zone_{id}` | **5 min** (configurable) | **Yes** | DB write-behind pipeline — survive consumer restart; config `Kafka.RetentionMs` |
+| `db_task_zone_{id}` | **5~10 min** (configurable) | **Yes** | DB write-behind pipeline — survive consumer restart; config `Kafka.RetentionMs` |
 | Future: payment | **longer** (explicit) | **Yes** | Critical financial messages — set per-topic |
 
 ## Topic Initialization
@@ -42,9 +63,13 @@ Dev environment additionally uses **tmpfs** for `/tmp/kafka-logs` to eliminate d
 ### Config
 
 ```yaml
-# login.yaml
+# Dev (login.yaml)
 Kafka:
-  RetentionMs: 300000 # 5 minutes, increase for production if needed
+  RetentionMs: 300000  # 5 minutes
+
+# Production (k8s_deploy.ps1 template)
+Kafka:
+  RetentionMs: 600000  # 10 minutes
 ```
 
 ## Adding a New Persistent Topic
@@ -58,9 +83,10 @@ Kafka:
 2. Call it before any producer/consumer uses the topic.
 3. Update this document.
 
-## JVM Resource Limits (Dev)
+## Resource Limits
 
-| Container | Heap | Container Limit |
-|---|---|---|
-| kafka | `-Xms256m -Xmx512m` | 768MB / 1 CPU |
-| kafka-ui | `-Xms128m -Xmx256m` | 384MB / 0.5 CPU |
+| Environment | Container | Heap | Limits |
+|---|---|---|---|
+| Dev | kafka | `-Xms128m -Xmx256m` | 512MB / 0.5 CPU |
+| Dev | kafka-ui | `-Xms128m -Xmx256m` | 384MB / 0.5 CPU |
+| Prod | kafka | `-Xms512m -Xmx1g` | 1.5Gi / 2 CPU |
