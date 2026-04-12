@@ -184,18 +184,6 @@ func NewOnlineSession(existing *PlayerSession, input OnlineSessionInput) *Player
 
 // ---- Idempotency (stays in Redis — not session-related) ----
 
-func CheckIdempotency(ctx context.Context, rdb *redis.Client, playerID uint64, requestID string) (bool, error) {
-	if requestID == "" {
-		return false, nil
-	}
-	key := idempotencyKey(playerID, requestID)
-	exists, err := rdb.Exists(ctx, key).Result()
-	if err != nil {
-		return false, err
-	}
-	return exists > 0, nil
-}
-
 func SetIdempotency(ctx context.Context, rdb *redis.Client, playerID uint64, requestID string) error {
 	if requestID == "" {
 		return nil

@@ -66,16 +66,13 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
-	defer createLock.Release(l.ctx)
+	defer func() {
+		if _, err := createLock.Release(l.ctx); err != nil {
+			logx.Errorf("CreatePlayer lock release failed for account=%s: %v", account, err)
+		}
+	}()
 
-	// 4. Step validation: logged_in -> creating_char
-	if err := loginsession.Advance(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, loginsession.StepCreatingChar); err != nil {
-		logx.Errorf("CreatePlayer step failed: sessionId=%d err=%v", sessionDetails.SessionId, err)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginFsmFailed)}
-		return resp, nil
-	}
-
-	// 5. Load + decode account data
+	// 4. Load + decode account data
 	accountDataKey := constants.GetAccountDataKey(account)
 	dataBytes, err := l.svcCtx.RedisClient.Get(l.ctx, accountDataKey).Bytes()
 	if err != nil {
@@ -100,7 +97,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 
 	// 6. Create character
-	if len(userAccount.SimplePlayers.Players) >= 5 {
+	if len(userAccount.SimplePlayers.Players) >= config.AppConfig.Account.MaxPlayersPerAccount {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountPlayerFull)}
 		logx.Infof("Account player limit reached: %s", account)
 		return resp, nil
@@ -129,12 +126,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		// Non-fatal: player can still play, only rollback cleanup is affected
 	}
 
-	// 8. Step back to logged_in (creating_char -> logged_in)
-	if err := loginsession.Advance(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, loginsession.StepLoggedIn); err != nil {
-		logx.Errorf("Failed to reset step, sessionId: %d, err: %v", sessionDetails.SessionId, err)
-	}
-
-	// 9. Return player info
+	// 8. Return player info
 	for _, p := range userAccount.SimplePlayers.Players {
 		resp.Players = append(resp.Players, &login_proto.AccountSimplePlayerWrapper{Player: p})
 	}

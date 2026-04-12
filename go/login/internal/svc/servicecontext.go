@@ -105,15 +105,21 @@ func NewServiceContext() *ServiceContext {
 	}
 }
 
-func (c *ServiceContext) SetNodeId(nodeId int64) {
-	node, err := snowflake.NewNode(nodeId)
-	if err != nil {
-		return
-	}
+func (s *ServiceContext) Start() {
+	s.ExpandMonitor.Start()
+}
 
+func (c *ServiceContext) SetNodeId(nodeId int64) {
+	// Set package-level vars BEFORE creating the node — NewNode reads these at creation time.
 	snowflake.Epoch = config.AppConfig.Snowflake.Epoch
 	snowflake.NodeBits = uint8(config.AppConfig.Snowflake.NodeBits)
 	snowflake.StepBits = uint8(config.AppConfig.Snowflake.StepBits)
+
+	node, err := snowflake.NewNode(nodeId)
+	if err != nil {
+		logx.Errorf("Failed to create snowflake node (nodeId=%d): %v", nodeId, err)
+		panic(fmt.Errorf("snowflake.NewNode(%d): %w", nodeId, err))
+	}
 
 	c.SnowFlake = node
 }
