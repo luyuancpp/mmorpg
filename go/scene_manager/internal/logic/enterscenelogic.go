@@ -68,6 +68,10 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
 
+	// 5. Track instance player count (no-op for main world — key only matters
+	//    for instances tracked in the active sorted set).
+	IncrInstancePlayerCount(l.svcCtx, in.SceneId)
+
 	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, in.SceneId, nodeId)
 	return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
 }
