@@ -71,6 +71,28 @@ void GateEventHandler::UnRegister()
 void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    const auto sessionId = event.session_id();
+    const auto targetNodeId = event.target_node_id();
+
+    auto &sessions = tlsSessionManager.sessions();
+    auto it = sessions.find(sessionId);
+    if (it == sessions.end())
+    {
+        LOG_ERROR << "RoutePlayer: session not found, session_id=" << sessionId;
+        return;
+    }
+
+    it->second.SetNodeId(SceneNodeService, targetNodeId);
+    LOG_INFO << "RoutePlayer: assigned scene node, session_id=" << sessionId
+             << " scene_node_id=" << targetNodeId;
+
+    // Consume pending login type if BindSession arrived before RoutePlayer.
+    const auto pendingType = it->second.pendingEnterGsType;
+    if (pendingType != 0)
+    {
+        it->second.pendingEnterGsType = 0;
+        ForwardLoginToScene(sessionId, pendingType, targetNodeId);
+    }
 ///<<< END WRITING YOUR CODE
 }
 void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayerEvent& event)
@@ -119,5 +141,36 @@ void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::Pl
 void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    const auto sessionId = event.session_id();
+    const auto playerId = event.player_id();
+    const auto enterGsType = event.enter_gs_type();
+
+    auto &sessions = tlsSessionManager.sessions();
+    auto it = sessions.find(sessionId);
+    if (it == sessions.end())
+    {
+        LOG_ERROR << "BindSession: session not found, session_id=" << sessionId
+                  << " player_id=" << playerId;
+        return;
+    }
+
+    it->second.playerId = playerId;
+    it->second.sessionVersion = event.session_version();
+
+    // If scene node already assigned (same-Gate reconnect), forward immediately.
+    if (it->second.HasNodeId(SceneNodeService))
+    {
+        const auto sceneNodeId = it->second.GetNodeId(SceneNodeService);
+        ForwardLoginToScene(sessionId, enterGsType, sceneNodeId);
+    }
+    else
+    {
+        // Scene not yet assigned — store for RoutePlayerEvent to consume.
+        it->second.pendingEnterGsType = enterGsType;
+    }
+
+    LOG_INFO << "BindSession: bound session_id=" << sessionId
+             << " player_id=" << playerId
+             << " enter_gs_type=" << enterGsType;
 ///<<< END WRITING YOUR CODE
 }
