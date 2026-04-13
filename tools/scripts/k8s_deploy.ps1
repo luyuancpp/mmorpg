@@ -13,6 +13,14 @@ param(
 	[string]$NodeImage = "ghcr.io/luyuancpp/mmorpg-node:latest",
 	[ValidateSet("custom", "managed-cloud", "bare-metal")]
 	[string]$OpsProfile = "custom",
+	[ValidateSet("dev", "prod-like", "prod")]
+	[string]$KafkaProfile = "prod",
+	[int]$KafkaBrokerRetentionMs = 0,
+	[int]$KafkaDbTaskRetentionMs = 0,
+	[int]$KafkaRetentionCheckIntervalMs = 0,
+	[long]$KafkaRetentionBytes = 0,
+	[long]$KafkaSegmentBytes = 0,
+	[string]$KafkaHeapOpts = "",
 	[int]$CentreReplicas = 1,
 	[int]$GateReplicas = 2,
 	[int]$SceneReplicas = 4,
@@ -75,6 +83,35 @@ function Apply-OpsProfileDefaults {
 			if ($SceneReplicas -lt 4) { $script:SceneReplicas = 4 }
 		}
 		default {
+		}
+	}
+}
+
+function Apply-KafkaProfileDefaults {
+	switch ($KafkaProfile) {
+		"dev" {
+			if ($KafkaBrokerRetentionMs -le 0) { $script:KafkaBrokerRetentionMs = 60000 }
+			if ($KafkaDbTaskRetentionMs -le 0) { $script:KafkaDbTaskRetentionMs = 300000 }
+			if ($KafkaRetentionCheckIntervalMs -le 0) { $script:KafkaRetentionCheckIntervalMs = 120000 }
+			if ($KafkaRetentionBytes -le 0) { $script:KafkaRetentionBytes = 134217728 }
+			if ($KafkaSegmentBytes -le 0) { $script:KafkaSegmentBytes = 16777216 }
+			if ([string]::IsNullOrWhiteSpace($KafkaHeapOpts)) { $script:KafkaHeapOpts = "-Xms128m -Xmx256m" }
+		}
+		"prod-like" {
+			if ($KafkaBrokerRetentionMs -le 0) { $script:KafkaBrokerRetentionMs = 300000 }
+			if ($KafkaDbTaskRetentionMs -le 0) { $script:KafkaDbTaskRetentionMs = 600000 }
+			if ($KafkaRetentionCheckIntervalMs -le 0) { $script:KafkaRetentionCheckIntervalMs = 120000 }
+			if ($KafkaRetentionBytes -le 0) { $script:KafkaRetentionBytes = 536870912 }
+			if ($KafkaSegmentBytes -le 0) { $script:KafkaSegmentBytes = 33554432 }
+			if ([string]::IsNullOrWhiteSpace($KafkaHeapOpts)) { $script:KafkaHeapOpts = "-Xms512m -Xmx1g" }
+		}
+		default {
+			if ($KafkaBrokerRetentionMs -le 0) { $script:KafkaBrokerRetentionMs = 300000 }
+			if ($KafkaDbTaskRetentionMs -le 0) { $script:KafkaDbTaskRetentionMs = 900000 }
+			if ($KafkaRetentionCheckIntervalMs -le 0) { $script:KafkaRetentionCheckIntervalMs = 120000 }
+			if ($KafkaRetentionBytes -le 0) { $script:KafkaRetentionBytes = 536870912 }
+			if ($KafkaSegmentBytes -le 0) { $script:KafkaSegmentBytes = 33554432 }
+			if ([string]::IsNullOrWhiteSpace($KafkaHeapOpts)) { $script:KafkaHeapOpts = "-Xms512m -Xmx1g" }
 		}
 	}
 }
@@ -368,6 +405,7 @@ function New-GoSvcConfigMapYaml {
 	$info = $GoSvcCatalogue[$SvcName]
 	$configMapName = $info.ConfigMap
 	$configFileName = $info.ConfigFile
+	$dbTaskRetentionMs = $script:KafkaDbTaskRetentionMs
 
 	$svcConfig = switch ($SvcName) {
 		"db" {
@@ -507,8 +545,9 @@ Kafka:
   SyncInterval: 30s
   StatsInterval: 5m
   CompressionType: 0
-  Idempotent: false
+  Idempotent: true
   MaxOpenRequests: 1
+	RetentionMs: ${dbTaskRetentionMs}
 "@
 		}
 		"player-locator" {
@@ -894,6 +933,7 @@ function Show-ZoneStatus {
 
 function Apply-Infra {
 	Write-Host "Deploying shared infrastructure to namespace $InfraNamespace"
+	Write-Host "Kafka profile: $KafkaProfile (broker_retention_ms=$KafkaBrokerRetentionMs db_task_retention_ms=$KafkaDbTaskRetentionMs)"
 	Ensure-Namespace -Namespace $InfraNamespace
 
 	foreach ($manifest in @("etcd.yaml", "redis.yaml", "kafka.yaml", "mysql.yaml")) {
@@ -902,7 +942,18 @@ function Apply-Infra {
 			Write-Warning "Infra manifest not found: $path — skipping"
 			continue
 		}
-		Invoke-Kubectl -Args @("apply", "-n", $InfraNamespace, "-f", $path)
+		if ($manifest -eq "kafka.yaml") {
+			$manifestContent = Get-Content -Path $path -Raw
+			$manifestContent = $manifestContent.Replace("__KAFKA_LOG_RETENTION_MS__", [string]$KafkaBrokerRetentionMs)
+			$manifestContent = $manifestContent.Replace("__KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS__", [string]$KafkaRetentionCheckIntervalMs)
+			$manifestContent = $manifestContent.Replace("__KAFKA_LOG_RETENTION_BYTES__", [string]$KafkaRetentionBytes)
+			$manifestContent = $manifestContent.Replace("__KAFKA_LOG_SEGMENT_BYTES__", [string]$KafkaSegmentBytes)
+			$manifestContent = $manifestContent.Replace("__KAFKA_HEAP_OPTS__", [string]$KafkaHeapOpts)
+			Invoke-KubectlWithInputFile -Args @("apply", "-n", $InfraNamespace) -InputContent $manifestContent
+		}
+		else {
+			Invoke-Kubectl -Args @("apply", "-n", $InfraNamespace, "-f", $path)
+		}
 	}
 
 	Write-Host "Shared infrastructure deployed: namespace=$InfraNamespace"
@@ -928,6 +979,7 @@ function Resolve-ZonesConfigPath {
 
 Ensure-KubectlAvailable
 Apply-OpsProfileDefaults
+Apply-KafkaProfileDefaults
 Show-ExposureProfileWarning
 
 switch ($Command) {

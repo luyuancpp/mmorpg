@@ -81,14 +81,15 @@ void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayer
     auto it = sessions.find(sessionId);
     if (it == sessions.end())
     {
-        LOG_INFO << "KickPlayer: session not found, already disconnected. session_id=" << sessionId;
+        // Expected during races between disconnect and kick command delivery.
+        LOG_DEBUG << "KickPlayer: session not found, already disconnected. session_id=" << sessionId;
         return;
     }
 
     auto conn = it->second.conn;
     if (!conn || !conn->connected())
     {
-        LOG_INFO << "KickPlayer: connection already closed. session_id=" << sessionId;
+        LOG_DEBUG << "KickPlayer: connection already closed. session_id=" << sessionId;
         return;
     }
 
