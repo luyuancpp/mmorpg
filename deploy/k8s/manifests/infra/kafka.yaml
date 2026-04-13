@@ -56,16 +56,16 @@ spec:
             # --- Retention: broker default is short (5 min) for ephemeral topics.
             # Persistent topics (db_task_zone_*) override via EnsureTopics at service startup.
             - name: KAFKA_LOG_RETENTION_MS
-              value: "300000"
+              value: "__KAFKA_LOG_RETENTION_MS__"
             - name: KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS
-              value: "120000"
+              value: "__KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS__"
             - name: KAFKA_LOG_RETENTION_BYTES
-              value: "536870912"
+              value: "__KAFKA_LOG_RETENTION_BYTES__"
             - name: KAFKA_LOG_SEGMENT_BYTES
-              value: "33554432"
+              value: "__KAFKA_LOG_SEGMENT_BYTES__"
             # --- JVM heap (production, single-node KRaft)
             - name: KAFKA_HEAP_OPTS
-              value: "-Xms512m -Xmx1g"
+              value: "__KAFKA_HEAP_OPTS__"
           ports:
             - containerPort: 9092
               name: kafka

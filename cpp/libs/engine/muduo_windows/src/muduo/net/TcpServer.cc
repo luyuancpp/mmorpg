@@ -106,8 +106,16 @@ void TcpServer::removeConnection(const TcpConnectionPtr& conn)
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr& conn)
 {
   loop_->assertInLoopThread();
-  LOG_INFO << "TcpServer::removeConnectionInLoop [" << name_
-           << "] - connection " << conn->name();
+  if (name_ == "RpcServer")
+  {
+    LOG_TRACE << "TcpServer::removeConnectionInLoop [" << name_
+              << "] - connection " << conn->name();
+  }
+  else
+  {
+    LOG_INFO << "TcpServer::removeConnectionInLoop [" << name_
+             << "] - connection " << conn->name();
+  }
   size_t n = connections_.erase(conn->name());
   (void)n;
   assert(n == 1);
