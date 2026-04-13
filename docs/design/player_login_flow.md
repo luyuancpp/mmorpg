@@ -240,3 +240,25 @@ Scene 侧:
 5. **pendingEnterGsType 延迟机制** — 首次登录/跨 Gate 场景时 BindSession 先于 RoutePlayer 到达，Gate 暂存 enter_gs_type 等待 scene 分配后再转发。
 6. **同 Gate 重连快速路径** — SessionInfo 保留 sceneNodeId，BindSession 直接触发 ForwardLoginToScene，SceneManager.EnterScene 幂等无副作用。
 7. **GateLoginNotify 替换 Centre2GsLogin** — 原由 Centre 发送，现由 Gate Kafka 事件驱动转发。
+
+## 场景切换时 Gate 绑定机制
+
+### 核心结论
+
+- 普通切换场景不依赖旧的 `Gate::PlayerEnterGameNode` 回调。
+- 当前绑定入口是 `SceneManager -> Kafka gate-{gateId} -> RoutePlayerEvent -> GateEventHandler::RoutePlayerEventHandler`。
+- Gate 更新的是同一条 TCP 会话上的 `SessionInfo(SceneNodeService -> targetNodeId)` 映射，而不是重建 Gate 连接。
+
+### 详细流程
+
+1. 上游业务触发 `SceneManager.EnterScene`。
+2. SceneManager 选择目标 Scene 节点并更新玩家位置（Redis 作为位置事实源）。
+3. SceneManager 向 `gate-{gateId}` 发送 `GateCommand{RoutePlayer}`（payload 为 `RoutePlayerEvent{session_id,target_node_id}`）。
+4. Gate 消费 Kafka 命令并分发 `RoutePlayerEvent`。
+5. `RoutePlayerEventHandler` 通过 `session_id` 找到会话，执行 `SetNodeId(SceneNodeService, target_node_id)`。
+6. 后续该玩家客户端消息在 Gate 转发时通过 `SessionInfo` 读取新绑定，路由到新 Scene 节点。
+
+### 与 pendingEnterGsType 的关系
+
+- `pendingEnterGsType` 主要用于登录/重连竞态（`BindSessionEvent` 先于 `RoutePlayerEvent` 到达）。
+- 普通切场景通常只有 `RoutePlayerEvent`，不会触发这套延迟登录通知机制。
