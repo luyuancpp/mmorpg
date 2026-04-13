@@ -45,6 +45,9 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 		return &base.Empty{}, nil
 	}
 
+	// 3. Decrement instance player count (harmless for main world scenes).
+	DecrInstancePlayerCount(l.svcCtx, in.SceneId)
+
 	l.Logger.Infof("Player %d left scene %d on node %s", in.PlayerId, in.SceneId, currentLoc.NodeId)
 	return &base.Empty{}, nil
 }

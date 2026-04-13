@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 
+	"proto/scene_manager"
 	"scene_manager/internal/config"
 	"scene_manager/internal/svc"
 )
@@ -202,4 +204,145 @@ func TestMultiplePlayersLocation(t *testing.T) {
 	require.NoError(t, DeletePlayerLocation(ctx, sc, 200))
 	loc1After, _ := GetPlayerLocation(ctx, sc, 100)
 	assert.NotNil(t, loc1After)
+}
+
+// ---------------------------------------------------------------------------
+// Main scene helpers
+// ---------------------------------------------------------------------------
+
+func newTestSvcCtxWithMainScenes(t *testing.T, mainConfIds []uint64) (*svc.ServiceContext, *miniredis.Miniredis) {
+	t.Helper()
+	mr := miniredis.RunT(t)
+	rds := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
+
+	c := config.Config{}
+	c.MainSceneConfIds = mainConfIds
+	c.InstanceIdleTimeoutSeconds = 300
+	c.InstanceCheckIntervalSeconds = 10
+
+	return &svc.ServiceContext{
+		Config: c,
+		Redis:  rds,
+	}, mr
+}
+
+func TestIsMainSceneConf(t *testing.T) {
+	sc, _ := newTestSvcCtxWithMainScenes(t, []uint64{1001, 1002, 1003})
+
+	assert.True(t, IsMainSceneConf(sc, 1001))
+	assert.True(t, IsMainSceneConf(sc, 1003))
+	assert.False(t, IsMainSceneConf(sc, 2001))
+	assert.False(t, IsMainSceneConf(sc, 0))
+}
+
+func TestGetMainSceneId_NotFound(t *testing.T) {
+	sc, _ := newTestSvcCtxWithMainScenes(t, nil)
+	ctx := context.Background()
+
+	id, _ := GetMainSceneId(ctx, sc, 9999)
+	assert.Equal(t, uint64(0), id)
+}
+
+func TestAssignNodeByHash_Deterministic(t *testing.T) {
+	nodes := []string{"1", "2", "3", "4"}
+
+	result1 := assignNodeByHash(1001, nodes)
+	result2 := assignNodeByHash(1001, nodes)
+	assert.Equal(t, result1, result2, "Same confId should always map to same node")
+
+	// Different confIds may map to different nodes (not guaranteed, but likely with 4 nodes)
+	results := make(map[string]bool)
+	for confId := uint64(1); confId <= 100; confId++ {
+		results[assignNodeByHash(confId, nodes)] = true
+	}
+	assert.Greater(t, len(results), 1, "100 different confIds should map to more than 1 node")
+}
+
+// ---------------------------------------------------------------------------
+// Instance lifecycle tests
+// ---------------------------------------------------------------------------
+
+func TestInstancePlayerCount_IncrDecr(t *testing.T) {
+	sc, _ := newTestSvcCtxWithMainScenes(t, nil)
+
+	sceneId := uint64(42)
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "0")
+
+	IncrInstancePlayerCount(sc, sceneId)
+	IncrInstancePlayerCount(sc, sceneId)
+
+	val, err := sc.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	require.NoError(t, err)
+	assert.Equal(t, "2", val)
+
+	DecrInstancePlayerCount(sc, sceneId)
+	val, _ = sc.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	assert.Equal(t, "1", val)
+}
+
+func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
+	ctx := context.Background()
+
+	// Register a node so GetBestNode works.
+	mr.ZAdd(NodeLoadKey, 0, "10")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+
+	// First create.
+	resp1, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 1001,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, uint32(0), resp1.ErrorCode)
+	assert.NotEqual(t, uint64(0), resp1.SceneId)
+
+	// Second create for same confId — should return same scene.
+	resp2, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 1001,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, resp1.SceneId, resp2.SceneId, "main scene should be idempotent")
+	assert.Equal(t, resp1.NodeId, resp2.NodeId)
+}
+
+func TestCreateScene_Instance_UniquIds(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
+	ctx := context.Background()
+
+	mr.ZAdd(NodeLoadKey, 0, "10")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+
+	resp1, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, uint32(0), resp1.ErrorCode)
+
+	resp2, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, uint32(0), resp2.ErrorCode)
+	assert.NotEqual(t, resp1.SceneId, resp2.SceneId, "instances should get unique IDs")
+}
+
+func TestCreateScene_Instance_TrackedInActiveSet(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
+	ctx := context.Background()
+
+	mr.ZAdd(NodeLoadKey, 0, "10")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+	})
+
+	// Should be in the active instances sorted set.
+	instKey := activeInstancesKey(sc.Config.ZoneID)
+	members, err := sc.Redis.ZrangeWithScores(instKey, 0, -1)
+	require.NoError(t, err)
+	assert.Len(t, members, 1)
+	assert.Equal(t, fmt.Sprintf("%d", resp.SceneId), members[0].Key)
 }
