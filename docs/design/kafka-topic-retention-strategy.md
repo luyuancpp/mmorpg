@@ -36,7 +36,32 @@ Most Kafka messages in this project are fire-and-forget control commands (player
 | Thread counts | Default (IO=8, Net=3, Bg=10) | Full concurrency |
 | Pod resources | 512Mi~1.5Gi / 200m~2 CPU | Production limits |
 | Storage | Persistent volume (emptyDir) | Data survives container restart |
-| `db_task` RetentionMs | `600000` (10 min) | More buffer for pod rescheduling |
+| `db_task` RetentionMs | `900000` (15 min, prod profile default) | More buffer for pod rescheduling |
+
+## Profile Switch (Enterprise Style)
+
+- Local compose now supports profile-driven env injection via `deploy/env/*.env`.
+- K8s deploy now supports `-KafkaProfile dev|prod-like|prod` and can override each Kafka parameter explicitly.
+
+### Compose Profiles
+
+```powershell
+# Dev profile (default-friendly)
+docker compose --env-file deploy/env/kafka.dev.env -f deploy/docker-compose.yml up -d
+
+# Production-like profile (local load/regression testing)
+docker compose --env-file deploy/env/kafka.prod-like.env -f deploy/docker-compose.yml up -d
+```
+
+### K8s Profiles
+
+```powershell
+# Prod-like defaults for infra and generated Go configs
+pwsh -File tools/scripts/k8s_deploy.ps1 -Command infra-up -KafkaProfile prod-like
+
+# Production defaults (broker 5m, db_task 15m)
+pwsh -File tools/scripts/k8s_deploy.ps1 -Command all-up -KafkaProfile prod
+```
 
 ## Per-Topic Retention Matrix
 
@@ -45,7 +70,7 @@ Most Kafka messages in this project are fire-and-forget control commands (player
 | `gate-{id}` | 60s (broker default) | No | Routing/bind/kick commands — consume immediately |
 | `scene-{id}` | 60s (broker default) | No | Scene commands — consume immediately |
 | `player-events` | 60s (broker default) | No | Disconnect/lease events — consume immediately |
-| `db_task_zone_{id}` | **5~10 min** (configurable) | **Yes** | DB write-behind pipeline — survive consumer restart; config `Kafka.RetentionMs` |
+| `db_task_zone_{id}` | **5~15 min** (configurable) | **Yes** | DB write-behind pipeline — survive consumer restart; config `Kafka.RetentionMs` |
 | Future: payment | **longer** (explicit) | **Yes** | Critical financial messages — set per-topic |
 
 ## Topic Initialization
@@ -67,9 +92,9 @@ Most Kafka messages in this project are fire-and-forget control commands (player
 Kafka:
   RetentionMs: 300000  # 5 minutes
 
-# Production (k8s_deploy.ps1 template)
+# Production (k8s_deploy.ps1 template, KafkaProfile=prod)
 Kafka:
-  RetentionMs: 600000  # 10 minutes
+  RetentionMs: 900000  # 15 minutes
 ```
 
 ## Adding a New Persistent Topic
