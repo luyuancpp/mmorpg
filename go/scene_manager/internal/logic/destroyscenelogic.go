@@ -44,5 +44,12 @@ func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) 
 			}
 		}
 	}
+
+	// Clean up instance tracking (no-op if this was a main scene).
+	sceneIdStr := fmt.Sprintf("%d", in.SceneId)
+	instKey := activeInstancesKey(l.svcCtx.Config.ZoneID)
+	l.svcCtx.Redis.Zrem(instKey, sceneIdStr)
+	l.svcCtx.Redis.Del(fmt.Sprintf(InstancePlayerCountKey, in.SceneId))
+
 	return &base.Empty{}, nil
 }

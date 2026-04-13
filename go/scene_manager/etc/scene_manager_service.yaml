@@ -18,3 +18,18 @@ ZoneID: 1
 # During this window, a breakpoint-paused node can re-register without being evicted.
 # Set to 0 for immediate removal in production.
 NodeRemovalGraceSeconds: 300
+
+# Persistent main-world scene config IDs. These scenes are created once at
+# startup and are never auto-destroyed. List your world map config IDs here.
+# Any scene_conf_id NOT in this list is treated as an instance (dungeon/arena).
+MainSceneConfIds:
+  # - 1001  # Example: Main City
+  # - 1002  # Example: Wild Zone A
+  # - 1003  # Example: Wild Zone B
+
+# Instance idle timeout (seconds). An instance with 0 players for longer
+# than this is automatically destroyed. Set to 0 to disable auto-destroy.
+InstanceIdleTimeoutSeconds: 300
+
+# How often (seconds) the lifecycle manager scans for idle instances.
+InstanceCheckIntervalSeconds: 30

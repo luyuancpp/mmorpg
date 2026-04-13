@@ -28,6 +28,7 @@
 #include "google/protobuf/message_lite.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
+#include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/base/node.pb.h"
 #include "proto/common/base/empty.pb.h"
@@ -56,6 +57,8 @@ extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
 }  // extern "C"
 namespace scene_manager {
+enum SceneType : int;
+extern const uint32_t SceneType_internal_data_[];
 class CreateSceneRequest;
 struct CreateSceneRequestDefaultTypeInternal;
 extern CreateSceneRequestDefaultTypeInternal _CreateSceneRequest_default_instance_;
@@ -83,10 +86,50 @@ extern const ::google::protobuf::internal::ClassDataFull LeaveSceneRequest_class
 }  // namespace scene_manager
 namespace google {
 namespace protobuf {
+template <>
+internal::EnumTraitsT<::scene_manager::SceneType_internal_data_>
+    internal::EnumTraitsImpl::value<::scene_manager::SceneType>;
 }  // namespace protobuf
 }  // namespace google
 
 namespace scene_manager {
+enum SceneType : int {
+  SCENE_TYPE_UNSPECIFIED = 0,
+  SCENE_TYPE_MAIN_WORLD = 1,
+  SCENE_TYPE_INSTANCE = 2,
+  SceneType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  SceneType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t SceneType_internal_data_[];
+inline constexpr SceneType SceneType_MIN =
+    static_cast<SceneType>(0);
+inline constexpr SceneType SceneType_MAX =
+    static_cast<SceneType>(2);
+inline bool SceneType_IsValid(int value) {
+  return 0 <= value && value <= 2;
+}
+inline constexpr int SceneType_ARRAYSIZE = 2 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL SceneType_descriptor();
+template <typename T>
+const ::std::string& SceneType_Name(T value) {
+  static_assert(::std::is_same<T, SceneType>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to SceneType_Name().");
+  return SceneType_Name(static_cast<SceneType>(value));
+}
+template <>
+inline const ::std::string& SceneType_Name(SceneType value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<SceneType_descriptor, 0, 2>(
+      static_cast<int>(value));
+}
+inline bool SceneType_Parse(
+    ::absl::string_view name, SceneType* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<SceneType>(SceneType_descriptor(), name,
+                                           value);
+}
 
 // ===================================================================
 
@@ -1358,9 +1401,29 @@ class CreateSceneRequest final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
+    kCreatorIdsFieldNumber = 4,
     kTargetNodeIdFieldNumber = 2,
     kSceneConfIdFieldNumber = 1,
+    kSceneTypeFieldNumber = 3,
   };
+  // repeated uint64 creator_ids = 4;
+  int creator_ids_size() const;
+  private:
+  int _internal_creator_ids_size() const;
+
+  public:
+  void clear_creator_ids() ;
+  ::uint64_t creator_ids(int index) const;
+  void set_creator_ids(int index, ::uint64_t value);
+  void add_creator_ids(::uint64_t value);
+  const ::google::protobuf::RepeatedField<::uint64_t>& creator_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_creator_ids();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_creator_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_creator_ids();
+
+  public:
   // string target_node_id = 2;
   void clear_target_node_id() ;
   const ::std::string& target_node_id() const;
@@ -1386,11 +1449,21 @@ class CreateSceneRequest final : public ::google::protobuf::Message
   void _internal_set_scene_conf_id(::uint64_t value);
 
   public:
+  // .scene_manager.SceneType scene_type = 3;
+  void clear_scene_type() ;
+  ::scene_manager::SceneType scene_type() const;
+  void set_scene_type(::scene_manager::SceneType value);
+
+  private:
+  ::scene_manager::SceneType _internal_scene_type() const;
+  void _internal_set_scene_type(::scene_manager::SceneType value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.CreateSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 55,
                                    2>
       _table_;
@@ -1412,8 +1485,11 @@ class CreateSceneRequest final : public ::google::protobuf::Message
         const CreateSceneRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<::uint64_t> creator_ids_;
+    ::google::protobuf::internal::CachedSize _creator_ids_cached_byte_size_;
     ::google::protobuf::internal::ArenaStringPtr target_node_id_;
     ::uint64_t scene_conf_id_;
+    int scene_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1525,6 +1601,76 @@ inline void CreateSceneRequest::set_allocated_target_node_id(::std::string* PROT
     _impl_.target_node_id_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:scene_manager.CreateSceneRequest.target_node_id)
+}
+
+// .scene_manager.SceneType scene_type = 3;
+inline void CreateSceneRequest::clear_scene_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_type_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::scene_manager::SceneType CreateSceneRequest::scene_type() const {
+  // @@protoc_insertion_point(field_get:scene_manager.CreateSceneRequest.scene_type)
+  return _internal_scene_type();
+}
+inline void CreateSceneRequest::set_scene_type(::scene_manager::SceneType value) {
+  _internal_set_scene_type(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:scene_manager.CreateSceneRequest.scene_type)
+}
+inline ::scene_manager::SceneType CreateSceneRequest::_internal_scene_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::scene_manager::SceneType>(_impl_.scene_type_);
+}
+inline void CreateSceneRequest::_internal_set_scene_type(::scene_manager::SceneType value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_type_ = value;
+}
+
+// repeated uint64 creator_ids = 4;
+inline int CreateSceneRequest::_internal_creator_ids_size() const {
+  return _internal_creator_ids().size();
+}
+inline int CreateSceneRequest::creator_ids_size() const {
+  return _internal_creator_ids_size();
+}
+inline void CreateSceneRequest::clear_creator_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.creator_ids_.Clear();
+}
+inline ::uint64_t CreateSceneRequest::creator_ids(int index) const {
+  // @@protoc_insertion_point(field_get:scene_manager.CreateSceneRequest.creator_ids)
+  return _internal_creator_ids().Get(index);
+}
+inline void CreateSceneRequest::set_creator_ids(int index, ::uint64_t value) {
+  _internal_mutable_creator_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:scene_manager.CreateSceneRequest.creator_ids)
+}
+inline void CreateSceneRequest::add_creator_ids(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_creator_ids()->Add(value);
+  // @@protoc_insertion_point(field_add:scene_manager.CreateSceneRequest.creator_ids)
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>& CreateSceneRequest::creator_ids() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:scene_manager.CreateSceneRequest.creator_ids)
+  return _internal_creator_ids();
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL CreateSceneRequest::mutable_creator_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:scene_manager.CreateSceneRequest.creator_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_creator_ids();
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>&
+CreateSceneRequest::_internal_creator_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.creator_ids_;
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+CreateSceneRequest::_internal_mutable_creator_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.creator_ids_;
 }
 
 // -------------------------------------------------------------------
@@ -2225,6 +2371,19 @@ inline void LeaveSceneRequest::set_allocated_request_id(::std::string* PROTOBUF_
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace scene_manager
 
+
+namespace google {
+namespace protobuf {
+
+template <>
+struct is_proto_enum<::scene_manager::SceneType> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::scene_manager::SceneType>() {
+  return ::scene_manager::SceneType_descriptor();
+}
+
+}  // namespace protobuf
+}  // namespace google
 
 // @@protoc_insertion_point(global_scope)
 

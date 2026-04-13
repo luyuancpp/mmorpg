@@ -9,6 +9,8 @@ message SceneInfo {
   uint64 scene_conf_id = 2;
   string node_id = 3;
   int64 create_time = 4;
+  // 1 = main world, 2 = instance
+  uint32 scene_type = 5;
 }
 
 // Redis: player:{id}:location
