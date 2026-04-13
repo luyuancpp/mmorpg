@@ -117,3 +117,5 @@
 116=SceneRollbackClientPlayerGmPreviewRollback
 117=SceneRollbackClientPlayerGmQueryTransactionLog
 118=LoginPreGateAssignGate
+119=FriendServiceNotifyOnline
+120=FriendServiceNotifyOffline

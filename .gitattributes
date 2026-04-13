@@ -1,0 +1,40 @@
+# Force LF line endings for all text files.
+* text=auto eol=lf
+
+# Ensure these extensions are always treated as text with LF.
+*.cpp text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.cc text eol=lf
+*.c text eol=lf
+*.go text eol=lf
+*.java text eol=lf
+*.proto text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.xml text eol=lf
+*.txt text eol=lf
+*.cmake text eol=lf
+*.tmpl text eol=lf
+*.sql text eol=lf
+
+# Binary files — do not touch.
+*.exe binary
+*.dll binary
+*.lib binary
+*.exp binary
+*.pdb binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.gz binary
+*.nav binary
+*.navmesh binary
