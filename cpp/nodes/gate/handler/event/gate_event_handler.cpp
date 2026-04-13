@@ -68,14 +68,14 @@ void GateEventHandler::UnRegister()
     tlsEcs.dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().disconnect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BindSessionEvent>().disconnect<&GateEventHandler::BindSessionEventHandler>();
 }
-void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent &event)
+void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayerEvent &event)
+void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayerEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
     const auto sessionId = event.session_id();
     auto &sessions = tlsSessionManager.sessions();
     auto it = sessions.find(sessionId);
@@ -104,20 +104,20 @@ void GateEventHandler::KickPlayerEventHandler(const contracts::kafka::KickPlayer
     conn->shutdown();
     LOG_INFO << "KickPlayer: kicked session_id=" << sessionId
              << " player_id=" << it->second.playerId;
-    ///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::PlayerDisconnectedEventHandler(const contracts::kafka::PlayerDisconnectedEvent &event)
+void GateEventHandler::PlayerDisconnectedEventHandler(const contracts::kafka::PlayerDisconnectedEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::PlayerLeaseExpiredEvent &event)
+void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::PlayerLeaseExpiredEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessionEvent &event)
+void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessionEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
