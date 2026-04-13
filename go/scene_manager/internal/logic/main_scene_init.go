@@ -83,7 +83,7 @@ func InitMainScenes(ctx context.Context, svcCtx *svc.ServiceContext) {
 		svcCtx.Redis.Incr(sceneCountKey)
 
 		// Notify the C++ scene node to create the ECS entity.
-		if _, err := CallCreateSceneOnNode(ctx, svcCtx, targetNode, uint32(confId)); err != nil {
+		if _, err := RequestNodeCreateScene(ctx, svcCtx, targetNode, uint32(confId)); err != nil {
 			logx.Errorf("[MainScene] Failed to call CreateScene on node %s for scene %d: %v", targetNode, sceneId, err)
 		}
 

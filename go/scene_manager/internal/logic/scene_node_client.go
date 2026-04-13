@@ -23,10 +23,10 @@ var (
 	nodeConnCache = make(map[string]*grpc.ClientConn)
 )
 
-// CallCreateSceneOnNode dials the C++ scene node identified by nodeId and calls
+// RequestNodeCreateScene dials the C++ scene node identified by nodeId and calls
 // CreateScene to instantiate the ECS scene entity.
 // If the node is unreachable, the error is returned but Redis state is already committed.
-func CallCreateSceneOnNode(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, configId uint32) (*scenepb.CreateSceneResponse, error) {
+func RequestNodeCreateScene(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, configId uint32) (*scenepb.CreateSceneResponse, error) {
 	if svcCtx.Etcd == nil {
 		return nil, fmt.Errorf("etcd client not available, skipping CreateScene RPC to node %s", nodeId)
 	}
@@ -43,6 +43,26 @@ func CallCreateSceneOnNode(ctx context.Context, svcCtx *svc.ServiceContext, node
 	}
 
 	return resp, nil
+}
+
+// RequestNodeDestroyScene dials the C++ scene node and calls DestroyScene
+// to remove the ECS scene entity.
+func RequestNodeDestroyScene(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, sceneId uint64) error {
+	if svcCtx.Etcd == nil {
+		return fmt.Errorf("etcd client not available, skipping DestroyScene RPC to node %s", nodeId)
+	}
+
+	conn, err := getOrDialNode(ctx, svcCtx, nodeId)
+	if err != nil {
+		return fmt.Errorf("dial scene node %s: %w", nodeId, err)
+	}
+
+	client := scenepb.NewSceneClient(conn)
+	if _, err := client.DestroyScene(ctx, &scenepb.DestroySceneRequest{SceneId: sceneId}); err != nil {
+		return fmt.Errorf("DestroyScene RPC to node %s: %w", nodeId, err)
+	}
+
+	return nil
 }
 
 // getOrDialNode returns a cached connection or discovers the node endpoint

@@ -14,7 +14,7 @@ import (
 
 // Redis key for the active-instance sorted set (score = create timestamp).
 const (
-	ActiveInstancesKeyFmt = "instances:zone:%d:active"
+	ActiveInstancesKeyFmt  = "instances:zone:%d:active"
 	InstancePlayerCountKey = "instance:%d:player_count"
 )
 
@@ -99,7 +99,7 @@ func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneReq
 	l.svcCtx.Redis.Hset(hashKey, fmt.Sprintf("%d", in.SceneConfId), fmt.Sprintf("%d", sceneId))
 
 	// Notify the C++ scene node to instantiate the ECS scene entity.
-	if _, err := CallCreateSceneOnNode(l.ctx, l.svcCtx, targetNode, uint32(in.SceneConfId)); err != nil {
+	if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, targetNode, uint32(in.SceneConfId)); err != nil {
 		l.Logger.Errorf("[MainWorld] Failed to call CreateScene on node %s for scene %d: %v (Redis state committed)", targetNode, sceneId, err)
 	}
 
@@ -136,7 +136,7 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 	l.svcCtx.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "0")
 
 	// Notify the C++ scene node to instantiate the ECS scene entity.
-	if _, err := CallCreateSceneOnNode(l.ctx, l.svcCtx, targetNode, uint32(in.SceneConfId)); err != nil {
+	if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, targetNode, uint32(in.SceneConfId)); err != nil {
 		l.Logger.Errorf("[Instance] Failed to call CreateScene on node %s for instance %d: %v (Redis state committed)", targetNode, sceneId, err)
 	}
 

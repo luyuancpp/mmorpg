@@ -121,3 +121,4 @@ const SceneRollbackClientPlayerGmQueryTransactionLogMessageId = 117
 const LoginPreGateAssignGateMessageId = 118
 const FriendServiceNotifyOnlineMessageId = 119
 const FriendServiceNotifyOfflineMessageId = 120
+const SceneDestroySceneMessageId = 121

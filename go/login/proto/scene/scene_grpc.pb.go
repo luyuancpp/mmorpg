@@ -30,6 +30,7 @@ const (
 	Scene_UpdateSessionDetail_FullMethodName           = "/Scene/UpdateSessionDetail"
 	Scene_EnterScene_FullMethodName                    = "/Scene/EnterScene"
 	Scene_CreateScene_FullMethodName                   = "/Scene/CreateScene"
+	Scene_DestroyScene_FullMethodName                  = "/Scene/DestroyScene"
 	Scene_NodeHandshake_FullMethodName                 = "/Scene/NodeHandshake"
 )
 
@@ -47,6 +48,7 @@ type SceneClient interface {
 	UpdateSessionDetail(ctx context.Context, in *RegisterPlayerSessionRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	EnterScene(ctx context.Context, in *Centre2GsEnterSceneRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	CreateScene(ctx context.Context, in *CreateSceneRequest, opts ...grpc.CallOption) (*CreateSceneResponse, error)
+	DestroyScene(ctx context.Context, in *DestroySceneRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	NodeHandshake(ctx context.Context, in *base.NodeHandshakeRequest, opts ...grpc.CallOption) (*base.NodeHandshakeResponse, error)
 }
 
@@ -158,6 +160,16 @@ func (c *sceneClient) CreateScene(ctx context.Context, in *CreateSceneRequest, o
 	return out, nil
 }
 
+func (c *sceneClient) DestroyScene(ctx context.Context, in *DestroySceneRequest, opts ...grpc.CallOption) (*base.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.Empty)
+	err := c.cc.Invoke(ctx, Scene_DestroyScene_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sceneClient) NodeHandshake(ctx context.Context, in *base.NodeHandshakeRequest, opts ...grpc.CallOption) (*base.NodeHandshakeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(base.NodeHandshakeResponse)
@@ -182,6 +194,7 @@ type SceneServer interface {
 	UpdateSessionDetail(context.Context, *RegisterPlayerSessionRequest) (*base.Empty, error)
 	EnterScene(context.Context, *Centre2GsEnterSceneRequest) (*base.Empty, error)
 	CreateScene(context.Context, *CreateSceneRequest) (*CreateSceneResponse, error)
+	DestroyScene(context.Context, *DestroySceneRequest) (*base.Empty, error)
 	NodeHandshake(context.Context, *base.NodeHandshakeRequest) (*base.NodeHandshakeResponse, error)
 	mustEmbedUnimplementedSceneServer()
 }
@@ -222,6 +235,9 @@ func (UnimplementedSceneServer) EnterScene(context.Context, *Centre2GsEnterScene
 }
 func (UnimplementedSceneServer) CreateScene(context.Context, *CreateSceneRequest) (*CreateSceneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateScene not implemented")
+}
+func (UnimplementedSceneServer) DestroyScene(context.Context, *DestroySceneRequest) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DestroyScene not implemented")
 }
 func (UnimplementedSceneServer) NodeHandshake(context.Context, *base.NodeHandshakeRequest) (*base.NodeHandshakeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method NodeHandshake not implemented")
@@ -427,6 +443,24 @@ func _Scene_CreateScene_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Scene_DestroyScene_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DestroySceneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneServer).DestroyScene(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Scene_DestroyScene_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneServer).DestroyScene(ctx, req.(*DestroySceneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Scene_NodeHandshake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(base.NodeHandshakeRequest)
 	if err := dec(in); err != nil {
@@ -491,6 +525,10 @@ var Scene_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateScene",
 			Handler:    _Scene_CreateScene_Handler,
+		},
+		{
+			MethodName: "DestroyScene",
+			Handler:    _Scene_DestroyScene_Handler,
 		},
 		{
 			MethodName: "NodeHandshake",

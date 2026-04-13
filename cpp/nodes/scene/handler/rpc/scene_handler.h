@@ -25,6 +25,8 @@ public:
 
 	void CreateScene(::google::protobuf::RpcController* controller,  const ::CreateSceneRequest* request, ::CreateSceneResponse* response, ::google::protobuf::Closure* done) override;
 
+	void DestroyScene(::google::protobuf::RpcController* controller,  const ::DestroySceneRequest* request, ::Empty* response, ::google::protobuf::Closure* done) override;
+
 	void NodeHandshake(::google::protobuf::RpcController* controller,  const ::NodeHandshakeRequest* request, ::NodeHandshakeResponse* response, ::google::protobuf::Closure* done) override;
 
 };

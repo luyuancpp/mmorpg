@@ -61,6 +61,11 @@ message CreateSceneResponse
   SceneInfoComp scene_info = 1;
 }
 
+message DestroySceneRequest
+{
+  uint64 scene_id = 1;
+}
+
 service Scene {
   rpc PlayerEnterGameNode (PlayerEnterGameNodeRequest) returns (Empty);
   rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
@@ -74,5 +79,6 @@ service Scene {
   rpc UpdateSessionDetail (RegisterPlayerSessionRequest) returns (Empty);
   rpc EnterScene (Centre2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
+  rpc DestroyScene (DestroySceneRequest) returns (Empty);
   rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
 }
