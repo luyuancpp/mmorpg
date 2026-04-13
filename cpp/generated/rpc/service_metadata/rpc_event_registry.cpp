@@ -834,7 +834,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case AfterEnterSceneEventId: {
@@ -842,7 +842,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case AfterLeaveSceneEventId: {
@@ -850,7 +850,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case BeKillEventEventId: {
@@ -858,7 +858,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case BeforeEnterSceneEventId: {
@@ -866,7 +866,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case BeforeLeaveSceneEventId: {
@@ -874,7 +874,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case BuffTestEventEventId: {
@@ -882,7 +882,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case CombatStateAddedPbEventEventId: {
@@ -890,7 +890,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case CombatStateRemovedPbEventEventId: {
@@ -898,7 +898,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case ConditionEventEventId: {
@@ -906,7 +906,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case ConnectToNodePbEventEventId: {
@@ -914,7 +914,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case ContractsKafkaBindSessionEventEventId: {
@@ -922,7 +922,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case ContractsKafkaKickPlayerEventEventId: {
@@ -930,7 +930,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case ContractsKafkaPlayerDisconnectedEventEventId: {
@@ -938,7 +938,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case ContractsKafkaPlayerLeaseExpiredEventEventId: {
@@ -946,7 +946,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case ContractsKafkaPlayerLifecycleCommandEventId: {
@@ -954,7 +954,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case ContractsKafkaRoutePlayerEventEventId: {
@@ -962,7 +962,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case InitializeActorComponentsEventEventId: {
@@ -970,7 +970,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case InitializeNpcComponentsEventEventId: {
@@ -978,7 +978,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case InitializePlayerComponentsEventEventId: {
@@ -986,7 +986,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case InterruptCurrentStatePbEventEventId: {
@@ -994,7 +994,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnAcceptedMissionEventEventId: {
@@ -1002,7 +1002,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnConnect2CentrePbEventEventId: {
@@ -1010,7 +1010,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnConnect2LoginEventId: {
@@ -1018,7 +1018,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnMissionAwardEventEventId: {
@@ -1026,7 +1026,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnNodeAddPbEventEventId: {
@@ -1034,7 +1034,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnNodeConnectedPbEventEventId: {
@@ -1042,7 +1042,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnNodeRemovePbEventEventId: {
@@ -1050,7 +1050,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnSceneCreatedEventId: {
@@ -1058,7 +1058,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnSceneDestroyedEventId: {
@@ -1066,7 +1066,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case OnServerStartEventId: {
@@ -1074,7 +1074,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case PlayerMigrationPbEventEventId: {
@@ -1082,7 +1082,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case PlayerUpgradeEventEventId: {
@@ -1090,7 +1090,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case RegisterPlayerEventEventId: {
@@ -1098,7 +1098,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case S2CEnterSceneEventId: {
@@ -1106,7 +1106,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	case SkillExecutedEventEventId: {
@@ -1114,7 +1114,7 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
-		tlsEcs.dispatcher.trigger(event);
+		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
 	default:

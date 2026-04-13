@@ -7,6 +7,15 @@ import "proto/contracts/kafka/gate_command.proto";
 
 option go_package = "db/proto/scene_manager";
 
+// Scene type: main world (persistent) vs instance (on-demand, has lifecycle).
+enum SceneType {
+  SCENE_TYPE_UNSPECIFIED = 0;
+  // Persistent main-world scene. Created at startup, never auto-destroyed.
+  SCENE_TYPE_MAIN_WORLD  = 1;
+  // On-demand instance (dungeon, arena, etc.). Created per request, auto-destroyed when idle.
+  SCENE_TYPE_INSTANCE    = 2;
+}
+
 // SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
 // No longer requires Centre — Login/player_locator drive the flow directly.
 service SceneManager {
@@ -24,14 +33,18 @@ service SceneManager {
 }
 
 message CreateSceneRequest {
-  // Scene config ID
+  // Scene config ID (map template)
   uint64 scene_conf_id = 1;
-  // Optional: Specify creation on a specific Scene node
+  // Optional: Specify creation on a specific Scene node (used for main world hash assignment)
   string target_node_id = 2;
+  // Scene type. Main world scenes are persistent; instances have lifecycle management.
+  SceneType scene_type = 3;
+  // Creator player IDs (for instance access control)
+  repeated uint64 creator_ids = 4;
 }
 
 message CreateSceneResponse {
-  // Global scene ID (allocated by Scene node)
+  // Global scene ID (allocated by SceneManager)
   uint64 scene_id = 1;
   // ID of the node where it resides
   string node_id = 2;

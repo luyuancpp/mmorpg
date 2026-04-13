@@ -1,0 +1,139 @@
+package logic
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+	"time"
+
+	"scene_manager/internal/svc"
+
+	"github.com/zeromicro/go-zero/core/logx"
+)
+
+// StartInstanceLifecycleManager periodically scans active instances and
+// destroys those that have been idle (0 players) longer than the configured timeout.
+func StartInstanceLifecycleManager(ctx context.Context, svcCtx *svc.ServiceContext) {
+	timeoutSec := svcCtx.Config.InstanceIdleTimeoutSeconds
+	if timeoutSec <= 0 {
+		logx.Info("[InstanceLifecycle] InstanceIdleTimeoutSeconds=0, auto-destroy disabled")
+		return
+	}
+
+	intervalSec := svcCtx.Config.InstanceCheckIntervalSeconds
+	if intervalSec <= 0 {
+		intervalSec = 30
+	}
+	interval := time.Duration(intervalSec) * time.Second
+
+	logx.Infof("[InstanceLifecycle] Started: check every %ds, idle timeout %ds", intervalSec, timeoutSec)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			cleanupIdleInstances(ctx, svcCtx, timeoutSec)
+		}
+	}
+}
+
+// cleanupIdleInstances scans the active-instance sorted set and destroys
+// instances that have had 0 players for longer than the timeout.
+func cleanupIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, timeoutSec int64) {
+	instKey := activeInstancesKey(svcCtx.Config.ZoneID)
+
+	// Get all active instances with their creation timestamps.
+	pairs, err := svcCtx.Redis.ZrangeWithScores(instKey, 0, -1)
+	if err != nil {
+		logx.Errorf("[InstanceLifecycle] Failed to list active instances: %v", err)
+		return
+	}
+
+	if len(pairs) == 0 {
+		return
+	}
+
+	now := time.Now().Unix()
+	destroyed := 0
+
+	for _, p := range pairs {
+		sceneId, err := strconv.ParseUint(p.Key, 10, 64)
+		if err != nil {
+			continue
+		}
+
+		// Check player count.
+		playerCountStr, _ := svcCtx.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+		playerCount := 0
+		if playerCountStr != "" {
+			fmt.Sscanf(playerCountStr, "%d", &playerCount)
+		}
+
+		if playerCount > 0 {
+			// Instance is active, update its "last active" time.
+			// (Re-add with current timestamp to reset the idle clock.)
+			svcCtx.Redis.Zadd(instKey, now, p.Key)
+			continue
+		}
+
+		// Player count is 0. Check how long it has been idle.
+		lastActiveTime := int64(p.Score)
+		idleDuration := now - lastActiveTime
+
+		if idleDuration < timeoutSec {
+			continue
+		}
+
+		// Idle timeout exceeded — destroy this instance.
+		logx.Infof("[InstanceLifecycle] Destroying idle instance %d (idle %ds > timeout %ds)",
+			sceneId, idleDuration, timeoutSec)
+
+		destroyInstance(ctx, svcCtx, sceneId)
+		destroyed++
+	}
+
+	if destroyed > 0 {
+		logx.Infof("[InstanceLifecycle] Cleanup done: destroyed %d idle instances", destroyed)
+	}
+}
+
+// destroyInstance removes all Redis state for an instance.
+func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, sceneId uint64) {
+	sceneIdStr := fmt.Sprintf("%d", sceneId)
+	sceneNodeKey := fmt.Sprintf("scene:%d:node", sceneId)
+
+	// Get node for load tracking before deletion.
+	nodeId, _ := svcCtx.Redis.Get(sceneNodeKey)
+
+	// Remove from scene -> node mapping.
+	svcCtx.Redis.Del(sceneNodeKey)
+
+	// Remove from active instances sorted set.
+	instKey := activeInstancesKey(svcCtx.Config.ZoneID)
+	svcCtx.Redis.Zrem(instKey, sceneIdStr)
+
+	// Remove player count tracker.
+	svcCtx.Redis.Del(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+
+	// Decrement node scene count.
+	if nodeId != "" {
+		sceneCountKey := fmt.Sprintf(NodeSceneCountKey, nodeId)
+		svcCtx.Redis.Incrby(sceneCountKey, -1)
+	}
+}
+
+// IncrInstancePlayerCount increments the player count for an instance scene.
+// Called when a player enters the scene.
+func IncrInstancePlayerCount(svcCtx *svc.ServiceContext, sceneId uint64) {
+	svcCtx.Redis.Incr(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+}
+
+// DecrInstancePlayerCount decrements the player count for an instance scene.
+// Called when a player leaves the scene.
+func DecrInstancePlayerCount(svcCtx *svc.ServiceContext, sceneId uint64) {
+	svcCtx.Redis.Incrby(fmt.Sprintf(InstancePlayerCountKey, sceneId), -1)
+}

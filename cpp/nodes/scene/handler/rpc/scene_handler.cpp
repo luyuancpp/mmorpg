@@ -31,6 +31,9 @@
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "proto/db/proto_option.pb.h"
 #include "network/node_utils.h"
+#include "modules/scene/comp/scene_comp.h"
+#include "modules/scene/comp/scene_node_comp.h"
+#include "proto/common/event/scene_event.pb.h"
 #include <unordered_map>
 #include <string>
 
@@ -38,61 +41,68 @@ using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
 using namespace muduo::net;
 
-namespace {
-
-MessagePriority GetMethodPriority(const google::protobuf::MethodDescriptor* method)
+namespace
 {
-	if (!method) {
-		return MESSAGE_PRIORITY_NORMAL;
+
+	MessagePriority GetMethodPriority(const google::protobuf::MethodDescriptor *method)
+	{
+		if (!method)
+		{
+			return MESSAGE_PRIORITY_NORMAL;
+		}
+
+		const auto &options = method->options();
+		if (!options.HasExtension(OptionMessagePriority))
+		{
+			return MESSAGE_PRIORITY_NORMAL;
+		}
+
+		return options.GetExtension(OptionMessagePriority);
 	}
 
-	const auto& options = method->options();
-	if (!options.HasExtension(OptionMessagePriority)) {
-		return MESSAGE_PRIORITY_NORMAL;
+	MessagePriority ResolveRoutedMessagePriority(const RoutePlayerMessageRequest &request)
+	{
+		ClientRequest clientRequest;
+		if (!clientRequest.ParseFromString(request.body()))
+		{
+			return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+		}
+
+		if (clientRequest.message_id() >= gRpcMethodRegistry.size())
+		{
+			return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+		}
+
+		const auto &messageInfo = gRpcMethodRegistry[clientRequest.message_id()];
+		const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+		if (serviceIt == gPlayerService.end())
+		{
+			return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+		}
+
+		google::protobuf::Service *service = serviceIt->second->service();
+		if (!service || !service->GetDescriptor())
+		{
+			return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+		}
+
+		return GetMethodPriority(service->GetDescriptor()->FindMethodByName(messageInfo.methodName));
 	}
 
-	return options.GetExtension(OptionMessagePriority);
-}
-
-MessagePriority ResolveRoutedMessagePriority(const RoutePlayerMessageRequest& request)
-{
-	ClientRequest clientRequest;
-	if (!clientRequest.ParseFromString(request.body())) {
-		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
+	bool IsImportantPriority(const MessagePriority priority)
+	{
+		return priority == MESSAGE_PRIORITY_IMPORTANT;
 	}
 
-	if (clientRequest.message_id() >= gRpcMethodRegistry.size()) {
-		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
-	}
-
-	const auto& messageInfo = gRpcMethodRegistry[clientRequest.message_id()];
-	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
-	if (serviceIt == gPlayerService.end()) {
-		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
-	}
-
-	google::protobuf::Service* service = serviceIt->second->service();
-	if (!service || !service->GetDescriptor()) {
-		return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
-	}
-
-	return GetMethodPriority(service->GetDescriptor()->FindMethodByName(messageInfo.methodName));
-}
-
-bool IsImportantPriority(const MessagePriority priority)
-{
-	return priority == MESSAGE_PRIORITY_IMPORTANT;
-}
-
-}  // namespace
+} // namespace
 
 ///<<< END WRITING YOUR CODE
 
-void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::PlayerEnterGameNodeRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController *controller, const ::PlayerEnterGameNodeRequest *request,
+									   ::Empty *response,
+									   ::google::protobuf::Closure *done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
 	LOG_DEBUG << "Handling EnterGs request for player: " << request->player_id();
 
 	// 1. Clear existing player session (handles rapid reconnect / account takeover)
@@ -111,197 +121,203 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 
 	// 3. Player not online — add to async load queue
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
-///<<< END WRITING YOUR CODE
-}
-
-void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-
-    LOG_TRACE << "Handling message routing for session ID: " << request->header().session_id()
-        << ", message ID: " << request->message_content().message_id();
-
-    const auto it = SessionMap().find(request->header().session_id());
-    if (it == SessionMap().end())
-    {
-        LOG_ERROR << "Session ID not found: " << request->header().session_id()
-            << ", message ID: " << request->message_content().message_id();
-        return;
-    }
-
-    const auto playerIt = tlsEcs.playerList.find(it->second);
-    if (playerIt == tlsEcs.playerList.end())
-    {
-        LOG_ERROR << "Player ID not found in common logic: " << it->second;
-        return;
-    }
-
-    const auto& player = playerIt->second;
-
-    if (request->message_content().message_id() >= gRpcMethodRegistry.size())
-    {
-        LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
-        return;
-    }
-
-    const auto& messageInfo = gRpcMethodRegistry[request->message_content().message_id()];
-    const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
-    if (serviceIt == gPlayerService.end())
-    {
-        LOG_ERROR << "PlayerService not found for message ID: " << request->message_content().message_id();
-        return;
-    }
-
-    const auto& serviceHandler = serviceIt->second;
-    google::protobuf::Service* service = serviceHandler->service();
-    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-    if (method == nullptr)
-    {
-        LOG_ERROR << "Method not found in PlayerService: " << messageInfo.methodName;
-        return;
-    }
-
-    const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-    if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(),
-            int32_t(request->message_content().serialized_message().size())))
-    {
-        LOG_ERROR << "Failed to parse request message for message ID: " << request->message_content().message_id()
-                  << " session=" << request->header().session_id();
-        return;
-    }
-
-    std::string errorDetails;
-    if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
-        LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
-                  << " session=" << request->header().session_id();
-        return;
-    }
-    if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
-        LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
-                  << " session=" << request->header().session_id();
-        return;
-    }
-
-    const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-    serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
-
-    response->mutable_header()->set_session_id(request->header().session_id());
-    response->mutable_message_content()->set_message_id(request->message_content().message_id());
-
-    if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
-    {
-        return;
-    }
-
-    response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController* controller, const ::ProcessClientPlayerMessageRequest* request,
-	::ProcessClientPlayerMessageResponse* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController *controller, const ::NodeRouteMessageRequest *request,
+									   ::NodeRouteMessageResponse *response,
+									   ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-		if (!request) return;
 
-		const auto& msg = request->message_content();
-		const uint64_t sessionId = request->session_id();
+	LOG_TRACE << "Handling message routing for session ID: " << request->header().session_id()
+			  << ", message ID: " << request->message_content().message_id();
 
-		if (msg.message_id() >= gRpcMethodRegistry.size())
-		{
-			LOG_ERROR << "ProcessClientPlayerMessage: message_id not found " << msg.message_id();
-			return;
-		}
+	const auto it = SessionMap().find(request->header().session_id());
+	if (it == SessionMap().end())
+	{
+		LOG_ERROR << "Session ID not found: " << request->header().session_id()
+				  << ", message ID: " << request->message_content().message_id();
+		return;
+	}
 
-		const auto& messageInfo = gRpcMethodRegistry.at(msg.message_id());
-		const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
-		if (serviceIt == gPlayerService.end())
-		{
-			LOG_ERROR << "ProcessClientPlayerMessage: player service not found for message id " << msg.message_id();
-			return;
-		}
+	const auto playerIt = tlsEcs.playerList.find(it->second);
+	if (playerIt == tlsEcs.playerList.end())
+	{
+		LOG_ERROR << "Player ID not found in common logic: " << it->second;
+		return;
+	}
 
-		google::protobuf::Service* service = serviceIt->second->service();
-		const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-		if (method == nullptr)
-		{
-			LOG_ERROR << "ProcessClientPlayerMessage: method not found " << messageInfo.methodName;
-			return;
-		}
+	const auto &player = playerIt->second;
 
-		const auto it = SessionMap().find(sessionId);
-		if (it == SessionMap().end())
-		{
-			LOG_ERROR << "ProcessClientPlayerMessage: session id not found " << sessionId << ", message id " << msg.message_id();
-			return;
-		}
+	if (request->message_content().message_id() >= gRpcMethodRegistry.size())
+	{
+		LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
+		return;
+	}
 
-		const auto player = tlsEcs.GetPlayer(it->second);
-		if (player == entt::null)
-		{
-			LOG_ERROR << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
-				<< " message_id=" << msg.message_id();
-			return;
-		}
+	const auto &messageInfo = gRpcMethodRegistry[request->message_content().message_id()];
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end())
+	{
+		LOG_ERROR << "PlayerService not found for message ID: " << request->message_content().message_id();
+		return;
+	}
 
-		// Parse request and validate field constraints
-		const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-		if (!playerRequest->ParsePartialFromArray(msg.serialized_message().data(),
-			static_cast<int32_t>(msg.serialized_message().size())))
-		{
-			LOG_ERROR << "ProcessClientPlayerMessage: failed to parse client-sent request message_id=" << msg.message_id()
-				<< " session=" << sessionId;
-			return;
-		}
+	const auto &serviceHandler = serviceIt->second;
+	google::protobuf::Service *service = serviceHandler->service();
+	const google::protobuf::MethodDescriptor *method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+	if (method == nullptr)
+	{
+		LOG_ERROR << "Method not found in PlayerService: " << messageInfo.methodName;
+		return;
+	}
 
-		std::string errorDetails;
-		if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
-			LOG_ERROR << "ProcessClientPlayerMessage: " << errorDetails << " message_id=" << msg.message_id()
-				<< " session=" << sessionId;
-			return;
-		}
-		if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
-			LOG_ERROR << "ProcessClientPlayerMessage: " << errorDetails << " message_id=" << msg.message_id()
-				<< " session=" << sessionId;
-			return;
-		}
+	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
+	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(),
+											  int32_t(request->message_content().serialized_message().size())))
+	{
+		LOG_ERROR << "Failed to parse request message for message ID: " << request->message_content().message_id()
+				  << " session=" << request->header().session_id();
+		return;
+	}
 
-		// Dispatch to the concrete player service method
-		const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-		serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
+	std::string errorDetails;
+	if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails))
+	{
+		LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
+				  << " session=" << request->header().session_id();
+		return;
+	}
+	if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails))
+	{
+		LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
+				  << " session=" << request->header().session_id();
+		return;
+	}
 
-		// Populate synchronous response (if caller expects one)
-		if (response != nullptr && Empty::GetDescriptor() != playerResponse->GetDescriptor()) {
-			response->mutable_message_content()->set_message_id(msg.message_id());
-			response->mutable_message_content()->set_id(msg.id());
-			response->set_session_id(sessionId);
+	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-			// Serialize response
-			const auto byte_size = playerResponse->ByteSizeLong();
-			response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
-			if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
-				static_cast<int32_t>(byte_size)))
-			{
-				LOG_ERROR << "ProcessClientPlayerMessage: Failed to serialize response for message ID: " << msg.message_id();
-				// Optionally fill error message here
-			}
-		}
+	response->mutable_header()->set_session_id(request->header().session_id());
+	response->mutable_message_content()->set_message_id(request->message_content().message_id());
 
-///<<< END WRITING YOUR CODE
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
+	{
+		return;
+	}
+
+	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
+	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController *controller, const ::ProcessClientPlayerMessageRequest *request,
+											  ::ProcessClientPlayerMessageResponse *response,
+											  ::google::protobuf::Closure *done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+	if (!request)
+		return;
+
+	const auto &msg = request->message_content();
+	const uint64_t sessionId = request->session_id();
+
+	if (msg.message_id() >= gRpcMethodRegistry.size())
+	{
+		LOG_ERROR << "ProcessClientPlayerMessage: message_id not found " << msg.message_id();
+		return;
+	}
+
+	const auto &messageInfo = gRpcMethodRegistry.at(msg.message_id());
+	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
+	if (serviceIt == gPlayerService.end())
+	{
+		LOG_ERROR << "ProcessClientPlayerMessage: player service not found for message id " << msg.message_id();
+		return;
+	}
+
+	google::protobuf::Service *service = serviceIt->second->service();
+	const google::protobuf::MethodDescriptor *method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+	if (method == nullptr)
+	{
+		LOG_ERROR << "ProcessClientPlayerMessage: method not found " << messageInfo.methodName;
+		return;
+	}
+
+	const auto it = SessionMap().find(sessionId);
+	if (it == SessionMap().end())
+	{
+		LOG_ERROR << "ProcessClientPlayerMessage: session id not found " << sessionId << ", message id " << msg.message_id();
+		return;
+	}
+
+	const auto player = tlsEcs.GetPlayer(it->second);
+	if (player == entt::null)
+	{
+		LOG_ERROR << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
+				  << " message_id=" << msg.message_id();
+		return;
+	}
+
+	// Parse request and validate field constraints
+	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
+	if (!playerRequest->ParsePartialFromArray(msg.serialized_message().data(),
+											  static_cast<int32_t>(msg.serialized_message().size())))
+	{
+		LOG_ERROR << "ProcessClientPlayerMessage: failed to parse client-sent request message_id=" << msg.message_id()
+				  << " session=" << sessionId;
+		return;
+	}
+
+	std::string errorDetails;
+	if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails))
+	{
+		LOG_ERROR << "ProcessClientPlayerMessage: " << errorDetails << " message_id=" << msg.message_id()
+				  << " session=" << sessionId;
+		return;
+	}
+	if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails))
+	{
+		LOG_ERROR << "ProcessClientPlayerMessage: " << errorDetails << " message_id=" << msg.message_id()
+				  << " session=" << sessionId;
+		return;
+	}
+
+	// Dispatch to the concrete player service method
+	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+	serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
+
+	// Populate synchronous response (if caller expects one)
+	if (response != nullptr && Empty::GetDescriptor() != playerResponse->GetDescriptor())
+	{
+		response->mutable_message_content()->set_message_id(msg.message_id());
+		response->mutable_message_content()->set_id(msg.id());
+		response->set_session_id(sessionId);
+
+		// Serialize response
+		const auto byte_size = playerResponse->ByteSizeLong();
+		response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
+		if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
+													 static_cast<int32_t>(byte_size)))
+		{
+			LOG_ERROR << "ProcessClientPlayerMessage: Failed to serialize response for message ID: " << msg.message_id();
+			// Optionally fill error message here
+		}
+	}
+
+	///<<< END WRITING YOUR CODE
+}
+
+void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController *controller, const ::NodeRouteMessageRequest *request,
+												 ::Empty *response,
+												 ::google::protobuf::Closure *done)
+{
+	///<<< BEGIN WRITING YOUR CODE
 	const auto it = SessionMap().find(request->header().session_id());
 	if (it == SessionMap().end())
 	{
 		LOG_ERROR << "session id not found " << request->header().session_id() << ","
-			<< " message id " << request->message_content().message_id();
+				  << " message id " << request->message_content().message_id();
 		return;
 	}
 
@@ -313,19 +329,19 @@ void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcControll
 	}
 
 	::SendMessageToClientViaGate(request->message_content().message_id(), request->message_content(), player);
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::InvokePlayerService(::google::protobuf::RpcController *controller, const ::NodeRouteMessageRequest *request,
+									   ::NodeRouteMessageResponse *response,
+									   ::google::protobuf::Closure *done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
 	const auto it = SessionMap().find(request->header().session_id());
 	if (it == SessionMap().end())
 	{
 		LOG_ERROR << "session id not found " << request->header().session_id() << ","
-			<< " message id " << request->message_content().message_id();
+				  << " message id " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kSessionNotFound);
 		return;
 	}
@@ -345,18 +361,18 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	const auto& messageInfo = gRpcMethodRegistry[request->message_content().message_id()];
+	const auto &messageInfo = gRpcMethodRegistry[request->message_content().message_id()];
 	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
 	if (serviceIt == gPlayerService.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << request->header().session_id()
-			<< "," << request->message_content().message_id();
+				  << "," << request->message_content().message_id();
 		return;
 	}
 
-	const auto& serviceHandler = serviceIt->second;
-	google::protobuf::Service* service = serviceHandler->service();
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
+	const auto &serviceHandler = serviceIt->second;
+	google::protobuf::Service *service = serviceHandler->service();
+	const google::protobuf::MethodDescriptor *method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
 	if (method == nullptr)
 	{
 		LOG_ERROR << "PlayerService method not found " << request->message_content().message_id();
@@ -371,65 +387,69 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-    std::string errorDetails;
+	std::string errorDetails;
 
-    // Validate field sizes
-    if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
-        LOG_ERROR << errorDetails << " Failed to check request for message ID: "
-            << request->message_content().message_id();
-        SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
-        return;
-    }
+	// Validate field sizes
+	if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails))
+	{
+		LOG_ERROR << errorDetails << " Failed to check request for message ID: "
+				  << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
+		return;
+	}
 
-    // Validate no negative integers
-    if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
-        LOG_ERROR << errorDetails << " Failed to check request for message ID: "
-            << request->message_content().message_id();
-        SendErrorToClient(*request, *response, kNegativeValueInMessage);
-        return;
-    }
+	// Validate no negative integers
+	if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails))
+	{
+		LOG_ERROR << errorDetails << " Failed to check request for message ID: "
+				  << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kNegativeValueInMessage);
+		return;
+	}
 
 	MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
 	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-    response->mutable_header()->set_session_id(request->header().session_id());
-    response->mutable_message_content()->set_message_id(request->message_content().message_id());
+	response->mutable_header()->set_session_id(request->header().session_id());
+	response->mutable_message_content()->set_message_id(request->message_content().message_id());
 
-    if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
-        return;
-    }
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
+	{
+		return;
+	}
 
-	auto& tipInfoMessage = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity());
+	auto &tipInfoMessage = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity());
 	response->mutable_message_content()->mutable_error_message()->CopyFrom(tipInfoMessage);
 	tipInfoMessage.Clear();
 
 	const auto byte_size = playerResponse->ByteSizeLong();
 	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
 	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
-	                                             static_cast<int32_t>(byte_size)))
+												 static_cast<int32_t>(byte_size)))
 	{
 		LOG_ERROR << "Failed to serialize response for message ID: " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kResponseMessageParseError);
 		return;
 	}
 
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
-	::RouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController *controller, const ::RouteMessageRequest *request,
+									  ::RouteMessageResponse *response,
+									  ::google::protobuf::Closure *done)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
-	::RoutePlayerMessageResponse* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController *controller, const ::RoutePlayerMessageRequest *request,
+										::RoutePlayerMessageResponse *response,
+										::google::protobuf::Closure *done)
 {
-///<<< BEGIN WRITING YOUR CODE
-	if (!request || !response) {
+	///<<< BEGIN WRITING YOUR CODE
+	if (!request || !response)
+	{
 		return;
 	}
 
@@ -442,19 +462,25 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 	const Guid playerId = request->player_info().player_id();
 	const MessagePriority routedPriority = ResolveRoutedMessagePriority(*request);
 	const bool importantRoute = IsImportantPriority(routedPriority);
-	if (playerId != kInvalidGuid) {
+	if (playerId != kInvalidGuid)
+	{
 		const auto localPlayer = tlsEcs.GetPlayer(playerId);
-		if (localPlayer != entt::null && request->node_list_size() == 0) {
+		if (localPlayer != entt::null && request->node_list_size() == 0)
+		{
 			LOG_TRACE << "RoutePlayerStringMsg local hit, player_id=" << playerId;
 			return;
 		}
 	}
 
-	if (request->node_list_size() == 0) {
-		if (importantRoute) {
+	if (request->node_list_size() == 0)
+	{
+		if (importantRoute)
+		{
 			LOG_ERROR << "RoutePlayerStringMsg IMPORTANT route dropped: no next node, player_id=" << playerId;
 			// Centre decommissioned: no fallback relay. TODO: query player_locator and re-route via Kafka.
-		} else {
+		}
+		else
+		{
 			LOG_WARN << "RoutePlayerStringMsg NORMAL route dropped: no next node, player_id=" << playerId;
 		}
 		return;
@@ -464,23 +490,26 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 	// Consume the current hop before forwarding.
 	nextRequest.mutable_node_list()->DeleteSubrange(0, 1);
 
-	const auto& nextNode = request->node_list(0);
-	entt::entity nextNodeEntity{ nextNode.node_id() };
-	auto& nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
-	if (!nextRegistry.valid(nextNodeEntity)) {
+	const auto &nextNode = request->node_list(0);
+	entt::entity nextNodeEntity{nextNode.node_id()};
+	auto &nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
+	if (!nextRegistry.valid(nextNodeEntity))
+	{
 		LOG_ERROR << "RoutePlayerStringMsg route dropped: next node not found, node_type=" << nextNode.node_type()
 				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
 		return;
 	}
 
 	const auto nextSession = nextRegistry.try_get<RpcSession>(nextNodeEntity);
-	if (!nextSession) {
+	if (!nextSession)
+	{
 		LOG_ERROR << "RoutePlayerStringMsg route dropped: next node session missing, node_type=" << nextNode.node_type()
 				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
 		return;
 	}
 
-	switch (nextNode.node_type()) {
+	switch (nextNode.node_type())
+	{
 	case eNodeType::SceneNodeService:
 		nextSession->SendRequest(SceneRoutePlayerStringMsgMessageId, nextRequest);
 		return;
@@ -492,18 +521,18 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 				 << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
 		return;
 	}
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* controller, const ::RegisterPlayerSessionRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController *controller, const ::RegisterPlayerSessionRequest *request,
+									   ::Empty *response,
+									   ::google::protobuf::Closure *done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
 	PlayerLifecycleSystem::RemovePlayerSession(request->player_id());
 
-	auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
-	if (const entt::entity gateNodeId{ GetGateNodeId(request->session_id()) };
+	auto &registry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+	if (const entt::entity gateNodeId{GetGateNodeId(request->session_id())};
 		!registry.valid(gateNodeId))
 	{
 		LOG_ERROR << "Gate not found " << GetGateNodeId(request->session_id());
@@ -522,48 +551,76 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
 
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
-///<<< END WRITING YOUR CODE
-}
-
-void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, const ::Centre2GsEnterSceneRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-
-    auto player = tlsEcs.GetPlayer(request->player_id());
-    if (player == entt::null)
-    {
-        LOG_ERROR << "EnterScene: Player entity not found for player_id " << request->player_id();
-        return;
-    }
-
-    LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
-
-    entt::entity sceneEntity{ request->scene_id() };
-    // Optional: validate scene entity (SceneCommon usually also checks internally)
-    if (!tlsEcs.actorRegistry.valid(sceneEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(sceneEntity)) {
-        LOG_ERROR << "EnterScene: invalid scene entity " << request->scene_id();
-        return;
-    }
-
-    PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
 	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, const ::CreateSceneRequest* request,
-	::CreateSceneResponse* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::EnterScene(::google::protobuf::RpcController *controller, const ::Centre2GsEnterSceneRequest *request,
+							  ::Empty *response,
+							  ::google::protobuf::Closure *done)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+
+	auto player = tlsEcs.GetPlayer(request->player_id());
+	if (player == entt::null)
+	{
+		LOG_ERROR << "EnterScene: Player entity not found for player_id " << request->player_id();
+		return;
+	}
+
+	LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
+
+	entt::entity sceneEntity{request->scene_id()};
+	// Optional: validate scene entity (SceneCommon usually also checks internally)
+	if (!tlsEcs.actorRegistry.valid(sceneEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(sceneEntity))
+	{
+		LOG_ERROR << "EnterScene: invalid scene entity " << request->scene_id();
+		return;
+	}
+
+	PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
+	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
-	::NodeHandshakeResponse* response,
-	::google::protobuf::Closure* done)
+void SceneHandler::CreateScene(::google::protobuf::RpcController *controller, const ::CreateSceneRequest *request,
+							   ::CreateSceneResponse *response,
+							   ::google::protobuf::Closure *done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+	if (request->config_id() == 0)
+	{
+		LOG_ERROR << "CreateScene: config_id is 0";
+		return;
+	}
+
+	// 1. Create scene entity in the scene ECS registry.
+	auto sceneEntity = tlsEcs.sceneRegistry.create();
+
+	// 2. Populate SceneInfoComp (proto component).
+	auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
+	sceneInfo.set_scene_confid(request->config_id());
+	sceneInfo.set_guid(entt::to_integral(sceneEntity));
+
+	// 3. Add player tracking set (initially empty).
+	tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
+
+	// 4. Fire scene-created event for downstream handlers (AOI init, etc.).
+	OnSceneCreated event;
+	event.set_entity(entt::to_integral(sceneEntity));
+	tlsEcs.dispatcher.trigger(event);
+
+	// 5. Populate response.
+	response->mutable_scene_info()->CopyFrom(sceneInfo);
+
+	LOG_INFO << "CreateScene: created scene entity=" << entt::to_integral(sceneEntity)
+			 << " config_id=" << request->config_id();
+	///<<< END WRITING YOUR CODE
+}
+
+void SceneHandler::NodeHandshake(::google::protobuf::RpcController *controller, const ::NodeHandshakeRequest *request,
+								 ::NodeHandshakeResponse *response,
+								 ::google::protobuf::Closure *done)
+{
+	///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }

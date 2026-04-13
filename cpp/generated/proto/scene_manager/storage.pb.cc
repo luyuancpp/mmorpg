@@ -34,7 +34,8 @@ inline constexpr SceneInfo::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         scene_id_{::uint64_t{0u}},
         scene_conf_id_{::uint64_t{0u}},
-        create_time_{::int64_t{0}} {}
+        create_time_{::int64_t{0}},
+        scene_type_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR SceneInfo::SceneInfo(::_pbi::ConstantInitialized)
@@ -94,15 +95,17 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::storage::SceneInfo, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::storage::SceneInfo, _impl_.scene_id_),
         PROTOBUF_FIELD_OFFSET(::storage::SceneInfo, _impl_.scene_conf_id_),
         PROTOBUF_FIELD_OFFSET(::storage::SceneInfo, _impl_.node_id_),
         PROTOBUF_FIELD_OFFSET(::storage::SceneInfo, _impl_.create_time_),
+        PROTOBUF_FIELD_OFFSET(::storage::SceneInfo, _impl_.scene_type_),
         1,
         2,
         0,
         3,
+        4,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::storage::PlayerLocation, _impl_._has_bits_),
         6, // hasbit index offset
@@ -117,7 +120,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::storage::SceneInfo)},
-        {11, sizeof(::storage::PlayerLocation)},
+        {13, sizeof(::storage::PlayerLocation)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::storage::_SceneInfo_default_instance_._instance,
@@ -126,18 +129,18 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fscene_5fmanager_2fstorage_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n!proto/scene_manager/storage.proto\022\007sto"
-    "rage\"Z\n\tSceneInfo\022\020\n\010scene_id\030\001 \001(\004\022\025\n\rs"
+    "rage\"n\n\tSceneInfo\022\020\n\010scene_id\030\001 \001(\004\022\025\n\rs"
     "cene_conf_id\030\002 \001(\004\022\017\n\007node_id\030\003 \001(\t\022\023\n\013c"
-    "reate_time\030\004 \001(\003\"H\n\016PlayerLocation\022\020\n\010sc"
-    "ene_id\030\001 \001(\004\022\017\n\007node_id\030\002 \001(\t\022\023\n\013update_"
-    "time\030\003 \001(\004B Z\036scene_manager/internal/sto"
-    "rageb\006proto3"
+    "reate_time\030\004 \001(\003\022\022\n\nscene_type\030\005 \001(\r\"H\n\016"
+    "PlayerLocation\022\020\n\010scene_id\030\001 \001(\004\022\017\n\007node"
+    "_id\030\002 \001(\t\022\023\n\013update_time\030\003 \001(\004B Z\036scene_"
+    "manager/internal/storageb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fscene_5fmanager_2fstorage_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fstorage_2eproto = {
     false,
     false,
-    252,
+    272,
     descriptor_table_protodef_proto_2fscene_5fmanager_2fstorage_2eproto,
     "proto/scene_manager/storage.proto",
     &descriptor_table_proto_2fscene_5fmanager_2fstorage_2eproto_once,
@@ -195,9 +198,9 @@ SceneInfo::SceneInfo(
                offsetof(Impl_, scene_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, scene_id_),
-           offsetof(Impl_, create_time_) -
+           offsetof(Impl_, scene_type_) -
                offsetof(Impl_, scene_id_) +
-               sizeof(Impl_::create_time_));
+               sizeof(Impl_::scene_type_));
 
   // @@protoc_insertion_point(copy_constructor:storage.SceneInfo)
 }
@@ -212,9 +215,9 @@ inline void SceneInfo::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, scene_id_),
            0,
-           offsetof(Impl_, create_time_) -
+           offsetof(Impl_, scene_type_) -
                offsetof(Impl_, scene_id_) +
-               sizeof(Impl_::create_time_));
+               sizeof(Impl_::scene_type_));
 }
 SceneInfo::~SceneInfo() {
   // @@protoc_insertion_point(destructor:storage.SceneInfo)
@@ -271,16 +274,16 @@ SceneInfo::GetClassData() const {
   return SceneInfo_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 33, 2>
+const ::_pbi::TcParseTable<3, 5, 0, 33, 2>
 SceneInfo::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    5,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     SceneInfo_class_data_.base(),
@@ -290,9 +293,7 @@ SceneInfo::_table_ = {
     ::_pbi::TcParser::GetTable<::storage::SceneInfo>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // int64 create_time = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SceneInfo, _impl_.create_time_), 3>(),
-     {32, 3, 0, PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.create_time_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint64 scene_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SceneInfo, _impl_.scene_id_), 1>(),
      {8, 1, 0, PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.scene_id_)}},
@@ -302,6 +303,14 @@ SceneInfo::_table_ = {
     // string node_id = 3;
     {::_pbi::TcParser::FastUS1,
      {26, 0, 0, PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.node_id_)}},
+    // int64 create_time = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SceneInfo, _impl_.create_time_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.create_time_)}},
+    // uint32 scene_type = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfo, _impl_.scene_type_), 4>(),
+     {40, 4, 0, PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.scene_type_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -317,6 +326,9 @@ SceneInfo::_table_ = {
     // int64 create_time = 4;
     {PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.create_time_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // uint32 scene_type = 5;
+    {PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.scene_type_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -336,10 +348,10 @@ PROTOBUF_NOINLINE void SceneInfo::Clear() {
   if ((cached_has_bits & 0x00000001u) != 0) {
     _impl_.node_id_.ClearNonDefaultToEmpty();
   }
-  if ((cached_has_bits & 0x0000000eu) != 0) {
+  if ((cached_has_bits & 0x0000001eu) != 0) {
     ::memset(&_impl_.scene_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.create_time_) -
-        reinterpret_cast<char*>(&_impl_.scene_id_)) + sizeof(_impl_.create_time_));
+        reinterpret_cast<char*>(&_impl_.scene_type_) -
+        reinterpret_cast<char*>(&_impl_.scene_id_)) + sizeof(_impl_.scene_type_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -397,6 +409,15 @@ PROTOBUF_NOINLINE void SceneInfo::Clear() {
     }
   }
 
+  // uint32 scene_type = 5;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (this_._internal_scene_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          5, this_._internal_scene_type(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -422,7 +443,7 @@ PROTOBUF_NOINLINE void SceneInfo::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
+  if ((cached_has_bits & 0x0000001fu) != 0) {
     // string node_id = 3;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_node_id().empty()) {
@@ -451,6 +472,13 @@ PROTOBUF_NOINLINE void SceneInfo::Clear() {
             this_._internal_create_time());
       }
     }
+    // uint32 scene_type = 5;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_scene_type() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_scene_type());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -465,7 +493,7 @@ void SceneInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
+  if ((cached_has_bits & 0x0000001fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_node_id().empty()) {
         _this->_internal_set_node_id(from._internal_node_id());
@@ -490,6 +518,11 @@ void SceneInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
         _this->_impl_.create_time_ = from._impl_.create_time_;
       }
     }
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (from._internal_scene_type() != 0) {
+        _this->_impl_.scene_type_ = from._impl_.scene_type_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -511,8 +544,8 @@ void SceneInfo::InternalSwap(SceneInfo* PROTOBUF_RESTRICT PROTOBUF_NONNULL other
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.node_id_, &other->_impl_.node_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.create_time_)
-      + sizeof(SceneInfo::_impl_.create_time_)
+      PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.scene_type_)
+      + sizeof(SceneInfo::_impl_.scene_type_)
       - PROTOBUF_FIELD_OFFSET(SceneInfo, _impl_.scene_id_)>(
           reinterpret_cast<char*>(&_impl_.scene_id_),
           reinterpret_cast<char*>(&other->_impl_.scene_id_));

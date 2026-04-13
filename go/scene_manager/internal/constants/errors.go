@@ -10,4 +10,6 @@ const (
 	ErrEncodeEvent       uint32 = 6
 	ErrKafkaRoute        uint32 = 7
 	ErrRedis             uint32 = 8
+	ErrDuplicateScene    uint32 = 9
+	ErrInvalidSceneType  uint32 = 10
 )

@@ -17,6 +17,9 @@ const (
 	NodeLoadKeyFmt     = "scene_nodes:zone:%d:load"
 	NodeSceneCountKey  = "node:%s:scene_count"
 	LoadReportInterval = 5 * time.Second
+
+	// NodeLoadKey is the Redis key when ZoneID=0 (used in tests).
+	NodeLoadKey = "scene_nodes:zone:0:load"
 )
 
 // missingSince tracks when each node was first observed missing from etcd.

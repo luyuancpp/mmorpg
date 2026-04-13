@@ -221,6 +221,7 @@ class SceneInfo final : public ::google::protobuf::Message
     kSceneIdFieldNumber = 1,
     kSceneConfIdFieldNumber = 2,
     kCreateTimeFieldNumber = 4,
+    kSceneTypeFieldNumber = 5,
   };
   // string node_id = 3;
   void clear_node_id() ;
@@ -267,11 +268,21 @@ class SceneInfo final : public ::google::protobuf::Message
   void _internal_set_create_time(::int64_t value);
 
   public:
+  // uint32 scene_type = 5;
+  void clear_scene_type() ;
+  ::uint32_t scene_type() const;
+  void set_scene_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_scene_type() const;
+  void _internal_set_scene_type(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:storage.SceneInfo)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 4,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
                                    0, 33,
                                    2>
       _table_;
@@ -297,6 +308,7 @@ class SceneInfo final : public ::google::protobuf::Message
     ::uint64_t scene_id_;
     ::uint64_t scene_conf_id_;
     ::int64_t create_time_;
+    ::uint32_t scene_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -676,6 +688,30 @@ inline ::int64_t SceneInfo::_internal_create_time() const {
 inline void SceneInfo::_internal_set_create_time(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.create_time_ = value;
+}
+
+// uint32 scene_type = 5;
+inline void SceneInfo::clear_scene_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_type_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::uint32_t SceneInfo::scene_type() const {
+  // @@protoc_insertion_point(field_get:storage.SceneInfo.scene_type)
+  return _internal_scene_type();
+}
+inline void SceneInfo::set_scene_type(::uint32_t value) {
+  _internal_set_scene_type(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:storage.SceneInfo.scene_type)
+}
+inline ::uint32_t SceneInfo::_internal_scene_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scene_type_;
+}
+inline void SceneInfo::_internal_set_scene_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_type_ = value;
 }
 
 // -------------------------------------------------------------------

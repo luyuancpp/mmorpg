@@ -28,8 +28,17 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 	svcCtx := svc.NewServiceContext(c)
 
-	// Start load reporter
-	go logic.StartLoadReporter(context.Background(), svcCtx)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Start load reporter (discovers scene nodes from etcd).
+	go logic.StartLoadReporter(ctx, svcCtx)
+
+	// Initialize persistent main-world scenes (waits for nodes, then creates).
+	go logic.InitMainScenes(ctx, svcCtx)
+
+	// Start instance lifecycle manager (auto-destroys idle instances).
+	go logic.StartInstanceLifecycleManager(ctx, svcCtx)
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		scene_manager.RegisterSceneManagerServer(grpcServer, server.NewSceneManagerServer(svcCtx))
