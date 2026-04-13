@@ -616,11 +616,53 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController *controller, co
 	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::NodeHandshake(::google::protobuf::RpcController *controller, const ::NodeHandshakeRequest *request,
-								 ::NodeHandshakeResponse *response,
-								 ::google::protobuf::Closure *done)
+void SceneHandler::DestroyScene(::google::protobuf::RpcController *controller, const ::DestroySceneRequest *request,
+								::Empty *response,
+								::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
-	///<<< END WRITING YOUR CODE
-}
+	const auto sceneId = request->scene_id();
+	if (sceneId == 0)
+	{
+		LOG_ERROR << "DestroyScene: scene_id is 0";
+		return;
+	}
+
+	// Find the scene entity by guid.
+	entt::entity targetEntity = entt::null;
+	auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
+	for (auto entity : view)
+	{
+		const auto &info = view.get<SceneInfoComp>(entity);
+		if (info.guid() == sceneId)
+		{
+			targetEntity = entity;
+			break;
+		}
+	}
+
+	if (targetEntity == entt::null)
+	{
+		LOG_WARN << "DestroyScene: scene entity not found for scene_id=" << sceneId;
+		return;
+	}
+
+	// Fire scene-destroyed event before entity removal.
+	OnSceneDestroyed event;
+	event.set_entity(entt::to_integral(targetEntity));
+	tlsEcs.dispatcher.trigger(event);
+
+	// Destroy the ECS entity (removes all components).
+	tlsEcs.sceneRegistry.destroy(targetEntity);
+
+	LOG_INFO << "DestroyScene: destroyed scene entity for scene_id=" << sceneId;
+	///<<< END WRITING YOUR CODE}
+
+	void SceneHandler::NodeHandshake(::google::protobuf::RpcController * controller, const ::NodeHandshakeRequest *request,
+									 ::NodeHandshakeResponse *response,
+									 ::google::protobuf::Closure *done)
+	{
+		///<<< BEGIN WRITING YOUR CODE
+		gNode->GetNodeRegistrationManager().OnNodeHandshake(*request, *response);
+		///<<< END WRITING YOUR CODE
+	}

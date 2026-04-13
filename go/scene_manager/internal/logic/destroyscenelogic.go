@@ -28,8 +28,15 @@ func NewDestroySceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Dest
 func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) (*base.Empty, error) {
 	key := fmt.Sprintf("scene:%d:node", in.SceneId)
 
-	// Get the node this scene belongs to before deleting (for load tracking)
+	// Get the node this scene belongs to before deleting (for load tracking + RPC)
 	nodeId, _ := l.svcCtx.Redis.Get(key)
+
+	// Notify C++ node to destroy the ECS scene entity.
+	if nodeId != "" {
+		if err := RequestNodeDestroyScene(l.ctx, l.svcCtx, nodeId, in.SceneId); err != nil {
+			l.Logger.Errorf("Failed to call DestroyScene on node %s for scene %d: %v", nodeId, in.SceneId, err)
+		}
+	}
 
 	_, err := l.svcCtx.Redis.Del(key)
 	if err != nil {

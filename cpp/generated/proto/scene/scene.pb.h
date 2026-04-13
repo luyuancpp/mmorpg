@@ -69,6 +69,10 @@ class CreateSceneResponse;
 struct CreateSceneResponseDefaultTypeInternal;
 extern CreateSceneResponseDefaultTypeInternal _CreateSceneResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull CreateSceneResponse_class_data_;
+class DestroySceneRequest;
+struct DestroySceneRequestDefaultTypeInternal;
+extern DestroySceneRequestDefaultTypeInternal _DestroySceneRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull DestroySceneRequest_class_data_;
 class GameNodeConnectRequest;
 struct GameNodeConnectRequestDefaultTypeInternal;
 extern GameNodeConnectRequestDefaultTypeInternal _GameNodeConnectRequest_default_instance_;
@@ -711,6 +715,197 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull PlayerEnterGameNodeRequest_class_data_;
+// -------------------------------------------------------------------
+
+class DestroySceneRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:DestroySceneRequest) */ {
+ public:
+  inline DestroySceneRequest() : DestroySceneRequest(nullptr) {}
+  ~DestroySceneRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(DestroySceneRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(DestroySceneRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR DestroySceneRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline DestroySceneRequest(const DestroySceneRequest& from) : DestroySceneRequest(nullptr, from) {}
+  inline DestroySceneRequest(DestroySceneRequest&& from) noexcept
+      : DestroySceneRequest(nullptr, ::std::move(from)) {}
+  inline DestroySceneRequest& operator=(const DestroySceneRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DestroySceneRequest& operator=(DestroySceneRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const DestroySceneRequest& default_instance() {
+    return *reinterpret_cast<const DestroySceneRequest*>(
+        &_DestroySceneRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 9;
+  friend void swap(DestroySceneRequest& a, DestroySceneRequest& b) { a.Swap(&b); }
+  inline void Swap(DestroySceneRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DestroySceneRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DestroySceneRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<DestroySceneRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const DestroySceneRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const DestroySceneRequest& from) { DestroySceneRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(DestroySceneRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "DestroySceneRequest"; }
+
+ protected:
+  explicit DestroySceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  DestroySceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DestroySceneRequest& from);
+  DestroySceneRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, DestroySceneRequest&& from) noexcept
+      : DestroySceneRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSceneIdFieldNumber = 1,
+  };
+  // uint64 scene_id = 1;
+  void clear_scene_id() ;
+  ::uint64_t scene_id() const;
+  void set_scene_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:DestroySceneRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const DestroySceneRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t scene_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_2fscene_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull DestroySceneRequest_class_data_;
 // -------------------------------------------------------------------
 
 class CreateSceneRequest final : public ::google::protobuf::Message
@@ -1985,6 +2180,10 @@ class Scene : public ::google::protobuf::Service {
                         const ::CreateSceneRequest* PROTOBUF_NONNULL request,
                         ::CreateSceneResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
+  virtual void DestroyScene(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::DestroySceneRequest* PROTOBUF_NONNULL request,
+                        ::Empty* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void NodeHandshake(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeHandshakeRequest* PROTOBUF_NONNULL request,
                         ::NodeHandshakeResponse* PROTOBUF_NONNULL response,
@@ -2060,6 +2259,10 @@ class Scene_Stub final : public Scene {
   void CreateScene(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::CreateSceneRequest* PROTOBUF_NONNULL request,
                         ::CreateSceneResponse* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
+  void DestroyScene(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::DestroySceneRequest* PROTOBUF_NONNULL request,
+                        ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void NodeHandshake(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeHandshakeRequest* PROTOBUF_NONNULL request,
@@ -2775,6 +2978,34 @@ inline void CreateSceneResponse::set_allocated_scene_info(::SceneInfoComp* PROTO
 
   _impl_.scene_info_ = reinterpret_cast<::SceneInfoComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:CreateSceneResponse.scene_info)
+}
+
+// -------------------------------------------------------------------
+
+// DestroySceneRequest
+
+// uint64 scene_id = 1;
+inline void DestroySceneRequest::clear_scene_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint64_t DestroySceneRequest::scene_id() const {
+  // @@protoc_insertion_point(field_get:DestroySceneRequest.scene_id)
+  return _internal_scene_id();
+}
+inline void DestroySceneRequest::set_scene_id(::uint64_t value) {
+  _internal_set_scene_id(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:DestroySceneRequest.scene_id)
+}
+inline ::uint64_t DestroySceneRequest::_internal_scene_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scene_id_;
+}
+inline void DestroySceneRequest::_internal_set_scene_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_id_ = value;
 }
 
 #ifdef __GNUC__

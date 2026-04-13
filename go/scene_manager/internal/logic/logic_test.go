@@ -346,3 +346,75 @@ func TestCreateScene_Instance_TrackedInActiveSet(t *testing.T) {
 	assert.Len(t, members, 1)
 	assert.Equal(t, fmt.Sprintf("%d", resp.SceneId), members[0].Key)
 }
+
+// ---------------------------------------------------------------------------
+// EnterScene / LeaveScene player-count tests
+// ---------------------------------------------------------------------------
+
+func TestEnterScene_IncrementsPlayerCount(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
+	ctx := context.Background()
+
+	// Setup: create an instance scene so there's a scene->node mapping.
+	mr.ZAdd(NodeLoadKey, 0, "10")
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{SceneConfId: 2001})
+	require.NoError(t, err)
+	sceneId := resp.SceneId
+
+	// Player count should start at 0.
+	countKey := fmt.Sprintf(InstancePlayerCountKey, sceneId)
+	val, _ := sc.Redis.Get(countKey)
+	assert.Equal(t, "0", val)
+
+	// EnterScene should increment.
+	enterLogic := NewEnterSceneLogic(ctx, sc)
+	enterResp, err := enterLogic.EnterScene(&scene_manager.EnterSceneRequest{
+		PlayerId: 1001,
+		SceneId:  sceneId,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, uint32(0), enterResp.ErrorCode)
+
+	val, _ = sc.Redis.Get(countKey)
+	assert.Equal(t, "1", val)
+}
+
+func TestLeaveScene_DecrementsPlayerCount(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
+	ctx := context.Background()
+
+	mr.ZAdd(NodeLoadKey, 0, "10")
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{SceneConfId: 2001})
+	sceneId := resp.SceneId
+
+	// Enter first.
+	enterLogic := NewEnterSceneLogic(ctx, sc)
+	enterLogic.EnterScene(&scene_manager.EnterSceneRequest{
+		PlayerId: 1001,
+		SceneId:  sceneId,
+	})
+
+	// Leave.
+	leaveLogic := NewLeaveSceneLogic(ctx, sc)
+	leaveLogic.LeaveScene(&scene_manager.LeaveSceneRequest{
+		PlayerId: 1001,
+		SceneId:  sceneId,
+	})
+
+	countKey := fmt.Sprintf(InstancePlayerCountKey, sceneId)
+	val, _ := sc.Redis.Get(countKey)
+	assert.Equal(t, "0", val)
+}
+
+func TestDecrPlayerCount_NeverGoesNegative(t *testing.T) {
+	sc, _ := newTestSvcCtx(t, "node-1")
+
+	// Decrement without any prior increment.
+	DecrInstancePlayerCount(sc, 999)
+
+	countKey := fmt.Sprintf(InstancePlayerCountKey, 999)
+	val, _ := sc.Redis.Get(countKey)
+	assert.Equal(t, "0", val, "player count should be clamped to 0, not negative")
+}

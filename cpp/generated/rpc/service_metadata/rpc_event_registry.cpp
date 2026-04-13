@@ -755,6 +755,11 @@ void InitMessageInfo()
         std::make_unique<::CreateSceneRequest>(),
         std::make_unique<::CreateSceneResponse>(),
         std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneDestroySceneMessageId] = RpcMethodMeta{
+        "Scene", "DestroyScene",
+        std::make_unique<::DestroySceneRequest>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneNodeHandshakeMessageId] = RpcMethodMeta{
         "Scene", "NodeHandshake",
         std::make_unique<::NodeHandshakeRequest>(),

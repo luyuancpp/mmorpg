@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"scene_manager/internal/svc"
@@ -24,7 +25,10 @@ const (
 
 // missingSince tracks when each node was first observed missing from etcd.
 // If a node reappears before the grace period expires, its entry is removed.
-var missingSince = make(map[string]time.Time)
+var (
+	missingSinceMu sync.Mutex
+	missingSince   = make(map[string]time.Time)
+)
 
 // nodeLoadKey returns the zone-scoped Redis sorted-set key.
 func nodeLoadKey(zoneID uint32) string {
@@ -81,7 +85,9 @@ func syncSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) {
 		seen[nodeIDStr] = struct{}{}
 
 		// Node is present in etcd: clear any pending removal.
+		missingSinceMu.Lock()
 		delete(missingSince, nodeIDStr)
+		missingSinceMu.Unlock()
 
 		// Read scene count as load indicator (0 if not set).
 		sceneCountKey := fmt.Sprintf(NodeSceneCountKey, nodeIDStr)
@@ -102,6 +108,7 @@ func syncSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) {
 	pairs, err := svcCtx.Redis.ZrangeWithScores(loadKey, 0, -1)
 	if err == nil {
 		now := time.Now()
+		missingSinceMu.Lock()
 		for _, p := range pairs {
 			if _, ok := seen[p.Key]; ok {
 				continue
@@ -110,6 +117,7 @@ func syncSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) {
 			if graceDuration <= 0 {
 				// No grace period: remove immediately.
 				svcCtx.Redis.Zrem(loadKey, p.Key)
+				RemoveNodeConn(p.Key)
 				continue
 			}
 			firstMissing, tracked := missingSince[p.Key]
@@ -124,8 +132,10 @@ func syncSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) {
 				logx.Infof("scene node %s grace period expired, removing from load set", p.Key)
 				svcCtx.Redis.Zrem(loadKey, p.Key)
 				delete(missingSince, p.Key)
+				RemoveNodeConn(p.Key)
 			}
 		}
+		missingSinceMu.Unlock()
 	}
 }
 

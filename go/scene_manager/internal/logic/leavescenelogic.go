@@ -3,9 +3,9 @@ package logic
 import (
 	"context"
 
-	"scene_manager/internal/svc"
 	"proto/common/base"
 	"proto/scene_manager"
+	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -45,7 +45,8 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 		return &base.Empty{}, nil
 	}
 
-	// 3. Decrement instance player count (harmless for main world scenes).
+	// 3. Decrement instance player count.
+	// For main world scenes the key is unused by lifecycle cleanup (harmless).
 	DecrInstancePlayerCount(l.svcCtx, in.SceneId)
 
 	l.Logger.Infof("Player %d left scene %d on node %s", in.PlayerId, in.SceneId, currentLoc.NodeId)

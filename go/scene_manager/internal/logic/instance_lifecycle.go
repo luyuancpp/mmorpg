@@ -101,13 +101,21 @@ func cleanupIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, timeo
 	}
 }
 
-// destroyInstance removes all Redis state for an instance.
+// destroyInstance removes all Redis state for an instance and notifies
+// the C++ scene node to destroy the ECS entity.
 func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, sceneId uint64) {
 	sceneIdStr := fmt.Sprintf("%d", sceneId)
 	sceneNodeKey := fmt.Sprintf("scene:%d:node", sceneId)
 
-	// Get node for load tracking before deletion.
+	// Get node for load tracking and RPC before deletion.
 	nodeId, _ := svcCtx.Redis.Get(sceneNodeKey)
+
+	// Notify C++ node to destroy the ECS scene entity.
+	if nodeId != "" {
+		if err := RequestNodeDestroyScene(ctx, svcCtx, nodeId, sceneId); err != nil {
+			logx.Errorf("[InstanceLifecycle] Failed to call DestroyScene on node %s for scene %d: %v", nodeId, sceneId, err)
+		}
+	}
 
 	// Remove from scene -> node mapping.
 	svcCtx.Redis.Del(sceneNodeKey)
@@ -133,7 +141,12 @@ func IncrInstancePlayerCount(svcCtx *svc.ServiceContext, sceneId uint64) {
 }
 
 // DecrInstancePlayerCount decrements the player count for an instance scene.
-// Called when a player leaves the scene.
+// Called when a player leaves the scene. Guards against going below zero.
 func DecrInstancePlayerCount(svcCtx *svc.ServiceContext, sceneId uint64) {
-	svcCtx.Redis.Incrby(fmt.Sprintf(InstancePlayerCountKey, sceneId), -1)
+	key := fmt.Sprintf(InstancePlayerCountKey, sceneId)
+	val, err := svcCtx.Redis.Incrby(key, -1)
+	if err == nil && val < 0 {
+		// Clamp to 0 — can happen if LeaveScene is called without a matching EnterScene.
+		svcCtx.Redis.Set(key, "0")
+	}
 }
