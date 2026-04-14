@@ -54,6 +54,7 @@ message Centre2GsEnterSceneRequest
 message CreateSceneRequest
 {
   uint32 config_id = 1;
+  uint64 scene_id = 2;  // Go-allocated scene ID; C++ dedup by this when > 0.
 }
 
 message CreateSceneResponse
