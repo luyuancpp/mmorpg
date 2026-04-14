@@ -12,4 +12,5 @@ const (
 	ErrRedis             uint32 = 8
 	ErrDuplicateScene    uint32 = 9
 	ErrInvalidSceneType  uint32 = 10
+	ErrNoSceneConfId     uint32 = 11
 )

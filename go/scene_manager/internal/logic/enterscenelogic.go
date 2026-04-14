@@ -36,8 +36,8 @@ func errResp(code uint32, msg string) *scene_manager.EnterSceneResponse {
 
 // EnterScene routes a player into a scene, managed by SceneManager.
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
-	// 1. Resolve the target Scene node.
-	nodeId, err := l.resolveNode(in.SceneId, in.ZoneId)
+	// 1. Resolve the target scene (sceneId + nodeId).
+	sceneId, nodeId, err := l.resolveScene(in.SceneId, in.SceneConfId, in.ZoneId)
 	if err != nil {
 		return errResp(constants.ErrNoAvailableNode, err.Error()), nil
 	}
@@ -45,14 +45,14 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	// 2. IDEMPOTENCY CHECK: Is player already here?
 	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
 	if err == nil && currentLoc != nil {
-		if currentLoc.SceneId == in.SceneId && currentLoc.NodeId == nodeId {
-			l.Logger.Infof("Player %d already in scene %d, idempotent success", in.PlayerId, in.SceneId)
+		if currentLoc.SceneId == sceneId && currentLoc.NodeId == nodeId {
+			l.Logger.Infof("Player %d already in scene %d, idempotent success", in.PlayerId, sceneId)
 			return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
 		}
 	}
 
 	// 3. Update Player Location (Source of Truth)
-	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, in.SceneId, nodeId); err != nil {
+	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, sceneId, nodeId); err != nil {
 		l.Logger.Errorf("Failed to update player location: %v", err)
 		return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
 	}
@@ -70,24 +70,42 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 
 	// 5. Track instance player count.
 	// For main world scenes the key is unused by lifecycle cleanup (harmless).
-	IncrInstancePlayerCount(l.svcCtx, in.SceneId)
+	IncrInstancePlayerCount(l.svcCtx, sceneId)
 
-	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, in.SceneId, nodeId)
+	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, sceneId, nodeId)
 	return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
 }
 
-// resolveNode picks the target scene node: load-balanced for first login (sceneId=0),
-// or looks up the owning node for an existing scene.
-func (l *EnterSceneLogic) resolveNode(sceneId uint64, zoneId uint32) (string, error) {
-	if sceneId == 0 {
-		return GetBestNode(l.ctx, l.svcCtx, zoneId)
+// resolveScene resolves the concrete (sceneId, nodeId) for an EnterScene request.
+//   - sceneId != 0: direct lookup — the caller already knows the exact scene instance.
+//   - sceneId == 0, sceneConfId != 0: auto-select least-loaded channel for the map.
+//   - sceneId == 0, sceneConfId == 0: fallback to the first configured main scene.
+func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneId uint32) (uint64, string, error) {
+	// Case 1: exact scene instance specified.
+	if sceneId != 0 {
+		key := fmt.Sprintf("scene:%d:node", sceneId)
+		nodeId, err := l.svcCtx.Redis.Get(key)
+		if err != nil {
+			return 0, "", fmt.Errorf("scene lookup failed: %w", err)
+		}
+		return sceneId, nodeId, nil
 	}
-	key := fmt.Sprintf("scene:%d:node", sceneId)
-	nodeId, err := l.svcCtx.Redis.Get(key)
-	if err != nil {
-		return "", fmt.Errorf("scene lookup failed: %w", err)
+
+	// Need a scene_conf_id to allocate.
+	if sceneConfId == 0 {
+		if len(l.svcCtx.Config.MainSceneConfIds) > 0 {
+			sceneConfId = l.svcCtx.Config.MainSceneConfIds[0]
+		} else {
+			return 0, "", fmt.Errorf("no scene_conf_id provided and no default main scene configured")
+		}
 	}
-	return nodeId, nil
+
+	// Case 2: auto-select least-loaded channel.
+	sid, nid, err := GetBestMainSceneChannel(l.ctx, l.svcCtx, sceneConfId, zoneId)
+	if err != nil || sid == 0 {
+		return 0, "", fmt.Errorf("no available channel for conf %d in zone %d", sceneConfId, zoneId)
+	}
+	return sid, nid, nil
 }
 
 // routePlayerToGate builds a GateCommand and pushes it to the gate's Kafka topic.
