@@ -19,5 +19,5 @@ procs:
   go-scene-manager:
     cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-scene-manager"]
 
-  go-gateway:
-    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-gateway"]
+  java-gateway:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "java-gateway"]

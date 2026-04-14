@@ -66,29 +66,29 @@ func (l *CreateSceneLogic) resolveSceneType(in *scene_manager.CreateSceneRequest
 	return constants.SceneTypeInstance
 }
 
-// createMainWorldScene returns the least-loaded line for a main-world scene.
-// Lines are pre-created by initMainScenesForZone at startup; this is a fallback
-// that also creates lines on-demand if they somehow don't exist yet.
+// createMainWorldScene returns the least-loaded channel for a main-world scene.
+// Channels are pre-created by initMainScenesForZone at startup; this is a fallback
+// that also creates channels on-demand if they somehow don't exist yet.
 func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
-	// Fast path: lines already exist — return the least-loaded one.
-	sceneId, nodeId, _ := GetBestMainSceneLine(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
+	// Fast path: channels already exist — return the least-loaded one.
+	sceneId, nodeId, _ := GetBestMainSceneChannel(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
 	if sceneId > 0 {
-		l.Logger.Infof("[MainWorld] Best line: scene=%d conf=%d node=%s", sceneId, in.SceneConfId, nodeId)
+		l.Logger.Infof("[MainWorld] Best channel: scene=%d conf=%d node=%s", sceneId, in.SceneConfId, nodeId)
 		return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: nodeId}, nil
 	}
 
-	// Slow path: no lines exist — create them now (startup race or missing init).
-	l.Logger.Infof("[MainWorld] No lines for conf %d in zone %d, creating on demand", in.SceneConfId, in.ZoneId)
+	// Slow path: no channels exist — create them now (startup race or missing init).
+	l.Logger.Infof("[MainWorld] No channels for conf %d in zone %d, creating on demand", in.SceneConfId, in.ZoneId)
 	initMainScenesForZone(l.ctx, l.svcCtx, in.ZoneId, []uint64{in.SceneConfId})
 
-	sceneId, nodeId, _ = GetBestMainSceneLine(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
+	sceneId, nodeId, _ = GetBestMainSceneChannel(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
 	if sceneId > 0 {
 		return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: nodeId}, nil
 	}
 
 	return &scene_manager.CreateSceneResponse{
 		ErrorCode:    constants.ErrNoAvailableNode,
-		ErrorMessage: "failed to create main world lines",
+		ErrorMessage: "failed to create main world channels",
 	}, nil
 }
 

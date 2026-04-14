@@ -20,7 +20,7 @@ param(
         "go-player-locator",
         "go-login",
         "go-scene-manager",
-        "go-gateway",
+        "java-gateway",
         "cpp-gate",
         "cpp-scene"
     )]
@@ -113,13 +113,41 @@ function Invoke-CppNode {
     }
 }
 
+function Invoke-JavaService {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Dir
+    )
+
+    $JavaRoot = Join-Path $RepoRoot "java"
+    $svcDir = Join-Path $JavaRoot $Dir
+    if (-not (Test-Path $svcDir)) {
+        throw "Java service directory not found: $svcDir"
+    }
+
+    $javaHome = "C:\Program Files\Eclipse Adoptium\jdk-23.0.2.7-hotspot"
+    if (Test-Path $javaHome) {
+        $env:JAVA_HOME = $javaHome
+    }
+
+    Push-Location $svcDir
+    try {
+        & .\mvnw.cmd spring-boot:run 2>&1
+        $code = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+        exit $code
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 switch ($Command) {
     "go-db" { Invoke-GoService -Dir "db" -Entry "db.go" -ExeName "db" }
     "go-data-service" { Invoke-GoService -Dir "data_service" -Entry "data_service.go" -ExeName "data_service" }
     "go-player-locator" { Invoke-GoService -Dir "player_locator" -Entry "player_locator.go" -ExeName "player_locator" }
     "go-login" { Invoke-GoService -Dir "login" -Entry "login.go" -ExeName "login" }
     "go-scene-manager" { Invoke-GoService -Dir "scene_manager" -Entry "scene_manager_service.go" -ExeName "scene_manager" }
-    "go-gateway" { Invoke-GoService -Dir "gateway" -Entry "gateway.go" -ExeName "gateway" }
+    "java-gateway" { Invoke-JavaService -Dir "gateway_node" }
     "cpp-gate" { Invoke-CppNode -Exe "gate.exe" }
     "cpp-scene" { Invoke-CppNode -Exe "scene.exe" }
     default { throw "Unsupported command: $Command" }
