@@ -1177,6 +1177,7 @@ class BaseDeployConfig final : public ::google::protobuf::Message
     kTableDataDirectoryFieldNumber = 10,
     kGateTokenSecretFieldNumber = 11,
     kTableDataFormatFieldNumber = 12,
+    kDataRootDirectoryFieldNumber = 14,
     kKafkaFieldNumber = 9,
     kLogLevelFieldNumber = 2,
     kKeepAliveIntervalFieldNumber = 5,
@@ -1305,6 +1306,21 @@ class BaseDeployConfig final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_table_data_format();
 
   public:
+  // string data_root_directory = 14;
+  void clear_data_root_directory() ;
+  const ::std::string& data_root_directory() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_data_root_directory(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_data_root_directory();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_data_root_directory();
+  void set_allocated_data_root_directory(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_data_root_directory() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_data_root_directory(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_data_root_directory();
+
+  public:
   // .KafkaConfig kafka = 9;
   bool has_kafka() const;
   void clear_kafka() ;
@@ -1374,8 +1390,8 @@ class BaseDeployConfig final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 13,
-                                   2, 143,
+  static const ::google::protobuf::internal::TcParseTable<4, 14,
+                                   2, 162,
                                    2>
       _table_;
 
@@ -1403,6 +1419,7 @@ class BaseDeployConfig final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr table_data_directory_;
     ::google::protobuf::internal::ArenaStringPtr gate_token_secret_;
     ::google::protobuf::internal::ArenaStringPtr table_data_format_;
+    ::google::protobuf::internal::ArenaStringPtr data_root_directory_;
     ::KafkaConfig* PROTOBUF_NULLABLE kafka_;
     ::uint32_t log_level_;
     ::uint32_t keep_alive_interval_;
@@ -1921,7 +1938,7 @@ BaseDeployConfig::_internal_mutable_etcd_hosts() {
 inline void BaseDeployConfig::clear_log_level() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.log_level_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
 }
 inline ::uint32_t BaseDeployConfig::log_level() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.log_level)
@@ -1929,7 +1946,7 @@ inline ::uint32_t BaseDeployConfig::log_level() const {
 }
 inline void BaseDeployConfig::set_log_level(::uint32_t value) {
   _internal_set_log_level(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000040u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.log_level)
 }
 inline ::uint32_t BaseDeployConfig::_internal_log_level() const {
@@ -2059,7 +2076,7 @@ BaseDeployConfig::_internal_mutable_service_discovery_prefixes() {
 inline void BaseDeployConfig::clear_keep_alive_interval() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.keep_alive_interval_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000080u;
 }
 inline ::uint32_t BaseDeployConfig::keep_alive_interval() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.keep_alive_interval)
@@ -2067,7 +2084,7 @@ inline ::uint32_t BaseDeployConfig::keep_alive_interval() const {
 }
 inline void BaseDeployConfig::set_keep_alive_interval(::uint32_t value) {
   _internal_set_keep_alive_interval(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000080u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.keep_alive_interval)
 }
 inline ::uint32_t BaseDeployConfig::_internal_keep_alive_interval() const {
@@ -2148,7 +2165,7 @@ inline void BaseDeployConfig::set_allocated_deployservice_prefix(::std::string* 
 inline void BaseDeployConfig::clear_node_ttl_seconds() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.node_ttl_seconds_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000080u;
+  _impl_._has_bits_[0] &= ~0x00000100u;
 }
 inline ::uint32_t BaseDeployConfig::node_ttl_seconds() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.node_ttl_seconds)
@@ -2156,7 +2173,7 @@ inline ::uint32_t BaseDeployConfig::node_ttl_seconds() const {
 }
 inline void BaseDeployConfig::set_node_ttl_seconds(::uint32_t value) {
   _internal_set_node_ttl_seconds(value);
-  _impl_._has_bits_[0] |= 0x00000080u;
+  _impl_._has_bits_[0] |= 0x00000100u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.node_ttl_seconds)
 }
 inline ::uint32_t BaseDeployConfig::_internal_node_ttl_seconds() const {
@@ -2172,7 +2189,7 @@ inline void BaseDeployConfig::_internal_set_node_ttl_seconds(::uint32_t value) {
 inline void BaseDeployConfig::clear_health_check_interval() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.health_check_interval_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000100u;
+  _impl_._has_bits_[0] &= ~0x00000200u;
 }
 inline ::uint32_t BaseDeployConfig::health_check_interval() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.health_check_interval)
@@ -2180,7 +2197,7 @@ inline ::uint32_t BaseDeployConfig::health_check_interval() const {
 }
 inline void BaseDeployConfig::set_health_check_interval(::uint32_t value) {
   _internal_set_health_check_interval(value);
-  _impl_._has_bits_[0] |= 0x00000100u;
+  _impl_._has_bits_[0] |= 0x00000200u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.health_check_interval)
 }
 inline ::uint32_t BaseDeployConfig::_internal_health_check_interval() const {
@@ -2194,14 +2211,14 @@ inline void BaseDeployConfig::_internal_set_health_check_interval(::uint32_t val
 
 // .KafkaConfig kafka = 9;
 inline bool BaseDeployConfig::has_kafka() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000010u) != 0;
+  bool value = (_impl_._has_bits_[0] & 0x00000020u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.kafka_ != nullptr);
   return value;
 }
 inline void BaseDeployConfig::clear_kafka() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.kafka_ != nullptr) _impl_.kafka_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline const ::KafkaConfig& BaseDeployConfig::_internal_kafka() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2220,16 +2237,16 @@ inline void BaseDeployConfig::unsafe_arena_set_allocated_kafka(
   }
   _impl_.kafka_ = reinterpret_cast<::KafkaConfig*>(value);
   if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000010u;
+    _impl_._has_bits_[0] |= 0x00000020u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000010u;
+    _impl_._has_bits_[0] &= ~0x00000020u;
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseDeployConfig.kafka)
 }
 inline ::KafkaConfig* PROTOBUF_NULLABLE BaseDeployConfig::release_kafka() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
   ::KafkaConfig* released = _impl_.kafka_;
   _impl_.kafka_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -2249,7 +2266,7 @@ inline ::KafkaConfig* PROTOBUF_NULLABLE BaseDeployConfig::unsafe_arena_release_k
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:BaseDeployConfig.kafka)
 
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
   ::KafkaConfig* temp = _impl_.kafka_;
   _impl_.kafka_ = nullptr;
   return temp;
@@ -2264,7 +2281,7 @@ inline ::KafkaConfig* PROTOBUF_NONNULL BaseDeployConfig::_internal_mutable_kafka
 }
 inline ::KafkaConfig* PROTOBUF_NONNULL BaseDeployConfig::mutable_kafka()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   ::KafkaConfig* _msg = _internal_mutable_kafka();
   // @@protoc_insertion_point(field_mutable:BaseDeployConfig.kafka)
   return _msg;
@@ -2281,9 +2298,9 @@ inline void BaseDeployConfig::set_allocated_kafka(::KafkaConfig* PROTOBUF_NULLAB
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    _impl_._has_bits_[0] |= 0x00000010u;
+    _impl_._has_bits_[0] |= 0x00000020u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000010u;
+    _impl_._has_bits_[0] &= ~0x00000020u;
   }
 
   _impl_.kafka_ = reinterpret_cast<::KafkaConfig*>(value);
@@ -2489,7 +2506,7 @@ inline void BaseDeployConfig::set_allocated_table_data_format(::std::string* PRO
 inline void BaseDeployConfig::clear_node_removal_grace_seconds() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.node_removal_grace_seconds_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000200u;
+  _impl_._has_bits_[0] &= ~0x00000400u;
 }
 inline ::uint32_t BaseDeployConfig::node_removal_grace_seconds() const {
   // @@protoc_insertion_point(field_get:BaseDeployConfig.node_removal_grace_seconds)
@@ -2497,7 +2514,7 @@ inline ::uint32_t BaseDeployConfig::node_removal_grace_seconds() const {
 }
 inline void BaseDeployConfig::set_node_removal_grace_seconds(::uint32_t value) {
   _internal_set_node_removal_grace_seconds(value);
-  _impl_._has_bits_[0] |= 0x00000200u;
+  _impl_._has_bits_[0] |= 0x00000400u;
   // @@protoc_insertion_point(field_set:BaseDeployConfig.node_removal_grace_seconds)
 }
 inline ::uint32_t BaseDeployConfig::_internal_node_removal_grace_seconds() const {
@@ -2507,6 +2524,71 @@ inline ::uint32_t BaseDeployConfig::_internal_node_removal_grace_seconds() const
 inline void BaseDeployConfig::_internal_set_node_removal_grace_seconds(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.node_removal_grace_seconds_ = value;
+}
+
+// string data_root_directory = 14;
+inline void BaseDeployConfig::clear_data_root_directory() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.data_root_directory_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline const ::std::string& BaseDeployConfig::data_root_directory() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.data_root_directory)
+  return _internal_data_root_directory();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void BaseDeployConfig::set_data_root_directory(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_.data_root_directory_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BaseDeployConfig.data_root_directory)
+}
+inline ::std::string* PROTOBUF_NONNULL BaseDeployConfig::mutable_data_root_directory()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_data_root_directory();
+  // @@protoc_insertion_point(field_mutable:BaseDeployConfig.data_root_directory)
+  return _s;
+}
+inline const ::std::string& BaseDeployConfig::_internal_data_root_directory() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.data_root_directory_.Get();
+}
+inline void BaseDeployConfig::_internal_set_data_root_directory(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_.data_root_directory_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL BaseDeployConfig::_internal_mutable_data_root_directory() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  return _impl_.data_root_directory_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE BaseDeployConfig::release_data_root_directory() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BaseDeployConfig.data_root_directory)
+  if ((_impl_._has_bits_[0] & 0x00000010u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000010u;
+  auto* released = _impl_.data_root_directory_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.data_root_directory_.Set("", GetArena());
+  }
+  return released;
+}
+inline void BaseDeployConfig::set_allocated_data_root_directory(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000010u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000010u;
+  }
+  _impl_.data_root_directory_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.data_root_directory_.IsDefault()) {
+    _impl_.data_root_directory_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BaseDeployConfig.data_root_directory)
 }
 
 // -------------------------------------------------------------------

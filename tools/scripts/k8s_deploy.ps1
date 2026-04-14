@@ -219,6 +219,7 @@ Etcd:
   KeepaliveInterval: 1
   NodeTTLSeconds: 60
 TableDataDirectory: "../generated/generated_tables/"
+DataRootDirectory: "/app/"
 LogLevel: 1
 HealthCheckInterval: 1
 service_discovery_prefixes:
