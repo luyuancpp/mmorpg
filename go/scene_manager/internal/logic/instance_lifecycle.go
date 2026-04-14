@@ -44,7 +44,7 @@ func StartInstanceLifecycleManager(ctx context.Context, svcCtx *svc.ServiceConte
 // cleanupIdleInstances iterates over all known zones and destroys
 // instances that have had 0 players for longer than the timeout.
 func cleanupIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, timeoutSec int64) {
-	zones := GetKnownZones()
+	zones := GetActiveZones()
 	for _, zoneId := range zones {
 		cleanupZoneIdleInstances(ctx, svcCtx, zoneId, timeoutSec)
 	}

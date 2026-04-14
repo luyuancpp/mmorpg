@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"sort"
-	"time"
 
 	"scene_manager/internal/svc"
 
@@ -22,30 +21,14 @@ func mainScenesKey(zoneID uint32) string {
 	return fmt.Sprintf(MainScenesHashKey, zoneID)
 }
 
-// InitMainScenes creates persistent main-world scenes at startup.
-// Discovers zones from etcd, then creates main scenes for each zone.
-// Each scene_conf_id in config is assigned to a node via consistent hashing
-// and created exactly once (idempotent — skips if already in Redis).
-func InitMainScenes(ctx context.Context, svcCtx *svc.ServiceContext) {
-	confIds := svcCtx.Config.MainSceneConfIds
-	if len(confIds) == 0 {
-		logx.Info("[MainScene] No MainSceneConfIds configured, skipping main scene init")
-		return
-	}
-
-	// Wait for at least one zone to be discovered by LoadReporter.
-	zones := waitForZones(ctx, svcCtx)
-	if len(zones) == 0 {
-		logx.Error("[MainScene] No zones discovered after waiting, cannot init main scenes")
-		return
-	}
-
-	for _, zoneId := range zones {
-		initMainScenesForZone(ctx, svcCtx, zoneId, confIds)
-	}
-}
-
-// initMainScenesForZone creates main scenes for a single zone.
+// initMainScenesForZone ensures main scenes exist for a single zone.
+// Called by fullSync (on startup / re-sync) and handleWatchEvent (on node PUT).
+// Two-layer idempotency:
+//   - Redis layer: skips scene ID allocation if confId already has a Redis entry.
+//   - C++ layer: CreateScene is idempotent by config_id (returns existing entity).
+//
+// This means we always send the CreateScene RPC even for existing Redis entries,
+// which handles the C++ node restart case (Redis has data, C++ lost ECS entities).
 func initMainScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, confIds []uint64) {
 	nodes := getNodesForZone(svcCtx, zoneId)
 	if len(nodes) == 0 {
@@ -53,59 +36,54 @@ func initMainScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zone
 		return
 	}
 
-	logx.Infof("[MainScene] Zone %d: initializing %d main world scenes across %d nodes", zoneId, len(confIds), len(nodes))
+	logx.Infof("[MainScene] Zone %d: ensuring %d main world scenes across %d nodes", zoneId, len(confIds), len(nodes))
 
 	hashKey := mainScenesKey(zoneId)
-	created, skipped := 0, 0
+	created, ensured := 0, 0
 
 	for _, confId := range confIds {
 		confIdStr := fmt.Sprintf("%d", confId)
-
-		// Idempotency: check if this confId already has a scene.
-		existing, _ := svcCtx.Redis.Hget(hashKey, confIdStr)
-		if existing != "" {
-			skipped++
-			continue
-		}
-
-		// Assign to node via consistent hash.
 		targetNode := assignNodeByHash(confId, nodes)
 
-		// Allocate scene ID.
-		id, err := svcCtx.Redis.Incr("scene:id_counter")
-		if err != nil {
-			logx.Errorf("[MainScene] Failed to generate scene id for conf %d: %v", confId, err)
-			continue
+		// Check if Redis already has a scene ID for this confId.
+		existing, _ := svcCtx.Redis.Hget(hashKey, confIdStr)
+		if existing == "" {
+			// New scene — allocate ID and register in Redis.
+			id, err := svcCtx.Redis.Incr("scene:id_counter")
+			if err != nil {
+				logx.Errorf("[MainScene] Failed to generate scene id for conf %d: %v", confId, err)
+				continue
+			}
+			sceneId := uint64(id)
+
+			sceneNodeKey := fmt.Sprintf("scene:%d:node", sceneId)
+			if err := svcCtx.Redis.Set(sceneNodeKey, targetNode); err != nil {
+				logx.Errorf("[MainScene] Failed to store scene mapping for scene %d: %v", sceneId, err)
+				continue
+			}
+
+			if err := svcCtx.Redis.Hset(hashKey, confIdStr, fmt.Sprintf("%d", sceneId)); err != nil {
+				logx.Errorf("[MainScene] Failed to store main scene hash for conf %d: %v", confId, err)
+				continue
+			}
+
+			sceneCountKey := fmt.Sprintf(NodeSceneCountKey, targetNode)
+			svcCtx.Redis.Incr(sceneCountKey)
+
+			created++
+			logx.Infof("[MainScene] Allocated main scene %d (conf=%d) on node %s in zone %d", sceneId, confId, targetNode, zoneId)
+		} else {
+			ensured++
 		}
-		sceneId := uint64(id)
 
-		// Store scene -> node mapping.
-		sceneNodeKey := fmt.Sprintf("scene:%d:node", sceneId)
-		if err := svcCtx.Redis.Set(sceneNodeKey, targetNode); err != nil {
-			logx.Errorf("[MainScene] Failed to store scene mapping for scene %d: %v", sceneId, err)
-			continue
-		}
-
-		// Store confId -> sceneId in main scenes hash.
-		if err := svcCtx.Redis.Hset(hashKey, confIdStr, fmt.Sprintf("%d", sceneId)); err != nil {
-			logx.Errorf("[MainScene] Failed to store main scene hash for conf %d: %v", confId, err)
-			continue
-		}
-
-		// Increment node scene count for load tracking.
-		sceneCountKey := fmt.Sprintf(NodeSceneCountKey, targetNode)
-		svcCtx.Redis.Incr(sceneCountKey)
-
-		// Notify the C++ scene node to create the ECS entity.
+		// Always send CreateScene RPC — C++ deduplicates by config_id.
+		// This ensures the C++ node has the ECS entity even after a restart.
 		if _, err := RequestNodeCreateScene(ctx, svcCtx, targetNode, uint32(confId)); err != nil {
-			logx.Errorf("[MainScene] Failed to call CreateScene on node %s for scene %d: %v", targetNode, sceneId, err)
+			logx.Errorf("[MainScene] Failed to call CreateScene on node %s for conf %d: %v", targetNode, confId, err)
 		}
-
-		created++
-		logx.Infof("[MainScene] Created main scene %d (conf=%d) on node %s in zone %d", sceneId, confId, targetNode, zoneId)
 	}
 
-	logx.Infof("[MainScene] Zone %d init done: created=%d, skipped(already exist)=%d", zoneId, created, skipped)
+	logx.Infof("[MainScene] Zone %d done: created=%d, ensured=%d", zoneId, created, ensured)
 }
 
 // GetMainSceneId looks up the scene ID for a main-world config in the given zone.
@@ -129,30 +107,6 @@ func IsMainSceneConf(svcCtx *svc.ServiceContext, confId uint64) bool {
 		}
 	}
 	return false
-}
-
-// waitForZones polls GetKnownZones until at least one zone is discovered
-// (populated by LoadReporter from etcd) or the context is cancelled.
-func waitForZones(ctx context.Context, svcCtx *svc.ServiceContext) []uint32 {
-	for attempt := 0; attempt < 60; attempt++ {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-		}
-
-		// Force a sync so knownZones is populated.
-		syncSceneNodes(ctx, svcCtx)
-
-		zones := GetKnownZones()
-		if len(zones) > 0 {
-			return zones
-		}
-
-		logx.Infof("[MainScene] Waiting for scene nodes... attempt %d", attempt+1)
-		time.Sleep(2 * time.Second)
-	}
-	return nil
 }
 
 // getNodesForZone returns sorted node IDs for a given zone from the Redis load set.

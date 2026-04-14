@@ -18,31 +18,22 @@ const (
 	NodeLoadKeyFmt     = "scene_nodes:zone:%d:load"
 	NodeSceneCountKey  = "node:%s:scene_count"
 	LoadReportInterval = 5 * time.Second
+	sceneNodePrefix    = "SceneNodeService.rpc/"
 )
 
-// missingSince tracks when each node was first observed missing from etcd.
-// If a node reappears before the grace period expires, its entry is removed.
+// activeZones holds the zone IDs derived from currently known nodes.
 var (
-	missingSinceMu sync.Mutex
-	missingSince   = make(map[string]time.Time)
+	activeZonesMu sync.RWMutex
+	activeZones   []uint32
 )
 
-// knownZones tracks all zone IDs discovered from etcd scene node registrations.
-// This allows the SceneManager to be zone-agnostic: any instance can serve any zone.
-var (
-	knownZonesMu sync.RWMutex
-	knownZones   = make(map[uint32]struct{})
-)
-
-// GetKnownZones returns all zone IDs currently discovered from etcd.
-func GetKnownZones() []uint32 {
-	knownZonesMu.RLock()
-	defer knownZonesMu.RUnlock()
-	zones := make([]uint32, 0, len(knownZones))
-	for z := range knownZones {
-		zones = append(zones, z)
-	}
-	return zones
+// GetActiveZones returns the zone IDs from the current known node set.
+func GetActiveZones() []uint32 {
+	activeZonesMu.RLock()
+	defer activeZonesMu.RUnlock()
+	result := make([]uint32, len(activeZones))
+	copy(result, activeZones)
+	return result
 }
 
 // nodeLoadKey returns the zone-scoped Redis sorted-set key.
@@ -61,124 +52,302 @@ type sceneNodeRegistration struct {
 	ZoneId uint32 `json:"zoneId"`
 }
 
-// StartLoadReporter discovers C++ scene nodes from etcd and publishes their
-// availability to per-zone Redis sorted-sets used by GetBestNode.
-func StartLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
-	ticker := time.NewTicker(LoadReportInterval)
-	defer ticker.Stop()
+// nodeEntry stores a parsed node with its string ID.
+type nodeEntry struct {
+	reg    sceneNodeRegistration
+	nodeID string
+}
 
-	syncSceneNodes(ctx, svcCtx)
+// pendingRemoval tracks a deleted node waiting out its grace period.
+type pendingRemoval struct {
+	since time.Time
+	entry nodeEntry
+}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			syncSceneNodes(ctx, svcCtx)
-		}
+// knownNodes tracks nodes currently registered in etcd, keyed by etcd key.
+var (
+	knownNodesMu sync.RWMutex
+	knownNodes   = make(map[string]nodeEntry)
+)
+
+// pendingRemovals tracks deleted nodes pending grace-period expiry.
+var (
+	pendingRemovalsMu sync.Mutex
+	pendingRemovals   = make(map[string]pendingRemoval) // nodeID → removal info
+)
+
+// parseNodeEntry parses a raw etcd value into a nodeEntry.
+func parseNodeEntry(value []byte) (nodeEntry, bool) {
+	var reg sceneNodeRegistration
+	if err := json.Unmarshal(value, &reg); err != nil {
+		logx.Errorf("[LoadReporter] failed to parse node registration: %v", err)
+		return nodeEntry{}, false
+	}
+	return nodeEntry{
+		reg:    reg,
+		nodeID: strconv.FormatUint(uint64(reg.NodeId), 10),
+	}, true
+}
+
+// updateNodeLoad reads the node's scene count from Redis and updates the load set.
+func updateNodeLoad(svcCtx *svc.ServiceContext, entry nodeEntry) {
+	sceneCountKey := fmt.Sprintf(NodeSceneCountKey, entry.nodeID)
+	var load int64
+	if s, e := svcCtx.Redis.Get(sceneCountKey); e == nil && s != "" {
+		fmt.Sscanf(s, "%d", &load)
+	}
+	loadKey := nodeLoadKey(entry.reg.ZoneId)
+	if _, err := svcCtx.Redis.Zadd(loadKey, load, entry.nodeID); err != nil {
+		logx.Errorf("[LoadReporter] failed to update load for node %s (zone %d): %v", entry.nodeID, entry.reg.ZoneId, err)
 	}
 }
 
-// syncSceneNodes reads ALL SceneNodeService entries from etcd (across all zones)
-// and updates per-zone Redis sorted sets with numeric node IDs.
-func syncSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) {
-	prefix := "SceneNodeService.rpc/"
-	resp, err := svcCtx.Etcd.Get(ctx, prefix, clientv3.WithPrefix())
+// removeNodeFromRedis cleans up a node's load-set entry and cached connection.
+func removeNodeFromRedis(svcCtx *svc.ServiceContext, entry nodeEntry) {
+	loadKey := nodeLoadKey(entry.reg.ZoneId)
+	svcCtx.Redis.Zrem(loadKey, entry.nodeID)
+	RemoveNodeConn(entry.nodeID)
+	logx.Infof("[LoadReporter] removed node %s from Redis load set (zone %d)", entry.nodeID, entry.reg.ZoneId)
+}
+
+// rebuildActiveZones derives activeZones from knownNodes.
+func rebuildActiveZones() {
+	knownNodesMu.RLock()
+	zoneSet := make(map[uint32]struct{})
+	for _, entry := range knownNodes {
+		zoneSet[entry.reg.ZoneId] = struct{}{}
+	}
+	knownNodesMu.RUnlock()
+
+	zones := make([]uint32, 0, len(zoneSet))
+	for z := range zoneSet {
+		zones = append(zones, z)
+	}
+	activeZonesMu.Lock()
+	activeZones = zones
+	activeZonesMu.Unlock()
+}
+
+// ---------------------------------------------------------------------------
+// StartLoadReporter — list-watch pattern (like K8s informer)
+// ---------------------------------------------------------------------------
+
+// StartLoadReporter uses etcd Watch to reactively discover scene node changes,
+// with a periodic ticker for load-score refresh and grace-period checks.
+// On Watch error or channel close, it re-lists and re-watches automatically.
+func StartLoadReporter(ctx context.Context, svcCtx *svc.ServiceContext) {
+	for {
+		rev, err := fullSync(ctx, svcCtx)
+		if err != nil {
+			logx.Errorf("[LoadReporter] full sync failed: %v, retrying in 3s", err)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(3 * time.Second):
+				continue
+			}
+		}
+
+		watchAndRefresh(ctx, svcCtx, rev)
+
+		if ctx.Err() != nil {
+			return
+		}
+		logx.Info("[LoadReporter] watch interrupted, re-syncing")
+	}
+}
+
+// fullSync does a complete etcd Get to build baseline state, updates Redis,
+// and ensures main scenes for all discovered zones. Returns the etcd revision.
+func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
+	resp, err := svcCtx.Etcd.Get(ctx, sceneNodePrefix, clientv3.WithPrefix())
 	if err != nil {
-		logx.Errorf("etcd get %s failed: %v", prefix, err)
-		return
+		return 0, fmt.Errorf("etcd get %s: %w", sceneNodePrefix, err)
 	}
 
-	// Track which nodes are seen per zone in this sync pass.
 	seenByZone := make(map[uint32]map[string]struct{})
 
+	knownNodesMu.Lock()
+	knownNodes = make(map[string]nodeEntry, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
-		var reg sceneNodeRegistration
-		if err := json.Unmarshal(kv.Value, &reg); err != nil {
-			logx.Errorf("failed to parse scene node registration %s: %v", string(kv.Key), err)
+		key := string(kv.Key)
+		entry, ok := parseNodeEntry(kv.Value)
+		if !ok {
 			continue
 		}
-		nodeIDStr := strconv.FormatUint(uint64(reg.NodeId), 10)
-		zoneId := reg.ZoneId
+		knownNodes[key] = entry
 
+		zoneId := entry.reg.ZoneId
 		if seenByZone[zoneId] == nil {
 			seenByZone[zoneId] = make(map[string]struct{})
 		}
-		seenByZone[zoneId][nodeIDStr] = struct{}{}
+		seenByZone[zoneId][entry.nodeID] = struct{}{}
 
-		// Node is present in etcd: clear any pending removal.
-		missingSinceMu.Lock()
-		delete(missingSince, nodeIDStr)
-		missingSinceMu.Unlock()
-
-		// Read scene count as load indicator (0 if not set).
-		sceneCountKey := fmt.Sprintf(NodeSceneCountKey, nodeIDStr)
-		var load int64
-		if s, e := svcCtx.Redis.Get(sceneCountKey); e == nil && s != "" {
-			fmt.Sscanf(s, "%d", &load)
-		}
-
-		loadKey := nodeLoadKey(zoneId)
-		if _, err := svcCtx.Redis.Zadd(loadKey, load, nodeIDStr); err != nil {
-			logx.Errorf("failed to update load for node %s (zone %d): %v", nodeIDStr, zoneId, err)
-		}
+		updateNodeLoad(svcCtx, entry)
 	}
+	knownNodesMu.Unlock()
 
-	// Merge discovered zones into the known set.
-	knownZonesMu.Lock()
+	// Update activeZones.
+	zones := make([]uint32, 0, len(seenByZone))
 	for z := range seenByZone {
-		knownZones[z] = struct{}{}
+		zones = append(zones, z)
 	}
-	allZones := make([]uint32, 0, len(knownZones))
-	for z := range knownZones {
-		allZones = append(allZones, z)
-	}
-	knownZonesMu.Unlock()
+	activeZonesMu.Lock()
+	activeZones = zones
+	activeZonesMu.Unlock()
 
-	// Remove stale entries per zone, respecting the grace period.
-	graceDuration := time.Duration(svcCtx.Config.NodeRemovalGraceSeconds) * time.Second
+	// Clear pending removals — full sync rebuilds truth.
+	pendingRemovalsMu.Lock()
+	pendingRemovals = make(map[string]pendingRemoval)
+	pendingRemovalsMu.Unlock()
 
-	for _, zoneId := range allZones {
-		seen := seenByZone[zoneId] // nil if no nodes in this zone this tick
-		if seen == nil {
-			seen = make(map[string]struct{})
-		}
-
+	// Clean stale Redis entries not in current etcd snapshot.
+	for _, zoneId := range zones {
+		seen := seenByZone[zoneId]
 		loadKey := nodeLoadKey(zoneId)
 		pairs, err := svcCtx.Redis.ZrangeWithScores(loadKey, 0, -1)
 		if err != nil {
 			continue
 		}
-
-		now := time.Now()
-		missingSinceMu.Lock()
 		for _, p := range pairs {
-			if _, ok := seen[p.Key]; ok {
-				continue
-			}
-			// Node is missing from etcd.
-			if graceDuration <= 0 {
-				// No grace period: remove immediately.
+			if _, ok := seen[p.Key]; !ok {
 				svcCtx.Redis.Zrem(loadKey, p.Key)
-				RemoveNodeConn(p.Key)
-				continue
-			}
-			firstMissing, tracked := missingSince[p.Key]
-			if !tracked {
-				// First time we noticed this node is missing. Start the clock.
-				missingSince[p.Key] = now
-				logx.Infof("scene node %s missing from etcd (zone %d), grace period started (%ds)", p.Key, zoneId, svcCtx.Config.NodeRemovalGraceSeconds)
-				continue
-			}
-			if now.Sub(firstMissing) >= graceDuration {
-				// Grace period expired: remove for real.
-				logx.Infof("scene node %s grace period expired (zone %d), removing from load set", p.Key, zoneId)
-				svcCtx.Redis.Zrem(loadKey, p.Key)
-				delete(missingSince, p.Key)
 				RemoveNodeConn(p.Key)
 			}
 		}
-		missingSinceMu.Unlock()
+	}
+
+	// Ensure main scenes for all zones (handles SceneManager restart).
+	if len(svcCtx.Config.MainSceneConfIds) > 0 {
+		for _, z := range zones {
+			initMainScenesForZone(ctx, svcCtx, z, svcCtx.Config.MainSceneConfIds)
+		}
+	}
+
+	logx.Infof("[LoadReporter] full sync: %d nodes, %d zones, rev=%d",
+		len(resp.Kvs), len(zones), resp.Header.Revision)
+	return resp.Header.Revision, nil
+}
+
+// watchAndRefresh starts an etcd Watch from the given revision and a periodic
+// ticker for load-score refresh and grace-period expiry checks.
+func watchAndRefresh(ctx context.Context, svcCtx *svc.ServiceContext, rev int64) {
+	watchCh := svcCtx.Etcd.Watch(ctx, sceneNodePrefix,
+		clientv3.WithPrefix(),
+		clientv3.WithRev(rev+1),
+		clientv3.WithPrevKV(),
+	)
+
+	ticker := time.NewTicker(LoadReportInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case watchResp, ok := <-watchCh:
+			if !ok {
+				logx.Info("[LoadReporter] watch channel closed")
+				return
+			}
+			if watchResp.Err() != nil {
+				logx.Errorf("[LoadReporter] watch error: %v", watchResp.Err())
+				return
+			}
+			for _, ev := range watchResp.Events {
+				handleWatchEvent(ctx, svcCtx, ev)
+			}
+		case <-ticker.C:
+			refreshLoadScores(svcCtx)
+			checkGracePeriodExpirations(svcCtx)
+		}
+	}
+}
+
+// handleWatchEvent processes a single etcd PUT or DELETE event.
+func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clientv3.Event) {
+	key := string(ev.Kv.Key)
+
+	switch ev.Type {
+	case clientv3.EventTypePut:
+		entry, ok := parseNodeEntry(ev.Kv.Value)
+		if !ok {
+			return
+		}
+
+		knownNodesMu.Lock()
+		_, existed := knownNodes[key]
+		knownNodes[key] = entry
+		knownNodesMu.Unlock()
+
+		// Node (re-)appeared: cancel pending removal.
+		pendingRemovalsMu.Lock()
+		delete(pendingRemovals, entry.nodeID)
+		pendingRemovalsMu.Unlock()
+
+		updateNodeLoad(svcCtx, entry)
+		rebuildActiveZones()
+
+		if !existed && len(svcCtx.Config.MainSceneConfIds) > 0 {
+			logx.Infof("[LoadReporter] Zone %d: node %s appeared (watch PUT)", entry.reg.ZoneId, entry.nodeID)
+			initMainScenesForZone(ctx, svcCtx, entry.reg.ZoneId, svcCtx.Config.MainSceneConfIds)
+		}
+
+	case clientv3.EventTypeDelete:
+		knownNodesMu.Lock()
+		entry, existed := knownNodes[key]
+		if existed {
+			delete(knownNodes, key)
+		}
+		knownNodesMu.Unlock()
+
+		if !existed {
+			return
+		}
+
+		rebuildActiveZones()
+
+		graceDuration := time.Duration(svcCtx.Config.NodeRemovalGraceSeconds) * time.Second
+		if graceDuration <= 0 {
+			removeNodeFromRedis(svcCtx, entry)
+			return
+		}
+
+		pendingRemovalsMu.Lock()
+		pendingRemovals[entry.nodeID] = pendingRemoval{since: time.Now(), entry: entry}
+		pendingRemovalsMu.Unlock()
+
+		logx.Infof("[LoadReporter] node %s deleted (zone %d), grace period started (%ds)",
+			entry.nodeID, entry.reg.ZoneId, svcCtx.Config.NodeRemovalGraceSeconds)
+	}
+}
+
+// refreshLoadScores updates Redis load scores for all currently known nodes.
+func refreshLoadScores(svcCtx *svc.ServiceContext) {
+	knownNodesMu.RLock()
+	defer knownNodesMu.RUnlock()
+	for _, entry := range knownNodes {
+		updateNodeLoad(svcCtx, entry)
+	}
+}
+
+// checkGracePeriodExpirations removes nodes whose grace period has expired.
+func checkGracePeriodExpirations(svcCtx *svc.ServiceContext) {
+	graceDuration := time.Duration(svcCtx.Config.NodeRemovalGraceSeconds) * time.Second
+	if graceDuration <= 0 {
+		return
+	}
+
+	now := time.Now()
+	pendingRemovalsMu.Lock()
+	defer pendingRemovalsMu.Unlock()
+	for nodeID, pr := range pendingRemovals {
+		if now.Sub(pr.since) >= graceDuration {
+			logx.Infof("[LoadReporter] node %s grace period expired (zone %d), removing",
+				nodeID, pr.entry.reg.ZoneId)
+			removeNodeFromRedis(svcCtx, pr.entry)
+			delete(pendingRemovals, nodeID)
+		}
 	}
 }
 

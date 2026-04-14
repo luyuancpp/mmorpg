@@ -431,3 +431,37 @@ func TestDecrPlayerCount_NeverGoesNegative(t *testing.T) {
 	val, _ := sc.Redis.Get(countKey)
 	assert.Equal(t, "0", val, "player count should be clamped to 0, not negative")
 }
+
+// ---------------------------------------------------------------------------
+// Idempotent re-init tests (node restart / re-appearance)
+// ---------------------------------------------------------------------------
+
+func TestInitMainScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001, 1002})
+	ctx := context.Background()
+
+	// Register a node in the load set.
+	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
+
+	// First init: allocates scene IDs in Redis.
+	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+
+	hashKey := mainScenesKey(testZoneId)
+	id1, _ := sc.Redis.Hget(hashKey, "1001")
+	id2, _ := sc.Redis.Hget(hashKey, "1002")
+	assert.NotEmpty(t, id1, "conf 1001 should have a scene ID")
+	assert.NotEmpty(t, id2, "conf 1002 should have a scene ID")
+	assert.NotEqual(t, id1, id2, "different configs should get different IDs")
+
+	// Second init (simulates node re-appearance): must NOT allocate new IDs.
+	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+
+	id1After, _ := sc.Redis.Hget(hashKey, "1001")
+	id2After, _ := sc.Redis.Hget(hashKey, "1002")
+	assert.Equal(t, id1, id1After, "re-init must not change scene ID for conf 1001")
+	assert.Equal(t, id2, id2After, "re-init must not change scene ID for conf 1002")
+
+	// Verify no extra entries crept in.
+	allFields, _ := sc.Redis.Hgetall(hashKey)
+	assert.Len(t, allFields, 2, "should still have exactly 2 entries")
+}
