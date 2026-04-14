@@ -12,8 +12,9 @@ The scene system supports two scene types managed by Go SceneManager and hosted 
 
 SceneManager is **stateless and horizontally scalable**. It does not bind to any specific zone:
 - Zone information flows through **RPC requests** (`zone_id` field), not config.
-- `LoadReporter` discovers scene nodes from **all zones** via etcd (`SceneNodeService.rpc/` prefix without zone filter), populating per-zone Redis load sets.
-- `syncSceneNodes` detects new zones and **node re-appearance** via `prevSeenByZone`, triggers `initMainScenesForZone` to create/ensure main scenes.
+- `LoadReporter` uses **list-watch** (etcd Watch) to reactively discover scene node changes. No polling.
+- On Watch PUT (node appeared) → triggers `initMainScenesForZone`. On Watch DELETE → grace period then cleanup.
+- `fullSync` on startup / watch reconnect does full etcd Get, rebuilds `knownNodes` baseline.
 - `InstanceLifecycleManager` iterates over `GetActiveZones()` when cleaning up idle instances.
 - Multiple SceneManager instances can run behind a load balancer, each serving any zone.
 
@@ -95,6 +96,111 @@ Go SceneManager.DestroyScene(scene_id) or InstanceLifecycleManager
 
 Industry-standard pattern (same principle as K8s controller reconciliation loop). No per-node state machine required.
 
+### K8s 设计模式在本项目中的映射
+
+#### 1. List-Watch（K8s Informer 模式）
+
+**K8s 原理**：K8s 的 Informer 不是每秒轮询 API Server，而是：
+- **List**：启动时执行一次全量 GET，拉取所有资源，建立本地缓存（indexer），记录 `resourceVersion`。
+- **Watch**：从 `resourceVersion+1` 开始监听变更事件流（ADDED / MODIFIED / DELETED），增量更新本地缓存。
+- **Re-list**：Watch 连接断开时，重新 List 建立基线，再重新 Watch。
+- 优势：全量 + 增量结合，不丢事件，不做无谓轮询，99% 的时间只处理增量。
+
+**本项目映射**（`load_reporter.go`）：
+
+| K8s Informer 概念 | 本项目实现 |
+|-------------------|-----------|
+| List（全量拉取） | `fullSync()` — `etcd.Get(prefix, WithPrefix())` 拉取所有 `SceneNodeService.rpc/*` |
+| Local cache / indexer | `knownNodes map[string]nodeEntry` — 按 etcd key 索引的节点信息 |
+| resourceVersion | `resp.Header.Revision` — etcd 全局递增版本号 |
+| Watch（增量监听） | `watchAndRefresh()` — `etcd.Watch(prefix, WithRev(rev+1))` 接收 PUT/DELETE |
+| Event handler | `handleWatchEvent()` — 分发 PUT（新增/更新）和 DELETE（删除）事件 |
+| Re-list on watch error | Watch channel 关闭或报错 → 回到外层 for 循环 → 重新 `fullSync()` |
+
+```
+StartLoadReporter (外层 for 循环)
+  │
+  ├─ fullSync()                          ← K8s List
+  │   ├─ etcd Get 全量拉取
+  │   ├─ 建立 knownNodes (= indexer)
+  │   ├─ 清理 Redis 中的陈旧节点
+  │   ├─ 对所有 zone 执行 initMainScenesForZone (= 全量 reconcile)
+  │   └─ 返回 revision
+  │
+  └─ watchAndRefresh(rev)                ← K8s Watch
+      ├─ etcd.Watch(prefix, WithRev(rev+1))
+      ├─ SELECT:
+      │   ├─ watchCh event
+      │   │   └─ handleWatchEvent()      ← Event handler (增量 reconcile)
+      │   │       ├─ PUT  → 更新 knownNodes, 更新 Redis load, 触发 initMainScenesForZone
+      │   │       └─ DELETE → 从 knownNodes 移除, 启动 grace period
+      │   └─ 5s ticker
+      │       ├─ refreshLoadScores()     ← 定期刷新负载分数
+      │       └─ checkGracePeriodExpirations()
+      └─ watch 断开 → return → 外层 for 自动 re-list
+```
+
+#### 2. Reconciliation Loop（K8s Controller 模式）
+
+**K8s 原理**：Controller 不记录"我做过什么操作"的步骤状态机，而是：
+- 声明 **期望状态**（Desired State）：例如 Deployment spec 声明要 3 个 Pod。
+- 观察 **当前状态**（Current State）：查看实际 Pod 数量。
+- **收敛**（Reconcile）：计算 diff，执行动作让 current → desired。
+- 关键特性：**幂等**。执行多次结果一样。不管中间崩溃多少次，下次运行时重新 observe + reconcile 即可自愈。
+
+**本项目映射**：
+
+| K8s Controller 概念 | 本项目实现 |
+|--------------------|-----------|
+| Desired State | `MainSceneConfIds` 配置："每个 zone 应该有这些主场景" |
+| Current State | Redis `main_scenes:zone:{zoneId}` 哈希 + C++ ECS registry |
+| Reconcile 函数 | `initMainScenesForZone()` — 对比 + 收敛 |
+| Reconcile 触发方式 | Watch PUT event（增量）或 fullSync（全量） |
+| 幂等保证 | Redis 层跳过已有 ID + C++ CreateScene 按 config_id 去重 |
+
+```
+Reconcile (initMainScenesForZone):
+
+  for each confId in MainSceneConfIds:
+      ┌─ Redis Hget(main_scenes:zone:X, confId)
+      │
+      ├─ 不存在 → 分配 scene ID (INCR), 写 Redis (HSET)
+      │           └─ 调 C++ CreateScene RPC → 创建 ECS entity
+      │
+      └─ 已存在 → 跳过 ID 分配
+                  └─ 仍然调 C++ CreateScene RPC → C++ 幂等返回已有 entity
+                     (覆盖 C++ 重启后 ECS 为空的情况)
+```
+
+#### 3. 两者结合 = 事件驱动的收敛控制器
+
+不轮询（Watch 推送），不搞状态机（幂等收敛），两个 K8s 核心模式的结合：
+
+```
+etcd Watch (事件驱动，不轮询)
+  │
+  ├─ PUT event (节点新增/重现)
+  │   └─ handleWatchEvent → initMainScenesForZone (reconcile)
+  │
+  ├─ DELETE event (节点消失)
+  │   └─ handleWatchEvent → 启动 grace period → 超时后清理 Redis
+  │
+  └─ Watch 断开
+      └─ fullSync (re-list) → 对所有 zone 执行 initMainScenesForZone (全量 reconcile)
+```
+
+旧方案（轮询）vs 新方案（list-watch）对比：
+
+| 方面 | 轮询 (旧) | List-Watch (新) |
+|------|-----------|-----------------|
+| 发现节点变化 | 每 5s `etcd.Get` 全量扫描 | etcd Watch 事件推送，毫秒级 |
+| 节点新增检测 | `prevSeenByZone` 前后帧 diff | Watch PUT 事件，`!existed` 判断 |
+| 节点删除检测 | 遍历 Redis vs seenByZone diff | Watch DELETE 事件直接触发 |
+| 负载分数刷新 | 每帧全量刷所有节点 | 5s ticker 仅更新已知节点 |
+| etcd 压力 | 每 5s 一次全量 Get | 建连 + 增量流，几乎零轮询开销 |
+| 容错 | 单帧失败跳过，下帧重试 | Watch 断开 → re-list + re-watch |
+| 延迟 | 最差 5s（一个 tick 间隔） | 毫秒级（etcd 推送延迟） |
+
 ### Three-Layer Protection
 
 1. **C++ CreateScene idempotent by `config_id`**: Before creating a new entity, scans `sceneRegistry.view<SceneInfoComp>()` for an existing entity with the same `scene_confid`. If found, returns the existing scene info. This makes the RPC safe to call any number of times.
@@ -104,25 +210,23 @@ Industry-standard pattern (same principle as K8s controller reconciliation loop)
    - C++ layer: **always sends `CreateScene` RPC** regardless of Redis state (C++ deduplicates).
    - This handles the scenario where Redis has stale data (scene ID exists) but the C++ node restarted and its ECS registry is empty.
 
-3. **Go `syncSceneNodes` lightweight re-appearance detection**:
-   - `prevSeenByZone map[uint32]map[string]struct{}` stores the previous tick's node set (flat, replaced each tick — **not** a state machine).
-   - On each sync: if a node appears that wasn't in the previous set → treated as new/re-appeared → triggers `initMainScenesForZone`.
-   - Covers: first startup, node reconnect, node restart, SceneManager restart.
+3. **Go LoadReporter list-watch**: etcd Watch 事件驱动。节点 PUT → 触发 reconcile。Watch 断开 → fullSync re-list + 全量 reconcile。
 
 ### Scenario Matrix
 
 | Scenario | Redis State | C++ ECS State | Outcome |
 |----------|-------------|---------------|----------|
-| First startup | empty | empty | Allocate scene ID + create ECS entity |
-| Node reconnect (data alive) | has data | has entity | RPC returns existing entity, zero side-effect |
-| Node restart (data lost) | has data | empty | No re-allocation, RPC creates new entity |
-| SceneManager restart | has data | has entity | `prevSeenByZone` empty → full re-ensure → C++ dedup |
+| First startup | empty | empty | fullSync → allocate scene ID + create ECS entity |
+| Node reconnect (data alive) | has data | has entity | Watch PUT → reconcile → RPC returns existing, zero side-effect |
+| Node restart (data lost) | has data | empty | Watch PUT → reconcile → no re-allocation, RPC creates new entity |
+| SceneManager restart | has data | has entity | fullSync → 全量 re-ensure → C++ dedup |
+| Watch 断开重连 | has data | has entity | re-list → 全量 reconcile → C++ dedup |
 
 ## Main Scene Initialization
 
-No blocking startup function. `syncSceneNodes` (called every 5s by `LoadReporter`) handles init:
-1. Reads all `SceneNodeService.rpc/` entries from etcd, builds `seenByZone` map.
-2. Compares with `prevSeenByZone`: any new/re-appeared node triggers `initMainScenesForZone`.
+事件驱动，不阻塞启动：
+1. `StartLoadReporter` → `fullSync()` 全量拉 etcd → 对所有发现的 zone 执行 `initMainScenesForZone`（全量 reconcile）。
+2. 之后 Watch 接管：每当有 C++ 场景节点注册（PUT 事件），`handleWatchEvent` 触发该 zone 的 `initMainScenesForZone`（增量 reconcile）。
 3. `initMainScenesForZone`: iterates `MainSceneConfIds`, performs Redis idempotent check (skip ID allocation if exists), always sends C++ CreateScene RPC, assigns nodes via FNV-1a consistent hashing.
 
 ## Key Redis Keys
