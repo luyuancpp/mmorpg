@@ -37,7 +37,7 @@ java/
 
 ## CONVENTIONS
 - Both `sa_token_node/` and `gateway_node/` use JDK 23 and Spring Boot 3.4.3.
-- `gateway_node/` replaces the former Go gateway (`go/gateway/`). The Go version is retained but no longer launched.
+- `gateway_node/` replaces the former Go gateway (`go/gateway/`, removed 2026-04-14).
 - Admin APIs require `X-Admin-Key` header matching `admin.api-key` in application.yaml.
 - Zone status uses dual-path: manual (MySQL) + auto (etcd/Redis probe). Manual always overrides auto.
 - Gate token signing uses HMAC-SHA256 matching the Go implementation for wire compatibility.

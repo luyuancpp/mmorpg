@@ -5,10 +5,12 @@ server:
 spring:
   application:
     name: gateway-node
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   datasource:
     url: jdbc:mysql://localhost:3306/mmorpg?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: appuser
-    password: apppass
+    password: apppass123
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
