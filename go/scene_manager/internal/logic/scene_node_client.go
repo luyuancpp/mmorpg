@@ -25,8 +25,9 @@ var (
 
 // RequestNodeCreateScene dials the C++ scene node identified by nodeId and calls
 // CreateScene to instantiate the ECS scene entity.
+// sceneId is the Go-allocated unique ID; C++ uses it for per-scene idempotency.
 // If the node is unreachable, the error is returned but Redis state is already committed.
-func RequestNodeCreateScene(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, configId uint32) (*scenepb.CreateSceneResponse, error) {
+func RequestNodeCreateScene(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, configId uint32, sceneId uint64) (*scenepb.CreateSceneResponse, error) {
 	if svcCtx.Etcd == nil {
 		return nil, fmt.Errorf("etcd client not available, skipping CreateScene RPC to node %s", nodeId)
 	}
@@ -37,7 +38,7 @@ func RequestNodeCreateScene(ctx context.Context, svcCtx *svc.ServiceContext, nod
 	}
 
 	client := scenepb.NewSceneClient(conn)
-	resp, err := client.CreateScene(ctx, &scenepb.CreateSceneRequest{ConfigId: configId})
+	resp, err := client.CreateScene(ctx, &scenepb.CreateSceneRequest{ConfigId: configId, SceneId: sceneId})
 	if err != nil {
 		return nil, fmt.Errorf("CreateScene RPC to node %s: %w", nodeId, err)
 	}

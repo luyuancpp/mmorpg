@@ -20,6 +20,11 @@ type Config struct {
 	// Anything not in this list is treated as an instance.
 	MainSceneConfIds []uint64 `json:",optional"`
 
+	// MainSceneLineCount: number of lines (channels) per main-world scene.
+	// Each line is a separate ECS scene entity sharing the same config_id.
+	// Players are assigned to the least-loaded line. Default 1 (no split).
+	MainSceneLineCount int `json:",default=1"`
+
 	// InstanceIdleTimeoutSeconds: seconds an empty instance is kept alive
 	// before being auto-destroyed. 0 = never auto-destroy (default).
 	InstanceIdleTimeoutSeconds int64 `json:",default=300"`

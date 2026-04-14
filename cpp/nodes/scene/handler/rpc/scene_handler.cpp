@@ -586,22 +586,23 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController *controller, co
 							   ::google::protobuf::Closure *done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (request->config_id() == 0)
+	if (request->config_id() == 0 || request->scene_id() == 0)
 	{
-		LOG_ERROR << "CreateScene: config_id is 0";
+		LOG_ERROR << "CreateScene: config_id=" << request->config_id()
+				  << " scene_id=" << request->scene_id() << ", both must be non-zero";
 		return;
 	}
 
-	// Idempotent: if a scene with this config_id already exists, return it.
+	// Idempotent: deduplicate by scene_id (Go-allocated, globally unique).
 	{
 		auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
 		for (auto entity : view)
 		{
 			const auto &info = view.get<SceneInfoComp>(entity);
-			if (info.scene_confid() == request->config_id())
+			if (info.guid() == request->scene_id())
 			{
 				response->mutable_scene_info()->CopyFrom(info);
-				LOG_INFO << "CreateScene: config_id=" << request->config_id()
+				LOG_INFO << "CreateScene: scene_id=" << request->scene_id()
 						 << " already exists (entity=" << entt::to_integral(entity) << "), returning existing";
 				return;
 			}
@@ -614,7 +615,7 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController *controller, co
 	// 2. Populate SceneInfoComp (proto component).
 	auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
 	sceneInfo.set_scene_confid(request->config_id());
-	sceneInfo.set_guid(entt::to_integral(sceneEntity));
+	sceneInfo.set_guid(request->scene_id());
 
 	// 3. Add player tracking set (initially empty).
 	tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
@@ -628,7 +629,8 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController *controller, co
 	response->mutable_scene_info()->CopyFrom(sceneInfo);
 
 	LOG_INFO << "CreateScene: created scene entity=" << entt::to_integral(sceneEntity)
-			 << " config_id=" << request->config_id();
+			 << " config_id=" << request->config_id()
+			 << " guid=" << sceneInfo.guid();
 	///<<< END WRITING YOUR CODE
 }
 

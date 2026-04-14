@@ -66,45 +66,30 @@ func (l *CreateSceneLogic) resolveSceneType(in *scene_manager.CreateSceneRequest
 	return constants.SceneTypeInstance
 }
 
-// createMainWorldScene looks up or creates a persistent main-world scene.
-// Main scenes are idempotent: if the confId already has a scene, return it.
+// createMainWorldScene returns the least-loaded line for a main-world scene.
+// Lines are pre-created by initMainScenesForZone at startup; this is a fallback
+// that also creates lines on-demand if they somehow don't exist yet.
 func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
-	// Check if already created (startup or prior call).
-	existingId, _ := GetMainSceneId(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
-	if existingId > 0 {
-		nodeKey := fmt.Sprintf("scene:%d:node", existingId)
-		nodeId, _ := l.svcCtx.Redis.Get(nodeKey)
-		l.Logger.Infof("[MainWorld] Scene already exists: id=%d conf=%d node=%s", existingId, in.SceneConfId, nodeId)
-		return &scene_manager.CreateSceneResponse{SceneId: existingId, NodeId: nodeId}, nil
+	// Fast path: lines already exist — return the least-loaded one.
+	sceneId, nodeId, _ := GetBestMainSceneLine(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
+	if sceneId > 0 {
+		l.Logger.Infof("[MainWorld] Best line: scene=%d conf=%d node=%s", sceneId, in.SceneConfId, nodeId)
+		return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: nodeId}, nil
 	}
 
-	// Determine target node: explicit or hash-assigned.
-	targetNode := in.TargetNodeId
-	if targetNode == "" {
-		bestNode, err := GetBestNode(l.ctx, l.svcCtx, in.ZoneId)
-		if err != nil {
-			l.Logger.Errorf("[MainWorld] No available node: %v", err)
-			return &scene_manager.CreateSceneResponse{ErrorCode: constants.ErrNoAvailableNode, ErrorMessage: err.Error()}, nil
-		}
-		targetNode = bestNode
+	// Slow path: no lines exist — create them now (startup race or missing init).
+	l.Logger.Infof("[MainWorld] No lines for conf %d in zone %d, creating on demand", in.SceneConfId, in.ZoneId)
+	initMainScenesForZone(l.ctx, l.svcCtx, in.ZoneId, []uint64{in.SceneConfId})
+
+	sceneId, nodeId, _ = GetBestMainSceneLine(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
+	if sceneId > 0 {
+		return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: nodeId}, nil
 	}
 
-	sceneId, err := l.allocateScene(in.SceneConfId, targetNode)
-	if err != nil {
-		return &scene_manager.CreateSceneResponse{ErrorCode: constants.ErrRedis, ErrorMessage: err.Error()}, nil
-	}
-
-	// Register in main scenes hash.
-	hashKey := mainScenesKey(in.ZoneId)
-	l.svcCtx.Redis.Hset(hashKey, fmt.Sprintf("%d", in.SceneConfId), fmt.Sprintf("%d", sceneId))
-
-	// Notify the C++ scene node to instantiate the ECS scene entity.
-	if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, targetNode, uint32(in.SceneConfId)); err != nil {
-		l.Logger.Errorf("[MainWorld] Failed to call CreateScene on node %s for scene %d: %v (Redis state committed)", targetNode, sceneId, err)
-	}
-
-	l.Logger.Infof("[MainWorld] Created scene %d (conf=%d) on node %s", sceneId, in.SceneConfId, targetNode)
-	return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: targetNode}, nil
+	return &scene_manager.CreateSceneResponse{
+		ErrorCode:    constants.ErrNoAvailableNode,
+		ErrorMessage: "failed to create main world lines",
+	}, nil
 }
 
 // createInstance creates an on-demand instance with lifecycle tracking.
@@ -136,7 +121,7 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 	l.svcCtx.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "0")
 
 	// Notify the C++ scene node to instantiate the ECS scene entity.
-	if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, targetNode, uint32(in.SceneConfId)); err != nil {
+	if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, targetNode, uint32(in.SceneConfId), sceneId); err != nil {
 		l.Logger.Errorf("[Instance] Failed to call CreateScene on node %s for instance %d: %v (Redis state committed)", targetNode, sceneId, err)
 	}
 

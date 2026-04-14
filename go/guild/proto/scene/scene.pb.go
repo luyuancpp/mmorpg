@@ -390,6 +390,7 @@ func (x *Centre2GsEnterSceneRequest) GetSceneId() uint64 {
 type CreateSceneRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ConfigId      uint32                 `protobuf:"varint,1,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
+	SceneId       uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"` // Go-allocated scene ID; C++ dedup by this when > 0.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -427,6 +428,13 @@ func (*CreateSceneRequest) Descriptor() ([]byte, []int) {
 func (x *CreateSceneRequest) GetConfigId() uint32 {
 	if x != nil {
 		return x.ConfigId
+	}
+	return 0
+}
+
+func (x *CreateSceneRequest) GetSceneId() uint64 {
+	if x != nil {
+		return x.SceneId
 	}
 	return 0
 }
@@ -550,9 +558,10 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\"T\n" +
 	"\x1aCentre2GsEnterSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
-	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"1\n" +
+	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"L\n" +
 	"\x12CreateSceneRequest\x12\x1b\n" +
-	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\"D\n" +
+	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x19\n" +
+	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"D\n" +
 	"\x13CreateSceneResponse\x12-\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x0e.SceneInfoCompR\tsceneInfo\"0\n" +

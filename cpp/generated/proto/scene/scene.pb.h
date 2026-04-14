@@ -1051,8 +1051,19 @@ class CreateSceneRequest final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
+    kSceneIdFieldNumber = 2,
     kConfigIdFieldNumber = 1,
   };
+  // uint64 scene_id = 2;
+  void clear_scene_id() ;
+  ::uint64_t scene_id() const;
+  void set_scene_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint64_t value);
+
+  public:
   // uint32 config_id = 1;
   void clear_config_id() ;
   ::uint32_t config_id() const;
@@ -1067,7 +1078,7 @@ class CreateSceneRequest final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<0, 1,
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
                                    0, 0,
                                    2>
       _table_;
@@ -1089,6 +1100,7 @@ class CreateSceneRequest final : public ::google::protobuf::Message
         const CreateSceneRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t scene_id_;
     ::uint32_t config_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2863,7 +2875,7 @@ inline void Centre2GsEnterSceneRequest::_internal_set_scene_id(::uint64_t value)
 inline void CreateSceneRequest::clear_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.config_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline ::uint32_t CreateSceneRequest::config_id() const {
   // @@protoc_insertion_point(field_get:CreateSceneRequest.config_id)
@@ -2871,7 +2883,7 @@ inline ::uint32_t CreateSceneRequest::config_id() const {
 }
 inline void CreateSceneRequest::set_config_id(::uint32_t value) {
   _internal_set_config_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:CreateSceneRequest.config_id)
 }
 inline ::uint32_t CreateSceneRequest::_internal_config_id() const {
@@ -2881,6 +2893,30 @@ inline ::uint32_t CreateSceneRequest::_internal_config_id() const {
 inline void CreateSceneRequest::_internal_set_config_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.config_id_ = value;
+}
+
+// uint64 scene_id = 2;
+inline void CreateSceneRequest::clear_scene_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint64_t CreateSceneRequest::scene_id() const {
+  // @@protoc_insertion_point(field_get:CreateSceneRequest.scene_id)
+  return _internal_scene_id();
+}
+inline void CreateSceneRequest::set_scene_id(::uint64_t value) {
+  _internal_set_scene_id(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:CreateSceneRequest.scene_id)
+}
+inline ::uint64_t CreateSceneRequest::_internal_scene_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scene_id_;
+}
+inline void CreateSceneRequest::_internal_set_scene_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_id_ = value;
 }
 
 // -------------------------------------------------------------------

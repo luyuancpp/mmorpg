@@ -225,6 +225,7 @@ func newTestSvcCtxWithMainScenes(t *testing.T, mainConfIds []uint64) (*svc.Servi
 
 	c := config.Config{}
 	c.MainSceneConfIds = mainConfIds
+	c.MainSceneLineCount = 1
 	c.InstanceIdleTimeoutSeconds = 300
 	c.InstanceCheckIntervalSeconds = 10
 
@@ -243,12 +244,13 @@ func TestIsMainSceneConf(t *testing.T) {
 	assert.False(t, IsMainSceneConf(sc, 0))
 }
 
-func TestGetMainSceneId_NotFound(t *testing.T) {
+func TestGetBestMainSceneLine_NotFound(t *testing.T) {
 	sc, _ := newTestSvcCtxWithMainScenes(t, nil)
 	ctx := context.Background()
 
-	id, _ := GetMainSceneId(ctx, sc, 9999, testZoneId)
+	id, nodeId, _ := GetBestMainSceneLine(ctx, sc, 9999, testZoneId)
 	assert.Equal(t, uint64(0), id)
+	assert.Equal(t, "", nodeId)
 }
 
 func TestAssignNodeByHash_Deterministic(t *testing.T) {
@@ -297,7 +299,7 @@ func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
 
 	logic := NewCreateSceneLogic(ctx, sc)
 
-	// First create.
+	// First create — triggers on-demand line init.
 	resp1, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
 		ZoneId:      testZoneId,
@@ -306,13 +308,13 @@ func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
 	assert.Equal(t, uint32(0), resp1.ErrorCode)
 	assert.NotEqual(t, uint64(0), resp1.SceneId)
 
-	// Second create for same confId — should return same scene.
+	// Second create for same confId — should return same scene (1 line).
 	resp2, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
 		ZoneId:      testZoneId,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, resp1.SceneId, resp2.SceneId, "main scene should be idempotent")
+	assert.Equal(t, resp1.SceneId, resp2.SceneId, "single-line main scene should be idempotent")
 	assert.Equal(t, resp1.NodeId, resp2.NodeId)
 }
 
@@ -446,22 +448,156 @@ func TestInitMainScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
 	// First init: allocates scene IDs in Redis.
 	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
 
-	hashKey := mainScenesKey(testZoneId)
-	id1, _ := sc.Redis.Hget(hashKey, "1001")
-	id2, _ := sc.Redis.Hget(hashKey, "1002")
-	assert.NotEmpty(t, id1, "conf 1001 should have a scene ID")
-	assert.NotEmpty(t, id2, "conf 1002 should have a scene ID")
-	assert.NotEqual(t, id1, id2, "different configs should get different IDs")
+	lines1, _ := GetAllMainSceneLines(ctx, sc, 1001, testZoneId)
+	lines2, _ := GetAllMainSceneLines(ctx, sc, 1002, testZoneId)
+	assert.Len(t, lines1, 1, "conf 1001 should have 1 line")
+	assert.Len(t, lines2, 1, "conf 1002 should have 1 line")
+	assert.NotEqual(t, lines1[0], lines2[0], "different configs should get different scene IDs")
 
 	// Second init (simulates node re-appearance): must NOT allocate new IDs.
 	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
 
-	id1After, _ := sc.Redis.Hget(hashKey, "1001")
-	id2After, _ := sc.Redis.Hget(hashKey, "1002")
-	assert.Equal(t, id1, id1After, "re-init must not change scene ID for conf 1001")
-	assert.Equal(t, id2, id2After, "re-init must not change scene ID for conf 1002")
+	lines1After, _ := GetAllMainSceneLines(ctx, sc, 1001, testZoneId)
+	lines2After, _ := GetAllMainSceneLines(ctx, sc, 1002, testZoneId)
+	assert.Equal(t, lines1, lines1After, "re-init must not change scene IDs for conf 1001")
+	assert.Equal(t, lines2, lines2After, "re-init must not change scene IDs for conf 1002")
+}
 
-	// Verify no extra entries crept in.
-	allFields, _ := sc.Redis.Hgetall(hashKey)
-	assert.Len(t, allFields, 2, "should still have exactly 2 entries")
+// ---------------------------------------------------------------------------
+// Main scene line (分线) tests
+// ---------------------------------------------------------------------------
+
+func TestInitMainScenes_MultipleLines(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
+	sc.Config.MainSceneLineCount = 3
+	ctx := context.Background()
+
+	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
+	mr.ZAdd(nodeLoadKey(testZoneId), 0, "20")
+
+	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+
+	lines, err := GetAllMainSceneLines(ctx, sc, 1001, testZoneId)
+	require.NoError(t, err)
+	assert.Len(t, lines, 3, "should create 3 lines")
+
+	// All scene IDs should be unique.
+	seen := make(map[uint64]bool)
+	for _, id := range lines {
+		assert.False(t, seen[id], "duplicate scene ID %d", id)
+		seen[id] = true
+	}
+}
+
+func TestInitMainScenes_MultipleLines_Idempotent(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
+	sc.Config.MainSceneLineCount = 3
+	ctx := context.Background()
+
+	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
+
+	// First init.
+	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	linesBefore, _ := GetAllMainSceneLines(ctx, sc, 1001, testZoneId)
+	assert.Len(t, linesBefore, 3)
+
+	// Second init — must not add extra lines.
+	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	linesAfter, _ := GetAllMainSceneLines(ctx, sc, 1001, testZoneId)
+	assert.Len(t, linesAfter, 3, "re-init must not create extra lines")
+}
+
+func TestGetBestMainSceneLine_SelectsLowestPlayerCount(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
+	sc.Config.MainSceneLineCount = 3
+	ctx := context.Background()
+
+	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
+
+	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+
+	lines, _ := GetAllMainSceneLines(ctx, sc, 1001, testZoneId)
+	require.Len(t, lines, 3)
+
+	// Set different player counts: lines[0]=10, lines[1]=2, lines[2]=5.
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, lines[0]), "10")
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, lines[1]), "2")
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, lines[2]), "5")
+
+	bestId, bestNode, err := GetBestMainSceneLine(ctx, sc, 1001, testZoneId)
+	require.NoError(t, err)
+	assert.Equal(t, lines[1], bestId, "should pick line with lowest player count")
+	assert.NotEmpty(t, bestNode)
+}
+
+func TestGetBestMainSceneLine_AllEmpty(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
+	sc.Config.MainSceneLineCount = 3
+	ctx := context.Background()
+
+	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
+
+	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+
+	// All lines have player_count = 0 (initialized by init).
+	bestId, _, err := GetBestMainSceneLine(ctx, sc, 1001, testZoneId)
+	require.NoError(t, err)
+	assert.NotEqual(t, uint64(0), bestId, "should return some line even when all empty")
+}
+
+func TestCreateScene_MainWorld_MultipleLines_ReturnsLeastLoaded(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
+	sc.Config.MainSceneLineCount = 3
+	ctx := context.Background()
+
+	mr.ZAdd(testLoadKey(), 0, "10")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+
+	// First call creates lines on demand, returns best.
+	resp1, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 1001,
+		ZoneId:      testZoneId,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, uint32(0), resp1.ErrorCode)
+
+	// 3 lines should now exist.
+	lines, _ := GetAllMainSceneLines(ctx, sc, 1001, testZoneId)
+	assert.Len(t, lines, 3)
+
+	// Simulate load: put 100 players on the line that was returned.
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, resp1.SceneId), "100")
+
+	// Second call should pick a different (less loaded) line.
+	resp2, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 1001,
+		ZoneId:      testZoneId,
+	})
+	require.NoError(t, err)
+	assert.NotEqual(t, resp1.SceneId, resp2.SceneId, "should pick a less loaded line")
+}
+
+func TestCreateScene_MainWorld_LineCountDefault1_BackwardCompat(t *testing.T) {
+	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
+	// MainSceneLineCount defaults to 1 via newTestSvcCtxWithMainScenes.
+	ctx := context.Background()
+
+	mr.ZAdd(testLoadKey(), 0, "10")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+
+	resp1, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 1001,
+		ZoneId:      testZoneId,
+	})
+	resp2, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 1001,
+		ZoneId:      testZoneId,
+	})
+
+	assert.Equal(t, resp1.SceneId, resp2.SceneId, "LineCount=1 → same scene every time")
+
+	lines, _ := GetAllMainSceneLines(ctx, sc, 1001, testZoneId)
+	assert.Len(t, lines, 1, "should have exactly 1 line")
 }
