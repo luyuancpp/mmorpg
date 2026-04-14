@@ -1,11 +1,13 @@
 # ────────────────────────────────────────────────────────────────
-# Multi-stage Dockerfile for the Java sa-token auth service.
+# Multi-stage Dockerfile for Java services (auth, gateway, etc.).
 #
-# Build context MUST be the java/sa_token_node/ directory.
+# Build context MUST be the java/<service>/ directory.
 #
 # Usage:
 #   docker build -f deploy/k8s/Dockerfile.java-svc \
-#     -t mmorpg-auth:latest  java/sa_token_node/
+#     -t mmorpg-auth:latest     java/sa_token_node/
+#   docker build -f deploy/k8s/Dockerfile.java-svc \
+#     -t mmorpg-gateway:latest  java/gateway_node/
 # ────────────────────────────────────────────────────────────────
 
 # ── Build stage ──────────────────────────────────────────────────
@@ -20,7 +22,7 @@ WORKDIR /src
 COPY . /src/
 
 RUN mvn clean package -DskipTests -q \
-    && mv target/sa-token-grpc-node-*.jar /app.jar
+    && cp target/*.jar /app.jar
 
 # ── Runtime stage ────────────────────────────────────────────────
 FROM eclipse-temurin:23-jre-alpine
@@ -31,6 +33,6 @@ WORKDIR /app
 
 COPY --from=builder /app.jar /app/service.jar
 
-EXPOSE 5555 5556
+EXPOSE 5555 5556 8081
 
 ENTRYPOINT ["java", "-jar", "/app/service.jar"]

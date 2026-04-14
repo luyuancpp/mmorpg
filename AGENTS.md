@@ -21,7 +21,7 @@ mmorpg/
 │   ├── db/            # Kafka consumer + MySQL persistence
 │   ├── player_locator/# Player location lookup
 │   └── shared/        # Shared Go utilities (kafkautil, etc.)
-├── java/         # Spring Boot / Sa-Token auth-side services
+├── java/         # Spring Boot services (auth + gateway/zone directory)
 ├── proto/        # Authoritative source contracts and service IDs
 ├── generated/    # Checked-in generated proto/table outputs
 ├── deploy/       # Docker Compose (dev) + Kubernetes (prod) manifests
@@ -66,6 +66,7 @@ The following were removed from git tracking:
 | Go scene manager | `go/scene_manager/scene_manager_service.go` | go-zero scene manager + load reporter |
 | Go data service | `go/data_service/data_service.go` | go-zero RPC service pattern |
 | Java auth grpc node | `java/sa_token_node/` | Maven Spring Boot auth/grpc service |
+| Java gateway (zone directory) | `java/gateway_node/` | Server list, gate assignment, zone health probe, admin APIs |
 | Proto contracts | `proto/` | Authoritative source; regenerate consumers after edits |
 | Checked-in generated contracts | `generated/proto/` | Review only; do not hand-edit |
 | Local/dev infra | `deploy/docker-compose.yml` | Kafka, Redis, MySQL, Nacos, etcd |

@@ -34,8 +34,8 @@ procs:
   go-scene-manager:
     cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-scene-manager"]
 
-  go-gateway:
-    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "go-gateway"]
+  java-gateway:
+    cmd: ["pwsh", "-NoProfile", "-File", "tools/scripts/dev_mprocs_proc.ps1", "-Command", "java-gateway"]
 
   robot:
     cmd: ["pwsh", "-NoProfile", "-Command", "Push-Location robot; go build -o robot.exe .; if ($LASTEXITCODE -eq 0) { ./robot.exe -c etc/robot.yaml } else { Write-Host 'Robot build failed'; pause }"]

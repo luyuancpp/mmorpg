@@ -60,12 +60,12 @@ $GoSvcCatalogue = @{
 	login           = @{ ConfigMap = "go-svc-login-config";           Manifest = "login.yaml";           Port = 50000; ConfigFlag = "-loginService";   ConfigFile = "login.yaml";                  ImageName = "mmorpg-login" }
 	"player-locator"= @{ ConfigMap = "go-svc-player-locator-config";  Manifest = "player-locator.yaml";  Port = 50100; ConfigFlag = "-f";              ConfigFile = "player_locator.yaml";           ImageName = "mmorpg-player-locator" }
 	"scene-manager" = @{ ConfigMap = "go-svc-scene-manager-config";   Manifest = "scene-manager.yaml";   Port = 60000; ConfigFlag = "-f";              ConfigFile = "scene_manager_service.yaml";    ImageName = "mmorpg-scene-manager" }
-	gateway         = @{ ConfigMap = "go-svc-gateway-config";         Manifest = "gateway.yaml";         Port = 8080;  ConfigFlag = "-f";              ConfigFile = "gateway.yaml";                  ImageName = "mmorpg-gateway" }
 }
 
 # Java service catalogue
 $JavaSvcCatalogue = @{
-	auth = @{ ConfigMap = "java-svc-auth-config"; Manifest = "auth.yaml"; HttpPort = 5555; GrpcPort = 5556; ImageName = "mmorpg-auth" }
+	auth    = @{ ConfigMap = "java-svc-auth-config";    Manifest = "auth.yaml";    HttpPort = 5555; GrpcPort = 5556; ImageName = "mmorpg-auth" }
+	gateway = @{ ConfigMap = "java-svc-gateway-config"; Manifest = "gateway.yaml"; HttpPort = 8081; GrpcPort = 0;    ImageName = "mmorpg-gateway" }
 }
 
 function Apply-OpsProfileDefaults {
@@ -599,22 +599,6 @@ Kafka:
 NodeID: "node-1"
 "@
 		}
-		"gateway" {
-@"
-RestConf:
-  Name: gateway
-  Host: 0.0.0.0
-  Port: 8080
-  Timeout: 10000
-Etcd:
-  Hosts:
-    - "etcd.${InfraNamespace}:2379"
-  DialTimeout: 5s
-Gate:
-  TokenSecret: "change-me-in-production-use-a-strong-random-key"
-  DiscoveryTimeout: 5s
-"@
-		}
 		default {
 			throw "Unknown Go service: $SvcName"
 		}
@@ -693,6 +677,30 @@ sa-token:
 grpc:
   server:
     port: 5556
+"@
+		}
+		"gateway" {
+@"
+server:
+  port: 8081
+spring:
+  application:
+    name: gateway-node
+  datasource:
+    url: jdbc:mysql://mysql.${InfraNamespace}:3306/mmorpg?useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+  data:
+    redis:
+      host: redis.${InfraNamespace}
+      port: 6379
+etcd:
+  endpoints: http://etcd.${InfraNamespace}:2379
+gate:
+  token-secret: change-me-in-production-use-a-strong-random-key
+zone:
+  probe:
+    interval-ms: 5000
 "@
 		}
 		default {
