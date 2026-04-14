@@ -1,32 +1,36 @@
-# Gateway K8s Deployment Notes
+# Gateway Service Notes
 
-## Deployed State
-- Docker image: `ghcr.io/luyuancpp/mmorpg-gateway:v1` via `deploy/k8s/Dockerfile.go-svc`
-- 2 replicas per zone (zones 3-10), 16 pods total
-- ConfigMap: `go-svc-gateway-config` per zone, points to `etcd.mmorpg-infra:2379`
+## Current Implementation: Java (`java/gateway_node/`)
+- **Replaced** Go gateway (`go/gateway/`) as of 2026-04-14
+- Spring Boot service with MySQL + Redis + etcd
+- Much richer feature set than the original Go prototype
 
-## Key Design Decisions
-- **Zone-agnostic prefix**: Gateway uses `GateNodeService.rpc/` (no zone filter) to discover ALL gates across all zones. This enables `/api/server-list` to return a global view.
-- **Removed `Gate.ZoneId`** from config — unnecessary since gateway is global.
-- **No AutoSyncInterval** on etcd client — prevents endpoint corruption bug (see below).
-- **Direct etcd Get** (`client.Get` with `WithPrefix`) instead of `namespace.NewKV` wrapper — the namespace wrapper had issues returning stale/empty results.
+### Endpoints
+| Category | Endpoints |
+|----------|-----------|
+| Player-facing | `GET /api/server-list`, `POST /api/assign-gate` |
+| Announcements | announcement CRUD + display |
+| Hotfix | hotfix check |
+| CDN | CDN URL signing |
+| Admin | zone config, whitelist, announcement management |
+| Health | zone health probe (periodic gate liveness check) |
 
-## Bug Found & Fixed: etcd AutoSync Endpoint Corruption
-- **Root cause**: etcd `ETCD_ADVERTISE_CLIENT_URLS` was `http://etcd:2379`. When the Go etcd client's AutoSync (30s) called MemberList, it got this URL and replaced its internal endpoint list with `etcd:2379`. From cross-namespace pods, `etcd` (without namespace qualifier) can't be resolved → all subsequent queries return 0 keys.
-- **Fix 1**: Changed `ETCD_ADVERTISE_CLIENT_URLS` to `http://etcd.mmorpg-infra.svc.cluster.local:2379` in `deploy/k8s/manifests/infra/etcd.yaml`.
-- **Fix 2**: Removed `AutoSyncInterval` from gateway's etcd client config (defensive; single-node etcd doesn't need endpoint discovery).
+### Key Services
+- `ServerListService` — zone list from MySQL `zone_config` table + etcd gate discovery
+- `AssignGateService` — least-load gate selection + HMAC token signing
+- `ZoneHealthProbeService` — periodic check, marks zones offline if no gate heartbeat
+- `GateWatcher` — etcd watcher for `GateNodeService.rpc/` prefix
+- `AnnouncementService`, `CdnSignService`, `HotfixCheckService`
 
-## Files Changed
-- `go/gateway/internal/svc/service_context.go` — zone-agnostic prefix, no AutoSync, direct Get
-- `go/gateway/internal/config/config.go` — removed `ZoneId` from `GateConf`
-- `go/gateway/etc/gateway.yaml` — removed `ZoneId` line
-- `go/gateway/gateway.go` — removed zone_id from startup banner
-- `tools/scripts/k8s_deploy.ps1` — removed `ZoneId` from gateway ConfigMap template
-- `deploy/k8s/manifests/infra/etcd.yaml` — fixed `ETCD_ADVERTISE_CLIENT_URLS` to FQDN
+### Config: `application.yaml`
+- etcd endpoints, MySQL datasource, Redis, gate token secret/TTL, zone probe interval
 
-## Smoke Test Results (verified)
-| Endpoint | Input | Output |
-|----------|-------|--------|
-| GET /api/server-list | - | All zones with registered gates |
-| POST /api/assign-gate | zone_id=N | Lowest-load gate IP/port + HMAC token |
-| POST /api/assign-gate | zone_id=99 | Clean error: "no gate available" |
+## Previous Implementation: Go (`go/gateway/`) — DEPRECATED
+- Original prototype (2026-04-05), 15 files, go-zero REST server
+- Only had 3 endpoints: server-list, assign-gate, health
+- Superseded by Java version for richer admin/ops features
+
+## Design Decisions (still apply)
+- **Zone-agnostic prefix**: Gateway uses `GateNodeService.rpc/` to discover ALL gates globally
+- **etcd FQDN fix**: `ETCD_ADVERTISE_CLIENT_URLS` must use `etcd.mmorpg-infra.svc.cluster.local:2379` (not short name) to prevent cross-namespace resolution failures
+- **HMAC token**: same algorithm shared between gateway and gate node for token verification
