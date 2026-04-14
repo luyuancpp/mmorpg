@@ -76,6 +76,32 @@ struct PlayerUpgradeEventDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerUpgradeEventDefaultTypeInternal _PlayerUpgradeEvent_default_instance_;
 
+inline constexpr PlayerLoginEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        actor_entity_{::uint64_t{0u}},
+        enter_gs_type_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerLoginEvent::PlayerLoginEvent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PlayerLoginEvent_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerLoginEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerLoginEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerLoginEventDefaultTypeInternal() {}
+  union {
+    PlayerLoginEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerLoginEventDefaultTypeInternal _PlayerLoginEvent_default_instance_;
+
 inline constexpr InitializePlayerComponentsEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -124,6 +150,13 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::InitializePlayerComponentsEvent, _impl_.actor_entity_),
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::PlayerLoginEvent, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::PlayerLoginEvent, _impl_.actor_entity_),
+        PROTOBUF_FIELD_OFFSET(::PlayerLoginEvent, _impl_.enter_gs_type_),
+        0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
@@ -131,11 +164,13 @@ static const ::_pbi::MigrationSchema
         {0, sizeof(::RegisterPlayerEvent)},
         {5, sizeof(::PlayerUpgradeEvent)},
         {12, sizeof(::InitializePlayerComponentsEvent)},
+        {17, sizeof(::PlayerLoginEvent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_RegisterPlayerEvent_default_instance_._instance,
     &::_PlayerUpgradeEvent_default_instance_._instance,
     &::_InitializePlayerComponentsEvent_default_instance_._instance,
+    &::_PlayerLoginEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -144,19 +179,21 @@ const char descriptor_table_protodef_proto_2fcommon_2fevent_2fplayer_5fevent_2ep
     " \001(\004\"=\n\022PlayerUpgradeEvent\022\024\n\014actor_enti"
     "ty\030\001 \001(\004\022\021\n\tnew_level\030\002 \001(\r\"7\n\037Initializ"
     "ePlayerComponentsEvent\022\024\n\014actor_entity\030\001"
-    " \001(\004B\016Z\014common/eventb\006proto3"
+    " \001(\004\"\?\n\020PlayerLoginEvent\022\024\n\014actor_entity"
+    "\030\001 \001(\004\022\025\n\renter_gs_type\030\002 \001(\rB\016Z\014common/"
+    "eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto = {
     false,
     false,
-    228,
+    293,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto,
     "proto/common/event/player_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto_once,
     nullptr,
     0,
-    3,
+    4,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto::offsets,
@@ -911,6 +948,286 @@ void InitializePlayerComponentsEvent::InternalSwap(InitializePlayerComponentsEve
 }
 
 ::google::protobuf::Metadata InitializePlayerComponentsEvent::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PlayerLoginEvent::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PlayerLoginEvent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_._has_bits_);
+};
+
+PlayerLoginEvent::PlayerLoginEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerLoginEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:PlayerLoginEvent)
+}
+PlayerLoginEvent::PlayerLoginEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerLoginEvent& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerLoginEvent_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE PlayerLoginEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void PlayerLoginEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, actor_entity_),
+           0,
+           offsetof(Impl_, enter_gs_type_) -
+               offsetof(Impl_, actor_entity_) +
+               sizeof(Impl_::enter_gs_type_));
+}
+PlayerLoginEvent::~PlayerLoginEvent() {
+  // @@protoc_insertion_point(destructor:PlayerLoginEvent)
+  SharedDtor(*this);
+}
+inline void PlayerLoginEvent::SharedDtor(MessageLite& self) {
+  PlayerLoginEvent& this_ = static_cast<PlayerLoginEvent&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PlayerLoginEvent::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PlayerLoginEvent(arena);
+}
+constexpr auto PlayerLoginEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(PlayerLoginEvent),
+                                            alignof(PlayerLoginEvent));
+}
+constexpr auto PlayerLoginEvent::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PlayerLoginEvent_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PlayerLoginEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PlayerLoginEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PlayerLoginEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PlayerLoginEvent>(), &PlayerLoginEvent::ByteSizeLong,
+              &PlayerLoginEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_._cached_size_),
+          false,
+      },
+      &PlayerLoginEvent::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PlayerLoginEvent_class_data_ =
+        PlayerLoginEvent::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerLoginEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerLoginEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PlayerLoginEvent_class_data_.tc_table);
+  return PlayerLoginEvent_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+PlayerLoginEvent::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PlayerLoginEvent_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::PlayerLoginEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 enter_gs_type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerLoginEvent, _impl_.enter_gs_type_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_.enter_gs_type_)}},
+    // uint64 actor_entity = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerLoginEvent, _impl_.actor_entity_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_.actor_entity_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 actor_entity = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_.actor_entity_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 enter_gs_type = 2;
+    {PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void PlayerLoginEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerLoginEvent)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    ::memset(&_impl_.actor_entity_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.enter_gs_type_) -
+        reinterpret_cast<char*>(&_impl_.actor_entity_)) + sizeof(_impl_.enter_gs_type_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PlayerLoginEvent::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PlayerLoginEvent& this_ = static_cast<const PlayerLoginEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PlayerLoginEvent::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PlayerLoginEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerLoginEvent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 actor_entity = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_actor_entity() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_actor_entity(), target);
+    }
+  }
+
+  // uint32 enter_gs_type = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_enter_gs_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_enter_gs_type(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerLoginEvent)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PlayerLoginEvent::ByteSizeLong(const MessageLite& base) {
+  const PlayerLoginEvent& this_ = static_cast<const PlayerLoginEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PlayerLoginEvent::ByteSizeLong() const {
+  const PlayerLoginEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:PlayerLoginEvent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // uint64 actor_entity = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_actor_entity() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_actor_entity());
+      }
+    }
+    // uint32 enter_gs_type = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_enter_gs_type() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_enter_gs_type());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PlayerLoginEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerLoginEvent*>(&to_msg);
+  auto& from = static_cast<const PlayerLoginEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerLoginEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_actor_entity() != 0) {
+        _this->_impl_.actor_entity_ = from._impl_.actor_entity_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_enter_gs_type() != 0) {
+        _this->_impl_.enter_gs_type_ = from._impl_.enter_gs_type_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerLoginEvent::CopyFrom(const PlayerLoginEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerLoginEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PlayerLoginEvent::InternalSwap(PlayerLoginEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_.enter_gs_type_)
+      + sizeof(PlayerLoginEvent::_impl_.enter_gs_type_)
+      - PROTOBUF_FIELD_OFFSET(PlayerLoginEvent, _impl_.actor_entity_)>(
+          reinterpret_cast<char*>(&_impl_.actor_entity_),
+          reinterpret_cast<char*>(&other->_impl_.actor_entity_));
+}
+
+::google::protobuf::Metadata PlayerLoginEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

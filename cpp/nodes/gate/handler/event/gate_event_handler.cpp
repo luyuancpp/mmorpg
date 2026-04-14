@@ -7,17 +7,19 @@
 #include "gate_codec.h"
 #include "proto/common/base/node.pb.h"
 #include "proto/scene/client_player_common.pb.h"
-#include "proto/scene/player_lifecycle.pb.h"
+#include "proto/scene/scene.pb.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
-#include "rpc/service_metadata/player_lifecycle_service_metadata.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "table/proto/tip/login_error_tip.pb.h"
 #include "thread_context/node_context_manager.h"
 #include "network/rpc_session.h"
 #include "node/system/node/node_util.h"
 
-// Forward login notification from Gate to Scene via gRPC.
-static void ForwardLoginToScene(uint64_t sessionId, uint32_t enterGsType, uint64_t sceneNodeId)
+// Forward player entry from Gate to Scene via gRPC PlayerEnterGameNode.
+// Gate is the bridge: it holds the TCP session and routes the RPC to the
+// correct Scene node using the entity ID from RoutePlayerEvent.
+static void ForwardPlayerToScene(uint64_t sessionId, uint32_t enterGsType,
+                                 uint64_t sceneNodeId, uint64_t playerId, uint64_t sceneId)
 {
     if (enterGsType == 0)
         return; // LOGIN_NONE, nothing to forward
@@ -26,29 +28,28 @@ static void ForwardLoginToScene(uint64_t sessionId, uint32_t enterGsType, uint64
     entt::entity sceneEntity{sceneNodeId};
     if (!sceneRegistry.valid(sceneEntity))
     {
-        LOG_ERROR << "ForwardLoginToScene: scene node entity invalid, scene_node_id=" << sceneNodeId;
+        LOG_ERROR << "ForwardPlayerToScene: scene node entity invalid, scene_node_id=" << sceneNodeId;
         return;
     }
 
     const auto *rpcSession = sceneRegistry.try_get<RpcSession>(sceneEntity);
     if (!rpcSession)
     {
-        LOG_ERROR << "ForwardLoginToScene: RpcSession not found for scene_node_id=" << sceneNodeId;
+        LOG_ERROR << "ForwardPlayerToScene: RpcSession not found for scene_node_id=" << sceneNodeId;
         return;
     }
 
-    GateLoginNotifyRequest loginReq;
-    loginReq.set_enter_gs_type(enterGsType);
+    PlayerEnterGameNodeRequest req;
+    req.set_player_id(playerId);
+    req.set_session_id(sessionId);
+    req.set_enter_gs_type(enterGsType);
+    req.set_scene_id(sceneId);
 
-    NodeRouteMessageRequest routeReq;
-    routeReq.mutable_message_content()->set_message_id(ScenePlayerGateLoginNotifyMessageId);
-    routeReq.mutable_message_content()->set_serialized_message(loginReq.SerializeAsString());
-    routeReq.mutable_header()->set_session_id(sessionId);
+    rpcSession->SendRequest(ScenePlayerEnterGameNodeMessageId, req);
 
-    rpcSession->SendRequest(SceneSendMessageToPlayerMessageId, routeReq);
-
-    LOG_INFO << "ForwardLoginToScene: sent login notification to scene, session_id=" << sessionId
-             << " enter_gs_type=" << enterGsType << " scene_node_id=" << sceneNodeId;
+    LOG_INFO << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node=" << sceneNodeId
+             << " player=" << playerId << " session=" << sessionId
+             << " scene_id=" << sceneId << " enter_gs_type=" << enterGsType;
 }
 ///<<< END WRITING YOUR CODE
 void GateEventHandler::Register()
@@ -83,15 +84,25 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
     }
 
     it->second.SetNodeId(SceneNodeService, targetNodeId);
+    it->second.sceneId = event.scene_id();
+
+    // Use player_id from the event if session doesn't have it yet (BindSession may not have arrived).
+    if (event.player_id() != 0 && it->second.playerId == kInvalidGuid)
+    {
+        it->second.playerId = event.player_id();
+    }
+
     LOG_INFO << "RoutePlayer: assigned scene node, session_id=" << sessionId
-             << " scene_node_id=" << targetNodeId;
+             << " scene_node_id=" << targetNodeId
+             << " scene_id=" << event.scene_id();
 
     // Consume pending login type if BindSession arrived before RoutePlayer.
     const auto pendingType = it->second.pendingEnterGsType;
     if (pendingType != 0)
     {
         it->second.pendingEnterGsType = 0;
-        ForwardLoginToScene(sessionId, pendingType, targetNodeId);
+        ForwardPlayerToScene(sessionId, pendingType, targetNodeId,
+                             it->second.playerId, it->second.sceneId);
     }
 ///<<< END WRITING YOUR CODE
 }
@@ -161,7 +172,8 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
     if (it->second.HasNodeId(SceneNodeService))
     {
         const auto sceneNodeId = it->second.GetNodeId(SceneNodeService);
-        ForwardLoginToScene(sessionId, enterGsType, sceneNodeId);
+        ForwardPlayerToScene(sessionId, enterGsType, sceneNodeId,
+                             playerId, it->second.sceneId);
     }
     else
     {

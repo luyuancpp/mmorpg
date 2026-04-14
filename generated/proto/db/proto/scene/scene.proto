@@ -13,7 +13,9 @@ message PlayerEnterGameNodeRequest
 {
   uint64 player_id = 1;
   uint64 session_id = 2;
-  uint32 centre_node_id = 3;
+  uint32 centre_node_id = 3;   // deprecated
+  uint32 enter_gs_type = 4;    // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
+  uint64 scene_id = 5;         // Target scene instance GUID from SceneManager
 }
 
 message ProcessClientPlayerMessageRequest

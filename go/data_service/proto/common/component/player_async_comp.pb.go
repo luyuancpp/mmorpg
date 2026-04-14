@@ -23,7 +23,10 @@ const (
 
 type PlayerGameNodeEntryInfoComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CentreNodeId  uint32                 `protobuf:"varint,1,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`
+	CentreNodeId  uint32                 `protobuf:"varint,1,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"` // deprecated
+	SessionId     uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	EnterGsType   uint32                 `protobuf:"varint,3,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
+	SceneId       uint64                 `protobuf:"varint,4,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`               // Target scene instance GUID from SceneManager
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -65,13 +68,38 @@ func (x *PlayerGameNodeEntryInfoComp) GetCentreNodeId() uint32 {
 	return 0
 }
 
+func (x *PlayerGameNodeEntryInfoComp) GetSessionId() uint64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *PlayerGameNodeEntryInfoComp) GetEnterGsType() uint32 {
+	if x != nil {
+		return x.EnterGsType
+	}
+	return 0
+}
+
+func (x *PlayerGameNodeEntryInfoComp) GetSceneId() uint64 {
+	if x != nil {
+		return x.SceneId
+	}
+	return 0
+}
+
 var File_proto_common_component_player_async_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_player_async_comp_proto_rawDesc = "" +
 	"\n" +
-	".proto/common/component/player_async_comp.proto\"C\n" +
+	".proto/common/component/player_async_comp.proto\"\xa1\x01\n" +
 	"\x1bPlayerGameNodeEntryInfoComp\x12$\n" +
-	"\x0ecentre_node_id\x18\x01 \x01(\rR\fcentreNodeIdB%Z#data_service/proto/common/componentb\x06proto3"
+	"\x0ecentre_node_id\x18\x01 \x01(\rR\fcentreNodeId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\x04R\tsessionId\x12\"\n" +
+	"\renter_gs_type\x18\x03 \x01(\rR\venterGsType\x12\x19\n" +
+	"\bscene_id\x18\x04 \x01(\x04R\asceneIdB%Z#data_service/proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_async_comp_proto_rawDescOnce sync.Once

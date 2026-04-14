@@ -11,6 +11,7 @@ void PlayerEventHandler::Register()
     tlsEcs.dispatcher.sink<RegisterPlayerEvent>().connect<&PlayerEventHandler::RegisterPlayerEventHandler>();
     tlsEcs.dispatcher.sink<PlayerUpgradeEvent>().connect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
     tlsEcs.dispatcher.sink<InitializePlayerComponentsEvent>().connect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
+    tlsEcs.dispatcher.sink<PlayerLoginEvent>().connect<&PlayerEventHandler::PlayerLoginEventHandler>();
 }
 
 void PlayerEventHandler::UnRegister()
@@ -18,6 +19,7 @@ void PlayerEventHandler::UnRegister()
     tlsEcs.dispatcher.sink<RegisterPlayerEvent>().disconnect<&PlayerEventHandler::RegisterPlayerEventHandler>();
     tlsEcs.dispatcher.sink<PlayerUpgradeEvent>().disconnect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
     tlsEcs.dispatcher.sink<InitializePlayerComponentsEvent>().disconnect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
+    tlsEcs.dispatcher.sink<PlayerLoginEvent>().disconnect<&PlayerEventHandler::PlayerLoginEventHandler>();
 }
 void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& event)
 {
@@ -50,5 +52,20 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 		return;
 	}
 
+///<<< END WRITING YOUR CODE
+}
+void PlayerEventHandler::PlayerLoginEventHandler(const PlayerLoginEvent& event)
+{
+///<<< BEGIN WRITING YOUR CODE
+	auto player = entt::to_entity(event.actor_entity());
+
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		LOG_ERROR << "Player Not Found :" << event.actor_entity();
+		return;
+	}
+
+	LOG_INFO << "PlayerLoginEvent: player=" << event.actor_entity()
+	         << " enter_gs_type=" << event.enter_gs_type();
 ///<<< END WRITING YOUR CODE
 }

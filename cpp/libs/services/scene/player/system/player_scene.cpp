@@ -18,6 +18,7 @@
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "grpc_client/scene_manager/scene_manager_service_grpc_client.h"
 #include <modules/scene/comp/scene_comp.h>
+#include <modules/scene/comp/scene_node_comp.h>
 #include <proto/common/component/player_network_comp.pb.h>
 #include "node/system/node/node_util.h"
 #include <limits>
@@ -157,15 +158,42 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	const auto sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene);
 	if (sceneInfo == nullptr)
 	{
-		LOG_ERROR << "Failed to get scene info for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+		LOG_ERROR << "HandleEnterScene: scene info not found for player: "
+		          << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
 		return;
 	}
 
+	// 1. Leave old scene if player is already in one.
+	auto *oldSceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
+	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity != entt::null
+	    && oldSceneComp->sceneEntity != scene)
+	{
+		auto *oldPlayers = tlsEcs.sceneRegistry.try_get<ScenePlayers>(oldSceneComp->sceneEntity);
+		if (oldPlayers)
+		{
+			oldPlayers->erase(player);
+		}
+	}
+
+	// 2. Bind player to the new scene entity.
+	tlsEcs.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity = scene;
+
+	// 3. Track player in the scene's player set.
+	auto *scenePlayers = tlsEcs.sceneRegistry.try_get<ScenePlayers>(scene);
+	if (scenePlayers)
+	{
+		scenePlayers->emplace(player);
+	}
+
+	// 4. Notify client of scene entry.
 	EnterSceneS2C message;
 	message.mutable_scene_info()->CopyFrom(*sceneInfo);
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 
-	// Team Follow Logic
+	LOG_INFO << "HandleEnterScene: player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
+	         << " entered scene guid=" << sceneInfo->guid();
+
+	// 5. Team Follow Logic: if player is in a team, check leader location.
 	const auto teamIdComp = tlsEcs.actorRegistry.try_get<TeamId>(player);
 	if (teamIdComp && teamIdComp->team_id() != 0)
 	{

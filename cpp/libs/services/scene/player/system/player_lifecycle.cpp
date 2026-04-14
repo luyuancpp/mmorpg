@@ -18,6 +18,7 @@
 #include "table/proto/tip/cross_server_error_tip.pb.h"
 #include "player_tip.h"
 #include "modules/scene/comp/scene_comp.h"
+#include "modules/scene/comp/scene_node_comp.h"
 #include <engine/infra/messaging/kafka/kafka_producer.h>
 #include "thread_context/player_manager.h"
 #include "core/system/redis.h"
@@ -95,53 +96,66 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 // CONSIDER: handle reentry into a different scene node while load is still in progress
 void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp &enterInfo)
 {
-	LOG_INFO << "EnterScene: Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " entering scene node";
-
-	// Centre decommissioned: no longer track centre_node_id or send CentreEnterGsSucceed.
-	// player_locator (Go service) owns session/location truth via Redis.
-	// TODO: After Centre restarts
-	// TODO: After scene node updates its gate, send to client only when ready.
-	//   Message ordering concern: enter scene_node_a then enter scene_node_b —
-	//   leave-scene message from node_a may arrive after enter-scene from node_b.
-	//   Scene node should wait for gate's leave-ack before broadcasting enter events.
-}
-
-void PlayerLifecycleSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
-{
-	if (!tlsEcs.actorRegistry.valid(player))
-	{
-		LOG_ERROR << "OnPlayerLogin: invalid player entity";
-		return;
-	}
-
 	const auto playerId = tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
-	auto &enterState = tlsEcs.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(player);
-	enterState.set_enter_gs_type(enterGsType);
+	LOG_INFO << "EnterScene: Player " << playerId << " entering scene node"
+	         << " session=" << enterInfo.session_id()
+	         << " scene_id=" << enterInfo.scene_id()
+	         << " enter_gs_type=" << enterInfo.enter_gs_type();
 
-	auto *sceneEntity = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
-	if (sceneEntity == nullptr || !tlsEcs.sceneRegistry.valid(sceneEntity->sceneEntity))
+	// 1. Bind session: map session_id -> player_id on this Scene node
+	//    so SendMessageToPlayer can route by session, and
+	//    SendMessageToClientViaGate can find the gate node.
+	if (enterInfo.session_id() != 0)
 	{
-		LOG_WARN << "OnPlayerLogin: player has no valid scene binding yet, player=" << playerId
-				 << " enter_gs_type=" << enterGsType;
-		return;
+		SessionMap().emplace(enterInfo.session_id(), playerId);
+		auto &snapshot = tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(player);
+		snapshot.set_gate_session_id(enterInfo.session_id());
 	}
 
-	switch (enterGsType)
+	// 2. Find the target scene entity by GUID (allocated by SceneManager).
+	entt::entity targetScene = entt::null;
+	if (enterInfo.scene_id() != 0)
 	{
-	case LOGIN_FIRST:
-	case LOGIN_REPLACE:
-	case LOGIN_RECONNECT:
-		LOG_INFO << "OnPlayerLogin: enter_gs_type=" << enterGsType << " player=" << playerId;
-		PlayerSceneSystem::HandleEnterScene(player, sceneEntity->sceneEntity);
-		break;
-	case LOGIN_NONE:
-		LOG_DEBUG << "OnPlayerLogin: LOGIN_NONE ignored, player=" << playerId;
-		break;
-	default:
-		LOG_ERROR << "OnPlayerLogin: unknown login type=" << enterGsType << " player=" << playerId;
-		break;
+		auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
+		for (auto entity : view)
+		{
+			const auto &info = view.get<SceneInfoComp>(entity);
+			if (info.guid() == enterInfo.scene_id())
+			{
+				targetScene = entity;
+				break;
+			}
+		}
+
+		if (targetScene == entt::null)
+		{
+			LOG_ERROR << "EnterScene: scene_id=" << enterInfo.scene_id()
+			          << " not found on this node for player " << playerId;
+		}
+	}
+
+	// 3. Enter the scene: bind player to scene entity and send client notification.
+	if (targetScene != entt::null)
+	{
+		PlayerSceneSystem::HandleEnterScene(player, targetScene);
+	}
+
+	// 4. Set login state for downstream systems (reconnect, first-login logic, etc.).
+	if (enterInfo.enter_gs_type() != 0)
+	{
+		auto &enterState = tlsEcs.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(player);
+		enterState.set_enter_gs_type(enterInfo.enter_gs_type());
+
+		// 5. Fire login event so business systems can react per login type.
+		//    At this point: session is bound, scene is entered, player entity is ready.
+		PlayerLoginEvent loginEvent;
+		loginEvent.set_actor_entity(entt::to_integral(player));
+		loginEvent.set_enter_gs_type(enterInfo.enter_gs_type());
+		tlsEcs.dispatcher.trigger(loginEvent);
 	}
 }
+
+
 
 void PlayerLifecycleSystem::HandleBindPlayerToGateOK(entt::entity player)
 {

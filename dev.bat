@@ -297,7 +297,23 @@ exit /b 0
 :: ================================================================
 :build
 echo [1/2] Building C++ (game.sln Debug x64)...
-msbuild game.sln /m /p:Configuration=Debug /p:Platform=x64 /v:minimal
+set "MSBUILD_EXE="
+
+:: Prefer VS2026 BuildTools first.
+if exist "C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
+if not defined MSBUILD_EXE if exist "C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe" set "MSBUILD_EXE=C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+if not defined MSBUILD_EXE if exist "E:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=E:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
+if not defined MSBUILD_EXE if exist "E:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe" set "MSBUILD_EXE=E:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+
+if not defined MSBUILD_EXE (
+    echo.
+    echo VS2026 BuildTools MSBuild not found.
+    echo Please install Visual Studio 2026 BuildTools with C++ workload.
+    pause & exit /b 1
+)
+
+echo Using MSBuild: %MSBUILD_EXE%
+"%MSBUILD_EXE%" game.sln /m /p:Configuration=Debug /p:Platform=x64 /v:minimal
 if errorlevel 1 (
     echo.
     echo C++ build failed. Check errors above.

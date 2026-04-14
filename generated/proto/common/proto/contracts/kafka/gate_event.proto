@@ -8,6 +8,8 @@ option go_package = "common/proto/contracts/kafka";
 message RoutePlayerEvent {
   uint64 session_id = 1;
   uint32 target_node_id = 2;
+  uint64 scene_id = 3;        // Scene instance GUID allocated by SceneManager
+  uint64 player_id = 4;
 }
 
 message KickPlayerEvent {

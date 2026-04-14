@@ -648,6 +648,8 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
     kPlayerIdFieldNumber = 1,
     kSessionIdFieldNumber = 2,
     kCentreNodeIdFieldNumber = 3,
+    kEnterGsTypeFieldNumber = 4,
+    kSceneIdFieldNumber = 5,
   };
   // uint64 player_id = 1;
   void clear_player_id() ;
@@ -679,11 +681,31 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
   void _internal_set_centre_node_id(::uint32_t value);
 
   public:
+  // uint32 enter_gs_type = 4;
+  void clear_enter_gs_type() ;
+  ::uint32_t enter_gs_type() const;
+  void set_enter_gs_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_enter_gs_type() const;
+  void _internal_set_enter_gs_type(::uint32_t value);
+
+  public:
+  // uint64 scene_id = 5;
+  void clear_scene_id() ;
+  ::uint64_t scene_id() const;
+  void set_scene_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:PlayerEnterGameNodeRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
                                    0, 0,
                                    2>
       _table_;
@@ -708,6 +730,8 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
     ::uint64_t player_id_;
     ::uint64_t session_id_;
     ::uint32_t centre_node_id_;
+    ::uint32_t enter_gs_type_;
+    ::uint64_t scene_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2370,6 +2394,54 @@ inline ::uint32_t PlayerEnterGameNodeRequest::_internal_centre_node_id() const {
 inline void PlayerEnterGameNodeRequest::_internal_set_centre_node_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.centre_node_id_ = value;
+}
+
+// uint32 enter_gs_type = 4;
+inline void PlayerEnterGameNodeRequest::clear_enter_gs_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enter_gs_type_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t PlayerEnterGameNodeRequest::enter_gs_type() const {
+  // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.enter_gs_type)
+  return _internal_enter_gs_type();
+}
+inline void PlayerEnterGameNodeRequest::set_enter_gs_type(::uint32_t value) {
+  _internal_set_enter_gs_type(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.enter_gs_type)
+}
+inline ::uint32_t PlayerEnterGameNodeRequest::_internal_enter_gs_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enter_gs_type_;
+}
+inline void PlayerEnterGameNodeRequest::_internal_set_enter_gs_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enter_gs_type_ = value;
+}
+
+// uint64 scene_id = 5;
+inline void PlayerEnterGameNodeRequest::clear_scene_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::uint64_t PlayerEnterGameNodeRequest::scene_id() const {
+  // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.scene_id)
+  return _internal_scene_id();
+}
+inline void PlayerEnterGameNodeRequest::set_scene_id(::uint64_t value) {
+  _internal_set_scene_id(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.scene_id)
+}
+inline ::uint64_t PlayerEnterGameNodeRequest::_internal_scene_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scene_id_;
+}
+inline void PlayerEnterGameNodeRequest::_internal_set_scene_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_id_ = value;
 }
 
 // -------------------------------------------------------------------

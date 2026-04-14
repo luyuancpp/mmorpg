@@ -5,8 +5,11 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "rpc/service_metadata/rpc_event_registry.h"
+
+namespace muduo { namespace net { class EventLoop; } }
 
 // Per-message-id traffic counters. Cache-line aligned to avoid false sharing.
 struct alignas(64) MessageTrafficCounters
@@ -79,3 +82,8 @@ private:
     std::chrono::steady_clock::time_point autoDisableTime_{};
     uint32_t reportIntervalSeconds_ = 30;
 };
+
+// Register the periodic traffic stats reporter on the event loop.
+// If NODE_TRAFFIC_STATS_ENABLED=1 env is set, starts immediately.
+// The reporter timer fires every `reportIntervalSeconds` and logs a summary.
+void RegisterTrafficStatsReporter(muduo::net::EventLoop& loop);

@@ -27,7 +27,9 @@ type PlayerEnterGameNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SessionId     uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	CentreNodeId  uint32                 `protobuf:"varint,3,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`
+	CentreNodeId  uint32                 `protobuf:"varint,3,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"` // deprecated
+	EnterGsType   uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"`    // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
+	SceneId       uint64                 `protobuf:"varint,5,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                  // Target scene instance GUID from SceneManager
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -79,6 +81,20 @@ func (x *PlayerEnterGameNodeRequest) GetSessionId() uint64 {
 func (x *PlayerEnterGameNodeRequest) GetCentreNodeId() uint32 {
 	if x != nil {
 		return x.CentreNodeId
+	}
+	return 0
+}
+
+func (x *PlayerEnterGameNodeRequest) GetEnterGsType() uint32 {
+	if x != nil {
+		return x.EnterGsType
+	}
+	return 0
+}
+
+func (x *PlayerEnterGameNodeRequest) GetSceneId() uint64 {
+	if x != nil {
+		return x.SceneId
 	}
 	return 0
 }
@@ -531,12 +547,14 @@ var File_proto_scene_scene_proto protoreflect.FileDescriptor
 
 const file_proto_scene_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/scene/scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/message.proto\"~\n" +
+	"\x17proto/scene/scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/message.proto\"\xbd\x01\n" +
 	"\x1aPlayerEnterGameNodeRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x02 \x01(\x04R\tsessionId\x12$\n" +
-	"\x0ecentre_node_id\x18\x03 \x01(\rR\fcentreNodeId\"|\n" +
+	"\x0ecentre_node_id\x18\x03 \x01(\rR\fcentreNodeId\x12\"\n" +
+	"\renter_gs_type\x18\x04 \x01(\rR\venterGsType\x12\x19\n" +
+	"\bscene_id\x18\x05 \x01(\x04R\asceneId\"|\n" +
 	"!ProcessClientPlayerMessageRequest\x128\n" +
 	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12\x1d\n" +
 	"\n" +

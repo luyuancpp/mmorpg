@@ -1082,6 +1082,14 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.enqueue(event);
 		return true;
 	}
+	case PlayerLoginEventEventId: {
+		PlayerLoginEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		tlsEcs.dispatcher.enqueue(event);
+		return true;
+	}
 	case PlayerMigrationPbEventEventId: {
 		PlayerMigrationPbEvent event;
 		if (!event.ParseFromString(payload)) {
