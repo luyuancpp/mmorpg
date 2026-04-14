@@ -265,7 +265,7 @@ func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSess
 		return nil
 	}
 
-	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID)
+	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID, existing.PlayerID)
 }
 
 // ensurePlayerDataInRedis loads player data from cache or DB synchronously.
