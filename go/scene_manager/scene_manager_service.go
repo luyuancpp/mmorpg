@@ -31,11 +31,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Start load reporter (discovers scene nodes from etcd).
+	// Start load reporter (discovers scene nodes from etcd, inits main scenes for new zones).
 	go logic.StartLoadReporter(ctx, svcCtx)
-
-	// Initialize persistent main-world scenes (waits for nodes, then creates).
-	go logic.InitMainScenes(ctx, svcCtx)
 
 	// Start instance lifecycle manager (auto-destroys idle instances).
 	go logic.StartInstanceLifecycleManager(ctx, svcCtx)
