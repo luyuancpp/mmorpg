@@ -359,11 +359,16 @@ func (p *KeyOrderedKafkaProducer) AddPartitions(newPartitions []int32) error {
 }
 
 // SendToTopic sends raw bytes to an arbitrary Kafka topic using the non-transactional producer.
-func (p *KeyOrderedKafkaProducer) SendToTopic(topic string, data []byte) error {
-	_, _, err := p.plainProducer.SendMessage(&sarama.ProducerMessage{
+// When key is non-empty, messages with the same key are routed to the same partition.
+func (p *KeyOrderedKafkaProducer) SendToTopic(topic string, data []byte, key string) error {
+	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Value: sarama.ByteEncoder(data),
-	})
+	}
+	if key != "" {
+		msg.Key = sarama.StringEncoder(key)
+	}
+	_, _, err := p.plainProducer.SendMessage(msg)
 	return err
 }
 

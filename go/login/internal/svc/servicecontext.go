@@ -151,7 +151,8 @@ func (s *ServiceContext) SendBindSessionToGate(gateID string, gateInstanceID str
 	}
 
 	topic := fmt.Sprintf("gate-%s", gateID)
-	if err := s.KafkaClient.SendToTopic(topic, data); err != nil {
+	partitionKey := strconv.FormatUint(playerID, 10)
+	if err := s.KafkaClient.SendToTopic(topic, data, partitionKey); err != nil {
 		return fmt.Errorf("send gate bind session command to %s: %w", topic, err)
 	}
 
@@ -159,11 +160,12 @@ func (s *ServiceContext) SendBindSessionToGate(gateID string, gateInstanceID str
 }
 
 // KickSessionOnGate sends a KickPlayer command to the target Gate via Kafka.
-func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint64) error {
+func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint64, playerID uint64) error {
 	eventId := uint32(game.ContractsKafkaKickPlayerEventEventId)
 
 	cmd := &kafkapb.GateCommand{
 		SessionId:        sessionID,
+		PlayerId:         playerID,
 		TargetInstanceId: gateInstanceID,
 		EventId:          eventId,
 	}
@@ -180,7 +182,8 @@ func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string,
 	}
 
 	topic := fmt.Sprintf("gate-%s", gateID)
-	if err := s.KafkaClient.SendToTopic(topic, data); err != nil {
+	partitionKey := strconv.FormatUint(cmd.PlayerId, 10)
+	if err := s.KafkaClient.SendToTopic(topic, data, partitionKey); err != nil {
 		return fmt.Errorf("send gate kick command to %s: %w", topic, err)
 	}
 

@@ -77,6 +77,9 @@ The following were removed from git tracking:
 | Shared dev scripts | `tools/scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
 | Robot proto/handlers | `tools/robot/` | Proto defs + message handlers for load testing |
 | Robot Go module | `robot/go.mod` | Standalone load client (one-client-one-goroutine rule) |
+| C++ traffic statistics | `cpp/libs/engine/core/network/traffic_statistics.h/.cpp` | Per-message atomic send/recv counters, periodic reporter |
+| Go gRPC traffic statistics | `go/shared/grpcstats/collector.go` | gRPC interceptor: per-method count, bytes, latency |
+| Traffic stats design doc | `docs/design/traffic-statistics-design.md` | Design rationale + production safety analysis |
 
 ## CONVENTIONS
 - Prefer verb-based, thin RPC handlers. Heavy logic belongs in systems/services, not transport wrappers.
@@ -101,6 +104,14 @@ The following were removed from git tracking:
 - login and db use IBM/sarama (ordered, transactional).
 - scene_manager and player_locator use segmentio/kafka-go (simple fire-and-forget).
 - Shared Kafka utilities (expand status, partition helpers) live in `go/shared/kafkautil/`; login and db import via `replace shared => ../shared`.
+- Shared gRPC traffic stats interceptor lives in `go/shared/grpcstats/`; all Go services import via `replace shared => ../shared`.
+
+### Traffic statistics
+- C++: `TrafficStatsCollector` in `cpp/libs/engine/core/network/traffic_statistics.h/.cpp`. Registered automatically in `Node` constructor via `RegisterTrafficStatsReporter()`.
+- Go: `grpcstats.Collector` in `go/shared/grpcstats/collector.go`. Wired as `UnaryServerInterceptor` in all Go service entry points.
+- Toggle C++: env `NODE_TRAFFIC_STATS_ENABLED=1`, optional `NODE_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `NODE_TRAFFIC_STATS_INTERVAL_SECONDS`.
+- Toggle Go: env `GRPC_TRAFFIC_STATS_ENABLED=1`, optional `GRPC_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `GRPC_TRAFFIC_STATS_INTERVAL_SECONDS`.
+- Safe for temporary production use: atomic-only counters, periodic summary logging (not per-message).
 
 ### Proto source conventions
 - All source `.proto` files in `proto/` should include `option go_package = "{service}/proto/{subdir}";` for documentation clarity.

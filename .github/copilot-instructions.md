@@ -28,6 +28,13 @@
 3. **Bitset type**: Prefer `std::bitset` per system (compile-time size from table generation, cache-friendly, zero allocation). Switch to `boost::dynamic_bitset` or `std::vector<bool>` only if runtime hot-reload of tables without recompilation is required.
 4. **`RewardClaimSystem` role**: Becomes a pure "dispatch reward items" utility. It no longer manages claimed state — each business system manages its own.
 
+## Traffic Statistics System
+- **C++**: `TrafficStatsCollector` singleton in `cpp/libs/engine/core/network/traffic_statistics.h/.cpp`. Per-message atomic counters (send/recv count, bytes, max size). Registered automatically in `Node` constructor via `RegisterTrafficStatsReporter()`. Old `LogMessageStatistics()` in `GameChannel` is legacy (per-message logging, not thread-safe); new system replaces it with periodic summary logging.
+- **Go**: `grpcstats.Collector` in `go/shared/grpcstats/collector.go`. gRPC `UnaryServerInterceptor` tracking per-method call count, request/response bytes, latency avg/max. Wired into all Go services.
+- **Toggle C++**: env `NODE_TRAFFIC_STATS_ENABLED=1`, optional `NODE_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `NODE_TRAFFIC_STATS_INTERVAL_SECONDS` (default 30s).
+- **Toggle Go**: env `GRPC_TRAFFIC_STATS_ENABLED=1`, optional `GRPC_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `GRPC_TRAFFIC_STATS_INTERVAL_SECONDS` (default 30s).
+- **Production safe**: atomic-only counters, periodic summary (not per-message), auto-disable timeout.
+
 ## Recent Architectural Decisions (2025-03-09)
 
 ### Scene Manager & Gate Communication

@@ -1,5 +1,18 @@
 # Traffic Statistics Design
 
+**Status**: Implemented (2026-04-14)
+
+## Implementation Files
+
+| Language | File | Role |
+|----------|------|------|
+| C++ | `cpp/libs/engine/core/network/traffic_statistics.h` | `TrafficStatsCollector` singleton, `RegisterTrafficStatsReporter()` |
+| C++ | `cpp/libs/engine/core/network/traffic_statistics.cpp` | Implementation + event loop timer registration |
+| C++ | `cpp/libs/engine/core/network/game_channel.cpp` | Send/recv recording hooks (`RecordSend`/`RecordRecv`) |
+| C++ | `cpp/libs/engine/core/node/system/node/node.cpp` | Auto-registration in Node constructor |
+| Go | `go/shared/grpcstats/collector.go` | gRPC interceptor + periodic reporter |
+| Go | All 7 services (`login`, `db`, `scene_manager`, `data_service`, `player_locator`, `guild`, `friend`) | Interceptor wired in |
+
 ## Goal
 
 Provide per-message-type traffic statistics for both C++ nodes and Go services, covering:
