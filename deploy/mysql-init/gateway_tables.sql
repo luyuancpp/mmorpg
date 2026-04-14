@@ -4,13 +4,13 @@
 USE mmorpg;
 
 CREATE TABLE IF NOT EXISTS zone_config (
-    zone_id        INT UNSIGNED PRIMARY KEY,
+    zone_id        BIGINT PRIMARY KEY,
     name           VARCHAR(64) NOT NULL,
-    manual_status  TINYINT NOT NULL DEFAULT 0 COMMENT '0=OPEN, 1=MAINTENANCE, 2=CLOSED, 3=PREVIEW',
-    capacity       INT UNSIGNED DEFAULT 5000,
+    manual_status  INT NOT NULL DEFAULT 0 COMMENT '0=OPEN, 1=MAINTENANCE, 2=CLOSED, 3=PREVIEW',
+    capacity       INT DEFAULT 5000,
     maintenance_msg VARCHAR(256) DEFAULT '',
     open_time      DATETIME DEFAULT NULL,
-    recommended    TINYINT(1) DEFAULT 0,
+    recommended    BIT(1) DEFAULT 0,
     sort_order     INT DEFAULT 0,
     created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS zone_config (
 
 CREATE TABLE IF NOT EXISTS zone_whitelist (
     id         BIGINT AUTO_INCREMENT PRIMARY KEY,
-    zone_id    INT UNSIGNED NOT NULL,
+    zone_id    BIGINT NOT NULL,
     account_id BIGINT NOT NULL,
     note       VARCHAR(128) DEFAULT '',
     UNIQUE KEY uk_zone_account (zone_id, account_id)
