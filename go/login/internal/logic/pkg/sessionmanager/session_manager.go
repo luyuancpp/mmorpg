@@ -10,6 +10,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
+	comppb "proto/common/component"
 	plpb "proto/player_locator"
 )
 
@@ -47,12 +48,12 @@ const (
 	idempotencyTTL       = 5 * time.Minute
 )
 
-// EnterGsType values matching proto EnterGsType enum (player_login_comp.proto).
+// EnterGsType values derived from proto EnterGsType enum (player_login_comp.proto).
 const (
-	EnterGsTypeNone      uint32 = 0
-	EnterGsTypeFirst     uint32 = 1
-	EnterGsTypeReplace   uint32 = 2
-	EnterGsTypeReconnect uint32 = 3
+	EnterGsTypeNone      = uint32(comppb.EnterGsType_LOGIN_NONE)
+	EnterGsTypeFirst     = uint32(comppb.EnterGsType_LOGIN_FIRST)
+	EnterGsTypeReplace   = uint32(comppb.EnterGsType_LOGIN_REPLACE)
+	EnterGsTypeReconnect = uint32(comppb.EnterGsType_LOGIN_RECONNECT)
 )
 
 // DecisionToEnterGsType maps a login decision to the corresponding proto enter_gs_type value.
