@@ -21,7 +21,7 @@ NodeRemovalGraceSeconds: 300
 # Persistent main-world scene config IDs. These scenes are created once at
 # startup and are never auto-destroyed. List your world map config IDs here.
 # Any scene_conf_id NOT in this list is treated as an instance (dungeon/arena).
-MainSceneConfIds:
+MainSceneConfIds: []
   # - 1001  # Example: Main City
   # - 1002  # Example: Wild Zone A
   # - 1003  # Example: Wild Zone B
