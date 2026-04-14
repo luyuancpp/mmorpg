@@ -70,7 +70,7 @@ func (l *CreateSceneLogic) resolveSceneType(in *scene_manager.CreateSceneRequest
 // Main scenes are idempotent: if the confId already has a scene, return it.
 func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
 	// Check if already created (startup or prior call).
-	existingId, _ := GetMainSceneId(l.ctx, l.svcCtx, in.SceneConfId)
+	existingId, _ := GetMainSceneId(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
 	if existingId > 0 {
 		nodeKey := fmt.Sprintf("scene:%d:node", existingId)
 		nodeId, _ := l.svcCtx.Redis.Get(nodeKey)
@@ -81,7 +81,7 @@ func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneReq
 	// Determine target node: explicit or hash-assigned.
 	targetNode := in.TargetNodeId
 	if targetNode == "" {
-		bestNode, err := GetBestNode(l.ctx, l.svcCtx)
+		bestNode, err := GetBestNode(l.ctx, l.svcCtx, in.ZoneId)
 		if err != nil {
 			l.Logger.Errorf("[MainWorld] No available node: %v", err)
 			return &scene_manager.CreateSceneResponse{ErrorCode: constants.ErrNoAvailableNode, ErrorMessage: err.Error()}, nil
@@ -95,7 +95,7 @@ func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneReq
 	}
 
 	// Register in main scenes hash.
-	hashKey := mainScenesKey(l.svcCtx.Config.ZoneID)
+	hashKey := mainScenesKey(in.ZoneId)
 	l.svcCtx.Redis.Hset(hashKey, fmt.Sprintf("%d", in.SceneConfId), fmt.Sprintf("%d", sceneId))
 
 	// Notify the C++ scene node to instantiate the ECS scene entity.
@@ -112,7 +112,7 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 	// Load-balance: pick the least-loaded node.
 	targetNode := in.TargetNodeId
 	if targetNode == "" {
-		bestNode, err := GetBestNode(l.ctx, l.svcCtx)
+		bestNode, err := GetBestNode(l.ctx, l.svcCtx, in.ZoneId)
 		if err != nil {
 			l.Logger.Errorf("[Instance] No available node: %v", err)
 			return &scene_manager.CreateSceneResponse{ErrorCode: constants.ErrNoAvailableNode, ErrorMessage: err.Error()}, nil
@@ -127,7 +127,7 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 
 	// Track in active instances sorted set (score = creation timestamp).
 	nowUnix := time.Now().Unix()
-	instKey := activeInstancesKey(l.svcCtx.Config.ZoneID)
+	instKey := activeInstancesKey(in.ZoneId)
 	if _, err := l.svcCtx.Redis.Zadd(instKey, nowUnix, fmt.Sprintf("%d", sceneId)); err != nil {
 		l.Logger.Errorf("[Instance] Failed to track instance %d: %v", sceneId, err)
 	}

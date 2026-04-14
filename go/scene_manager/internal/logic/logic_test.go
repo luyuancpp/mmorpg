@@ -15,6 +15,14 @@ import (
 	"scene_manager/internal/svc"
 )
 
+// testZoneId is the zone ID used across all tests.
+const testZoneId uint32 = 1
+
+// testLoadKey returns the Redis load-set key for the test zone.
+func testLoadKey() string {
+	return nodeLoadKey(testZoneId)
+}
+
 // ---------------------------------------------------------------------------
 // Test helper
 // ---------------------------------------------------------------------------
@@ -120,11 +128,11 @@ func TestGetBestNode_SelectsLowestLoad(t *testing.T) {
 	ctx := context.Background()
 
 	// Register 3 nodes with different loads (numeric IDs)
-	mr.ZAdd(NodeLoadKey, 50, "3")
-	mr.ZAdd(NodeLoadKey, 5, "1")
-	mr.ZAdd(NodeLoadKey, 20, "2")
+	mr.ZAdd(testLoadKey(), 50, "3")
+	mr.ZAdd(testLoadKey(), 5, "1")
+	mr.ZAdd(testLoadKey(), 20, "2")
 
-	best, err := GetBestNode(ctx, sc)
+	best, err := GetBestNode(ctx, sc, testZoneId)
 	require.NoError(t, err)
 	assert.Equal(t, "1", best)
 }
@@ -134,7 +142,7 @@ func TestGetBestNode_NoNodes_ReturnsError(t *testing.T) {
 	ctx := context.Background()
 
 	// No nodes registered in the ZSet
-	_, err := GetBestNode(ctx, sc)
+	_, err := GetBestNode(ctx, sc, testZoneId)
 	assert.Error(t, err)
 }
 
@@ -143,11 +151,11 @@ func TestGetBestNode_TiedLoad(t *testing.T) {
 	ctx := context.Background()
 
 	// All nodes have same load (numeric IDs)
-	mr.ZAdd(NodeLoadKey, 10, "10")
-	mr.ZAdd(NodeLoadKey, 10, "20")
-	mr.ZAdd(NodeLoadKey, 10, "30")
+	mr.ZAdd(testLoadKey(), 10, "10")
+	mr.ZAdd(testLoadKey(), 10, "20")
+	mr.ZAdd(testLoadKey(), 10, "30")
 
-	best, err := GetBestNode(ctx, sc)
+	best, err := GetBestNode(ctx, sc, testZoneId)
 	require.NoError(t, err)
 	// Should return one of the tied nodes (Redis ZRANGE returns lexicographic order on tie)
 	assert.Contains(t, []string{"10", "20", "30"}, best)
@@ -157,9 +165,9 @@ func TestGetBestNode_SingleNode(t *testing.T) {
 	sc, mr := newTestSvcCtx(t, "node-self")
 	ctx := context.Background()
 
-	mr.ZAdd(NodeLoadKey, 99, "42")
+	mr.ZAdd(testLoadKey(), 99, "42")
 
-	best, err := GetBestNode(ctx, sc)
+	best, err := GetBestNode(ctx, sc, testZoneId)
 	require.NoError(t, err)
 	assert.Equal(t, "42", best)
 }
@@ -239,7 +247,7 @@ func TestGetMainSceneId_NotFound(t *testing.T) {
 	sc, _ := newTestSvcCtxWithMainScenes(t, nil)
 	ctx := context.Background()
 
-	id, _ := GetMainSceneId(ctx, sc, 9999)
+	id, _ := GetMainSceneId(ctx, sc, 9999, testZoneId)
 	assert.Equal(t, uint64(0), id)
 }
 
@@ -285,13 +293,14 @@ func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
 	ctx := context.Background()
 
 	// Register a node so GetBestNode works.
-	mr.ZAdd(NodeLoadKey, 0, "10")
+	mr.ZAdd(testLoadKey(), 0, "10")
 
 	logic := NewCreateSceneLogic(ctx, sc)
 
 	// First create.
 	resp1, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
+		ZoneId:      testZoneId,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, uint32(0), resp1.ErrorCode)
@@ -300,6 +309,7 @@ func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
 	// Second create for same confId — should return same scene.
 	resp2, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
+		ZoneId:      testZoneId,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, resp1.SceneId, resp2.SceneId, "main scene should be idempotent")
@@ -310,18 +320,20 @@ func TestCreateScene_Instance_UniquIds(t *testing.T) {
 	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
 	ctx := context.Background()
 
-	mr.ZAdd(NodeLoadKey, 0, "10")
+	mr.ZAdd(testLoadKey(), 0, "10")
 
 	logic := NewCreateSceneLogic(ctx, sc)
 
 	resp1, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 2001,
+		ZoneId:      testZoneId,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, uint32(0), resp1.ErrorCode)
 
 	resp2, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 2001,
+		ZoneId:      testZoneId,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, uint32(0), resp2.ErrorCode)
@@ -332,15 +344,16 @@ func TestCreateScene_Instance_TrackedInActiveSet(t *testing.T) {
 	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
 	ctx := context.Background()
 
-	mr.ZAdd(NodeLoadKey, 0, "10")
+	mr.ZAdd(testLoadKey(), 0, "10")
 
 	logic := NewCreateSceneLogic(ctx, sc)
 	resp, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 2001,
+		ZoneId:      testZoneId,
 	})
 
 	// Should be in the active instances sorted set.
-	instKey := activeInstancesKey(sc.Config.ZoneID)
+	instKey := activeInstancesKey(testZoneId)
 	members, err := sc.Redis.ZrangeWithScores(instKey, 0, -1)
 	require.NoError(t, err)
 	assert.Len(t, members, 1)
@@ -356,9 +369,9 @@ func TestEnterScene_IncrementsPlayerCount(t *testing.T) {
 	ctx := context.Background()
 
 	// Setup: create an instance scene so there's a scene->node mapping.
-	mr.ZAdd(NodeLoadKey, 0, "10")
+	mr.ZAdd(testLoadKey(), 0, "10")
 	logic := NewCreateSceneLogic(ctx, sc)
-	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{SceneConfId: 2001})
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{SceneConfId: 2001, ZoneId: testZoneId})
 	require.NoError(t, err)
 	sceneId := resp.SceneId
 
@@ -384,9 +397,9 @@ func TestLeaveScene_DecrementsPlayerCount(t *testing.T) {
 	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
 	ctx := context.Background()
 
-	mr.ZAdd(NodeLoadKey, 0, "10")
+	mr.ZAdd(testLoadKey(), 0, "10")
 	logic := NewCreateSceneLogic(ctx, sc)
-	resp, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{SceneConfId: 2001})
+	resp, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{SceneConfId: 2001, ZoneId: testZoneId})
 	sceneId := resp.SceneId
 
 	// Enter first.

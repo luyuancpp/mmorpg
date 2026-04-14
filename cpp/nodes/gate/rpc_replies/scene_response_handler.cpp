@@ -106,6 +106,7 @@ void OnSceneDestroySceneReply(const muduo::net::TcpConnectionPtr& conn, const st
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE}
+}
 
 void OnSceneNodeHandshakeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, muduo::Timestamp timestamp)
 {

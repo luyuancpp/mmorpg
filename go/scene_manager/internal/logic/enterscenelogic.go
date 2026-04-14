@@ -37,7 +37,7 @@ func errResp(code uint32, msg string) *scene_manager.EnterSceneResponse {
 // EnterScene routes a player into a scene, managed by SceneManager.
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
 	// 1. Resolve the target Scene node.
-	nodeId, err := l.resolveNode(in.SceneId)
+	nodeId, err := l.resolveNode(in.SceneId, in.ZoneId)
 	if err != nil {
 		return errResp(constants.ErrNoAvailableNode, err.Error()), nil
 	}
@@ -78,9 +78,9 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 
 // resolveNode picks the target scene node: load-balanced for first login (sceneId=0),
 // or looks up the owning node for an existing scene.
-func (l *EnterSceneLogic) resolveNode(sceneId uint64) (string, error) {
+func (l *EnterSceneLogic) resolveNode(sceneId uint64, zoneId uint32) (string, error) {
 	if sceneId == 0 {
-		return GetBestNode(l.ctx, l.svcCtx)
+		return GetBestNode(l.ctx, l.svcCtx, zoneId)
 	}
 	key := fmt.Sprintf("scene:%d:node", sceneId)
 	nodeId, err := l.svcCtx.Redis.Get(key)
