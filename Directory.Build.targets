@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
+    <!--
+      Normalize legacy toolset pinning (v145) to the VS default installed toolset.
+      This keeps old vcxproj files buildable on newer VS versions without editing each project.
+    -->
+    <PlatformToolset Condition="'$(PlatformToolset)' == 'v145' and '$(DefaultPlatformToolset)' != ''">$(DefaultPlatformToolset)</PlatformToolset>
+
+    <!-- Prefer latest C++ language mode across all C++ projects. -->
+    <LanguageStandard>stdcpplatest</LanguageStandard>
+  </PropertyGroup>
+
   <ItemDefinitionGroup
       Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and '$(Configuration)' == 'Debug'">
     <Link>

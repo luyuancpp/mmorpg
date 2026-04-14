@@ -29,6 +29,7 @@
 #include "core/utils/debug/stacktrace_system.h"
 #include "network/node_utils.h"
 #include "node/system/node/thread_observability.h"
+#include "network/traffic_statistics.h"
 #include <boost/algorithm/string.hpp>
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/node/node_connector.h"
@@ -158,6 +159,7 @@ Node::Node(muduo::net::EventLoop *loop,
 	targetNodeTypeWhitelist = std::move(connectTo);
 	Initialize();
 	node::observability::RegisterThreadObservability(*eventLoop, "logs/" + NodeUtils::NodeTypeToShortName(nodeType));
+	RegisterTrafficStatsReporter(*eventLoop);
 }
 
 Node::~Node()

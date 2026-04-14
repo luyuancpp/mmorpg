@@ -161,6 +161,65 @@ func (x *InitializePlayerComponentsEvent) GetActorEntity() uint64 {
 	return 0
 }
 
+// Fired after player entity is fully initialized and placed into a scene.
+// enter_gs_type: LOGIN_FIRST(1) / LOGIN_RECONNECT(2) / LOGIN_REPLACE(3)
+// Business systems subscribe to handle login-type-specific logic:
+//
+//	LOGIN_FIRST:     full data sync, daily reset check, welcome message
+//	LOGIN_RECONNECT: delta state sync, resume interrupted actions
+//	LOGIN_REPLACE:   cleanup old transient state (trade, matchmaking)
+type PlayerLoginEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ActorEntity   uint64                 `protobuf:"varint,1,opt,name=actor_entity,json=actorEntity,proto3" json:"actor_entity,omitempty"`
+	EnterGsType   uint32                 `protobuf:"varint,2,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlayerLoginEvent) Reset() {
+	*x = PlayerLoginEvent{}
+	mi := &file_proto_common_event_player_event_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerLoginEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerLoginEvent) ProtoMessage() {}
+
+func (x *PlayerLoginEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_event_player_event_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerLoginEvent.ProtoReflect.Descriptor instead.
+func (*PlayerLoginEvent) Descriptor() ([]byte, []int) {
+	return file_proto_common_event_player_event_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *PlayerLoginEvent) GetActorEntity() uint64 {
+	if x != nil {
+		return x.ActorEntity
+	}
+	return 0
+}
+
+func (x *PlayerLoginEvent) GetEnterGsType() uint32 {
+	if x != nil {
+		return x.EnterGsType
+	}
+	return 0
+}
+
 var File_proto_common_event_player_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_player_event_proto_rawDesc = "" +
@@ -172,7 +231,10 @@ const file_proto_common_event_player_event_proto_rawDesc = "" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12\x1b\n" +
 	"\tnew_level\x18\x02 \x01(\rR\bnewLevel\"D\n" +
 	"\x1fInitializePlayerComponentsEvent\x12!\n" +
-	"\factor_entity\x18\x01 \x01(\x04R\vactorEntityB\x17Z\x15db/proto/common/eventb\x06proto3"
+	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\"Y\n" +
+	"\x10PlayerLoginEvent\x12!\n" +
+	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12\"\n" +
+	"\renter_gs_type\x18\x02 \x01(\rR\venterGsTypeB\x17Z\x15db/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_player_event_proto_rawDescOnce sync.Once
@@ -186,11 +248,12 @@ func file_proto_common_event_player_event_proto_rawDescGZIP() []byte {
 	return file_proto_common_event_player_event_proto_rawDescData
 }
 
-var file_proto_common_event_player_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_common_event_player_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_common_event_player_event_proto_goTypes = []any{
 	(*RegisterPlayerEvent)(nil),             // 0: RegisterPlayerEvent
 	(*PlayerUpgradeEvent)(nil),              // 1: PlayerUpgradeEvent
 	(*InitializePlayerComponentsEvent)(nil), // 2: InitializePlayerComponentsEvent
+	(*PlayerLoginEvent)(nil),                // 3: PlayerLoginEvent
 }
 var file_proto_common_event_player_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -211,7 +274,7 @@ func file_proto_common_event_player_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_event_player_event_proto_rawDesc), len(file_proto_common_event_player_event_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

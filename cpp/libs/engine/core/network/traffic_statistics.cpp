@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "muduo/base/Logging.h"
+#include "muduo/net/EventLoop.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
 
 TrafficStatsCollector &TrafficStatsCollector::Instance()
@@ -233,4 +234,26 @@ void TrafficStatsCollector::LogWindowSummary(double windowSeconds, const std::ve
     {
         LOG_INFO << "[TrafficStats]   ... and " << (sorted.size() - kTopN) << " more message types";
     }
+}
+
+void RegisterTrafficStatsReporter(muduo::net::EventLoop& loop)
+{
+    auto& collector = TrafficStatsCollector::Instance();
+    if (!collector.IsEnabled())
+    {
+        LOG_INFO << "[TrafficStats] Not enabled (set NODE_TRAFFIC_STATS_ENABLED=1 to enable).";
+        return;
+    }
+
+    double interval = static_cast<double>(collector.GetReportIntervalSeconds());
+    loop.runEvery(interval, []
+    {
+        auto& c = TrafficStatsCollector::Instance();
+        if (c.IsEnabled())
+        {
+            c.ReportAndReset();
+        }
+    });
+
+    LOG_INFO << "[TrafficStats] Periodic reporter registered, interval=" << collector.GetReportIntervalSeconds() << "s";
 }

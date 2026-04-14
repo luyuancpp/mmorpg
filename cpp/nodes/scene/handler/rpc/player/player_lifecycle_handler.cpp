@@ -3,24 +3,21 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "player/system/player_lifecycle.h"
-#include "player/system/player_scene.h"
 #include "muduo/base/Logging.h"
-#include "proto/common/component/player_login_comp.pb.h"
+#include "player/system/player_lifecycle.h"
+#include <thread_context/registry_manager.h>
 ///<<< END WRITING YOUR CODE
 
 void ScenePlayerHandler::GateLoginNotify(entt::entity player,const ::GateLoginNotifyRequest* request,
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "GateLoginNotify for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
-
-	if (request->enter_gs_type() == LOGIN_NONE)
-	{
-		return;
-	}
-
-	PlayerLifecycleSystem::OnPlayerLogin(player, request->enter_gs_type());
+	// Deprecated: Gate now sends PlayerEnterGameNode RPC directly (carries session_id,
+	// enter_gs_type, scene_id). This handler is kept for backward compatibility but
+	// should not be reached in normal operation.
+	LOG_WARN << "GateLoginNotify: deprecated path reached for player "
+	         << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
+	         << ", enter_gs_type=" << request->enter_gs_type();
 	///<<< END WRITING YOUR CODE
 
 }

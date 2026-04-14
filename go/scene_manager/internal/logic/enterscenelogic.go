@@ -61,7 +61,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	// The gate Kafka consumer may not be implemented yet; location in Redis
 	// is the source of truth so we log but do not fail the request.
 	if in.GateId != "" {
-		if err := l.routePlayerToGate(in, nodeId); err != nil {
+		if err := l.routePlayerToGate(in, nodeId, sceneId); err != nil {
 			l.Logger.Errorf("Failed to route player %d to gate (non-fatal): %v", in.PlayerId, err)
 		}
 	} else {
@@ -109,7 +109,7 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 }
 
 // routePlayerToGate builds a GateCommand and pushes it to the gate's Kafka topic.
-func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest, nodeId string) error {
+func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest, nodeId string, sceneId uint64) error {
 	targetNodeId, err := strconv.ParseUint(nodeId, 10, 32)
 	if err != nil {
 		return fmt.Errorf("invalid scene node id %q: %w", nodeId, err)
@@ -122,6 +122,8 @@ func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest,
 	event := &kafkacontracts.RoutePlayerEvent{
 		SessionId:    in.SessionId,
 		TargetNodeId: uint32(targetNodeId),
+		SceneId:      sceneId,
+		PlayerId:     in.PlayerId,
 	}
 	payload, err := proto.Marshal(event)
 	if err != nil {

@@ -63,13 +63,16 @@ message DestroySceneRequest {
 
 message EnterSceneRequest {
   uint64 player_id = 1;
-  uint64 scene_id = 2;          // Target scene
+  uint64 scene_id = 2;          // Target scene (if known). 0 = allocate via scene_conf_id.
   uint64 session_id = 3;        // Gate session ID
   string request_id = 4;        // Idempotency ID (optional)
   string gate_id = 5;           // Gate Node ID
   string gate_instance_id = 6;  // Gate Instance ID (for Kafka message validation)
   // Zone ID: which zone the target scene belongs to.
   uint32 zone_id = 7;
+  // Scene config ID (map template). Required when scene_id == 0.
+  // Used to resolve the actual scene instance from main_scene_channels.
+  uint64 scene_conf_id = 8;
 }
 
 message EnterSceneResponse {

@@ -283,13 +283,16 @@ func (x *DestroySceneRequest) GetZoneId() uint32 {
 type EnterSceneRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SceneId        uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // Target scene
+	SceneId        uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // Target scene (if known). 0 = allocate via scene_conf_id.
 	SessionId      uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session ID
 	RequestId      string                 `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                  // Idempotency ID (optional)
 	GateId         string                 `protobuf:"bytes,5,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                           // Gate Node ID
 	GateInstanceId string                 `protobuf:"bytes,6,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate Instance ID (for Kafka message validation)
 	// Zone ID: which zone the target scene belongs to.
-	ZoneId        uint32 `protobuf:"varint,7,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	ZoneId uint32 `protobuf:"varint,7,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	// Scene config ID (map template). Required when scene_id == 0.
+	// Used to resolve the actual scene instance from main_scene_channels.
+	SceneConfId   uint64 `protobuf:"varint,8,opt,name=scene_conf_id,json=sceneConfId,proto3" json:"scene_conf_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -369,6 +372,13 @@ func (x *EnterSceneRequest) GetGateInstanceId() string {
 func (x *EnterSceneRequest) GetZoneId() uint32 {
 	if x != nil {
 		return x.ZoneId
+	}
+	return 0
+}
+
+func (x *EnterSceneRequest) GetSceneConfId() uint64 {
+	if x != nil {
+		return x.SceneConfId
 	}
 	return 0
 }
@@ -515,7 +525,7 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"I\n" +
 	"\x13DestroySceneRequest\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
-	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\xe5\x01\n" +
+	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\x89\x02\n" +
 	"\x11EnterSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12\x1d\n" +
@@ -525,7 +535,8 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"request_id\x18\x04 \x01(\tR\trequestId\x12\x17\n" +
 	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +
 	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\x12\x17\n" +
-	"\azone_id\x18\a \x01(\rR\x06zoneId\"X\n" +
+	"\azone_id\x18\a \x01(\rR\x06zoneId\x12\"\n" +
+	"\rscene_conf_id\x18\b \x01(\x04R\vsceneConfId\"X\n" +
 	"\x12EnterSceneResponse\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x01 \x01(\rR\terrorCode\x12#\n" +

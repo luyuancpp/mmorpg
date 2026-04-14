@@ -233,6 +233,8 @@ class RoutePlayerEvent final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kSessionIdFieldNumber = 1,
+    kSceneIdFieldNumber = 3,
+    kPlayerIdFieldNumber = 4,
     kTargetNodeIdFieldNumber = 2,
   };
   // uint64 session_id = 1;
@@ -243,6 +245,26 @@ class RoutePlayerEvent final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_session_id() const;
   void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // uint64 scene_id = 3;
+  void clear_scene_id() ;
+  ::uint64_t scene_id() const;
+  void set_scene_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint64_t value);
+
+  public:
+  // uint64 player_id = 4;
+  void clear_player_id() ;
+  ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
 
   public:
   // uint32 target_node_id = 2;
@@ -259,7 +281,7 @@ class RoutePlayerEvent final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 0,
                                    2>
       _table_;
@@ -282,6 +304,8 @@ class RoutePlayerEvent final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t session_id_;
+    ::uint64_t scene_id_;
+    ::uint64_t player_id_;
     ::uint32_t target_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1256,7 +1280,7 @@ inline void RoutePlayerEvent::_internal_set_session_id(::uint64_t value) {
 inline void RoutePlayerEvent::clear_target_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_node_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint32_t RoutePlayerEvent::target_node_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.target_node_id)
@@ -1264,7 +1288,7 @@ inline ::uint32_t RoutePlayerEvent::target_node_id() const {
 }
 inline void RoutePlayerEvent::set_target_node_id(::uint32_t value) {
   _internal_set_target_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.target_node_id)
 }
 inline ::uint32_t RoutePlayerEvent::_internal_target_node_id() const {
@@ -1274,6 +1298,54 @@ inline ::uint32_t RoutePlayerEvent::_internal_target_node_id() const {
 inline void RoutePlayerEvent::_internal_set_target_node_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_node_id_ = value;
+}
+
+// uint64 scene_id = 3;
+inline void RoutePlayerEvent::clear_scene_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint64_t RoutePlayerEvent::scene_id() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.scene_id)
+  return _internal_scene_id();
+}
+inline void RoutePlayerEvent::set_scene_id(::uint64_t value) {
+  _internal_set_scene_id(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.scene_id)
+}
+inline ::uint64_t RoutePlayerEvent::_internal_scene_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scene_id_;
+}
+inline void RoutePlayerEvent::_internal_set_scene_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_id_ = value;
+}
+
+// uint64 player_id = 4;
+inline void RoutePlayerEvent::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint64_t RoutePlayerEvent::player_id() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.player_id)
+  return _internal_player_id();
+}
+inline void RoutePlayerEvent::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.player_id)
+}
+inline ::uint64_t RoutePlayerEvent::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void RoutePlayerEvent::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
 }
 
 // -------------------------------------------------------------------

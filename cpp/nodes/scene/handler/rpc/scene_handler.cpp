@@ -103,14 +103,21 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	LOG_DEBUG << "Handling EnterGs request for player: " << request->player_id();
+	LOG_DEBUG << "Handling PlayerEnterGameNode for player: " << request->player_id()
+	          << " session=" << request->session_id()
+	          << " enter_gs_type=" << request->enter_gs_type()
+	          << " scene_id=" << request->scene_id();
 
 	// 1. Clear existing player session (handles rapid reconnect / account takeover)
 	PlayerLifecycleSystem::RemovePlayerSessionSilently(request->player_id());
 
 	auto playerIt = tlsEcs.playerList.find(request->player_id());
 
+	// Carry session/login/scene context through the async load pipeline.
 	PlayerGameNodeEntryInfoComp enterInfo;
+	enterInfo.set_session_id(request->session_id());
+	enterInfo.set_enter_gs_type(request->enter_gs_type());
+	enterInfo.set_scene_id(request->scene_id());
 
 	// 2. If player is already online, enter scene directly
 	if (playerIt != tlsEcs.playerList.end())
@@ -119,7 +126,9 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	// 3. Player not online — add to async load queue
+	// 3. Player not online — add to async load queue.
+	//    After load completes, HandlePlayerAsyncLoaded → InitPlayerFromAllData → EnterScene
+	//    will use enterInfo to bind session, find scene, and process the login.
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
 	///<<< END WRITING YOUR CODE
 }
