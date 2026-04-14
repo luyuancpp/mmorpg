@@ -5,8 +5,17 @@
 ## Overview
 
 The scene system supports two scene types managed by Go SceneManager and hosted on C++ SceneNodes:
-- **Main World** scenes: persistent, one per config ID, created at startup.
+- **Main World** scenes: persistent, one per config ID per zone, created at startup.
 - **Instance** scenes: on-demand, lifecycle-managed, auto-destroyed when idle.
+
+### Zone-Agnostic Design
+
+SceneManager is **stateless and horizontally scalable**. It does not bind to any specific zone:
+- Zone information flows through **RPC requests** (`zone_id` field), not config.
+- `LoadReporter` discovers scene nodes from **all zones** via etcd (`SceneNodeService.rpc/` prefix without zone filter), populating per-zone Redis load sets.
+- `InitMainScenes` discovers available zones from etcd registrations and creates main scenes for each zone.
+- `InstanceLifecycleManager` iterates over all known zones when cleaning up idle instances.
+- Multiple SceneManager instances can run behind a load balancer, each serving any zone.
 
 ## Scene Types
 
@@ -78,13 +87,13 @@ Go SceneManager.DestroyScene(scene_id) or InstanceLifecycleManager
 ## gRPC Connection Cache (Go → C++ SceneNode)
 
 - `scene_node_client.go` maintains a `nodeConnCache` (`sync.RWMutex`-guarded `map[string]*grpc.ClientConn`).
-- Node endpoint discovered from etcd: `SceneNodeService.rpc/zone/{zoneId}/` prefix scan, JSON parsing of `sceneNodeRegistration.Endpoint`.
+- Node endpoint discovered from etcd: `SceneNodeService.rpc/` prefix scan (all zones), JSON parsing of `sceneNodeRegistration.Endpoint`.
 - `RemoveNodeConn(nodeId)` called by `load_reporter.go` when a node's grace period expires.
 
 ## Startup Initialization
 
-1. `InitMainScenes` waits for at least one scene node to register in etcd (polls up to 60 attempts).
-2. For each `MainSceneConfIds` in config: idempotent check via Redis HGET, then assigns to node via FNV-1a consistent hashing, allocates scene ID, calls C++ CreateScene.
+1. `InitMainScenes` waits for at least one zone to be discovered by `LoadReporter` from etcd (polls up to 60 attempts).
+2. For each discovered zone: iterates `MainSceneConfIds` config, performs idempotent check via Redis HGET, assigns to node via FNV-1a consistent hashing, allocates scene ID, calls C++ CreateScene.
 
 ## Key Redis Keys
 

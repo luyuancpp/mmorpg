@@ -55,7 +55,7 @@ func main() {
 	fmt.Println("=============================================================")
 	fmt.Printf("  Listen:      %s\n", c.ListenOn)
 	fmt.Printf("  Mode:        %s\n", c.Mode)
-	fmt.Printf("  zone_id:     %d\n", c.ZoneID)
+	fmt.Printf("  multi-zone:  true (zone-agnostic)\n")
 	if len(c.Etcd.Hosts) > 0 {
 		fmt.Printf("  etcd:        %v\n", c.Etcd.Hosts)
 	}

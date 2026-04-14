@@ -33,7 +33,8 @@ inline constexpr LeaveSceneRequest::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
-        scene_id_{::uint64_t{0u}} {}
+        scene_id_{::uint64_t{0u}},
+        zone_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR LeaveSceneRequest::LeaveSceneRequest(::_pbi::ConstantInitialized)
@@ -97,7 +98,8 @@ inline constexpr EnterSceneRequest::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
         scene_id_{::uint64_t{0u}},
-        session_id_{::uint64_t{0u}} {}
+        session_id_{::uint64_t{0u}},
+        zone_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR EnterSceneRequest::EnterSceneRequest(::_pbi::ConstantInitialized)
@@ -122,7 +124,8 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr DestroySceneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        scene_id_{::uint64_t{0u}} {}
+        scene_id_{::uint64_t{0u}},
+        zone_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR DestroySceneRequest::DestroySceneRequest(::_pbi::ConstantInitialized)
@@ -185,7 +188,8 @@ inline constexpr CreateSceneRequest::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         scene_conf_id_{::uint64_t{0u}},
-        scene_type_{static_cast< ::scene_manager::SceneType >(0)} {}
+        scene_type_{static_cast< ::scene_manager::SceneType >(0)},
+        zone_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR CreateSceneRequest::CreateSceneRequest(::_pbi::ConstantInitialized)
@@ -216,15 +220,17 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneRequest, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneRequest, _impl_.scene_conf_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneRequest, _impl_.target_node_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneRequest, _impl_.scene_type_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneRequest, _impl_.creator_ids_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneRequest, _impl_.zone_id_),
         1,
         0,
         2,
         ~0u,
+        3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneResponse, _impl_._has_bits_),
         7, // hasbit index offset
@@ -238,24 +244,28 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::DestroySceneRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::scene_manager::DestroySceneRequest, _impl_.scene_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::DestroySceneRequest, _impl_.zone_id_),
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_._has_bits_),
-        9, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.scene_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.request_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.gate_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.gate_instance_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.zone_id_),
         3,
         4,
         5,
         0,
         1,
         2,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_._has_bits_),
         5, // hasbit index offset
@@ -265,23 +275,25 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_.scene_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_.request_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_.zone_id_),
         1,
         2,
         0,
+        3,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::scene_manager::CreateSceneRequest)},
-        {11, sizeof(::scene_manager::CreateSceneResponse)},
-        {22, sizeof(::scene_manager::DestroySceneRequest)},
-        {27, sizeof(::scene_manager::EnterSceneRequest)},
-        {42, sizeof(::scene_manager::EnterSceneResponse)},
-        {49, sizeof(::scene_manager::LeaveSceneRequest)},
+        {13, sizeof(::scene_manager::CreateSceneResponse)},
+        {24, sizeof(::scene_manager::DestroySceneRequest)},
+        {31, sizeof(::scene_manager::EnterSceneRequest)},
+        {48, sizeof(::scene_manager::EnterSceneResponse)},
+        {55, sizeof(::scene_manager::LeaveSceneRequest)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::scene_manager::_CreateSceneRequest_default_instance_._instance,
@@ -297,32 +309,34 @@ const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5
     "ice.proto\022\rscene_manager\032\034proto/common/b"
     "ase/node.proto\032\035proto/common/base/empty."
     "proto\032(proto/contracts/kafka/gate_comman"
-    "d.proto\"\206\001\n\022CreateSceneRequest\022\025\n\rscene_"
+    "d.proto\"\227\001\n\022CreateSceneRequest\022\025\n\rscene_"
     "conf_id\030\001 \001(\004\022\026\n\016target_node_id\030\002 \001(\t\022,\n"
     "\nscene_type\030\003 \001(\0162\030.scene_manager.SceneT"
-    "ype\022\023\n\013creator_ids\030\004 \003(\004\"c\n\023CreateSceneR"
-    "esponse\022\020\n\010scene_id\030\001 \001(\004\022\017\n\007node_id\030\002 \001"
-    "(\t\022\022\n\nerror_code\030\003 \001(\r\022\025\n\rerror_message\030"
-    "\004 \001(\t\"\'\n\023DestroySceneRequest\022\020\n\010scene_id"
-    "\030\001 \001(\004\"\213\001\n\021EnterSceneRequest\022\021\n\tplayer_i"
-    "d\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n\nsession_id\030"
-    "\003 \001(\004\022\022\n\nrequest_id\030\004 \001(\t\022\017\n\007gate_id\030\005 \001"
-    "(\t\022\030\n\020gate_instance_id\030\006 \001(\t\"\?\n\022EnterSce"
-    "neResponse\022\022\n\nerror_code\030\001 \001(\r\022\025\n\rerror_"
-    "message\030\002 \001(\t\"L\n\021LeaveSceneRequest\022\021\n\tpl"
-    "ayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n\nreque"
-    "st_id\030\003 \001(\t*[\n\tSceneType\022\032\n\026SCENE_TYPE_U"
-    "NSPECIFIED\020\000\022\031\n\025SCENE_TYPE_MAIN_WORLD\020\001\022"
-    "\027\n\023SCENE_TYPE_INSTANCE\020\0022\263\002\n\014SceneManage"
-    "r\022V\n\013CreateScene\022!.scene_manager.CreateS"
-    "ceneRequest\032\".scene_manager.CreateSceneR"
-    "esponse\"\000\022<\n\014DestroyScene\022\".scene_manage"
-    "r.DestroySceneRequest\032\006.Empty\"\000\022S\n\nEnter"
-    "Scene\022 .scene_manager.EnterSceneRequest\032"
-    "!.scene_manager.EnterSceneResponse\"\000\0228\n\n"
-    "LeaveScene\022 .scene_manager.LeaveSceneReq"
-    "uest\032\006.Empty\"\000B\035Z\033scene_manager/scene_ma"
-    "nagerb\006proto3"
+    "ype\022\023\n\013creator_ids\030\004 \003(\004\022\017\n\007zone_id\030\005 \001("
+    "\r\"c\n\023CreateSceneResponse\022\020\n\010scene_id\030\001 \001"
+    "(\004\022\017\n\007node_id\030\002 \001(\t\022\022\n\nerror_code\030\003 \001(\r\022"
+    "\025\n\rerror_message\030\004 \001(\t\"8\n\023DestroySceneRe"
+    "quest\022\020\n\010scene_id\030\001 \001(\004\022\017\n\007zone_id\030\002 \001(\r"
+    "\"\234\001\n\021EnterSceneRequest\022\021\n\tplayer_id\030\001 \001("
+    "\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\004\022"
+    "\022\n\nrequest_id\030\004 \001(\t\022\017\n\007gate_id\030\005 \001(\t\022\030\n\020"
+    "gate_instance_id\030\006 \001(\t\022\017\n\007zone_id\030\007 \001(\r\""
+    "\?\n\022EnterSceneResponse\022\022\n\nerror_code\030\001 \001("
+    "\r\022\025\n\rerror_message\030\002 \001(\t\"]\n\021LeaveSceneRe"
+    "quest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001"
+    "(\004\022\022\n\nrequest_id\030\003 \001(\t\022\017\n\007zone_id\030\004 \001(\r*"
+    "[\n\tSceneType\022\032\n\026SCENE_TYPE_UNSPECIFIED\020\000"
+    "\022\031\n\025SCENE_TYPE_MAIN_WORLD\020\001\022\027\n\023SCENE_TYP"
+    "E_INSTANCE\020\0022\263\002\n\014SceneManager\022V\n\013CreateS"
+    "cene\022!.scene_manager.CreateSceneRequest\032"
+    "\".scene_manager.CreateSceneResponse\"\000\022<\n"
+    "\014DestroyScene\022\".scene_manager.DestroySce"
+    "neRequest\032\006.Empty\"\000\022S\n\nEnterScene\022 .scen"
+    "e_manager.EnterSceneRequest\032!.scene_mana"
+    "ger.EnterSceneResponse\"\000\0228\n\nLeaveScene\022 "
+    ".scene_manager.LeaveSceneRequest\032\006.Empty"
+    "\"\000B\035Z\033scene_manager/scene_managerb\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_deps[3] = {
@@ -334,7 +348,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_5fmanager_2fscene_5fmana
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto = {
     false,
     false,
-    1173,
+    1241,
     descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto,
     "proto/scene_manager/scene_manager_service.proto",
     &descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_once,
@@ -400,9 +414,9 @@ CreateSceneRequest::CreateSceneRequest(
                offsetof(Impl_, scene_conf_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, scene_conf_id_),
-           offsetof(Impl_, scene_type_) -
+           offsetof(Impl_, zone_id_) -
                offsetof(Impl_, scene_conf_id_) +
-               sizeof(Impl_::scene_type_));
+               sizeof(Impl_::zone_id_));
 
   // @@protoc_insertion_point(copy_constructor:scene_manager.CreateSceneRequest)
 }
@@ -419,9 +433,9 @@ inline void CreateSceneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, scene_conf_id_),
            0,
-           offsetof(Impl_, scene_type_) -
+           offsetof(Impl_, zone_id_) -
                offsetof(Impl_, scene_conf_id_) +
-               sizeof(Impl_::scene_type_));
+               sizeof(Impl_::zone_id_));
 }
 CreateSceneRequest::~CreateSceneRequest() {
   // @@protoc_insertion_point(destructor:scene_manager.CreateSceneRequest)
@@ -490,16 +504,16 @@ CreateSceneRequest::GetClassData() const {
   return CreateSceneRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 55, 2>
+const ::_pbi::TcParseTable<3, 5, 0, 55, 2>
 CreateSceneRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    5,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     CreateSceneRequest_class_data_.base(),
@@ -509,9 +523,7 @@ CreateSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::scene_manager::CreateSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // repeated uint64 creator_ids = 4;
-    {::_pbi::TcParser::FastV64P1,
-     {34, 63, 0, PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.creator_ids_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint64 scene_conf_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CreateSceneRequest, _impl_.scene_conf_id_), 1>(),
      {8, 1, 0, PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.scene_conf_id_)}},
@@ -521,6 +533,14 @@ CreateSceneRequest::_table_ = {
     // .scene_manager.SceneType scene_type = 3;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CreateSceneRequest, _impl_.scene_type_), 2>(),
      {24, 2, 0, PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.scene_type_)}},
+    // repeated uint64 creator_ids = 4;
+    {::_pbi::TcParser::FastV64P1,
+     {34, 63, 0, PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.creator_ids_)}},
+    // uint32 zone_id = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CreateSceneRequest, _impl_.zone_id_), 3>(),
+     {40, 3, 0, PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.zone_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -536,6 +556,9 @@ CreateSceneRequest::_table_ = {
     // repeated uint64 creator_ids = 4;
     {PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.creator_ids_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
+    // uint32 zone_id = 5;
+    {PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -556,10 +579,10 @@ PROTOBUF_NOINLINE void CreateSceneRequest::Clear() {
   if ((cached_has_bits & 0x00000001u) != 0) {
     _impl_.target_node_id_.ClearNonDefaultToEmpty();
   }
-  if ((cached_has_bits & 0x00000006u) != 0) {
+  if ((cached_has_bits & 0x0000000eu) != 0) {
     ::memset(&_impl_.scene_conf_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.scene_type_) -
-        reinterpret_cast<char*>(&_impl_.scene_conf_id_)) + sizeof(_impl_.scene_type_));
+        reinterpret_cast<char*>(&_impl_.zone_id_) -
+        reinterpret_cast<char*>(&_impl_.scene_conf_id_)) + sizeof(_impl_.zone_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -617,6 +640,15 @@ PROTOBUF_NOINLINE void CreateSceneRequest::Clear() {
     }
   }
 
+  // uint32 zone_id = 5;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          5, this_._internal_zone_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -651,7 +683,7 @@ PROTOBUF_NOINLINE void CreateSceneRequest::Clear() {
     }
   }
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     // string target_node_id = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_target_node_id().empty()) {
@@ -673,6 +705,13 @@ PROTOBUF_NOINLINE void CreateSceneRequest::Clear() {
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_scene_type());
       }
     }
+    // uint32 zone_id = 5;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_zone_id());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -688,7 +727,7 @@ void CreateSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
 
   _this->_internal_mutable_creator_ids()->MergeFrom(from._internal_creator_ids());
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_target_node_id().empty()) {
         _this->_internal_set_target_node_id(from._internal_target_node_id());
@@ -706,6 +745,11 @@ void CreateSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
     if ((cached_has_bits & 0x00000004u) != 0) {
       if (from._internal_scene_type() != 0) {
         _this->_impl_.scene_type_ = from._impl_.scene_type_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
   }
@@ -730,8 +774,8 @@ void CreateSceneRequest::InternalSwap(CreateSceneRequest* PROTOBUF_RESTRICT PROT
   _impl_.creator_ids_.InternalSwap(&other->_impl_.creator_ids_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_node_id_, &other->_impl_.target_node_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.scene_type_)
-      + sizeof(CreateSceneRequest::_impl_.scene_type_)
+      PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.zone_id_)
+      + sizeof(CreateSceneRequest::_impl_.zone_id_)
       - PROTOBUF_FIELD_OFFSET(CreateSceneRequest, _impl_.scene_conf_id_)>(
           reinterpret_cast<char*>(&_impl_.scene_conf_id_),
           reinterpret_cast<char*>(&other->_impl_.scene_conf_id_));
@@ -1162,7 +1206,12 @@ PROTOBUF_NDEBUG_INLINE DestroySceneRequest::Impl_::Impl_(
 
 inline void DestroySceneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.scene_id_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, scene_id_),
+           0,
+           offsetof(Impl_, zone_id_) -
+               offsetof(Impl_, scene_id_) +
+               sizeof(Impl_::zone_id_));
 }
 DestroySceneRequest::~DestroySceneRequest() {
   // @@protoc_insertion_point(destructor:scene_manager.DestroySceneRequest)
@@ -1218,16 +1267,16 @@ DestroySceneRequest::GetClassData() const {
   return DestroySceneRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
 DestroySceneRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(DestroySceneRequest, _impl_._has_bits_),
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     DestroySceneRequest_class_data_.base(),
@@ -1237,6 +1286,9 @@ DestroySceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::scene_manager::DestroySceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // uint32 zone_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(DestroySceneRequest, _impl_.zone_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(DestroySceneRequest, _impl_.zone_id_)}},
     // uint64 scene_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DestroySceneRequest, _impl_.scene_id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(DestroySceneRequest, _impl_.scene_id_)}},
@@ -1246,6 +1298,9 @@ DestroySceneRequest::_table_ = {
     // uint64 scene_id = 1;
     {PROTOBUF_FIELD_OFFSET(DestroySceneRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 zone_id = 2;
+    {PROTOBUF_FIELD_OFFSET(DestroySceneRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -1258,7 +1313,12 @@ PROTOBUF_NOINLINE void DestroySceneRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.scene_id_ = ::uint64_t{0u};
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    ::memset(&_impl_.scene_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.zone_id_) -
+        reinterpret_cast<char*>(&_impl_.scene_id_)) + sizeof(_impl_.zone_id_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -1287,6 +1347,15 @@ PROTOBUF_NOINLINE void DestroySceneRequest::Clear() {
     }
   }
 
+  // uint32 zone_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_zone_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1310,13 +1379,21 @@ PROTOBUF_NOINLINE void DestroySceneRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
     // uint64 scene_id = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_scene_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_scene_id());
+      }
+    }
+    // uint32 zone_id = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_zone_id());
       }
     }
   }
@@ -1333,9 +1410,16 @@ void DestroySceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    if (from._internal_scene_id() != 0) {
-      _this->_impl_.scene_id_ = from._impl_.scene_id_;
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_scene_id() != 0) {
+        _this->_impl_.scene_id_ = from._impl_.scene_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -1354,7 +1438,12 @@ void DestroySceneRequest::InternalSwap(DestroySceneRequest* PROTOBUF_RESTRICT PR
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.scene_id_, other->_impl_.scene_id_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(DestroySceneRequest, _impl_.zone_id_)
+      + sizeof(DestroySceneRequest::_impl_.zone_id_)
+      - PROTOBUF_FIELD_OFFSET(DestroySceneRequest, _impl_.scene_id_)>(
+          reinterpret_cast<char*>(&_impl_.scene_id_),
+          reinterpret_cast<char*>(&other->_impl_.scene_id_));
 }
 
 ::google::protobuf::Metadata DestroySceneRequest::GetMetadata() const {
@@ -1406,9 +1495,9 @@ EnterSceneRequest::EnterSceneRequest(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, session_id_) -
+           offsetof(Impl_, zone_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::session_id_));
+               sizeof(Impl_::zone_id_));
 
   // @@protoc_insertion_point(copy_constructor:scene_manager.EnterSceneRequest)
 }
@@ -1425,9 +1514,9 @@ inline void EnterSceneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena)
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, session_id_) -
+           offsetof(Impl_, zone_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::session_id_));
+               sizeof(Impl_::zone_id_));
 }
 EnterSceneRequest::~EnterSceneRequest() {
   // @@protoc_insertion_point(destructor:scene_manager.EnterSceneRequest)
@@ -1486,16 +1575,16 @@ EnterSceneRequest::GetClassData() const {
   return EnterSceneRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 6, 0, 73, 2>
+const ::_pbi::TcParseTable<3, 7, 0, 73, 2>
 EnterSceneRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_._has_bits_),
     0, // no _extensions_
-    6, 56,  // max_field_number, fast_idx_mask
+    7, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967232,  // skipmap
+    4294967168,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    6,  // num_field_entries
+    7,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     EnterSceneRequest_class_data_.base(),
@@ -1524,7 +1613,9 @@ EnterSceneRequest::_table_ = {
     // string gate_instance_id = 6;
     {::_pbi::TcParser::FastUS1,
      {50, 2, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_instance_id_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 zone_id = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneRequest, _impl_.zone_id_), 6>(),
+     {56, 6, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -1546,6 +1637,9 @@ EnterSceneRequest::_table_ = {
     // string gate_instance_id = 6;
     {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_instance_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 zone_id = 7;
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 6, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -1575,10 +1669,10 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
       _impl_.gate_instance_id_.ClearNonDefaultToEmpty();
     }
   }
-  if ((cached_has_bits & 0x00000038u) != 0) {
+  if ((cached_has_bits & 0x00000078u) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.session_id_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.session_id_));
+        reinterpret_cast<char*>(&_impl_.zone_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.zone_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1656,6 +1750,15 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
     }
   }
 
+  // uint32 zone_id = 7;
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+    if (this_._internal_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_zone_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1681,7 +1784,7 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000003fu) != 0) {
+  if ((cached_has_bits & 0x0000007fu) != 0) {
     // string request_id = 4;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_request_id().empty()) {
@@ -1724,6 +1827,13 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
             this_._internal_session_id());
       }
     }
+    // uint32 zone_id = 7;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (this_._internal_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_zone_id());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -1738,7 +1848,7 @@ void EnterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000003fu) != 0) {
+  if ((cached_has_bits & 0x0000007fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_request_id().empty()) {
         _this->_internal_set_request_id(from._internal_request_id());
@@ -1781,6 +1891,11 @@ void EnterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const
         _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -1804,8 +1919,8 @@ void EnterSceneRequest::InternalSwap(EnterSceneRequest* PROTOBUF_RESTRICT PROTOB
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_id_, &other->_impl_.gate_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_instance_id_, &other->_impl_.gate_instance_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.session_id_)
-      + sizeof(EnterSceneRequest::_impl_.session_id_)
+      PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_)
+      + sizeof(EnterSceneRequest::_impl_.zone_id_)
       - PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));
@@ -2154,9 +2269,9 @@ LeaveSceneRequest::LeaveSceneRequest(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, scene_id_) -
+           offsetof(Impl_, zone_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::scene_id_));
+               sizeof(Impl_::zone_id_));
 
   // @@protoc_insertion_point(copy_constructor:scene_manager.LeaveSceneRequest)
 }
@@ -2171,9 +2286,9 @@ inline void LeaveSceneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena)
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, scene_id_) -
+           offsetof(Impl_, zone_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::scene_id_));
+               sizeof(Impl_::zone_id_));
 }
 LeaveSceneRequest::~LeaveSceneRequest() {
   // @@protoc_insertion_point(destructor:scene_manager.LeaveSceneRequest)
@@ -2230,16 +2345,16 @@ LeaveSceneRequest::GetClassData() const {
   return LeaveSceneRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 50, 2>
+const ::_pbi::TcParseTable<2, 4, 0, 50, 2>
 LeaveSceneRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
+    4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     LeaveSceneRequest_class_data_.base(),
@@ -2249,7 +2364,9 @@ LeaveSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::scene_manager::LeaveSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 zone_id = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LeaveSceneRequest, _impl_.zone_id_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.zone_id_)}},
     // uint64 player_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaveSceneRequest, _impl_.player_id_), 1>(),
      {8, 1, 0, PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.player_id_)}},
@@ -2271,6 +2388,9 @@ LeaveSceneRequest::_table_ = {
     // string request_id = 3;
     {PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 zone_id = 4;
+    {PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -2290,10 +2410,10 @@ PROTOBUF_NOINLINE void LeaveSceneRequest::Clear() {
   if ((cached_has_bits & 0x00000001u) != 0) {
     _impl_.request_id_.ClearNonDefaultToEmpty();
   }
-  if ((cached_has_bits & 0x00000006u) != 0) {
+  if ((cached_has_bits & 0x0000000eu) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.scene_id_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.scene_id_));
+        reinterpret_cast<char*>(&_impl_.zone_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.zone_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -2342,6 +2462,15 @@ PROTOBUF_NOINLINE void LeaveSceneRequest::Clear() {
     }
   }
 
+  // uint32 zone_id = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          4, this_._internal_zone_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -2367,7 +2496,7 @@ PROTOBUF_NOINLINE void LeaveSceneRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     // string request_id = 3;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_request_id().empty()) {
@@ -2389,6 +2518,13 @@ PROTOBUF_NOINLINE void LeaveSceneRequest::Clear() {
             this_._internal_scene_id());
       }
     }
+    // uint32 zone_id = 4;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_zone_id());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -2403,7 +2539,7 @@ void LeaveSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_request_id().empty()) {
         _this->_internal_set_request_id(from._internal_request_id());
@@ -2421,6 +2557,11 @@ void LeaveSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const
     if ((cached_has_bits & 0x00000004u) != 0) {
       if (from._internal_scene_id() != 0) {
         _this->_impl_.scene_id_ = from._impl_.scene_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
   }
@@ -2444,8 +2585,8 @@ void LeaveSceneRequest::InternalSwap(LeaveSceneRequest* PROTOBUF_RESTRICT PROTOB
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_id_, &other->_impl_.request_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.scene_id_)
-      + sizeof(LeaveSceneRequest::_impl_.scene_id_)
+      PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.zone_id_)
+      + sizeof(LeaveSceneRequest::_impl_.zone_id_)
       - PROTOBUF_FIELD_OFFSET(LeaveSceneRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));

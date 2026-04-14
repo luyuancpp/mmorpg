@@ -282,6 +282,7 @@ class LeaveSceneRequest final : public ::google::protobuf::Message
     kRequestIdFieldNumber = 3,
     kPlayerIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
+    kZoneIdFieldNumber = 4,
   };
   // string request_id = 3;
   void clear_request_id() ;
@@ -318,11 +319,21 @@ class LeaveSceneRequest final : public ::google::protobuf::Message
   void _internal_set_scene_id(::uint64_t value);
 
   public:
+  // uint32 zone_id = 4;
+  void clear_zone_id() ;
+  ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.LeaveSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 50,
                                    2>
       _table_;
@@ -347,6 +358,7 @@ class LeaveSceneRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr request_id_;
     ::uint64_t player_id_;
     ::uint64_t scene_id_;
+    ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -713,6 +725,7 @@ class EnterSceneRequest final : public ::google::protobuf::Message
     kPlayerIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
     kSessionIdFieldNumber = 3,
+    kZoneIdFieldNumber = 7,
   };
   // string request_id = 4;
   void clear_request_id() ;
@@ -789,11 +802,21 @@ class EnterSceneRequest final : public ::google::protobuf::Message
   void _internal_set_session_id(::uint64_t value);
 
   public:
+  // uint32 zone_id = 7;
+  void clear_zone_id() ;
+  ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 6,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
                                    0, 73,
                                    2>
       _table_;
@@ -821,6 +844,7 @@ class EnterSceneRequest final : public ::google::protobuf::Message
     ::uint64_t player_id_;
     ::uint64_t scene_id_;
     ::uint64_t session_id_;
+    ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -974,6 +998,7 @@ class DestroySceneRequest final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kSceneIdFieldNumber = 1,
+    kZoneIdFieldNumber = 2,
   };
   // uint64 scene_id = 1;
   void clear_scene_id() ;
@@ -985,11 +1010,21 @@ class DestroySceneRequest final : public ::google::protobuf::Message
   void _internal_set_scene_id(::uint64_t value);
 
   public:
+  // uint32 zone_id = 2;
+  void clear_zone_id() ;
+  ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.DestroySceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<0, 1,
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
                                    0, 0,
                                    2>
       _table_;
@@ -1012,6 +1047,7 @@ class DestroySceneRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t scene_id_;
+    ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1405,6 +1441,7 @@ class CreateSceneRequest final : public ::google::protobuf::Message
     kTargetNodeIdFieldNumber = 2,
     kSceneConfIdFieldNumber = 1,
     kSceneTypeFieldNumber = 3,
+    kZoneIdFieldNumber = 5,
   };
   // repeated uint64 creator_ids = 4;
   int creator_ids_size() const;
@@ -1459,11 +1496,21 @@ class CreateSceneRequest final : public ::google::protobuf::Message
   void _internal_set_scene_type(::scene_manager::SceneType value);
 
   public:
+  // uint32 zone_id = 5;
+  void clear_zone_id() ;
+  ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.CreateSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 4,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
                                    0, 55,
                                    2>
       _table_;
@@ -1490,6 +1537,7 @@ class CreateSceneRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr target_node_id_;
     ::uint64_t scene_conf_id_;
     int scene_type_;
+    ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1671,6 +1719,30 @@ inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
 CreateSceneRequest::_internal_mutable_creator_ids() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.creator_ids_;
+}
+
+// uint32 zone_id = 5;
+inline void CreateSceneRequest::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t CreateSceneRequest::zone_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.CreateSceneRequest.zone_id)
+  return _internal_zone_id();
+}
+inline void CreateSceneRequest::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:scene_manager.CreateSceneRequest.zone_id)
+}
+inline ::uint32_t CreateSceneRequest::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void CreateSceneRequest::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -1881,6 +1953,30 @@ inline ::uint64_t DestroySceneRequest::_internal_scene_id() const {
 inline void DestroySceneRequest::_internal_set_scene_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = value;
+}
+
+// uint32 zone_id = 2;
+inline void DestroySceneRequest::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint32_t DestroySceneRequest::zone_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.DestroySceneRequest.zone_id)
+  return _internal_zone_id();
+}
+inline void DestroySceneRequest::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:scene_manager.DestroySceneRequest.zone_id)
+}
+inline ::uint32_t DestroySceneRequest::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void DestroySceneRequest::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -2154,6 +2250,30 @@ inline void EnterSceneRequest::set_allocated_gate_instance_id(::std::string* PRO
   // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneRequest.gate_instance_id)
 }
 
+// uint32 zone_id = 7;
+inline void EnterSceneRequest::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
+}
+inline ::uint32_t EnterSceneRequest::zone_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.zone_id)
+  return _internal_zone_id();
+}
+inline void EnterSceneRequest::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000040u;
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.zone_id)
+}
+inline ::uint32_t EnterSceneRequest::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void EnterSceneRequest::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // EnterSceneResponse
@@ -2362,6 +2482,30 @@ inline void LeaveSceneRequest::set_allocated_request_id(::std::string* PROTOBUF_
     _impl_.request_id_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:scene_manager.LeaveSceneRequest.request_id)
+}
+
+// uint32 zone_id = 4;
+inline void LeaveSceneRequest::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t LeaveSceneRequest::zone_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneRequest.zone_id)
+  return _internal_zone_id();
+}
+inline void LeaveSceneRequest::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneRequest.zone_id)
+}
+inline ::uint32_t LeaveSceneRequest::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void LeaveSceneRequest::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
 }
 
 #ifdef __GNUC__

@@ -41,6 +41,8 @@ message CreateSceneRequest {
   SceneType scene_type = 3;
   // Creator player IDs (for instance access control)
   repeated uint64 creator_ids = 4;
+  // Zone ID: which zone this scene belongs to.
+  uint32 zone_id = 5;
 }
 
 message CreateSceneResponse {
@@ -55,6 +57,8 @@ message CreateSceneResponse {
 
 message DestroySceneRequest {
   uint64 scene_id = 1;
+  // Zone ID: which zone this scene belongs to.
+  uint32 zone_id = 2;
 }
 
 message EnterSceneRequest {
@@ -64,6 +68,8 @@ message EnterSceneRequest {
   string request_id = 4;        // Idempotency ID (optional)
   string gate_id = 5;           // Gate Node ID
   string gate_instance_id = 6;  // Gate Instance ID (for Kafka message validation)
+  // Zone ID: which zone the target scene belongs to.
+  uint32 zone_id = 7;
 }
 
 message EnterSceneResponse {
@@ -75,4 +81,6 @@ message LeaveSceneRequest {
   uint64 player_id = 1;
   uint64 scene_id = 2;
   string request_id = 3;
+  // Zone ID: which zone the target scene belongs to.
+  uint32 zone_id = 4;
 }

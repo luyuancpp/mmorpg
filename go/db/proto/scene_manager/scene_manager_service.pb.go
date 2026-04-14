@@ -84,7 +84,9 @@ type CreateSceneRequest struct {
 	// Scene type. Main world scenes are persistent; instances have lifecycle management.
 	SceneType SceneType `protobuf:"varint,3,opt,name=scene_type,json=sceneType,proto3,enum=scene_manager.SceneType" json:"scene_type,omitempty"`
 	// Creator player IDs (for instance access control)
-	CreatorIds    []uint64 `protobuf:"varint,4,rep,packed,name=creator_ids,json=creatorIds,proto3" json:"creator_ids,omitempty"`
+	CreatorIds []uint64 `protobuf:"varint,4,rep,packed,name=creator_ids,json=creatorIds,proto3" json:"creator_ids,omitempty"`
+	// Zone ID: which zone this scene belongs to.
+	ZoneId        uint32 `protobuf:"varint,5,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -145,6 +147,13 @@ func (x *CreateSceneRequest) GetCreatorIds() []uint64 {
 		return x.CreatorIds
 	}
 	return nil
+}
+
+func (x *CreateSceneRequest) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
 }
 
 type CreateSceneResponse struct {
@@ -219,8 +228,10 @@ func (x *CreateSceneResponse) GetErrorMessage() string {
 }
 
 type DestroySceneRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneId       uint64                 `protobuf:"varint,1,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	SceneId uint64                 `protobuf:"varint,1,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
+	// Zone ID: which zone this scene belongs to.
+	ZoneId        uint32 `protobuf:"varint,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -262,6 +273,13 @@ func (x *DestroySceneRequest) GetSceneId() uint64 {
 	return 0
 }
 
+func (x *DestroySceneRequest) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
 type EnterSceneRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -270,8 +288,10 @@ type EnterSceneRequest struct {
 	RequestId      string                 `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                  // Idempotency ID (optional)
 	GateId         string                 `protobuf:"bytes,5,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                           // Gate Node ID
 	GateInstanceId string                 `protobuf:"bytes,6,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate Instance ID (for Kafka message validation)
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Zone ID: which zone the target scene belongs to.
+	ZoneId        uint32 `protobuf:"varint,7,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnterSceneRequest) Reset() {
@@ -346,6 +366,13 @@ func (x *EnterSceneRequest) GetGateInstanceId() string {
 	return ""
 }
 
+func (x *EnterSceneRequest) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
 type EnterSceneResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorCode     uint32                 `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
@@ -399,10 +426,12 @@ func (x *EnterSceneResponse) GetErrorMessage() string {
 }
 
 type LeaveSceneRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SceneId       uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
-	RequestId     string                 `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId  uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SceneId   uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
+	RequestId string                 `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	// Zone ID: which zone the target scene belongs to.
+	ZoneId        uint32 `protobuf:"varint,4,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -458,26 +487,35 @@ func (x *LeaveSceneRequest) GetRequestId() string {
 	return ""
 }
 
+func (x *LeaveSceneRequest) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
 var File_proto_scene_manager_scene_manager_service_proto protoreflect.FileDescriptor
 
 const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\n" +
-	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1cproto/common/base/node.proto\x1a\x1dproto/common/base/empty.proto\x1a(proto/contracts/kafka/gate_command.proto\"\xb8\x01\n" +
+	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1cproto/common/base/node.proto\x1a\x1dproto/common/base/empty.proto\x1a(proto/contracts/kafka/gate_command.proto\"\xd1\x01\n" +
 	"\x12CreateSceneRequest\x12\"\n" +
 	"\rscene_conf_id\x18\x01 \x01(\x04R\vsceneConfId\x12$\n" +
 	"\x0etarget_node_id\x18\x02 \x01(\tR\ftargetNodeId\x127\n" +
 	"\n" +
 	"scene_type\x18\x03 \x01(\x0e2\x18.scene_manager.SceneTypeR\tsceneType\x12\x1f\n" +
 	"\vcreator_ids\x18\x04 \x03(\x04R\n" +
-	"creatorIds\"\x8d\x01\n" +
+	"creatorIds\x12\x17\n" +
+	"\azone_id\x18\x05 \x01(\rR\x06zoneId\"\x8d\x01\n" +
 	"\x13CreateSceneResponse\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x03 \x01(\rR\terrorCode\x12#\n" +
-	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"0\n" +
+	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"I\n" +
 	"\x13DestroySceneRequest\x12\x19\n" +
-	"\bscene_id\x18\x01 \x01(\x04R\asceneId\"\xcc\x01\n" +
+	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
+	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\xe5\x01\n" +
 	"\x11EnterSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12\x1d\n" +
@@ -486,16 +524,18 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\n" +
 	"request_id\x18\x04 \x01(\tR\trequestId\x12\x17\n" +
 	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +
-	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\"X\n" +
+	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\x12\x17\n" +
+	"\azone_id\x18\a \x01(\rR\x06zoneId\"X\n" +
 	"\x12EnterSceneResponse\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x01 \x01(\rR\terrorCode\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"j\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"\x83\x01\n" +
 	"\x11LeaveSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x03 \x01(\tR\trequestId*[\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\x12\x17\n" +
+	"\azone_id\x18\x04 \x01(\rR\x06zoneId*[\n" +
 	"\tSceneType\x12\x1a\n" +
 	"\x16SCENE_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SCENE_TYPE_MAIN_WORLD\x10\x01\x12\x17\n" +

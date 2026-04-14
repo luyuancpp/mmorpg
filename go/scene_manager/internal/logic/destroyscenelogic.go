@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"scene_manager/internal/svc"
 	"proto/common/base"
 	"proto/scene_manager"
+	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -54,7 +54,7 @@ func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) 
 
 	// Clean up instance tracking (no-op if this was a main scene).
 	sceneIdStr := fmt.Sprintf("%d", in.SceneId)
-	instKey := activeInstancesKey(l.svcCtx.Config.ZoneID)
+	instKey := activeInstancesKey(in.ZoneId)
 	l.svcCtx.Redis.Zrem(instKey, sceneIdStr)
 	l.svcCtx.Redis.Del(fmt.Sprintf(InstancePlayerCountKey, in.SceneId))
 

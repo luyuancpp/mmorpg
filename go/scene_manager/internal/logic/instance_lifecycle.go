@@ -41,10 +41,19 @@ func StartInstanceLifecycleManager(ctx context.Context, svcCtx *svc.ServiceConte
 	}
 }
 
-// cleanupIdleInstances scans the active-instance sorted set and destroys
+// cleanupIdleInstances iterates over all known zones and destroys
 // instances that have had 0 players for longer than the timeout.
 func cleanupIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, timeoutSec int64) {
-	instKey := activeInstancesKey(svcCtx.Config.ZoneID)
+	zones := GetKnownZones()
+	for _, zoneId := range zones {
+		cleanupZoneIdleInstances(ctx, svcCtx, zoneId, timeoutSec)
+	}
+}
+
+// cleanupZoneIdleInstances scans the active-instance sorted set for a single zone
+// and destroys instances that have been idle longer than the timeout.
+func cleanupZoneIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, timeoutSec int64) {
+	instKey := activeInstancesKey(zoneId)
 
 	// Get all active instances with their creation timestamps.
 	pairs, err := svcCtx.Redis.ZrangeWithScores(instKey, 0, -1)
@@ -92,18 +101,18 @@ func cleanupIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, timeo
 		logx.Infof("[InstanceLifecycle] Destroying idle instance %d (idle %ds > timeout %ds)",
 			sceneId, idleDuration, timeoutSec)
 
-		destroyInstance(ctx, svcCtx, sceneId)
+		destroyInstance(ctx, svcCtx, zoneId, sceneId)
 		destroyed++
 	}
 
 	if destroyed > 0 {
-		logx.Infof("[InstanceLifecycle] Cleanup done: destroyed %d idle instances", destroyed)
+		logx.Infof("[InstanceLifecycle] Zone %d cleanup done: destroyed %d idle instances", zoneId, destroyed)
 	}
 }
 
 // destroyInstance removes all Redis state for an instance and notifies
 // the C++ scene node to destroy the ECS entity.
-func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, sceneId uint64) {
+func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64) {
 	sceneIdStr := fmt.Sprintf("%d", sceneId)
 	sceneNodeKey := fmt.Sprintf("scene:%d:node", sceneId)
 
@@ -121,7 +130,7 @@ func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, sceneId ui
 	svcCtx.Redis.Del(sceneNodeKey)
 
 	// Remove from active instances sorted set.
-	instKey := activeInstancesKey(svcCtx.Config.ZoneID)
+	instKey := activeInstancesKey(zoneId)
 	svcCtx.Redis.Zrem(instKey, sceneIdStr)
 
 	// Remove player count tracker.

@@ -103,9 +103,9 @@ func getOrDialNode(ctx context.Context, svcCtx *svc.ServiceContext, nodeId strin
 }
 
 // resolveNodeEndpoint looks up the SceneNode registration in etcd and returns
-// the "ip:port" address string.
+// the "ip:port" address string. Scans all zones (zone-agnostic).
 func resolveNodeEndpoint(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string) (string, error) {
-	prefix := fmt.Sprintf("SceneNodeService.rpc/zone/%d/", svcCtx.Config.ZoneID)
+	prefix := "SceneNodeService.rpc/"
 	resp, err := svcCtx.Etcd.Get(ctx, prefix, clientv3.WithPrefix())
 	if err != nil {
 		return "", fmt.Errorf("etcd get %s: %w", prefix, err)

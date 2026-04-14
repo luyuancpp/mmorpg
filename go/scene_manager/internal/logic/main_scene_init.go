@@ -23,6 +23,7 @@ func mainScenesKey(zoneID uint32) string {
 }
 
 // InitMainScenes creates persistent main-world scenes at startup.
+// Discovers zones from etcd, then creates main scenes for each zone.
 // Each scene_conf_id in config is assigned to a node via consistent hashing
 // and created exactly once (idempotent — skips if already in Redis).
 func InitMainScenes(ctx context.Context, svcCtx *svc.ServiceContext) {
@@ -32,16 +33,29 @@ func InitMainScenes(ctx context.Context, svcCtx *svc.ServiceContext) {
 		return
 	}
 
-	// Wait for at least one scene node to be available.
-	nodes := waitForSceneNodes(ctx, svcCtx)
-	if len(nodes) == 0 {
-		logx.Error("[MainScene] No scene nodes available after waiting, cannot init main scenes")
+	// Wait for at least one zone to be discovered by LoadReporter.
+	zones := waitForZones(ctx, svcCtx)
+	if len(zones) == 0 {
+		logx.Error("[MainScene] No zones discovered after waiting, cannot init main scenes")
 		return
 	}
 
-	logx.Infof("[MainScene] Initializing %d main world scenes across %d nodes", len(confIds), len(nodes))
+	for _, zoneId := range zones {
+		initMainScenesForZone(ctx, svcCtx, zoneId, confIds)
+	}
+}
 
-	hashKey := mainScenesKey(svcCtx.Config.ZoneID)
+// initMainScenesForZone creates main scenes for a single zone.
+func initMainScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, confIds []uint64) {
+	nodes := getNodesForZone(svcCtx, zoneId)
+	if len(nodes) == 0 {
+		logx.Errorf("[MainScene] No nodes available for zone %d, skipping", zoneId)
+		return
+	}
+
+	logx.Infof("[MainScene] Zone %d: initializing %d main world scenes across %d nodes", zoneId, len(confIds), len(nodes))
+
+	hashKey := mainScenesKey(zoneId)
 	created, skipped := 0, 0
 
 	for _, confId := range confIds {
@@ -88,16 +102,16 @@ func InitMainScenes(ctx context.Context, svcCtx *svc.ServiceContext) {
 		}
 
 		created++
-		logx.Infof("[MainScene] Created main scene %d (conf=%d) on node %s", sceneId, confId, targetNode)
+		logx.Infof("[MainScene] Created main scene %d (conf=%d) on node %s in zone %d", sceneId, confId, targetNode, zoneId)
 	}
 
-	logx.Infof("[MainScene] Init done: created=%d, skipped(already exist)=%d", created, skipped)
+	logx.Infof("[MainScene] Zone %d init done: created=%d, skipped(already exist)=%d", zoneId, created, skipped)
 }
 
-// GetMainSceneId looks up the scene ID for a main-world config.
+// GetMainSceneId looks up the scene ID for a main-world config in the given zone.
 // Returns 0 if not found.
-func GetMainSceneId(ctx context.Context, svcCtx *svc.ServiceContext, confId uint64) (uint64, error) {
-	hashKey := mainScenesKey(svcCtx.Config.ZoneID)
+func GetMainSceneId(ctx context.Context, svcCtx *svc.ServiceContext, confId uint64, zoneId uint32) (uint64, error) {
+	hashKey := mainScenesKey(zoneId)
 	val, err := svcCtx.Redis.Hget(hashKey, fmt.Sprintf("%d", confId))
 	if err != nil || val == "" {
 		return 0, err
@@ -117,9 +131,9 @@ func IsMainSceneConf(svcCtx *svc.ServiceContext, confId uint64) bool {
 	return false
 }
 
-// waitForSceneNodes polls etcd until at least one scene node is registered
-// or the context is cancelled. Returns the sorted list of node ID strings.
-func waitForSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) []string {
+// waitForZones polls GetKnownZones until at least one zone is discovered
+// (populated by LoadReporter from etcd) or the context is cancelled.
+func waitForZones(ctx context.Context, svcCtx *svc.ServiceContext) []uint32 {
 	for attempt := 0; attempt < 60; attempt++ {
 		select {
 		case <-ctx.Done():
@@ -127,24 +141,33 @@ func waitForSceneNodes(ctx context.Context, svcCtx *svc.ServiceContext) []string
 		default:
 		}
 
-		// Force a sync so the Redis sorted set is populated.
+		// Force a sync so knownZones is populated.
 		syncSceneNodes(ctx, svcCtx)
 
-		loadKey := nodeLoadKey(svcCtx.Config.ZoneID)
-		pairs, err := svcCtx.Redis.ZrangeWithScores(loadKey, 0, -1)
-		if err == nil && len(pairs) > 0 {
-			nodes := make([]string, 0, len(pairs))
-			for _, p := range pairs {
-				nodes = append(nodes, p.Key)
-			}
-			sort.Strings(nodes)
-			return nodes
+		zones := GetKnownZones()
+		if len(zones) > 0 {
+			return zones
 		}
 
 		logx.Infof("[MainScene] Waiting for scene nodes... attempt %d", attempt+1)
 		time.Sleep(2 * time.Second)
 	}
 	return nil
+}
+
+// getNodesForZone returns sorted node IDs for a given zone from the Redis load set.
+func getNodesForZone(svcCtx *svc.ServiceContext, zoneId uint32) []string {
+	loadKey := nodeLoadKey(zoneId)
+	pairs, err := svcCtx.Redis.ZrangeWithScores(loadKey, 0, -1)
+	if err != nil || len(pairs) == 0 {
+		return nil
+	}
+	nodes := make([]string, 0, len(pairs))
+	for _, p := range pairs {
+		nodes = append(nodes, p.Key)
+	}
+	sort.Strings(nodes)
+	return nodes
 }
 
 // assignNodeByHash uses FNV-1a to consistently map a confId to a node.

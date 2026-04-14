@@ -119,3 +119,4 @@
 118=LoginPreGateAssignGate
 119=FriendServiceNotifyOnline
 120=FriendServiceNotifyOffline
+121=SceneDestroyScene
