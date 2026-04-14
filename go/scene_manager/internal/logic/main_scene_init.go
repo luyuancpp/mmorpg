@@ -15,21 +15,21 @@ import (
 
 // Redis keys for main scene management.
 const (
-	// SET per (zone, confId): holds sceneId strings for each line/channel.
-	MainSceneLinesKeyFmt = "main_scene_lines:zone:%d:%d"
+	// SET per (zone, confId): holds sceneId strings for each channel.
+	MainSceneChannelsKeyFmt = "main_scene_channels:zone:%d:%d"
 )
 
-func mainSceneLinesKey(zoneID uint32, confId uint64) string {
-	return fmt.Sprintf(MainSceneLinesKeyFmt, zoneID, confId)
+func mainSceneChannelsKey(zoneID uint32, confId uint64) string {
+	return fmt.Sprintf(MainSceneChannelsKeyFmt, zoneID, confId)
 }
 
-// initMainScenesForZone ensures main scenes (with N lines each) exist for a single zone.
+// initMainScenesForZone ensures main scenes (with N channels each) exist for a single zone.
 // Called by fullSync (on startup / re-sync) and handleWatchEvent (on node PUT).
 // Two-layer idempotency:
-//   - Redis layer: only creates missing lines (if existing < LineCount).
+//   - Redis layer: only creates missing channels (if existing < ChannelCount).
 //   - C++ layer: CreateScene is idempotent by scene_id (returns existing entity).
 //
-// Always sends CreateScene RPC for all lines to handle C++ node restarts.
+// Always sends CreateScene RPC for all channels to handle C++ node restarts.
 func initMainScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, confIds []uint64) {
 	nodes := getNodesForZone(svcCtx, zoneId)
 	if len(nodes) == 0 {
@@ -37,33 +37,33 @@ func initMainScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zone
 		return
 	}
 
-	lineCount := svcCtx.Config.MainSceneLineCount
-	if lineCount < 1 {
-		lineCount = 1
+	channelCount := svcCtx.Config.MainSceneChannelCount
+	if channelCount < 1 {
+		channelCount = 1
 	}
 
-	logx.Infof("[MainScene] Zone %d: ensuring %d main world scenes x %d lines across %d nodes",
-		zoneId, len(confIds), lineCount, len(nodes))
+	logx.Infof("[MainScene] Zone %d: ensuring %d main world scenes x %d channels across %d nodes",
+		zoneId, len(confIds), channelCount, len(nodes))
 
 	created, ensured := 0, 0
 
 	for _, confId := range confIds {
-		lineSetKey := mainSceneLinesKey(zoneId, confId)
+		channelSetKey := mainSceneChannelsKey(zoneId, confId)
 
-		// Get existing lines for this confId.
-		existingMembers, _ := svcCtx.Redis.Smembers(lineSetKey)
+		// Get existing channels for this confId.
+		existingMembers, _ := svcCtx.Redis.Smembers(channelSetKey)
 		existingCount := len(existingMembers)
 
-		// Create missing lines.
-		for i := existingCount; i < lineCount; i++ {
+		// Create missing channels.
+		for i := existingCount; i < channelCount; i++ {
 			id, err := svcCtx.Redis.Incr("scene:id_counter")
 			if err != nil {
-				logx.Errorf("[MainScene] Failed to generate scene id for conf %d line %d: %v", confId, i, err)
+				logx.Errorf("[MainScene] Failed to generate scene id for conf %d channel %d: %v", confId, i, err)
 				continue
 			}
 			sceneId := uint64(id)
 
-			// Vary hash input per line so lines may land on different nodes.
+			// Vary hash input per channel so channels may land on different nodes.
 			targetNode := assignNodeByHash(confId*1000+uint64(i), nodes)
 
 			sceneNodeKey := fmt.Sprintf("scene:%d:node", sceneId)
@@ -72,8 +72,8 @@ func initMainScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zone
 				continue
 			}
 
-			if _, err := svcCtx.Redis.Sadd(lineSetKey, fmt.Sprintf("%d", sceneId)); err != nil {
-				logx.Errorf("[MainScene] Failed to add line to set for conf %d: %v", confId, err)
+			if _, err := svcCtx.Redis.Sadd(channelSetKey, fmt.Sprintf("%d", sceneId)); err != nil {
+				logx.Errorf("[MainScene] Failed to add channel to set for conf %d: %v", confId, err)
 				continue
 			}
 
@@ -84,12 +84,12 @@ func initMainScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zone
 			svcCtx.Redis.Incr(sceneCountKey)
 
 			created++
-			logx.Infof("[MainScene] Allocated line %d (scene=%d, conf=%d) on node %s in zone %d",
+			logx.Infof("[MainScene] Allocated channel %d (scene=%d, conf=%d) on node %s in zone %d",
 				i, sceneId, confId, targetNode, zoneId)
 		}
 
-		// Always send CreateScene RPC for all lines — C++ deduplicates by scene_id.
-		allMembers, _ := svcCtx.Redis.Smembers(lineSetKey)
+		// Always send CreateScene RPC for all channels — C++ deduplicates by scene_id.
+		allMembers, _ := svcCtx.Redis.Smembers(channelSetKey)
 		for _, sceneIdStr := range allMembers {
 			sceneId, _ := strconv.ParseUint(sceneIdStr, 10, 64)
 			nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
@@ -105,14 +105,14 @@ func initMainScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zone
 		}
 	}
 
-	logx.Infof("[MainScene] Zone %d done: created=%d lines, ensured=%d RPCs", zoneId, created, ensured)
+	logx.Infof("[MainScene] Zone %d done: created=%d channels, ensured=%d RPCs", zoneId, created, ensured)
 }
 
-// GetBestMainSceneLine returns the (sceneId, nodeId) of the least-loaded line
-// for the given main-world confId in the zone. Returns (0, "", nil) if no lines exist.
-func GetBestMainSceneLine(ctx context.Context, svcCtx *svc.ServiceContext, confId uint64, zoneId uint32) (uint64, string, error) {
-	lineSetKey := mainSceneLinesKey(zoneId, confId)
-	members, err := svcCtx.Redis.Smembers(lineSetKey)
+// GetBestMainSceneChannel returns the (sceneId, nodeId) of the least-loaded channel
+// for the given main-world confId in the zone. Returns (0, "", nil) if no channels exist.
+func GetBestMainSceneChannel(ctx context.Context, svcCtx *svc.ServiceContext, confId uint64, zoneId uint32) (uint64, string, error) {
+	channelSetKey := mainSceneChannelsKey(zoneId, confId)
+	members, err := svcCtx.Redis.Smembers(channelSetKey)
 	if err != nil || len(members) == 0 {
 		return 0, "", err
 	}
@@ -141,10 +141,10 @@ func GetBestMainSceneLine(ctx context.Context, svcCtx *svc.ServiceContext, confI
 	return bestSceneId, bestNodeId, nil
 }
 
-// GetAllMainSceneLines returns all line sceneIds for a confId in a zone.
-func GetAllMainSceneLines(ctx context.Context, svcCtx *svc.ServiceContext, confId uint64, zoneId uint32) ([]uint64, error) {
-	lineSetKey := mainSceneLinesKey(zoneId, confId)
-	members, err := svcCtx.Redis.Smembers(lineSetKey)
+// GetAllMainSceneChannels returns all channel sceneIds for a confId in a zone.
+func GetAllMainSceneChannels(ctx context.Context, svcCtx *svc.ServiceContext, confId uint64, zoneId uint32) ([]uint64, error) {
+	channelSetKey := mainSceneChannelsKey(zoneId, confId)
+	members, err := svcCtx.Redis.Smembers(channelSetKey)
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +167,7 @@ func IsMainSceneConf(svcCtx *svc.ServiceContext, confId uint64) bool {
 	}
 	return false
 }
+
 
 // getNodesForZone returns sorted node IDs for a given zone from the Redis load set.
 func getNodesForZone(svcCtx *svc.ServiceContext, zoneId uint32) []string {
