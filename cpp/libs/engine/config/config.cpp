@@ -72,6 +72,16 @@ bool readBaseDeployConfig(const std::string &filename, BaseDeployConfig &baseCon
 		baseConfig.set_table_data_format(root["TableDataFormat"].as<std::string>());
 	}
 
+	if (root["DataRootDirectory"])
+	{
+		baseConfig.set_data_root_directory(root["DataRootDirectory"].as<std::string>());
+	}
+
+	if (root["GateTokenSecret"])
+	{
+		baseConfig.set_gate_token_secret(root["GateTokenSecret"].as<std::string>());
+	}
+
 	// Kafka config
 	if (root["Kafka"])
 	{
@@ -162,6 +172,11 @@ void InitThreadLocalConfig()
 std::string GetConfigDir()
 {
 	return tlsNodeConfigManager.GetBaseDeployConfig().table_data_directory();
+}
+
+std::string GetDataRootDir()
+{
+	return tlsNodeConfigManager.GetBaseDeployConfig().data_root_directory();
 }
 
 bool UseProtoBinaryTables()

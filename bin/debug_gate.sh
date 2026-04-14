@@ -11,6 +11,7 @@ Etcd:
   Hosts:
     - "etcd:2379"
 TableDataDirectory: "../generated/generated_tables/"
+DataRootDirectory: "/app/"
 LogLevel: 1
 HealthCheckInterval: 1
 Kafka:
