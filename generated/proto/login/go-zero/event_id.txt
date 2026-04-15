@@ -34,3 +34,4 @@
 33=ContractsKafkaPlayerDisconnectedEvent
 34=ContractsKafkaPlayerLeaseExpiredEvent
 35=ContractsKafkaPlayerLifecycleCommand
+36=PlayerLoginEvent

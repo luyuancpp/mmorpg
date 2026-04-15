@@ -33,6 +33,7 @@ void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::
         contracts::kafka::RoutePlayerEvent event;
         event.set_session_id(command.session_id());
         event.set_target_node_id(command.target_node_id());
+        event.set_player_id(command.player_id());
         tlsEcs.dispatcher.trigger(event);
         return;
     }

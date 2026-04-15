@@ -94,7 +94,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent &acceptEvent, Mis
 	OnAcceptedMissionEvent onAcceptedMissionEvent;
 	onAcceptedMissionEvent.set_entity(entt::to_integral(playerEntity));
 	onAcceptedMissionEvent.set_mission_id(missionId);
-	tlsEcs.dispatcher.enqueue(onAcceptedMissionEvent);
+	tlsEcs.dispatcher.trigger(onAcceptedMissionEvent);
 	LOG_INFO << "Mission accepted: missionId = " << missionId
 			 << ", playerId = " << tlsEcs.actorRegistry.get_or_emplace<Guid>(playerEntity);
 
