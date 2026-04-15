@@ -58,14 +58,14 @@ def _gen_all_cpp(tables: list[TableSchema], env: Environment, cfg: ExporterConfi
     h_tpl: Template = env.get_template("cpp_config.h.j2")
     cpp_tpl: Template = env.get_template("cpp_config.cpp.j2")
 
-    for t: TableSchema in tables:
+    for t in tables:
         ctx = _cpp_ctx(t)
         write_file(cfg.cpp.code_dir / f"{t.name.lower()}_table.h", _clean_output(h_tpl.render(**ctx)))
         write_file(cfg.cpp.code_dir / f"{t.name.lower()}_table.cpp", _clean_output(cpp_tpl.render(**ctx)))
         logger.info("Generated C++ config: %s", t.name)
 
     # all_table aggregator
-    names: list[str] = sorted(t.name for t: TableSchema in tables)
+    names = sorted(t.name for t in tables)
     ah_tpl: Template = env.get_template("cpp_all_table.h.j2")
     ac_tpl: Template = env.get_template("cpp_all_table.cpp.j2")
     write_file(cfg.cpp.code_dir / "all_table.h", ah_tpl.render())
@@ -90,12 +90,12 @@ def _cpp_ctx(table: TableSchema) -> dict:
 def _gen_all_go(tables: list[TableSchema], env: Environment, cfg: ExporterConfig) -> None:
     go_tpl: Template = env.get_template("go_config.go.j2")
 
-    for t: TableSchema in tables:
+    for t in tables:
         ctx = _go_ctx(t, cfg)
         write_file(cfg.go.code_dir / f"{t.name.lower()}_table.go", go_tpl.render(**ctx))
         logger.info("Generated Go config: %s", t.name)
 
-    names: list[str] = sorted(t.name for t: TableSchema in tables)
+    names = sorted(t.name for t in tables)
     all_tpl: Template = env.get_template("go_all_table.go.j2")
     write_file(cfg.go.code_dir / "all_table.go", all_tpl.render(sheetnames=names))
 
@@ -118,12 +118,12 @@ def _go_ctx(table: TableSchema, cfg: ExporterConfig) -> dict:
 def _gen_all_java(tables: list[TableSchema], env: Environment, cfg: ExporterConfig) -> None:
     java_tpl: Template = env.get_template("java_config.java.j2")
 
-    for t: TableSchema in tables:
+    for t in tables:
         ctx = _java_ctx(t, cfg)
         write_file(cfg.java.code_dir / f"{t.name}TableManager.java", java_tpl.render(**ctx))
         logger.info("Generated Java config: %s", t.name)
 
-    names: list[str] = sorted(t.name for t: TableSchema in tables)
+    names = sorted(t.name for t in tables)
     all_tpl: Template = env.get_template("java_all_table.java.j2")
     write_file(cfg.java.code_dir / "AllTable.java", all_tpl.render(
         sheetnames=names, package=cfg.java.package

@@ -49,7 +49,7 @@ void {{ sheetname }}TableManager::Load() {
 {% endfor -%}
 }
 
-std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetTable(const uint32_t tableId) {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::FindById(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId;
@@ -58,7 +58,7 @@ std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::Ge
     return {it->second, kSuccess};
 }
 
-std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::FindByIdSilent(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId};
@@ -67,7 +67,7 @@ std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::Ge
 }
 
 {% for col in table.table_keys -%}
-std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::GetBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} tableId) const {
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::FindBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} tableId) const {
     const auto it = kv_{{ col.name }}data_.find(tableId);
     if (it == kv_{{ col.name }}data_.end()) {
         LOG_ERROR << "{{ sheetname }} table not found for {{ col.name }}: " << tableId;

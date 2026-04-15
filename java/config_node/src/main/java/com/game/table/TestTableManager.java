@@ -50,11 +50,11 @@ public class TestTableManager {
         }
     }
 
-    public TestTableData getAll() {
+    public TestTableData findAll() {
         return data;
     }
 
-    public TestTable getById(int id) {
+    public TestTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -65,24 +65,24 @@ public class TestTableManager {
 
 
 
-    public List<TestTable> getByEffectIndex(int key) {
+    public List<TestTable> findByEffectIndex(int key) {
         return idxEffect.getOrDefault(key, Collections.emptyList());
     }
 
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -93,9 +93,9 @@ public class TestTableManager {
     }
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<TestTable> getByIds(List<Integer> ids) {
+    public List<TestTable> findByIds(List<Integer> ids) {
         List<TestTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             TestTable row = kvData.get(id);
@@ -104,17 +104,17 @@ public class TestTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public TestTable getRandom() {
+    public TestTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<TestTable> filter(Predicate<TestTable> pred) {
+    public List<TestTable> where(Predicate<TestTable> pred) {
         List<TestTable> result = new ArrayList<>();
         for (TestTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -122,7 +122,7 @@ public class TestTableManager {
         return result;
     }
 
-    public TestTable findFirst(Predicate<TestTable> pred) {
+    public TestTable first(Predicate<TestTable> pred) {
         for (TestTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

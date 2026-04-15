@@ -73,44 +73,44 @@ func (m *SkillTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *SkillTableManager) GetAll() []*pb.SkillTable {
+func (m *SkillTableManager) FindAll() []*pb.SkillTable {
     return m.data
 }
 
-func (m *SkillTableManager) GetById(id uint32) (*pb.SkillTable, bool) {
+func (m *SkillTableManager) FindById(id uint32) (*pb.SkillTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
-func (m *SkillTableManager) GetBySkill_typeIndex(key uint32) []*pb.SkillTable {
+func (m *SkillTableManager) FindBySkill_typeIndex(key uint32) []*pb.SkillTable {
     return m.idxSkill_type[key]
 }
 
 
-func (m *SkillTableManager) GetByTargeting_modeIndex(key uint32) []*pb.SkillTable {
+func (m *SkillTableManager) FindByTargeting_modeIndex(key uint32) []*pb.SkillTable {
     return m.idxTargeting_mode[key]
 }
 
 
-func (m *SkillTableManager) GetByEffectIndex(key uint32) []*pb.SkillTable {
+func (m *SkillTableManager) FindByEffectIndex(key uint32) []*pb.SkillTable {
     return m.idxEffect[key]
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *SkillTableManager) HasId(id uint32) bool {
+func (m *SkillTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *SkillTableManager) Len() int {
+func (m *SkillTableManager) Count() int {
     return len(m.data)
 }
 
@@ -131,9 +131,9 @@ func (m *SkillTableManager) CountByEffectIndex(key uint32) int {
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *SkillTableManager) GetByIds(ids []uint32) []*pb.SkillTable {
+func (m *SkillTableManager) FindByIds(ids []uint32) []*pb.SkillTable {
     result := make([]*pb.SkillTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -143,9 +143,9 @@ func (m *SkillTableManager) GetByIds(ids []uint32) []*pb.SkillTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *SkillTableManager) GetRandom() (*pb.SkillTable, bool) {
+func (m *SkillTableManager) RandOne() (*pb.SkillTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -154,9 +154,9 @@ func (m *SkillTableManager) GetRandom() (*pb.SkillTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *SkillTableManager) Filter(pred func(*pb.SkillTable) bool) []*pb.SkillTable {
+func (m *SkillTableManager) Where(pred func(*pb.SkillTable) bool) []*pb.SkillTable {
     var result []*pb.SkillTable
     for _, row := range m.data {
         if pred(row) {
@@ -166,7 +166,7 @@ func (m *SkillTableManager) Filter(pred func(*pb.SkillTable) bool) []*pb.SkillTa
     return result
 }
 
-func (m *SkillTableManager) FindFirst(pred func(*pb.SkillTable) bool) (*pb.SkillTable, bool) {
+func (m *SkillTableManager) First(pred func(*pb.SkillTable) bool) (*pb.SkillTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

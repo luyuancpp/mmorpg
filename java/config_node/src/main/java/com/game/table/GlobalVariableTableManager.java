@@ -45,11 +45,11 @@ public class GlobalVariableTableManager {
         }
     }
 
-    public GlobalVariableTableData getAll() {
+    public GlobalVariableTableData findAll() {
         return data;
     }
 
-    public GlobalVariableTable getById(int id) {
+    public GlobalVariableTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class GlobalVariableTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<GlobalVariableTable> getByIds(List<Integer> ids) {
+    public List<GlobalVariableTable> findByIds(List<Integer> ids) {
         List<GlobalVariableTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             GlobalVariableTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class GlobalVariableTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public GlobalVariableTable getRandom() {
+    public GlobalVariableTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<GlobalVariableTable> filter(Predicate<GlobalVariableTable> pred) {
+    public List<GlobalVariableTable> where(Predicate<GlobalVariableTable> pred) {
         List<GlobalVariableTable> result = new ArrayList<>();
         for (GlobalVariableTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class GlobalVariableTableManager {
         return result;
     }
 
-    public GlobalVariableTable findFirst(Predicate<GlobalVariableTable> pred) {
+    public GlobalVariableTable first(Predicate<GlobalVariableTable> pred) {
         for (GlobalVariableTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

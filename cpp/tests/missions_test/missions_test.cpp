@@ -62,7 +62,7 @@ TEST(MissionsComp, AcceptMission)
 	auto &missions = GetPlayerMissionsComp(player);
 	missions.SetMissionTypeNotRepeated(false);
 
-	auto &allMissions = GetMissionAllTable();
+	auto &allMissions = FindAllMissionTable();
 	std::size_t acceptedCount = 0;
 
 	for (int32_t i = 0; i < allMissions.data_size(); ++i)

@@ -60,11 +60,11 @@ public class MissionTableManager {
         }
     }
 
-    public MissionTableData getAll() {
+    public MissionTableData findAll() {
         return data;
     }
 
-    public MissionTable getById(int id) {
+    public MissionTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -75,32 +75,32 @@ public class MissionTableManager {
 
 
 
-    public List<MissionTable> getByCondition_idIndex(int key) {
+    public List<MissionTable> findByCondition_idIndex(int key) {
         return idxCondition_id.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<MissionTable> getByNext_mission_idIndex(int key) {
+    public List<MissionTable> findByNext_mission_idIndex(int key) {
         return idxNext_mission_id.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<MissionTable> getByTarget_countIndex(int key) {
+    public List<MissionTable> findByTarget_countIndex(int key) {
         return idxTarget_count.getOrDefault(key, Collections.emptyList());
     }
 
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -119,9 +119,9 @@ public class MissionTableManager {
     }
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<MissionTable> getByIds(List<Integer> ids) {
+    public List<MissionTable> findByIds(List<Integer> ids) {
         List<MissionTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             MissionTable row = kvData.get(id);
@@ -130,17 +130,17 @@ public class MissionTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public MissionTable getRandom() {
+    public MissionTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<MissionTable> filter(Predicate<MissionTable> pred) {
+    public List<MissionTable> where(Predicate<MissionTable> pred) {
         List<MissionTable> result = new ArrayList<>();
         for (MissionTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -148,7 +148,7 @@ public class MissionTableManager {
         return result;
     }
 
-    public MissionTable findFirst(Predicate<MissionTable> pred) {
+    public MissionTable first(Predicate<MissionTable> pred) {
         for (MissionTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

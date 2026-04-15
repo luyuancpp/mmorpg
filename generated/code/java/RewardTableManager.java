@@ -45,11 +45,11 @@ public class RewardTableManager {
         }
     }
 
-    public RewardTableData getAll() {
+    public RewardTableData findAll() {
         return data;
     }
 
-    public RewardTable getById(int id) {
+    public RewardTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class RewardTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<RewardTable> getByIds(List<Integer> ids) {
+    public List<RewardTable> findByIds(List<Integer> ids) {
         List<RewardTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             RewardTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class RewardTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public RewardTable getRandom() {
+    public RewardTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<RewardTable> filter(Predicate<RewardTable> pred) {
+    public List<RewardTable> where(Predicate<RewardTable> pred) {
         List<RewardTable> result = new ArrayList<>();
         for (RewardTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class RewardTableManager {
         return result;
     }
 
-    public RewardTable findFirst(Predicate<RewardTable> pred) {
+    public RewardTable first(Predicate<RewardTable> pred) {
         for (RewardTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

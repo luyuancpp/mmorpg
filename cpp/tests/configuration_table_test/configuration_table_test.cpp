@@ -17,7 +17,7 @@ void LoadTables();
 
 TEST(ConfigTableTest, IterateSkillTable)
 {
-	for (auto &row : GetSkillAllTable().data())
+	for (auto &row : FindAllSkillTable().data())
 	{
 		LOG_INFO << row.DebugString();
 	}
@@ -25,7 +25,7 @@ TEST(ConfigTableTest, IterateSkillTable)
 
 TEST(ConfigTableTest, IterateBuffTable)
 {
-	for (auto &row : GetBuffAllTable().data())
+	for (auto &row : FindAllBuffTable().data())
 	{
 		LOG_INFO << row.DebugString();
 	}
@@ -33,7 +33,7 @@ TEST(ConfigTableTest, IterateBuffTable)
 
 TEST(ConfigTableTest, IterateTestTable)
 {
-	for (auto &row : GetTestAllTable().data())
+	for (auto &row : FindAllTestTable().data())
 	{
 		LOG_INFO << row.DebugString();
 	}
@@ -41,7 +41,7 @@ TEST(ConfigTableTest, IterateTestTable)
 
 TEST(ConfigTableTest, IterateTestMultiKeyTable)
 {
-	for (auto &row : GetTestMultiKeyAllTable().data())
+	for (auto &row : FindAllTestMultiKeyTable().data())
 	{
 		LOG_INFO << row.DebugString();
 	}
@@ -87,19 +87,19 @@ TEST(ConfigTableTest, MultiKeyStringRangeQuery)
 
 TEST(ConfigTableTest, FindByUint32Key)
 {
-	auto result = TestMultiKeyTableManager::Instance().GetByUint32_key(14);
+	auto result = TestMultiKeyTableManager::Instance().FindByUint32_key(14);
 	EXPECT_EQ(result.first->id(), 1);
 }
 
 TEST(ConfigTableTest, FindByInt32Key)
 {
-	auto result = TestMultiKeyTableManager::Instance().GetByInt32_key(8);
+	auto result = TestMultiKeyTableManager::Instance().FindByInt32_key(8);
 	EXPECT_EQ(result.first->id(), 1);
 }
 
 TEST(ConfigTableTest, FindByStringKey)
 {
-	auto result = TestMultiKeyTableManager::Instance().GetByString_key("aa");
+	auto result = TestMultiKeyTableManager::Instance().FindByString_key("aa");
 	EXPECT_EQ(result.first->id(), 1);
 }
 
@@ -109,7 +109,7 @@ TEST(ConfigTableTest, FindByStringKey)
 
 TEST(ConfigTableTest, ScalarCompFromRow)
 {
-	auto [row, ok] = TestMultiKeyTableManager::Instance().GetTable(1);
+	auto [row, ok] = TestMultiKeyTableManager::Instance().FindById(1);
 	ASSERT_NE(row, nullptr);
 
 	auto idComp = MakeTestMultiKeyIdComp(*row);
@@ -127,7 +127,7 @@ TEST(ConfigTableTest, ScalarCompFromRow)
 
 TEST(ConfigTableTest, RepeatedCompSpan)
 {
-	auto [row, ok] = TestMultiKeyTableManager::Instance().GetTable(1);
+	auto [row, ok] = TestMultiKeyTableManager::Instance().FindById(1);
 	ASSERT_NE(row, nullptr);
 
 	auto effectComp = MakeTestMultiKeyEffectComp(*row);
@@ -139,7 +139,7 @@ TEST(ConfigTableTest, RepeatedCompSpan)
 TEST(ConfigTableTest, BuffCompStringView)
 {
 	// Verify string columns produce valid string_view components
-	for (auto &row : GetBuffAllTable().data())
+	for (auto &row : FindAllBuffTable().data())
 	{
 		auto comp = MakeBuffHealth_regenerationComp(row);
 		// string_view should point into proto memory (not a copy)
@@ -159,7 +159,7 @@ TEST(ConfigTableTest, RepeatedEffectIndex)
 	// GetEffectIndex() returns multimap<uint32_t, const Table*>
 	auto &idx = TestMultiKeyTableManager::Instance().GetEffectIndex();
 	// Every row's effect values should be indexed
-	for (auto &row : GetTestMultiKeyAllTable().data())
+	for (auto &row : FindAllTestMultiKeyTable().data())
 	{
 		for (auto val : row.effect())
 		{
@@ -182,7 +182,7 @@ TEST(ConfigTableTest, RepeatedEffectIndex)
 TEST(ConfigTableTest, BuffSubBuffIndex)
 {
 	auto &idx = BuffTableManager::Instance().GetSub_buffIndex();
-	for (auto &row : GetBuffAllTable().data())
+	for (auto &row : FindAllBuffTable().data())
 	{
 		for (auto val : row.sub_buff())
 		{

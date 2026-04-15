@@ -45,11 +45,11 @@ public class BaseSceneTableManager {
         }
     }
 
-    public BaseSceneTableData getAll() {
+    public BaseSceneTableData findAll() {
         return data;
     }
 
-    public BaseSceneTable getById(int id) {
+    public BaseSceneTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class BaseSceneTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<BaseSceneTable> getByIds(List<Integer> ids) {
+    public List<BaseSceneTable> findByIds(List<Integer> ids) {
         List<BaseSceneTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             BaseSceneTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class BaseSceneTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public BaseSceneTable getRandom() {
+    public BaseSceneTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<BaseSceneTable> filter(Predicate<BaseSceneTable> pred) {
+    public List<BaseSceneTable> where(Predicate<BaseSceneTable> pred) {
         List<BaseSceneTable> result = new ArrayList<>();
         for (BaseSceneTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class BaseSceneTableManager {
         return result;
     }
 
-    public BaseSceneTable findFirst(Predicate<BaseSceneTable> pred) {
+    public BaseSceneTable first(Predicate<BaseSceneTable> pred) {
         for (BaseSceneTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

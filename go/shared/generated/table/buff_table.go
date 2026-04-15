@@ -73,44 +73,44 @@ func (m *BuffTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *BuffTableManager) GetAll() []*pb.BuffTable {
+func (m *BuffTableManager) FindAll() []*pb.BuffTable {
     return m.data
 }
 
-func (m *BuffTableManager) GetById(id uint32) (*pb.BuffTable, bool) {
+func (m *BuffTableManager) FindById(id uint32) (*pb.BuffTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
-func (m *BuffTableManager) GetByInterval_effectIndex(key float64) []*pb.BuffTable {
+func (m *BuffTableManager) FindByInterval_effectIndex(key float64) []*pb.BuffTable {
     return m.idxInterval_effect[key]
 }
 
 
-func (m *BuffTableManager) GetBySub_buffIndex(key uint32) []*pb.BuffTable {
+func (m *BuffTableManager) FindBySub_buffIndex(key uint32) []*pb.BuffTable {
     return m.idxSub_buff[key]
 }
 
 
-func (m *BuffTableManager) GetByTarget_sub_buffIndex(key uint32) []*pb.BuffTable {
+func (m *BuffTableManager) FindByTarget_sub_buffIndex(key uint32) []*pb.BuffTable {
     return m.idxTarget_sub_buff[key]
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *BuffTableManager) HasId(id uint32) bool {
+func (m *BuffTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *BuffTableManager) Len() int {
+func (m *BuffTableManager) Count() int {
     return len(m.data)
 }
 
@@ -131,9 +131,9 @@ func (m *BuffTableManager) CountByTarget_sub_buffIndex(key uint32) int {
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *BuffTableManager) GetByIds(ids []uint32) []*pb.BuffTable {
+func (m *BuffTableManager) FindByIds(ids []uint32) []*pb.BuffTable {
     result := make([]*pb.BuffTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -143,9 +143,9 @@ func (m *BuffTableManager) GetByIds(ids []uint32) []*pb.BuffTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *BuffTableManager) GetRandom() (*pb.BuffTable, bool) {
+func (m *BuffTableManager) RandOne() (*pb.BuffTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -154,9 +154,9 @@ func (m *BuffTableManager) GetRandom() (*pb.BuffTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *BuffTableManager) Filter(pred func(*pb.BuffTable) bool) []*pb.BuffTable {
+func (m *BuffTableManager) Where(pred func(*pb.BuffTable) bool) []*pb.BuffTable {
     var result []*pb.BuffTable
     for _, row := range m.data {
         if pred(row) {
@@ -166,7 +166,7 @@ func (m *BuffTableManager) Filter(pred func(*pb.BuffTable) bool) []*pb.BuffTable
     return result
 }
 
-func (m *BuffTableManager) FindFirst(pred func(*pb.BuffTable) bool) (*pb.BuffTable, bool) {
+func (m *BuffTableManager) First(pred func(*pb.BuffTable) bool) (*pb.BuffTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

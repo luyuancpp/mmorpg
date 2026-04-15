@@ -63,34 +63,34 @@ func (m *ClassTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *ClassTableManager) GetAll() []*pb.ClassTable {
+func (m *ClassTableManager) FindAll() []*pb.ClassTable {
     return m.data
 }
 
-func (m *ClassTableManager) GetById(id uint32) (*pb.ClassTable, bool) {
+func (m *ClassTableManager) FindById(id uint32) (*pb.ClassTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
-func (m *ClassTableManager) GetBySkillIndex(key uint32) []*pb.ClassTable {
+func (m *ClassTableManager) FindBySkillIndex(key uint32) []*pb.ClassTable {
     return m.idxSkill[key]
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *ClassTableManager) HasId(id uint32) bool {
+func (m *ClassTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *ClassTableManager) Len() int {
+func (m *ClassTableManager) Count() int {
     return len(m.data)
 }
 
@@ -101,9 +101,9 @@ func (m *ClassTableManager) CountBySkillIndex(key uint32) int {
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *ClassTableManager) GetByIds(ids []uint32) []*pb.ClassTable {
+func (m *ClassTableManager) FindByIds(ids []uint32) []*pb.ClassTable {
     result := make([]*pb.ClassTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -113,9 +113,9 @@ func (m *ClassTableManager) GetByIds(ids []uint32) []*pb.ClassTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *ClassTableManager) GetRandom() (*pb.ClassTable, bool) {
+func (m *ClassTableManager) RandOne() (*pb.ClassTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -124,9 +124,9 @@ func (m *ClassTableManager) GetRandom() (*pb.ClassTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *ClassTableManager) Filter(pred func(*pb.ClassTable) bool) []*pb.ClassTable {
+func (m *ClassTableManager) Where(pred func(*pb.ClassTable) bool) []*pb.ClassTable {
     var result []*pb.ClassTable
     for _, row := range m.data {
         if pred(row) {
@@ -136,7 +136,7 @@ func (m *ClassTableManager) Filter(pred func(*pb.ClassTable) bool) []*pb.ClassTa
     return result
 }
 
-func (m *ClassTableManager) FindFirst(pred func(*pb.ClassTable) bool) (*pb.ClassTable, bool) {
+func (m *ClassTableManager) First(pred func(*pb.ClassTable) bool) (*pb.ClassTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

@@ -45,11 +45,11 @@ public class ActorActionStateTableManager {
         }
     }
 
-    public ActorActionStateTableData getAll() {
+    public ActorActionStateTableData findAll() {
         return data;
     }
 
-    public ActorActionStateTable getById(int id) {
+    public ActorActionStateTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class ActorActionStateTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<ActorActionStateTable> getByIds(List<Integer> ids) {
+    public List<ActorActionStateTable> findByIds(List<Integer> ids) {
         List<ActorActionStateTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             ActorActionStateTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class ActorActionStateTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public ActorActionStateTable getRandom() {
+    public ActorActionStateTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<ActorActionStateTable> filter(Predicate<ActorActionStateTable> pred) {
+    public List<ActorActionStateTable> where(Predicate<ActorActionStateTable> pred) {
         List<ActorActionStateTable> result = new ArrayList<>();
         for (ActorActionStateTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class ActorActionStateTableManager {
         return result;
     }
 
-    public ActorActionStateTable findFirst(Predicate<ActorActionStateTable> pred) {
+    public ActorActionStateTable first(Predicate<ActorActionStateTable> pred) {
         for (ActorActionStateTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

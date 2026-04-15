@@ -45,11 +45,11 @@ public class ItemTableManager {
         }
     }
 
-    public ItemTableData getAll() {
+    public ItemTableData findAll() {
         return data;
     }
 
-    public ItemTable getById(int id) {
+    public ItemTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class ItemTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<ItemTable> getByIds(List<Integer> ids) {
+    public List<ItemTable> findByIds(List<Integer> ids) {
         List<ItemTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             ItemTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class ItemTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public ItemTable getRandom() {
+    public ItemTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<ItemTable> filter(Predicate<ItemTable> pred) {
+    public List<ItemTable> where(Predicate<ItemTable> pred) {
         List<ItemTable> result = new ArrayList<>();
         for (ItemTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class ItemTableManager {
         return result;
     }
 
-    public ItemTable findFirst(Predicate<ItemTable> pred) {
+    public ItemTable first(Predicate<ItemTable> pred) {
         for (ItemTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

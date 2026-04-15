@@ -45,11 +45,11 @@ public class ActorActionCombatStateTableManager {
         }
     }
 
-    public ActorActionCombatStateTableData getAll() {
+    public ActorActionCombatStateTableData findAll() {
         return data;
     }
 
-    public ActorActionCombatStateTable getById(int id) {
+    public ActorActionCombatStateTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class ActorActionCombatStateTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<ActorActionCombatStateTable> getByIds(List<Integer> ids) {
+    public List<ActorActionCombatStateTable> findByIds(List<Integer> ids) {
         List<ActorActionCombatStateTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             ActorActionCombatStateTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class ActorActionCombatStateTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public ActorActionCombatStateTable getRandom() {
+    public ActorActionCombatStateTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<ActorActionCombatStateTable> filter(Predicate<ActorActionCombatStateTable> pred) {
+    public List<ActorActionCombatStateTable> where(Predicate<ActorActionCombatStateTable> pred) {
         List<ActorActionCombatStateTable> result = new ArrayList<>();
         for (ActorActionCombatStateTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class ActorActionCombatStateTableManager {
         return result;
     }
 
-    public ActorActionCombatStateTable findFirst(Predicate<ActorActionCombatStateTable> pred) {
+    public ActorActionCombatStateTable first(Predicate<ActorActionCombatStateTable> pred) {
         for (ActorActionCombatStateTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

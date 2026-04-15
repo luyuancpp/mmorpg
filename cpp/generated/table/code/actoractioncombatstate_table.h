@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const ActorActionCombatStateTableData& All() const { return data_; }
+    const ActorActionCombatStateTableData& FindAll() const { return data_; }
 
-    std::pair<const ActorActionCombatStateTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const ActorActionCombatStateTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const ActorActionCombatStateTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const ActorActionCombatStateTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -33,17 +33,17 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const ActorActionCombatStateTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const ActorActionCombatStateTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const ActorActionCombatStateTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -54,18 +54,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const ActorActionCombatStateTable* GetRandom() const {
+    const ActorActionCombatStateTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const ActorActionCombatStateTable*> Filter(const std::function<bool(const ActorActionCombatStateTable&)>& pred) const {
+    std::vector<const ActorActionCombatStateTable*> Where(const std::function<bool(const ActorActionCombatStateTable&)>& pred) const {
         std::vector<const ActorActionCombatStateTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -75,7 +75,7 @@ public:
         return result;
     }
 
-    const ActorActionCombatStateTable* FindFirst(const std::function<bool(const ActorActionCombatStateTable&)>& pred) const {
+    const ActorActionCombatStateTable* First(const std::function<bool(const ActorActionCombatStateTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -92,30 +92,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const ActorActionCombatStateTableData& GetActorActionCombatStateAllTable() {
-    return ActorActionCombatStateTableManager::Instance().All();
+inline const ActorActionCombatStateTableData& FindAllActorActionCombatStateTable() {
+    return ActorActionCombatStateTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateActorActionCombatStateTable(tableId) \
-    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().GetTable(tableId); \
+    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().FindById(tableId); \
     do { if (!(actorActionCombatStateTable)) { LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomActorActionCombatStateTable(prefix, tableId) \
-    const auto [prefix##ActorActionCombatStateTable, prefix##fetchResult] = ActorActionCombatStateTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##ActorActionCombatStateTable, prefix##fetchResult] = ActorActionCombatStateTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##ActorActionCombatStateTable)) { LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchActorActionCombatStateTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().GetTable(tableId); \
+    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().FindById(tableId); \
     do { if (!(actorActionCombatStateTable)) { LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchActorActionCombatStateTableOrReturnVoid(tableId) \
-    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().GetTable(tableId); \
+    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().FindById(tableId); \
     do { if (!(actorActionCombatStateTable)) { LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchActorActionCombatStateTableOrContinue(tableId) \
-    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().GetTable(tableId); \
+    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().FindById(tableId); \
     do { if (!(actorActionCombatStateTable)) { LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchActorActionCombatStateTableOrReturnFalse(tableId) \
-    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().GetTable(tableId); \
+    const auto [actorActionCombatStateTable, fetchResult] = ActorActionCombatStateTableManager::Instance().FindById(tableId); \
     do { if (!(actorActionCombatStateTable)) { LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId; return false; } } while(0)

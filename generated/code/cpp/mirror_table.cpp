@@ -29,7 +29,7 @@ void MirrorTableManager::Load() {
     }
 }
 
-std::pair<const MirrorTable*, uint32_t> MirrorTableManager::GetTable(const uint32_t tableId) {
+std::pair<const MirrorTable*, uint32_t> MirrorTableManager::FindById(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Mirror table not found for ID: " << tableId;
@@ -38,7 +38,7 @@ std::pair<const MirrorTable*, uint32_t> MirrorTableManager::GetTable(const uint3
     return {it->second, kSuccess};
 }
 
-std::pair<const MirrorTable*, uint32_t> MirrorTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const MirrorTable*, uint32_t> MirrorTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId};

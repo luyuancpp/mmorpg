@@ -45,11 +45,11 @@ public class MessageLimiterTableManager {
         }
     }
 
-    public MessageLimiterTableData getAll() {
+    public MessageLimiterTableData findAll() {
         return data;
     }
 
-    public MessageLimiterTable getById(int id) {
+    public MessageLimiterTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class MessageLimiterTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<MessageLimiterTable> getByIds(List<Integer> ids) {
+    public List<MessageLimiterTable> findByIds(List<Integer> ids) {
         List<MessageLimiterTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             MessageLimiterTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class MessageLimiterTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public MessageLimiterTable getRandom() {
+    public MessageLimiterTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<MessageLimiterTable> filter(Predicate<MessageLimiterTable> pred) {
+    public List<MessageLimiterTable> where(Predicate<MessageLimiterTable> pred) {
         List<MessageLimiterTable> result = new ArrayList<>();
         for (MessageLimiterTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class MessageLimiterTableManager {
         return result;
     }
 
-    public MessageLimiterTable findFirst(Predicate<MessageLimiterTable> pred) {
+    public MessageLimiterTable first(Predicate<MessageLimiterTable> pred) {
         for (MessageLimiterTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

@@ -32,7 +32,7 @@ void TestTableManager::Load() {
     }
 }
 
-std::pair<const TestTable*, uint32_t> TestTableManager::GetTable(const uint32_t tableId) {
+std::pair<const TestTable*, uint32_t> TestTableManager::FindById(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Test table not found for ID: " << tableId;
@@ -41,7 +41,7 @@ std::pair<const TestTable*, uint32_t> TestTableManager::GetTable(const uint32_t 
     return {it->second, kSuccess};
 }
 
-std::pair<const TestTable*, uint32_t> TestTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const TestTable*, uint32_t> TestTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId};

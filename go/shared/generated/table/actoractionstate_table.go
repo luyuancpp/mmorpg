@@ -58,37 +58,37 @@ func (m *ActorActionStateTableManager) Load(configDir string, useBinary bool) er
     return nil
 }
 
-func (m *ActorActionStateTableManager) GetAll() []*pb.ActorActionStateTable {
+func (m *ActorActionStateTableManager) FindAll() []*pb.ActorActionStateTable {
     return m.data
 }
 
-func (m *ActorActionStateTableManager) GetById(id uint32) (*pb.ActorActionStateTable, bool) {
+func (m *ActorActionStateTableManager) FindById(id uint32) (*pb.ActorActionStateTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *ActorActionStateTableManager) HasId(id uint32) bool {
+func (m *ActorActionStateTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *ActorActionStateTableManager) Len() int {
+func (m *ActorActionStateTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *ActorActionStateTableManager) GetByIds(ids []uint32) []*pb.ActorActionStateTable {
+func (m *ActorActionStateTableManager) FindByIds(ids []uint32) []*pb.ActorActionStateTable {
     result := make([]*pb.ActorActionStateTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *ActorActionStateTableManager) GetByIds(ids []uint32) []*pb.ActorActionS
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *ActorActionStateTableManager) GetRandom() (*pb.ActorActionStateTable, bool) {
+func (m *ActorActionStateTableManager) RandOne() (*pb.ActorActionStateTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *ActorActionStateTableManager) GetRandom() (*pb.ActorActionStateTable, b
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *ActorActionStateTableManager) Filter(pred func(*pb.ActorActionStateTable) bool) []*pb.ActorActionStateTable {
+func (m *ActorActionStateTableManager) Where(pred func(*pb.ActorActionStateTable) bool) []*pb.ActorActionStateTable {
     var result []*pb.ActorActionStateTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *ActorActionStateTableManager) Filter(pred func(*pb.ActorActionStateTabl
     return result
 }
 
-func (m *ActorActionStateTableManager) FindFirst(pred func(*pb.ActorActionStateTable) bool) (*pb.ActorActionStateTable, bool) {
+func (m *ActorActionStateTableManager) First(pred func(*pb.ActorActionStateTable) bool) (*pb.ActorActionStateTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

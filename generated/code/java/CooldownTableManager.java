@@ -45,11 +45,11 @@ public class CooldownTableManager {
         }
     }
 
-    public CooldownTableData getAll() {
+    public CooldownTableData findAll() {
         return data;
     }
 
-    public CooldownTable getById(int id) {
+    public CooldownTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class CooldownTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<CooldownTable> getByIds(List<Integer> ids) {
+    public List<CooldownTable> findByIds(List<Integer> ids) {
         List<CooldownTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             CooldownTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class CooldownTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public CooldownTable getRandom() {
+    public CooldownTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<CooldownTable> filter(Predicate<CooldownTable> pred) {
+    public List<CooldownTable> where(Predicate<CooldownTable> pred) {
         List<CooldownTable> result = new ArrayList<>();
         for (CooldownTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class CooldownTableManager {
         return result;
     }
 
-    public CooldownTable findFirst(Predicate<CooldownTable> pred) {
+    public CooldownTable first(Predicate<CooldownTable> pred) {
         for (CooldownTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

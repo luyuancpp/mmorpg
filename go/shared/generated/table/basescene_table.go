@@ -58,37 +58,37 @@ func (m *BaseSceneTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *BaseSceneTableManager) GetAll() []*pb.BaseSceneTable {
+func (m *BaseSceneTableManager) FindAll() []*pb.BaseSceneTable {
     return m.data
 }
 
-func (m *BaseSceneTableManager) GetById(id uint32) (*pb.BaseSceneTable, bool) {
+func (m *BaseSceneTableManager) FindById(id uint32) (*pb.BaseSceneTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *BaseSceneTableManager) HasId(id uint32) bool {
+func (m *BaseSceneTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *BaseSceneTableManager) Len() int {
+func (m *BaseSceneTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *BaseSceneTableManager) GetByIds(ids []uint32) []*pb.BaseSceneTable {
+func (m *BaseSceneTableManager) FindByIds(ids []uint32) []*pb.BaseSceneTable {
     result := make([]*pb.BaseSceneTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *BaseSceneTableManager) GetByIds(ids []uint32) []*pb.BaseSceneTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *BaseSceneTableManager) GetRandom() (*pb.BaseSceneTable, bool) {
+func (m *BaseSceneTableManager) RandOne() (*pb.BaseSceneTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *BaseSceneTableManager) GetRandom() (*pb.BaseSceneTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *BaseSceneTableManager) Filter(pred func(*pb.BaseSceneTable) bool) []*pb.BaseSceneTable {
+func (m *BaseSceneTableManager) Where(pred func(*pb.BaseSceneTable) bool) []*pb.BaseSceneTable {
     var result []*pb.BaseSceneTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *BaseSceneTableManager) Filter(pred func(*pb.BaseSceneTable) bool) []*pb
     return result
 }
 
-func (m *BaseSceneTableManager) FindFirst(pred func(*pb.BaseSceneTable) bool) (*pb.BaseSceneTable, bool) {
+func (m *BaseSceneTableManager) First(pred func(*pb.BaseSceneTable) bool) (*pb.BaseSceneTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

@@ -16,7 +16,7 @@
 
 uint32_t MaxStack(uint32_t configId)
 {
-    return ItemTableManager::Instance().GetTable(configId).first->max_stack_size();
+    return ItemTableManager::Instance().FindById(configId).first->max_stack_size();
 }
 
 InitItemParam MakeItem(uint32_t configId, uint32_t size)

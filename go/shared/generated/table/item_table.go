@@ -58,37 +58,37 @@ func (m *ItemTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *ItemTableManager) GetAll() []*pb.ItemTable {
+func (m *ItemTableManager) FindAll() []*pb.ItemTable {
     return m.data
 }
 
-func (m *ItemTableManager) GetById(id uint32) (*pb.ItemTable, bool) {
+func (m *ItemTableManager) FindById(id uint32) (*pb.ItemTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *ItemTableManager) HasId(id uint32) bool {
+func (m *ItemTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *ItemTableManager) Len() int {
+func (m *ItemTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *ItemTableManager) GetByIds(ids []uint32) []*pb.ItemTable {
+func (m *ItemTableManager) FindByIds(ids []uint32) []*pb.ItemTable {
     result := make([]*pb.ItemTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *ItemTableManager) GetByIds(ids []uint32) []*pb.ItemTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *ItemTableManager) GetRandom() (*pb.ItemTable, bool) {
+func (m *ItemTableManager) RandOne() (*pb.ItemTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *ItemTableManager) GetRandom() (*pb.ItemTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *ItemTableManager) Filter(pred func(*pb.ItemTable) bool) []*pb.ItemTable {
+func (m *ItemTableManager) Where(pred func(*pb.ItemTable) bool) []*pb.ItemTable {
     var result []*pb.ItemTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *ItemTableManager) Filter(pred func(*pb.ItemTable) bool) []*pb.ItemTable
     return result
 }
 
-func (m *ItemTableManager) FindFirst(pred func(*pb.ItemTable) bool) (*pb.ItemTable, bool) {
+func (m *ItemTableManager) First(pred func(*pb.ItemTable) bool) (*pb.ItemTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

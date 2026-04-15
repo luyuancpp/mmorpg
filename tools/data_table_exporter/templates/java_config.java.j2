@@ -57,11 +57,11 @@ public class {{ sheetname }}TableManager {
         }
     }
 
-    public {{ sheetname }}TableData getAll() {
+    public {{ sheetname }}TableData findAll() {
         return data;
     }
 
-    public {{ sheetname }}Table getById(int id) {
+    public {{ sheetname }}Table findById(int id) {
         return kvData.get(id);
     }
 
@@ -70,13 +70,13 @@ public class {{ sheetname }}TableManager {
     }
 
 {% for col in table.table_keys %}
-    public {{ sheetname }}Table getBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
+    public {{ sheetname }}Table findBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
         return kv{{ col.name | title }}Data.get(key);
     }
 {% endfor %}
 
 {% for arr in table.repeated_comp_arrays %}
-    public List<{{ sheetname }}Table> getBy{{ arr.name | title }}Index({{ to_java_type(arr.data_type) }} key) {
+    public List<{{ sheetname }}Table> findBy{{ arr.name | title }}Index({{ to_java_type(arr.data_type) }} key) {
         return idx{{ arr.name | title }}.getOrDefault(key, Collections.emptyList());
     }
 {% endfor %}
@@ -85,21 +85,21 @@ public class {{ sheetname }}TableManager {
     // FK: {{ col.name }} → {{ col.foreign_key.target_table }}.{{ col.foreign_key.target_column }}
 {% endfor %}
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 {% for col in table.table_keys if not col.is_multi_key %}
-    public boolean has{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
+    public boolean existsBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
         return kv{{ col.name | title }}Data.containsKey(key);
     }
 {% endfor %}
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -114,9 +114,9 @@ public class {{ sheetname }}TableManager {
     }
 {% endfor %}
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<{{ sheetname }}Table> getByIds(List<Integer> ids) {
+    public List<{{ sheetname }}Table> findByIds(List<Integer> ids) {
         List<{{ sheetname }}Table> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             {{ sheetname }}Table row = kvData.get(id);
@@ -125,17 +125,17 @@ public class {{ sheetname }}TableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public {{ sheetname }}Table getRandom() {
+    public {{ sheetname }}Table randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<{{ sheetname }}Table> filter(Predicate<{{ sheetname }}Table> pred) {
+    public List<{{ sheetname }}Table> where(Predicate<{{ sheetname }}Table> pred) {
         List<{{ sheetname }}Table> result = new ArrayList<>();
         for ({{ sheetname }}Table row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -143,7 +143,7 @@ public class {{ sheetname }}TableManager {
         return result;
     }
 
-    public {{ sheetname }}Table findFirst(Predicate<{{ sheetname }}Table> pred) {
+    public {{ sheetname }}Table first(Predicate<{{ sheetname }}Table> pred) {
         for ({{ sheetname }}Table row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const CooldownTableData& All() const { return data_; }
+    const CooldownTableData& FindAll() const { return data_; }
 
-    std::pair<const CooldownTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const CooldownTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const CooldownTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const CooldownTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -33,17 +33,17 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const CooldownTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const CooldownTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const CooldownTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -54,18 +54,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const CooldownTable* GetRandom() const {
+    const CooldownTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const CooldownTable*> Filter(const std::function<bool(const CooldownTable&)>& pred) const {
+    std::vector<const CooldownTable*> Where(const std::function<bool(const CooldownTable&)>& pred) const {
         std::vector<const CooldownTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -75,7 +75,7 @@ public:
         return result;
     }
 
-    const CooldownTable* FindFirst(const std::function<bool(const CooldownTable&)>& pred) const {
+    const CooldownTable* First(const std::function<bool(const CooldownTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -92,30 +92,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const CooldownTableData& GetCooldownAllTable() {
-    return CooldownTableManager::Instance().All();
+inline const CooldownTableData& FindAllCooldownTable() {
+    return CooldownTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateCooldownTable(tableId) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().GetTable(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomCooldownTable(prefix, tableId) \
-    const auto [prefix##CooldownTable, prefix##fetchResult] = CooldownTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##CooldownTable, prefix##fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##CooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchCooldownTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().GetTable(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchCooldownTableOrReturnVoid(tableId) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().GetTable(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchCooldownTableOrContinue(tableId) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().GetTable(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchCooldownTableOrReturnFalse(tableId) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().GetTable(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return false; } } while(0)

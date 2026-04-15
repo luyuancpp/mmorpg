@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const DungeonTableData& All() const { return data_; }
+    const DungeonTableData& FindAll() const { return data_; }
 
-    std::pair<const DungeonTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const DungeonTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const DungeonTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const DungeonTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -35,17 +35,17 @@ public:
 
     // FK: scene_id → BaseScene.id
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const DungeonTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const DungeonTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const DungeonTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -56,18 +56,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const DungeonTable* GetRandom() const {
+    const DungeonTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const DungeonTable*> Filter(const std::function<bool(const DungeonTable&)>& pred) const {
+    std::vector<const DungeonTable*> Where(const std::function<bool(const DungeonTable&)>& pred) const {
         std::vector<const DungeonTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -77,7 +77,7 @@ public:
         return result;
     }
 
-    const DungeonTable* FindFirst(const std::function<bool(const DungeonTable&)>& pred) const {
+    const DungeonTable* First(const std::function<bool(const DungeonTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -94,30 +94,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const DungeonTableData& GetDungeonAllTable() {
-    return DungeonTableManager::Instance().All();
+inline const DungeonTableData& FindAllDungeonTable() {
+    return DungeonTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateDungeonTable(tableId) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().GetTable(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomDungeonTable(prefix, tableId) \
-    const auto [prefix##DungeonTable, prefix##fetchResult] = DungeonTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##DungeonTable, prefix##fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##DungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchDungeonTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().GetTable(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchDungeonTableOrReturnVoid(tableId) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().GetTable(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchDungeonTableOrContinue(tableId) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().GetTable(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchDungeonTableOrReturnFalse(tableId) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().GetTable(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return false; } } while(0)

@@ -102,53 +102,53 @@ func (m *{{ sheetname }}TableManager) Load(configDir string, useBinary bool) err
     return nil
 }
 
-func (m *{{ sheetname }}TableManager) GetAll() []*pb.{{ sheetname }}Table {
+func (m *{{ sheetname }}TableManager) FindAll() []*pb.{{ sheetname }}Table {
     return m.data
 }
 
-func (m *{{ sheetname }}TableManager) GetById(id {{ to_go_type(table.id_column.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
+func (m *{{ sheetname }}TableManager) FindById(id {{ to_go_type(table.id_column.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 {% for col in table.table_keys if not col.is_multi_key -%}
-func (m *{{ sheetname }}TableManager) GetBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
+func (m *{{ sheetname }}TableManager) FindBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
     row, ok := m.kv{{ col.name | title }}Data[key]
     return row, ok
 }
 
 {% endfor %}
 {%- for col in table.table_keys if col.is_multi_key %}
-func (m *{{ sheetname }}TableManager) GetBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) []*pb.{{ sheetname }}Table {
+func (m *{{ sheetname }}TableManager) FindBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) []*pb.{{ sheetname }}Table {
     return m.kv{{ col.name | title }}Data[key]
 }
 
 {% endfor %}
 {%- for arr in table.repeated_comp_arrays %}
-func (m *{{ sheetname }}TableManager) GetBy{{ arr.name | title }}Index(key {{ to_go_type(arr.data_type) }}) []*pb.{{ sheetname }}Table {
+func (m *{{ sheetname }}TableManager) FindBy{{ arr.name | title }}Index(key {{ to_go_type(arr.data_type) }}) []*pb.{{ sheetname }}Table {
     return m.idx{{ arr.name | title }}[key]
 }
 
 {% endfor %}
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *{{ sheetname }}TableManager) HasId(id {{ to_go_type(table.id_column.data_type) }}) bool {
+func (m *{{ sheetname }}TableManager) Exists(id {{ to_go_type(table.id_column.data_type) }}) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 {% for col in table.table_keys if not col.is_multi_key -%}
-func (m *{{ sheetname }}TableManager) Has{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) bool {
+func (m *{{ sheetname }}TableManager) ExistsBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) bool {
     _, ok := m.kv{{ col.name | title }}Data[key]
     return ok
 }
 
 {% endfor %}
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *{{ sheetname }}TableManager) Len() int {
+func (m *{{ sheetname }}TableManager) Count() int {
     return len(m.data)
 }
 
@@ -165,9 +165,9 @@ func (m *{{ sheetname }}TableManager) CountBy{{ arr.name | title }}Index(key {{ 
 
 {% endfor %}
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *{{ sheetname }}TableManager) GetByIds(ids []{{ to_go_type(table.id_column.data_type) }}) []*pb.{{ sheetname }}Table {
+func (m *{{ sheetname }}TableManager) FindByIds(ids []{{ to_go_type(table.id_column.data_type) }}) []*pb.{{ sheetname }}Table {
     result := make([]*pb.{{ sheetname }}Table, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -177,9 +177,9 @@ func (m *{{ sheetname }}TableManager) GetByIds(ids []{{ to_go_type(table.id_colu
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *{{ sheetname }}TableManager) GetRandom() (*pb.{{ sheetname }}Table, bool) {
+func (m *{{ sheetname }}TableManager) RandOne() (*pb.{{ sheetname }}Table, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -187,7 +187,7 @@ func (m *{{ sheetname }}TableManager) GetRandom() (*pb.{{ sheetname }}Table, boo
 }
 
 {% for col in table.table_keys if col.is_multi_key -%}
-func (m *{{ sheetname }}TableManager) GetRandomBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
+func (m *{{ sheetname }}TableManager) RandOneBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
     rows := m.kv{{ col.name | title }}Data[key]
     if len(rows) == 0 {
         return nil, false
@@ -197,9 +197,9 @@ func (m *{{ sheetname }}TableManager) GetRandomBy{{ col.name | title }}(key {{ t
 
 {% endfor %}
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *{{ sheetname }}TableManager) Filter(pred func(*pb.{{ sheetname }}Table) bool) []*pb.{{ sheetname }}Table {
+func (m *{{ sheetname }}TableManager) Where(pred func(*pb.{{ sheetname }}Table) bool) []*pb.{{ sheetname }}Table {
     var result []*pb.{{ sheetname }}Table
     for _, row := range m.data {
         if pred(row) {
@@ -209,7 +209,7 @@ func (m *{{ sheetname }}TableManager) Filter(pred func(*pb.{{ sheetname }}Table)
     return result
 }
 
-func (m *{{ sheetname }}TableManager) FindFirst(pred func(*pb.{{ sheetname }}Table) bool) (*pb.{{ sheetname }}Table, bool) {
+func (m *{{ sheetname }}TableManager) First(pred func(*pb.{{ sheetname }}Table) bool) (*pb.{{ sheetname }}Table, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true
@@ -225,12 +225,12 @@ func (m *{{ sheetname }}TableManager) FindFirst(pred func(*pb.{{ sheetname }}Tab
 // ---- Composite Key ----
 
 {% for ck in table.composite_keys -%}
-func (m *{{ sheetname }}TableManager) GetByComposite{{ ck.group | title }}({% for col in ck.columns %}{{ col.name }} {{ to_go_type(col.data_type) }}{% if not loop.last %}, {% endif %}{% endfor %}) (*pb.{{ sheetname }}Table, bool) {
+func (m *{{ sheetname }}TableManager) FindBy{{ ck.group | title }}({% for col in ck.columns %}{{ col.name }} {{ to_go_type(col.data_type) }}{% if not loop.last %}, {% endif %}{% endfor %}) (*pb.{{ sheetname }}Table, bool) {
     row, ok := m.compositeKv{{ ck.group | title }}[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}{ {%- for col in ck.columns %}{{ to_go_proto_field(col.name) }}: {{ col.name }}, {% endfor -%} }]
     return row, ok
 }
 
-func (m *{{ sheetname }}TableManager) HasComposite{{ ck.group | title }}({% for col in ck.columns %}{{ col.name }} {{ to_go_type(col.data_type) }}{% if not loop.last %}, {% endif %}{% endfor %}) bool {
+func (m *{{ sheetname }}TableManager) ExistsBy{{ ck.group | title }}({% for col in ck.columns %}{{ col.name }} {{ to_go_type(col.data_type) }}{% if not loop.last %}, {% endif %}{% endfor %}) bool {
     _, ok := m.compositeKv{{ ck.group | title }}[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}{ {%- for col in ck.columns %}{{ to_go_proto_field(col.name) }}: {{ col.name }}, {% endfor -%} }]
     return ok
 }

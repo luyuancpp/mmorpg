@@ -45,11 +45,11 @@ public class WorldTableManager {
         }
     }
 
-    public WorldTableData getAll() {
+    public WorldTableData findAll() {
         return data;
     }
 
-    public WorldTable getById(int id) {
+    public WorldTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -65,26 +65,26 @@ public class WorldTableManager {
     // FK: scene_id → BaseScene.id
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<WorldTable> getByIds(List<Integer> ids) {
+    public List<WorldTable> findByIds(List<Integer> ids) {
         List<WorldTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             WorldTable row = kvData.get(id);
@@ -93,17 +93,17 @@ public class WorldTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public WorldTable getRandom() {
+    public WorldTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<WorldTable> filter(Predicate<WorldTable> pred) {
+    public List<WorldTable> where(Predicate<WorldTable> pred) {
         List<WorldTable> result = new ArrayList<>();
         for (WorldTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -111,7 +111,7 @@ public class WorldTableManager {
         return result;
     }
 
-    public WorldTable findFirst(Predicate<WorldTable> pred) {
+    public WorldTable first(Predicate<WorldTable> pred) {
         for (WorldTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

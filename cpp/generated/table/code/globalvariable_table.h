@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const GlobalVariableTableData& All() const { return data_; }
+    const GlobalVariableTableData& FindAll() const { return data_; }
 
-    std::pair<const GlobalVariableTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const GlobalVariableTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const GlobalVariableTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const GlobalVariableTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -33,17 +33,17 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const GlobalVariableTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const GlobalVariableTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const GlobalVariableTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -54,18 +54,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const GlobalVariableTable* GetRandom() const {
+    const GlobalVariableTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const GlobalVariableTable*> Filter(const std::function<bool(const GlobalVariableTable&)>& pred) const {
+    std::vector<const GlobalVariableTable*> Where(const std::function<bool(const GlobalVariableTable&)>& pred) const {
         std::vector<const GlobalVariableTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -75,7 +75,7 @@ public:
         return result;
     }
 
-    const GlobalVariableTable* FindFirst(const std::function<bool(const GlobalVariableTable&)>& pred) const {
+    const GlobalVariableTable* First(const std::function<bool(const GlobalVariableTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -92,30 +92,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const GlobalVariableTableData& GetGlobalVariableAllTable() {
-    return GlobalVariableTableManager::Instance().All();
+inline const GlobalVariableTableData& FindAllGlobalVariableTable() {
+    return GlobalVariableTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateGlobalVariableTable(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomGlobalVariableTable(prefix, tableId) \
-    const auto [prefix##GlobalVariableTable, prefix##fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##GlobalVariableTable, prefix##fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##GlobalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnVoid(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchGlobalVariableTableOrContinue(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnFalse(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().GetTable(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return false; } } while(0)

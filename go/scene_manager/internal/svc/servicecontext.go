@@ -48,7 +48,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 // loadWorldConfIds extracts base scene config IDs from the loaded World table.
 func loadWorldConfIds() []uint64 {
-	rows := table.WorldTableManagerInstance.GetAll()
+	rows := table.WorldTableManagerInstance.FindAll()
 	ids := make([]uint64, 0, len(rows))
 	for _, row := range rows {
 		ids = append(ids, uint64(row.SceneId))

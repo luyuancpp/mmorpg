@@ -58,37 +58,37 @@ func (m *RewardTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *RewardTableManager) GetAll() []*pb.RewardTable {
+func (m *RewardTableManager) FindAll() []*pb.RewardTable {
     return m.data
 }
 
-func (m *RewardTableManager) GetById(id uint32) (*pb.RewardTable, bool) {
+func (m *RewardTableManager) FindById(id uint32) (*pb.RewardTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *RewardTableManager) HasId(id uint32) bool {
+func (m *RewardTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *RewardTableManager) Len() int {
+func (m *RewardTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *RewardTableManager) GetByIds(ids []uint32) []*pb.RewardTable {
+func (m *RewardTableManager) FindByIds(ids []uint32) []*pb.RewardTable {
     result := make([]*pb.RewardTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *RewardTableManager) GetByIds(ids []uint32) []*pb.RewardTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *RewardTableManager) GetRandom() (*pb.RewardTable, bool) {
+func (m *RewardTableManager) RandOne() (*pb.RewardTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *RewardTableManager) GetRandom() (*pb.RewardTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *RewardTableManager) Filter(pred func(*pb.RewardTable) bool) []*pb.RewardTable {
+func (m *RewardTableManager) Where(pred func(*pb.RewardTable) bool) []*pb.RewardTable {
     var result []*pb.RewardTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *RewardTableManager) Filter(pred func(*pb.RewardTable) bool) []*pb.Rewar
     return result
 }
 
-func (m *RewardTableManager) FindFirst(pred func(*pb.RewardTable) bool) (*pb.RewardTable, bool) {
+func (m *RewardTableManager) First(pred func(*pb.RewardTable) bool) (*pb.RewardTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

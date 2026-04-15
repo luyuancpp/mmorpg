@@ -73,44 +73,44 @@ func (m *MissionTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *MissionTableManager) GetAll() []*pb.MissionTable {
+func (m *MissionTableManager) FindAll() []*pb.MissionTable {
     return m.data
 }
 
-func (m *MissionTableManager) GetById(id uint32) (*pb.MissionTable, bool) {
+func (m *MissionTableManager) FindById(id uint32) (*pb.MissionTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
-func (m *MissionTableManager) GetByCondition_idIndex(key uint32) []*pb.MissionTable {
+func (m *MissionTableManager) FindByCondition_idIndex(key uint32) []*pb.MissionTable {
     return m.idxCondition_id[key]
 }
 
 
-func (m *MissionTableManager) GetByNext_mission_idIndex(key uint32) []*pb.MissionTable {
+func (m *MissionTableManager) FindByNext_mission_idIndex(key uint32) []*pb.MissionTable {
     return m.idxNext_mission_id[key]
 }
 
 
-func (m *MissionTableManager) GetByTarget_countIndex(key uint32) []*pb.MissionTable {
+func (m *MissionTableManager) FindByTarget_countIndex(key uint32) []*pb.MissionTable {
     return m.idxTarget_count[key]
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *MissionTableManager) HasId(id uint32) bool {
+func (m *MissionTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *MissionTableManager) Len() int {
+func (m *MissionTableManager) Count() int {
     return len(m.data)
 }
 
@@ -131,9 +131,9 @@ func (m *MissionTableManager) CountByTarget_countIndex(key uint32) int {
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *MissionTableManager) GetByIds(ids []uint32) []*pb.MissionTable {
+func (m *MissionTableManager) FindByIds(ids []uint32) []*pb.MissionTable {
     result := make([]*pb.MissionTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -143,9 +143,9 @@ func (m *MissionTableManager) GetByIds(ids []uint32) []*pb.MissionTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *MissionTableManager) GetRandom() (*pb.MissionTable, bool) {
+func (m *MissionTableManager) RandOne() (*pb.MissionTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -154,9 +154,9 @@ func (m *MissionTableManager) GetRandom() (*pb.MissionTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *MissionTableManager) Filter(pred func(*pb.MissionTable) bool) []*pb.MissionTable {
+func (m *MissionTableManager) Where(pred func(*pb.MissionTable) bool) []*pb.MissionTable {
     var result []*pb.MissionTable
     for _, row := range m.data {
         if pred(row) {
@@ -166,7 +166,7 @@ func (m *MissionTableManager) Filter(pred func(*pb.MissionTable) bool) []*pb.Mis
     return result
 }
 
-func (m *MissionTableManager) FindFirst(pred func(*pb.MissionTable) bool) (*pb.MissionTable, bool) {
+func (m *MissionTableManager) First(pred func(*pb.MissionTable) bool) (*pb.MissionTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

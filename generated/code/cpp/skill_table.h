@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const SkillTableData& All() const { return data_; }
+    const SkillTableData& FindAll() const { return data_; }
 
-    std::pair<const SkillTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const SkillTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const SkillTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const SkillTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -34,7 +34,7 @@ public:
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
     double GetDamage(uint32_t tableId) {
-        auto [table, ok] = GetTable(tableId);
+        auto [table, ok] = FindById(tableId);
         if (!ok || table == nullptr) {
             LOG_ERROR << "Damage table not found for ID: " << tableId;
             return double();
@@ -49,20 +49,20 @@ public:
     const std::unordered_multimap<uint32_t, const SkillTable*>& GetTargeting_modeIndex() const { return idx_targeting_mode_; }
     const std::unordered_multimap<uint32_t, const SkillTable*>& GetEffectIndex() const { return idx_effect_; }
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
     std::size_t CountBySkill_typeIndex(uint32_t key) const { return idx_skill_type_.count(key); }
     std::size_t CountByTargeting_modeIndex(uint32_t key) const { return idx_targeting_mode_.count(key); }
     std::size_t CountByEffectIndex(uint32_t key) const { return idx_effect_.count(key); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const SkillTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const SkillTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const SkillTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -73,18 +73,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const SkillTable* GetRandom() const {
+    const SkillTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const SkillTable*> Filter(const std::function<bool(const SkillTable&)>& pred) const {
+    std::vector<const SkillTable*> Where(const std::function<bool(const SkillTable&)>& pred) const {
         std::vector<const SkillTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -94,7 +94,7 @@ public:
         return result;
     }
 
-    const SkillTable* FindFirst(const std::function<bool(const SkillTable&)>& pred) const {
+    const SkillTable* First(const std::function<bool(const SkillTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -115,30 +115,30 @@ private:
     std::unordered_multimap<uint32_t, const SkillTable*> idx_effect_;
 };
 
-inline const SkillTableData& GetSkillAllTable() {
-    return SkillTableManager::Instance().All();
+inline const SkillTableData& FindAllSkillTable() {
+    return SkillTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateSkillTable(tableId) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomSkillTable(prefix, tableId) \
-    const auto [prefix##SkillTable, prefix##fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##SkillTable, prefix##fetchResult] = SkillTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##SkillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchSkillTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchSkillTableOrReturnVoid(tableId) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchSkillTableOrContinue(tableId) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchSkillTableOrReturnFalse(tableId) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().GetTable(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return false; } } while(0)

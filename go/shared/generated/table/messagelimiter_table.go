@@ -58,37 +58,37 @@ func (m *MessageLimiterTableManager) Load(configDir string, useBinary bool) erro
     return nil
 }
 
-func (m *MessageLimiterTableManager) GetAll() []*pb.MessageLimiterTable {
+func (m *MessageLimiterTableManager) FindAll() []*pb.MessageLimiterTable {
     return m.data
 }
 
-func (m *MessageLimiterTableManager) GetById(id uint32) (*pb.MessageLimiterTable, bool) {
+func (m *MessageLimiterTableManager) FindById(id uint32) (*pb.MessageLimiterTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *MessageLimiterTableManager) HasId(id uint32) bool {
+func (m *MessageLimiterTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *MessageLimiterTableManager) Len() int {
+func (m *MessageLimiterTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *MessageLimiterTableManager) GetByIds(ids []uint32) []*pb.MessageLimiterTable {
+func (m *MessageLimiterTableManager) FindByIds(ids []uint32) []*pb.MessageLimiterTable {
     result := make([]*pb.MessageLimiterTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *MessageLimiterTableManager) GetByIds(ids []uint32) []*pb.MessageLimiter
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *MessageLimiterTableManager) GetRandom() (*pb.MessageLimiterTable, bool) {
+func (m *MessageLimiterTableManager) RandOne() (*pb.MessageLimiterTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *MessageLimiterTableManager) GetRandom() (*pb.MessageLimiterTable, bool)
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *MessageLimiterTableManager) Filter(pred func(*pb.MessageLimiterTable) bool) []*pb.MessageLimiterTable {
+func (m *MessageLimiterTableManager) Where(pred func(*pb.MessageLimiterTable) bool) []*pb.MessageLimiterTable {
     var result []*pb.MessageLimiterTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *MessageLimiterTableManager) Filter(pred func(*pb.MessageLimiterTable) b
     return result
 }
 
-func (m *MessageLimiterTableManager) FindFirst(pred func(*pb.MessageLimiterTable) bool) (*pb.MessageLimiterTable, bool) {
+func (m *MessageLimiterTableManager) First(pred func(*pb.MessageLimiterTable) bool) (*pb.MessageLimiterTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

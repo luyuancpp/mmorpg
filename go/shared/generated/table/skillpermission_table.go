@@ -63,34 +63,34 @@ func (m *SkillPermissionTableManager) Load(configDir string, useBinary bool) err
     return nil
 }
 
-func (m *SkillPermissionTableManager) GetAll() []*pb.SkillPermissionTable {
+func (m *SkillPermissionTableManager) FindAll() []*pb.SkillPermissionTable {
     return m.data
 }
 
-func (m *SkillPermissionTableManager) GetById(id uint32) (*pb.SkillPermissionTable, bool) {
+func (m *SkillPermissionTableManager) FindById(id uint32) (*pb.SkillPermissionTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
-func (m *SkillPermissionTableManager) GetBySkill_typeIndex(key uint32) []*pb.SkillPermissionTable {
+func (m *SkillPermissionTableManager) FindBySkill_typeIndex(key uint32) []*pb.SkillPermissionTable {
     return m.idxSkill_type[key]
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *SkillPermissionTableManager) HasId(id uint32) bool {
+func (m *SkillPermissionTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *SkillPermissionTableManager) Len() int {
+func (m *SkillPermissionTableManager) Count() int {
     return len(m.data)
 }
 
@@ -101,9 +101,9 @@ func (m *SkillPermissionTableManager) CountBySkill_typeIndex(key uint32) int {
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *SkillPermissionTableManager) GetByIds(ids []uint32) []*pb.SkillPermissionTable {
+func (m *SkillPermissionTableManager) FindByIds(ids []uint32) []*pb.SkillPermissionTable {
     result := make([]*pb.SkillPermissionTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -113,9 +113,9 @@ func (m *SkillPermissionTableManager) GetByIds(ids []uint32) []*pb.SkillPermissi
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *SkillPermissionTableManager) GetRandom() (*pb.SkillPermissionTable, bool) {
+func (m *SkillPermissionTableManager) RandOne() (*pb.SkillPermissionTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -124,9 +124,9 @@ func (m *SkillPermissionTableManager) GetRandom() (*pb.SkillPermissionTable, boo
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *SkillPermissionTableManager) Filter(pred func(*pb.SkillPermissionTable) bool) []*pb.SkillPermissionTable {
+func (m *SkillPermissionTableManager) Where(pred func(*pb.SkillPermissionTable) bool) []*pb.SkillPermissionTable {
     var result []*pb.SkillPermissionTable
     for _, row := range m.data {
         if pred(row) {
@@ -136,7 +136,7 @@ func (m *SkillPermissionTableManager) Filter(pred func(*pb.SkillPermissionTable)
     return result
 }
 
-func (m *SkillPermissionTableManager) FindFirst(pred func(*pb.SkillPermissionTable) bool) (*pb.SkillPermissionTable, bool) {
+func (m *SkillPermissionTableManager) First(pred func(*pb.SkillPermissionTable) bool) (*pb.SkillPermissionTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true
