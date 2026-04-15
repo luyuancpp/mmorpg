@@ -7,34 +7,37 @@ std::string GetConfigDir();
 bool UseProtoBinaryTables();
 
 void ClassTableManager::Load() {
-    data_.Clear();
+    auto snap = std::make_unique<Snapshot>();
 
     if (UseProtoBinaryTables()) {
         const std::string path = GetConfigDir() + "class.pb";
         const auto contents = File2String(path);
-        if (!data_.ParseFromString(contents)) {
+        if (!snap->data.ParseFromString(contents)) {
             LOG_FATAL << "Class binary parse failed: " << path;
         }
     } else {
         const std::string path = GetConfigDir() + "class.json";
         const auto contents = File2String(path);
-        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &snap->data); !result.ok()) {
             LOG_FATAL << "Class" << result.message().data();
         }
     }
 
-    for (int32_t i = 0; i < data_.data_size(); ++i) {
-        const auto& row_data = data_.data(i);
-        kv_data_.emplace(row_data.id(), &row_data);
+    for (int32_t i = 0; i < snap->data.data_size(); ++i) {
+        const auto& row_data = snap->data.data(i);
+        snap->kvData.emplace(row_data.id(), &row_data);
         for (const auto& elem : row_data.skill()) {
-            idx_skill_.emplace(elem, &row_data);
+            snap->idxskill.emplace(elem, &row_data);
         }
     }
+
+    snapshot_ = std::move(snap);
 }
 
 std::pair<const ClassTable*, uint32_t> ClassTableManager::FindById(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         LOG_ERROR << "Class table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -42,8 +45,9 @@ std::pair<const ClassTable*, uint32_t> ClassTableManager::FindById(const uint32_
 }
 
 std::pair<const ClassTable*, uint32_t> ClassTableManager::FindByIdSilent(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};

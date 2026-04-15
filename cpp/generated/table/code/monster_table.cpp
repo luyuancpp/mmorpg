@@ -7,31 +7,34 @@ std::string GetConfigDir();
 bool UseProtoBinaryTables();
 
 void MonsterTableManager::Load() {
-    data_.Clear();
+    auto snap = std::make_unique<Snapshot>();
 
     if (UseProtoBinaryTables()) {
         const std::string path = GetConfigDir() + "monster.pb";
         const auto contents = File2String(path);
-        if (!data_.ParseFromString(contents)) {
+        if (!snap->data.ParseFromString(contents)) {
             LOG_FATAL << "Monster binary parse failed: " << path;
         }
     } else {
         const std::string path = GetConfigDir() + "monster.json";
         const auto contents = File2String(path);
-        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &snap->data); !result.ok()) {
             LOG_FATAL << "Monster" << result.message().data();
         }
     }
 
-    for (int32_t i = 0; i < data_.data_size(); ++i) {
-        const auto& row_data = data_.data(i);
-        kv_data_.emplace(row_data.id(), &row_data);
+    for (int32_t i = 0; i < snap->data.data_size(); ++i) {
+        const auto& row_data = snap->data.data(i);
+        snap->kvData.emplace(row_data.id(), &row_data);
     }
+
+    snapshot_ = std::move(snap);
 }
 
 std::pair<const MonsterTable*, uint32_t> MonsterTableManager::FindById(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         LOG_ERROR << "Monster table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -39,8 +42,9 @@ std::pair<const MonsterTable*, uint32_t> MonsterTableManager::FindById(const uin
 }
 
 std::pair<const MonsterTable*, uint32_t> MonsterTableManager::FindByIdSilent(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};

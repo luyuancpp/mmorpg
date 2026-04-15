@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <random>
 #include <unordered_map>
 #include <vector>
@@ -14,16 +15,30 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const BuffTable*>;
     using LoadSuccessCallback = std::function<void()>;
 
+    // Internal snapshot holding all parsed data and indices.
+    // Load() builds a new snapshot and swaps it in, replacing the old one.
+    struct Snapshot {
+        BuffTableData data;
+        KeyValueDataType kvData;
+        ExcelExpression<double> expressionhealth_regeneration;
+        ExcelExpression<double> expressionbonus_damage;
+        std::unordered_multimap<double, const BuffTable*> idxinterval_effect;
+        std::unordered_multimap<uint32_t, const BuffTable*> idxsub_buff;
+        std::unordered_multimap<uint32_t, const BuffTable*> idxtarget_sub_buff;
+    };
+
     static BuffTableManager& Instance() {
         static BuffTableManager instance;
         return instance;
     }
 
-    const BuffTableData& FindAll() const { return data_; }
+    const Snapshot& GetSnapshot() const { return *snapshot_; }
+
+    const BuffTableData& FindAll() const { return snapshot_->data; }
 
     std::pair<const BuffTable*, uint32_t> FindById(uint32_t tableId);
     std::pair<const BuffTable*, uint32_t> FindByIdSilent(uint32_t tableId);
-    const KeyValueDataType& KeyValueData() const { return kv_data_; }
+    const KeyValueDataType& KeyValueData() const { return snapshot_->kvData; }
 
     void Load();
 
@@ -38,10 +53,10 @@ public:
         if (table == nullptr) {
             return double();
         }
-        return expression_health_regeneration_.Value(table->health_regeneration());
+        return snapshot_->expressionhealth_regeneration.Value(table->health_regeneration());
     }
     void SetHealth_regenerationParam(const std::vector<double>& paramList) {
-        expression_health_regeneration_.SetParam(paramList);
+        snapshot_->expressionhealth_regeneration.SetParam(paramList);
     }
 
     double GetBonus_damage(uint32_t tableId) {
@@ -49,26 +64,26 @@ public:
         if (table == nullptr) {
             return double();
         }
-        return expression_bonus_damage_.Value(table->bonus_damage());
+        return snapshot_->expressionbonus_damage.Value(table->bonus_damage());
     }
     void SetBonus_damageParam(const std::vector<double>& paramList) {
-        expression_bonus_damage_.SetParam(paramList);
+        snapshot_->expressionbonus_damage.SetParam(paramList);
     }
 
-    const std::unordered_multimap<double, const BuffTable*>& GetInterval_effectIndex() const { return idx_interval_effect_; }
-    const std::unordered_multimap<uint32_t, const BuffTable*>& GetSub_buffIndex() const { return idx_sub_buff_; }
-    const std::unordered_multimap<uint32_t, const BuffTable*>& GetTarget_sub_buffIndex() const { return idx_target_sub_buff_; }
+    const std::unordered_multimap<double, const BuffTable*>& GetInterval_effectIndex() const { return snapshot_->idxinterval_effect; }
+    const std::unordered_multimap<uint32_t, const BuffTable*>& GetSub_buffIndex() const { return snapshot_->idxsub_buff; }
+    const std::unordered_multimap<uint32_t, const BuffTable*>& GetTarget_sub_buffIndex() const { return snapshot_->idxtarget_sub_buff; }
 
     // ---- Exists ----
 
-    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return snapshot_->kvData.count(id) > 0; }
 
     // ---- Count ----
 
-    std::size_t Count() const { return kv_data_.size(); }
-    std::size_t CountByInterval_effectIndex(double key) const { return idx_interval_effect_.count(key); }
-    std::size_t CountBySub_buffIndex(uint32_t key) const { return idx_sub_buff_.count(key); }
-    std::size_t CountByTarget_sub_buffIndex(uint32_t key) const { return idx_target_sub_buff_.count(key); }
+    std::size_t Count() const { return snapshot_->kvData.size(); }
+    std::size_t CountByInterval_effectIndex(double key) const { return snapshot_->idxinterval_effect.count(key); }
+    std::size_t CountBySub_buffIndex(uint32_t key) const { return snapshot_->idxsub_buff.count(key); }
+    std::size_t CountByTarget_sub_buffIndex(uint32_t key) const { return snapshot_->idxtarget_sub_buff.count(key); }
 
     // ---- FindByIds (IN) ----
 
@@ -76,7 +91,7 @@ public:
         std::vector<const BuffTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
-            if (auto it = kv_data_.find(id); it != kv_data_.end()) {
+            if (auto it = snapshot_->kvData.find(id); it != snapshot_->kvData.end()) {
                 result.push_back(it->second);
             }
         }
@@ -86,28 +101,28 @@ public:
     // ---- RandOne ----
 
     const BuffTable* RandOne() const {
-        if (data_.data_size() == 0) return nullptr;
+        if (snapshot_->data.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
-        std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
-        return &data_.data(dist(rng));
+        std::uniform_int_distribution<int> dist(0, snapshot_->data.data_size() - 1);
+        return &snapshot_->data.data(dist(rng));
     }
 
     // ---- Where / First ----
 
     std::vector<const BuffTable*> Where(const std::function<bool(const BuffTable&)>& pred) const {
         std::vector<const BuffTable*> result;
-        for (int i = 0; i < data_.data_size(); ++i) {
-            if (pred(data_.data(i))) {
-                result.push_back(&data_.data(i));
+        for (int i = 0; i < snapshot_->data.data_size(); ++i) {
+            if (pred(snapshot_->data.data(i))) {
+                result.push_back(&snapshot_->data.data(i));
             }
         }
         return result;
     }
 
     const BuffTable* First(const std::function<bool(const BuffTable&)>& pred) const {
-        for (int i = 0; i < data_.data_size(); ++i) {
-            if (pred(data_.data(i))) {
-                return &data_.data(i);
+        for (int i = 0; i < snapshot_->data.data_size(); ++i) {
+            if (pred(snapshot_->data.data(i))) {
+                return &snapshot_->data.data(i);
             }
         }
         return nullptr;
@@ -117,13 +132,7 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
-    BuffTableData data_;
-    KeyValueDataType kv_data_;
-    ExcelExpression<double> expression_health_regeneration_;
-    ExcelExpression<double> expression_bonus_damage_;
-    std::unordered_multimap<double, const BuffTable*> idx_interval_effect_;
-    std::unordered_multimap<uint32_t, const BuffTable*> idx_sub_buff_;
-    std::unordered_multimap<uint32_t, const BuffTable*> idx_target_sub_buff_;
+    std::unique_ptr<Snapshot> snapshot_ = std::make_unique<Snapshot>();
 };
 
 inline const BuffTableData& FindAllBuffTable() {

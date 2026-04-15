@@ -7,44 +7,47 @@ std::string GetConfigDir();
 bool UseProtoBinaryTables();
 
 void SkillTableManager::Load() {
-    data_.Clear();
+    auto snap = std::make_unique<Snapshot>();
 
     if (UseProtoBinaryTables()) {
         const std::string path = GetConfigDir() + "skill.pb";
         const auto contents = File2String(path);
-        if (!data_.ParseFromString(contents)) {
+        if (!snap->data.ParseFromString(contents)) {
             LOG_FATAL << "Skill binary parse failed: " << path;
         }
     } else {
         const std::string path = GetConfigDir() + "skill.json";
         const auto contents = File2String(path);
-        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &snap->data); !result.ok()) {
             LOG_FATAL << "Skill" << result.message().data();
         }
     }
 
-    for (int32_t i = 0; i < data_.data_size(); ++i) {
-        const auto& row_data = data_.data(i);
-        kv_data_.emplace(row_data.id(), &row_data);
+    for (int32_t i = 0; i < snap->data.data_size(); ++i) {
+        const auto& row_data = snap->data.data(i);
+        snap->kvData.emplace(row_data.id(), &row_data);
         for (const auto& elem : row_data.skill_type()) {
-            idx_skill_type_.emplace(elem, &row_data);
+            snap->idxskill_type.emplace(elem, &row_data);
         }
         for (const auto& elem : row_data.targeting_mode()) {
-            idx_targeting_mode_.emplace(elem, &row_data);
+            snap->idxtargeting_mode.emplace(elem, &row_data);
         }
         for (const auto& elem : row_data.effect()) {
-            idx_effect_.emplace(elem, &row_data);
+            snap->idxeffect.emplace(elem, &row_data);
         }
     }
 
-    expression_damage_.Init({
+    snap->expressiondamage.Init({
         "level"
     });
+
+    snapshot_ = std::move(snap);
 }
 
 std::pair<const SkillTable*, uint32_t> SkillTableManager::FindById(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         LOG_ERROR << "Skill table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -52,8 +55,9 @@ std::pair<const SkillTable*, uint32_t> SkillTableManager::FindById(const uint32_
 }
 
 std::pair<const SkillTable*, uint32_t> SkillTableManager::FindByIdSilent(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
