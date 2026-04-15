@@ -1,12 +1,10 @@
 package cpp
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
-	"text/template"
 
 	"github.com/iancoleman/strcase"
 	messageoption "github.com/luyuancpp/protooption"
@@ -20,28 +18,6 @@ import (
 	"protogen/logger"
 )
 
-const playerLoaderTemplate = `
-#include "thread_context/ecs_context.h"
-#include "proto/common/database/mysql_database_table.pb.h"
-
-void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message){
-	{{- range .Fields }}
-	{{- if .TypeName }}
-	tlsEcs.actorRegistry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
-	{{- end }}
-	{{- end }}
-}
-
-void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message){
-	{{- range .Fields }}
-	{{- if .TypeName }}
-	message.mutable_{{.Name}}()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<{{.TypeName}}>(player));
-	{{- end }}
-	{{- end }}
-}
-
-`
-
 type PlayerDBProtoFieldData struct {
 	Name     string
 	TypeName string
@@ -54,29 +30,6 @@ type DescData struct {
 	Entries     []HeaderEntry
 }
 
-const playerHeaderTemplate = `#pragma once
-#include "entt/src/entt/entity/registry.hpp"
-#include "proto/common/database/player_cache.pb.h"
-{{- range .Entries }}
-void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message);
-void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);
-{{ end }}
-
-inline void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
-{
-{{- range .Entries }}
-{{.HandlerName}}MessageFieldsMarshal(player, *message.mutable_{{.MessageType}}_data());
-{{- end }}
-}
-
-inline void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
-{
-{{- range .Entries }}
-{{.HandlerName}}MessageFieldsUnmarshal(player, message.{{.MessageType}}_data());
-{{- end }}
-}
-`
-
 type HeaderEntry struct {
 	HandlerName string // e.g. "PlayerDatabase1"
 	MessageType string // e.g. "player_database1"
@@ -87,25 +40,8 @@ type HeaderTemplateInput struct {
 }
 
 func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error {
-	tmpl, err := template.New("loader").Parse(playerHeaderTemplate)
-	if err != nil {
-		logger.Global.Fatal("Failed to generate player header file: template parsing failed",
-			zap.String("template_name", "loader"),
-			zap.String("output_path", outputPath),
-			zap.Error(err),
-		)
-	}
-
 	data := HeaderTemplateInput{Entries: entries}
-	var rendered bytes.Buffer
-	if err := tmpl.Execute(&rendered, data); err != nil {
-		logger.Global.Fatal("Failed to generate player header file: template execution failed",
-			zap.String("file_path", outputPath),
-			zap.Error(err),
-		)
-	}
-
-	return utils.WriteFileIfChanged(outputPath, []byte(utils.NormalizeGeneratedLayout(rendered.String())))
+	return utils.RenderTemplateToFile("internal/template/player_data_loader.h.tmpl", outputPath, data)
 }
 
 // isPlayerDatabase returns true if the message has OptionIsPlayerDatabase set.
@@ -218,15 +154,6 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 }
 
 func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
-	tmpl, err := template.New("handler").Parse(playerLoaderTemplate)
-	if err != nil {
-		logger.Global.Fatal("Failed to generate deserialization code: template parsing failed",
-			zap.String("template_name", "handler"),
-			zap.String("file_name", fileName),
-			zap.Error(err),
-		)
-	}
-
 	data := DescData{
 		Fields:      fields,
 		HandlerName: handlerName,
@@ -234,15 +161,6 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 		Entries:     entries,
 	}
 
-	var rendered bytes.Buffer
-	if err := tmpl.Execute(&rendered, data); err != nil {
-		logger.Global.Fatal("Failed to generate deserialization code: template execution failed",
-			zap.String("file_name", fileName),
-			zap.String("message_type", messageType),
-			zap.Error(err),
-		)
-	}
-
-	return utils.WriteFileIfChanged(fileName, []byte(utils.NormalizeGeneratedLayout(rendered.String())))
+	return utils.RenderTemplateToFile("internal/template/player_data_loader.cpp.tmpl", fileName, data)
 }
 

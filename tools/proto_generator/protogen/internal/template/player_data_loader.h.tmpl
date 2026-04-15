@@ -1,0 +1,21 @@
+#pragma once
+#include "entt/src/entt/entity/registry.hpp"
+#include "proto/common/database/player_cache.pb.h"
+{{- range .Entries }}
+void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message);
+void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);
+{{ end }}
+
+inline void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
+{
+{{- range .Entries }}
+{{.HandlerName}}MessageFieldsMarshal(player, *message.mutable_{{.MessageType}}_data());
+{{- end }}
+}
+
+inline void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
+{
+{{- range .Entries }}
+{{.HandlerName}}MessageFieldsUnmarshal(player, message.{{.MessageType}}_data());
+{{- end }}
+}

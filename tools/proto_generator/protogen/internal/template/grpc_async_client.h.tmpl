@@ -1,0 +1,75 @@
+#pragma once
+#include <memory>
+#include <boost/circular_buffer.hpp>
+#include "entt/src/entt/entity/registry.hpp"
+#include "grpc_client/grpc_call_tag.h"
+{{.GrpcIncludeHeadName}}
+{{ range $index, $m := .ServiceInfo }}
+  {{- if eq $index 0 }}
+{{$m.ServiceInfoIncludeName}}
+  {{- end }}
+{{- end }}
+
+using grpc::ClientContext;
+using grpc::Status;
+using grpc::ClientAsyncResponseReader;
+
+namespace {{.Package}} {
+{{- range $svc := .ServiceInfo }}
+using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
+
+{{- range $method := $svc.Methods }}
+#pragma region {{ $svc.Service }}{{ $method.Method }}
+{{ if $method.ClientStreaming }}
+
+struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
+    uint32_t messageId{ {{ $svc.Service }}{{ $method.Method }}MessageId };
+    ClientContext context;
+    Status status;
+    {{ $method.CppResponse }} reply;
+    std::unique_ptr<grpc::ClientAsyncReaderWriter<{{ $method.CppRequest }}, {{ $method.CppResponse }}>> stream;
+};
+
+struct {{ $method.RequestName }}Buffer {
+    boost::circular_buffer<{{ $method.CppRequest }}> pendingWritesBuffer{200};
+};
+
+struct {{ $method.RequestName }}WriteInProgress {
+    bool isInProgress{false};
+};
+
+{{ else }}
+
+struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
+    uint32_t messageId{ {{ $svc.Service }}{{ $method.Method }}MessageId };
+    ClientContext context;
+    Status status;
+    {{ $method.CppResponse }} reply;
+    std::unique_ptr<ClientAsyncResponseReader<{{ $method.CppResponse }}>> response_reader;
+};
+
+{{ end }}
+
+class {{ $method.CppRequest }};
+using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType =
+    std::function<void(const ClientContext&, const {{ $method.CppResponse }}&)>;
+extern Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}Handler;
+
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request);
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
+
+{{- end }}
+{{- end }}
+
+{{- range $index, $svc := .ServiceInfo }}
+  {{- if eq $index 0 }}
+void Set{{$svc.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void Set{{$svc.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void Handle{{$svc.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+void Init{{$svc.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+  {{- end }}
+{{- end }}
+
+}// namespace {{.Package}}

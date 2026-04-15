@@ -329,8 +329,12 @@ exit /b 0
 
 :: ================================================================
 :proto
-echo Regenerating proto code...
-%PS% -File tools\scripts\dev_tools.ps1 -Command proto-gen-run -ConfigPath tools\proto_generator\protogen\etc\proto_gen.yaml
+echo [1/2] Building proto generator...
+%PS% -File tools\scripts\dev_tools.ps1 -Command proto-gen-build
+if errorlevel 1 ( echo Proto generator build failed. & pause & exit /b 1 )
+echo.
+echo [2/2] Regenerating proto code...
+%PS% -File tools\scripts\dev_tools.ps1 -Command proto-gen-run -UseBinary -ConfigPath tools\proto_generator\protogen\etc\proto_gen.yaml
 if errorlevel 1 ( echo Proto generation failed. & pause & exit /b 1 )
 echo Proto generation complete.
 exit /b 0

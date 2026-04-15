@@ -13,59 +13,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const handlerTotalTemplate = `package handler
-
-import (
-	"reflect"
-
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
-	"robot/generated/pb/game"
-	"robot/logic/gameobject"
-	"robot/pkg"
-	base "proto/common/base"
-)
-
-type handlerFunc func(*gameobject.Player, []byte)
-
-// unmarshalAndCall creates a handlerFunc that unmarshals body into a new
-// message of type PT and forwards it to the typed handler function.
-func unmarshalAndCall[PT proto.Message](fn func(*gameobject.Player, PT)) handlerFunc {
-	var zero PT
-	msgType := reflect.TypeOf(zero).Elem()
-	return func(player *gameobject.Player, body []byte) {
-		msg := reflect.New(msgType).Interface().(PT)
-		if err := proto.Unmarshal(body, msg); err != nil {
-			zap.L().Error("unmarshal failed", zap.Error(err))
-			return
-		}
-		fn(player, msg)
-	}
-}
-
-var messageHandlers = map[uint32]handlerFunc{
-{{- range .Cases }}
-	game.{{.MessageID}}: unmarshalAndCall({{.FunctionCall}}),
-{{- end }}
-}
-
-func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {
-	zap.L().Debug("Received message body", zap.String("response", response.String()))
-
-	player, ok := gameobject.PlayerList.Get(client.PlayerId)
-	if !ok {
-		zap.L().Error("Player not found", zap.Uint64("player_id", client.PlayerId))
-		return
-	}
-
-	if h, ok := messageHandlers[response.MessageId]; ok {
-		h(player, response.SerializedMessage)
-	} else {
-		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId))
-	}
-}
-`
-
 type HandlerCase struct {
 	MessageID    string
 	FunctionCall string
@@ -159,7 +106,7 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 	}
 	defer file.Close()
 
-	tmpl, err := template.New("handler").Parse(handlerTotalTemplate)
+	tmpl, err := template.ParseFiles("internal/template/robot_handler_total.go.tmpl")
 	if err != nil {
 		logger.Global.Fatal("Failed to parse handler template",
 			zap.Error(err),

@@ -1,12 +1,10 @@
 package cpp
 
 import (
-	"bytes"
 	"os"
 	"path"
 	"sort"
 	"sync"
-	"text/template"
 
 	"go.uber.org/zap"
 
@@ -28,19 +26,11 @@ type GrpcServiceTemplateData struct {
 	FileBaseNameCamel     string
 }
 
-// generateGrpcFile generates a gRPC file from a template and avoids duplicate writes.
-func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, text string) error {
+// generateGrpcFile generates a gRPC file from a template file and avoids duplicate writes.
+func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, tmplPath string) error {
 	if len(grpcServices) == 0 {
 		logger.Global.Fatal("Failed to generate gRPC file: service info must not be empty",
 			zap.String("target_file", fileName),
-		)
-	}
-
-	tmpl, err := template.New(fileName).Parse(text)
-	if err != nil {
-		logger.Global.Fatal("Failed to generate gRPC file: template parsing failed",
-			zap.String("template_name", fileName),
-			zap.Error(err),
 		)
 	}
 
@@ -53,16 +43,9 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 		FileBaseNameCamel:     grpcServices[0].FileBaseNameCamel(),
 	}
 
-	var generatedContent bytes.Buffer
-	if err := tmpl.Execute(&generatedContent, data); err != nil {
-		logger.Global.Fatal("Failed to generate gRPC file: template execution failed",
-			zap.String("target_file", fileName),
-			zap.Error(err),
-		)
-	}
-
-	if err := utils2.WriteFileIfChanged(fileName, []byte(utils2.NormalizeGeneratedLayout(generatedContent.String()))); err != nil {
-		logger.Global.Error("Failed to generate gRPC file: write failed",
+	if err := utils2.RenderTemplateToFile(tmplPath, fileName, data); err != nil {
+		logger.Global.Error("Failed to generate gRPC file",
+			zap.String("template_path", tmplPath),
 			zap.String("file_path", fileName),
 			zap.String("directory", path.Dir(fileName)),
 			zap.Error(err),
@@ -113,7 +96,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			cppFileBaseName := firstService.LogicalPath()
 
 			filePath := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientH
-			if err := generateGrpcFile(filePath, serviceInfo, AsyncClientHeaderTemplate); err != nil {
+			if err := generateGrpcFile(filePath, serviceInfo, "internal/template/grpc_async_client.h.tmpl"); err != nil {
 				logger.Global.Fatal("Failed to generate gRPC client header file",
 					zap.String("file_path", filePath),
 					zap.String("proto_file", protoFile),
@@ -122,7 +105,7 @@ func CppGrpcCallClient(wg *sync.WaitGroup) {
 			}
 
 			filePathCpp := _config.Global.Paths.CppGenGrpcDir + cppFileBaseName + _config.Global.FileExtensions.GrpcClientCpp
-			if err := generateGrpcFile(filePathCpp, serviceInfo, AsyncClientCppHandleTemplate); err != nil {
+			if err := generateGrpcFile(filePathCpp, serviceInfo, "internal/template/grpc_async_client.cpp.tmpl"); err != nil {
 				logger.Global.Fatal("Failed to generate gRPC client cpp file",
 					zap.String("file_path", filePathCpp),
 					zap.String("proto_file", protoFile),
