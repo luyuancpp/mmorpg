@@ -1,0 +1,18 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "BaseSceneTableOuterClass";
+option java_multiple_files = true;
+
+
+message BaseSceneTable {
+	uint32 id = 1;
+	string nav_bin_file = 2;
+}
+
+message BaseSceneTableData {
+	repeated BaseSceneTable data = 1;
+}

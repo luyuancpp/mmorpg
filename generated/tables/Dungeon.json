@@ -1,0 +1,22 @@
+{
+ "data": [
+  {
+   "id": 1,
+   "max_team_size": 5,
+   "scene_id": 17,
+   "time_limit": 1800
+  },
+  {
+   "id": 2,
+   "max_team_size": 5,
+   "scene_id": 18,
+   "time_limit": 3600
+  },
+  {
+   "id": 3,
+   "max_team_size": 10,
+   "scene_id": 19,
+   "time_limit": 1800
+  }
+ ]
+}
