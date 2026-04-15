@@ -14,16 +14,24 @@ import (
 
 
 
-type ItemTableManager struct {
+// itemSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type itemSnapshot struct {
     data   []*pb.ItemTable
     kvData map[uint32]*pb.ItemTable
+}
+
+type ItemTableManager struct {
+    snap *itemSnapshot
 }
 
 var ItemTableManagerInstance = NewItemTableManager()
 
 func NewItemTableManager() *ItemTableManager {
     return &ItemTableManager{
-        kvData: make(map[uint32]*pb.ItemTable),
+        snap: &itemSnapshot{
+            kvData: make(map[uint32]*pb.ItemTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *ItemTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &itemSnapshot{
+        kvData: make(map[uint32]*pb.ItemTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *ItemTableManager) FindAll() []*pb.ItemTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *ItemTableManager) FindById(id uint32) (*pb.ItemTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *ItemTableManager) FindById(id uint32) (*pb.ItemTable, bool) {
 // ---- Exists ----
 
 func (m *ItemTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *ItemTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *ItemTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *ItemTableManager) Count() int {
 func (m *ItemTableManager) FindByIds(ids []uint32) []*pb.ItemTable {
     result := make([]*pb.ItemTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *ItemTableManager) FindByIds(ids []uint32) []*pb.ItemTable {
 // ---- RandOne ----
 
 func (m *ItemTableManager) RandOne() (*pb.ItemTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *ItemTableManager) RandOne() (*pb.ItemTable, bool) {
 
 func (m *ItemTableManager) Where(pred func(*pb.ItemTable) bool) []*pb.ItemTable {
     var result []*pb.ItemTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *ItemTableManager) Where(pred func(*pb.ItemTable) bool) []*pb.ItemTable 
 }
 
 func (m *ItemTableManager) First(pred func(*pb.ItemTable) bool) (*pb.ItemTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

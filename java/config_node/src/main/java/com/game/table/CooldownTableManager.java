@@ -20,10 +20,28 @@ public class CooldownTableManager {
 
     private static final CooldownTableManager INSTANCE = new CooldownTableManager();
 
-    private CooldownTableData data;
-    private final Map<Integer, CooldownTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final CooldownTableData data;
+        final Map<Integer, CooldownTable> kvData;
 
 
+
+
+        Snapshot(CooldownTableData data,
+                 Map<Integer, CooldownTable> kvData) {
+            this.data = data;
+            this.kvData = kvData;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            CooldownTableData.getDefaultInstance(),
+            Collections.emptyMap()
+    );
 
     public static CooldownTableManager getInstance() {
         return INSTANCE;
@@ -38,24 +56,29 @@ public class CooldownTableManager {
             String json = Files.readString(Path.of(configDir, "cooldown.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        CooldownTableData data = builder.build();
+
+        Map<Integer, CooldownTable> kvData = new HashMap<>(data.getDataCount());
 
         for (CooldownTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
         }
+
+        this.snapshot = new Snapshot(data, kvData);
     }
 
     public CooldownTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public CooldownTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, CooldownTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
@@ -66,7 +89,7 @@ public class CooldownTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -74,7 +97,7 @@ public class CooldownTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
@@ -83,9 +106,10 @@ public class CooldownTableManager {
     // ---- FindByIds (IN) ----
 
     public List<CooldownTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<CooldownTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            CooldownTable row = kvData.get(id);
+            CooldownTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -94,23 +118,26 @@ public class CooldownTableManager {
     // ---- RandOne ----
 
     public CooldownTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<CooldownTable> where(Predicate<CooldownTable> pred) {
+        Snapshot snap = this.snapshot;
         List<CooldownTable> result = new ArrayList<>();
-        for (CooldownTable row : data.getDataList()) {
+        for (CooldownTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public CooldownTable first(Predicate<CooldownTable> pred) {
-        for (CooldownTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (CooldownTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

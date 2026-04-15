@@ -20,18 +20,48 @@ public class ConditionTableManager {
 
     private static final ConditionTableManager INSTANCE = new ConditionTableManager();
 
-    private ConditionTableData data;
-    private final Map<Integer, ConditionTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final ConditionTableData data;
+        final Map<Integer, ConditionTable> kvData;
 
 
-    private final Map<Integer, List<ConditionTable>> idxCondition1 = new HashMap<>();
 
-    private final Map<Integer, List<ConditionTable>> idxCondition2 = new HashMap<>();
+        final Map<Integer, List<ConditionTable>> idxCondition1;
 
-    private final Map<Integer, List<ConditionTable>> idxCondition3 = new HashMap<>();
+        final Map<Integer, List<ConditionTable>> idxCondition2;
 
-    private final Map<Integer, List<ConditionTable>> idxCondition4 = new HashMap<>();
+        final Map<Integer, List<ConditionTable>> idxCondition3;
 
+        final Map<Integer, List<ConditionTable>> idxCondition4;
+
+
+        Snapshot(ConditionTableData data,
+                 Map<Integer, ConditionTable> kvData,
+                 Map<Integer, List<ConditionTable>> idxCondition1,
+                 Map<Integer, List<ConditionTable>> idxCondition2,
+                 Map<Integer, List<ConditionTable>> idxCondition3,
+                 Map<Integer, List<ConditionTable>> idxCondition4) {
+            this.data = data;
+            this.kvData = kvData;
+            this.idxCondition1 = idxCondition1;
+            this.idxCondition2 = idxCondition2;
+            this.idxCondition3 = idxCondition3;
+            this.idxCondition4 = idxCondition4;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            ConditionTableData.getDefaultInstance(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap()
+    );
 
     public static ConditionTableManager getInstance() {
         return INSTANCE;
@@ -46,7 +76,13 @@ public class ConditionTableManager {
             String json = Files.readString(Path.of(configDir, "condition.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        ConditionTableData data = builder.build();
+
+        Map<Integer, ConditionTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<ConditionTable>> idxCondition1 = new HashMap<>();
+        Map<Integer, List<ConditionTable>> idxCondition2 = new HashMap<>();
+        Map<Integer, List<ConditionTable>> idxCondition3 = new HashMap<>();
+        Map<Integer, List<ConditionTable>> idxCondition4 = new HashMap<>();
 
         for (ConditionTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -63,37 +99,40 @@ public class ConditionTableManager {
                 idxCondition4.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
         }
+
+        this.snapshot = new Snapshot(data, kvData, idxCondition1, idxCondition2, idxCondition3, idxCondition4);
     }
 
     public ConditionTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public ConditionTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, ConditionTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
 
     public List<ConditionTable> findByCondition1Index(int key) {
-        return idxCondition1.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxCondition1.getOrDefault(key, Collections.emptyList());
     }
 
     public List<ConditionTable> findByCondition2Index(int key) {
-        return idxCondition2.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxCondition2.getOrDefault(key, Collections.emptyList());
     }
 
     public List<ConditionTable> findByCondition3Index(int key) {
-        return idxCondition3.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxCondition3.getOrDefault(key, Collections.emptyList());
     }
 
     public List<ConditionTable> findByCondition4Index(int key) {
-        return idxCondition4.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxCondition4.getOrDefault(key, Collections.emptyList());
     }
 
 
@@ -102,7 +141,7 @@ public class ConditionTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -110,34 +149,35 @@ public class ConditionTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
 
     public int countByCondition1Index(int key) {
-        return idxCondition1.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxCondition1.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countByCondition2Index(int key) {
-        return idxCondition2.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxCondition2.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countByCondition3Index(int key) {
-        return idxCondition3.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxCondition3.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countByCondition4Index(int key) {
-        return idxCondition4.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxCondition4.getOrDefault(key, Collections.emptyList()).size();
     }
 
 
     // ---- FindByIds (IN) ----
 
     public List<ConditionTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<ConditionTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            ConditionTable row = kvData.get(id);
+            ConditionTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -146,23 +186,26 @@ public class ConditionTableManager {
     // ---- RandOne ----
 
     public ConditionTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<ConditionTable> where(Predicate<ConditionTable> pred) {
+        Snapshot snap = this.snapshot;
         List<ConditionTable> result = new ArrayList<>();
-        for (ConditionTable row : data.getDataList()) {
+        for (ConditionTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public ConditionTable first(Predicate<ConditionTable> pred) {
-        for (ConditionTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (ConditionTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

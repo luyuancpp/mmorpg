@@ -20,16 +20,43 @@ public class MissionTableManager {
 
     private static final MissionTableManager INSTANCE = new MissionTableManager();
 
-    private MissionTableData data;
-    private final Map<Integer, MissionTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final MissionTableData data;
+        final Map<Integer, MissionTable> kvData;
 
 
-    private final Map<Integer, List<MissionTable>> idxCondition_id = new HashMap<>();
 
-    private final Map<Integer, List<MissionTable>> idxNext_mission_id = new HashMap<>();
+        final Map<Integer, List<MissionTable>> idxCondition_id;
 
-    private final Map<Integer, List<MissionTable>> idxTarget_count = new HashMap<>();
+        final Map<Integer, List<MissionTable>> idxNext_mission_id;
 
+        final Map<Integer, List<MissionTable>> idxTarget_count;
+
+
+        Snapshot(MissionTableData data,
+                 Map<Integer, MissionTable> kvData,
+                 Map<Integer, List<MissionTable>> idxCondition_id,
+                 Map<Integer, List<MissionTable>> idxNext_mission_id,
+                 Map<Integer, List<MissionTable>> idxTarget_count) {
+            this.data = data;
+            this.kvData = kvData;
+            this.idxCondition_id = idxCondition_id;
+            this.idxNext_mission_id = idxNext_mission_id;
+            this.idxTarget_count = idxTarget_count;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            MissionTableData.getDefaultInstance(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap()
+    );
 
     public static MissionTableManager getInstance() {
         return INSTANCE;
@@ -44,7 +71,12 @@ public class MissionTableManager {
             String json = Files.readString(Path.of(configDir, "mission.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        MissionTableData data = builder.build();
+
+        Map<Integer, MissionTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<MissionTable>> idxCondition_id = new HashMap<>();
+        Map<Integer, List<MissionTable>> idxNext_mission_id = new HashMap<>();
+        Map<Integer, List<MissionTable>> idxTarget_count = new HashMap<>();
 
         for (MissionTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -58,33 +90,36 @@ public class MissionTableManager {
                 idxTarget_count.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
         }
+
+        this.snapshot = new Snapshot(data, kvData, idxCondition_id, idxNext_mission_id, idxTarget_count);
     }
 
     public MissionTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public MissionTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, MissionTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
 
     public List<MissionTable> findByCondition_idIndex(int key) {
-        return idxCondition_id.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxCondition_id.getOrDefault(key, Collections.emptyList());
     }
 
     public List<MissionTable> findByNext_mission_idIndex(int key) {
-        return idxNext_mission_id.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxNext_mission_id.getOrDefault(key, Collections.emptyList());
     }
 
     public List<MissionTable> findByTarget_countIndex(int key) {
-        return idxTarget_count.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxTarget_count.getOrDefault(key, Collections.emptyList());
     }
 
 
@@ -93,7 +128,7 @@ public class MissionTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -101,30 +136,31 @@ public class MissionTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
 
     public int countByCondition_idIndex(int key) {
-        return idxCondition_id.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxCondition_id.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countByNext_mission_idIndex(int key) {
-        return idxNext_mission_id.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxNext_mission_id.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countByTarget_countIndex(int key) {
-        return idxTarget_count.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxTarget_count.getOrDefault(key, Collections.emptyList()).size();
     }
 
 
     // ---- FindByIds (IN) ----
 
     public List<MissionTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<MissionTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            MissionTable row = kvData.get(id);
+            MissionTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -133,23 +169,26 @@ public class MissionTableManager {
     // ---- RandOne ----
 
     public MissionTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<MissionTable> where(Predicate<MissionTable> pred) {
+        Snapshot snap = this.snapshot;
         List<MissionTable> result = new ArrayList<>();
-        for (MissionTable row : data.getDataList()) {
+        for (MissionTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public MissionTable first(Predicate<MissionTable> pred) {
-        for (MissionTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (MissionTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

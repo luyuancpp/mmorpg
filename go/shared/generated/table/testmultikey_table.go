@@ -14,7 +14,9 @@ import (
 
 
 
-type TestMultiKeyTableManager struct {
+// testmultikeySnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type testmultikeySnapshot struct {
     data   []*pb.TestMultiKeyTable
     kvData map[uint32]*pb.TestMultiKeyTable
     kvString_keyData map[string]*pb.TestMultiKeyTable
@@ -26,18 +28,24 @@ type TestMultiKeyTableManager struct {
     idxEffect map[uint32][]*pb.TestMultiKeyTable
 }
 
+type TestMultiKeyTableManager struct {
+    snap *testmultikeySnapshot
+}
+
 var TestMultiKeyTableManagerInstance = NewTestMultiKeyTableManager()
 
 func NewTestMultiKeyTableManager() *TestMultiKeyTableManager {
     return &TestMultiKeyTableManager{
-        kvData: make(map[uint32]*pb.TestMultiKeyTable),
-        kvString_keyData: make(map[string]*pb.TestMultiKeyTable),
-        kvUint32_keyData: make(map[uint32]*pb.TestMultiKeyTable),
-        kvInt32_keyData: make(map[int32]*pb.TestMultiKeyTable),
-        kvM_string_keyData: make(map[string][]*pb.TestMultiKeyTable),
-        kvM_uint32_keyData: make(map[uint32][]*pb.TestMultiKeyTable),
-        kvM_int32_keyData: make(map[int32][]*pb.TestMultiKeyTable),
-        idxEffect: make(map[uint32][]*pb.TestMultiKeyTable),
+        snap: &testmultikeySnapshot{
+            kvData: make(map[uint32]*pb.TestMultiKeyTable),
+            kvString_keyData: make(map[string]*pb.TestMultiKeyTable),
+            kvUint32_keyData: make(map[uint32]*pb.TestMultiKeyTable),
+            kvInt32_keyData: make(map[int32]*pb.TestMultiKeyTable),
+            kvM_string_keyData: make(map[string][]*pb.TestMultiKeyTable),
+            kvM_uint32_keyData: make(map[uint32][]*pb.TestMultiKeyTable),
+            kvM_int32_keyData: make(map[int32][]*pb.TestMultiKeyTable),
+            idxEffect: make(map[uint32][]*pb.TestMultiKeyTable),
+        },
     }
 }
 
@@ -64,65 +72,77 @@ func (m *TestMultiKeyTableManager) Load(configDir string, useBinary bool) error 
         }
     }
 
+    snap := &testmultikeySnapshot{
+        kvData: make(map[uint32]*pb.TestMultiKeyTable, len(container.Data)),
+        kvString_keyData: make(map[string]*pb.TestMultiKeyTable, len(container.Data)),
+        kvUint32_keyData: make(map[uint32]*pb.TestMultiKeyTable, len(container.Data)),
+        kvInt32_keyData: make(map[int32]*pb.TestMultiKeyTable, len(container.Data)),
+        kvM_string_keyData: make(map[string][]*pb.TestMultiKeyTable),
+        kvM_uint32_keyData: make(map[uint32][]*pb.TestMultiKeyTable),
+        kvM_int32_keyData: make(map[int32][]*pb.TestMultiKeyTable),
+        idxEffect: make(map[uint32][]*pb.TestMultiKeyTable),
+    }
+
     for _, row := range container.Data {
-        m.kvData[row.Id] = row
-        m.kvString_keyData[row.StringKey] = row
-        m.kvUint32_keyData[row.Uint32Key] = row
-        m.kvInt32_keyData[row.Int32Key] = row
-        m.kvM_string_keyData[row.MStringKey] = append(m.kvM_string_keyData[row.MStringKey], row)
-        m.kvM_uint32_keyData[row.MUint32Key] = append(m.kvM_uint32_keyData[row.MUint32Key], row)
-        m.kvM_int32_keyData[row.MInt32Key] = append(m.kvM_int32_keyData[row.MInt32Key], row)
+        snap.kvData[row.Id] = row
+        snap.kvString_keyData[row.StringKey] = row
+        snap.kvUint32_keyData[row.Uint32Key] = row
+        snap.kvInt32_keyData[row.Int32Key] = row
+        snap.kvM_string_keyData[row.MStringKey] = append(snap.kvM_string_keyData[row.MStringKey], row)
+        snap.kvM_uint32_keyData[row.MUint32Key] = append(snap.kvM_uint32_keyData[row.MUint32Key], row)
+        snap.kvM_int32_keyData[row.MInt32Key] = append(snap.kvM_int32_keyData[row.MInt32Key], row)
         for _, elem := range row.Effect {
-            m.idxEffect[elem] = append(m.idxEffect[elem], row)
+            snap.idxEffect[elem] = append(snap.idxEffect[elem], row)
         }
     }
 
-    m.data = container.Data
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *TestMultiKeyTableManager) FindAll() []*pb.TestMultiKeyTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *TestMultiKeyTableManager) FindById(id uint32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
 func (m *TestMultiKeyTableManager) FindByString_key(key string) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvString_keyData[key]
+    row, ok := m.snap.kvString_keyData[key]
     return row, ok
 }
 
 func (m *TestMultiKeyTableManager) FindByUint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvUint32_keyData[key]
+    row, ok := m.snap.kvUint32_keyData[key]
     return row, ok
 }
 
 func (m *TestMultiKeyTableManager) FindByInt32_key(key int32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvInt32_keyData[key]
+    row, ok := m.snap.kvInt32_keyData[key]
     return row, ok
 }
 
 
 func (m *TestMultiKeyTableManager) FindByM_string_key(key string) []*pb.TestMultiKeyTable {
-    return m.kvM_string_keyData[key]
+    return m.snap.kvM_string_keyData[key]
 }
 
 
 func (m *TestMultiKeyTableManager) FindByM_uint32_key(key uint32) []*pb.TestMultiKeyTable {
-    return m.kvM_uint32_keyData[key]
+    return m.snap.kvM_uint32_keyData[key]
 }
 
 
 func (m *TestMultiKeyTableManager) FindByM_int32_key(key int32) []*pb.TestMultiKeyTable {
-    return m.kvM_int32_keyData[key]
+    return m.snap.kvM_int32_keyData[key]
 }
 
 
 func (m *TestMultiKeyTableManager) FindByEffectIndex(key uint32) []*pb.TestMultiKeyTable {
-    return m.idxEffect[key]
+    return m.snap.idxEffect[key]
 }
 
 
@@ -130,22 +150,22 @@ func (m *TestMultiKeyTableManager) FindByEffectIndex(key uint32) []*pb.TestMulti
 // ---- Exists ----
 
 func (m *TestMultiKeyTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
 func (m *TestMultiKeyTableManager) ExistsByString_key(key string) bool {
-    _, ok := m.kvString_keyData[key]
+    _, ok := m.snap.kvString_keyData[key]
     return ok
 }
 
 func (m *TestMultiKeyTableManager) ExistsByUint32_key(key uint32) bool {
-    _, ok := m.kvUint32_keyData[key]
+    _, ok := m.snap.kvUint32_keyData[key]
     return ok
 }
 
 func (m *TestMultiKeyTableManager) ExistsByInt32_key(key int32) bool {
-    _, ok := m.kvInt32_keyData[key]
+    _, ok := m.snap.kvInt32_keyData[key]
     return ok
 }
 
@@ -154,24 +174,24 @@ func (m *TestMultiKeyTableManager) ExistsByInt32_key(key int32) bool {
 // ---- Count ----
 
 func (m *TestMultiKeyTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 func (m *TestMultiKeyTableManager) CountByM_string_key(key string) int {
-    return len(m.kvM_string_keyData[key])
+    return len(m.snap.kvM_string_keyData[key])
 }
 
 func (m *TestMultiKeyTableManager) CountByM_uint32_key(key uint32) int {
-    return len(m.kvM_uint32_keyData[key])
+    return len(m.snap.kvM_uint32_keyData[key])
 }
 
 func (m *TestMultiKeyTableManager) CountByM_int32_key(key int32) int {
-    return len(m.kvM_int32_keyData[key])
+    return len(m.snap.kvM_int32_keyData[key])
 }
 
 
 func (m *TestMultiKeyTableManager) CountByEffectIndex(key uint32) int {
-    return len(m.idxEffect[key])
+    return len(m.snap.idxEffect[key])
 }
 
 
@@ -181,7 +201,7 @@ func (m *TestMultiKeyTableManager) CountByEffectIndex(key uint32) int {
 func (m *TestMultiKeyTableManager) FindByIds(ids []uint32) []*pb.TestMultiKeyTable {
     result := make([]*pb.TestMultiKeyTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -191,14 +211,14 @@ func (m *TestMultiKeyTableManager) FindByIds(ids []uint32) []*pb.TestMultiKeyTab
 // ---- RandOne ----
 
 func (m *TestMultiKeyTableManager) RandOne() (*pb.TestMultiKeyTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 func (m *TestMultiKeyTableManager) RandOneByM_string_key(key string) (*pb.TestMultiKeyTable, bool) {
-    rows := m.kvM_string_keyData[key]
+    rows := m.snap.kvM_string_keyData[key]
     if len(rows) == 0 {
         return nil, false
     }
@@ -206,7 +226,7 @@ func (m *TestMultiKeyTableManager) RandOneByM_string_key(key string) (*pb.TestMu
 }
 
 func (m *TestMultiKeyTableManager) RandOneByM_uint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
-    rows := m.kvM_uint32_keyData[key]
+    rows := m.snap.kvM_uint32_keyData[key]
     if len(rows) == 0 {
         return nil, false
     }
@@ -214,7 +234,7 @@ func (m *TestMultiKeyTableManager) RandOneByM_uint32_key(key uint32) (*pb.TestMu
 }
 
 func (m *TestMultiKeyTableManager) RandOneByM_int32_key(key int32) (*pb.TestMultiKeyTable, bool) {
-    rows := m.kvM_int32_keyData[key]
+    rows := m.snap.kvM_int32_keyData[key]
     if len(rows) == 0 {
         return nil, false
     }
@@ -227,7 +247,7 @@ func (m *TestMultiKeyTableManager) RandOneByM_int32_key(key int32) (*pb.TestMult
 
 func (m *TestMultiKeyTableManager) Where(pred func(*pb.TestMultiKeyTable) bool) []*pb.TestMultiKeyTable {
     var result []*pb.TestMultiKeyTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -236,7 +256,7 @@ func (m *TestMultiKeyTableManager) Where(pred func(*pb.TestMultiKeyTable) bool) 
 }
 
 func (m *TestMultiKeyTableManager) First(pred func(*pb.TestMultiKeyTable) bool) (*pb.TestMultiKeyTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

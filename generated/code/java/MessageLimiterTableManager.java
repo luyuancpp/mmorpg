@@ -20,10 +20,28 @@ public class MessageLimiterTableManager {
 
     private static final MessageLimiterTableManager INSTANCE = new MessageLimiterTableManager();
 
-    private MessageLimiterTableData data;
-    private final Map<Integer, MessageLimiterTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final MessageLimiterTableData data;
+        final Map<Integer, MessageLimiterTable> kvData;
 
 
+
+
+        Snapshot(MessageLimiterTableData data,
+                 Map<Integer, MessageLimiterTable> kvData) {
+            this.data = data;
+            this.kvData = kvData;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            MessageLimiterTableData.getDefaultInstance(),
+            Collections.emptyMap()
+    );
 
     public static MessageLimiterTableManager getInstance() {
         return INSTANCE;
@@ -38,24 +56,29 @@ public class MessageLimiterTableManager {
             String json = Files.readString(Path.of(configDir, "messagelimiter.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        MessageLimiterTableData data = builder.build();
+
+        Map<Integer, MessageLimiterTable> kvData = new HashMap<>(data.getDataCount());
 
         for (MessageLimiterTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
         }
+
+        this.snapshot = new Snapshot(data, kvData);
     }
 
     public MessageLimiterTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public MessageLimiterTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, MessageLimiterTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
@@ -66,7 +89,7 @@ public class MessageLimiterTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -74,7 +97,7 @@ public class MessageLimiterTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
@@ -83,9 +106,10 @@ public class MessageLimiterTableManager {
     // ---- FindByIds (IN) ----
 
     public List<MessageLimiterTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<MessageLimiterTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            MessageLimiterTable row = kvData.get(id);
+            MessageLimiterTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -94,23 +118,26 @@ public class MessageLimiterTableManager {
     // ---- RandOne ----
 
     public MessageLimiterTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<MessageLimiterTable> where(Predicate<MessageLimiterTable> pred) {
+        Snapshot snap = this.snapshot;
         List<MessageLimiterTable> result = new ArrayList<>();
-        for (MessageLimiterTable row : data.getDataList()) {
+        for (MessageLimiterTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public MessageLimiterTable first(Predicate<MessageLimiterTable> pred) {
-        for (MessageLimiterTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (MessageLimiterTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

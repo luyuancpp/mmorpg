@@ -20,12 +20,33 @@ public class TestTableManager {
 
     private static final TestTableManager INSTANCE = new TestTableManager();
 
-    private TestTableData data;
-    private final Map<Integer, TestTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final TestTableData data;
+        final Map<Integer, TestTable> kvData;
 
 
-    private final Map<Integer, List<TestTable>> idxEffect = new HashMap<>();
 
+        final Map<Integer, List<TestTable>> idxEffect;
+
+
+        Snapshot(TestTableData data,
+                 Map<Integer, TestTable> kvData,
+                 Map<Integer, List<TestTable>> idxEffect) {
+            this.data = data;
+            this.kvData = kvData;
+            this.idxEffect = idxEffect;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            TestTableData.getDefaultInstance(),
+            Collections.emptyMap(),
+            Collections.emptyMap()
+    );
 
     public static TestTableManager getInstance() {
         return INSTANCE;
@@ -40,7 +61,10 @@ public class TestTableManager {
             String json = Files.readString(Path.of(configDir, "test.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        TestTableData data = builder.build();
+
+        Map<Integer, TestTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<TestTable>> idxEffect = new HashMap<>();
 
         for (TestTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -48,25 +72,28 @@ public class TestTableManager {
                 idxEffect.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
         }
+
+        this.snapshot = new Snapshot(data, kvData, idxEffect);
     }
 
     public TestTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public TestTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, TestTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
 
     public List<TestTable> findByEffectIndex(int key) {
-        return idxEffect.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxEffect.getOrDefault(key, Collections.emptyList());
     }
 
 
@@ -75,7 +102,7 @@ public class TestTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -83,22 +110,23 @@ public class TestTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
 
     public int countByEffectIndex(int key) {
-        return idxEffect.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxEffect.getOrDefault(key, Collections.emptyList()).size();
     }
 
 
     // ---- FindByIds (IN) ----
 
     public List<TestTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<TestTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            TestTable row = kvData.get(id);
+            TestTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -107,23 +135,26 @@ public class TestTableManager {
     // ---- RandOne ----
 
     public TestTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<TestTable> where(Predicate<TestTable> pred) {
+        Snapshot snap = this.snapshot;
         List<TestTable> result = new ArrayList<>();
-        for (TestTable row : data.getDataList()) {
+        for (TestTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public TestTable first(Predicate<TestTable> pred) {
-        for (TestTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (TestTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

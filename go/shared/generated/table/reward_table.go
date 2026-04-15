@@ -14,16 +14,24 @@ import (
 
 
 
-type RewardTableManager struct {
+// rewardSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type rewardSnapshot struct {
     data   []*pb.RewardTable
     kvData map[uint32]*pb.RewardTable
+}
+
+type RewardTableManager struct {
+    snap *rewardSnapshot
 }
 
 var RewardTableManagerInstance = NewRewardTableManager()
 
 func NewRewardTableManager() *RewardTableManager {
     return &RewardTableManager{
-        kvData: make(map[uint32]*pb.RewardTable),
+        snap: &rewardSnapshot{
+            kvData: make(map[uint32]*pb.RewardTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *RewardTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &rewardSnapshot{
+        kvData: make(map[uint32]*pb.RewardTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *RewardTableManager) FindAll() []*pb.RewardTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *RewardTableManager) FindById(id uint32) (*pb.RewardTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *RewardTableManager) FindById(id uint32) (*pb.RewardTable, bool) {
 // ---- Exists ----
 
 func (m *RewardTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *RewardTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *RewardTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *RewardTableManager) Count() int {
 func (m *RewardTableManager) FindByIds(ids []uint32) []*pb.RewardTable {
     result := make([]*pb.RewardTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *RewardTableManager) FindByIds(ids []uint32) []*pb.RewardTable {
 // ---- RandOne ----
 
 func (m *RewardTableManager) RandOne() (*pb.RewardTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *RewardTableManager) RandOne() (*pb.RewardTable, bool) {
 
 func (m *RewardTableManager) Where(pred func(*pb.RewardTable) bool) []*pb.RewardTable {
     var result []*pb.RewardTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *RewardTableManager) Where(pred func(*pb.RewardTable) bool) []*pb.Reward
 }
 
 func (m *RewardTableManager) First(pred func(*pb.RewardTable) bool) (*pb.RewardTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

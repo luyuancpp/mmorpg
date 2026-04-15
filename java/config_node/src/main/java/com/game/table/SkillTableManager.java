@@ -20,16 +20,43 @@ public class SkillTableManager {
 
     private static final SkillTableManager INSTANCE = new SkillTableManager();
 
-    private SkillTableData data;
-    private final Map<Integer, SkillTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final SkillTableData data;
+        final Map<Integer, SkillTable> kvData;
 
 
-    private final Map<Integer, List<SkillTable>> idxSkill_type = new HashMap<>();
 
-    private final Map<Integer, List<SkillTable>> idxTargeting_mode = new HashMap<>();
+        final Map<Integer, List<SkillTable>> idxSkill_type;
 
-    private final Map<Integer, List<SkillTable>> idxEffect = new HashMap<>();
+        final Map<Integer, List<SkillTable>> idxTargeting_mode;
 
+        final Map<Integer, List<SkillTable>> idxEffect;
+
+
+        Snapshot(SkillTableData data,
+                 Map<Integer, SkillTable> kvData,
+                 Map<Integer, List<SkillTable>> idxSkill_type,
+                 Map<Integer, List<SkillTable>> idxTargeting_mode,
+                 Map<Integer, List<SkillTable>> idxEffect) {
+            this.data = data;
+            this.kvData = kvData;
+            this.idxSkill_type = idxSkill_type;
+            this.idxTargeting_mode = idxTargeting_mode;
+            this.idxEffect = idxEffect;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            SkillTableData.getDefaultInstance(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap()
+    );
 
     public static SkillTableManager getInstance() {
         return INSTANCE;
@@ -44,7 +71,12 @@ public class SkillTableManager {
             String json = Files.readString(Path.of(configDir, "skill.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        SkillTableData data = builder.build();
+
+        Map<Integer, SkillTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<SkillTable>> idxSkill_type = new HashMap<>();
+        Map<Integer, List<SkillTable>> idxTargeting_mode = new HashMap<>();
+        Map<Integer, List<SkillTable>> idxEffect = new HashMap<>();
 
         for (SkillTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -58,33 +90,36 @@ public class SkillTableManager {
                 idxEffect.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
         }
+
+        this.snapshot = new Snapshot(data, kvData, idxSkill_type, idxTargeting_mode, idxEffect);
     }
 
     public SkillTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public SkillTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, SkillTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
 
     public List<SkillTable> findBySkill_typeIndex(int key) {
-        return idxSkill_type.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxSkill_type.getOrDefault(key, Collections.emptyList());
     }
 
     public List<SkillTable> findByTargeting_modeIndex(int key) {
-        return idxTargeting_mode.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxTargeting_mode.getOrDefault(key, Collections.emptyList());
     }
 
     public List<SkillTable> findByEffectIndex(int key) {
-        return idxEffect.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxEffect.getOrDefault(key, Collections.emptyList());
     }
 
 
@@ -93,7 +128,7 @@ public class SkillTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -101,30 +136,31 @@ public class SkillTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
 
     public int countBySkill_typeIndex(int key) {
-        return idxSkill_type.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxSkill_type.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countByTargeting_modeIndex(int key) {
-        return idxTargeting_mode.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxTargeting_mode.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countByEffectIndex(int key) {
-        return idxEffect.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxEffect.getOrDefault(key, Collections.emptyList()).size();
     }
 
 
     // ---- FindByIds (IN) ----
 
     public List<SkillTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<SkillTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            SkillTable row = kvData.get(id);
+            SkillTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -133,23 +169,26 @@ public class SkillTableManager {
     // ---- RandOne ----
 
     public SkillTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<SkillTable> where(Predicate<SkillTable> pred) {
+        Snapshot snap = this.snapshot;
         List<SkillTable> result = new ArrayList<>();
-        for (SkillTable row : data.getDataList()) {
+        for (SkillTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public SkillTable first(Predicate<SkillTable> pred) {
-        for (SkillTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (SkillTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

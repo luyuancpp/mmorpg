@@ -14,18 +14,26 @@ import (
 
 
 
-type SkillPermissionTableManager struct {
+// skillpermissionSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type skillpermissionSnapshot struct {
     data   []*pb.SkillPermissionTable
     kvData map[uint32]*pb.SkillPermissionTable
     idxSkill_type map[uint32][]*pb.SkillPermissionTable
+}
+
+type SkillPermissionTableManager struct {
+    snap *skillpermissionSnapshot
 }
 
 var SkillPermissionTableManagerInstance = NewSkillPermissionTableManager()
 
 func NewSkillPermissionTableManager() *SkillPermissionTableManager {
     return &SkillPermissionTableManager{
-        kvData: make(map[uint32]*pb.SkillPermissionTable),
-        idxSkill_type: make(map[uint32][]*pb.SkillPermissionTable),
+        snap: &skillpermissionSnapshot{
+            kvData: make(map[uint32]*pb.SkillPermissionTable),
+            idxSkill_type: make(map[uint32][]*pb.SkillPermissionTable),
+        },
     }
 }
 
@@ -52,29 +60,35 @@ func (m *SkillPermissionTableManager) Load(configDir string, useBinary bool) err
         }
     }
 
+    snap := &skillpermissionSnapshot{
+        kvData: make(map[uint32]*pb.SkillPermissionTable, len(container.Data)),
+        idxSkill_type: make(map[uint32][]*pb.SkillPermissionTable),
+    }
+
     for _, row := range container.Data {
-        m.kvData[row.Id] = row
+        snap.kvData[row.Id] = row
         for _, elem := range row.SkillType {
-            m.idxSkill_type[elem] = append(m.idxSkill_type[elem], row)
+            snap.idxSkill_type[elem] = append(snap.idxSkill_type[elem], row)
         }
     }
 
-    m.data = container.Data
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *SkillPermissionTableManager) FindAll() []*pb.SkillPermissionTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *SkillPermissionTableManager) FindById(id uint32) (*pb.SkillPermissionTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
 
 func (m *SkillPermissionTableManager) FindBySkill_typeIndex(key uint32) []*pb.SkillPermissionTable {
-    return m.idxSkill_type[key]
+    return m.snap.idxSkill_type[key]
 }
 
 
@@ -82,7 +96,7 @@ func (m *SkillPermissionTableManager) FindBySkill_typeIndex(key uint32) []*pb.Sk
 // ---- Exists ----
 
 func (m *SkillPermissionTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -91,12 +105,12 @@ func (m *SkillPermissionTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *SkillPermissionTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
 func (m *SkillPermissionTableManager) CountBySkill_typeIndex(key uint32) int {
-    return len(m.idxSkill_type[key])
+    return len(m.snap.idxSkill_type[key])
 }
 
 
@@ -106,7 +120,7 @@ func (m *SkillPermissionTableManager) CountBySkill_typeIndex(key uint32) int {
 func (m *SkillPermissionTableManager) FindByIds(ids []uint32) []*pb.SkillPermissionTable {
     result := make([]*pb.SkillPermissionTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -116,10 +130,10 @@ func (m *SkillPermissionTableManager) FindByIds(ids []uint32) []*pb.SkillPermiss
 // ---- RandOne ----
 
 func (m *SkillPermissionTableManager) RandOne() (*pb.SkillPermissionTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -128,7 +142,7 @@ func (m *SkillPermissionTableManager) RandOne() (*pb.SkillPermissionTable, bool)
 
 func (m *SkillPermissionTableManager) Where(pred func(*pb.SkillPermissionTable) bool) []*pb.SkillPermissionTable {
     var result []*pb.SkillPermissionTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -137,7 +151,7 @@ func (m *SkillPermissionTableManager) Where(pred func(*pb.SkillPermissionTable) 
 }
 
 func (m *SkillPermissionTableManager) First(pred func(*pb.SkillPermissionTable) bool) (*pb.SkillPermissionTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

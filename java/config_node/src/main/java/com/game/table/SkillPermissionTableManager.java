@@ -20,12 +20,33 @@ public class SkillPermissionTableManager {
 
     private static final SkillPermissionTableManager INSTANCE = new SkillPermissionTableManager();
 
-    private SkillPermissionTableData data;
-    private final Map<Integer, SkillPermissionTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final SkillPermissionTableData data;
+        final Map<Integer, SkillPermissionTable> kvData;
 
 
-    private final Map<Integer, List<SkillPermissionTable>> idxSkill_type = new HashMap<>();
 
+        final Map<Integer, List<SkillPermissionTable>> idxSkill_type;
+
+
+        Snapshot(SkillPermissionTableData data,
+                 Map<Integer, SkillPermissionTable> kvData,
+                 Map<Integer, List<SkillPermissionTable>> idxSkill_type) {
+            this.data = data;
+            this.kvData = kvData;
+            this.idxSkill_type = idxSkill_type;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            SkillPermissionTableData.getDefaultInstance(),
+            Collections.emptyMap(),
+            Collections.emptyMap()
+    );
 
     public static SkillPermissionTableManager getInstance() {
         return INSTANCE;
@@ -40,7 +61,10 @@ public class SkillPermissionTableManager {
             String json = Files.readString(Path.of(configDir, "skillpermission.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        SkillPermissionTableData data = builder.build();
+
+        Map<Integer, SkillPermissionTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<SkillPermissionTable>> idxSkill_type = new HashMap<>();
 
         for (SkillPermissionTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -48,25 +72,28 @@ public class SkillPermissionTableManager {
                 idxSkill_type.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
         }
+
+        this.snapshot = new Snapshot(data, kvData, idxSkill_type);
     }
 
     public SkillPermissionTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public SkillPermissionTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, SkillPermissionTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
 
     public List<SkillPermissionTable> findBySkill_typeIndex(int key) {
-        return idxSkill_type.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxSkill_type.getOrDefault(key, Collections.emptyList());
     }
 
 
@@ -75,7 +102,7 @@ public class SkillPermissionTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -83,22 +110,23 @@ public class SkillPermissionTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
 
     public int countBySkill_typeIndex(int key) {
-        return idxSkill_type.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxSkill_type.getOrDefault(key, Collections.emptyList()).size();
     }
 
 
     // ---- FindByIds (IN) ----
 
     public List<SkillPermissionTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<SkillPermissionTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            SkillPermissionTable row = kvData.get(id);
+            SkillPermissionTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -107,23 +135,26 @@ public class SkillPermissionTableManager {
     // ---- RandOne ----
 
     public SkillPermissionTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<SkillPermissionTable> where(Predicate<SkillPermissionTable> pred) {
+        Snapshot snap = this.snapshot;
         List<SkillPermissionTable> result = new ArrayList<>();
-        for (SkillPermissionTable row : data.getDataList()) {
+        for (SkillPermissionTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public SkillPermissionTable first(Predicate<SkillPermissionTable> pred) {
-        for (SkillPermissionTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (SkillPermissionTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

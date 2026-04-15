@@ -20,10 +20,28 @@ public class RewardTableManager {
 
     private static final RewardTableManager INSTANCE = new RewardTableManager();
 
-    private RewardTableData data;
-    private final Map<Integer, RewardTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final RewardTableData data;
+        final Map<Integer, RewardTable> kvData;
 
 
+
+
+        Snapshot(RewardTableData data,
+                 Map<Integer, RewardTable> kvData) {
+            this.data = data;
+            this.kvData = kvData;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            RewardTableData.getDefaultInstance(),
+            Collections.emptyMap()
+    );
 
     public static RewardTableManager getInstance() {
         return INSTANCE;
@@ -38,24 +56,29 @@ public class RewardTableManager {
             String json = Files.readString(Path.of(configDir, "reward.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        RewardTableData data = builder.build();
+
+        Map<Integer, RewardTable> kvData = new HashMap<>(data.getDataCount());
 
         for (RewardTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
         }
+
+        this.snapshot = new Snapshot(data, kvData);
     }
 
     public RewardTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public RewardTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, RewardTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
@@ -66,7 +89,7 @@ public class RewardTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -74,7 +97,7 @@ public class RewardTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
@@ -83,9 +106,10 @@ public class RewardTableManager {
     // ---- FindByIds (IN) ----
 
     public List<RewardTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<RewardTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            RewardTable row = kvData.get(id);
+            RewardTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -94,23 +118,26 @@ public class RewardTableManager {
     // ---- RandOne ----
 
     public RewardTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<RewardTable> where(Predicate<RewardTable> pred) {
+        Snapshot snap = this.snapshot;
         List<RewardTable> result = new ArrayList<>();
-        for (RewardTable row : data.getDataList()) {
+        for (RewardTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public RewardTable first(Predicate<RewardTable> pred) {
-        for (RewardTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (RewardTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

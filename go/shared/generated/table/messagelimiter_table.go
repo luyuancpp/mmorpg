@@ -14,16 +14,24 @@ import (
 
 
 
-type MessageLimiterTableManager struct {
+// messagelimiterSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type messagelimiterSnapshot struct {
     data   []*pb.MessageLimiterTable
     kvData map[uint32]*pb.MessageLimiterTable
+}
+
+type MessageLimiterTableManager struct {
+    snap *messagelimiterSnapshot
 }
 
 var MessageLimiterTableManagerInstance = NewMessageLimiterTableManager()
 
 func NewMessageLimiterTableManager() *MessageLimiterTableManager {
     return &MessageLimiterTableManager{
-        kvData: make(map[uint32]*pb.MessageLimiterTable),
+        snap: &messagelimiterSnapshot{
+            kvData: make(map[uint32]*pb.MessageLimiterTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *MessageLimiterTableManager) Load(configDir string, useBinary bool) erro
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &messagelimiterSnapshot{
+        kvData: make(map[uint32]*pb.MessageLimiterTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *MessageLimiterTableManager) FindAll() []*pb.MessageLimiterTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *MessageLimiterTableManager) FindById(id uint32) (*pb.MessageLimiterTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *MessageLimiterTableManager) FindById(id uint32) (*pb.MessageLimiterTabl
 // ---- Exists ----
 
 func (m *MessageLimiterTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *MessageLimiterTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *MessageLimiterTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *MessageLimiterTableManager) Count() int {
 func (m *MessageLimiterTableManager) FindByIds(ids []uint32) []*pb.MessageLimiterTable {
     result := make([]*pb.MessageLimiterTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *MessageLimiterTableManager) FindByIds(ids []uint32) []*pb.MessageLimite
 // ---- RandOne ----
 
 func (m *MessageLimiterTableManager) RandOne() (*pb.MessageLimiterTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *MessageLimiterTableManager) RandOne() (*pb.MessageLimiterTable, bool) {
 
 func (m *MessageLimiterTableManager) Where(pred func(*pb.MessageLimiterTable) bool) []*pb.MessageLimiterTable {
     var result []*pb.MessageLimiterTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *MessageLimiterTableManager) Where(pred func(*pb.MessageLimiterTable) bo
 }
 
 func (m *MessageLimiterTableManager) First(pred func(*pb.MessageLimiterTable) bool) (*pb.MessageLimiterTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

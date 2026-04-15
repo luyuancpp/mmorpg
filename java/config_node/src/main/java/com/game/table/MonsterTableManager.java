@@ -20,10 +20,28 @@ public class MonsterTableManager {
 
     private static final MonsterTableManager INSTANCE = new MonsterTableManager();
 
-    private MonsterTableData data;
-    private final Map<Integer, MonsterTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final MonsterTableData data;
+        final Map<Integer, MonsterTable> kvData;
 
 
+
+
+        Snapshot(MonsterTableData data,
+                 Map<Integer, MonsterTable> kvData) {
+            this.data = data;
+            this.kvData = kvData;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            MonsterTableData.getDefaultInstance(),
+            Collections.emptyMap()
+    );
 
     public static MonsterTableManager getInstance() {
         return INSTANCE;
@@ -38,24 +56,29 @@ public class MonsterTableManager {
             String json = Files.readString(Path.of(configDir, "monster.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        MonsterTableData data = builder.build();
+
+        Map<Integer, MonsterTable> kvData = new HashMap<>(data.getDataCount());
 
         for (MonsterTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
         }
+
+        this.snapshot = new Snapshot(data, kvData);
     }
 
     public MonsterTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public MonsterTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, MonsterTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
@@ -66,7 +89,7 @@ public class MonsterTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -74,7 +97,7 @@ public class MonsterTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
@@ -83,9 +106,10 @@ public class MonsterTableManager {
     // ---- FindByIds (IN) ----
 
     public List<MonsterTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<MonsterTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            MonsterTable row = kvData.get(id);
+            MonsterTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -94,23 +118,26 @@ public class MonsterTableManager {
     // ---- RandOne ----
 
     public MonsterTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<MonsterTable> where(Predicate<MonsterTable> pred) {
+        Snapshot snap = this.snapshot;
         List<MonsterTable> result = new ArrayList<>();
-        for (MonsterTable row : data.getDataList()) {
+        for (MonsterTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public MonsterTable first(Predicate<MonsterTable> pred) {
-        for (MonsterTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (MonsterTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

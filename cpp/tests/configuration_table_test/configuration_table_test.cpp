@@ -202,6 +202,70 @@ TEST(ConfigTableTest, BuffSubBuffIndex)
 	}
 }
 
+// ---------------------------------------------------------------------------
+// Reload (hot-reload safety: snapshot swap, no accumulation)
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, ReloadDoesNotAccumulateData)
+{
+	auto &mgr = TestMultiKeyTableManager::Instance();
+	const auto countBefore = mgr.Count();
+	ASSERT_GT(countBefore, 0u);
+
+	// Reload the same data file.
+	mgr.Load();
+
+	// Count must stay the same — old snapshot replaced, not accumulated.
+	EXPECT_EQ(mgr.Count(), countBefore);
+
+	// Data should still be accessible.
+	auto [row, ok] = mgr.FindById(1);
+	ASSERT_NE(row, nullptr);
+	EXPECT_EQ(row->id(), 1u);
+}
+
+TEST(ConfigTableTest, ReloadReplacesOldPointers)
+{
+	auto &mgr = TestMultiKeyTableManager::Instance();
+
+	// Get a pointer before reload.
+	auto [rowBefore, ok1] = mgr.FindById(1);
+	ASSERT_NE(rowBefore, nullptr);
+	EXPECT_EQ(rowBefore->id(), 1u);
+
+	// Reload.
+	mgr.Load();
+
+	// New pointer should be valid and contain correct data,
+	// but will point to a different Snapshot's protobuf storage.
+	auto [rowAfter, ok2] = mgr.FindById(1);
+	ASSERT_NE(rowAfter, nullptr);
+	EXPECT_EQ(rowAfter->id(), 1u);
+	EXPECT_NE(rowBefore, rowAfter) << "reload should produce a new Snapshot";
+}
+
+TEST(ConfigTableTest, ReloadMultiKeyIndicesConsistent)
+{
+	auto &mgr = TestMultiKeyTableManager::Instance();
+
+	// Reload twice to stress test.
+	mgr.Load();
+	mgr.Load();
+
+	// Multi-key range query should still work correctly.
+	auto &data = mgr.GetM_uint32_keyData();
+	auto range = data.equal_range(17);
+	std::size_t rangeCount = 0;
+	for (auto it = range.first; it != range.second; ++it)
+	{
+		++rangeCount;
+	}
+	// Verify no accumulation: count should match initial data.
+	const auto countBefore = mgr.Count();
+	mgr.Load();
+	EXPECT_EQ(mgr.Count(), countBefore);
+}
+
 int main(int argc, char **argv)
 {
 	::testing::InitGoogleTest(&argc, argv);

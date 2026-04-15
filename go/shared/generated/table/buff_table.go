@@ -14,7 +14,9 @@ import (
 
 
 
-type BuffTableManager struct {
+// buffSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type buffSnapshot struct {
     data   []*pb.BuffTable
     kvData map[uint32]*pb.BuffTable
     idxInterval_effect map[float64][]*pb.BuffTable
@@ -22,14 +24,20 @@ type BuffTableManager struct {
     idxTarget_sub_buff map[uint32][]*pb.BuffTable
 }
 
+type BuffTableManager struct {
+    snap *buffSnapshot
+}
+
 var BuffTableManagerInstance = NewBuffTableManager()
 
 func NewBuffTableManager() *BuffTableManager {
     return &BuffTableManager{
-        kvData: make(map[uint32]*pb.BuffTable),
-        idxInterval_effect: make(map[float64][]*pb.BuffTable),
-        idxSub_buff: make(map[uint32][]*pb.BuffTable),
-        idxTarget_sub_buff: make(map[uint32][]*pb.BuffTable),
+        snap: &buffSnapshot{
+            kvData: make(map[uint32]*pb.BuffTable),
+            idxInterval_effect: make(map[float64][]*pb.BuffTable),
+            idxSub_buff: make(map[uint32][]*pb.BuffTable),
+            idxTarget_sub_buff: make(map[uint32][]*pb.BuffTable),
+        },
     }
 }
 
@@ -56,45 +64,53 @@ func (m *BuffTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
+    snap := &buffSnapshot{
+        kvData: make(map[uint32]*pb.BuffTable, len(container.Data)),
+        idxInterval_effect: make(map[float64][]*pb.BuffTable),
+        idxSub_buff: make(map[uint32][]*pb.BuffTable),
+        idxTarget_sub_buff: make(map[uint32][]*pb.BuffTable),
+    }
+
     for _, row := range container.Data {
-        m.kvData[row.Id] = row
+        snap.kvData[row.Id] = row
         for _, elem := range row.IntervalEffect {
-            m.idxInterval_effect[elem] = append(m.idxInterval_effect[elem], row)
+            snap.idxInterval_effect[elem] = append(snap.idxInterval_effect[elem], row)
         }
         for _, elem := range row.SubBuff {
-            m.idxSub_buff[elem] = append(m.idxSub_buff[elem], row)
+            snap.idxSub_buff[elem] = append(snap.idxSub_buff[elem], row)
         }
         for _, elem := range row.TargetSubBuff {
-            m.idxTarget_sub_buff[elem] = append(m.idxTarget_sub_buff[elem], row)
+            snap.idxTarget_sub_buff[elem] = append(snap.idxTarget_sub_buff[elem], row)
         }
     }
 
-    m.data = container.Data
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *BuffTableManager) FindAll() []*pb.BuffTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *BuffTableManager) FindById(id uint32) (*pb.BuffTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
 
 func (m *BuffTableManager) FindByInterval_effectIndex(key float64) []*pb.BuffTable {
-    return m.idxInterval_effect[key]
+    return m.snap.idxInterval_effect[key]
 }
 
 
 func (m *BuffTableManager) FindBySub_buffIndex(key uint32) []*pb.BuffTable {
-    return m.idxSub_buff[key]
+    return m.snap.idxSub_buff[key]
 }
 
 
 func (m *BuffTableManager) FindByTarget_sub_buffIndex(key uint32) []*pb.BuffTable {
-    return m.idxTarget_sub_buff[key]
+    return m.snap.idxTarget_sub_buff[key]
 }
 
 
@@ -102,7 +118,7 @@ func (m *BuffTableManager) FindByTarget_sub_buffIndex(key uint32) []*pb.BuffTabl
 // ---- Exists ----
 
 func (m *BuffTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -111,22 +127,22 @@ func (m *BuffTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *BuffTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
 func (m *BuffTableManager) CountByInterval_effectIndex(key float64) int {
-    return len(m.idxInterval_effect[key])
+    return len(m.snap.idxInterval_effect[key])
 }
 
 
 func (m *BuffTableManager) CountBySub_buffIndex(key uint32) int {
-    return len(m.idxSub_buff[key])
+    return len(m.snap.idxSub_buff[key])
 }
 
 
 func (m *BuffTableManager) CountByTarget_sub_buffIndex(key uint32) int {
-    return len(m.idxTarget_sub_buff[key])
+    return len(m.snap.idxTarget_sub_buff[key])
 }
 
 
@@ -136,7 +152,7 @@ func (m *BuffTableManager) CountByTarget_sub_buffIndex(key uint32) int {
 func (m *BuffTableManager) FindByIds(ids []uint32) []*pb.BuffTable {
     result := make([]*pb.BuffTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -146,10 +162,10 @@ func (m *BuffTableManager) FindByIds(ids []uint32) []*pb.BuffTable {
 // ---- RandOne ----
 
 func (m *BuffTableManager) RandOne() (*pb.BuffTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -158,7 +174,7 @@ func (m *BuffTableManager) RandOne() (*pb.BuffTable, bool) {
 
 func (m *BuffTableManager) Where(pred func(*pb.BuffTable) bool) []*pb.BuffTable {
     var result []*pb.BuffTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -167,7 +183,7 @@ func (m *BuffTableManager) Where(pred func(*pb.BuffTable) bool) []*pb.BuffTable 
 }
 
 func (m *BuffTableManager) First(pred func(*pb.BuffTable) bool) (*pb.BuffTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

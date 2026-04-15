@@ -20,10 +20,28 @@ public class DungeonTableManager {
 
     private static final DungeonTableManager INSTANCE = new DungeonTableManager();
 
-    private DungeonTableData data;
-    private final Map<Integer, DungeonTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final DungeonTableData data;
+        final Map<Integer, DungeonTable> kvData;
 
 
+
+
+        Snapshot(DungeonTableData data,
+                 Map<Integer, DungeonTable> kvData) {
+            this.data = data;
+            this.kvData = kvData;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            DungeonTableData.getDefaultInstance(),
+            Collections.emptyMap()
+    );
 
     public static DungeonTableManager getInstance() {
         return INSTANCE;
@@ -38,24 +56,29 @@ public class DungeonTableManager {
             String json = Files.readString(Path.of(configDir, "dungeon.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        DungeonTableData data = builder.build();
+
+        Map<Integer, DungeonTable> kvData = new HashMap<>(data.getDataCount());
 
         for (DungeonTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
         }
+
+        this.snapshot = new Snapshot(data, kvData);
     }
 
     public DungeonTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public DungeonTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, DungeonTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
@@ -68,7 +91,7 @@ public class DungeonTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -76,7 +99,7 @@ public class DungeonTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
@@ -85,9 +108,10 @@ public class DungeonTableManager {
     // ---- FindByIds (IN) ----
 
     public List<DungeonTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<DungeonTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            DungeonTable row = kvData.get(id);
+            DungeonTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -96,23 +120,26 @@ public class DungeonTableManager {
     // ---- RandOne ----
 
     public DungeonTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<DungeonTable> where(Predicate<DungeonTable> pred) {
+        Snapshot snap = this.snapshot;
         List<DungeonTable> result = new ArrayList<>();
-        for (DungeonTable row : data.getDataList()) {
+        for (DungeonTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public DungeonTable first(Predicate<DungeonTable> pred) {
-        for (DungeonTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (DungeonTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

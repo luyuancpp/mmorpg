@@ -20,14 +20,55 @@ public class {{ sheetname }}TableManager {
 
     private static final {{ sheetname }}TableManager INSTANCE = new {{ sheetname }}TableManager();
 
-    private {{ sheetname }}TableData data;
-    private final Map<Integer, {{ sheetname }}Table> kvData = new HashMap<>();
-{% for col in table.table_keys %}
-    private final Map<{{ to_java_boxed(col.data_type) }}, {{ sheetname }}Table> kv{{ col.name | title }}Data = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final {{ sheetname }}TableData data;
+        final Map<Integer, {{ sheetname }}Table> kvData;
+{% for col in table.table_keys if not col.is_multi_key %}
+        final Map<{{ to_java_boxed(col.data_type) }}, {{ sheetname }}Table> kv{{ col.name | title }}Data;
+{% endfor %}
+{% for col in table.table_keys if col.is_multi_key %}
+        final Map<{{ to_java_boxed(col.data_type) }}, List<{{ sheetname }}Table>> kv{{ col.name | title }}Data;
 {% endfor %}
 {% for arr in table.repeated_comp_arrays %}
-    private final Map<{{ to_java_repeated_elem_type(arr.data_type) }}, List<{{ sheetname }}Table>> idx{{ arr.name | title }} = new HashMap<>();
+        final Map<{{ to_java_repeated_elem_type(arr.data_type) }}, List<{{ sheetname }}Table>> idx{{ arr.name | title }};
 {% endfor %}
+
+        Snapshot({{ sheetname }}TableData data,
+                 Map<Integer, {{ sheetname }}Table> kvData
+{%- for col in table.table_keys if not col.is_multi_key %},
+                 Map<{{ to_java_boxed(col.data_type) }}, {{ sheetname }}Table> kv{{ col.name | title }}Data
+{%- endfor %}
+{%- for col in table.table_keys if col.is_multi_key %},
+                 Map<{{ to_java_boxed(col.data_type) }}, List<{{ sheetname }}Table>> kv{{ col.name | title }}Data
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %},
+                 Map<{{ to_java_repeated_elem_type(arr.data_type) }}, List<{{ sheetname }}Table>> idx{{ arr.name | title }}
+{%- endfor %}) {
+            this.data = data;
+            this.kvData = kvData;
+{%- for col in table.table_keys %}
+            this.kv{{ col.name | title }}Data = kv{{ col.name | title }}Data;
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+            this.idx{{ arr.name | title }} = idx{{ arr.name | title }};
+{%- endfor %}
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            {{ sheetname }}TableData.getDefaultInstance(),
+            Collections.emptyMap()
+{%- for col in table.table_keys %},
+            Collections.emptyMap()
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %},
+            Collections.emptyMap()
+{%- endfor %}
+    );
 
     public static {{ sheetname }}TableManager getInstance() {
         return INSTANCE;
@@ -42,12 +83,26 @@ public class {{ sheetname }}TableManager {
             String json = Files.readString(Path.of(configDir, "{{ sheetname | lower }}.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        {{ sheetname }}TableData data = builder.build();
+
+        Map<Integer, {{ sheetname }}Table> kvData = new HashMap<>(data.getDataCount());
+{%- for col in table.table_keys if not col.is_multi_key %}
+        Map<{{ to_java_boxed(col.data_type) }}, {{ sheetname }}Table> kv{{ col.name | title }}Data = new HashMap<>(data.getDataCount());
+{%- endfor %}
+{%- for col in table.table_keys if col.is_multi_key %}
+        Map<{{ to_java_boxed(col.data_type) }}, List<{{ sheetname }}Table>> kv{{ col.name | title }}Data = new HashMap<>();
+{%- endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+        Map<{{ to_java_repeated_elem_type(arr.data_type) }}, List<{{ sheetname }}Table>> idx{{ arr.name | title }} = new HashMap<>();
+{%- endfor %}
 
         for ({{ sheetname }}Table row : data.getDataList()) {
             kvData.put(row.getId(), row);
-{%- for col in table.table_keys %}
+{%- for col in table.table_keys if not col.is_multi_key %}
             kv{{ col.name | title }}Data.put(row.{{ to_java_proto_getter(col.name) }}(), row);
+{%- endfor %}
+{%- for col in table.table_keys if col.is_multi_key %}
+            kv{{ col.name | title }}Data.computeIfAbsent(row.{{ to_java_proto_getter(col.name) }}(), k -> new ArrayList<>()).add(row);
 {%- endfor %}
 {%- for arr in table.repeated_comp_arrays %}
             for ({{ to_java_repeated_elem_type(arr.data_type) }} elem : row.{{ to_java_proto_getter(arr.name) }}List()) {
@@ -55,29 +110,38 @@ public class {{ sheetname }}TableManager {
             }
 {%- endfor %}
         }
+
+        this.snapshot = new Snapshot(data, kvData
+{%- for col in table.table_keys %}, kv{{ col.name | title }}Data{% endfor %}
+{%- for arr in table.repeated_comp_arrays %}, idx{{ arr.name | title }}{% endfor %});
     }
 
     public {{ sheetname }}TableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public {{ sheetname }}Table findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, {{ sheetname }}Table> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
 
-{% for col in table.table_keys %}
+{% for col in table.table_keys if not col.is_multi_key %}
     public {{ sheetname }}Table findBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
-        return kv{{ col.name | title }}Data.get(key);
+        return snapshot.kv{{ col.name | title }}Data.get(key);
+    }
+{% endfor %}
+{% for col in table.table_keys if col.is_multi_key %}
+    public List<{{ sheetname }}Table> findBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
+        return snapshot.kv{{ col.name | title }}Data.getOrDefault(key, Collections.emptyList());
     }
 {% endfor %}
 
 {% for arr in table.repeated_comp_arrays %}
     public List<{{ sheetname }}Table> findBy{{ arr.name | title }}Index({{ to_java_type(arr.data_type) }} key) {
-        return idx{{ arr.name | title }}.getOrDefault(key, Collections.emptyList());
+        return snapshot.idx{{ arr.name | title }}.getOrDefault(key, Collections.emptyList());
     }
 {% endfor %}
 
@@ -88,38 +152,39 @@ public class {{ sheetname }}TableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 {% for col in table.table_keys if not col.is_multi_key %}
     public boolean existsBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
-        return kv{{ col.name | title }}Data.containsKey(key);
+        return snapshot.kv{{ col.name | title }}Data.containsKey(key);
     }
 {% endfor %}
 
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 {% for col in table.table_keys if col.is_multi_key %}
     public int countBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
-        return kv{{ col.name | title }}Data.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.kv{{ col.name | title }}Data.getOrDefault(key, Collections.emptyList()).size();
     }
 {% endfor %}
 {% for arr in table.repeated_comp_arrays %}
     public int countBy{{ arr.name | title }}Index({{ to_java_type(arr.data_type) }} key) {
-        return idx{{ arr.name | title }}.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idx{{ arr.name | title }}.getOrDefault(key, Collections.emptyList()).size();
     }
 {% endfor %}
 
     // ---- FindByIds (IN) ----
 
     public List<{{ sheetname }}Table> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<{{ sheetname }}Table> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            {{ sheetname }}Table row = kvData.get(id);
+            {{ sheetname }}Table row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -128,23 +193,26 @@ public class {{ sheetname }}TableManager {
     // ---- RandOne ----
 
     public {{ sheetname }}Table randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<{{ sheetname }}Table> where(Predicate<{{ sheetname }}Table> pred) {
+        Snapshot snap = this.snapshot;
         List<{{ sheetname }}Table> result = new ArrayList<>();
-        for ({{ sheetname }}Table row : data.getDataList()) {
+        for ({{ sheetname }}Table row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public {{ sheetname }}Table first(Predicate<{{ sheetname }}Table> pred) {
-        for ({{ sheetname }}Table row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for ({{ sheetname }}Table row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;
