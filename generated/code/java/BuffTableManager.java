@@ -20,16 +20,43 @@ public class BuffTableManager {
 
     private static final BuffTableManager INSTANCE = new BuffTableManager();
 
-    private BuffTableData data;
-    private final Map<Integer, BuffTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final BuffTableData data;
+        final Map<Integer, BuffTable> kvData;
 
 
-    private final Map<Double, List<BuffTable>> idxInterval_effect = new HashMap<>();
 
-    private final Map<Integer, List<BuffTable>> idxSub_buff = new HashMap<>();
+        final Map<Double, List<BuffTable>> idxInterval_effect;
 
-    private final Map<Integer, List<BuffTable>> idxTarget_sub_buff = new HashMap<>();
+        final Map<Integer, List<BuffTable>> idxSub_buff;
 
+        final Map<Integer, List<BuffTable>> idxTarget_sub_buff;
+
+
+        Snapshot(BuffTableData data,
+                 Map<Integer, BuffTable> kvData,
+                 Map<Double, List<BuffTable>> idxInterval_effect,
+                 Map<Integer, List<BuffTable>> idxSub_buff,
+                 Map<Integer, List<BuffTable>> idxTarget_sub_buff) {
+            this.data = data;
+            this.kvData = kvData;
+            this.idxInterval_effect = idxInterval_effect;
+            this.idxSub_buff = idxSub_buff;
+            this.idxTarget_sub_buff = idxTarget_sub_buff;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            BuffTableData.getDefaultInstance(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap()
+    );
 
     public static BuffTableManager getInstance() {
         return INSTANCE;
@@ -44,7 +71,12 @@ public class BuffTableManager {
             String json = Files.readString(Path.of(configDir, "buff.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        BuffTableData data = builder.build();
+
+        Map<Integer, BuffTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Double, List<BuffTable>> idxInterval_effect = new HashMap<>();
+        Map<Integer, List<BuffTable>> idxSub_buff = new HashMap<>();
+        Map<Integer, List<BuffTable>> idxTarget_sub_buff = new HashMap<>();
 
         for (BuffTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -58,33 +90,36 @@ public class BuffTableManager {
                 idxTarget_sub_buff.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
         }
+
+        this.snapshot = new Snapshot(data, kvData, idxInterval_effect, idxSub_buff, idxTarget_sub_buff);
     }
 
     public BuffTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public BuffTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, BuffTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
 
     public List<BuffTable> findByInterval_effectIndex(double key) {
-        return idxInterval_effect.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxInterval_effect.getOrDefault(key, Collections.emptyList());
     }
 
     public List<BuffTable> findBySub_buffIndex(int key) {
-        return idxSub_buff.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxSub_buff.getOrDefault(key, Collections.emptyList());
     }
 
     public List<BuffTable> findByTarget_sub_buffIndex(int key) {
-        return idxTarget_sub_buff.getOrDefault(key, Collections.emptyList());
+        return snapshot.idxTarget_sub_buff.getOrDefault(key, Collections.emptyList());
     }
 
 
@@ -93,7 +128,7 @@ public class BuffTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -101,30 +136,31 @@ public class BuffTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
 
     public int countByInterval_effectIndex(double key) {
-        return idxInterval_effect.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxInterval_effect.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countBySub_buffIndex(int key) {
-        return idxSub_buff.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxSub_buff.getOrDefault(key, Collections.emptyList()).size();
     }
 
     public int countByTarget_sub_buffIndex(int key) {
-        return idxTarget_sub_buff.getOrDefault(key, Collections.emptyList()).size();
+        return snapshot.idxTarget_sub_buff.getOrDefault(key, Collections.emptyList()).size();
     }
 
 
     // ---- FindByIds (IN) ----
 
     public List<BuffTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<BuffTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            BuffTable row = kvData.get(id);
+            BuffTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -133,23 +169,26 @@ public class BuffTableManager {
     // ---- RandOne ----
 
     public BuffTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<BuffTable> where(Predicate<BuffTable> pred) {
+        Snapshot snap = this.snapshot;
         List<BuffTable> result = new ArrayList<>();
-        for (BuffTable row : data.getDataList()) {
+        for (BuffTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public BuffTable first(Predicate<BuffTable> pred) {
-        for (BuffTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (BuffTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

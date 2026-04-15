@@ -20,10 +20,28 @@ public class WorldTableManager {
 
     private static final WorldTableManager INSTANCE = new WorldTableManager();
 
-    private WorldTableData data;
-    private final Map<Integer, WorldTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final WorldTableData data;
+        final Map<Integer, WorldTable> kvData;
 
 
+
+
+        Snapshot(WorldTableData data,
+                 Map<Integer, WorldTable> kvData) {
+            this.data = data;
+            this.kvData = kvData;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            WorldTableData.getDefaultInstance(),
+            Collections.emptyMap()
+    );
 
     public static WorldTableManager getInstance() {
         return INSTANCE;
@@ -38,24 +56,29 @@ public class WorldTableManager {
             String json = Files.readString(Path.of(configDir, "world.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        WorldTableData data = builder.build();
+
+        Map<Integer, WorldTable> kvData = new HashMap<>(data.getDataCount());
 
         for (WorldTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
         }
+
+        this.snapshot = new Snapshot(data, kvData);
     }
 
     public WorldTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public WorldTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, WorldTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
@@ -68,7 +91,7 @@ public class WorldTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -76,7 +99,7 @@ public class WorldTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
@@ -85,9 +108,10 @@ public class WorldTableManager {
     // ---- FindByIds (IN) ----
 
     public List<WorldTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<WorldTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            WorldTable row = kvData.get(id);
+            WorldTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -96,23 +120,26 @@ public class WorldTableManager {
     // ---- RandOne ----
 
     public WorldTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<WorldTable> where(Predicate<WorldTable> pred) {
+        Snapshot snap = this.snapshot;
         List<WorldTable> result = new ArrayList<>();
-        for (WorldTable row : data.getDataList()) {
+        for (WorldTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public WorldTable first(Predicate<WorldTable> pred) {
-        for (WorldTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (WorldTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

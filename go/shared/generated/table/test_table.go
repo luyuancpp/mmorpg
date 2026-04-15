@@ -14,18 +14,26 @@ import (
 
 
 
-type TestTableManager struct {
+// testSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type testSnapshot struct {
     data   []*pb.TestTable
     kvData map[uint32]*pb.TestTable
     idxEffect map[uint32][]*pb.TestTable
+}
+
+type TestTableManager struct {
+    snap *testSnapshot
 }
 
 var TestTableManagerInstance = NewTestTableManager()
 
 func NewTestTableManager() *TestTableManager {
     return &TestTableManager{
-        kvData: make(map[uint32]*pb.TestTable),
-        idxEffect: make(map[uint32][]*pb.TestTable),
+        snap: &testSnapshot{
+            kvData: make(map[uint32]*pb.TestTable),
+            idxEffect: make(map[uint32][]*pb.TestTable),
+        },
     }
 }
 
@@ -52,29 +60,35 @@ func (m *TestTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
+    snap := &testSnapshot{
+        kvData: make(map[uint32]*pb.TestTable, len(container.Data)),
+        idxEffect: make(map[uint32][]*pb.TestTable),
+    }
+
     for _, row := range container.Data {
-        m.kvData[row.Id] = row
+        snap.kvData[row.Id] = row
         for _, elem := range row.Effect {
-            m.idxEffect[elem] = append(m.idxEffect[elem], row)
+            snap.idxEffect[elem] = append(snap.idxEffect[elem], row)
         }
     }
 
-    m.data = container.Data
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *TestTableManager) FindAll() []*pb.TestTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *TestTableManager) FindById(id uint32) (*pb.TestTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
 
 func (m *TestTableManager) FindByEffectIndex(key uint32) []*pb.TestTable {
-    return m.idxEffect[key]
+    return m.snap.idxEffect[key]
 }
 
 
@@ -82,7 +96,7 @@ func (m *TestTableManager) FindByEffectIndex(key uint32) []*pb.TestTable {
 // ---- Exists ----
 
 func (m *TestTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -91,12 +105,12 @@ func (m *TestTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *TestTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
 func (m *TestTableManager) CountByEffectIndex(key uint32) int {
-    return len(m.idxEffect[key])
+    return len(m.snap.idxEffect[key])
 }
 
 
@@ -106,7 +120,7 @@ func (m *TestTableManager) CountByEffectIndex(key uint32) int {
 func (m *TestTableManager) FindByIds(ids []uint32) []*pb.TestTable {
     result := make([]*pb.TestTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -116,10 +130,10 @@ func (m *TestTableManager) FindByIds(ids []uint32) []*pb.TestTable {
 // ---- RandOne ----
 
 func (m *TestTableManager) RandOne() (*pb.TestTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -128,7 +142,7 @@ func (m *TestTableManager) RandOne() (*pb.TestTable, bool) {
 
 func (m *TestTableManager) Where(pred func(*pb.TestTable) bool) []*pb.TestTable {
     var result []*pb.TestTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -137,7 +151,7 @@ func (m *TestTableManager) Where(pred func(*pb.TestTable) bool) []*pb.TestTable 
 }
 
 func (m *TestTableManager) First(pred func(*pb.TestTable) bool) (*pb.TestTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

@@ -14,16 +14,24 @@ import (
 
 
 
-type ActorActionStateTableManager struct {
+// actoractionstateSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type actoractionstateSnapshot struct {
     data   []*pb.ActorActionStateTable
     kvData map[uint32]*pb.ActorActionStateTable
+}
+
+type ActorActionStateTableManager struct {
+    snap *actoractionstateSnapshot
 }
 
 var ActorActionStateTableManagerInstance = NewActorActionStateTableManager()
 
 func NewActorActionStateTableManager() *ActorActionStateTableManager {
     return &ActorActionStateTableManager{
-        kvData: make(map[uint32]*pb.ActorActionStateTable),
+        snap: &actoractionstateSnapshot{
+            kvData: make(map[uint32]*pb.ActorActionStateTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *ActorActionStateTableManager) Load(configDir string, useBinary bool) er
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &actoractionstateSnapshot{
+        kvData: make(map[uint32]*pb.ActorActionStateTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *ActorActionStateTableManager) FindAll() []*pb.ActorActionStateTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *ActorActionStateTableManager) FindById(id uint32) (*pb.ActorActionStateTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *ActorActionStateTableManager) FindById(id uint32) (*pb.ActorActionState
 // ---- Exists ----
 
 func (m *ActorActionStateTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *ActorActionStateTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *ActorActionStateTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *ActorActionStateTableManager) Count() int {
 func (m *ActorActionStateTableManager) FindByIds(ids []uint32) []*pb.ActorActionStateTable {
     result := make([]*pb.ActorActionStateTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *ActorActionStateTableManager) FindByIds(ids []uint32) []*pb.ActorAction
 // ---- RandOne ----
 
 func (m *ActorActionStateTableManager) RandOne() (*pb.ActorActionStateTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *ActorActionStateTableManager) RandOne() (*pb.ActorActionStateTable, boo
 
 func (m *ActorActionStateTableManager) Where(pred func(*pb.ActorActionStateTable) bool) []*pb.ActorActionStateTable {
     var result []*pb.ActorActionStateTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *ActorActionStateTableManager) Where(pred func(*pb.ActorActionStateTable
 }
 
 func (m *ActorActionStateTableManager) First(pred func(*pb.ActorActionStateTable) bool) (*pb.ActorActionStateTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

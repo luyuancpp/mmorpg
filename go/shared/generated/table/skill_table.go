@@ -14,7 +14,9 @@ import (
 
 
 
-type SkillTableManager struct {
+// skillSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type skillSnapshot struct {
     data   []*pb.SkillTable
     kvData map[uint32]*pb.SkillTable
     idxSkill_type map[uint32][]*pb.SkillTable
@@ -22,14 +24,20 @@ type SkillTableManager struct {
     idxEffect map[uint32][]*pb.SkillTable
 }
 
+type SkillTableManager struct {
+    snap *skillSnapshot
+}
+
 var SkillTableManagerInstance = NewSkillTableManager()
 
 func NewSkillTableManager() *SkillTableManager {
     return &SkillTableManager{
-        kvData: make(map[uint32]*pb.SkillTable),
-        idxSkill_type: make(map[uint32][]*pb.SkillTable),
-        idxTargeting_mode: make(map[uint32][]*pb.SkillTable),
-        idxEffect: make(map[uint32][]*pb.SkillTable),
+        snap: &skillSnapshot{
+            kvData: make(map[uint32]*pb.SkillTable),
+            idxSkill_type: make(map[uint32][]*pb.SkillTable),
+            idxTargeting_mode: make(map[uint32][]*pb.SkillTable),
+            idxEffect: make(map[uint32][]*pb.SkillTable),
+        },
     }
 }
 
@@ -56,45 +64,53 @@ func (m *SkillTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
+    snap := &skillSnapshot{
+        kvData: make(map[uint32]*pb.SkillTable, len(container.Data)),
+        idxSkill_type: make(map[uint32][]*pb.SkillTable),
+        idxTargeting_mode: make(map[uint32][]*pb.SkillTable),
+        idxEffect: make(map[uint32][]*pb.SkillTable),
+    }
+
     for _, row := range container.Data {
-        m.kvData[row.Id] = row
+        snap.kvData[row.Id] = row
         for _, elem := range row.SkillType {
-            m.idxSkill_type[elem] = append(m.idxSkill_type[elem], row)
+            snap.idxSkill_type[elem] = append(snap.idxSkill_type[elem], row)
         }
         for _, elem := range row.TargetingMode {
-            m.idxTargeting_mode[elem] = append(m.idxTargeting_mode[elem], row)
+            snap.idxTargeting_mode[elem] = append(snap.idxTargeting_mode[elem], row)
         }
         for _, elem := range row.Effect {
-            m.idxEffect[elem] = append(m.idxEffect[elem], row)
+            snap.idxEffect[elem] = append(snap.idxEffect[elem], row)
         }
     }
 
-    m.data = container.Data
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *SkillTableManager) FindAll() []*pb.SkillTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *SkillTableManager) FindById(id uint32) (*pb.SkillTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
 
 func (m *SkillTableManager) FindBySkill_typeIndex(key uint32) []*pb.SkillTable {
-    return m.idxSkill_type[key]
+    return m.snap.idxSkill_type[key]
 }
 
 
 func (m *SkillTableManager) FindByTargeting_modeIndex(key uint32) []*pb.SkillTable {
-    return m.idxTargeting_mode[key]
+    return m.snap.idxTargeting_mode[key]
 }
 
 
 func (m *SkillTableManager) FindByEffectIndex(key uint32) []*pb.SkillTable {
-    return m.idxEffect[key]
+    return m.snap.idxEffect[key]
 }
 
 
@@ -102,7 +118,7 @@ func (m *SkillTableManager) FindByEffectIndex(key uint32) []*pb.SkillTable {
 // ---- Exists ----
 
 func (m *SkillTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -111,22 +127,22 @@ func (m *SkillTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *SkillTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
 func (m *SkillTableManager) CountBySkill_typeIndex(key uint32) int {
-    return len(m.idxSkill_type[key])
+    return len(m.snap.idxSkill_type[key])
 }
 
 
 func (m *SkillTableManager) CountByTargeting_modeIndex(key uint32) int {
-    return len(m.idxTargeting_mode[key])
+    return len(m.snap.idxTargeting_mode[key])
 }
 
 
 func (m *SkillTableManager) CountByEffectIndex(key uint32) int {
-    return len(m.idxEffect[key])
+    return len(m.snap.idxEffect[key])
 }
 
 
@@ -136,7 +152,7 @@ func (m *SkillTableManager) CountByEffectIndex(key uint32) int {
 func (m *SkillTableManager) FindByIds(ids []uint32) []*pb.SkillTable {
     result := make([]*pb.SkillTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -146,10 +162,10 @@ func (m *SkillTableManager) FindByIds(ids []uint32) []*pb.SkillTable {
 // ---- RandOne ----
 
 func (m *SkillTableManager) RandOne() (*pb.SkillTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -158,7 +174,7 @@ func (m *SkillTableManager) RandOne() (*pb.SkillTable, bool) {
 
 func (m *SkillTableManager) Where(pred func(*pb.SkillTable) bool) []*pb.SkillTable {
     var result []*pb.SkillTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -167,7 +183,7 @@ func (m *SkillTableManager) Where(pred func(*pb.SkillTable) bool) []*pb.SkillTab
 }
 
 func (m *SkillTableManager) First(pred func(*pb.SkillTable) bool) (*pb.SkillTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

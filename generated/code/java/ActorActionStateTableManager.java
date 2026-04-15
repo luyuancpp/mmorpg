@@ -20,10 +20,28 @@ public class ActorActionStateTableManager {
 
     private static final ActorActionStateTableManager INSTANCE = new ActorActionStateTableManager();
 
-    private ActorActionStateTableData data;
-    private final Map<Integer, ActorActionStateTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final ActorActionStateTableData data;
+        final Map<Integer, ActorActionStateTable> kvData;
 
 
+
+
+        Snapshot(ActorActionStateTableData data,
+                 Map<Integer, ActorActionStateTable> kvData) {
+            this.data = data;
+            this.kvData = kvData;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            ActorActionStateTableData.getDefaultInstance(),
+            Collections.emptyMap()
+    );
 
     public static ActorActionStateTableManager getInstance() {
         return INSTANCE;
@@ -38,24 +56,29 @@ public class ActorActionStateTableManager {
             String json = Files.readString(Path.of(configDir, "actoractionstate.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        ActorActionStateTableData data = builder.build();
+
+        Map<Integer, ActorActionStateTable> kvData = new HashMap<>(data.getDataCount());
 
         for (ActorActionStateTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
         }
+
+        this.snapshot = new Snapshot(data, kvData);
     }
 
     public ActorActionStateTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public ActorActionStateTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, ActorActionStateTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
@@ -66,7 +89,7 @@ public class ActorActionStateTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -74,7 +97,7 @@ public class ActorActionStateTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
@@ -83,9 +106,10 @@ public class ActorActionStateTableManager {
     // ---- FindByIds (IN) ----
 
     public List<ActorActionStateTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<ActorActionStateTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            ActorActionStateTable row = kvData.get(id);
+            ActorActionStateTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -94,23 +118,26 @@ public class ActorActionStateTableManager {
     // ---- RandOne ----
 
     public ActorActionStateTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<ActorActionStateTable> where(Predicate<ActorActionStateTable> pred) {
+        Snapshot snap = this.snapshot;
         List<ActorActionStateTable> result = new ArrayList<>();
-        for (ActorActionStateTable row : data.getDataList()) {
+        for (ActorActionStateTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public ActorActionStateTable first(Predicate<ActorActionStateTable> pred) {
-        for (ActorActionStateTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (ActorActionStateTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

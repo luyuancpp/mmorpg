@@ -14,16 +14,24 @@ import (
 
 
 
-type MirrorTableManager struct {
+// mirrorSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type mirrorSnapshot struct {
     data   []*pb.MirrorTable
     kvData map[uint32]*pb.MirrorTable
+}
+
+type MirrorTableManager struct {
+    snap *mirrorSnapshot
 }
 
 var MirrorTableManagerInstance = NewMirrorTableManager()
 
 func NewMirrorTableManager() *MirrorTableManager {
     return &MirrorTableManager{
-        kvData: make(map[uint32]*pb.MirrorTable),
+        snap: &mirrorSnapshot{
+            kvData: make(map[uint32]*pb.MirrorTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *MirrorTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &mirrorSnapshot{
+        kvData: make(map[uint32]*pb.MirrorTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *MirrorTableManager) FindAll() []*pb.MirrorTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *MirrorTableManager) FindById(id uint32) (*pb.MirrorTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *MirrorTableManager) FindById(id uint32) (*pb.MirrorTable, bool) {
 // ---- Exists ----
 
 func (m *MirrorTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *MirrorTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *MirrorTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *MirrorTableManager) Count() int {
 func (m *MirrorTableManager) FindByIds(ids []uint32) []*pb.MirrorTable {
     result := make([]*pb.MirrorTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *MirrorTableManager) FindByIds(ids []uint32) []*pb.MirrorTable {
 // ---- RandOne ----
 
 func (m *MirrorTableManager) RandOne() (*pb.MirrorTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *MirrorTableManager) RandOne() (*pb.MirrorTable, bool) {
 
 func (m *MirrorTableManager) Where(pred func(*pb.MirrorTable) bool) []*pb.MirrorTable {
     var result []*pb.MirrorTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *MirrorTableManager) Where(pred func(*pb.MirrorTable) bool) []*pb.Mirror
 }
 
 func (m *MirrorTableManager) First(pred func(*pb.MirrorTable) bool) (*pb.MirrorTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

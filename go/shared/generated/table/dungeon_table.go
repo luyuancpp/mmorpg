@@ -14,16 +14,24 @@ import (
 
 
 
-type DungeonTableManager struct {
+// dungeonSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type dungeonSnapshot struct {
     data   []*pb.DungeonTable
     kvData map[uint32]*pb.DungeonTable
+}
+
+type DungeonTableManager struct {
+    snap *dungeonSnapshot
 }
 
 var DungeonTableManagerInstance = NewDungeonTableManager()
 
 func NewDungeonTableManager() *DungeonTableManager {
     return &DungeonTableManager{
-        kvData: make(map[uint32]*pb.DungeonTable),
+        snap: &dungeonSnapshot{
+            kvData: make(map[uint32]*pb.DungeonTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *DungeonTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &dungeonSnapshot{
+        kvData: make(map[uint32]*pb.DungeonTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *DungeonTableManager) FindAll() []*pb.DungeonTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *DungeonTableManager) FindById(id uint32) (*pb.DungeonTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *DungeonTableManager) FindById(id uint32) (*pb.DungeonTable, bool) {
 // ---- Exists ----
 
 func (m *DungeonTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *DungeonTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *DungeonTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *DungeonTableManager) Count() int {
 func (m *DungeonTableManager) FindByIds(ids []uint32) []*pb.DungeonTable {
     result := make([]*pb.DungeonTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *DungeonTableManager) FindByIds(ids []uint32) []*pb.DungeonTable {
 // ---- RandOne ----
 
 func (m *DungeonTableManager) RandOne() (*pb.DungeonTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *DungeonTableManager) RandOne() (*pb.DungeonTable, bool) {
 
 func (m *DungeonTableManager) Where(pred func(*pb.DungeonTable) bool) []*pb.DungeonTable {
     var result []*pb.DungeonTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *DungeonTableManager) Where(pred func(*pb.DungeonTable) bool) []*pb.Dung
 }
 
 func (m *DungeonTableManager) First(pred func(*pb.DungeonTable) bool) (*pb.DungeonTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

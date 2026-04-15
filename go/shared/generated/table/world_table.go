@@ -14,16 +14,24 @@ import (
 
 
 
-type WorldTableManager struct {
+// worldSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type worldSnapshot struct {
     data   []*pb.WorldTable
     kvData map[uint32]*pb.WorldTable
+}
+
+type WorldTableManager struct {
+    snap *worldSnapshot
 }
 
 var WorldTableManagerInstance = NewWorldTableManager()
 
 func NewWorldTableManager() *WorldTableManager {
     return &WorldTableManager{
-        kvData: make(map[uint32]*pb.WorldTable),
+        snap: &worldSnapshot{
+            kvData: make(map[uint32]*pb.WorldTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *WorldTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &worldSnapshot{
+        kvData: make(map[uint32]*pb.WorldTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *WorldTableManager) FindAll() []*pb.WorldTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *WorldTableManager) FindById(id uint32) (*pb.WorldTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *WorldTableManager) FindById(id uint32) (*pb.WorldTable, bool) {
 // ---- Exists ----
 
 func (m *WorldTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *WorldTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *WorldTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *WorldTableManager) Count() int {
 func (m *WorldTableManager) FindByIds(ids []uint32) []*pb.WorldTable {
     result := make([]*pb.WorldTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *WorldTableManager) FindByIds(ids []uint32) []*pb.WorldTable {
 // ---- RandOne ----
 
 func (m *WorldTableManager) RandOne() (*pb.WorldTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *WorldTableManager) RandOne() (*pb.WorldTable, bool) {
 
 func (m *WorldTableManager) Where(pred func(*pb.WorldTable) bool) []*pb.WorldTable {
     var result []*pb.WorldTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *WorldTableManager) Where(pred func(*pb.WorldTable) bool) []*pb.WorldTab
 }
 
 func (m *WorldTableManager) First(pred func(*pb.WorldTable) bool) (*pb.WorldTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

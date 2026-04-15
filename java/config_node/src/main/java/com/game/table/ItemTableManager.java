@@ -20,10 +20,28 @@ public class ItemTableManager {
 
     private static final ItemTableManager INSTANCE = new ItemTableManager();
 
-    private ItemTableData data;
-    private final Map<Integer, ItemTable> kvData = new HashMap<>();
+    /**
+     * Internal snapshot holding all parsed data and indices.
+     * load() builds a new snapshot and swaps it in, replacing the old one.
+     */
+    private static class Snapshot {
+        final ItemTableData data;
+        final Map<Integer, ItemTable> kvData;
 
 
+
+
+        Snapshot(ItemTableData data,
+                 Map<Integer, ItemTable> kvData) {
+            this.data = data;
+            this.kvData = kvData;
+        }
+    }
+
+    private Snapshot snapshot = new Snapshot(
+            ItemTableData.getDefaultInstance(),
+            Collections.emptyMap()
+    );
 
     public static ItemTableManager getInstance() {
         return INSTANCE;
@@ -38,24 +56,29 @@ public class ItemTableManager {
             String json = Files.readString(Path.of(configDir, "item.json"));
             JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
         }
-        this.data = builder.build();
+        ItemTableData data = builder.build();
+
+        Map<Integer, ItemTable> kvData = new HashMap<>(data.getDataCount());
 
         for (ItemTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
         }
+
+        this.snapshot = new Snapshot(data, kvData);
     }
 
     public ItemTableData findAll() {
-        return data;
+        return snapshot.data;
     }
 
     public ItemTable findById(int id) {
-        return kvData.get(id);
+        return snapshot.kvData.get(id);
     }
 
     public Map<Integer, ItemTable> getKvData() {
-        return Collections.unmodifiableMap(kvData);
+        return Collections.unmodifiableMap(snapshot.kvData);
     }
+
 
 
 
@@ -66,7 +89,7 @@ public class ItemTableManager {
     // ---- Exists ----
 
     public boolean exists(int id) {
-        return kvData.containsKey(id);
+        return snapshot.kvData.containsKey(id);
     }
 
 
@@ -74,7 +97,7 @@ public class ItemTableManager {
     // ---- Count ----
 
     public int count() {
-        return kvData.size();
+        return snapshot.kvData.size();
     }
 
 
@@ -83,9 +106,10 @@ public class ItemTableManager {
     // ---- FindByIds (IN) ----
 
     public List<ItemTable> findByIds(List<Integer> ids) {
+        Snapshot snap = this.snapshot;
         List<ItemTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
-            ItemTable row = kvData.get(id);
+            ItemTable row = snap.kvData.get(id);
             if (row != null) { result.add(row); }
         }
         return result;
@@ -94,23 +118,26 @@ public class ItemTableManager {
     // ---- RandOne ----
 
     public ItemTable randOne() {
-        if (data == null || data.getDataCount() == 0) return null;
-        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
-        return data.getData(idx);
+        Snapshot snap = this.snapshot;
+        if (snap.data == null || snap.data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(snap.data.getDataCount());
+        return snap.data.getData(idx);
     }
 
     // ---- Where / First ----
 
     public List<ItemTable> where(Predicate<ItemTable> pred) {
+        Snapshot snap = this.snapshot;
         List<ItemTable> result = new ArrayList<>();
-        for (ItemTable row : data.getDataList()) {
+        for (ItemTable row : snap.data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
         }
         return result;
     }
 
     public ItemTable first(Predicate<ItemTable> pred) {
-        for (ItemTable row : data.getDataList()) {
+        Snapshot snap = this.snapshot;
+        for (ItemTable row : snap.data.getDataList()) {
             if (pred.test(row)) { return row; }
         }
         return null;

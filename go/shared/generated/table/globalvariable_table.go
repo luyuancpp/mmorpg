@@ -14,16 +14,24 @@ import (
 
 
 
-type GlobalVariableTableManager struct {
+// globalvariableSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type globalvariableSnapshot struct {
     data   []*pb.GlobalVariableTable
     kvData map[uint32]*pb.GlobalVariableTable
+}
+
+type GlobalVariableTableManager struct {
+    snap *globalvariableSnapshot
 }
 
 var GlobalVariableTableManagerInstance = NewGlobalVariableTableManager()
 
 func NewGlobalVariableTableManager() *GlobalVariableTableManager {
     return &GlobalVariableTableManager{
-        kvData: make(map[uint32]*pb.GlobalVariableTable),
+        snap: &globalvariableSnapshot{
+            kvData: make(map[uint32]*pb.GlobalVariableTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *GlobalVariableTableManager) Load(configDir string, useBinary bool) erro
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &globalvariableSnapshot{
+        kvData: make(map[uint32]*pb.GlobalVariableTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *GlobalVariableTableManager) FindAll() []*pb.GlobalVariableTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *GlobalVariableTableManager) FindById(id uint32) (*pb.GlobalVariableTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *GlobalVariableTableManager) FindById(id uint32) (*pb.GlobalVariableTabl
 // ---- Exists ----
 
 func (m *GlobalVariableTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *GlobalVariableTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *GlobalVariableTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *GlobalVariableTableManager) Count() int {
 func (m *GlobalVariableTableManager) FindByIds(ids []uint32) []*pb.GlobalVariableTable {
     result := make([]*pb.GlobalVariableTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *GlobalVariableTableManager) FindByIds(ids []uint32) []*pb.GlobalVariabl
 // ---- RandOne ----
 
 func (m *GlobalVariableTableManager) RandOne() (*pb.GlobalVariableTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *GlobalVariableTableManager) RandOne() (*pb.GlobalVariableTable, bool) {
 
 func (m *GlobalVariableTableManager) Where(pred func(*pb.GlobalVariableTable) bool) []*pb.GlobalVariableTable {
     var result []*pb.GlobalVariableTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *GlobalVariableTableManager) Where(pred func(*pb.GlobalVariableTable) bo
 }
 
 func (m *GlobalVariableTableManager) First(pred func(*pb.GlobalVariableTable) bool) (*pb.GlobalVariableTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }

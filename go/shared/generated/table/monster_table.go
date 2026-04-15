@@ -14,16 +14,24 @@ import (
 
 
 
-type MonsterTableManager struct {
+// monsterSnapshot holds all parsed data and indices.
+// Load() builds a new snapshot and swaps it in, replacing the old one.
+type monsterSnapshot struct {
     data   []*pb.MonsterTable
     kvData map[uint32]*pb.MonsterTable
+}
+
+type MonsterTableManager struct {
+    snap *monsterSnapshot
 }
 
 var MonsterTableManagerInstance = NewMonsterTableManager()
 
 func NewMonsterTableManager() *MonsterTableManager {
     return &MonsterTableManager{
-        kvData: make(map[uint32]*pb.MonsterTable),
+        snap: &monsterSnapshot{
+            kvData: make(map[uint32]*pb.MonsterTable),
+        },
     }
 }
 
@@ -50,20 +58,25 @@ func (m *MonsterTableManager) Load(configDir string, useBinary bool) error {
         }
     }
 
-    for _, row := range container.Data {
-        m.kvData[row.Id] = row
+    snap := &monsterSnapshot{
+        kvData: make(map[uint32]*pb.MonsterTable, len(container.Data)),
     }
 
-    m.data = container.Data
+    for _, row := range container.Data {
+        snap.kvData[row.Id] = row
+    }
+
+    snap.data = container.Data
+    m.snap = snap
     return nil
 }
 
 func (m *MonsterTableManager) FindAll() []*pb.MonsterTable {
-    return m.data
+    return m.snap.data
 }
 
 func (m *MonsterTableManager) FindById(id uint32) (*pb.MonsterTable, bool) {
-    row, ok := m.kvData[id]
+    row, ok := m.snap.kvData[id]
     return row, ok
 }
 
@@ -72,7 +85,7 @@ func (m *MonsterTableManager) FindById(id uint32) (*pb.MonsterTable, bool) {
 // ---- Exists ----
 
 func (m *MonsterTableManager) Exists(id uint32) bool {
-    _, ok := m.kvData[id]
+    _, ok := m.snap.kvData[id]
     return ok
 }
 
@@ -81,7 +94,7 @@ func (m *MonsterTableManager) Exists(id uint32) bool {
 // ---- Count ----
 
 func (m *MonsterTableManager) Count() int {
-    return len(m.data)
+    return len(m.snap.data)
 }
 
 
@@ -91,7 +104,7 @@ func (m *MonsterTableManager) Count() int {
 func (m *MonsterTableManager) FindByIds(ids []uint32) []*pb.MonsterTable {
     result := make([]*pb.MonsterTable, 0, len(ids))
     for _, id := range ids {
-        if row, ok := m.kvData[id]; ok {
+        if row, ok := m.snap.kvData[id]; ok {
             result = append(result, row)
         }
     }
@@ -101,10 +114,10 @@ func (m *MonsterTableManager) FindByIds(ids []uint32) []*pb.MonsterTable {
 // ---- RandOne ----
 
 func (m *MonsterTableManager) RandOne() (*pb.MonsterTable, bool) {
-    if len(m.data) == 0 {
+    if len(m.snap.data) == 0 {
         return nil, false
     }
-    return m.data[rand.IntN(len(m.data))], true
+    return m.snap.data[rand.IntN(len(m.snap.data))], true
 }
 
 
@@ -113,7 +126,7 @@ func (m *MonsterTableManager) RandOne() (*pb.MonsterTable, bool) {
 
 func (m *MonsterTableManager) Where(pred func(*pb.MonsterTable) bool) []*pb.MonsterTable {
     var result []*pb.MonsterTable
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             result = append(result, row)
         }
@@ -122,7 +135,7 @@ func (m *MonsterTableManager) Where(pred func(*pb.MonsterTable) bool) []*pb.Mons
 }
 
 func (m *MonsterTableManager) First(pred func(*pb.MonsterTable) bool) (*pb.MonsterTable, bool) {
-    for _, row := range m.data {
+    for _, row := range m.snap.data {
         if pred(row) {
             return row, true
         }
