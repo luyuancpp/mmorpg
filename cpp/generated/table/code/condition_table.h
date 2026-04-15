@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <random>
 #include <unordered_map>
 #include <vector>
@@ -14,16 +15,29 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ConditionTable*>;
     using LoadSuccessCallback = std::function<void()>;
 
+    // Internal snapshot holding all parsed data and indices.
+    // Load() builds a new snapshot and swaps it in, replacing the old one.
+    struct Snapshot {
+        ConditionTableData data;
+        KeyValueDataType kvData;
+        std::unordered_multimap<uint32_t, const ConditionTable*> idxcondition1;
+        std::unordered_multimap<uint32_t, const ConditionTable*> idxcondition2;
+        std::unordered_multimap<uint32_t, const ConditionTable*> idxcondition3;
+        std::unordered_multimap<uint32_t, const ConditionTable*> idxcondition4;
+    };
+
     static ConditionTableManager& Instance() {
         static ConditionTableManager instance;
         return instance;
     }
 
-    const ConditionTableData& FindAll() const { return data_; }
+    const Snapshot& GetSnapshot() const { return *snapshot_; }
+
+    const ConditionTableData& FindAll() const { return snapshot_->data; }
 
     std::pair<const ConditionTable*, uint32_t> FindById(uint32_t tableId);
     std::pair<const ConditionTable*, uint32_t> FindByIdSilent(uint32_t tableId);
-    const KeyValueDataType& KeyValueData() const { return kv_data_; }
+    const KeyValueDataType& KeyValueData() const { return snapshot_->kvData; }
 
     void Load();
 
@@ -33,22 +47,22 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition1Index() const { return idx_condition1_; }
-    const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition2Index() const { return idx_condition2_; }
-    const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition3Index() const { return idx_condition3_; }
-    const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition4Index() const { return idx_condition4_; }
+    const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition1Index() const { return snapshot_->idxcondition1; }
+    const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition2Index() const { return snapshot_->idxcondition2; }
+    const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition3Index() const { return snapshot_->idxcondition3; }
+    const std::unordered_multimap<uint32_t, const ConditionTable*>& GetCondition4Index() const { return snapshot_->idxcondition4; }
 
     // ---- Exists ----
 
-    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return snapshot_->kvData.count(id) > 0; }
 
     // ---- Count ----
 
-    std::size_t Count() const { return kv_data_.size(); }
-    std::size_t CountByCondition1Index(uint32_t key) const { return idx_condition1_.count(key); }
-    std::size_t CountByCondition2Index(uint32_t key) const { return idx_condition2_.count(key); }
-    std::size_t CountByCondition3Index(uint32_t key) const { return idx_condition3_.count(key); }
-    std::size_t CountByCondition4Index(uint32_t key) const { return idx_condition4_.count(key); }
+    std::size_t Count() const { return snapshot_->kvData.size(); }
+    std::size_t CountByCondition1Index(uint32_t key) const { return snapshot_->idxcondition1.count(key); }
+    std::size_t CountByCondition2Index(uint32_t key) const { return snapshot_->idxcondition2.count(key); }
+    std::size_t CountByCondition3Index(uint32_t key) const { return snapshot_->idxcondition3.count(key); }
+    std::size_t CountByCondition4Index(uint32_t key) const { return snapshot_->idxcondition4.count(key); }
 
     // ---- FindByIds (IN) ----
 
@@ -56,7 +70,7 @@ public:
         std::vector<const ConditionTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
-            if (auto it = kv_data_.find(id); it != kv_data_.end()) {
+            if (auto it = snapshot_->kvData.find(id); it != snapshot_->kvData.end()) {
                 result.push_back(it->second);
             }
         }
@@ -66,28 +80,28 @@ public:
     // ---- RandOne ----
 
     const ConditionTable* RandOne() const {
-        if (data_.data_size() == 0) return nullptr;
+        if (snapshot_->data.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
-        std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
-        return &data_.data(dist(rng));
+        std::uniform_int_distribution<int> dist(0, snapshot_->data.data_size() - 1);
+        return &snapshot_->data.data(dist(rng));
     }
 
     // ---- Where / First ----
 
     std::vector<const ConditionTable*> Where(const std::function<bool(const ConditionTable&)>& pred) const {
         std::vector<const ConditionTable*> result;
-        for (int i = 0; i < data_.data_size(); ++i) {
-            if (pred(data_.data(i))) {
-                result.push_back(&data_.data(i));
+        for (int i = 0; i < snapshot_->data.data_size(); ++i) {
+            if (pred(snapshot_->data.data(i))) {
+                result.push_back(&snapshot_->data.data(i));
             }
         }
         return result;
     }
 
     const ConditionTable* First(const std::function<bool(const ConditionTable&)>& pred) const {
-        for (int i = 0; i < data_.data_size(); ++i) {
-            if (pred(data_.data(i))) {
-                return &data_.data(i);
+        for (int i = 0; i < snapshot_->data.data_size(); ++i) {
+            if (pred(snapshot_->data.data(i))) {
+                return &snapshot_->data.data(i);
             }
         }
         return nullptr;
@@ -97,12 +111,7 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
-    ConditionTableData data_;
-    KeyValueDataType kv_data_;
-    std::unordered_multimap<uint32_t, const ConditionTable*> idx_condition1_;
-    std::unordered_multimap<uint32_t, const ConditionTable*> idx_condition2_;
-    std::unordered_multimap<uint32_t, const ConditionTable*> idx_condition3_;
-    std::unordered_multimap<uint32_t, const ConditionTable*> idx_condition4_;
+    std::unique_ptr<Snapshot> snapshot_ = std::make_unique<Snapshot>();
 };
 
 inline const ConditionTableData& FindAllConditionTable() {

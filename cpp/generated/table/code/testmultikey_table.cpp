@@ -7,40 +7,43 @@ std::string GetConfigDir();
 bool UseProtoBinaryTables();
 
 void TestMultiKeyTableManager::Load() {
-    data_.Clear();
+    auto snap = std::make_unique<Snapshot>();
 
     if (UseProtoBinaryTables()) {
         const std::string path = GetConfigDir() + "testmultikey.pb";
         const auto contents = File2String(path);
-        if (!data_.ParseFromString(contents)) {
+        if (!snap->data.ParseFromString(contents)) {
             LOG_FATAL << "TestMultiKey binary parse failed: " << path;
         }
     } else {
         const std::string path = GetConfigDir() + "testmultikey.json";
         const auto contents = File2String(path);
-        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &snap->data); !result.ok()) {
             LOG_FATAL << "TestMultiKey" << result.message().data();
         }
     }
 
-    for (int32_t i = 0; i < data_.data_size(); ++i) {
-        const auto& row_data = data_.data(i);
-        kv_data_.emplace(row_data.id(), &row_data);
-        kv_string_keydata_.emplace(row_data.string_key(), &row_data);
-        kv_uint32_keydata_.emplace(row_data.uint32_key(), &row_data);
-        kv_int32_keydata_.emplace(row_data.int32_key(), &row_data);
-        kv_m_string_keydata_.emplace(row_data.m_string_key(), &row_data);
-        kv_m_uint32_keydata_.emplace(row_data.m_uint32_key(), &row_data);
-        kv_m_int32_keydata_.emplace(row_data.m_int32_key(), &row_data);
+    for (int32_t i = 0; i < snap->data.data_size(); ++i) {
+        const auto& row_data = snap->data.data(i);
+        snap->kvData.emplace(row_data.id(), &row_data);
+        snap->kvstring_key.emplace(row_data.string_key(), &row_data);
+        snap->kvuint32_key.emplace(row_data.uint32_key(), &row_data);
+        snap->kvint32_key.emplace(row_data.int32_key(), &row_data);
+        snap->kvm_string_key.emplace(row_data.m_string_key(), &row_data);
+        snap->kvm_uint32_key.emplace(row_data.m_uint32_key(), &row_data);
+        snap->kvm_int32_key.emplace(row_data.m_int32_key(), &row_data);
         for (const auto& elem : row_data.effect()) {
-            idx_effect_.emplace(elem, &row_data);
+            snap->idxeffect.emplace(elem, &row_data);
         }
     }
+
+    snapshot_ = std::move(snap);
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindById(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         LOG_ERROR << "TestMultiKey table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -48,16 +51,18 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindById
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByIdSilent(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByString_key(const std::string& key) const {
-    const auto it = kv_string_keydata_.find(key);
-    if (it == kv_string_keydata_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvstring_key.find(key);
+    if (it == snap.kvstring_key.end()) {
         LOG_ERROR << "TestMultiKey table not found for string_key: " << key;
         return {nullptr, kInvalidTableId};
     }
@@ -65,8 +70,9 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindBySt
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByUint32_key(uint32_t key) const {
-    const auto it = kv_uint32_keydata_.find(key);
-    if (it == kv_uint32_keydata_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvuint32_key.find(key);
+    if (it == snap.kvuint32_key.end()) {
         LOG_ERROR << "TestMultiKey table not found for uint32_key: " << key;
         return {nullptr, kInvalidTableId};
     }
@@ -74,8 +80,9 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByUi
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByInt32_key(int32_t key) const {
-    const auto it = kv_int32_keydata_.find(key);
-    if (it == kv_int32_keydata_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvint32_key.find(key);
+    if (it == snap.kvint32_key.end()) {
         LOG_ERROR << "TestMultiKey table not found for int32_key: " << key;
         return {nullptr, kInvalidTableId};
     }
@@ -83,8 +90,9 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByIn
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_string_key(const std::string& key) const {
-    const auto it = kv_m_string_keydata_.find(key);
-    if (it == kv_m_string_keydata_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvm_string_key.find(key);
+    if (it == snap.kvm_string_key.end()) {
         LOG_ERROR << "TestMultiKey table not found for m_string_key: " << key;
         return {nullptr, kInvalidTableId};
     }
@@ -92,8 +100,9 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_uint32_key(uint32_t key) const {
-    const auto it = kv_m_uint32_keydata_.find(key);
-    if (it == kv_m_uint32_keydata_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvm_uint32_key.find(key);
+    if (it == snap.kvm_uint32_key.end()) {
         LOG_ERROR << "TestMultiKey table not found for m_uint32_key: " << key;
         return {nullptr, kInvalidTableId};
     }
@@ -101,8 +110,9 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_int32_key(int32_t key) const {
-    const auto it = kv_m_int32_keydata_.find(key);
-    if (it == kv_m_int32_keydata_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvm_int32_key.find(key);
+    if (it == snap.kvm_int32_key.end()) {
         LOG_ERROR << "TestMultiKey table not found for m_int32_key: " << key;
         return {nullptr, kInvalidTableId};
     }

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <random>
 #include <unordered_map>
 #include <vector>
@@ -14,16 +15,26 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SkillPermissionTable*>;
     using LoadSuccessCallback = std::function<void()>;
 
+    // Internal snapshot holding all parsed data and indices.
+    // Load() builds a new snapshot and swaps it in, replacing the old one.
+    struct Snapshot {
+        SkillPermissionTableData data;
+        KeyValueDataType kvData;
+        std::unordered_multimap<uint32_t, const SkillPermissionTable*> idxskill_type;
+    };
+
     static SkillPermissionTableManager& Instance() {
         static SkillPermissionTableManager instance;
         return instance;
     }
 
-    const SkillPermissionTableData& FindAll() const { return data_; }
+    const Snapshot& GetSnapshot() const { return *snapshot_; }
+
+    const SkillPermissionTableData& FindAll() const { return snapshot_->data; }
 
     std::pair<const SkillPermissionTable*, uint32_t> FindById(uint32_t tableId);
     std::pair<const SkillPermissionTable*, uint32_t> FindByIdSilent(uint32_t tableId);
-    const KeyValueDataType& KeyValueData() const { return kv_data_; }
+    const KeyValueDataType& KeyValueData() const { return snapshot_->kvData; }
 
     void Load();
 
@@ -33,16 +44,16 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    const std::unordered_multimap<uint32_t, const SkillPermissionTable*>& GetSkill_typeIndex() const { return idx_skill_type_; }
+    const std::unordered_multimap<uint32_t, const SkillPermissionTable*>& GetSkill_typeIndex() const { return snapshot_->idxskill_type; }
 
     // ---- Exists ----
 
-    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return snapshot_->kvData.count(id) > 0; }
 
     // ---- Count ----
 
-    std::size_t Count() const { return kv_data_.size(); }
-    std::size_t CountBySkill_typeIndex(uint32_t key) const { return idx_skill_type_.count(key); }
+    std::size_t Count() const { return snapshot_->kvData.size(); }
+    std::size_t CountBySkill_typeIndex(uint32_t key) const { return snapshot_->idxskill_type.count(key); }
 
     // ---- FindByIds (IN) ----
 
@@ -50,7 +61,7 @@ public:
         std::vector<const SkillPermissionTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
-            if (auto it = kv_data_.find(id); it != kv_data_.end()) {
+            if (auto it = snapshot_->kvData.find(id); it != snapshot_->kvData.end()) {
                 result.push_back(it->second);
             }
         }
@@ -60,28 +71,28 @@ public:
     // ---- RandOne ----
 
     const SkillPermissionTable* RandOne() const {
-        if (data_.data_size() == 0) return nullptr;
+        if (snapshot_->data.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
-        std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
-        return &data_.data(dist(rng));
+        std::uniform_int_distribution<int> dist(0, snapshot_->data.data_size() - 1);
+        return &snapshot_->data.data(dist(rng));
     }
 
     // ---- Where / First ----
 
     std::vector<const SkillPermissionTable*> Where(const std::function<bool(const SkillPermissionTable&)>& pred) const {
         std::vector<const SkillPermissionTable*> result;
-        for (int i = 0; i < data_.data_size(); ++i) {
-            if (pred(data_.data(i))) {
-                result.push_back(&data_.data(i));
+        for (int i = 0; i < snapshot_->data.data_size(); ++i) {
+            if (pred(snapshot_->data.data(i))) {
+                result.push_back(&snapshot_->data.data(i));
             }
         }
         return result;
     }
 
     const SkillPermissionTable* First(const std::function<bool(const SkillPermissionTable&)>& pred) const {
-        for (int i = 0; i < data_.data_size(); ++i) {
-            if (pred(data_.data(i))) {
-                return &data_.data(i);
+        for (int i = 0; i < snapshot_->data.data_size(); ++i) {
+            if (pred(snapshot_->data.data(i))) {
+                return &snapshot_->data.data(i);
             }
         }
         return nullptr;
@@ -91,9 +102,7 @@ public:
 
 private:
     LoadSuccessCallback loadSuccessCallback_;
-    SkillPermissionTableData data_;
-    KeyValueDataType kv_data_;
-    std::unordered_multimap<uint32_t, const SkillPermissionTable*> idx_skill_type_;
+    std::unique_ptr<Snapshot> snapshot_ = std::make_unique<Snapshot>();
 };
 
 inline const SkillPermissionTableData& FindAllSkillPermissionTable() {

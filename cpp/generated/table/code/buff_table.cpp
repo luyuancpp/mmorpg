@@ -7,45 +7,48 @@ std::string GetConfigDir();
 bool UseProtoBinaryTables();
 
 void BuffTableManager::Load() {
-    data_.Clear();
+    auto snap = std::make_unique<Snapshot>();
 
     if (UseProtoBinaryTables()) {
         const std::string path = GetConfigDir() + "buff.pb";
         const auto contents = File2String(path);
-        if (!data_.ParseFromString(contents)) {
+        if (!snap->data.ParseFromString(contents)) {
             LOG_FATAL << "Buff binary parse failed: " << path;
         }
     } else {
         const std::string path = GetConfigDir() + "buff.json";
         const auto contents = File2String(path);
-        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
+        if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &snap->data); !result.ok()) {
             LOG_FATAL << "Buff" << result.message().data();
         }
     }
 
-    for (int32_t i = 0; i < data_.data_size(); ++i) {
-        const auto& row_data = data_.data(i);
-        kv_data_.emplace(row_data.id(), &row_data);
+    for (int32_t i = 0; i < snap->data.data_size(); ++i) {
+        const auto& row_data = snap->data.data(i);
+        snap->kvData.emplace(row_data.id(), &row_data);
         for (const auto& elem : row_data.interval_effect()) {
-            idx_interval_effect_.emplace(elem, &row_data);
+            snap->idxinterval_effect.emplace(elem, &row_data);
         }
         for (const auto& elem : row_data.sub_buff()) {
-            idx_sub_buff_.emplace(elem, &row_data);
+            snap->idxsub_buff.emplace(elem, &row_data);
         }
         for (const auto& elem : row_data.target_sub_buff()) {
-            idx_target_sub_buff_.emplace(elem, &row_data);
+            snap->idxtarget_sub_buff.emplace(elem, &row_data);
         }
     }
 
-    expression_health_regeneration_.Init({
+    snap->expressionhealth_regeneration.Init({
         "level", 
         "health"
     });
+
+    snapshot_ = std::move(snap);
 }
 
 std::pair<const BuffTable*, uint32_t> BuffTableManager::FindById(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         LOG_ERROR << "Buff table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -53,8 +56,9 @@ std::pair<const BuffTable*, uint32_t> BuffTableManager::FindById(const uint32_t 
 }
 
 std::pair<const BuffTable*, uint32_t> BuffTableManager::FindByIdSilent(const uint32_t tableId) {
-    const auto it = kv_data_.find(tableId);
-    if (it == kv_data_.end()) {
+    const auto& snap = GetSnapshot();
+    const auto it = snap.kvData.find(tableId);
+    if (it == snap.kvData.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
