@@ -200,6 +200,32 @@ void NodeAllocator::AcquireNodePort()
 
 	GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
 
+	// Allocate gRPC port if node has gRPC services registered.
+	if (!gNode->GetGrpcServices().empty() && assignedPort != 0)
+	{
+		uint32_t grpcPort = assignedPort + 1;
+		if (!IsLocalPortAvailable(static_cast<uint16_t>(grpcPort)))
+		{
+			LOG_WARN << "gRPC port " << grpcPort << " (TCP+1) not available, scanning...";
+			constexpr uint32_t MIN_PORT = 20000;
+			constexpr uint32_t MAX_PORT = 65535;
+			std::unordered_set<uint32_t> usedGrpcPorts = usedPorts;
+			usedGrpcPorts.insert(assignedPort);
+			grpcPort = AllocatePortInRange(usedGrpcPorts, MIN_PORT, MAX_PORT, assignedPort + 2);
+		}
+
+		if (grpcPort != 0)
+		{
+			GetNodeInfo().mutable_grpc_endpoint()->set_ip(GetNodeInfo().endpoint().ip());
+			GetNodeInfo().mutable_grpc_endpoint()->set_port(grpcPort);
+			LOG_INFO << "Assigned gRPC port: " << grpcPort;
+		}
+		else
+		{
+			LOG_ERROR << "No available gRPC port found.";
+		}
+	}
+
 	LOG_INFO << "NodeType: " << gNode->GetNodeType()
 			 << " IP: " << GetNodeInfo().endpoint().ip()
 			 << " Port: " << assignedPort;

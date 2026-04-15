@@ -118,6 +118,10 @@ func resolveNodeEndpoint(ctx context.Context, svcCtx *svc.ServiceContext, nodeId
 			continue
 		}
 		if fmt.Sprintf("%d", reg.NodeId) == nodeId {
+			if reg.GrpcEndpoint.Port > 0 {
+				return fmt.Sprintf("%s:%d", reg.GrpcEndpoint.IP, reg.GrpcEndpoint.Port), nil
+			}
+			// Fallback to TCP endpoint if gRPC endpoint not yet available.
 			return fmt.Sprintf("%s:%d", reg.Endpoint.IP, reg.Endpoint.Port), nil
 		}
 	}

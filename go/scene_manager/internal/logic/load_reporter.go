@@ -43,12 +43,16 @@ func nodeLoadKey(zoneID uint32) string {
 
 // sceneNodeRegistration mirrors the JSON that C++ scene nodes write to etcd.
 type sceneNodeRegistration struct {
-	NodeId   uint32 `json:"nodeId"`
-	NodeType uint32 `json:"nodeType"`
-	Endpoint struct {
+	NodeId       uint32 `json:"nodeId"`
+	NodeType     uint32 `json:"nodeType"`
+	Endpoint     struct {
 		IP   string `json:"ip"`
 		Port uint32 `json:"port"`
 	} `json:"endpoint"`
+	GrpcEndpoint struct {
+		IP   string `json:"ip"`
+		Port uint32 `json:"port"`
+	} `json:"grpcEndpoint"`
 	ZoneId uint32 `json:"zoneId"`
 }
 

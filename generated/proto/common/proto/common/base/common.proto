@@ -19,6 +19,7 @@ message NodeInfo {
   uint32 protocol_type = 7; // Node communication protocol type
   string node_uuid = 8;
   uint32 player_count = 9; // Current online player/connection count (for load balancing)
+  EndpointComp grpc_endpoint = 10; // gRPC server endpoint (for Go services to connect)
 }
 
 message NodeInfoListComp

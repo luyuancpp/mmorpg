@@ -37,7 +37,7 @@ func BuildProtocCpp(wg *sync.WaitGroup) {
 			defer wg.Done()
 			dir := meta.Source
 			rpcType := strings.ToLower(strings.TrimSpace(meta.Rpc.Type))
-			if rpcType != "grpc" && rpcType != "etcd" {
+			if rpcType != "grpc" && rpcType != "etcd" && rpcType != "both" {
 				logger.Global.Info("Skipped gRPC C++ batch build: non-gRPC domain",
 					zap.String("dir", dir),
 					zap.String("rpc_type", rpcType),

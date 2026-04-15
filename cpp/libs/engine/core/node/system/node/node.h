@@ -21,6 +21,8 @@
 #include "node/system/registration/registration_manager.h"
 #include "node/system/discovery/service_discovery_manager.h"
 #include "node/system/grpc_channel_cache.h"
+#include <grpcpp/grpcpp.h>
+#include <thread>
 
 // Tracks a pending node removal that can be cancelled if the node re-registers.
 struct PendingNodeRemoval
@@ -141,6 +143,10 @@ public:
                                      KafkaMessageHandler handler,
                                      const std::vector<int32_t> &partitions = {});
 
+    // gRPC server: register a service before StartRpcServer().
+    void RegisterGrpcService(grpc::Service *service);
+    const std::vector<grpc::Service *> &GetGrpcServices() const { return grpcServices_; }
+
     // Called before LOG_FATAL when this node's identity is no longer valid.
     // Override in subclasses to flush players, save state, etc.
     // After this returns, the process will terminate.
@@ -163,6 +169,10 @@ protected:
     void StartKafkaPolling();
     virtual bool RegisterKafkaHandlers() { return kafkaHandlersFn_ ? kafkaHandlersFn_(*this) : true; }
     void InitEtcdService();
+
+    // gRPC server lifecycle (called automatically if services registered).
+    void StartGrpcServer();
+    void ShutdownGrpcServer();
 
     void ReleaseNodeId();
     void RegisterHandlers();
@@ -208,6 +218,11 @@ protected:
     ::google::protobuf::Service *replyService_{nullptr};
     AfterStartFn afterStartFn_;
     KafkaHandlersFn kafkaHandlersFn_;
+
+    // gRPC server (optional, started only when services are registered via RegisterGrpcService).
+    std::vector<grpc::Service *> grpcServices_;
+    std::unique_ptr<grpc::Server> grpcServer_;
+    std::thread grpcServerThread_;
 };
 
 // DependencyGate — polls for required service-discovery dependencies before
