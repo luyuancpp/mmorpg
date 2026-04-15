@@ -33,7 +33,7 @@ void RecastSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 	StdFilePtr fp(std::fopen(path, "rb"));
 	if (fp == nullptr)
 	{
-		LOG_WARN << "nav bin file not found, skipping: " << path;
+		LOG_ERROR << "nav bin file not found: " << path;
 		return;
 	}
 

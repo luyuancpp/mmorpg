@@ -143,6 +143,27 @@ message NodeInfo {
 | `go/scene_manager/internal/logic/scene_node_client.go` | Use grpc_endpoint |
 | `go/scene_manager/internal/logic/load_reporter.go` | Parse grpc_endpoint |
 
+## Multi-Node Multi-Zone: No Extra Mapping Needed
+
+Each Scene node registers its own gRPC endpoint in etcd. No additional port mapping or service mesh is required.
+
+```
+etcd keys (example):
+  SceneNodeService.rpc/zone/1/node_type/3/node_id/1 → {ip: x.x.x.x, port: 20000, grpc_port: 20001, zone_id: 1}
+  SceneNodeService.rpc/zone/1/node_type/3/node_id/2 → {ip: x.x.x.x, port: 20002, grpc_port: 20003, zone_id: 1}
+  SceneNodeService.rpc/zone/2/node_type/3/node_id/1 → {ip: y.y.y.y, port: 20000, grpc_port: 20001, zone_id: 2}
+```
+
+| Environment | Extra mapping? | Reason |
+|-------------|---------------|--------|
+| Local dev | No | Go services in Docker reach host IP directly |
+| K8s | No | Each Pod has unique IP, no port conflict |
+| Multi-zone | No | Each zone's Scene nodes register independently, scene_manager filters by zone |
+
+- gRPC port = TCP port + 1 (convention, unique per node via etcd CAS port allocation).
+- scene_manager's existing per-nodeId connection cache handles multi-node/multi-zone.
+- gRPC port is **internal cluster communication only** — no LoadBalancer/NodePort exposure needed.
+
 ## Related
 
 - Gate codec race fix (2026-04-15): moved Gate TcpServer callbacks before WaitAndRun to prevent `kUnknownMessageType` on early client connections.
