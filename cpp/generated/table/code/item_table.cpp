@@ -25,16 +25,16 @@ void ItemTableManager::Load() {
 
     for (int32_t i = 0; i < snap->data.data_size(); ++i) {
         const auto& row_data = snap->data.data(i);
-        snap->kvData.emplace(row_data.id(), &row_data);
+        snap->idMap.emplace(row_data.id(), &row_data);
     }
 
-    snapshot_ = std::move(snap);
+    snapshot = std::move(snap);
 }
 
 std::pair<const ItemTable*, uint32_t> ItemTableManager::FindById(const uint32_t tableId) {
     const auto& snap = GetSnapshot();
-    const auto it = snap.kvData.find(tableId);
-    if (it == snap.kvData.end()) {
+    const auto it = snap.idMap.find(tableId);
+    if (it == snap.idMap.end()) {
         LOG_ERROR << "Item table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -43,8 +43,8 @@ std::pair<const ItemTable*, uint32_t> ItemTableManager::FindById(const uint32_t 
 
 std::pair<const ItemTable*, uint32_t> ItemTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto& snap = GetSnapshot();
-    const auto it = snap.kvData.find(tableId);
-    if (it == snap.kvData.end()) {
+    const auto it = snap.idMap.find(tableId);
+    if (it == snap.idMap.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};

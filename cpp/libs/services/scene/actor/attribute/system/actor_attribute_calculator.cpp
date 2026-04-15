@@ -18,15 +18,15 @@ void UpdateVelocity(entt::entity entity) {
     velocity.Clear();
 
     for (const auto& buffCompPb : tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(entity) | std::views::values) {
-        FetchBuffTableOrContinue(buffCompPb.buffPb.buff_table_id());
+        LookupBuffOrContinue(buffCompPb.buffPb.buff_table_id());
 
-        velocity.set_x(velocity.x() + buffTable->movement_speed_boost());
-        velocity.set_y(velocity.y() + buffTable->movement_speed_boost());
-        velocity.set_z(velocity.z() + buffTable->movement_speed_boost());
+        velocity.set_x(velocity.x() + buffRow->movement_speed_boost());
+        velocity.set_y(velocity.y() + buffRow->movement_speed_boost());
+        velocity.set_z(velocity.z() + buffRow->movement_speed_boost());
 
-        velocity.set_x(velocity.x() - buffTable->movement_speed_reduction());
-        velocity.set_y(velocity.y() - buffTable->movement_speed_reduction());
-        velocity.set_z(velocity.z() - buffTable->movement_speed_reduction());
+        velocity.set_x(velocity.x() - buffRow->movement_speed_reduction());
+        velocity.set_y(velocity.y() - buffRow->movement_speed_reduction());
+        velocity.set_z(velocity.z() - buffRow->movement_speed_reduction());
     }
 
     // Set runtime dirty bit (do not write dirty bits back to persisted proto)

@@ -25,48 +25,48 @@ struct MissionConfig : public IMissionConfig
 
     uint32_t GetMissionType(uint32_t missionTableId) const override
     {
-        FetchMissionTableOrReturnCustom(missionTableId, 0);
-        return missionTable->mission_type();
+        LookupMissionOrReturn(missionTableId, 0);
+        return missionRow->mission_type();
     }
 
     uint32_t GetMissionSubType(uint32_t missionTableId) const override
     {
-        FetchMissionTableOrReturnCustom(missionTableId, 0);
-        return missionTable->mission_sub_type();
+        LookupMissionOrReturn(missionTableId, 0);
+        return missionRow->mission_sub_type();
     }
 
     uint32_t GetRewardId(uint32_t missionTableId) const override
     {
-        FetchMissionTableOrReturnCustom(missionTableId, 0);
-        return missionTable->reward_id();
+        LookupMissionOrReturn(missionTableId, 0);
+        return missionRow->reward_id();
     }
 
     bool AutoReward(uint32_t missionTableId) const override
     {
-        FetchMissionTableOrReturnFalse(missionTableId);
-        return missionTable->auto_reward() > 0;
+        LookupMissionOrFalse(missionTableId);
+        return missionRow->auto_reward() > 0;
     }
 
     const ::google::protobuf::RepeatedField<uint32_t>& GetConditionIds(uint32_t missionTableId) const override
     {
-        FetchMissionTableOrReturnCustom(missionTableId, EmptyRepeatedField());
-        return missionTable->condition_id();
+        LookupMissionOrReturn(missionTableId, EmptyRepeatedField());
+        return missionRow->condition_id();
     }
 
     const ::google::protobuf::RepeatedField<uint32_t>& GetTargetCounts(uint32_t missionTableId) const override
     {
-        FetchMissionTableOrReturnCustom(missionTableId, EmptyRepeatedField());
-        return missionTable->target_count();
+        LookupMissionOrReturn(missionTableId, EmptyRepeatedField());
+        return missionRow->target_count();
     }
 
     const ::google::protobuf::RepeatedField<uint32_t>& GetNextMissionTableIds(uint32_t missionTableId) const override
     {
-        FetchMissionTableOrReturnCustom(missionTableId, EmptyRepeatedField());
-        return missionTable->next_mission_id();
+        LookupMissionOrReturn(missionTableId, EmptyRepeatedField());
+        return missionRow->next_mission_id();
     }
 
     bool CheckTypeRepeated() const override { return true; }
-    bool HasKey(uint32_t missionTableId) const override { FetchMissionTableOrReturnFalse(missionTableId); return true; }
+    bool HasKey(uint32_t missionTableId) const override { LookupMissionOrFalse(missionTableId); return true; }
 
 private:
     static const ::google::protobuf::RepeatedField<uint32_t>& EmptyRepeatedField()

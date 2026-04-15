@@ -23,10 +23,10 @@ constexpr size_t kComparisonFunctionCount = std::size(kComparisonFunctions);
 namespace condition_util {
 
 bool IsFulfilled(uint32_t conditionId, uint32_t progressValue, uint32_t targetCountOverride) {
-	FetchConditionTableOrReturnFalse(conditionId);
-	const auto cmpIndex = static_cast<size_t>(conditionTable->comparison_op());
+	LookupConditionOrFalse(conditionId);
+	const auto cmpIndex = static_cast<size_t>(conditionRow->comparison_op());
 	if (cmpIndex >= kComparisonFunctionCount) return false;
-	const uint32_t target = (targetCountOverride > 0) ? targetCountOverride : conditionTable->target_count();
+	const uint32_t target = (targetCountOverride > 0) ? targetCountOverride : conditionRow->target_count();
 	return kComparisonFunctions[cmpIndex](progressValue, target);
 }
 
@@ -61,8 +61,8 @@ bool MatchesEventSlots(const ConditionTable* conditionRow,
 }
 
 uint32_t ClampIfFulfilled(uint32_t conditionId, uint32_t progress, uint32_t targetCountOverride) {
-	FetchConditionTableOrReturnCustom(conditionId, progress);
-	const uint32_t target = (targetCountOverride > 0) ? targetCountOverride : conditionTable->target_count();
+	LookupConditionOrReturn(conditionId, progress);
+	const uint32_t target = (targetCountOverride > 0) ? targetCountOverride : conditionRow->target_count();
 	if (IsFulfilled(conditionId, progress, target)) {
 		return std::min(progress, target);
 	}

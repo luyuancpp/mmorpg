@@ -65,10 +65,10 @@ uint32_t CombatStateSystem::ValidateSkillUsage(const entt::entity entityId, cons
         return kSuccess;
     }
 
-    FetchAndValidateActorActionCombatStateTable(combatAction);
+    LookupActorActionCombatState(combatAction);
 
     for (const auto& stateKey : combatStateCollection.states() | std::views::keys) {
-        const auto& combatState = actorActionCombatStateTable->state(stateKey);
+        const auto& combatState = actorActionCombatStateRow->state(stateKey);
 
         if (combatState.state_mode() == kCombatStateMutualExclusion) {
             return combatState.state_tip();

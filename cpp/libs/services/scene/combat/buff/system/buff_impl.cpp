@@ -58,9 +58,9 @@ void BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::entity casterEntity, e
 
     auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(targetEntity);
     for (auto& buffComp : buffList | std::views::values) {
-        FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
+        LookupBuffOrContinue(buffComp.buffPb.buff_table_id());
 
-        if (buffTable->buff_type() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
+        if (buffRow->buff_type() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
             if (const auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsComp>(buffComp.dataPbPtr)) {
                 dataPtr->set_last_time(TimeSystem::NowMilliseconds());
             }
@@ -112,11 +112,11 @@ void BuffImplSystem::HandleBuffEffectsOnDamage(entt::entity casterEntity, entt::
 
     auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(casterEntity);
     for (auto& buffComp : buffList | std::views::values) {
-        FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
+        LookupBuffOrContinue(buffComp.buffPb.buff_table_id());
 
-        switch (buffTable->buff_type()) {
+        switch (buffRow->buff_type()) {
             case kBuffTypeNextBasicAttack:
-                ApplyNextBasicAttackBuff(buffComp, buffTable, damageEvent, buffsToRemoveCaster, casterEntity, targetEntity);
+                ApplyNextBasicAttackBuff(buffComp, buffRow, damageEvent, buffsToRemoveCaster, casterEntity, targetEntity);
                 break;
             default:
                 break;
@@ -125,7 +125,7 @@ void BuffImplSystem::HandleBuffEffectsOnDamage(entt::entity casterEntity, entt::
 }
 
 void BuffImplSystem::ApplyNextBasicAttackBuff(BuffEntry& buffComp, const BuffTable* buffTable, DamageEventComp& damageEvent, UInt64Set& buffsToRemoveCaster, entt::entity casterEntity, entt::entity targetEntity) {
-    const auto bonusDamage = BuffTableManager::Instance().GetBonus_damage(buffTable->id());
+    const auto bonusDamage = BuffTableManager::Instance().GetBonusDamage(buffTable->id());
     damageEvent.set_damage(damageEvent.damage() + bonusDamage);
 
     buffsToRemoveCaster.emplace(buffComp.buffPb.buff_id());

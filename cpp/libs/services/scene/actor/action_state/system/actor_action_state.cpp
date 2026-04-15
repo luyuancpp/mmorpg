@@ -49,15 +49,15 @@ namespace {
 }
 
 uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
-    FetchAndValidateActorActionStateTable(actorAction);
+    LookupActorActionState(actorAction);
 
     const auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
-        RETURN_ON_ERROR(CheckForStateConflict(actorActionStateTable, actorState));
+        RETURN_ON_ERROR(CheckForStateConflict(actorActionStateRow, actorState));
     }
 
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
-        if (InterruptAndPerformAction(actorActionStateTable, actorState, actorEntity)) {
+        if (InterruptAndPerformAction(actorActionStateRow, actorState, actorEntity)) {
             continue;
         }
     }
@@ -69,11 +69,11 @@ uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint
 
 
 uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
-    FetchAndValidateActorActionStateTable(actorAction);
+    LookupActorActionState(actorAction);
     
     const auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
-        RETURN_ON_ERROR(CheckForStateConflict(actorActionStateTable, actorState));
+        RETURN_ON_ERROR(CheckForStateConflict(actorActionStateRow, actorState));
     }
 
     return kSuccess;

@@ -25,25 +25,25 @@ void MissionTableManager::Load() {
 
     for (int32_t i = 0; i < snap->data.data_size(); ++i) {
         const auto& row_data = snap->data.data(i);
-        snap->kvData.emplace(row_data.id(), &row_data);
+        snap->idMap.emplace(row_data.id(), &row_data);
         for (const auto& elem : row_data.condition_id()) {
-            snap->idxcondition_id.emplace(elem, &row_data);
+            snap->conditionIdIndex.emplace(elem, &row_data);
         }
         for (const auto& elem : row_data.next_mission_id()) {
-            snap->idxnext_mission_id.emplace(elem, &row_data);
+            snap->nextMissionIdIndex.emplace(elem, &row_data);
         }
         for (const auto& elem : row_data.target_count()) {
-            snap->idxtarget_count.emplace(elem, &row_data);
+            snap->targetCountIndex.emplace(elem, &row_data);
         }
     }
 
-    snapshot_ = std::move(snap);
+    snapshot = std::move(snap);
 }
 
 std::pair<const MissionTable*, uint32_t> MissionTableManager::FindById(const uint32_t tableId) {
     const auto& snap = GetSnapshot();
-    const auto it = snap.kvData.find(tableId);
-    if (it == snap.kvData.end()) {
+    const auto it = snap.idMap.find(tableId);
+    if (it == snap.idMap.end()) {
         LOG_ERROR << "Mission table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -52,8 +52,8 @@ std::pair<const MissionTable*, uint32_t> MissionTableManager::FindById(const uin
 
 std::pair<const MissionTable*, uint32_t> MissionTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto& snap = GetSnapshot();
-    const auto it = snap.kvData.find(tableId);
-    if (it == snap.kvData.end()) {
+    const auto it = snap.idMap.find(tableId);
+    if (it == snap.idMap.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};

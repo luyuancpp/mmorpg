@@ -13,10 +13,10 @@ public:
 			? currentMilliseconds - cooldownTimeComp.start()
 			: 0;
 
-		FetchCooldownTableOrReturnCustom(cooldownTimeComp.cooldown_table_id(), 0);
+		LookupCooldownOrReturn(cooldownTimeComp.cooldown_table_id(), 0);
 
-		return (cooldownTable->duration() > elapsed)
-			? cooldownTable->duration() - elapsed
+		return (cooldownRow->duration() > elapsed)
+			? cooldownRow->duration() - elapsed
 			: 0;
 	}
 
@@ -37,9 +37,9 @@ public:
 	}
 
 	inline static  uint64_t GetDuration(const CooldownTimeComp& cooldownTimeComp) {
-		FetchCooldownTableOrReturnCustom(cooldownTimeComp.cooldown_table_id(), 0);
+		LookupCooldownOrReturn(cooldownTimeComp.cooldown_table_id(), 0);
 	
-		return cooldownTable->duration();
+		return cooldownRow->duration();
 	}
 
 	inline static  void SetStartTime(CooldownTimeComp& cooldownTimeComp, uint64_t startTimeMilliseconds) {
