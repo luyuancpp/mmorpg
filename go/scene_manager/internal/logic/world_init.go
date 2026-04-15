@@ -10,6 +10,8 @@ import (
 
 	"scene_manager/internal/svc"
 
+	"shared/generated/table"
+
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -56,12 +58,7 @@ func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zon
 
 		// Create missing channels.
 		for i := existingCount; i < channelCount; i++ {
-			id, err := svcCtx.Redis.Incr("scene:id_counter")
-			if err != nil {
-				logx.Errorf("[World] Failed to generate scene id for conf %d channel %d: %v", confId, i, err)
-				continue
-			}
-			sceneId := uint64(id)
+			sceneId := svcCtx.SceneIDGen.Generate()
 
 			// Vary hash input per channel so channels may land on different nodes.
 			targetNode := assignNodeByHash(confId*1000+uint64(i), nodes)
@@ -158,16 +155,25 @@ func GetAllWorldChannels(ctx context.Context, svcCtx *svc.ServiceContext, confId
 	return ids, nil
 }
 
+// worldConfIds extracts base scene config IDs from the loaded World table.
+func worldConfIds() []uint64 {
+	rows := table.WorldTableManagerInstance.FindAll()
+	ids := make([]uint64, 0, len(rows))
+	for _, row := range rows {
+		ids = append(ids, uint64(row.SceneId))
+	}
+	return ids
+}
+
 // IsWorldConf checks if a scene_conf_id is a world scene.
-func IsWorldConf(svcCtx *svc.ServiceContext, confId uint64) bool {
-	for _, id := range svcCtx.WorldConfIds {
-		if id == confId {
+func IsWorldConf(confId uint64) bool {
+	for _, row := range table.WorldTableManagerInstance.FindAll() {
+		if uint64(row.SceneId) == confId {
 			return true
 		}
 	}
 	return false
 }
-
 
 // getNodesForZone returns sorted node IDs for a given zone from the Redis load set.
 func getNodesForZone(svcCtx *svc.ServiceContext, zoneId uint32) []string {

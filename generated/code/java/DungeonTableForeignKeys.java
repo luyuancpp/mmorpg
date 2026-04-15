@@ -15,6 +15,13 @@ public final class DungeonTableForeignKeys {
         return BaseSceneTableManager.getInstance().findById(row.getSceneId());
     }
 
+    /** Resolve Dungeon.scene_id -> BaseScene row (by Dungeon id). */
+    public static BaseSceneTable getSceneIdRow(int tableId) {
+        DungeonTable row = DungeonTableManager.getInstance().findById(tableId);
+        if (row == null) { return null; }
+        return getSceneIdRow(row);
+    }
+
     // ---- Reverse FK (HasMany): find source rows by FK column value ----
 
     /** Reverse FK: find all Dungeon rows whose scene_id == key. */

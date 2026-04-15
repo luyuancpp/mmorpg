@@ -22,11 +22,25 @@ public final class {{ sheetname }}TableForeignKeys {
         }
         return result;
     }
+
+    /** Resolve {{ sheetname }}.{{ col.name }}[] -> {{ col.foreign_key.target_table }} rows (by {{ sheetname }} id). */
+    public static List<{{ col.foreign_key.target_table }}Table> get{{ to_pascal_case(col.name) }}Rows(int tableId) {
+        {{ sheetname }}Table row = {{ sheetname }}TableManager.getInstance().findById(tableId);
+        if (row == null) { return List.of(); }
+        return get{{ to_pascal_case(col.name) }}Rows(row);
+    }
 {% else %}
 
     /** Resolve {{ sheetname }}.{{ col.name }} -> {{ col.foreign_key.target_table }} row. */
     public static {{ col.foreign_key.target_table }}Table get{{ to_pascal_case(col.name) }}Row({{ sheetname }}Table row) {
         return {{ col.foreign_key.target_table }}TableManager.getInstance().findById(row.{{ to_java_proto_getter(col.name) }}());
+    }
+
+    /** Resolve {{ sheetname }}.{{ col.name }} -> {{ col.foreign_key.target_table }} row (by {{ sheetname }} id). */
+    public static {{ col.foreign_key.target_table }}Table get{{ to_pascal_case(col.name) }}Row(int tableId) {
+        {{ sheetname }}Table row = {{ sheetname }}TableManager.getInstance().findById(tableId);
+        if (row == null) { return null; }
+        return get{{ to_pascal_case(col.name) }}Row(row);
     }
 {% endif %}
 {% endfor %}
@@ -40,6 +54,13 @@ public final class {{ sheetname }}TableForeignKeys {
             if (r != null) { result.add(r); }
         }
         return result;
+    }
+
+    /** Resolve {{ sheetname }}.{{ col.name }}[] -> {{ col.group_foreign_key.target_table }} rows (by {{ sheetname }} id). */
+    public static List<{{ col.group_foreign_key.target_table }}Table> get{{ to_pascal_case(col.name) }}Rows(int tableId) {
+        {{ sheetname }}Table row = {{ sheetname }}TableManager.getInstance().findById(tableId);
+        if (row == null) { return List.of(); }
+        return get{{ to_pascal_case(col.name) }}Rows(row);
     }
 {% endfor %}
 

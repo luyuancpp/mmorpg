@@ -15,6 +15,13 @@ public final class WorldTableForeignKeys {
         return BaseSceneTableManager.getInstance().findById(row.getSceneId());
     }
 
+    /** Resolve World.scene_id -> BaseScene row (by World id). */
+    public static BaseSceneTable getSceneIdRow(int tableId) {
+        WorldTable row = WorldTableManager.getInstance().findById(tableId);
+        if (row == null) { return null; }
+        return getSceneIdRow(row);
+    }
+
     // ---- Reverse FK (HasMany): find source rows by FK column value ----
 
     /** Reverse FK: find all World rows whose scene_id == key. */

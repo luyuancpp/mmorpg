@@ -15,9 +15,23 @@ public final class MirrorTableForeignKeys {
         return BaseSceneTableManager.getInstance().findById(row.getSceneId());
     }
 
+    /** Resolve Mirror.scene_id -> BaseScene row (by Mirror id). */
+    public static BaseSceneTable getSceneIdRow(int tableId) {
+        MirrorTable row = MirrorTableManager.getInstance().findById(tableId);
+        if (row == null) { return null; }
+        return getSceneIdRow(row);
+    }
+
     /** Resolve Mirror.main_scene_id -> World row. */
     public static WorldTable getMainSceneIdRow(MirrorTable row) {
         return WorldTableManager.getInstance().findById(row.getMainSceneId());
+    }
+
+    /** Resolve Mirror.main_scene_id -> World row (by Mirror id). */
+    public static WorldTable getMainSceneIdRow(int tableId) {
+        MirrorTable row = MirrorTableManager.getInstance().findById(tableId);
+        if (row == null) { return null; }
+        return getMainSceneIdRow(row);
     }
 
     // ---- Reverse FK (HasMany): find source rows by FK column value ----

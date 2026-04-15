@@ -10,6 +10,7 @@ import (
 	"scene_manager/internal/logic"
 	"scene_manager/internal/server"
 	"scene_manager/internal/svc"
+	"shared/generated/table"
 	"shared/grpcstats"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -53,7 +54,7 @@ func main() {
 	fmt.Printf("  Listen:      %s\n", c.ListenOn)
 	fmt.Printf("  Mode:        %s\n", c.Mode)
 	fmt.Printf("  multi-zone:  true (zone-agnostic)\n")
-	fmt.Printf("  main scenes: %d (from World.json)\n", len(svcCtx.WorldConfIds))
+	fmt.Printf("  main scenes: %d (from World.json)\n", len(table.WorldTableManagerInstance.FindAll()))
 	if len(c.Etcd.Hosts) > 0 {
 		fmt.Printf("  etcd:        %v\n", c.Etcd.Hosts)
 	}
