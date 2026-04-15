@@ -43,15 +43,40 @@ public class RewardTableManager {
         }
     }
 
-    public RewardTableData getAll() {
+    /** SELECT * FROM reward */
+    public RewardTableData selectAll() {
         return data;
     }
 
-    public RewardTable getById(int id) {
+    /** SELECT COUNT(*) FROM reward */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM reward WHERE id = ? */
+    public RewardTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, RewardTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM reward WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM reward WHERE id IN (?, ?, ...) */
+    public List<RewardTable> selectByIds(List<Integer> ids) {
+        List<RewardTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            RewardTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, RewardTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 

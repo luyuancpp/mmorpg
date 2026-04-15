@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,14 @@ import (
     "google.golang.org/protobuf/proto"
     pb "{{ proto_import_path }}"
 )
+
+{% for ck in table.composite_keys %}
+type {{ sheetname }}{{ composite_go_struct_name(ck.group) }} struct {
+{%- for col in ck.columns %}
+    {{ to_go_proto_field(col.name) }} {{ to_go_type(col.data_type) }}
+{%- endfor %}
+}
+{% endfor %}
 
 type {{ sheetname }}TableManager struct {
     data   []*pb.{{ sheetname }}Table
@@ -22,6 +31,9 @@ type {{ sheetname }}TableManager struct {
 {%- endfor %}
 {%- for arr in table.repeated_comp_arrays %}
     idx{{ arr.name | title }} map[{{ to_go_type(arr.data_type) }}][]*pb.{{ sheetname }}Table
+{%- endfor %}
+{%- for ck in table.composite_keys %}
+    compositeKv{{ ck.group | title }} map[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}]*pb.{{ sheetname }}Table
 {%- endfor %}
 }
 
@@ -38,6 +50,9 @@ func New{{ sheetname }}TableManager() *{{ sheetname }}TableManager {
 {%- endfor %}
 {%- for arr in table.repeated_comp_arrays %}
         idx{{ arr.name | title }}: make(map[{{ to_go_type(arr.data_type) }}][]*pb.{{ sheetname }}Table),
+{%- endfor %}
+{%- for ck in table.composite_keys %}
+        compositeKv{{ ck.group | title }}: make(map[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}]*pb.{{ sheetname }}Table),
 {%- endfor %}
     }
 }
@@ -78,6 +93,9 @@ func (m *{{ sheetname }}TableManager) Load(configDir string, useBinary bool) err
             m.idx{{ arr.name | title }}[elem] = append(m.idx{{ arr.name | title }}[elem], row)
         }
 {%- endfor %}
+{%- for ck in table.composite_keys %}
+        m.compositeKv{{ ck.group | title }}[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}{ {%- for col in ck.columns %}{{ to_go_proto_field(col.name) }}: row.{{ to_go_proto_field(col.name) }}, {% endfor -%} }] = row
+{%- endfor %}
     }
 
     m.data = container.Data
@@ -112,6 +130,109 @@ func (m *{{ sheetname }}TableManager) GetBy{{ arr.name | title }}Index(key {{ to
 }
 
 {% endfor %}
+
+// ---- Has / Exists ----
+
+func (m *{{ sheetname }}TableManager) HasId(id {{ to_go_type(table.id_column.data_type) }}) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+{% for col in table.table_keys if not col.is_multi_key -%}
+func (m *{{ sheetname }}TableManager) Has{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) bool {
+    _, ok := m.kv{{ col.name | title }}Data[key]
+    return ok
+}
+
+{% endfor %}
+
+// ---- Len / Count ----
+
+func (m *{{ sheetname }}TableManager) Len() int {
+    return len(m.data)
+}
+
+{% for col in table.table_keys if col.is_multi_key -%}
+func (m *{{ sheetname }}TableManager) CountBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) int {
+    return len(m.kv{{ col.name | title }}Data[key])
+}
+
+{% endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+func (m *{{ sheetname }}TableManager) CountBy{{ arr.name | title }}Index(key {{ to_go_type(arr.data_type) }}) int {
+    return len(m.idx{{ arr.name | title }}[key])
+}
+
+{% endfor %}
+
+// ---- Batch Lookup (IN) ----
+
+func (m *{{ sheetname }}TableManager) GetByIds(ids []{{ to_go_type(table.id_column.data_type) }}) []*pb.{{ sheetname }}Table {
+    result := make([]*pb.{{ sheetname }}Table, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *{{ sheetname }}TableManager) GetRandom() (*pb.{{ sheetname }}Table, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+{% for col in table.table_keys if col.is_multi_key -%}
+func (m *{{ sheetname }}TableManager) GetRandomBy{{ col.name | title }}(key {{ to_go_type(col.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
+    rows := m.kv{{ col.name | title }}Data[key]
+    if len(rows) == 0 {
+        return nil, false
+    }
+    return rows[rand.IntN(len(rows))], true
+}
+
+{% endfor %}
+
+// ---- Filter / FindFirst ----
+
+func (m *{{ sheetname }}TableManager) Filter(pred func(*pb.{{ sheetname }}Table) bool) []*pb.{{ sheetname }}Table {
+    var result []*pb.{{ sheetname }}Table
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *{{ sheetname }}TableManager) FindFirst(pred func(*pb.{{ sheetname }}Table) bool) (*pb.{{ sheetname }}Table, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
 {%- for col in table.foreign_key_columns %}
 // FK: {{ col.name }} → {{ col.foreign_key.target_table }}.{{ col.foreign_key.target_column }}
+{% endfor %}
+
+// ---- Composite Key ----
+
+{% for ck in table.composite_keys -%}
+func (m *{{ sheetname }}TableManager) GetByComposite{{ ck.group | title }}({% for col in ck.columns %}{{ col.name }} {{ to_go_type(col.data_type) }}{% if not loop.last %}, {% endif %}{% endfor %}) (*pb.{{ sheetname }}Table, bool) {
+    row, ok := m.compositeKv{{ ck.group | title }}[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}{ {%- for col in ck.columns %}{{ to_go_proto_field(col.name) }}: {{ col.name }}, {% endfor -%} }]
+    return row, ok
+}
+
+func (m *{{ sheetname }}TableManager) HasComposite{{ ck.group | title }}({% for col in ck.columns %}{{ col.name }} {{ to_go_type(col.data_type) }}{% if not loop.last %}, {% endif %}{% endfor %}) bool {
+    _, ok := m.compositeKv{{ ck.group | title }}[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}{ {%- for col in ck.columns %}{{ to_go_proto_field(col.name) }}: {{ col.name }}, {% endfor -%} }]
+    return ok
+}
+
 {% endfor %}

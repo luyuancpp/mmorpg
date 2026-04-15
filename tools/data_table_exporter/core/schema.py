@@ -103,6 +103,14 @@ class ColumnDef:
         return "multi" in self.options
 
     @property
+    def composite_key_group(self) -> str:
+        """Return group name if this column participates in a composite key, else ''."""
+        for opt in self.options:
+            if opt.startswith("composite:"):
+                return opt[10:]
+        return ""
+
+    @property
     def has_bit_index(self) -> bool:
         return "bit_index" in self.options
 
@@ -170,6 +178,16 @@ class GroupField:
 
 
 @dataclass
+class CompositeKeyDef:
+    """Two or more columns forming a composite key lookup.
+
+    Parsed from columns having ``composite:group_name`` in their options.
+    """
+    group: str
+    columns: list[ColumnDef] = field(default_factory=list)
+
+
+@dataclass
 class TableSchema:
     """Complete schema for one Excel sheet / data table."""
     name: str
@@ -208,6 +226,16 @@ class TableSchema:
     @property
     def foreign_key_columns(self) -> list[ColumnDef]:
         return [c for c in self.columns if c.foreign_key]
+
+    @property
+    def composite_keys(self) -> list[CompositeKeyDef]:
+        """Columns grouped by ``composite:group_name`` option."""
+        groups: dict[str, list[ColumnDef]] = {}
+        for c in self.columns:
+            grp = c.composite_key_group
+            if grp:
+                groups.setdefault(grp, []).append(c)
+        return [CompositeKeyDef(group=g, columns=cols) for g, cols in groups.items() if len(cols) >= 2]
 
     @property
     def bit_index_columns(self) -> list[ColumnDef]:

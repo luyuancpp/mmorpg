@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for {{ sheetname }}.
@@ -82,4 +84,69 @@ public class {{ sheetname }}TableManager {
 {% for col in table.foreign_key_columns %}
     // FK: {{ col.name }} → {{ col.foreign_key.target_table }}.{{ col.foreign_key.target_column }}
 {% endfor %}
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+{% for col in table.table_keys if not col.is_multi_key %}
+    public boolean has{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
+        return kv{{ col.name | title }}Data.containsKey(key);
+    }
+{% endfor %}
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+{% for col in table.table_keys if col.is_multi_key %}
+    public int countBy{{ col.name | title }}({{ to_java_type(col.data_type) }} key) {
+        return kv{{ col.name | title }}Data.getOrDefault(key, Collections.emptyList()).size();
+    }
+{% endfor %}
+{% for arr in table.repeated_comp_arrays %}
+    public int countBy{{ arr.name | title }}Index({{ to_java_type(arr.data_type) }} key) {
+        return idx{{ arr.name | title }}.getOrDefault(key, Collections.emptyList()).size();
+    }
+{% endfor %}
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<{{ sheetname }}Table> getByIds(List<Integer> ids) {
+        List<{{ sheetname }}Table> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            {{ sheetname }}Table row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public {{ sheetname }}Table getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<{{ sheetname }}Table> filter(Predicate<{{ sheetname }}Table> pred) {
+        List<{{ sheetname }}Table> result = new ArrayList<>();
+        for ({{ sheetname }}Table row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public {{ sheetname }}Table findFirst(Predicate<{{ sheetname }}Table> pred) {
+        for ({{ sheetname }}Table row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

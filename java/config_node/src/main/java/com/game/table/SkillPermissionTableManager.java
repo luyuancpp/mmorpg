@@ -48,22 +48,48 @@ public class SkillPermissionTableManager {
         }
     }
 
-    public SkillPermissionTableData getAll() {
+    /** SELECT * FROM skillpermission */
+    public SkillPermissionTableData selectAll() {
         return data;
     }
 
-    public SkillPermissionTable getById(int id) {
+    /** SELECT COUNT(*) FROM skillpermission */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM skillpermission WHERE id = ? */
+    public SkillPermissionTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, SkillPermissionTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM skillpermission WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM skillpermission WHERE id IN (?, ?, ...) */
+    public List<SkillPermissionTable> selectByIds(List<Integer> ids) {
+        List<SkillPermissionTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            SkillPermissionTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, SkillPermissionTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
 
 
-    public List<SkillPermissionTable> getBySkill_typeIndex(int key) {
+    /** SELECT * FROM skillpermission WHERE ? IN (skill_type) */
+    public List<SkillPermissionTable> selectWhereInSkill_type(int key) {
         return idxSkill_type.getOrDefault(key, Collections.emptyList());
     }
 

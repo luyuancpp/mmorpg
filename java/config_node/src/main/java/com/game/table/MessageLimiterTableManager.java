@@ -43,15 +43,40 @@ public class MessageLimiterTableManager {
         }
     }
 
-    public MessageLimiterTableData getAll() {
+    /** SELECT * FROM messagelimiter */
+    public MessageLimiterTableData selectAll() {
         return data;
     }
 
-    public MessageLimiterTable getById(int id) {
+    /** SELECT COUNT(*) FROM messagelimiter */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM messagelimiter WHERE id = ? */
+    public MessageLimiterTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, MessageLimiterTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM messagelimiter WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM messagelimiter WHERE id IN (?, ?, ...) */
+    public List<MessageLimiterTable> selectByIds(List<Integer> ids) {
+        List<MessageLimiterTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            MessageLimiterTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, MessageLimiterTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 

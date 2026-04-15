@@ -63,34 +63,63 @@ public class ConditionTableManager {
         }
     }
 
-    public ConditionTableData getAll() {
+    /** SELECT * FROM condition */
+    public ConditionTableData selectAll() {
         return data;
     }
 
-    public ConditionTable getById(int id) {
+    /** SELECT COUNT(*) FROM condition */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM condition WHERE id = ? */
+    public ConditionTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, ConditionTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM condition WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM condition WHERE id IN (?, ?, ...) */
+    public List<ConditionTable> selectByIds(List<Integer> ids) {
+        List<ConditionTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            ConditionTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, ConditionTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
 
 
-    public List<ConditionTable> getByCondition1Index(int key) {
+    /** SELECT * FROM condition WHERE ? IN (condition1) */
+    public List<ConditionTable> selectWhereInCondition1(int key) {
         return idxCondition1.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<ConditionTable> getByCondition2Index(int key) {
+    /** SELECT * FROM condition WHERE ? IN (condition2) */
+    public List<ConditionTable> selectWhereInCondition2(int key) {
         return idxCondition2.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<ConditionTable> getByCondition3Index(int key) {
+    /** SELECT * FROM condition WHERE ? IN (condition3) */
+    public List<ConditionTable> selectWhereInCondition3(int key) {
         return idxCondition3.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<ConditionTable> getByCondition4Index(int key) {
+    /** SELECT * FROM condition WHERE ? IN (condition4) */
+    public List<ConditionTable> selectWhereInCondition4(int key) {
         return idxCondition4.getOrDefault(key, Collections.emptyList());
     }
 
