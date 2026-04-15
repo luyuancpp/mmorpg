@@ -8,12 +8,12 @@ import (
 // Foreign key helpers for TestMultiKeyTable
 // ---------------------------------------------------------------------------
 
-// GetTestMultiKeyTestRefRow resolves TestMultiKey.test_ref → Test row.
+// GetTestMultiKeyTestRefRow resolves TestMultiKey.test_ref -> Test row.
 func GetTestMultiKeyTestRefRow(row *pb.TestMultiKeyTable) (*pb.TestTable, bool) {
     return TestTableManagerInstance.FindById(row.TestRef)
 }
 
-// GetTestMultiKeyTestRefsRows resolves TestMultiKey.test_refs[] → Test rows.
+// GetTestMultiKeyTestRefsRows resolves TestMultiKey.test_refs[] -> Test rows.
 func GetTestMultiKeyTestRefsRows(row *pb.TestMultiKeyTable) []*pb.TestTable {
     var result []*pb.TestTable
     for _, id := range row.TestRefs {

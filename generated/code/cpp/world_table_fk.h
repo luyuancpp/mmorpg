@@ -8,8 +8,8 @@
 // Foreign key helpers for WorldTable
 // ---------------------------------------------------------------------------
 
-/// Resolve World.scene_id → BaseScene row.
-inline const BaseSceneTable* GetSceneIdRow(const WorldTable& row) {
+/// Resolve World.scene_id -> BaseScene row.
+inline const BaseSceneTable* GetWorldSceneIdRow(const WorldTable& row) {
     auto [ptr, _] = BaseSceneTableManager::Instance().FindByIdSilent(row.scene_id());
     return ptr;
 }

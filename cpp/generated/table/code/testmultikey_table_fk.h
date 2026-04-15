@@ -8,14 +8,14 @@
 // Foreign key helpers for TestMultiKeyTable
 // ---------------------------------------------------------------------------
 
-/// Resolve TestMultiKey.test_ref → Test row.
-inline const TestTable* GetTestRefRow(const TestMultiKeyTable& row) {
+/// Resolve TestMultiKey.test_ref -> Test row.
+inline const TestTable* GetTestMultiKeyTestRefRow(const TestMultiKeyTable& row) {
     auto [ptr, _] = TestTableManager::Instance().FindByIdSilent(row.test_ref());
     return ptr;
 }
 
-/// Resolve TestMultiKey.test_refs[] → Test rows.
-inline std::vector<const TestTable*> GetTestRefsRows(const TestMultiKeyTable& row) {
+/// Resolve TestMultiKey.test_refs[] -> Test rows.
+inline std::vector<const TestTable*> GetTestMultiKeyTestRefsRows(const TestMultiKeyTable& row) {
     std::vector<const TestTable*> result;
     for (auto id : row.test_refs()) {
         auto [ptr, _] = TestTableManager::Instance().FindByIdSilent(id);
