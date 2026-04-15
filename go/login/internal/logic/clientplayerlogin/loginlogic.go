@@ -3,7 +3,6 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
-	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -13,6 +12,7 @@ import (
 	login_proto_common "proto/common/base"
 	login_proto_data_base "proto/common/database"
 	login_proto "proto/login"
+	"shared/generated/pb/table"
 	"time"
 
 	"github.com/redis/go-redis/v9"

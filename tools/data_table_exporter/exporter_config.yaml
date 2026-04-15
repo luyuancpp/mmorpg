@@ -61,13 +61,13 @@ languages:
     enabled: true
     code_dir: ../../generated/code/go/generated/table
     proto_output_dir: ../../generated/code/go
-    proto_import_path: "game/generated/pb/table"
+    proto_import_path: "shared/generated/pb/table"
     constants_dir: ../../generated/code/go/generated/constants
     table_id_dir: ../../generated/code/go/generated/table/table_id
     bit_index_dir: ../../generated/code/go/generated/bit_index
-    # Go services that receive a copy of generated code
-    grpc_service_scan_dir: ../../proto/service/go/grpc
-    grpc_deploy_base: ../../go
+    deploy:
+      - src: ../../generated/code/go/generated
+        dst: ../../go/shared/generated
 
   java:
     enabled: true
