@@ -21,6 +21,7 @@
 #include "proto/scene/scene.pb.h"
 #include "proto/scene/scene_admin.pb.h"
 #include "proto/scene_manager/scene_manager_service.pb.h"
+#include "proto/scene_manager/scene_node_service.pb.h"
 
 #include "rpc/service_metadata/chat_service_metadata.h"
 #include "rpc/service_metadata/data_service_service_metadata.h"
@@ -40,6 +41,7 @@
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/scene_admin_service_metadata.h"
 #include "rpc/service_metadata/scene_manager_service_service_metadata.h"
+#include "rpc/service_metadata/scene_node_service_service_metadata.h"
 
 #include "proto/common/event/mission_event.pb.h"
 #include "proto/common/event/scene_event.pb.h"
@@ -141,6 +143,8 @@ namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt:
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::array<RpcMethodMeta, 122> gRpcMethodRegistry;
 
@@ -794,6 +798,18 @@ void InitMessageInfo()
         std::make_unique<::scene_manager::LeaveSceneRequest>(),
         std::make_unique<::Empty>(),
         nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveScene};
+
+    // --- SceneNodeGrpc ---
+    gRpcMethodRegistry[SceneNodeGrpcCreateSceneMessageId] = RpcMethodMeta{
+        "SceneNodeGrpc", "CreateScene",
+        std::make_unique<::CreateSceneRequest>(),
+        std::make_unique<::CreateSceneResponse>(),
+        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCreateScene};
+    gRpcMethodRegistry[SceneNodeGrpcDestroySceneMessageId] = RpcMethodMeta{
+        "SceneNodeGrpc", "DestroyScene",
+        std::make_unique<::DestroySceneRequest>(),
+        std::make_unique<::Empty>(),
+        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcDestroyScene};
 }
 
 bool IsClientMessageId(uint32_t messageId)
