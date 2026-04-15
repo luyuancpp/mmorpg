@@ -99,25 +99,25 @@ inline const DungeonTableData& FindAllDungeonTable() {
 }
 
 #define FetchAndValidateDungeonTable(tableId) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomDungeonTable(prefix, tableId) \
-    const auto [prefix##DungeonTable, prefix##fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
+    const auto [prefix##DungeonTable, prefix##fetchResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##DungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchDungeonTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchDungeonTableOrReturnVoid(tableId) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchDungeonTableOrContinue(tableId) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchDungeonTableOrReturnFalse(tableId) \
-    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindById(tableId); \
+    const auto [dungeonTable, fetchResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonTable)) { LOG_ERROR << "Dungeon table not found for ID: " << tableId; return false; } } while(0)

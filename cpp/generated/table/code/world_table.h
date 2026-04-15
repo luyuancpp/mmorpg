@@ -99,25 +99,25 @@ inline const WorldTableData& FindAllWorldTable() {
 }
 
 #define FetchAndValidateWorldTable(tableId) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomWorldTable(prefix, tableId) \
-    const auto [prefix##WorldTable, prefix##fetchResult] = WorldTableManager::Instance().FindById(tableId); \
+    const auto [prefix##WorldTable, prefix##fetchResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##WorldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchWorldTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchWorldTableOrReturnVoid(tableId) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchWorldTableOrContinue(tableId) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchWorldTableOrReturnFalse(tableId) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return false; } } while(0)

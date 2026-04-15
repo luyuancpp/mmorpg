@@ -101,25 +101,25 @@ inline const SkillPermissionTableData& FindAllSkillPermissionTable() {
 }
 
 #define FetchAndValidateSkillPermissionTable(tableId) \
-    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindById(tableId); \
+    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomSkillPermissionTable(prefix, tableId) \
-    const auto [prefix##SkillPermissionTable, prefix##fetchResult] = SkillPermissionTableManager::Instance().FindById(tableId); \
+    const auto [prefix##SkillPermissionTable, prefix##fetchResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##SkillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchSkillPermissionTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindById(tableId); \
+    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchSkillPermissionTableOrReturnVoid(tableId) \
-    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindById(tableId); \
+    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchSkillPermissionTableOrContinue(tableId) \
-    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindById(tableId); \
+    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchSkillPermissionTableOrReturnFalse(tableId) \
-    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindById(tableId); \
+    const auto [skillPermissionTable, fetchResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId; return false; } } while(0)

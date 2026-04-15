@@ -107,25 +107,25 @@ inline const MissionTableData& FindAllMissionTable() {
 }
 
 #define FetchAndValidateMissionTable(tableId) \
-    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindById(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionTable)) { LOG_ERROR << "Mission table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMissionTable(prefix, tableId) \
-    const auto [prefix##MissionTable, prefix##fetchResult] = MissionTableManager::Instance().FindById(tableId); \
+    const auto [prefix##MissionTable, prefix##fetchResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##MissionTable)) { LOG_ERROR << "Mission table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchMissionTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindById(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionTable)) { LOG_ERROR << "Mission table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMissionTableOrReturnVoid(tableId) \
-    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindById(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionTable)) { LOG_ERROR << "Mission table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMissionTableOrContinue(tableId) \
-    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindById(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionTable)) { LOG_ERROR << "Mission table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMissionTableOrReturnFalse(tableId) \
-    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindById(tableId); \
+    const auto [missionTable, fetchResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionTable)) { LOG_ERROR << "Mission table not found for ID: " << tableId; return false; } } while(0)

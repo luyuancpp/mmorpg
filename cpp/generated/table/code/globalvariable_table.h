@@ -97,25 +97,25 @@ inline const GlobalVariableTableData& FindAllGlobalVariableTable() {
 }
 
 #define FetchAndValidateGlobalVariableTable(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomGlobalVariableTable(prefix, tableId) \
-    const auto [prefix##GlobalVariableTable, prefix##fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
+    const auto [prefix##GlobalVariableTable, prefix##fetchResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##GlobalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnVoid(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchGlobalVariableTableOrContinue(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchGlobalVariableTableOrReturnFalse(tableId) \
-    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindById(tableId); \
+    const auto [globalVariableTable, fetchResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << tableId; return false; } } while(0)

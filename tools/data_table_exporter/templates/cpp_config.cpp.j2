@@ -67,10 +67,10 @@ std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::Fi
 }
 
 {% for col in table.table_keys -%}
-std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::FindBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} tableId) const {
-    const auto it = kv_{{ col.name }}data_.find(tableId);
+std::pair<const {{ sheetname }}Table*, uint32_t> {{ sheetname }}TableManager::FindBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const {
+    const auto it = kv_{{ col.name }}data_.find(key);
     if (it == kv_{{ col.name }}data_.end()) {
-        LOG_ERROR << "{{ sheetname }} table not found for {{ col.name }}: " << tableId;
+        LOG_ERROR << "{{ sheetname }} table not found for {{ col.name }}: " << key;
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};

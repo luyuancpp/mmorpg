@@ -56,15 +56,14 @@ public:
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
 {% for col in table.table_keys %}
-    std::pair<const {{ sheetname }}Table*, uint32_t> FindBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} tableId) const;
+    std::pair<const {{ sheetname }}Table*, uint32_t> FindBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const;
     const std::{{ cpp_map_type(col.is_multi_key) }}<{{ to_cpp_type(col.data_type) }}, const {{ sheetname }}Table*>& Get{{ col.name | title }}Data() const { return kv_{{ col.name }}data_; }
 {% endfor %}
 
 {% for col in table.expression_columns %}
     {{ col.expression_type }} Get{{ col.name | title }}(uint32_t tableId) {
-        auto [table, ok] = FindById(tableId);
-        if (!ok || table == nullptr) {
-            LOG_ERROR << "{{ col.name | title }} table not found for ID: " << tableId;
+        auto [table, fetchResult] = FindById(tableId);
+        if (table == nullptr) {
             return {{ col.expression_type }}();
         }
         return expression_{{ col.name }}_.Value(table->{{ col.name }}());
@@ -178,25 +177,25 @@ inline const {{ sheetname }}TableData& FindAll{{ sheetname }}Table() {
 }
 
 #define FetchAndValidate{{ sheetname }}Table(tableId) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustom{{ sheetname }}Table(prefix, tableId) \
-    const auto [prefix##{{ sheetname }}Table, prefix##fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
+    const auto [prefix##{{ sheetname }}Table, prefix##fetchResult] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##{{ sheetname }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnCustom(tableId, customReturnValue) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnVoid(tableId) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrContinue(tableId) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; continue; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnFalse(tableId) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return false; } } while(0)

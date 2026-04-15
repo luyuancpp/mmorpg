@@ -60,9 +60,6 @@
     <ClInclude Include="code\item_table.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="code\mainscene_table.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="code\messagelimiter_table.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -73,9 +70,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="code\reward_table.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="code\scene_table.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="code\skill_table.h">
@@ -162,9 +156,6 @@
     <ClInclude Include="proto\item_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="proto\mainscene_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="proto\messagelimiter_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -175,9 +166,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\reward_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="proto\scene_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\skill_table.pb.h">
@@ -237,9 +225,6 @@
     <ClInclude Include="code\item_table_comp.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="code\mainscene_table_comp.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="code\messagelimiter_table_comp.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -250,9 +235,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="code\reward_table_comp.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="code\scene_table_comp.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="code\skill_table_comp.h">
@@ -296,9 +278,6 @@
     <ClCompile Include="code\item_table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="code\mainscene_table.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="code\messagelimiter_table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -309,9 +288,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="code\reward_table.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="code\scene_table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="code\skill_table.cpp">
@@ -398,9 +374,6 @@
     <ClCompile Include="proto\item_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="proto\mainscene_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="proto\messagelimiter_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -411,9 +384,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\reward_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\scene_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\skill_table.pb.cc">

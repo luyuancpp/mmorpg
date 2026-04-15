@@ -100,25 +100,25 @@ inline const MirrorTableData& FindAllMirrorTable() {
 }
 
 #define FetchAndValidateMirrorTable(tableId) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMirrorTable(prefix, tableId) \
-    const auto [prefix##MirrorTable, prefix##fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
+    const auto [prefix##MirrorTable, prefix##fetchResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##MirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchMirrorTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMirrorTableOrReturnVoid(tableId) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMirrorTableOrContinue(tableId) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMirrorTableOrReturnFalse(tableId) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return false; } } while(0)

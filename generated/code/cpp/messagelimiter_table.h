@@ -97,25 +97,25 @@ inline const MessageLimiterTableData& FindAllMessageLimiterTable() {
 }
 
 #define FetchAndValidateMessageLimiterTable(tableId) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMessageLimiterTable(prefix, tableId) \
-    const auto [prefix##MessageLimiterTable, prefix##fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
+    const auto [prefix##MessageLimiterTable, prefix##fetchResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##MessageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchMessageLimiterTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMessageLimiterTableOrReturnVoid(tableId) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMessageLimiterTableOrContinue(tableId) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMessageLimiterTableOrReturnFalse(tableId) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return false; } } while(0)

@@ -97,25 +97,25 @@ inline const BaseSceneTableData& FindAllBaseSceneTable() {
 }
 
 #define FetchAndValidateBaseSceneTable(tableId) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomBaseSceneTable(prefix, tableId) \
-    const auto [prefix##BaseSceneTable, prefix##fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
+    const auto [prefix##BaseSceneTable, prefix##fetchResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##BaseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchBaseSceneTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchBaseSceneTableOrReturnVoid(tableId) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchBaseSceneTableOrContinue(tableId) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchBaseSceneTableOrReturnFalse(tableId) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return false; } } while(0)
