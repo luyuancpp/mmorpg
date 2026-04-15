@@ -21,6 +21,8 @@ public class AllTable {
 
         ActorActionStateTableManager.getInstance().load(configDir, useBinary);
 
+        BaseSceneTableManager.getInstance().load(configDir, useBinary);
+
         BuffTableManager.getInstance().load(configDir, useBinary);
 
         ClassTableManager.getInstance().load(configDir, useBinary);
@@ -29,21 +31,21 @@ public class AllTable {
 
         CooldownTableManager.getInstance().load(configDir, useBinary);
 
+        DungeonTableManager.getInstance().load(configDir, useBinary);
+
         GlobalVariableTableManager.getInstance().load(configDir, useBinary);
 
         ItemTableManager.getInstance().load(configDir, useBinary);
 
-        MainSceneTableManager.getInstance().load(configDir, useBinary);
-
         MessageLimiterTableManager.getInstance().load(configDir, useBinary);
+
+        MirrorTableManager.getInstance().load(configDir, useBinary);
 
         MissionTableManager.getInstance().load(configDir, useBinary);
 
         MonsterTableManager.getInstance().load(configDir, useBinary);
 
         RewardTableManager.getInstance().load(configDir, useBinary);
-
-        SceneTableManager.getInstance().load(configDir, useBinary);
 
         SkillTableManager.getInstance().load(configDir, useBinary);
 
@@ -52,6 +54,8 @@ public class AllTable {
         TestTableManager.getInstance().load(configDir, useBinary);
 
         TestMultiKeyTableManager.getInstance().load(configDir, useBinary);
+
+        WorldTableManager.getInstance().load(configDir, useBinary);
 
         if (loadSuccessCallback != null) {
             loadSuccessCallback.run();
@@ -68,7 +72,7 @@ public class AllTable {
      * @param useBinary true to load .pb (proto binary), false to load .json.
      */
     public static void loadTablesAsync(String configDir, boolean useBinary) throws Exception {
-        CountDownLatch latch = new CountDownLatch(18);
+        CountDownLatch latch = new CountDownLatch(20);
 
         new Thread(() -> {
             try {
@@ -85,6 +89,16 @@ public class AllTable {
                 ActorActionStateTableManager.getInstance().load(configDir, useBinary);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load ActorActionState table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                BaseSceneTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load BaseScene table", e);
             } finally {
                 latch.countDown();
             }
@@ -132,6 +146,16 @@ public class AllTable {
 
         new Thread(() -> {
             try {
+                DungeonTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load Dungeon table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
                 GlobalVariableTableManager.getInstance().load(configDir, useBinary);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load GlobalVariable table", e);
@@ -152,9 +176,9 @@ public class AllTable {
 
         new Thread(() -> {
             try {
-                MainSceneTableManager.getInstance().load(configDir, useBinary);
+                MessageLimiterTableManager.getInstance().load(configDir, useBinary);
             } catch (Exception e) {
-                throw new RuntimeException("Failed to load MainScene table", e);
+                throw new RuntimeException("Failed to load MessageLimiter table", e);
             } finally {
                 latch.countDown();
             }
@@ -162,9 +186,9 @@ public class AllTable {
 
         new Thread(() -> {
             try {
-                MessageLimiterTableManager.getInstance().load(configDir, useBinary);
+                MirrorTableManager.getInstance().load(configDir, useBinary);
             } catch (Exception e) {
-                throw new RuntimeException("Failed to load MessageLimiter table", e);
+                throw new RuntimeException("Failed to load Mirror table", e);
             } finally {
                 latch.countDown();
             }
@@ -195,16 +219,6 @@ public class AllTable {
                 RewardTableManager.getInstance().load(configDir, useBinary);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load Reward table", e);
-            } finally {
-                latch.countDown();
-            }
-        }).start();
-
-        new Thread(() -> {
-            try {
-                SceneTableManager.getInstance().load(configDir, useBinary);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to load Scene table", e);
             } finally {
                 latch.countDown();
             }
@@ -250,6 +264,16 @@ public class AllTable {
             }
         }).start();
 
+        new Thread(() -> {
+            try {
+                WorldTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load World table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
         latch.await();
 
         if (loadSuccessCallback != null) {
@@ -274,6 +298,8 @@ public class AllTable {
 
         ActorActionStateTableManager.getInstance().load(configDir, useBinary);
 
+        BaseSceneTableManager.getInstance().load(configDir, useBinary);
+
         BuffTableManager.getInstance().load(configDir, useBinary);
 
         ClassTableManager.getInstance().load(configDir, useBinary);
@@ -282,21 +308,21 @@ public class AllTable {
 
         CooldownTableManager.getInstance().load(configDir, useBinary);
 
+        DungeonTableManager.getInstance().load(configDir, useBinary);
+
         GlobalVariableTableManager.getInstance().load(configDir, useBinary);
 
         ItemTableManager.getInstance().load(configDir, useBinary);
 
-        MainSceneTableManager.getInstance().load(configDir, useBinary);
-
         MessageLimiterTableManager.getInstance().load(configDir, useBinary);
+
+        MirrorTableManager.getInstance().load(configDir, useBinary);
 
         MissionTableManager.getInstance().load(configDir, useBinary);
 
         MonsterTableManager.getInstance().load(configDir, useBinary);
 
         RewardTableManager.getInstance().load(configDir, useBinary);
-
-        SceneTableManager.getInstance().load(configDir, useBinary);
 
         SkillTableManager.getInstance().load(configDir, useBinary);
 
@@ -305,6 +331,8 @@ public class AllTable {
         TestTableManager.getInstance().load(configDir, useBinary);
 
         TestMultiKeyTableManager.getInstance().load(configDir, useBinary);
+
+        WorldTableManager.getInstance().load(configDir, useBinary);
 
         if (loadSuccessCallback != null) {
             loadSuccessCallback.run();

@@ -1,0 +1,20 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "DungeonTableOuterClass";
+option java_multiple_files = true;
+
+
+message DungeonTable {
+	uint32 id = 1;
+	uint32 scene_id = 2;
+	uint32 max_team_size = 3;
+	uint32 time_limit = 4;
+}
+
+message DungeonTableData {
+	repeated DungeonTable data = 1;
+}

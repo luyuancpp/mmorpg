@@ -6,22 +6,24 @@
 
 #include "actoractioncombatstate_table.h"
 #include "actoractionstate_table.h"
+#include "basescene_table.h"
 #include "buff_table.h"
 #include "class_table.h"
 #include "condition_table.h"
 #include "cooldown_table.h"
+#include "dungeon_table.h"
 #include "globalvariable_table.h"
 #include "item_table.h"
-#include "mainscene_table.h"
 #include "messagelimiter_table.h"
+#include "mirror_table.h"
 #include "mission_table.h"
 #include "monster_table.h"
 #include "reward_table.h"
-#include "scene_table.h"
 #include "skill_table.h"
 #include "skillpermission_table.h"
 #include "test_table.h"
 #include "testmultikey_table.h"
+#include "world_table.h"
 
 
 LoadSuccessCallback loadSuccessCallback;
@@ -33,6 +35,9 @@ void LoadTables() {
 
     ActorActionStateTableManager::Instance().Load();
     ActorActionStateTableManager::Instance().LoadSuccess();
+
+    BaseSceneTableManager::Instance().Load();
+    BaseSceneTableManager::Instance().LoadSuccess();
 
     BuffTableManager::Instance().Load();
     BuffTableManager::Instance().LoadSuccess();
@@ -46,17 +51,20 @@ void LoadTables() {
     CooldownTableManager::Instance().Load();
     CooldownTableManager::Instance().LoadSuccess();
 
+    DungeonTableManager::Instance().Load();
+    DungeonTableManager::Instance().LoadSuccess();
+
     GlobalVariableTableManager::Instance().Load();
     GlobalVariableTableManager::Instance().LoadSuccess();
 
     ItemTableManager::Instance().Load();
     ItemTableManager::Instance().LoadSuccess();
 
-    MainSceneTableManager::Instance().Load();
-    MainSceneTableManager::Instance().LoadSuccess();
-
     MessageLimiterTableManager::Instance().Load();
     MessageLimiterTableManager::Instance().LoadSuccess();
+
+    MirrorTableManager::Instance().Load();
+    MirrorTableManager::Instance().LoadSuccess();
 
     MissionTableManager::Instance().Load();
     MissionTableManager::Instance().LoadSuccess();
@@ -66,9 +74,6 @@ void LoadTables() {
 
     RewardTableManager::Instance().Load();
     RewardTableManager::Instance().LoadSuccess();
-
-    SceneTableManager::Instance().Load();
-    SceneTableManager::Instance().LoadSuccess();
 
     SkillTableManager::Instance().Load();
     SkillTableManager::Instance().LoadSuccess();
@@ -82,6 +87,9 @@ void LoadTables() {
     TestMultiKeyTableManager::Instance().Load();
     TestMultiKeyTableManager::Instance().LoadSuccess();
 
+    WorldTableManager::Instance().Load();
+    WorldTableManager::Instance().LoadSuccess();
+
 
     if (loadSuccessCallback) {
         loadSuccessCallback();
@@ -89,7 +97,7 @@ void LoadTables() {
 }
 
 void LoadTablesAsync() {
-    static muduo::CountDownLatch latch(18);
+    static muduo::CountDownLatch latch(20);
 
     std::thread ActorActionCombatStateLoadThread([]() {
         void InitThreadLocalConfig();
@@ -106,6 +114,14 @@ void LoadTablesAsync() {
         latch.countDown();
     });
     ActorActionStateLoadThread.detach();
+
+    std::thread BaseSceneLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        BaseSceneTableManager::Instance().Load();
+        latch.countDown();
+    });
+    BaseSceneLoadThread.detach();
 
     std::thread BuffLoadThread([]() {
         void InitThreadLocalConfig();
@@ -139,6 +155,14 @@ void LoadTablesAsync() {
     });
     CooldownLoadThread.detach();
 
+    std::thread DungeonLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        DungeonTableManager::Instance().Load();
+        latch.countDown();
+    });
+    DungeonLoadThread.detach();
+
     std::thread GlobalVariableLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
@@ -155,14 +179,6 @@ void LoadTablesAsync() {
     });
     ItemLoadThread.detach();
 
-    std::thread MainSceneLoadThread([]() {
-        void InitThreadLocalConfig();
-        InitThreadLocalConfig();
-        MainSceneTableManager::Instance().Load();
-        latch.countDown();
-    });
-    MainSceneLoadThread.detach();
-
     std::thread MessageLimiterLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
@@ -170,6 +186,14 @@ void LoadTablesAsync() {
         latch.countDown();
     });
     MessageLimiterLoadThread.detach();
+
+    std::thread MirrorLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        MirrorTableManager::Instance().Load();
+        latch.countDown();
+    });
+    MirrorLoadThread.detach();
 
     std::thread MissionLoadThread([]() {
         void InitThreadLocalConfig();
@@ -194,14 +218,6 @@ void LoadTablesAsync() {
         latch.countDown();
     });
     RewardLoadThread.detach();
-
-    std::thread SceneLoadThread([]() {
-        void InitThreadLocalConfig();
-        InitThreadLocalConfig();
-        SceneTableManager::Instance().Load();
-        latch.countDown();
-    });
-    SceneLoadThread.detach();
 
     std::thread SkillLoadThread([]() {
         void InitThreadLocalConfig();
@@ -235,12 +251,22 @@ void LoadTablesAsync() {
     });
     TestMultiKeyLoadThread.detach();
 
+    std::thread WorldLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        WorldTableManager::Instance().Load();
+        latch.countDown();
+    });
+    WorldLoadThread.detach();
+
     latch.wait();
 
 
     ActorActionCombatStateTableManager::Instance().LoadSuccess();
 
     ActorActionStateTableManager::Instance().LoadSuccess();
+
+    BaseSceneTableManager::Instance().LoadSuccess();
 
     BuffTableManager::Instance().LoadSuccess();
 
@@ -250,21 +276,21 @@ void LoadTablesAsync() {
 
     CooldownTableManager::Instance().LoadSuccess();
 
+    DungeonTableManager::Instance().LoadSuccess();
+
     GlobalVariableTableManager::Instance().LoadSuccess();
 
     ItemTableManager::Instance().LoadSuccess();
 
-    MainSceneTableManager::Instance().LoadSuccess();
-
     MessageLimiterTableManager::Instance().LoadSuccess();
+
+    MirrorTableManager::Instance().LoadSuccess();
 
     MissionTableManager::Instance().LoadSuccess();
 
     MonsterTableManager::Instance().LoadSuccess();
 
     RewardTableManager::Instance().LoadSuccess();
-
-    SceneTableManager::Instance().LoadSuccess();
 
     SkillTableManager::Instance().LoadSuccess();
 
@@ -273,6 +299,8 @@ void LoadTablesAsync() {
     TestTableManager::Instance().LoadSuccess();
 
     TestMultiKeyTableManager::Instance().LoadSuccess();
+
+    WorldTableManager::Instance().LoadSuccess();
 
     if (loadSuccessCallback) {
         loadSuccessCallback();
