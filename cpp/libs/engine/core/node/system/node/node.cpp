@@ -295,6 +295,70 @@ void Node::InitEtcdService()
 	serviceDiscoveryManager.Init();
 }
 
+void Node::RegisterGrpcService(grpc::Service *service)
+{
+	if (service == nullptr)
+	{
+		LOG_WARN << "Attempted to register null gRPC service, skipping.";
+		return;
+	}
+	grpcServices_.push_back(service);
+}
+
+void Node::StartGrpcServer()
+{
+	if (grpcServices_.empty())
+	{
+		return;
+	}
+
+	const auto &grpcEp = GetNodeInfo().grpc_endpoint();
+	if (grpcEp.port() == 0)
+	{
+		LOG_ERROR << "gRPC server port not allocated, skipping gRPC server start.";
+		return;
+	}
+
+	const std::string serverAddress = grpcEp.ip() + ":" + std::to_string(grpcEp.port());
+
+	grpc::ServerBuilder builder;
+	builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
+
+	for (auto *svc : grpcServices_)
+	{
+		builder.RegisterService(svc);
+	}
+
+	grpcServer_ = builder.BuildAndStart();
+	if (!grpcServer_)
+	{
+		LOG_FATAL << "Failed to start gRPC server on " << serverAddress;
+		return;
+	}
+
+	grpcServerThread_ = std::thread([this, serverAddress]
+									{
+		LOG_INFO << "gRPC server thread started, listening on " << serverAddress;
+		grpcServer_->Wait(); });
+
+	LOG_INFO << "gRPC server started on " << serverAddress;
+}
+
+void Node::ShutdownGrpcServer()
+{
+	if (grpcServer_)
+	{
+		LOG_INFO << "Shutting down gRPC server...";
+		grpcServer_->Shutdown();
+		if (grpcServerThread_.joinable())
+		{
+			grpcServerThread_.join();
+		}
+		grpcServer_.reset();
+		LOG_INFO << "gRPC server shut down.";
+	}
+}
+
 void Node::OnNodeIdConflictShutdown(NodeIdConflictReason reason)
 {
 	LOG_WARN << "Node identity conflict detected (reason="
@@ -349,6 +413,8 @@ void Node::StartRpcServer()
 
 	StartNodeRegistrationHealthMonitor();
 
+	StartGrpcServer();
+
 	tlsEcs.dispatcher.trigger<OnServerStart>();
 
 	auto nodeTypeName = boost::to_upper_copy(eNodeType_Name(GetNodeInfo().node_type()));
@@ -379,6 +445,13 @@ void Node::StartRpcServer()
 	if (etcdHosts.empty())
 		etcdHosts = "(not configured)";
 
+	// Build gRPC listen string
+	std::string grpcListen = "(disabled)";
+	if (GetNodeInfo().grpc_endpoint().port() > 0)
+	{
+		grpcListen = GetNodeInfo().grpc_endpoint().ip() + ":" + std::to_string(GetNodeInfo().grpc_endpoint().port());
+	}
+
 	// Print startup banner to both log file and stdout/console so it is always visible.
 	const std::string banner =
 		"\n\n"
@@ -388,7 +461,9 @@ void Node::StartRpcServer()
 					   "=============================================================\n"
 					   "  Listen:      " +
 		ep.ip() + ":" + std::to_string(ep.port()) + "\n"
-													"  node_id:     " +
+													"  gRPC:        " +
+		grpcListen + "\n"
+					 "  node_id:     " +
 		std::to_string(GetNodeId()) + "\n"
 									  "  node_uuid:   " +
 		GetNodeInfo().node_uuid() + "\n"
@@ -447,6 +522,7 @@ void Node::ShutdownInLoop()
 	}
 
 	LOG_DEBUG << "Node shutting down...";
+	ShutdownGrpcServer();
 	grpcHandlerTimer.Cancel();
 	serviceHealthMonitorTimer.Cancel();
 	acquireNodeTimer.Cancel();

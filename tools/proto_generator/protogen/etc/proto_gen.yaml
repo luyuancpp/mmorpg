@@ -293,7 +293,7 @@ domain_meta:
   scene:
     source: "{{proto_dir}}scene/"
     rpc:
-      type: rpc
+      type: both
     outputs:
       cpp:
         proto: "cpp/generated/nodes/scene/proto"

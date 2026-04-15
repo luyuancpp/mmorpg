@@ -1,7 +1,7 @@
 # Scene Node gRPC Server Design
 
 **Date:** 2026-04-15
-**Status:** Planned
+**Status:** Implemented
 
 ## Problem
 
@@ -78,52 +78,73 @@ Kafka remains appropriate for Gate's `RoutePlayer`/`KickPlayer` (notifications, 
   scene_manager                     └─────────────────────────┘
 ```
 
-## Implementation Plan
+## Implementation (Completed)
 
-### 1. Proto: Add gRPC Endpoint to NodeInfo
+### 1. Proto: Added gRPC Endpoint to NodeInfo
 
 **File:** `proto/common/base/common.proto`
 
-Add `grpc_endpoint` field to `NodeInfo`:
 ```protobuf
 message NodeInfo {
-    // ... existing fields ...
-    Endpoint grpc_endpoint = N;  // gRPC endpoint (for Go services)
+    // ... existing fields 1-9 ...
+    EndpointComp grpc_endpoint = 10; // gRPC server endpoint (for Go services to connect)
 }
 ```
 
-### 2. C++ Scene Node: Add gRPC Server
+### 2. Proto codegen: Enabled gRPC C++ stubs for scene domain
 
-**File:** `cpp/libs/engine/core/node/system/node/node.h/.cpp`
+**File:** `tools/proto_generator/protogen/etc/proto_gen.yaml`
 
-- Add optional gRPC server to `Node` base class
-- gRPC port = TCP port + 1 (by convention, overridable by env)
-- gRPC server runs on a separate thread pool (standard `grpc::ServerBuilder`)
-- Register proto `Scene` service implementation
+Changed scene domain `rpc.type` from `rpc` to `both`. The `both` type generates gRPC `.grpc.pb.h/.grpc.pb.cc` stubs while preserving muduo RPC handler generation (which checks `IsGRPC()` -> returns false for `both`).
 
-**File:** `cpp/nodes/scene/main.cpp`
+**File:** `tools/proto_generator/protogen/internal/generator/cpp/gen.go`
 
-- Enable gRPC server in Scene node startup
-- Register Scene gRPC service handlers (CreateScene, DestroyScene, etc.)
+Added `both` to the allowed types for gRPC C++ stub generation.
 
-### 3. etcd Registration: Publish Both Endpoints
+### 3. C++ Node base class: Added optional gRPC server
+
+**File:** `cpp/libs/engine/core/node/system/node/node.h`
+
+- `RegisterGrpcService(grpc::Service*)` — register before `StartRpcServer()`
+- `StartGrpcServer()` / `ShutdownGrpcServer()` — lifecycle methods
+- `grpcServer_` (unique_ptr), `grpcServerThread_` (std::thread), `grpcServices_` (vector)
 
 **File:** `cpp/libs/engine/core/node/system/node/node.cpp`
 
-- Populate `grpc_endpoint` in NodeInfo before etcd registration
-- Single etcd key contains both TCP and gRPC endpoints
+- `StartGrpcServer()` called in `StartRpcServer()` after TCP server, only if services registered
+- `ShutdownGrpcServer()` called first in `ShutdownInLoop()`
+- gRPC server runs on its own thread (`grpcServer_->Wait()`)
+- Banner updated to include gRPC endpoint
 
-### 4. Go scene_manager: Use gRPC Endpoint
+### 4. C++ Node allocator: gRPC port allocation
+
+**File:** `cpp/libs/engine/core/node/system/node/node_allocator.cpp`
+
+After TCP port allocation, if node has gRPC services, allocates gRPC port = TCP port + 1 (with availability check and fallback scan). Sets `grpc_endpoint` in NodeInfo, which is then published to etcd as JSON.
+
+### 5. C++ Scene Node: gRPC service implementation
+
+**File:** `cpp/nodes/scene/handler/grpc/scene_grpc_service.h/.cpp`
+
+Implements `Scene::Service` from generated `scene.grpc.pb.h`:
+- `CreateScene` — dispatches to muduo event loop via promise/future for thread safety
+- `DestroyScene` — same dispatch pattern
+- Idempotent, matches existing muduo handler logic
+
+**File:** `cpp/nodes/scene/main.cpp`
+
+Registers `SceneGrpcServiceImpl` via `node.RegisterGrpcService()` before startup.
+Changed from `RunSimpleNodeMainWithOwnedContext` to `RunNodeMain` to support constructing `SceneRuntimeContext` with `EventLoop*`.
+
+### 6. Go scene_manager: Uses gRPC endpoint
 
 **File:** `go/scene_manager/internal/logic/scene_node_client.go`
 
-- Parse `grpc_endpoint` from etcd NodeInfo JSON
-- Dial using `grpc_endpoint` instead of `endpoint`
-- No change to RPC call logic (already using Scene proto stubs)
+Updated `resolveNodeEndpoint()` to prefer `grpcEndpoint` from etcd JSON, with fallback to `endpoint` for backward compatibility.
 
 **File:** `go/scene_manager/internal/logic/load_reporter.go`
 
-- Parse `grpc_endpoint` from etcd watch events
+Added `GrpcEndpoint` field to `sceneNodeRegistration` struct.
 
 ## Cross-Server Implications
 
@@ -132,16 +153,21 @@ message NodeInfo {
 - No Kafka topic routing or cross-zone stream management needed
 - Same `CreateScene` RPC works for local and cross-zone requests
 
-## Files Affected
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `proto/common/base/common.proto` | Add `grpc_endpoint` to NodeInfo |
-| `cpp/libs/engine/core/node/system/node/node.h` | Optional gRPC server support |
-| `cpp/libs/engine/core/node/system/node/node.cpp` | gRPC server init, etcd registration |
-| `cpp/nodes/scene/main.cpp` | Enable gRPC server, register service |
-| `go/scene_manager/internal/logic/scene_node_client.go` | Use grpc_endpoint |
-| `go/scene_manager/internal/logic/load_reporter.go` | Parse grpc_endpoint |
+| `proto/common/base/common.proto` | Added `grpc_endpoint` field 10 to NodeInfo |
+| `tools/proto_generator/protogen/etc/proto_gen.yaml` | Scene domain `rpc.type: rpc` -> `both` |
+| `tools/proto_generator/protogen/internal/generator/cpp/gen.go` | Added `both` to gRPC stub generation check |
+| `cpp/libs/engine/core/node/system/node/node.h` | gRPC server members and methods |
+| `cpp/libs/engine/core/node/system/node/node.cpp` | gRPC server lifecycle, banner update |
+| `cpp/libs/engine/core/node/system/node/node_allocator.cpp` | gRPC port allocation |
+| `cpp/nodes/scene/handler/grpc/scene_grpc_service.h` | **New** — gRPC service header |
+| `cpp/nodes/scene/handler/grpc/scene_grpc_service.cpp` | **New** — gRPC service implementation |
+| `cpp/nodes/scene/main.cpp` | Register gRPC service, use RunNodeMain |
+| `go/scene_manager/internal/logic/scene_node_client.go` | Use grpcEndpoint |
+| `go/scene_manager/internal/logic/load_reporter.go` | Parse grpcEndpoint |
 
 ## Multi-Node Multi-Zone: No Extra Mapping Needed
 
@@ -163,6 +189,20 @@ etcd keys (example):
 - gRPC port = TCP port + 1 (convention, unique per node via etcd CAS port allocation).
 - scene_manager's existing per-nodeId connection cache handles multi-node/multi-zone.
 - gRPC port is **internal cluster communication only** — no LoadBalancer/NodePort exposure needed.
+
+## Connection Scale / Cost Assessment
+
+This design does **not** recreate the old full-mesh explosion problem.
+
+| Dimension | Reality |
+|-----------|---------|
+| Who dials Scene gRPC | Mainly scene_manager, plus occasional cross-zone scene_manager |
+| Per-Scene steady-state connections | Usually single-digit to low double-digit |
+| Per-request connection creation | No — connections are cached and reused |
+| Concurrency model | HTTP/2 multiplexing over a small number of TCP connections |
+| High-fanout traffic | Still stays on Kafka or existing TCP(RPC0), not this gRPC path |
+
+So the cost is acceptable because this path is for **low-caller-count, request/response orchestration**, not for Gate-scale fanout.
 
 ## Related
 

@@ -135,6 +135,7 @@ inline constexpr NodeInfo::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         endpoint_{nullptr},
+        grpc_endpoint_{nullptr},
         node_id_{0u},
         node_type_{0u},
         launch_time_{::uint64_t{0u}},
@@ -203,7 +204,7 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_._has_bits_),
-        12, // hasbit index offset
+        13, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.node_id_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.node_type_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.launch_time_),
@@ -213,15 +214,17 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.protocol_type_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.node_uuid_),
         PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.player_count_),
-        2,
+        PROTOBUF_FIELD_OFFSET(::NodeInfo, _impl_.grpc_endpoint_),
         3,
         4,
         5,
-        1,
         6,
+        1,
         7,
-        0,
         8,
+        0,
+        9,
+        2,
         0x000, // bitmap
         PROTOBUF_FIELD_OFFSET(::NodeInfoListComp, _impl_.node_list_),
         0x081, // bitmap
@@ -257,10 +260,10 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::EndpointComp)},
         {7, sizeof(::NodeInfo)},
-        {28, sizeof(::NodeInfoListComp)},
-        {30, sizeof(::NetworkAddress)},
-        {37, sizeof(::SceneInfoComp_CreatorsEntry_DoNotUse)},
-        {44, sizeof(::SceneInfoComp)},
+        {30, sizeof(::NodeInfoListComp)},
+        {32, sizeof(::NetworkAddress)},
+        {39, sizeof(::SceneInfoComp_CreatorsEntry_DoNotUse)},
+        {46, sizeof(::SceneInfoComp)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_EndpointComp_default_instance_._instance,
@@ -273,26 +276,27 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\036proto/common/base/common.proto\"(\n\014Endp"
-    "ointComp\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\316\001\n\010N"
+    "ointComp\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\"\364\001\n\010N"
     "odeInfo\022\017\n\007node_id\030\001 \001(\r\022\021\n\tnode_type\030\002 "
     "\001(\r\022\023\n\013launch_time\030\003 \001(\004\022\027\n\017scene_node_t"
     "ype\030\004 \001(\r\022\037\n\010endpoint\030\005 \001(\0132\r.EndpointCo"
     "mp\022\017\n\007zone_id\030\006 \001(\r\022\025\n\rprotocol_type\030\007 \001"
     "(\r\022\021\n\tnode_uuid\030\010 \001(\t\022\024\n\014player_count\030\t "
-    "\001(\r\"0\n\020NodeInfoListComp\022\034\n\tnode_list\030\001 \003"
-    "(\0132\t.NodeInfo\"*\n\016NetworkAddress\022\n\n\002ip\030\001 "
-    "\001(\t\022\014\n\004port\030\002 \001(\r\"\302\001\n\rSceneInfoComp\022\024\n\014s"
-    "cene_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirro"
-    "r_confid\030\003 \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\022.\n"
-    "\010creators\030\005 \003(\0132\034.SceneInfoComp.Creators"
-    "Entry\032/\n\rCreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005v"
-    "alue\030\002 \001(\010:\0028\001B\rZ\013common/baseb\006proto3"
+    "\001(\r\022$\n\rgrpc_endpoint\030\n \001(\0132\r.EndpointCom"
+    "p\"0\n\020NodeInfoListComp\022\034\n\tnode_list\030\001 \003(\013"
+    "2\t.NodeInfo\"*\n\016NetworkAddress\022\n\n\002ip\030\001 \001("
+    "\t\022\014\n\004port\030\002 \001(\r\"\302\001\n\rSceneInfoComp\022\024\n\014sce"
+    "ne_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirror_"
+    "confid\030\003 \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\022.\n\010c"
+    "reators\030\005 \003(\0132\034.SceneInfoComp.CreatorsEn"
+    "try\032/\n\rCreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005val"
+    "ue\030\002 \001(\010:\0028\001B\rZ\013common/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto = {
     false,
     false,
-    597,
+    635,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto,
     "proto/common/base/common.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto_once,
@@ -645,6 +649,9 @@ NodeInfo::NodeInfo(
   _impl_.endpoint_ = ((cached_has_bits & 0x00000002u) != 0)
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.endpoint_)
                 : nullptr;
+  _impl_.grpc_endpoint_ = ((cached_has_bits & 0x00000004u) != 0)
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.grpc_endpoint_)
+                : nullptr;
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, node_id_),
            reinterpret_cast<const char *>(&from._impl_) +
@@ -680,6 +687,7 @@ inline void NodeInfo::SharedDtor(MessageLite& self) {
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.node_uuid_.Destroy();
   delete this_._impl_.endpoint_;
+  delete this_._impl_.grpc_endpoint_;
   this_._impl_.~Impl_();
 }
 
@@ -726,17 +734,17 @@ NodeInfo::GetClassData() const {
   return NodeInfo_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 9, 1, 34, 2>
+const ::_pbi::TcParseTable<4, 10, 2, 34, 2>
 NodeInfo::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_._has_bits_),
     0, // no _extensions_
-    9, 120,  // max_field_number, fast_idx_mask
+    10, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294966784,  // skipmap
+    4294966272,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    9,  // num_field_entries
-    1,  // num_aux_entries
+    10,  // num_field_entries
+    2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     NodeInfo_class_data_.base(),
     nullptr,  // post_loop_handler
@@ -747,33 +755,35 @@ NodeInfo::_table_ = {
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint32 node_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.node_id_), 2>(),
-     {8, 2, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.node_id_), 3>(),
+     {8, 3, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_id_)}},
     // uint32 node_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.node_type_), 3>(),
-     {16, 3, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.node_type_), 4>(),
+     {16, 4, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_type_)}},
     // uint64 launch_time = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(NodeInfo, _impl_.launch_time_), 4>(),
-     {24, 4, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.launch_time_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(NodeInfo, _impl_.launch_time_), 5>(),
+     {24, 5, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.launch_time_)}},
     // uint32 scene_node_type = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.scene_node_type_), 5>(),
-     {32, 5, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.scene_node_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.scene_node_type_), 6>(),
+     {32, 6, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.scene_node_type_)}},
     // .EndpointComp endpoint = 5;
     {::_pbi::TcParser::FastMtS1,
      {42, 1, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.endpoint_)}},
     // uint32 zone_id = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.zone_id_), 6>(),
-     {48, 6, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.zone_id_), 7>(),
+     {48, 7, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_)}},
     // uint32 protocol_type = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.protocol_type_), 7>(),
-     {56, 7, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.protocol_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.protocol_type_), 8>(),
+     {56, 8, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.protocol_type_)}},
     // string node_uuid = 8;
     {::_pbi::TcParser::FastUS1,
      {66, 0, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_uuid_)}},
     // uint32 player_count = 9;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.player_count_), 8>(),
-     {72, 8, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.player_count_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfo, _impl_.player_count_), 9>(),
+     {72, 9, 0, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.player_count_)}},
+    // .EndpointComp grpc_endpoint = 10;
+    {::_pbi::TcParser::FastMtS1,
+     {82, 2, 1, PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.grpc_endpoint_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -783,34 +793,38 @@ NodeInfo::_table_ = {
     65535, 65535
   }}, {{
     // uint32 node_id = 1;
-    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_id_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 node_type = 2;
-    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_type_), _Internal::kHasBitsOffset + 3, 0,
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_type_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 launch_time = 3;
-    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.launch_time_), _Internal::kHasBitsOffset + 4, 0,
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.launch_time_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 scene_node_type = 4;
-    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.scene_node_type_), _Internal::kHasBitsOffset + 5, 0,
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.scene_node_type_), _Internal::kHasBitsOffset + 6, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // .EndpointComp endpoint = 5;
     {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.endpoint_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint32 zone_id = 6;
-    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_), _Internal::kHasBitsOffset + 6, 0,
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.zone_id_), _Internal::kHasBitsOffset + 7, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 protocol_type = 7;
-    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.protocol_type_), _Internal::kHasBitsOffset + 7, 0,
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.protocol_type_), _Internal::kHasBitsOffset + 8, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // string node_uuid = 8;
     {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.node_uuid_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // uint32 player_count = 9;
-    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.player_count_), _Internal::kHasBitsOffset + 8, 0,
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.player_count_), _Internal::kHasBitsOffset + 9, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // .EndpointComp grpc_endpoint = 10;
+    {PROTOBUF_FIELD_OFFSET(NodeInfo, _impl_.grpc_endpoint_), _Internal::kHasBitsOffset + 2, 1,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
+      {::_pbi::TcParser::GetTable<::EndpointComp>()},
       {::_pbi::TcParser::GetTable<::EndpointComp>()},
   }},
   {{
@@ -827,7 +841,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
+  if ((cached_has_bits & 0x00000007u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       _impl_.node_uuid_.ClearNonDefaultToEmpty();
     }
@@ -835,13 +849,21 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
       ABSL_DCHECK(_impl_.endpoint_ != nullptr);
       _impl_.endpoint_->Clear();
     }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      ABSL_DCHECK(_impl_.grpc_endpoint_ != nullptr);
+      _impl_.grpc_endpoint_->Clear();
+    }
   }
-  if ((cached_has_bits & 0x000000fcu) != 0) {
+  if ((cached_has_bits & 0x000000f8u) != 0) {
     ::memset(&_impl_.node_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.protocol_type_) -
-        reinterpret_cast<char*>(&_impl_.node_id_)) + sizeof(_impl_.protocol_type_));
+        reinterpret_cast<char*>(&_impl_.zone_id_) -
+        reinterpret_cast<char*>(&_impl_.node_id_)) + sizeof(_impl_.zone_id_));
   }
-  _impl_.player_count_ = 0u;
+  if ((cached_has_bits & 0x00000300u) != 0) {
+    ::memset(&_impl_.protocol_type_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.player_count_) -
+        reinterpret_cast<char*>(&_impl_.protocol_type_)) + sizeof(_impl_.player_count_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -862,7 +884,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   (void)cached_has_bits;
 
   // uint32 node_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_node_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -871,7 +893,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   }
 
   // uint32 node_type = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
     if (this_._internal_node_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -880,7 +902,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   }
 
   // uint64 launch_time = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
     if (this_._internal_launch_time() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -889,7 +911,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   }
 
   // uint32 scene_node_type = 4;
-  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
     if (this_._internal_scene_node_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -906,7 +928,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   }
 
   // uint32 zone_id = 6;
-  if ((cached_has_bits & 0x00000040u) != 0) {
+  if ((cached_has_bits & 0x00000080u) != 0) {
     if (this_._internal_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -915,7 +937,7 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   }
 
   // uint32 protocol_type = 7;
-  if ((cached_has_bits & 0x00000080u) != 0) {
+  if ((cached_has_bits & 0x00000100u) != 0) {
     if (this_._internal_protocol_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -934,12 +956,19 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
   }
 
   // uint32 player_count = 9;
-  if ((cached_has_bits & 0x00000100u) != 0) {
+  if ((cached_has_bits & 0x00000200u) != 0) {
     if (this_._internal_player_count() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           9, this_._internal_player_count(), target);
     }
+  }
+
+  // .EndpointComp grpc_endpoint = 10;
+  if ((cached_has_bits & 0x00000004u) != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        10, *this_._impl_.grpc_endpoint_, this_._impl_.grpc_endpoint_->GetCachedSize(), target,
+        stream);
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -980,52 +1009,57 @@ PROTOBUF_NOINLINE void NodeInfo::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.endpoint_);
     }
-    // uint32 node_id = 1;
+    // .EndpointComp grpc_endpoint = 10;
     if ((cached_has_bits & 0x00000004u) != 0) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.grpc_endpoint_);
+    }
+    // uint32 node_id = 1;
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (this_._internal_node_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_node_id());
       }
     }
     // uint32 node_type = 2;
-    if ((cached_has_bits & 0x00000008u) != 0) {
+    if ((cached_has_bits & 0x00000010u) != 0) {
       if (this_._internal_node_type() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_node_type());
       }
     }
     // uint64 launch_time = 3;
-    if ((cached_has_bits & 0x00000010u) != 0) {
+    if ((cached_has_bits & 0x00000020u) != 0) {
       if (this_._internal_launch_time() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_launch_time());
       }
     }
     // uint32 scene_node_type = 4;
-    if ((cached_has_bits & 0x00000020u) != 0) {
+    if ((cached_has_bits & 0x00000040u) != 0) {
       if (this_._internal_scene_node_type() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_scene_node_type());
       }
     }
     // uint32 zone_id = 6;
-    if ((cached_has_bits & 0x00000040u) != 0) {
+    if ((cached_has_bits & 0x00000080u) != 0) {
       if (this_._internal_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_zone_id());
       }
     }
+  }
+  if ((cached_has_bits & 0x00000300u) != 0) {
     // uint32 protocol_type = 7;
-    if ((cached_has_bits & 0x00000080u) != 0) {
+    if ((cached_has_bits & 0x00000100u) != 0) {
       if (this_._internal_protocol_type() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_protocol_type());
       }
     }
-  }
-   {
     // uint32 player_count = 9;
-    if ((cached_has_bits & 0x00000100u) != 0) {
+    if ((cached_has_bits & 0x00000200u) != 0) {
       if (this_._internal_player_count() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_player_count());
@@ -1065,39 +1099,49 @@ void NodeInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
+      ABSL_DCHECK(from._impl_.grpc_endpoint_ != nullptr);
+      if (_this->_impl_.grpc_endpoint_ == nullptr) {
+        _this->_impl_.grpc_endpoint_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.grpc_endpoint_);
+      } else {
+        _this->_impl_.grpc_endpoint_->MergeFrom(*from._impl_.grpc_endpoint_);
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (from._internal_node_id() != 0) {
         _this->_impl_.node_id_ = from._impl_.node_id_;
       }
     }
-    if ((cached_has_bits & 0x00000008u) != 0) {
+    if ((cached_has_bits & 0x00000010u) != 0) {
       if (from._internal_node_type() != 0) {
         _this->_impl_.node_type_ = from._impl_.node_type_;
       }
     }
-    if ((cached_has_bits & 0x00000010u) != 0) {
+    if ((cached_has_bits & 0x00000020u) != 0) {
       if (from._internal_launch_time() != 0) {
         _this->_impl_.launch_time_ = from._impl_.launch_time_;
       }
     }
-    if ((cached_has_bits & 0x00000020u) != 0) {
+    if ((cached_has_bits & 0x00000040u) != 0) {
       if (from._internal_scene_node_type() != 0) {
         _this->_impl_.scene_node_type_ = from._impl_.scene_node_type_;
       }
     }
-    if ((cached_has_bits & 0x00000040u) != 0) {
+    if ((cached_has_bits & 0x00000080u) != 0) {
       if (from._internal_zone_id() != 0) {
         _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
-    if ((cached_has_bits & 0x00000080u) != 0) {
+  }
+  if ((cached_has_bits & 0x00000300u) != 0) {
+    if ((cached_has_bits & 0x00000100u) != 0) {
       if (from._internal_protocol_type() != 0) {
         _this->_impl_.protocol_type_ = from._impl_.protocol_type_;
       }
     }
-  }
-  if ((cached_has_bits & 0x00000100u) != 0) {
-    if (from._internal_player_count() != 0) {
-      _this->_impl_.player_count_ = from._impl_.player_count_;
+    if ((cached_has_bits & 0x00000200u) != 0) {
+      if (from._internal_player_count() != 0) {
+        _this->_impl_.player_count_ = from._impl_.player_count_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
