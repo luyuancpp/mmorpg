@@ -64,3 +64,34 @@ The C++ node's etcd key includes `node_type` and `node_id` (not hostname), and t
 | Pod crash (no graceful shutdown) | Lease expires in 60s, ID freed | Lease expires per config TTL, ID freed |
 | K8s rolling update | Old pod's lease expires, new pod may get same or different ID | Same behavior |
 | Pool exhaustion | Impossible in practice (IDs recycle) | Impossible in practice (IDs recycle) |
+
+## Design Decision: Keep Both Approaches
+
+Considered unifying Go to use C++ pure-scan approach. Decided to **keep both as-is**.
+
+### Trade-off Comparison
+
+| | C++ (pure scan slot) | Go (hostname + ID dual key) |
+|---|---|---|
+| Code | Simpler (one key) | Slightly more (two keys) |
+| Restart identity | Not guaranteed same ID | Same hostname -> same ID |
+| Log correlation | ID may drift across restarts | Stable ID, easier to grep |
+| Extra protection | Has `SnowFlakeGuard` (Redis SETEX 600s) | Not needed -- hostname key is the guard |
+| Correctness | Equal | Equal |
+
+### Why not change Go to match C++
+
+- Go has no etcd watch snapshot -- `mustAllocNodeID` runs once at startup, must self-scan.
+- Losing hostname idempotency degrades observability with no offsetting benefit.
+- Go lacks the `SnowFlakeGuard` Redis mechanism that C++ uses to protect ID reuse windows.
+- Dual-key code is already written, compiled, and clear.
+
+### Why not change C++ to match Go
+
+- C++ already has watch-maintained live snapshot -- hostname mapping is redundant.
+- Adding hostname key + dual-key CAS would increase code complexity with zero benefit.
+- `SnowFlakeGuard` already covers the restart-reuse safety window.
+
+### Conclusion
+
+Each language uses the approach that best fits its runtime model. Both are safe for ephemeral K8s pods. No unification needed.
