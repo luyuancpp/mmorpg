@@ -35,6 +35,9 @@ void {{ sheetname }}TableManager::Load() {
             idx_{{ arr.name }}_.emplace(elem, &row_data);
         }
 {%- endfor %}
+{%- for ck in table.composite_keys %}
+        composite_kv_{{ ck.group }}_.emplace({{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}{ {%- for col in ck.columns %}row_data.{{ col.name }}(){% if not loop.last %}, {% endif %}{% endfor -%} }, &row_data);
+{%- endfor %}
     }
 {% for col in table.expression_columns if col.expression_params %}
 

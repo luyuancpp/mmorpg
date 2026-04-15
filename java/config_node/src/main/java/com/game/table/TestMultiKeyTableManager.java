@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for TestMultiKey.
@@ -66,81 +68,130 @@ public class TestMultiKeyTableManager {
         }
     }
 
-    /** SELECT * FROM testmultikey */
-    public TestMultiKeyTableData selectAll() {
+    public TestMultiKeyTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM testmultikey */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM testmultikey WHERE id = ? */
-    public TestMultiKeyTable selectById(int id) {
+    public TestMultiKeyTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM testmultikey WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM testmultikey WHERE id IN (?, ?, ...) */
-    public List<TestMultiKeyTable> selectByIds(List<Integer> ids) {
-        List<TestMultiKeyTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            TestMultiKeyTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, TestMultiKeyTable> dataMap() {
+    public Map<Integer, TestMultiKeyTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
-    /** SELECT * FROM testmultikey WHERE string_key = ? */
-    public TestMultiKeyTable selectByString_key(String key) {
+    public TestMultiKeyTable getByString_key(String key) {
         return kvString_keyData.get(key);
     }
 
-    /** SELECT * FROM testmultikey WHERE uint32_key = ? */
-    public TestMultiKeyTable selectByUint32_key(int key) {
+    public TestMultiKeyTable getByUint32_key(int key) {
         return kvUint32_keyData.get(key);
     }
 
-    /** SELECT * FROM testmultikey WHERE int32_key = ? */
-    public TestMultiKeyTable selectByInt32_key(int key) {
+    public TestMultiKeyTable getByInt32_key(int key) {
         return kvInt32_keyData.get(key);
     }
 
-    /** SELECT * FROM testmultikey WHERE m_string_key = ? */
-    public TestMultiKeyTable selectByM_string_key(String key) {
+    public TestMultiKeyTable getByM_string_key(String key) {
         return kvM_string_keyData.get(key);
     }
 
-    /** SELECT * FROM testmultikey WHERE m_uint32_key = ? */
-    public TestMultiKeyTable selectByM_uint32_key(int key) {
+    public TestMultiKeyTable getByM_uint32_key(int key) {
         return kvM_uint32_keyData.get(key);
     }
 
-    /** SELECT * FROM testmultikey WHERE m_int32_key = ? */
-    public TestMultiKeyTable selectByM_int32_key(int key) {
+    public TestMultiKeyTable getByM_int32_key(int key) {
         return kvM_int32_keyData.get(key);
     }
 
 
 
-    /** SELECT * FROM testmultikey WHERE ? IN (effect) */
-    public List<TestMultiKeyTable> selectWhereInEffect(int key) {
+    public List<TestMultiKeyTable> getByEffectIndex(int key) {
         return idxEffect.getOrDefault(key, Collections.emptyList());
     }
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+    public boolean hasString_key(String key) {
+        return kvString_keyData.containsKey(key);
+    }
+
+    public boolean hasUint32_key(int key) {
+        return kvUint32_keyData.containsKey(key);
+    }
+
+    public boolean hasInt32_key(int key) {
+        return kvInt32_keyData.containsKey(key);
+    }
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+    public int countByM_string_key(String key) {
+        return kvM_string_keyData.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByM_uint32_key(int key) {
+        return kvM_uint32_keyData.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByM_int32_key(int key) {
+        return kvM_int32_keyData.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    public int countByEffectIndex(int key) {
+        return idxEffect.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<TestMultiKeyTable> getByIds(List<Integer> ids) {
+        List<TestMultiKeyTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            TestMultiKeyTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public TestMultiKeyTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<TestMultiKeyTable> filter(Predicate<TestMultiKeyTable> pred) {
+        List<TestMultiKeyTable> result = new ArrayList<>();
+        for (TestMultiKeyTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public TestMultiKeyTable findFirst(Predicate<TestMultiKeyTable> pred) {
+        for (TestMultiKeyTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type BuffTableManager struct {
     data   []*pb.BuffTable
@@ -93,4 +96,84 @@ func (m *BuffTableManager) GetBySub_buffIndex(key uint32) []*pb.BuffTable {
 func (m *BuffTableManager) GetByTarget_sub_buffIndex(key uint32) []*pb.BuffTable {
     return m.idxTarget_sub_buff[key]
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *BuffTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *BuffTableManager) Len() int {
+    return len(m.data)
+}
+
+
+func (m *BuffTableManager) CountByInterval_effectIndex(key float64) int {
+    return len(m.idxInterval_effect[key])
+}
+
+
+func (m *BuffTableManager) CountBySub_buffIndex(key uint32) int {
+    return len(m.idxSub_buff[key])
+}
+
+
+func (m *BuffTableManager) CountByTarget_sub_buffIndex(key uint32) int {
+    return len(m.idxTarget_sub_buff[key])
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *BuffTableManager) GetByIds(ids []uint32) []*pb.BuffTable {
+    result := make([]*pb.BuffTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *BuffTableManager) GetRandom() (*pb.BuffTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *BuffTableManager) Filter(pred func(*pb.BuffTable) bool) []*pb.BuffTable {
+    var result []*pb.BuffTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *BuffTableManager) FindFirst(pred func(*pb.BuffTable) bool) (*pb.BuffTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

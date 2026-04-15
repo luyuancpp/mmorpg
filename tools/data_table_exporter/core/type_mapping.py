@@ -85,7 +85,7 @@ def to_go_proto_field(snake_name: str) -> str:
 
     Example: ``sub_buff`` → ``SubBuff``, ``id`` → ``Id``.
     """
-    return "".join(word.capitalize() for word in snake_name.split("_"))
+    return "".join(word.capitalize() for word: str in snake_name.split("_"))
 
 
 def to_go_repeated_elem_type(proto_type: str) -> str:
@@ -130,7 +130,7 @@ def to_java_boxed(proto_type: str) -> str:
 
 def to_java_proto_getter(snake_name: str) -> str:
     """Convert snake_case field name to Java proto getter (e.g. ``sub_buff`` → ``getSubBuff``)."""
-    camel = "".join(word.capitalize() for word in snake_name.split("_"))
+    camel: str = "".join(word.capitalize() for word: str in snake_name.split("_"))
     return f"get{camel}"
 
 
@@ -145,9 +145,9 @@ def to_java_repeated_elem_type(proto_type: str) -> str:
 
 def composite_go_struct_name(group: str) -> str:
     """Go struct name for a composite key: ``class_level`` → ``ClassLevelKey``."""
-    return "".join(word.capitalize() for word in group.split("_")) + "Key"
+    return "".join(word.capitalize() for word: str in group.split("_")) + "Key"
 
 
 def composite_cpp_struct_name(group: str) -> str:
     """C++ struct name for a composite key: ``class_level`` → ``ClassLevelKey``."""
-    return "".join(word.capitalize() for word in group.split("_")) + "Key"
+    return "".join(word.capitalize() for word: str in group.split("_")) + "Key"

@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type TestTableManager struct {
     data   []*pb.TestTable
@@ -73,4 +76,74 @@ func (m *TestTableManager) GetById(id uint32) (*pb.TestTable, bool) {
 func (m *TestTableManager) GetByEffectIndex(key uint32) []*pb.TestTable {
     return m.idxEffect[key]
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *TestTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *TestTableManager) Len() int {
+    return len(m.data)
+}
+
+
+func (m *TestTableManager) CountByEffectIndex(key uint32) int {
+    return len(m.idxEffect[key])
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *TestTableManager) GetByIds(ids []uint32) []*pb.TestTable {
+    result := make([]*pb.TestTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *TestTableManager) GetRandom() (*pb.TestTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *TestTableManager) Filter(pred func(*pb.TestTable) bool) []*pb.TestTable {
+    var result []*pb.TestTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *TestTableManager) FindFirst(pred func(*pb.TestTable) bool) (*pb.TestTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

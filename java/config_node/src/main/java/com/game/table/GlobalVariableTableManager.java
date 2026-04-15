@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for GlobalVariable.
@@ -43,40 +45,15 @@ public class GlobalVariableTableManager {
         }
     }
 
-    /** SELECT * FROM globalvariable */
-    public GlobalVariableTableData selectAll() {
+    public GlobalVariableTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM globalvariable */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM globalvariable WHERE id = ? */
-    public GlobalVariableTable selectById(int id) {
+    public GlobalVariableTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM globalvariable WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM globalvariable WHERE id IN (?, ?, ...) */
-    public List<GlobalVariableTable> selectByIds(List<Integer> ids) {
-        List<GlobalVariableTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            GlobalVariableTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, GlobalVariableTable> dataMap() {
+    public Map<Integer, GlobalVariableTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -85,4 +62,57 @@ public class GlobalVariableTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<GlobalVariableTable> getByIds(List<Integer> ids) {
+        List<GlobalVariableTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            GlobalVariableTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public GlobalVariableTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<GlobalVariableTable> filter(Predicate<GlobalVariableTable> pred) {
+        List<GlobalVariableTable> result = new ArrayList<>();
+        for (GlobalVariableTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public GlobalVariableTable findFirst(Predicate<GlobalVariableTable> pred) {
+        for (GlobalVariableTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

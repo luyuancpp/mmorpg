@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for TestMultiKey.
@@ -111,4 +113,85 @@ public class TestMultiKeyTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+    public boolean hasString_key(String key) {
+        return kvString_keyData.containsKey(key);
+    }
+
+    public boolean hasUint32_key(int key) {
+        return kvUint32_keyData.containsKey(key);
+    }
+
+    public boolean hasInt32_key(int key) {
+        return kvInt32_keyData.containsKey(key);
+    }
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+    public int countByM_string_key(String key) {
+        return kvM_string_keyData.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByM_uint32_key(int key) {
+        return kvM_uint32_keyData.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByM_int32_key(int key) {
+        return kvM_int32_keyData.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    public int countByEffectIndex(int key) {
+        return idxEffect.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<TestMultiKeyTable> getByIds(List<Integer> ids) {
+        List<TestMultiKeyTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            TestMultiKeyTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public TestMultiKeyTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<TestMultiKeyTable> filter(Predicate<TestMultiKeyTable> pred) {
+        List<TestMultiKeyTable> result = new ArrayList<>();
+        for (TestMultiKeyTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public TestMultiKeyTable findFirst(Predicate<TestMultiKeyTable> pred) {
+        for (TestMultiKeyTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

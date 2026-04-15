@@ -1,7 +1,10 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <random>
 #include <unordered_map>
+#include <vector>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
 #include "table/proto/actoractionstate_table.pb.h"
@@ -29,6 +32,59 @@ public:
     }
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
+
+    // ---- Has / Exists ----
+
+    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+
+    // ---- Len / Count ----
+
+    std::size_t Len() const { return kv_data_.size(); }
+
+    // ---- Batch Lookup (IN) ----
+
+    std::vector<const ActorActionStateTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+        std::vector<const ActorActionStateTable*> result;
+        result.reserve(ids.size());
+        for (auto id : ids) {
+            if (auto it = kv_data_.find(id); it != kv_data_.end()) {
+                result.push_back(it->second);
+            }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    const ActorActionStateTable* GetRandom() const {
+        if (data_.data_size() == 0) return nullptr;
+        thread_local std::mt19937 rng{std::random_device{}()};
+        std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
+        return &data_.data(dist(rng));
+    }
+
+    // ---- Filter / FindFirst ----
+
+    std::vector<const ActorActionStateTable*> Filter(const std::function<bool(const ActorActionStateTable&)>& pred) const {
+        std::vector<const ActorActionStateTable*> result;
+        for (int i = 0; i < data_.data_size(); ++i) {
+            if (pred(data_.data(i))) {
+                result.push_back(&data_.data(i));
+            }
+        }
+        return result;
+    }
+
+    const ActorActionStateTable* FindFirst(const std::function<bool(const ActorActionStateTable&)>& pred) const {
+        for (int i = 0; i < data_.data_size(); ++i) {
+            if (pred(data_.data(i))) {
+                return &data_.data(i);
+            }
+        }
+        return nullptr;
+    }
+
+    // ---- Composite Key ----
 
 private:
     LoadSuccessCallback loadSuccessCallback_;

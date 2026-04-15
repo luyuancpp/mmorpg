@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for Monster.
@@ -43,40 +45,15 @@ public class MonsterTableManager {
         }
     }
 
-    /** SELECT * FROM monster */
-    public MonsterTableData selectAll() {
+    public MonsterTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM monster */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM monster WHERE id = ? */
-    public MonsterTable selectById(int id) {
+    public MonsterTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM monster WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM monster WHERE id IN (?, ?, ...) */
-    public List<MonsterTable> selectByIds(List<Integer> ids) {
-        List<MonsterTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            MonsterTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, MonsterTable> dataMap() {
+    public Map<Integer, MonsterTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -85,4 +62,57 @@ public class MonsterTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<MonsterTable> getByIds(List<Integer> ids) {
+        List<MonsterTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            MonsterTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public MonsterTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<MonsterTable> filter(Predicate<MonsterTable> pred) {
+        List<MonsterTable> result = new ArrayList<>();
+        for (MonsterTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public MonsterTable findFirst(Predicate<MonsterTable> pred) {
+        for (MonsterTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

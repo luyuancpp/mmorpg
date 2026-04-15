@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for MessageLimiter.
@@ -43,40 +45,15 @@ public class MessageLimiterTableManager {
         }
     }
 
-    /** SELECT * FROM messagelimiter */
-    public MessageLimiterTableData selectAll() {
+    public MessageLimiterTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM messagelimiter */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM messagelimiter WHERE id = ? */
-    public MessageLimiterTable selectById(int id) {
+    public MessageLimiterTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM messagelimiter WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM messagelimiter WHERE id IN (?, ?, ...) */
-    public List<MessageLimiterTable> selectByIds(List<Integer> ids) {
-        List<MessageLimiterTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            MessageLimiterTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, MessageLimiterTable> dataMap() {
+    public Map<Integer, MessageLimiterTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -85,4 +62,57 @@ public class MessageLimiterTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<MessageLimiterTable> getByIds(List<Integer> ids) {
+        List<MessageLimiterTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            MessageLimiterTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public MessageLimiterTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<MessageLimiterTable> filter(Predicate<MessageLimiterTable> pred) {
+        List<MessageLimiterTable> result = new ArrayList<>();
+        for (MessageLimiterTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public MessageLimiterTable findFirst(Predicate<MessageLimiterTable> pred) {
+        for (MessageLimiterTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

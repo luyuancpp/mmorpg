@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type ConditionTableManager struct {
     data   []*pb.ConditionTable
@@ -103,4 +106,89 @@ func (m *ConditionTableManager) GetByCondition3Index(key uint32) []*pb.Condition
 func (m *ConditionTableManager) GetByCondition4Index(key uint32) []*pb.ConditionTable {
     return m.idxCondition4[key]
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *ConditionTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *ConditionTableManager) Len() int {
+    return len(m.data)
+}
+
+
+func (m *ConditionTableManager) CountByCondition1Index(key uint32) int {
+    return len(m.idxCondition1[key])
+}
+
+
+func (m *ConditionTableManager) CountByCondition2Index(key uint32) int {
+    return len(m.idxCondition2[key])
+}
+
+
+func (m *ConditionTableManager) CountByCondition3Index(key uint32) int {
+    return len(m.idxCondition3[key])
+}
+
+
+func (m *ConditionTableManager) CountByCondition4Index(key uint32) int {
+    return len(m.idxCondition4[key])
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *ConditionTableManager) GetByIds(ids []uint32) []*pb.ConditionTable {
+    result := make([]*pb.ConditionTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *ConditionTableManager) GetRandom() (*pb.ConditionTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *ConditionTableManager) Filter(pred func(*pb.ConditionTable) bool) []*pb.ConditionTable {
+    var result []*pb.ConditionTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *ConditionTableManager) FindFirst(pred func(*pb.ConditionTable) bool) (*pb.ConditionTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

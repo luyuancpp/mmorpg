@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for Item.
@@ -43,40 +45,15 @@ public class ItemTableManager {
         }
     }
 
-    /** SELECT * FROM item */
-    public ItemTableData selectAll() {
+    public ItemTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM item */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM item WHERE id = ? */
-    public ItemTable selectById(int id) {
+    public ItemTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM item WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM item WHERE id IN (?, ?, ...) */
-    public List<ItemTable> selectByIds(List<Integer> ids) {
-        List<ItemTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            ItemTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, ItemTable> dataMap() {
+    public Map<Integer, ItemTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -85,4 +62,57 @@ public class ItemTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<ItemTable> getByIds(List<Integer> ids) {
+        List<ItemTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            ItemTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public ItemTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<ItemTable> filter(Predicate<ItemTable> pred) {
+        List<ItemTable> result = new ArrayList<>();
+        for (ItemTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public ItemTable findFirst(Predicate<ItemTable> pred) {
+        for (ItemTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

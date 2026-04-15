@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for Class.
@@ -69,4 +71,61 @@ public class ClassTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+    public int countBySkillIndex(int key) {
+        return idxSkill.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<ClassTable> getByIds(List<Integer> ids) {
+        List<ClassTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            ClassTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public ClassTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<ClassTable> filter(Predicate<ClassTable> pred) {
+        List<ClassTable> result = new ArrayList<>();
+        for (ClassTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public ClassTable findFirst(Predicate<ClassTable> pred) {
+        for (ClassTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }
