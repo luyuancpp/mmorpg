@@ -26,8 +26,8 @@ void MirrorTableManager::Load() {
     for (int32_t i = 0; i < snap->data.data_size(); ++i) {
         const auto& row_data = snap->data.data(i);
         snap->idMap.emplace(row_data.id(), &row_data);
-        snap->sceneIdIndex.emplace(row_data.scene_id(), &row_data);
-        snap->mainSceneIdIndex.emplace(row_data.main_scene_id(), &row_data);
+        snap->sceneIdIndex[row_data.scene_id()].push_back(&row_data);
+        snap->mainSceneIdIndex[row_data.main_scene_id()].push_back(&row_data);
     }
 
     snapshot = std::move(snap);

@@ -19,6 +19,6 @@ inline const BaseSceneTable* GetWorldSceneIdRow(const WorldTable& row) {
 // ---------------------------------------------------------------------------
 
 /// Reverse FK: find all World rows whose scene_id == key.
-inline std::vector<const WorldTable*> FindWorldRowsBySceneId(uint32_t key) {
+inline const std::vector<const WorldTable*>& FindWorldRowsBySceneId(uint32_t key) {
     return WorldTableManager::Instance().GetBySceneId(key);
 }
