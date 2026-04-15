@@ -29,6 +29,6 @@ inline std::vector<const TestTable*> GetTestMultiKeyTestRefsRows(const TestMulti
 // ---------------------------------------------------------------------------
 
 /// Reverse FK: find all TestMultiKey rows whose test_ref == key.
-inline std::vector<const TestMultiKeyTable*> FindTestMultiKeyRowsByTestRef(uint32_t key) {
+inline const std::vector<const TestMultiKeyTable*>& FindTestMultiKeyRowsByTestRef(uint32_t key) {
     return TestMultiKeyTableManager::Instance().GetByTestRef(key);
 }

@@ -19,6 +19,6 @@ inline const BaseSceneTable* GetDungeonSceneIdRow(const DungeonTable& row) {
 // ---------------------------------------------------------------------------
 
 /// Reverse FK: find all Dungeon rows whose scene_id == key.
-inline std::vector<const DungeonTable*> FindDungeonRowsBySceneId(uint32_t key) {
+inline const std::vector<const DungeonTable*>& FindDungeonRowsBySceneId(uint32_t key) {
     return DungeonTableManager::Instance().GetBySceneId(key);
 }

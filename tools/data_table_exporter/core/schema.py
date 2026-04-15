@@ -105,7 +105,7 @@ class ColumnDef:
     @property
     def composite_key_group(self) -> str:
         """Return group name if this column participates in a composite key, else ''."""
-        for opt: str in self.options:
+        for opt in self.options:
             if opt.startswith("composite:"):
                 return opt[10:]
         return ""
@@ -116,28 +116,28 @@ class ColumnDef:
 
     @property
     def expression_type(self) -> str:
-        for opt: str in self.options:
+        for opt in self.options:
             if opt.startswith("expr:"):
                 return opt[5:]
         return ""
 
     @property
     def expression_params(self) -> list[str]:
-        for opt: str in self.options:
+        for opt in self.options:
             if opt.startswith("expr_params:"):
-                return [p.strip() for p: str in opt[12:].split(",") if p.strip()]
+                return [p.strip() for p in opt[12:].split(",") if p.strip()]
         return []
 
     @property
     def foreign_key(self) -> Optional[ForeignKeyRef]:
-        for opt: str in self.options:
+        for opt in self.options:
             if opt.lower().startswith("fk:"):
                 return ForeignKeyRef.parse(opt)
         return None
 
     @property
     def group_foreign_key(self) -> Optional[GroupForeignKeyRef]:
-        for opt: str in self.options:
+        for opt in self.options:
             if opt.lower().startswith("gfk:"):
                 return GroupForeignKeyRef.parse(opt)
         return None
@@ -209,12 +209,12 @@ class TableSchema:
 
     @property
     def server_columns(self) -> list[ColumnDef]:
-        return [c for c: ColumnDef in self.columns if c.is_server]
+        return [c for c in self.columns if c.is_server]
 
     @property
     def id_column(self) -> ColumnDef:
         """The ``id`` column (always first server column named 'id')."""
-        for c: ColumnDef in self.columns:
+        for c in self.columns:
             if c.name == "id" and c.is_server:
                 return c
         # fallback: first server column
@@ -222,17 +222,17 @@ class TableSchema:
 
     @property
     def table_keys(self) -> list[ColumnDef]:
-        return [c for c: ColumnDef in self.columns if c.is_table_key]
+        return [c for c in self.columns if c.is_table_key]
 
     @property
     def expression_columns(self) -> list[ColumnDef]:
-        return [c for c: ColumnDef in self.columns if c.expression_type]
+        return [c for c in self.columns if c.expression_type]
 
     @property
     def foreign_key_columns(self) -> list[ColumnDef]:
         seen: set[str] = set()
         result: list[ColumnDef] = []
-        for c: ColumnDef in self.columns:
+        for c in self.columns:
             if c.foreign_key and c.name not in seen:
                 seen.add(c.name)
                 result.append(c)
@@ -242,7 +242,7 @@ class TableSchema:
     def group_foreign_key_columns(self) -> list[ColumnDef]:
         seen: set[str] = set()
         result: list[ColumnDef] = []
-        for c: ColumnDef in self.columns:
+        for c in self.columns:
             if c.group_foreign_key and c.name not in seen:
                 seen.add(c.name)
                 result.append(c)
@@ -256,11 +256,11 @@ class TableSchema:
     def fk_target_tables(self) -> list[str]:
         """Unique sorted list of target table names referenced by FK/GFK."""
         targets: set[str] = set()
-        for c: ColumnDef in self.foreign_key_columns:
+        for c in self.foreign_key_columns:
             fk: ForeignKeyRef | None = c.foreign_key
             if fk:
                 targets.add(fk.target_table)
-        for c: ColumnDef in self.group_foreign_key_columns:
+        for c in self.group_foreign_key_columns:
             gfk: GroupForeignKeyRef | None = c.group_foreign_key
             if gfk:
                 targets.add(gfk.target_table)
@@ -275,7 +275,7 @@ class TableSchema:
         """
         seen: set[str] = set()
         result: list[ColumnDef] = []
-        for c: ColumnDef in self.columns:
+        for c in self.columns:
             if c.name in seen:
                 continue
             if c.is_indexed or (c.foreign_key and not c.is_repeated):
@@ -291,7 +291,7 @@ class TableSchema:
     def composite_keys(self) -> list[CompositeKeyDef]:
         """Columns grouped by ``composite:group_name`` option."""
         groups: dict[str, list[ColumnDef]] = {}
-        for c: ColumnDef in self.columns:
+        for c in self.columns:
             grp: str = c.composite_key_group
             if grp:
                 groups.setdefault(grp, []).append(c)
@@ -299,22 +299,22 @@ class TableSchema:
 
     @property
     def bit_index_columns(self) -> list[ColumnDef]:
-        return [c for c: ColumnDef in self.columns if c.has_bit_index]
+        return [c for c in self.columns if c.has_bit_index]
 
     @property
     def map_keys(self) -> list[ColumnDef]:
-        return [c for c: ColumnDef in self.columns if c.map_role == "map_key"]
+        return [c for c in self.columns if c.map_role == "map_key"]
 
     @property
     def set_columns(self) -> list[ColumnDef]:
-        return [c for c: ColumnDef in self.columns if c.map_role == "set"]
+        return [c for c in self.columns if c.map_role == "set"]
 
     @property
     def col_to_group(self) -> dict[int, str]:
         """Map column index → group name for grouped columns."""
         result: dict[int, str] = {}
-        for g: GroupField in self.groups.values():
-            for idx: int in g.indices:
+        for g in self.groups.values():
+            for idx in g.indices:
                 result[idx] = g.name
         return result
 
@@ -328,11 +328,11 @@ class TableSchema:
         Returns one ColumnDef per unique field name (deduped).
         """
         group_indices = set()
-        for g: GroupField in self.groups.values():
+        for g in self.groups.values():
             group_indices.update(g.indices)
         seen: set[str] = set()
         result: list[ColumnDef] = []
-        for c: ColumnDef in self.columns:
+        for c in self.columns:
             if not c.is_server:
                 continue
             if c.map_role or c.is_repeated or c.is_set:
@@ -351,4 +351,4 @@ class TableSchema:
 
         Returns ArrayField objects (not grouped sub-messages).
         """
-        return [a for a: ArrayField in self.arrays.values()]
+        return [a for a in self.arrays.values()]

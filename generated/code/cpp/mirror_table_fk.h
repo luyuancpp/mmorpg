@@ -27,11 +27,11 @@ inline const WorldTable* GetMirrorMainSceneIdRow(const MirrorTable& row) {
 // ---------------------------------------------------------------------------
 
 /// Reverse FK: find all Mirror rows whose scene_id == key.
-inline std::vector<const MirrorTable*> FindMirrorRowsBySceneId(uint32_t key) {
+inline const std::vector<const MirrorTable*>& FindMirrorRowsBySceneId(uint32_t key) {
     return MirrorTableManager::Instance().GetBySceneId(key);
 }
 
 /// Reverse FK: find all Mirror rows whose main_scene_id == key.
-inline std::vector<const MirrorTable*> FindMirrorRowsByMainSceneId(uint32_t key) {
+inline const std::vector<const MirrorTable*>& FindMirrorRowsByMainSceneId(uint32_t key) {
     return MirrorTableManager::Instance().GetByMainSceneId(key);
 }

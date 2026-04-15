@@ -31,63 +31,85 @@ LoadSuccessCallback loadSuccessCallback;
 void LoadTables() {
 
     ActorActionCombatStateTableManager::Instance().Load();
-    ActorActionCombatStateTableManager::Instance().LoadSuccess();
 
     ActorActionStateTableManager::Instance().Load();
-    ActorActionStateTableManager::Instance().LoadSuccess();
 
     BaseSceneTableManager::Instance().Load();
-    BaseSceneTableManager::Instance().LoadSuccess();
 
     BuffTableManager::Instance().Load();
-    BuffTableManager::Instance().LoadSuccess();
 
     ClassTableManager::Instance().Load();
-    ClassTableManager::Instance().LoadSuccess();
 
     ConditionTableManager::Instance().Load();
-    ConditionTableManager::Instance().LoadSuccess();
 
     CooldownTableManager::Instance().Load();
-    CooldownTableManager::Instance().LoadSuccess();
 
     DungeonTableManager::Instance().Load();
-    DungeonTableManager::Instance().LoadSuccess();
 
     GlobalVariableTableManager::Instance().Load();
-    GlobalVariableTableManager::Instance().LoadSuccess();
 
     ItemTableManager::Instance().Load();
-    ItemTableManager::Instance().LoadSuccess();
 
     MessageLimiterTableManager::Instance().Load();
-    MessageLimiterTableManager::Instance().LoadSuccess();
 
     MirrorTableManager::Instance().Load();
-    MirrorTableManager::Instance().LoadSuccess();
 
     MissionTableManager::Instance().Load();
-    MissionTableManager::Instance().LoadSuccess();
 
     MonsterTableManager::Instance().Load();
-    MonsterTableManager::Instance().LoadSuccess();
 
     RewardTableManager::Instance().Load();
-    RewardTableManager::Instance().LoadSuccess();
 
     SkillTableManager::Instance().Load();
-    SkillTableManager::Instance().LoadSuccess();
 
     SkillPermissionTableManager::Instance().Load();
-    SkillPermissionTableManager::Instance().LoadSuccess();
 
     TestTableManager::Instance().Load();
-    TestTableManager::Instance().LoadSuccess();
 
     TestMultiKeyTableManager::Instance().Load();
-    TestMultiKeyTableManager::Instance().LoadSuccess();
 
     WorldTableManager::Instance().Load();
+
+
+
+    ActorActionCombatStateTableManager::Instance().LoadSuccess();
+
+    ActorActionStateTableManager::Instance().LoadSuccess();
+
+    BaseSceneTableManager::Instance().LoadSuccess();
+
+    BuffTableManager::Instance().LoadSuccess();
+
+    ClassTableManager::Instance().LoadSuccess();
+
+    ConditionTableManager::Instance().LoadSuccess();
+
+    CooldownTableManager::Instance().LoadSuccess();
+
+    DungeonTableManager::Instance().LoadSuccess();
+
+    GlobalVariableTableManager::Instance().LoadSuccess();
+
+    ItemTableManager::Instance().LoadSuccess();
+
+    MessageLimiterTableManager::Instance().LoadSuccess();
+
+    MirrorTableManager::Instance().LoadSuccess();
+
+    MissionTableManager::Instance().LoadSuccess();
+
+    MonsterTableManager::Instance().LoadSuccess();
+
+    RewardTableManager::Instance().LoadSuccess();
+
+    SkillTableManager::Instance().LoadSuccess();
+
+    SkillPermissionTableManager::Instance().LoadSuccess();
+
+    TestTableManager::Instance().LoadSuccess();
+
+    TestMultiKeyTableManager::Instance().LoadSuccess();
+
     WorldTableManager::Instance().LoadSuccess();
 
 

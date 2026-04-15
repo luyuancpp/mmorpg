@@ -36,7 +36,7 @@ void {{ sheetname }}TableManager::Load() {
         }
 {%- endfor %}
 {%- for col in table.index_columns %}
-        snap->{{ to_camel_case(col.name) }}Index.emplace(row_data.{{ col.name }}(), &row_data);
+        snap->{{ to_camel_case(col.name) }}Index[row_data.{{ col.name }}()].push_back(&row_data);
 {%- endfor %}
 {%- for ck in table.composite_keys %}
         snap->{{ to_camel_case(ck.group) }}Composite.emplace({{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}{ {%- for col in ck.columns %}row_data.{{ col.name }}(){% if not loop.last %}, {% endif %}{% endfor -%} }, &row_data);

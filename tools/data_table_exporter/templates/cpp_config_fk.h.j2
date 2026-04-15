@@ -49,7 +49,7 @@ inline std::vector<const {{ col.group_foreign_key.target_table }}Table*> Get{{ s
 {% for col in table.foreign_key_columns if not col.is_repeated %}
 
 /// Reverse FK: find all {{ sheetname }} rows whose {{ col.name }} == key.
-inline std::vector<const {{ sheetname }}Table*> Find{{ sheetname }}RowsBy{{ to_pascal_case(col.name) }}({{ to_cpp_param_type(col.data_type) }} key) {
+inline const std::vector<const {{ sheetname }}Table*>& Find{{ sheetname }}RowsBy{{ to_pascal_case(col.name) }}({{ to_cpp_param_type(col.data_type) }} key) {
     return {{ sheetname }}TableManager::Instance().GetBy{{ to_pascal_case(col.name) }}(key);
 }
 {% endfor %}

@@ -52,7 +52,7 @@ public:
         std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*> {{ to_camel_case(arr.name) }}Index;
 {%- endfor %}
 {%- for col in table.index_columns %}
-        std::unordered_multimap<{{ to_cpp_type(col.data_type) }}, const {{ sheetname }}Table*> {{ to_camel_case(col.name) }}Index;
+        std::unordered_map<{{ to_cpp_type(col.data_type) }}, std::vector<const {{ sheetname }}Table*>> {{ to_camel_case(col.name) }}Index;
 {%- endfor %}
 {%- for ck in table.composite_keys %}
         std::unordered_map<{{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}, const {{ sheetname }}Table*, {{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}Hash> {{ to_camel_case(ck.group) }}Composite;
@@ -105,14 +105,11 @@ public:
     const std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*>& Get{{ to_pascal_case(arr.name) }}Index() const { return snapshot->{{ to_camel_case(arr.name) }}Index; }
 {%- endfor %}
 {%- for col in table.index_columns %}
-    const std::unordered_multimap<{{ to_cpp_type(col.data_type) }}, const {{ sheetname }}Table*>& Get{{ to_pascal_case(col.name) }}Index() const { return snapshot->{{ to_camel_case(col.name) }}Index; }
-    std::vector<const {{ sheetname }}Table*> GetBy{{ to_pascal_case(col.name) }}({{ to_cpp_param_type(col.data_type) }} key) const {
-        auto range = snapshot->{{ to_camel_case(col.name) }}Index.equal_range(key);
-        std::vector<const {{ sheetname }}Table*> result;
-        for (auto it = range.first; it != range.second; ++it) {
-            result.push_back(it->second);
-        }
-        return result;
+    const std::unordered_map<{{ to_cpp_type(col.data_type) }}, std::vector<const {{ sheetname }}Table*>>& Get{{ to_pascal_case(col.name) }}Index() const { return snapshot->{{ to_camel_case(col.name) }}Index; }
+    const std::vector<const {{ sheetname }}Table*>& GetBy{{ to_pascal_case(col.name) }}({{ to_cpp_param_type(col.data_type) }} key) const {
+        static const std::vector<const {{ sheetname }}Table*> kEmpty;
+        auto it = snapshot->{{ to_camel_case(col.name) }}Index.find(key);
+        return it != snapshot->{{ to_camel_case(col.name) }}Index.end() ? it->second : kEmpty;
     }
 {%- endfor %}
 
@@ -135,7 +132,10 @@ public:
     std::size_t CountBy{{ to_pascal_case(arr.name) }}Index({{ to_cpp_param_type(arr.data_type) }} key) const { return snapshot->{{ to_camel_case(arr.name) }}Index.count(key); }
 {%- endfor %}
 {%- for col in table.index_columns %}
-    std::size_t CountBy{{ to_pascal_case(col.name) }}Index({{ to_cpp_param_type(col.data_type) }} key) const { return snapshot->{{ to_camel_case(col.name) }}Index.count(key); }
+    std::size_t CountBy{{ to_pascal_case(col.name) }}Index({{ to_cpp_param_type(col.data_type) }} key) const {
+        auto it = snapshot->{{ to_camel_case(col.name) }}Index.find(key);
+        return it != snapshot->{{ to_camel_case(col.name) }}Index.end() ? it->second.size() : 0;
+    }
 {%- endfor %}
 
     // ---- FindByIds (IN) ----

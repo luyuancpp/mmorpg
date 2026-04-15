@@ -13,6 +13,9 @@ LoadSuccessCallback loadSuccessCallback;
 void LoadTables() {
 {% for item in sheetnames %}
     {{ item }}TableManager::Instance().Load();
+{% endfor %}
+
+{% for item in sheetnames %}
     {{ item }}TableManager::Instance().LoadSuccess();
 {% endfor %}
 
