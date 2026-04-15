@@ -183,9 +183,15 @@ void ProtobufCodecLite::defaultErrorCallback(const TcpConnectionPtr& conn,
                                              ErrorCode errorCode)
 {
   LOG_ERROR << "ProtobufCodecLite::defaultErrorCallback - " << errorCodeToString(errorCode);
-  if (conn && conn->connected())
+  if (conn)
   {
-    conn->shutdown();
+    LOG_ERROR << "  peer: " << conn->peerAddress().toIpPort()
+              << " local: " << conn->localAddress().toIpPort()
+              << " name: " << conn->name();
+    if (conn->connected())
+    {
+      conn->shutdown();
+    }
   }
 }
 
