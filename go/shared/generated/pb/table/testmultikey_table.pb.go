@@ -84,9 +84,11 @@ type TestMultiKeyTable struct {
 	MStringKey    string                  `protobuf:"bytes,7,opt,name=m_string_key,json=mStringKey,proto3" json:"m_string_key,omitempty"`
 	MUint32Key    uint32                  `protobuf:"varint,8,opt,name=m_uint32_key,json=mUint32Key,proto3" json:"m_uint32_key,omitempty"`
 	MInt32Key     int32                   `protobuf:"varint,9,opt,name=m_int32_key,json=mInt32Key,proto3" json:"m_int32_key,omitempty"`
-	Tag1          map[string]string       `protobuf:"bytes,10,rep,name=tag1,proto3" json:"tag1,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	ImmuneTag1    map[string]string       `protobuf:"bytes,11,rep,name=immune_tag1,json=immuneTag1,proto3" json:"immune_tag1,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Testobj1      []*TestMultiKeytestobj1 `protobuf:"bytes,12,rep,name=testobj1,proto3" json:"testobj1,omitempty"`
+	TestRef       uint32                  `protobuf:"varint,10,opt,name=test_ref,json=testRef,proto3" json:"test_ref,omitempty"`
+	TestRefs      []uint32                `protobuf:"varint,11,rep,packed,name=test_refs,json=testRefs,proto3" json:"test_refs,omitempty"`
+	Tag1          map[string]string       `protobuf:"bytes,12,rep,name=tag1,proto3" json:"tag1,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ImmuneTag1    map[string]string       `protobuf:"bytes,13,rep,name=immune_tag1,json=immuneTag1,proto3" json:"immune_tag1,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Testobj1      []*TestMultiKeytestobj1 `protobuf:"bytes,14,rep,name=testobj1,proto3" json:"testobj1,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -184,6 +186,20 @@ func (x *TestMultiKeyTable) GetMInt32Key() int32 {
 	return 0
 }
 
+func (x *TestMultiKeyTable) GetTestRef() uint32 {
+	if x != nil {
+		return x.TestRef
+	}
+	return 0
+}
+
+func (x *TestMultiKeyTable) GetTestRefs() []uint32 {
+	if x != nil {
+		return x.TestRefs
+	}
+	return nil
+}
+
 func (x *TestMultiKeyTable) GetTag1() map[string]string {
 	if x != nil {
 		return x.Tag1
@@ -256,7 +272,7 @@ const file_testmultikey_table_proto_rawDesc = "" +
 	"\x18testmultikey_table.proto\"`\n" +
 	"\x14TestMultiKeytestobj1\x12!\n" +
 	"\ftestobj1_key\x18\x01 \x01(\rR\vtestobj1Key\x12%\n" +
-	"\x0etestobj1_value\x18\x02 \x01(\rR\rtestobj1Value\"\xb2\x04\n" +
+	"\x0etestobj1_value\x18\x02 \x01(\rR\rtestobj1Value\"\xea\x04\n" +
 	"\x11TestMultiKeyTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x14\n" +
 	"\x05level\x18\x02 \x01(\rR\x05level\x12\x16\n" +
@@ -270,12 +286,14 @@ const file_testmultikey_table_proto_rawDesc = "" +
 	"mStringKey\x12 \n" +
 	"\fm_uint32_key\x18\b \x01(\rR\n" +
 	"mUint32Key\x12\x1e\n" +
-	"\vm_int32_key\x18\t \x01(\x05R\tmInt32Key\x120\n" +
-	"\x04tag1\x18\n" +
-	" \x03(\v2\x1c.TestMultiKeyTable.Tag1EntryR\x04tag1\x12C\n" +
-	"\vimmune_tag1\x18\v \x03(\v2\".TestMultiKeyTable.ImmuneTag1EntryR\n" +
+	"\vm_int32_key\x18\t \x01(\x05R\tmInt32Key\x12\x19\n" +
+	"\btest_ref\x18\n" +
+	" \x01(\rR\atestRef\x12\x1b\n" +
+	"\ttest_refs\x18\v \x03(\rR\btestRefs\x120\n" +
+	"\x04tag1\x18\f \x03(\v2\x1c.TestMultiKeyTable.Tag1EntryR\x04tag1\x12C\n" +
+	"\vimmune_tag1\x18\r \x03(\v2\".TestMultiKeyTable.ImmuneTag1EntryR\n" +
 	"immuneTag1\x121\n" +
-	"\btestobj1\x18\f \x03(\v2\x15.TestMultiKeytestobj1R\btestobj1\x1a7\n" +
+	"\btestobj1\x18\x0e \x03(\v2\x15.TestMultiKeytestobj1R\btestobj1\x1a7\n" +
 	"\tTag1Entry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a=\n" +

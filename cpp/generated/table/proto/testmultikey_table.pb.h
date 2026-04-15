@@ -512,9 +512,10 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kEffectFieldNumber = 3,
-    kTag1FieldNumber = 10,
-    kImmuneTag1FieldNumber = 11,
-    kTestobj1FieldNumber = 12,
+    kTestRefsFieldNumber = 11,
+    kTag1FieldNumber = 12,
+    kImmuneTag1FieldNumber = 13,
+    kTestobj1FieldNumber = 14,
     kStringKeyFieldNumber = 4,
     kMStringKeyFieldNumber = 7,
     kIdFieldNumber = 1,
@@ -523,6 +524,7 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
     kInt32KeyFieldNumber = 6,
     kMUint32KeyFieldNumber = 8,
     kMInt32KeyFieldNumber = 9,
+    kTestRefFieldNumber = 10,
   };
   // repeated uint32 effect = 3;
   int effect_size() const;
@@ -542,7 +544,25 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_effect();
 
   public:
-  // map<string, string> tag1 = 10;
+  // repeated uint32 test_refs = 11;
+  int test_refs_size() const;
+  private:
+  int _internal_test_refs_size() const;
+
+  public:
+  void clear_test_refs() ;
+  ::uint32_t test_refs(int index) const;
+  void set_test_refs(int index, ::uint32_t value);
+  void add_test_refs(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& test_refs() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_test_refs();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_test_refs() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_test_refs();
+
+  public:
+  // map<string, string> tag1 = 12;
   int tag1_size() const;
   private:
   int _internal_tag1_size() const;
@@ -557,7 +577,7 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_tag1();
 
   public:
-  // map<string, string> immune_tag1 = 11;
+  // map<string, string> immune_tag1 = 13;
   int immune_tag1_size() const;
   private:
   int _internal_immune_tag1_size() const;
@@ -572,7 +592,7 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL _internal_mutable_immune_tag1();
 
   public:
-  // repeated .TestMultiKeytestobj1 testobj1 = 12;
+  // repeated .TestMultiKeytestobj1 testobj1 = 14;
   int testobj1_size() const;
   private:
   int _internal_testobj1_size() const;
@@ -679,11 +699,21 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   void _internal_set_m_int32_key(::int32_t value);
 
   public:
+  // uint32 test_ref = 10;
+  void clear_test_ref() ;
+  ::uint32_t test_ref() const;
+  void set_test_ref(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_test_ref() const;
+  void _internal_set_test_ref(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:TestMultiKeyTable)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 12,
+  static const ::google::protobuf::internal::TcParseTable<4, 14,
                                    3, 71,
                                    2>
       _table_;
@@ -707,6 +737,8 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedField<::uint32_t> effect_;
     ::google::protobuf::internal::CachedSize _effect_cached_byte_size_;
+    ::google::protobuf::RepeatedField<::uint32_t> test_refs_;
+    ::google::protobuf::internal::CachedSize _test_refs_cached_byte_size_;
     ::google::protobuf::internal::MapField<TestMultiKeyTable_Tag1Entry_DoNotUse, std::string, std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
@@ -724,6 +756,7 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
     ::int32_t int32_key_;
     ::uint32_t m_uint32_key_;
     ::int32_t m_int32_key_;
+    ::uint32_t test_ref_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1321,7 +1354,77 @@ inline void TestMultiKeyTable::_internal_set_m_int32_key(::int32_t value) {
   _impl_.m_int32_key_ = value;
 }
 
-// map<string, string> tag1 = 10;
+// uint32 test_ref = 10;
+inline void TestMultiKeyTable::clear_test_ref() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.test_ref_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000100u;
+}
+inline ::uint32_t TestMultiKeyTable::test_ref() const {
+  // @@protoc_insertion_point(field_get:TestMultiKeyTable.test_ref)
+  return _internal_test_ref();
+}
+inline void TestMultiKeyTable::set_test_ref(::uint32_t value) {
+  _internal_set_test_ref(value);
+  _impl_._has_bits_[0] |= 0x00000100u;
+  // @@protoc_insertion_point(field_set:TestMultiKeyTable.test_ref)
+}
+inline ::uint32_t TestMultiKeyTable::_internal_test_ref() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.test_ref_;
+}
+inline void TestMultiKeyTable::_internal_set_test_ref(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.test_ref_ = value;
+}
+
+// repeated uint32 test_refs = 11;
+inline int TestMultiKeyTable::_internal_test_refs_size() const {
+  return _internal_test_refs().size();
+}
+inline int TestMultiKeyTable::test_refs_size() const {
+  return _internal_test_refs_size();
+}
+inline void TestMultiKeyTable::clear_test_refs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.test_refs_.Clear();
+}
+inline ::uint32_t TestMultiKeyTable::test_refs(int index) const {
+  // @@protoc_insertion_point(field_get:TestMultiKeyTable.test_refs)
+  return _internal_test_refs().Get(index);
+}
+inline void TestMultiKeyTable::set_test_refs(int index, ::uint32_t value) {
+  _internal_mutable_test_refs()->Set(index, value);
+  // @@protoc_insertion_point(field_set:TestMultiKeyTable.test_refs)
+}
+inline void TestMultiKeyTable::add_test_refs(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_test_refs()->Add(value);
+  // @@protoc_insertion_point(field_add:TestMultiKeyTable.test_refs)
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>& TestMultiKeyTable::test_refs() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:TestMultiKeyTable.test_refs)
+  return _internal_test_refs();
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL TestMultiKeyTable::mutable_test_refs()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:TestMultiKeyTable.test_refs)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_test_refs();
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>&
+TestMultiKeyTable::_internal_test_refs() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.test_refs_;
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
+TestMultiKeyTable::_internal_mutable_test_refs() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.test_refs_;
+}
+
+// map<string, string> tag1 = 12;
 inline int TestMultiKeyTable::_internal_tag1_size() const {
   return _internal_tag1().size();
 }
@@ -1350,7 +1453,7 @@ inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestM
   return _internal_mutable_tag1();
 }
 
-// map<string, string> immune_tag1 = 11;
+// map<string, string> immune_tag1 = 13;
 inline int TestMultiKeyTable::_internal_immune_tag1_size() const {
   return _internal_immune_tag1().size();
 }
@@ -1379,7 +1482,7 @@ inline ::google::protobuf::Map<std::string, std::string>* PROTOBUF_NONNULL TestM
   return _internal_mutable_immune_tag1();
 }
 
-// repeated .TestMultiKeytestobj1 testobj1 = 12;
+// repeated .TestMultiKeytestobj1 testobj1 = 14;
 inline int TestMultiKeyTable::_internal_testobj1_size() const {
   return _internal_testobj1().size();
 }

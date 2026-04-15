@@ -44,6 +44,8 @@ public class TestMultiKeyTableManager {
 
         final Map<Integer, List<TestMultiKeyTable>> idxEffect;
 
+        final Map<Integer, List<TestMultiKeyTable>> idxTest_refs;
+
 
         Snapshot(TestMultiKeyTableData data,
                  Map<Integer, TestMultiKeyTable> kvData,
@@ -53,7 +55,8 @@ public class TestMultiKeyTableManager {
                  Map<String, List<TestMultiKeyTable>> kvM_string_keyData,
                  Map<Integer, List<TestMultiKeyTable>> kvM_uint32_keyData,
                  Map<Integer, List<TestMultiKeyTable>> kvM_int32_keyData,
-                 Map<Integer, List<TestMultiKeyTable>> idxEffect) {
+                 Map<Integer, List<TestMultiKeyTable>> idxEffect,
+                 Map<Integer, List<TestMultiKeyTable>> idxTest_refs) {
             this.data = data;
             this.kvData = kvData;
             this.kvString_keyData = kvString_keyData;
@@ -63,11 +66,13 @@ public class TestMultiKeyTableManager {
             this.kvM_uint32_keyData = kvM_uint32_keyData;
             this.kvM_int32_keyData = kvM_int32_keyData;
             this.idxEffect = idxEffect;
+            this.idxTest_refs = idxTest_refs;
         }
     }
 
     private Snapshot snapshot = new Snapshot(
             TestMultiKeyTableData.getDefaultInstance(),
+            Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
@@ -101,6 +106,7 @@ public class TestMultiKeyTableManager {
         Map<Integer, List<TestMultiKeyTable>> kvM_uint32_keyData = new HashMap<>();
         Map<Integer, List<TestMultiKeyTable>> kvM_int32_keyData = new HashMap<>();
         Map<Integer, List<TestMultiKeyTable>> idxEffect = new HashMap<>();
+        Map<Integer, List<TestMultiKeyTable>> idxTest_refs = new HashMap<>();
 
         for (TestMultiKeyTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -113,9 +119,12 @@ public class TestMultiKeyTableManager {
             for (Integer elem : row.getEffectList()) {
                 idxEffect.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
+            for (Integer elem : row.getTestRefsList()) {
+                idxTest_refs.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
+            }
         }
 
-        this.snapshot = new Snapshot(data, kvData, kvString_keyData, kvUint32_keyData, kvInt32_keyData, kvM_string_keyData, kvM_uint32_keyData, kvM_int32_keyData, idxEffect);
+        this.snapshot = new Snapshot(data, kvData, kvString_keyData, kvUint32_keyData, kvInt32_keyData, kvM_string_keyData, kvM_uint32_keyData, kvM_int32_keyData, idxEffect, idxTest_refs);
     }
 
     public TestMultiKeyTableData findAll() {
@@ -162,7 +171,13 @@ public class TestMultiKeyTableManager {
         return snapshot.idxEffect.getOrDefault(key, Collections.emptyList());
     }
 
+    public List<TestMultiKeyTable> findByTest_refsIndex(int key) {
+        return snapshot.idxTest_refs.getOrDefault(key, Collections.emptyList());
+    }
 
+
+
+    // FK: test_ref → Test.id
 
 
     // ---- Exists ----
@@ -207,6 +222,10 @@ public class TestMultiKeyTableManager {
 
     public int countByEffectIndex(int key) {
         return snapshot.idxEffect.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByTest_refsIndex(int key) {
+        return snapshot.idxTest_refs.getOrDefault(key, Collections.emptyList()).size();
     }
 
 

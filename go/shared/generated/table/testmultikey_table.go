@@ -26,6 +26,7 @@ type testmultikeySnapshot struct {
     kvM_uint32_keyData map[uint32][]*pb.TestMultiKeyTable
     kvM_int32_keyData map[int32][]*pb.TestMultiKeyTable
     idxEffect map[uint32][]*pb.TestMultiKeyTable
+    idxTest_refs map[uint32][]*pb.TestMultiKeyTable
 }
 
 type TestMultiKeyTableManager struct {
@@ -45,6 +46,7 @@ func NewTestMultiKeyTableManager() *TestMultiKeyTableManager {
             kvM_uint32_keyData: make(map[uint32][]*pb.TestMultiKeyTable),
             kvM_int32_keyData: make(map[int32][]*pb.TestMultiKeyTable),
             idxEffect: make(map[uint32][]*pb.TestMultiKeyTable),
+            idxTest_refs: make(map[uint32][]*pb.TestMultiKeyTable),
         },
     }
 }
@@ -81,6 +83,7 @@ func (m *TestMultiKeyTableManager) Load(configDir string, useBinary bool) error 
         kvM_uint32_keyData: make(map[uint32][]*pb.TestMultiKeyTable),
         kvM_int32_keyData: make(map[int32][]*pb.TestMultiKeyTable),
         idxEffect: make(map[uint32][]*pb.TestMultiKeyTable),
+        idxTest_refs: make(map[uint32][]*pb.TestMultiKeyTable),
     }
 
     for _, row := range container.Data {
@@ -93,6 +96,9 @@ func (m *TestMultiKeyTableManager) Load(configDir string, useBinary bool) error 
         snap.kvM_int32_keyData[row.MInt32Key] = append(snap.kvM_int32_keyData[row.MInt32Key], row)
         for _, elem := range row.Effect {
             snap.idxEffect[elem] = append(snap.idxEffect[elem], row)
+        }
+        for _, elem := range row.TestRefs {
+            snap.idxTest_refs[elem] = append(snap.idxTest_refs[elem], row)
         }
     }
 
@@ -146,6 +152,11 @@ func (m *TestMultiKeyTableManager) FindByEffectIndex(key uint32) []*pb.TestMulti
 }
 
 
+func (m *TestMultiKeyTableManager) FindByTest_refsIndex(key uint32) []*pb.TestMultiKeyTable {
+    return m.snap.idxTest_refs[key]
+}
+
+
 
 // ---- Exists ----
 
@@ -192,6 +203,11 @@ func (m *TestMultiKeyTableManager) CountByM_int32_key(key int32) int {
 
 func (m *TestMultiKeyTableManager) CountByEffectIndex(key uint32) int {
     return len(m.snap.idxEffect[key])
+}
+
+
+func (m *TestMultiKeyTableManager) CountByTest_refsIndex(key uint32) int {
+    return len(m.snap.idxTest_refs[key])
 }
 
 
@@ -263,6 +279,8 @@ func (m *TestMultiKeyTableManager) First(pred func(*pb.TestMultiKeyTable) bool) 
     }
     return nil, false
 }
+// FK: test_ref → Test.id
+
 
 // ---- Composite Key ----
 

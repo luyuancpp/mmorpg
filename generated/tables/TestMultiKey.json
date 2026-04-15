@@ -15,6 +15,11 @@
    "tag1": {
     "Metal": "Control"
    },
+   "test_ref": 1,
+   "test_refs": [
+    1,
+    2
+   ],
    "testobj1": [
     {
      "testobj1_key": 0,
@@ -54,6 +59,11 @@
    "tag1": {
     "Wood": "Control"
    },
+   "test_ref": 2,
+   "test_refs": [
+    3,
+    4
+   ],
    "testobj1": [
     {
      "testobj1_key": 1,
@@ -97,6 +107,11 @@
    "tag1": {
     "Water": "Control"
    },
+   "test_ref": 3,
+   "test_refs": [
+    5,
+    6
+   ],
    "testobj1": [
     {
      "testobj1_key": 1,

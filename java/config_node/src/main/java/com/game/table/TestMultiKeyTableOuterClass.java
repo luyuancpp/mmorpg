@@ -62,21 +62,22 @@ public final class TestMultiKeyTableOuterClass {
     java.lang.String[] descriptorData = {
       "\n\030testmultikey_table.proto\"D\n\024TestMultiK" +
       "eytestobj1\022\024\n\014testobj1_key\030\001 \001(\r\022\026\n\016test" +
-      "obj1_value\030\002 \001(\r\"\250\003\n\021TestMultiKeyTable\022\n" +
+      "obj1_value\030\002 \001(\r\"\315\003\n\021TestMultiKeyTable\022\n" +
       "\n\002id\030\001 \001(\r\022\r\n\005level\030\002 \001(\r\022\016\n\006effect\030\003 \003(" +
       "\r\022\022\n\nstring_key\030\004 \001(\t\022\022\n\nuint32_key\030\005 \001(" +
       "\r\022\021\n\tint32_key\030\006 \001(\005\022\024\n\014m_string_key\030\007 \001" +
       "(\t\022\024\n\014m_uint32_key\030\010 \001(\r\022\023\n\013m_int32_key\030" +
-      "\t \001(\005\022*\n\004tag1\030\n \003(\0132\034.TestMultiKeyTable." +
-      "Tag1Entry\0227\n\013immune_tag1\030\013 \003(\0132\".TestMul" +
-      "tiKeyTable.ImmuneTag1Entry\022\'\n\010testobj1\030\014" +
-      " \003(\0132\025.TestMultiKeytestobj1\032+\n\tTag1Entry" +
-      "\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\0321\n\017Immu" +
-      "neTag1Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:" +
-      "\0028\001\"9\n\025TestMultiKeyTableData\022 \n\004data\030\001 \003" +
-      "(\0132\022.TestMultiKeyTableBC\n\016com.game.table" +
-      "B\033TestMultiKeyTableOuterClassP\001Z\022generat" +
-      "ed/pb/tableb\006proto3"
+      "\t \001(\005\022\020\n\010test_ref\030\n \001(\r\022\021\n\ttest_refs\030\013 \003" +
+      "(\r\022*\n\004tag1\030\014 \003(\0132\034.TestMultiKeyTable.Tag" +
+      "1Entry\0227\n\013immune_tag1\030\r \003(\0132\".TestMultiK" +
+      "eyTable.ImmuneTag1Entry\022\'\n\010testobj1\030\016 \003(" +
+      "\0132\025.TestMultiKeytestobj1\032+\n\tTag1Entry\022\013\n" +
+      "\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\0321\n\017ImmuneT" +
+      "ag1Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001" +
+      "\"9\n\025TestMultiKeyTableData\022 \n\004data\030\001 \003(\0132" +
+      "\022.TestMultiKeyTableBC\n\016com.game.tableB\033T" +
+      "estMultiKeyTableOuterClassP\001Z\022generated/" +
+      "pb/tableb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -93,7 +94,7 @@ public final class TestMultiKeyTableOuterClass {
     internal_static_TestMultiKeyTable_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_TestMultiKeyTable_descriptor,
-        new java.lang.String[] { "Id", "Level", "Effect", "StringKey", "Uint32Key", "Int32Key", "MStringKey", "MUint32Key", "MInt32Key", "Tag1", "ImmuneTag1", "Testobj1", });
+        new java.lang.String[] { "Id", "Level", "Effect", "StringKey", "Uint32Key", "Int32Key", "MStringKey", "MUint32Key", "MInt32Key", "TestRef", "TestRefs", "Tag1", "ImmuneTag1", "Testobj1", });
     internal_static_TestMultiKeyTable_Tag1Entry_descriptor =
       internal_static_TestMultiKeyTable_descriptor.getNestedTypes().get(0);
     internal_static_TestMultiKeyTable_Tag1Entry_fieldAccessorTable = new

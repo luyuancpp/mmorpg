@@ -88,11 +88,34 @@ public interface TestMultiKeyTableOrBuilder extends
   int getMInt32Key();
 
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>uint32 test_ref = 10;</code>
+   * @return The testRef.
+   */
+  int getTestRef();
+
+  /**
+   * <code>repeated uint32 test_refs = 11;</code>
+   * @return A list containing the testRefs.
+   */
+  java.util.List<java.lang.Integer> getTestRefsList();
+  /**
+   * <code>repeated uint32 test_refs = 11;</code>
+   * @return The count of testRefs.
+   */
+  int getTestRefsCount();
+  /**
+   * <code>repeated uint32 test_refs = 11;</code>
+   * @param index The index of the element to return.
+   * @return The testRefs at the given index.
+   */
+  int getTestRefs(int index);
+
+  /**
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   int getTag1Count();
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   boolean containsTag1(
       java.lang.String key);
@@ -103,12 +126,12 @@ public interface TestMultiKeyTableOrBuilder extends
   java.util.Map<java.lang.String, java.lang.String>
   getTag1();
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   java.util.Map<java.lang.String, java.lang.String>
   getTag1Map();
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   /* nullable */
 java.lang.String getTag1OrDefault(
@@ -116,17 +139,17 @@ java.lang.String getTag1OrDefault(
       /* nullable */
 java.lang.String defaultValue);
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   java.lang.String getTag1OrThrow(
       java.lang.String key);
 
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   int getImmuneTag1Count();
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   boolean containsImmuneTag1(
       java.lang.String key);
@@ -137,12 +160,12 @@ java.lang.String defaultValue);
   java.util.Map<java.lang.String, java.lang.String>
   getImmuneTag1();
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   java.util.Map<java.lang.String, java.lang.String>
   getImmuneTag1Map();
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   /* nullable */
 java.lang.String getImmuneTag1OrDefault(
@@ -150,31 +173,31 @@ java.lang.String getImmuneTag1OrDefault(
       /* nullable */
 java.lang.String defaultValue);
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   java.lang.String getImmuneTag1OrThrow(
       java.lang.String key);
 
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   java.util.List<com.game.table.TestMultiKeytestobj1> 
       getTestobj1List();
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   com.game.table.TestMultiKeytestobj1 getTestobj1(int index);
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   int getTestobj1Count();
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   java.util.List<? extends com.game.table.TestMultiKeytestobj1OrBuilder> 
       getTestobj1OrBuilderList();
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   com.game.table.TestMultiKeytestobj1OrBuilder getTestobj1OrBuilder(
       int index);

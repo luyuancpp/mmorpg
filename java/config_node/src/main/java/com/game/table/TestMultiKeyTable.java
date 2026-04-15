@@ -31,6 +31,7 @@ private static final long serialVersionUID = 0L;
     effect_ = emptyIntList();
     stringKey_ = "";
     mStringKey_ = "";
+    testRefs_ = emptyIntList();
     testobj1_ = java.util.Collections.emptyList();
   }
 
@@ -44,9 +45,9 @@ private static final long serialVersionUID = 0L;
   protected com.google.protobuf.MapFieldReflectionAccessor internalGetMapFieldReflection(
       int number) {
     switch (number) {
-      case 10:
+      case 12:
         return internalGetTag1();
-      case 11:
+      case 13:
         return internalGetImmuneTag1();
       default:
         throw new RuntimeException(
@@ -235,7 +236,48 @@ private static final long serialVersionUID = 0L;
     return mInt32Key_;
   }
 
-  public static final int TAG1_FIELD_NUMBER = 10;
+  public static final int TEST_REF_FIELD_NUMBER = 10;
+  private int testRef_ = 0;
+  /**
+   * <code>uint32 test_ref = 10;</code>
+   * @return The testRef.
+   */
+  @java.lang.Override
+  public int getTestRef() {
+    return testRef_;
+  }
+
+  public static final int TEST_REFS_FIELD_NUMBER = 11;
+  @SuppressWarnings("serial")
+  private com.google.protobuf.Internal.IntList testRefs_ =
+      emptyIntList();
+  /**
+   * <code>repeated uint32 test_refs = 11;</code>
+   * @return A list containing the testRefs.
+   */
+  @java.lang.Override
+  public java.util.List<java.lang.Integer>
+      getTestRefsList() {
+    return testRefs_;
+  }
+  /**
+   * <code>repeated uint32 test_refs = 11;</code>
+   * @return The count of testRefs.
+   */
+  public int getTestRefsCount() {
+    return testRefs_.size();
+  }
+  /**
+   * <code>repeated uint32 test_refs = 11;</code>
+   * @param index The index of the element to return.
+   * @return The testRefs at the given index.
+   */
+  public int getTestRefs(int index) {
+    return testRefs_.getInt(index);
+  }
+  private int testRefsMemoizedSerializedSize = -1;
+
+  public static final int TAG1_FIELD_NUMBER = 12;
   private static final class Tag1DefaultEntryHolder {
     static final com.google.protobuf.MapEntry<
         java.lang.String, java.lang.String> defaultEntry =
@@ -262,7 +304,7 @@ private static final long serialVersionUID = 0L;
     return internalGetTag1().getMap().size();
   }
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   @java.lang.Override
   public boolean containsTag1(
@@ -279,14 +321,14 @@ private static final long serialVersionUID = 0L;
     return getTag1Map();
   }
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   @java.lang.Override
   public java.util.Map<java.lang.String, java.lang.String> getTag1Map() {
     return internalGetTag1().getMap();
   }
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   @java.lang.Override
   public /* nullable */
@@ -300,7 +342,7 @@ java.lang.String defaultValue) {
     return map.containsKey(key) ? map.get(key) : defaultValue;
   }
   /**
-   * <code>map&lt;string, string&gt; tag1 = 10;</code>
+   * <code>map&lt;string, string&gt; tag1 = 12;</code>
    */
   @java.lang.Override
   public java.lang.String getTag1OrThrow(
@@ -314,7 +356,7 @@ java.lang.String defaultValue) {
     return map.get(key);
   }
 
-  public static final int IMMUNE_TAG1_FIELD_NUMBER = 11;
+  public static final int IMMUNE_TAG1_FIELD_NUMBER = 13;
   private static final class ImmuneTag1DefaultEntryHolder {
     static final com.google.protobuf.MapEntry<
         java.lang.String, java.lang.String> defaultEntry =
@@ -341,7 +383,7 @@ java.lang.String defaultValue) {
     return internalGetImmuneTag1().getMap().size();
   }
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   @java.lang.Override
   public boolean containsImmuneTag1(
@@ -358,14 +400,14 @@ java.lang.String defaultValue) {
     return getImmuneTag1Map();
   }
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   @java.lang.Override
   public java.util.Map<java.lang.String, java.lang.String> getImmuneTag1Map() {
     return internalGetImmuneTag1().getMap();
   }
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   @java.lang.Override
   public /* nullable */
@@ -379,7 +421,7 @@ java.lang.String defaultValue) {
     return map.containsKey(key) ? map.get(key) : defaultValue;
   }
   /**
-   * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+   * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
    */
   @java.lang.Override
   public java.lang.String getImmuneTag1OrThrow(
@@ -393,18 +435,18 @@ java.lang.String defaultValue) {
     return map.get(key);
   }
 
-  public static final int TESTOBJ1_FIELD_NUMBER = 12;
+  public static final int TESTOBJ1_FIELD_NUMBER = 14;
   @SuppressWarnings("serial")
   private java.util.List<com.game.table.TestMultiKeytestobj1> testobj1_;
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   @java.lang.Override
   public java.util.List<com.game.table.TestMultiKeytestobj1> getTestobj1List() {
     return testobj1_;
   }
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   @java.lang.Override
   public java.util.List<? extends com.game.table.TestMultiKeytestobj1OrBuilder> 
@@ -412,21 +454,21 @@ java.lang.String defaultValue) {
     return testobj1_;
   }
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   @java.lang.Override
   public int getTestobj1Count() {
     return testobj1_.size();
   }
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   @java.lang.Override
   public com.game.table.TestMultiKeytestobj1 getTestobj1(int index) {
     return testobj1_.get(index);
   }
   /**
-   * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+   * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
    */
   @java.lang.Override
   public com.game.table.TestMultiKeytestobj1OrBuilder getTestobj1OrBuilder(
@@ -480,20 +522,30 @@ java.lang.String defaultValue) {
     if (mInt32Key_ != 0) {
       output.writeInt32(9, mInt32Key_);
     }
+    if (testRef_ != 0) {
+      output.writeUInt32(10, testRef_);
+    }
+    if (getTestRefsList().size() > 0) {
+      output.writeUInt32NoTag(90);
+      output.writeUInt32NoTag(testRefsMemoizedSerializedSize);
+    }
+    for (int i = 0; i < testRefs_.size(); i++) {
+      output.writeUInt32NoTag(testRefs_.getInt(i));
+    }
     com.google.protobuf.GeneratedMessage
       .serializeStringMapTo(
         output,
         internalGetTag1(),
         Tag1DefaultEntryHolder.defaultEntry,
-        10);
+        12);
     com.google.protobuf.GeneratedMessage
       .serializeStringMapTo(
         output,
         internalGetImmuneTag1(),
         ImmuneTag1DefaultEntryHolder.defaultEntry,
-        11);
+        13);
     for (int i = 0; i < testobj1_.size(); i++) {
-      output.writeMessage(12, testobj1_.get(i));
+      output.writeMessage(14, testobj1_.get(i));
     }
     getUnknownFields().writeTo(output);
   }
@@ -548,6 +600,24 @@ java.lang.String defaultValue) {
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(9, mInt32Key_);
     }
+    if (testRef_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(10, testRef_);
+    }
+    {
+      int dataSize = 0;
+      for (int i = 0; i < testRefs_.size(); i++) {
+        dataSize += com.google.protobuf.CodedOutputStream
+          .computeUInt32SizeNoTag(testRefs_.getInt(i));
+      }
+      size += dataSize;
+      if (!getTestRefsList().isEmpty()) {
+        size += 1;
+        size += com.google.protobuf.CodedOutputStream
+            .computeInt32SizeNoTag(dataSize);
+      }
+      testRefsMemoizedSerializedSize = dataSize;
+    }
     for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
          : internalGetTag1().getMap().entrySet()) {
       com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
@@ -556,7 +626,7 @@ java.lang.String defaultValue) {
           .setValue(entry.getValue())
           .build();
       size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(10, tag1__);
+          .computeMessageSize(12, tag1__);
     }
     for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
          : internalGetImmuneTag1().getMap().entrySet()) {
@@ -566,11 +636,11 @@ java.lang.String defaultValue) {
           .setValue(entry.getValue())
           .build();
       size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(11, immuneTag1__);
+          .computeMessageSize(13, immuneTag1__);
     }
     for (int i = 0; i < testobj1_.size(); i++) {
       size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(12, testobj1_.get(i));
+        .computeMessageSize(14, testobj1_.get(i));
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -605,6 +675,10 @@ java.lang.String defaultValue) {
         != other.getMUint32Key()) return false;
     if (getMInt32Key()
         != other.getMInt32Key()) return false;
+    if (getTestRef()
+        != other.getTestRef()) return false;
+    if (!getTestRefsList()
+        .equals(other.getTestRefsList())) return false;
     if (!internalGetTag1().equals(
         other.internalGetTag1())) return false;
     if (!internalGetImmuneTag1().equals(
@@ -642,6 +716,12 @@ java.lang.String defaultValue) {
     hash = (53 * hash) + getMUint32Key();
     hash = (37 * hash) + M_INT32_KEY_FIELD_NUMBER;
     hash = (53 * hash) + getMInt32Key();
+    hash = (37 * hash) + TEST_REF_FIELD_NUMBER;
+    hash = (53 * hash) + getTestRef();
+    if (getTestRefsCount() > 0) {
+      hash = (37 * hash) + TEST_REFS_FIELD_NUMBER;
+      hash = (53 * hash) + getTestRefsList().hashCode();
+    }
     if (!internalGetTag1().getMap().isEmpty()) {
       hash = (37 * hash) + TAG1_FIELD_NUMBER;
       hash = (53 * hash) + internalGetTag1().hashCode();
@@ -767,9 +847,9 @@ java.lang.String defaultValue) {
     protected com.google.protobuf.MapFieldReflectionAccessor internalGetMapFieldReflection(
         int number) {
       switch (number) {
-        case 10:
+        case 12:
           return internalGetTag1();
-        case 11:
+        case 13:
           return internalGetImmuneTag1();
         default:
           throw new RuntimeException(
@@ -780,9 +860,9 @@ java.lang.String defaultValue) {
     protected com.google.protobuf.MapFieldReflectionAccessor internalGetMutableMapFieldReflection(
         int number) {
       switch (number) {
-        case 10:
+        case 12:
           return internalGetMutableTag1();
-        case 11:
+        case 13:
           return internalGetMutableImmuneTag1();
         default:
           throw new RuntimeException(
@@ -820,6 +900,8 @@ java.lang.String defaultValue) {
       mStringKey_ = "";
       mUint32Key_ = 0;
       mInt32Key_ = 0;
+      testRef_ = 0;
+      testRefs_ = emptyIntList();
       internalGetMutableTag1().clear();
       internalGetMutableImmuneTag1().clear();
       if (testobj1Builder_ == null) {
@@ -828,7 +910,7 @@ java.lang.String defaultValue) {
         testobj1_ = null;
         testobj1Builder_.clear();
       }
-      bitField0_ = (bitField0_ & ~0x00000800);
+      bitField0_ = (bitField0_ & ~0x00002000);
       return this;
     }
 
@@ -863,9 +945,9 @@ java.lang.String defaultValue) {
 
     private void buildPartialRepeatedFields(com.game.table.TestMultiKeyTable result) {
       if (testobj1Builder_ == null) {
-        if (((bitField0_ & 0x00000800) != 0)) {
+        if (((bitField0_ & 0x00002000) != 0)) {
           testobj1_ = java.util.Collections.unmodifiableList(testobj1_);
-          bitField0_ = (bitField0_ & ~0x00000800);
+          bitField0_ = (bitField0_ & ~0x00002000);
         }
         result.testobj1_ = testobj1_;
       } else {
@@ -904,10 +986,17 @@ java.lang.String defaultValue) {
         result.mInt32Key_ = mInt32Key_;
       }
       if (((from_bitField0_ & 0x00000200) != 0)) {
+        result.testRef_ = testRef_;
+      }
+      if (((from_bitField0_ & 0x00000400) != 0)) {
+        testRefs_.makeImmutable();
+        result.testRefs_ = testRefs_;
+      }
+      if (((from_bitField0_ & 0x00000800) != 0)) {
         result.tag1_ = internalGetTag1();
         result.tag1_.makeImmutable();
       }
-      if (((from_bitField0_ & 0x00000400) != 0)) {
+      if (((from_bitField0_ & 0x00001000) != 0)) {
         result.immuneTag1_ = internalGetImmuneTag1();
         result.immuneTag1_.makeImmutable();
       }
@@ -964,17 +1053,31 @@ java.lang.String defaultValue) {
       if (other.getMInt32Key() != 0) {
         setMInt32Key(other.getMInt32Key());
       }
+      if (other.getTestRef() != 0) {
+        setTestRef(other.getTestRef());
+      }
+      if (!other.testRefs_.isEmpty()) {
+        if (testRefs_.isEmpty()) {
+          testRefs_ = other.testRefs_;
+          testRefs_.makeImmutable();
+          bitField0_ |= 0x00000400;
+        } else {
+          ensureTestRefsIsMutable();
+          testRefs_.addAll(other.testRefs_);
+        }
+        onChanged();
+      }
       internalGetMutableTag1().mergeFrom(
           other.internalGetTag1());
-      bitField0_ |= 0x00000200;
+      bitField0_ |= 0x00000800;
       internalGetMutableImmuneTag1().mergeFrom(
           other.internalGetImmuneTag1());
-      bitField0_ |= 0x00000400;
+      bitField0_ |= 0x00001000;
       if (testobj1Builder_ == null) {
         if (!other.testobj1_.isEmpty()) {
           if (testobj1_.isEmpty()) {
             testobj1_ = other.testobj1_;
-            bitField0_ = (bitField0_ & ~0x00000800);
+            bitField0_ = (bitField0_ & ~0x00002000);
           } else {
             ensureTestobj1IsMutable();
             testobj1_.addAll(other.testobj1_);
@@ -987,7 +1090,7 @@ java.lang.String defaultValue) {
             testobj1Builder_.dispose();
             testobj1Builder_ = null;
             testobj1_ = other.testobj1_;
-            bitField0_ = (bitField0_ & ~0x00000800);
+            bitField0_ = (bitField0_ & ~0x00002000);
             testobj1Builder_ = 
               com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
                  internalGetTestobj1FieldBuilder() : null;
@@ -1078,25 +1181,46 @@ java.lang.String defaultValue) {
               bitField0_ |= 0x00000100;
               break;
             } // case 72
-            case 82: {
+            case 80: {
+              testRef_ = input.readUInt32();
+              bitField0_ |= 0x00000200;
+              break;
+            } // case 80
+            case 88: {
+              int v = input.readUInt32();
+              ensureTestRefsIsMutable();
+              testRefs_.addInt(v);
+              break;
+            } // case 88
+            case 90: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              ensureTestRefsIsMutable();
+              while (input.getBytesUntilLimit() > 0) {
+                testRefs_.addInt(input.readUInt32());
+              }
+              input.popLimit(limit);
+              break;
+            } // case 90
+            case 98: {
               com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
               tag1__ = input.readMessage(
                   Tag1DefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
               internalGetMutableTag1().getMutableMap().put(
                   tag1__.getKey(), tag1__.getValue());
-              bitField0_ |= 0x00000200;
+              bitField0_ |= 0x00000800;
               break;
-            } // case 82
-            case 90: {
+            } // case 98
+            case 106: {
               com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
               immuneTag1__ = input.readMessage(
                   ImmuneTag1DefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
               internalGetMutableImmuneTag1().getMutableMap().put(
                   immuneTag1__.getKey(), immuneTag1__.getValue());
-              bitField0_ |= 0x00000400;
+              bitField0_ |= 0x00001000;
               break;
-            } // case 90
-            case 98: {
+            } // case 106
+            case 114: {
               com.game.table.TestMultiKeytestobj1 m =
                   input.readMessage(
                       com.game.table.TestMultiKeytestobj1.parser(),
@@ -1108,7 +1232,7 @@ java.lang.String defaultValue) {
                 testobj1Builder_.addMessage(m);
               }
               break;
-            } // case 98
+            } // case 114
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1546,6 +1670,122 @@ java.lang.String defaultValue) {
       return this;
     }
 
+    private int testRef_ ;
+    /**
+     * <code>uint32 test_ref = 10;</code>
+     * @return The testRef.
+     */
+    @java.lang.Override
+    public int getTestRef() {
+      return testRef_;
+    }
+    /**
+     * <code>uint32 test_ref = 10;</code>
+     * @param value The testRef to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTestRef(int value) {
+
+      testRef_ = value;
+      bitField0_ |= 0x00000200;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 test_ref = 10;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearTestRef() {
+      bitField0_ = (bitField0_ & ~0x00000200);
+      testRef_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private com.google.protobuf.Internal.IntList testRefs_ = emptyIntList();
+    private void ensureTestRefsIsMutable() {
+      if (!testRefs_.isModifiable()) {
+        testRefs_ = makeMutableCopy(testRefs_);
+      }
+      bitField0_ |= 0x00000400;
+    }
+    /**
+     * <code>repeated uint32 test_refs = 11;</code>
+     * @return A list containing the testRefs.
+     */
+    public java.util.List<java.lang.Integer>
+        getTestRefsList() {
+      testRefs_.makeImmutable();
+      return testRefs_;
+    }
+    /**
+     * <code>repeated uint32 test_refs = 11;</code>
+     * @return The count of testRefs.
+     */
+    public int getTestRefsCount() {
+      return testRefs_.size();
+    }
+    /**
+     * <code>repeated uint32 test_refs = 11;</code>
+     * @param index The index of the element to return.
+     * @return The testRefs at the given index.
+     */
+    public int getTestRefs(int index) {
+      return testRefs_.getInt(index);
+    }
+    /**
+     * <code>repeated uint32 test_refs = 11;</code>
+     * @param index The index to set the value at.
+     * @param value The testRefs to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTestRefs(
+        int index, int value) {
+
+      ensureTestRefsIsMutable();
+      testRefs_.setInt(index, value);
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>repeated uint32 test_refs = 11;</code>
+     * @param value The testRefs to add.
+     * @return This builder for chaining.
+     */
+    public Builder addTestRefs(int value) {
+
+      ensureTestRefsIsMutable();
+      testRefs_.addInt(value);
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>repeated uint32 test_refs = 11;</code>
+     * @param values The testRefs to add.
+     * @return This builder for chaining.
+     */
+    public Builder addAllTestRefs(
+        java.lang.Iterable<? extends java.lang.Integer> values) {
+      ensureTestRefsIsMutable();
+      com.google.protobuf.AbstractMessageLite.Builder.addAll(
+          values, testRefs_);
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>repeated uint32 test_refs = 11;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearTestRefs() {
+      testRefs_ = emptyIntList();
+      bitField0_ = (bitField0_ & ~0x00000400);
+      onChanged();
+      return this;
+    }
+
     private com.google.protobuf.MapField<
         java.lang.String, java.lang.String> tag1_;
     private com.google.protobuf.MapField<java.lang.String, java.lang.String>
@@ -1565,7 +1805,7 @@ java.lang.String defaultValue) {
       if (!tag1_.isMutable()) {
         tag1_ = tag1_.copy();
       }
-      bitField0_ |= 0x00000200;
+      bitField0_ |= 0x00000800;
       onChanged();
       return tag1_;
     }
@@ -1573,7 +1813,7 @@ java.lang.String defaultValue) {
       return internalGetTag1().getMap().size();
     }
     /**
-     * <code>map&lt;string, string&gt; tag1 = 10;</code>
+     * <code>map&lt;string, string&gt; tag1 = 12;</code>
      */
     @java.lang.Override
     public boolean containsTag1(
@@ -1590,14 +1830,14 @@ java.lang.String defaultValue) {
       return getTag1Map();
     }
     /**
-     * <code>map&lt;string, string&gt; tag1 = 10;</code>
+     * <code>map&lt;string, string&gt; tag1 = 12;</code>
      */
     @java.lang.Override
     public java.util.Map<java.lang.String, java.lang.String> getTag1Map() {
       return internalGetTag1().getMap();
     }
     /**
-     * <code>map&lt;string, string&gt; tag1 = 10;</code>
+     * <code>map&lt;string, string&gt; tag1 = 12;</code>
      */
     @java.lang.Override
     public /* nullable */
@@ -1611,7 +1851,7 @@ java.lang.String defaultValue) {
       return map.containsKey(key) ? map.get(key) : defaultValue;
     }
     /**
-     * <code>map&lt;string, string&gt; tag1 = 10;</code>
+     * <code>map&lt;string, string&gt; tag1 = 12;</code>
      */
     @java.lang.Override
     public java.lang.String getTag1OrThrow(
@@ -1625,13 +1865,13 @@ java.lang.String defaultValue) {
       return map.get(key);
     }
     public Builder clearTag1() {
-      bitField0_ = (bitField0_ & ~0x00000200);
+      bitField0_ = (bitField0_ & ~0x00000800);
       internalGetMutableTag1().getMutableMap()
           .clear();
       return this;
     }
     /**
-     * <code>map&lt;string, string&gt; tag1 = 10;</code>
+     * <code>map&lt;string, string&gt; tag1 = 12;</code>
      */
     public Builder removeTag1(
         java.lang.String key) {
@@ -1646,11 +1886,11 @@ java.lang.String defaultValue) {
     @java.lang.Deprecated
     public java.util.Map<java.lang.String, java.lang.String>
         getMutableTag1() {
-      bitField0_ |= 0x00000200;
+      bitField0_ |= 0x00000800;
       return internalGetMutableTag1().getMutableMap();
     }
     /**
-     * <code>map&lt;string, string&gt; tag1 = 10;</code>
+     * <code>map&lt;string, string&gt; tag1 = 12;</code>
      */
     public Builder putTag1(
         java.lang.String key,
@@ -1659,17 +1899,17 @@ java.lang.String defaultValue) {
       if (value == null) { throw new NullPointerException("map value"); }
       internalGetMutableTag1().getMutableMap()
           .put(key, value);
-      bitField0_ |= 0x00000200;
+      bitField0_ |= 0x00000800;
       return this;
     }
     /**
-     * <code>map&lt;string, string&gt; tag1 = 10;</code>
+     * <code>map&lt;string, string&gt; tag1 = 12;</code>
      */
     public Builder putAllTag1(
         java.util.Map<java.lang.String, java.lang.String> values) {
       internalGetMutableTag1().getMutableMap()
           .putAll(values);
-      bitField0_ |= 0x00000200;
+      bitField0_ |= 0x00000800;
       return this;
     }
 
@@ -1692,7 +1932,7 @@ java.lang.String defaultValue) {
       if (!immuneTag1_.isMutable()) {
         immuneTag1_ = immuneTag1_.copy();
       }
-      bitField0_ |= 0x00000400;
+      bitField0_ |= 0x00001000;
       onChanged();
       return immuneTag1_;
     }
@@ -1700,7 +1940,7 @@ java.lang.String defaultValue) {
       return internalGetImmuneTag1().getMap().size();
     }
     /**
-     * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+     * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
      */
     @java.lang.Override
     public boolean containsImmuneTag1(
@@ -1717,14 +1957,14 @@ java.lang.String defaultValue) {
       return getImmuneTag1Map();
     }
     /**
-     * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+     * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
      */
     @java.lang.Override
     public java.util.Map<java.lang.String, java.lang.String> getImmuneTag1Map() {
       return internalGetImmuneTag1().getMap();
     }
     /**
-     * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+     * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
      */
     @java.lang.Override
     public /* nullable */
@@ -1738,7 +1978,7 @@ java.lang.String defaultValue) {
       return map.containsKey(key) ? map.get(key) : defaultValue;
     }
     /**
-     * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+     * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
      */
     @java.lang.Override
     public java.lang.String getImmuneTag1OrThrow(
@@ -1752,13 +1992,13 @@ java.lang.String defaultValue) {
       return map.get(key);
     }
     public Builder clearImmuneTag1() {
-      bitField0_ = (bitField0_ & ~0x00000400);
+      bitField0_ = (bitField0_ & ~0x00001000);
       internalGetMutableImmuneTag1().getMutableMap()
           .clear();
       return this;
     }
     /**
-     * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+     * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
      */
     public Builder removeImmuneTag1(
         java.lang.String key) {
@@ -1773,11 +2013,11 @@ java.lang.String defaultValue) {
     @java.lang.Deprecated
     public java.util.Map<java.lang.String, java.lang.String>
         getMutableImmuneTag1() {
-      bitField0_ |= 0x00000400;
+      bitField0_ |= 0x00001000;
       return internalGetMutableImmuneTag1().getMutableMap();
     }
     /**
-     * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+     * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
      */
     public Builder putImmuneTag1(
         java.lang.String key,
@@ -1786,26 +2026,26 @@ java.lang.String defaultValue) {
       if (value == null) { throw new NullPointerException("map value"); }
       internalGetMutableImmuneTag1().getMutableMap()
           .put(key, value);
-      bitField0_ |= 0x00000400;
+      bitField0_ |= 0x00001000;
       return this;
     }
     /**
-     * <code>map&lt;string, string&gt; immune_tag1 = 11;</code>
+     * <code>map&lt;string, string&gt; immune_tag1 = 13;</code>
      */
     public Builder putAllImmuneTag1(
         java.util.Map<java.lang.String, java.lang.String> values) {
       internalGetMutableImmuneTag1().getMutableMap()
           .putAll(values);
-      bitField0_ |= 0x00000400;
+      bitField0_ |= 0x00001000;
       return this;
     }
 
     private java.util.List<com.game.table.TestMultiKeytestobj1> testobj1_ =
       java.util.Collections.emptyList();
     private void ensureTestobj1IsMutable() {
-      if (!((bitField0_ & 0x00000800) != 0)) {
+      if (!((bitField0_ & 0x00002000) != 0)) {
         testobj1_ = new java.util.ArrayList<com.game.table.TestMultiKeytestobj1>(testobj1_);
-        bitField0_ |= 0x00000800;
+        bitField0_ |= 0x00002000;
        }
     }
 
@@ -1813,7 +2053,7 @@ java.lang.String defaultValue) {
         com.game.table.TestMultiKeytestobj1, com.game.table.TestMultiKeytestobj1.Builder, com.game.table.TestMultiKeytestobj1OrBuilder> testobj1Builder_;
 
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public java.util.List<com.game.table.TestMultiKeytestobj1> getTestobj1List() {
       if (testobj1Builder_ == null) {
@@ -1823,7 +2063,7 @@ java.lang.String defaultValue) {
       }
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public int getTestobj1Count() {
       if (testobj1Builder_ == null) {
@@ -1833,7 +2073,7 @@ java.lang.String defaultValue) {
       }
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public com.game.table.TestMultiKeytestobj1 getTestobj1(int index) {
       if (testobj1Builder_ == null) {
@@ -1843,7 +2083,7 @@ java.lang.String defaultValue) {
       }
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder setTestobj1(
         int index, com.game.table.TestMultiKeytestobj1 value) {
@@ -1860,7 +2100,7 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder setTestobj1(
         int index, com.game.table.TestMultiKeytestobj1.Builder builderForValue) {
@@ -1874,7 +2114,7 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder addTestobj1(com.game.table.TestMultiKeytestobj1 value) {
       if (testobj1Builder_ == null) {
@@ -1890,7 +2130,7 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder addTestobj1(
         int index, com.game.table.TestMultiKeytestobj1 value) {
@@ -1907,7 +2147,7 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder addTestobj1(
         com.game.table.TestMultiKeytestobj1.Builder builderForValue) {
@@ -1921,7 +2161,7 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder addTestobj1(
         int index, com.game.table.TestMultiKeytestobj1.Builder builderForValue) {
@@ -1935,7 +2175,7 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder addAllTestobj1(
         java.lang.Iterable<? extends com.game.table.TestMultiKeytestobj1> values) {
@@ -1950,12 +2190,12 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder clearTestobj1() {
       if (testobj1Builder_ == null) {
         testobj1_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00000800);
+        bitField0_ = (bitField0_ & ~0x00002000);
         onChanged();
       } else {
         testobj1Builder_.clear();
@@ -1963,7 +2203,7 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public Builder removeTestobj1(int index) {
       if (testobj1Builder_ == null) {
@@ -1976,14 +2216,14 @@ java.lang.String defaultValue) {
       return this;
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public com.game.table.TestMultiKeytestobj1.Builder getTestobj1Builder(
         int index) {
       return internalGetTestobj1FieldBuilder().getBuilder(index);
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public com.game.table.TestMultiKeytestobj1OrBuilder getTestobj1OrBuilder(
         int index) {
@@ -1993,7 +2233,7 @@ java.lang.String defaultValue) {
       }
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public java.util.List<? extends com.game.table.TestMultiKeytestobj1OrBuilder> 
          getTestobj1OrBuilderList() {
@@ -2004,14 +2244,14 @@ java.lang.String defaultValue) {
       }
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public com.game.table.TestMultiKeytestobj1.Builder addTestobj1Builder() {
       return internalGetTestobj1FieldBuilder().addBuilder(
           com.game.table.TestMultiKeytestobj1.getDefaultInstance());
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public com.game.table.TestMultiKeytestobj1.Builder addTestobj1Builder(
         int index) {
@@ -2019,7 +2259,7 @@ java.lang.String defaultValue) {
           index, com.game.table.TestMultiKeytestobj1.getDefaultInstance());
     }
     /**
-     * <code>repeated .TestMultiKeytestobj1 testobj1 = 12;</code>
+     * <code>repeated .TestMultiKeytestobj1 testobj1 = 14;</code>
      */
     public java.util.List<com.game.table.TestMultiKeytestobj1.Builder> 
          getTestobj1BuilderList() {
@@ -2032,7 +2272,7 @@ java.lang.String defaultValue) {
         testobj1Builder_ = new com.google.protobuf.RepeatedFieldBuilder<
             com.game.table.TestMultiKeytestobj1, com.game.table.TestMultiKeytestobj1.Builder, com.game.table.TestMultiKeytestobj1OrBuilder>(
                 testobj1_,
-                ((bitField0_ & 0x00000800) != 0),
+                ((bitField0_ & 0x00002000) != 0),
                 getParentForChildren(),
                 isClean());
         testobj1_ = null;

@@ -92,6 +92,8 @@ inline constexpr TestMultiKeyTable::Impl_::Impl_(
       : _cached_size_{0},
         effect_{},
         _effect_cached_byte_size_{0},
+        test_refs_{},
+        _test_refs_cached_byte_size_{0},
         tag1_{},
         immune_tag1_{},
         testobj1_{},
@@ -106,7 +108,8 @@ inline constexpr TestMultiKeyTable::Impl_::Impl_(
         uint32_key_{0u},
         int32_key_{0},
         m_uint32_key_{0u},
-        m_int32_key_{0} {}
+        m_int32_key_{0},
+        test_ref_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR TestMultiKeyTable::TestMultiKeyTable(::_pbi::ConstantInitialized)
@@ -182,7 +185,7 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_._has_bits_),
-        15, // hasbit index offset
+        17, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.level_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.effect_),
@@ -192,6 +195,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.m_string_key_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.m_uint32_key_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.m_int32_key_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.test_ref_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.test_refs_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.tag1_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.immune_tag1_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable, _impl_.testobj1_),
@@ -204,6 +209,8 @@ const ::uint32_t
         1,
         6,
         7,
+        8,
+        ~0u,
         ~0u,
         ~0u,
         ~0u,
@@ -217,7 +224,7 @@ static const ::_pbi::MigrationSchema
         {7, sizeof(::TestMultiKeyTable_Tag1Entry_DoNotUse)},
         {14, sizeof(::TestMultiKeyTable_ImmuneTag1Entry_DoNotUse)},
         {21, sizeof(::TestMultiKeyTable)},
-        {48, sizeof(::TestMultiKeyTableData)},
+        {52, sizeof(::TestMultiKeyTableData)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_TestMultiKeytestobj1_default_instance_._instance,
@@ -230,27 +237,28 @@ const char descriptor_table_protodef_testmultikey_5ftable_2eproto[] ABSL_ATTRIBU
     protodesc_cold) = {
     "\n\030testmultikey_table.proto\"D\n\024TestMultiK"
     "eytestobj1\022\024\n\014testobj1_key\030\001 \001(\r\022\026\n\016test"
-    "obj1_value\030\002 \001(\r\"\250\003\n\021TestMultiKeyTable\022\n"
+    "obj1_value\030\002 \001(\r\"\315\003\n\021TestMultiKeyTable\022\n"
     "\n\002id\030\001 \001(\r\022\r\n\005level\030\002 \001(\r\022\016\n\006effect\030\003 \003("
     "\r\022\022\n\nstring_key\030\004 \001(\t\022\022\n\nuint32_key\030\005 \001("
     "\r\022\021\n\tint32_key\030\006 \001(\005\022\024\n\014m_string_key\030\007 \001"
     "(\t\022\024\n\014m_uint32_key\030\010 \001(\r\022\023\n\013m_int32_key\030"
-    "\t \001(\005\022*\n\004tag1\030\n \003(\0132\034.TestMultiKeyTable."
-    "Tag1Entry\0227\n\013immune_tag1\030\013 \003(\0132\".TestMul"
-    "tiKeyTable.ImmuneTag1Entry\022\'\n\010testobj1\030\014"
-    " \003(\0132\025.TestMultiKeytestobj1\032+\n\tTag1Entry"
-    "\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\0321\n\017Immu"
-    "neTag1Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:"
-    "\0028\001\"9\n\025TestMultiKeyTableData\022 \n\004data\030\001 \003"
-    "(\0132\022.TestMultiKeyTableBC\n\016com.game.table"
-    "B\033TestMultiKeyTableOuterClassP\001Z\022generat"
-    "ed/pb/tableb\006proto3"
+    "\t \001(\005\022\020\n\010test_ref\030\n \001(\r\022\021\n\ttest_refs\030\013 \003"
+    "(\r\022*\n\004tag1\030\014 \003(\0132\034.TestMultiKeyTable.Tag"
+    "1Entry\0227\n\013immune_tag1\030\r \003(\0132\".TestMultiK"
+    "eyTable.ImmuneTag1Entry\022\'\n\010testobj1\030\016 \003("
+    "\0132\025.TestMultiKeytestobj1\032+\n\tTag1Entry\022\013\n"
+    "\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\0321\n\017ImmuneT"
+    "ag1Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001"
+    "\"9\n\025TestMultiKeyTableData\022 \n\004data\030\001 \003(\0132"
+    "\022.TestMultiKeyTableBC\n\016com.game.tableB\033T"
+    "estMultiKeyTableOuterClassP\001Z\022generated/"
+    "pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_testmultikey_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_testmultikey_5ftable_2eproto = {
     false,
     false,
-    659,
+    696,
     descriptor_table_protodef_testmultikey_5ftable_2eproto,
     "testmultikey_table.proto",
     &descriptor_table_testmultikey_5ftable_2eproto_once,
@@ -766,6 +774,8 @@ PROTOBUF_NDEBUG_INLINE TestMultiKeyTable::Impl_::Impl_(
         _cached_size_{0},
         effect_{visibility, arena, from.effect_},
         _effect_cached_byte_size_{0},
+        test_refs_{visibility, arena, from.test_refs_},
+        _test_refs_cached_byte_size_{0},
         tag1_{visibility, arena, from.tag1_},
         immune_tag1_{visibility, arena, from.immune_tag1_},
         testobj1_{visibility, arena, from.testobj1_},
@@ -789,9 +799,9 @@ TestMultiKeyTable::TestMultiKeyTable(
                offsetof(Impl_, id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, id_),
-           offsetof(Impl_, m_int32_key_) -
+           offsetof(Impl_, test_ref_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::m_int32_key_));
+               sizeof(Impl_::test_ref_));
 
   // @@protoc_insertion_point(copy_constructor:TestMultiKeyTable)
 }
@@ -801,6 +811,8 @@ PROTOBUF_NDEBUG_INLINE TestMultiKeyTable::Impl_::Impl_(
       : _cached_size_{0},
         effect_{visibility, arena},
         _effect_cached_byte_size_{0},
+        test_refs_{visibility, arena},
+        _test_refs_cached_byte_size_{0},
         tag1_{visibility, arena},
         immune_tag1_{visibility, arena},
         testobj1_{visibility, arena},
@@ -812,9 +824,9 @@ inline void TestMultiKeyTable::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena)
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, m_int32_key_) -
+           offsetof(Impl_, test_ref_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::m_int32_key_));
+               sizeof(Impl_::test_ref_));
 }
 TestMultiKeyTable::~TestMultiKeyTable() {
   // @@protoc_insertion_point(destructor:TestMultiKeyTable)
@@ -838,6 +850,10 @@ constexpr auto TestMultiKeyTable::InternalNewImpl_() {
   constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
       PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.effect_) +
           decltype(TestMultiKeyTable::_impl_.effect_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+      PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.test_refs_) +
+          decltype(TestMultiKeyTable::_impl_.test_refs_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
       PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.tag1_) +
@@ -904,16 +920,16 @@ TestMultiKeyTable::GetClassData() const {
   return TestMultiKeyTable_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 12, 3, 71, 2>
+const ::_pbi::TcParseTable<4, 14, 3, 71, 2>
 TestMultiKeyTable::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_._has_bits_),
     0, // no _extensions_
-    12, 120,  // max_field_number, fast_idx_mask
+    14, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294963200,  // skipmap
+    4294950912,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    12,  // num_field_entries
+    14,  // num_field_entries
     3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     TestMultiKeyTable_class_data_.base(),
@@ -951,13 +967,17 @@ TestMultiKeyTable::_table_ = {
     // int32 m_int32_key = 9;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(TestMultiKeyTable, _impl_.m_int32_key_), 7>(),
      {72, 7, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.m_int32_key_)}},
+    // uint32 test_ref = 10;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(TestMultiKeyTable, _impl_.test_ref_), 8>(),
+     {80, 8, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.test_ref_)}},
+    // repeated uint32 test_refs = 11;
+    {::_pbi::TcParser::FastV32P1,
+     {90, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.test_refs_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
-    // repeated .TestMultiKeytestobj1 testobj1 = 12;
+    // repeated .TestMultiKeytestobj1 testobj1 = 14;
     {::_pbi::TcParser::FastMtR1,
-     {98, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.testobj1_)}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
+     {114, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.testobj1_)}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
@@ -989,13 +1009,19 @@ TestMultiKeyTable::_table_ = {
     // int32 m_int32_key = 9;
     {PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.m_int32_key_), _Internal::kHasBitsOffset + 7, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
-    // map<string, string> tag1 = 10;
+    // uint32 test_ref = 10;
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.test_ref_), _Internal::kHasBitsOffset + 8, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // repeated uint32 test_refs = 11;
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.test_refs_), -1, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
+    // map<string, string> tag1 = 12;
     {PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.tag1_), -1, 1,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
-    // map<string, string> immune_tag1 = 11;
+    // map<string, string> immune_tag1 = 13;
     {PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.immune_tag1_), -1, 2,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
-    // repeated .TestMultiKeytestobj1 testobj1 = 12;
+    // repeated .TestMultiKeytestobj1 testobj1 = 14;
     {PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.testobj1_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
@@ -1009,7 +1035,7 @@ TestMultiKeyTable::_table_ = {
                                        0)},
   }},
   {{
-    "\21\0\0\0\12\0\0\14\0\0\4\13\0\0\0\0"
+    "\21\0\0\0\12\0\0\14\0\0\0\0\4\13\0\0"
     "TestMultiKeyTable"
     "string_key"
     "m_string_key"
@@ -1025,6 +1051,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
   (void) cached_has_bits;
 
   _impl_.effect_.Clear();
+  _impl_.test_refs_.Clear();
   _impl_.tag1_.Clear();
   _impl_.immune_tag1_.Clear();
   _impl_.testobj1_.Clear();
@@ -1042,6 +1069,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
         reinterpret_cast<char*>(&_impl_.m_int32_key_) -
         reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.m_int32_key_));
   }
+  _impl_.test_ref_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -1144,7 +1172,25 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
     }
   }
 
-  // map<string, string> tag1 = 10;
+  // uint32 test_ref = 10;
+  if ((this_._impl_._has_bits_[0] & 0x00000100u) != 0) {
+    if (this_._internal_test_ref() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          10, this_._internal_test_ref(), target);
+    }
+  }
+
+  // repeated uint32 test_refs = 11;
+  {
+    int byte_size = this_._impl_._test_refs_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteUInt32Packed(
+          11, this_._internal_test_refs(), byte_size, target);
+    }
+  }
+
+  // map<string, string> tag1 = 12;
   if (!this_._internal_tag1().empty()) {
     using MapType = ::google::protobuf::Map<std::string, std::string>;
     using WireHelper = _pbi::MapEntryFuncs<std::string, std::string,
@@ -1155,7 +1201,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
     if (stream->IsSerializationDeterministic() && field.size() > 1) {
       for (const auto& entry : ::google::protobuf::internal::MapSorterPtr<MapType>(field)) {
         target = WireHelper::InternalSerialize(
-            10, entry.first, entry.second, target, stream);
+            12, entry.first, entry.second, target, stream);
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.first.data(), static_cast<int>(entry.first.length()),
  ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestMultiKeyTable.tag1");
@@ -1166,7 +1212,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
     } else {
       for (const auto& entry : field) {
         target = WireHelper::InternalSerialize(
-            10, entry.first, entry.second, target, stream);
+            12, entry.first, entry.second, target, stream);
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.first.data(), static_cast<int>(entry.first.length()),
  ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestMultiKeyTable.tag1");
@@ -1177,7 +1223,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
     }
   }
 
-  // map<string, string> immune_tag1 = 11;
+  // map<string, string> immune_tag1 = 13;
   if (!this_._internal_immune_tag1().empty()) {
     using MapType = ::google::protobuf::Map<std::string, std::string>;
     using WireHelper = _pbi::MapEntryFuncs<std::string, std::string,
@@ -1188,7 +1234,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
     if (stream->IsSerializationDeterministic() && field.size() > 1) {
       for (const auto& entry : ::google::protobuf::internal::MapSorterPtr<MapType>(field)) {
         target = WireHelper::InternalSerialize(
-            11, entry.first, entry.second, target, stream);
+            13, entry.first, entry.second, target, stream);
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.first.data(), static_cast<int>(entry.first.length()),
  ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestMultiKeyTable.immune_tag1");
@@ -1199,7 +1245,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
     } else {
       for (const auto& entry : field) {
         target = WireHelper::InternalSerialize(
-            11, entry.first, entry.second, target, stream);
+            13, entry.first, entry.second, target, stream);
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.first.data(), static_cast<int>(entry.first.length()),
  ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestMultiKeyTable.immune_tag1");
@@ -1210,14 +1256,14 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
     }
   }
 
-  // repeated .TestMultiKeytestobj1 testobj1 = 12;
+  // repeated .TestMultiKeytestobj1 testobj1 = 14;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this_._internal_testobj1_size());
        i < n; i++) {
     const auto& repfield = this_._internal_testobj1().Get(i);
     target =
         ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-            12, repfield, repfield.GetCachedSize(),
+            14, repfield, repfield.GetCachedSize(),
             target, stream);
   }
 
@@ -1253,7 +1299,14 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
               this_._internal_effect(), 1,
               this_._impl_._effect_cached_byte_size_);
     }
-    // map<string, string> tag1 = 10;
+    // repeated uint32 test_refs = 11;
+    {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt32SizeWithPackedTagSize(
+              this_._internal_test_refs(), 1,
+              this_._impl_._test_refs_cached_byte_size_);
+    }
+    // map<string, string> tag1 = 12;
     {
       total_size +=
           1 * ::google::protobuf::internal::FromIntSize(this_._internal_tag1_size());
@@ -1263,7 +1316,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
                                        _pbi::WireFormatLite::TYPE_STRING>::ByteSizeLong(entry.first, entry.second);
       }
     }
-    // map<string, string> immune_tag1 = 11;
+    // map<string, string> immune_tag1 = 13;
     {
       total_size +=
           1 * ::google::protobuf::internal::FromIntSize(this_._internal_immune_tag1_size());
@@ -1273,7 +1326,7 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
                                        _pbi::WireFormatLite::TYPE_STRING>::ByteSizeLong(entry.first, entry.second);
       }
     }
-    // repeated .TestMultiKeytestobj1 testobj1 = 12;
+    // repeated .TestMultiKeytestobj1 testobj1 = 14;
     {
       total_size += 1UL * this_._internal_testobj1_size();
       for (const auto& msg : this_._internal_testobj1()) {
@@ -1340,6 +1393,15 @@ PROTOBUF_NOINLINE void TestMultiKeyTable::Clear() {
       }
     }
   }
+   {
+    // uint32 test_ref = 10;
+    if ((cached_has_bits & 0x00000100u) != 0) {
+      if (this_._internal_test_ref() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_test_ref());
+      }
+    }
+  }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
 }
@@ -1353,6 +1415,7 @@ void TestMultiKeyTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   (void) cached_has_bits;
 
   _this->_internal_mutable_effect()->MergeFrom(from._internal_effect());
+  _this->_internal_mutable_test_refs()->MergeFrom(from._internal_test_refs());
   _this->_impl_.tag1_.MergeFrom(from._impl_.tag1_);
   _this->_impl_.immune_tag1_.MergeFrom(from._impl_.immune_tag1_);
   _this->_internal_mutable_testobj1()->MergeFrom(
@@ -1408,6 +1471,11 @@ void TestMultiKeyTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const
       }
     }
   }
+  if ((cached_has_bits & 0x00000100u) != 0) {
+    if (from._internal_test_ref() != 0) {
+      _this->_impl_.test_ref_ = from._impl_.test_ref_;
+    }
+  }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -1427,14 +1495,15 @@ void TestMultiKeyTable::InternalSwap(TestMultiKeyTable* PROTOBUF_RESTRICT PROTOB
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.effect_.InternalSwap(&other->_impl_.effect_);
+  _impl_.test_refs_.InternalSwap(&other->_impl_.test_refs_);
   _impl_.tag1_.InternalSwap(&other->_impl_.tag1_);
   _impl_.immune_tag1_.InternalSwap(&other->_impl_.immune_tag1_);
   _impl_.testobj1_.InternalSwap(&other->_impl_.testobj1_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.string_key_, &other->_impl_.string_key_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.m_string_key_, &other->_impl_.m_string_key_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.m_int32_key_)
-      + sizeof(TestMultiKeyTable::_impl_.m_int32_key_)
+      PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.test_ref_)
+      + sizeof(TestMultiKeyTable::_impl_.test_ref_)
       - PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));

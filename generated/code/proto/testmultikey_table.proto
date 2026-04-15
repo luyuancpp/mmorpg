@@ -23,9 +23,11 @@ message TestMultiKeyTable {
 	string m_string_key = 7;
 	uint32 m_uint32_key = 8;
 	int32 m_int32_key = 9;
-	map <string, string> tag1 = 10;
-	map <string, string> immune_tag1 = 11;
-	repeated TestMultiKeytestobj1 testobj1 = 12;
+	uint32 test_ref = 10;
+	repeated uint32 test_refs = 11;
+	map <string, string> tag1 = 12;
+	map <string, string> immune_tag1 = 13;
+	repeated TestMultiKeytestobj1 testobj1 = 14;
 }
 
 message TestMultiKeyTableData {
