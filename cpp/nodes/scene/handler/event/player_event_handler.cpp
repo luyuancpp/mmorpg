@@ -9,22 +9,22 @@
 ///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
 {
-	tlsEcs.dispatcher.sink<RegisterPlayerEvent>().connect<&PlayerEventHandler::RegisterPlayerEventHandler>();
-	tlsEcs.dispatcher.sink<PlayerUpgradeEvent>().connect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
-	tlsEcs.dispatcher.sink<InitializePlayerComponentsEvent>().connect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
-	tlsEcs.dispatcher.sink<PlayerLoginEvent>().connect<&PlayerEventHandler::PlayerLoginEventHandler>();
+    tlsEcs.dispatcher.sink<RegisterPlayerEvent>().connect<&PlayerEventHandler::RegisterPlayerEventHandler>();
+    tlsEcs.dispatcher.sink<PlayerUpgradeEvent>().connect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
+    tlsEcs.dispatcher.sink<InitializePlayerComponentsEvent>().connect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
+    tlsEcs.dispatcher.sink<PlayerLoginEvent>().connect<&PlayerEventHandler::PlayerLoginEventHandler>();
 }
 
 void PlayerEventHandler::UnRegister()
 {
-	tlsEcs.dispatcher.sink<RegisterPlayerEvent>().disconnect<&PlayerEventHandler::RegisterPlayerEventHandler>();
-	tlsEcs.dispatcher.sink<PlayerUpgradeEvent>().disconnect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
-	tlsEcs.dispatcher.sink<InitializePlayerComponentsEvent>().disconnect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
-	tlsEcs.dispatcher.sink<PlayerLoginEvent>().disconnect<&PlayerEventHandler::PlayerLoginEventHandler>();
+    tlsEcs.dispatcher.sink<RegisterPlayerEvent>().disconnect<&PlayerEventHandler::RegisterPlayerEventHandler>();
+    tlsEcs.dispatcher.sink<PlayerUpgradeEvent>().disconnect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
+    tlsEcs.dispatcher.sink<InitializePlayerComponentsEvent>().disconnect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
+    tlsEcs.dispatcher.sink<PlayerLoginEvent>().disconnect<&PlayerEventHandler::PlayerLoginEventHandler>();
 }
-void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent &event)
+void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& event)
 {
-	///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.actor_entity());
 
 	if (!tlsEcs.actorRegistry.valid(player))
@@ -34,17 +34,16 @@ void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent &e
 	}
 
 	PlayerSkillSystem::RegisterPlayer(player);
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void PlayerEventHandler::PlayerUpgradeEventHandler(const PlayerUpgradeEvent &event)
+void PlayerEventHandler::PlayerUpgradeEventHandler(const PlayerUpgradeEvent& event)
 {
-	///<<< BEGIN WRITING YOUR CODE
-
-	///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void PlayerEventHandler::InitializePlayerComponentsEventHandler(const InitializePlayerComponentsEvent &event)
+void PlayerEventHandler::InitializePlayerComponentsEventHandler(const InitializePlayerComponentsEvent& event)
 {
-	///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.actor_entity());
 
 	if (!tlsEcs.actorRegistry.valid(player))
@@ -53,11 +52,11 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 		return;
 	}
 
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void PlayerEventHandler::PlayerLoginEventHandler(const PlayerLoginEvent &event)
+void PlayerEventHandler::PlayerLoginEventHandler(const PlayerLoginEvent& event)
 {
-	///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.actor_entity());
 
 	if (!tlsEcs.actorRegistry.valid(player))
@@ -85,5 +84,5 @@ void PlayerEventHandler::PlayerLoginEventHandler(const PlayerLoginEvent &event)
 		LOG_WARN << "PlayerLoginEvent: unexpected enter_gs_type=" << event.enter_gs_type();
 		break;
 	}
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
