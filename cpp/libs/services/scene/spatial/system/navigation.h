@@ -1,6 +1,7 @@
 #pragma once
 
-class NavigationSystem {
+class NavigationSystem
+{
 public:
-	static void LoadMainSceneNavBins();
+	static void LoadWorldNavBins();
 };

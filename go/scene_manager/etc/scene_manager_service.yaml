@@ -18,8 +18,8 @@ Kafka:
 # Set to 0 for immediate removal in production.
 NodeRemovalGraceSeconds: 300
 
-# Directory containing exported table JSON files (e.g. MainScene.json).
-# Main scene config IDs are loaded from MainScene.json automatically.
+# Directory containing exported table JSON files (e.g. World.json).
+# World config IDs are loaded from World.json automatically.
 # Default: ../../generated/tables (relative to service working directory).
 # TableDir: ../../generated/tables
 

@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -6,16 +7,16 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
+    "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
 
-var GlobalVariableTableManagerInstance = NewGlobalVariableTableManager()
-
-
 type GlobalVariableTableManager struct {
-    data []*pb.GlobalVariableTable
+    data   []*pb.GlobalVariableTable
     kvData map[uint32]*pb.GlobalVariableTable
 }
+
+var GlobalVariableTableManagerInstance = NewGlobalVariableTableManager()
 
 func NewGlobalVariableTableManager() *GlobalVariableTableManager {
     return &GlobalVariableTableManager{
@@ -23,16 +24,27 @@ func NewGlobalVariableTableManager() *GlobalVariableTableManager {
     }
 }
 
-func (m *GlobalVariableTableManager) Load(configDir string) error {
-    path := filepath.Join(configDir, "globalvariable.json")
-    raw, err := os.ReadFile(path)
-    if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
-    }
-
+func (m *GlobalVariableTableManager) Load(configDir string, useBinary bool) error {
     var container pb.GlobalVariableTableData
-    if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+
+    if useBinary {
+        path := filepath.Join(configDir, "globalvariable.pb")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := proto.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse binary: %w", err)
+        }
+    } else {
+        path := filepath.Join(configDir, "globalvariable.json")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := protojson.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse json: %w", err)
+        }
     }
 
     for _, row := range container.Data {
@@ -43,7 +55,12 @@ func (m *GlobalVariableTableManager) Load(configDir string) error {
     return nil
 }
 
+func (m *GlobalVariableTableManager) GetAll() []*pb.GlobalVariableTable {
+    return m.data
+}
+
 func (m *GlobalVariableTableManager) GetById(id uint32) (*pb.GlobalVariableTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

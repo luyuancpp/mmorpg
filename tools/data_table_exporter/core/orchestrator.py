@@ -4,16 +4,9 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from pathlib import Path
-from pathlib import Path
-from pathlib import Path
-from pathlib import Path
-from pathlib import Path
-from pathlib import Path
-from pathlib import Path
 import sys
 
-from core.config_loader import ExporterConfig, load_config
+from core.config_loader import ExporterConfig, LangConfig, load_config
 from core.excel_reader import read_all_tables
 from core.file_utils import ensure_dirs, md5_copy
 from core.foreign_key import validate_foreign_keys
@@ -32,8 +25,7 @@ from core.generators.proto_gen import (
     generate_proto_files,
 )
 from core.generators.table_id_gen import generate_table_ids
-from tools.data_table_exporter.core.schema import TableSchema
-from tools.data_table_exporter.core.config_loader import LangConfig
+from core.schema import TableSchema
 
 logger: logging.Logger = logging.getLogger(__name__)
 

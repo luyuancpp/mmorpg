@@ -1,11 +1,10 @@
 package svc
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"scene_manager/internal/config"
 	"time"
+
+	"shared/generated/table"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -14,11 +13,11 @@ import (
 )
 
 type ServiceContext struct {
-	Config          config.Config
-	Redis           *redis.Redis
-	Kafka           *kafka.Writer
-	Etcd            *clientv3.Client
-	MainSceneConfIds []uint64
+	Config       config.Config
+	Redis        *redis.Redis
+	Kafka        *kafka.Writer
+	Etcd         *clientv3.Client
+	WorldConfIds []uint64
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -30,46 +29,30 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic("failed to create etcd client: " + err.Error())
 	}
 
-	mainSceneIds := loadMainSceneConfIds(c.TableDir)
+	table.LoadTables(c.TableDir, c.UseBinary)
+
+	worldIds := loadWorldConfIds()
 
 	return &ServiceContext{
-		Config:          c,
-		Redis:           redis.MustNewRedis(c.Redis.RedisConf),
+		Config: c,
+		Redis:  redis.MustNewRedis(c.Redis.RedisConf),
 		Kafka: &kafka.Writer{
 			Addr:                   kafka.TCP(c.Kafka.Brokers...),
 			Balancer:               &kafka.LeastBytes{},
 			AllowAutoTopicCreation: true,
 		},
-		Etcd:            etcdCli,
-		MainSceneConfIds: mainSceneIds,
+		Etcd:         etcdCli,
+		WorldConfIds: worldIds,
 	}
 }
 
-// loadMainSceneConfIds reads World.json from tableDir and returns all base scene config IDs
-// referenced by main-world scenes (the scene_id foreign key column).
-func loadMainSceneConfIds(tableDir string) []uint64 {
-	path := filepath.Join(tableDir, "World.json")
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		logx.Errorf("[Table] Failed to read World.json from %s: %v", path, err)
-		return nil
+// loadWorldConfIds extracts base scene config IDs from the loaded World table.
+func loadWorldConfIds() []uint64 {
+	rows := table.WorldTableManagerInstance.GetAll()
+	ids := make([]uint64, 0, len(rows))
+	for _, row := range rows {
+		ids = append(ids, uint64(row.SceneId))
 	}
-
-	var container struct {
-		Data []struct {
-			SceneId uint64 `json:"scene_id"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal(raw, &container); err != nil {
-		logx.Errorf("[Table] Failed to parse World.json: %v", err)
-		return nil
-	}
-
-	ids := make([]uint64, 0, len(container.Data))
-	for _, row := range container.Data {
-		ids = append(ids, row.SceneId)
-	}
-
-	logx.Infof("[Table] Loaded %d main scene config IDs from %s", len(ids), path)
+	logx.Infof("[Table] Loaded %d world config IDs from World table", len(ids))
 	return ids
 }

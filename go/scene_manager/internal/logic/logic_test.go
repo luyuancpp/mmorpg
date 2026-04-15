@@ -215,40 +215,40 @@ func TestMultiplePlayersLocation(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Main scene helpers
+// World scene helpers
 // ---------------------------------------------------------------------------
 
-func newTestSvcCtxWithMainScenes(t *testing.T, mainConfIds []uint64) (*svc.ServiceContext, *miniredis.Miniredis) {
+func newTestSvcCtxWithWorldScenes(t *testing.T, worldConfIds []uint64) (*svc.ServiceContext, *miniredis.Miniredis) {
 	t.Helper()
 	mr := miniredis.RunT(t)
 	rds := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
 
 	c := config.Config{}
-	c.MainSceneChannelCount = 1
+	c.WorldChannelCount = 1
 	c.InstanceIdleTimeoutSeconds = 300
 	c.InstanceCheckIntervalSeconds = 10
 
 	return &svc.ServiceContext{
 		Config:           c,
 		Redis:            rds,
-		MainSceneConfIds: mainConfIds,
+		WorldConfIds: worldConfIds,
 	}, mr
 }
 
-func TestIsMainSceneConf(t *testing.T) {
-	sc, _ := newTestSvcCtxWithMainScenes(t, []uint64{1001, 1002, 1003})
+func TestIsWorldConf(t *testing.T) {
+	sc, _ := newTestSvcCtxWithWorldScenes(t, []uint64{1001, 1002, 1003})
 
-	assert.True(t, IsMainSceneConf(sc, 1001))
-	assert.True(t, IsMainSceneConf(sc, 1003))
-	assert.False(t, IsMainSceneConf(sc, 2001))
-	assert.False(t, IsMainSceneConf(sc, 0))
+	assert.True(t, IsWorldConf(sc, 1001))
+	assert.True(t, IsWorldConf(sc, 1003))
+	assert.False(t, IsWorldConf(sc, 2001))
+	assert.False(t, IsWorldConf(sc, 0))
 }
 
-func TestGetBestMainSceneChannel_NotFound(t *testing.T) {
-	sc, _ := newTestSvcCtxWithMainScenes(t, nil)
+func TestGetBestWorldChannel_NotFound(t *testing.T) {
+	sc, _ := newTestSvcCtxWithWorldScenes(t, nil)
 	ctx := context.Background()
 
-	id, nodeId, _ := GetBestMainSceneChannel(ctx, sc, 9999, testZoneId)
+	id, nodeId, _ := GetBestWorldChannel(ctx, sc, 9999, testZoneId)
 	assert.Equal(t, uint64(0), id)
 	assert.Equal(t, "", nodeId)
 }
@@ -273,7 +273,7 @@ func TestAssignNodeByHash_Deterministic(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestInstancePlayerCount_IncrDecr(t *testing.T) {
-	sc, _ := newTestSvcCtxWithMainScenes(t, nil)
+	sc, _ := newTestSvcCtxWithWorldScenes(t, nil)
 
 	sceneId := uint64(42)
 	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "0")
@@ -291,7 +291,7 @@ func TestInstancePlayerCount_IncrDecr(t *testing.T) {
 }
 
 func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
+	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
 	ctx := context.Background()
 
 	// Register a node so GetBestNode works.
@@ -319,7 +319,7 @@ func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
 }
 
 func TestCreateScene_Instance_UniquIds(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
+	sc, mr := newTestSvcCtxWithWorldScenes(t, nil)
 	ctx := context.Background()
 
 	mr.ZAdd(testLoadKey(), 0, "10")
@@ -343,7 +343,7 @@ func TestCreateScene_Instance_UniquIds(t *testing.T) {
 }
 
 func TestCreateScene_Instance_TrackedInActiveSet(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
+	sc, mr := newTestSvcCtxWithWorldScenes(t, nil)
 	ctx := context.Background()
 
 	mr.ZAdd(testLoadKey(), 0, "10")
@@ -367,7 +367,7 @@ func TestCreateScene_Instance_TrackedInActiveSet(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestEnterScene_IncrementsPlayerCount(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
+	sc, mr := newTestSvcCtxWithWorldScenes(t, nil)
 	ctx := context.Background()
 
 	// Setup: create an instance scene so there's a scene->node mapping.
@@ -396,7 +396,7 @@ func TestEnterScene_IncrementsPlayerCount(t *testing.T) {
 }
 
 func TestLeaveScene_DecrementsPlayerCount(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, nil)
+	sc, mr := newTestSvcCtxWithWorldScenes(t, nil)
 	ctx := context.Background()
 
 	mr.ZAdd(testLoadKey(), 0, "10")
@@ -438,27 +438,27 @@ func TestDecrPlayerCount_NeverGoesNegative(t *testing.T) {
 // Idempotent re-init tests (node restart / re-appearance)
 // ---------------------------------------------------------------------------
 
-func TestInitMainScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001, 1002})
+func TestInitWorldScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001, 1002})
 	ctx := context.Background()
 
 	// Register a node in the load set.
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
 	// First init: allocates scene IDs in Redis.
-	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
 
-	lines1, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
-	lines2, _ := GetAllMainSceneChannels(ctx, sc, 1002, testZoneId)
+	lines1, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
+	lines2, _ := GetAllWorldChannels(ctx, sc, 1002, testZoneId)
 	assert.Len(t, lines1, 1, "conf 1001 should have 1 channel")
 	assert.Len(t, lines2, 1, "conf 1002 should have 1 channel")
 	assert.NotEqual(t, lines1[0], lines2[0], "different configs should get different scene IDs")
 
 	// Second init (simulates node re-appearance): must NOT allocate new IDs.
-	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
 
-	lines1After, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
-	lines2After, _ := GetAllMainSceneChannels(ctx, sc, 1002, testZoneId)
+	lines1After, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
+	lines2After, _ := GetAllWorldChannels(ctx, sc, 1002, testZoneId)
 	assert.Equal(t, lines1, lines1After, "re-init must not change scene IDs for conf 1001")
 	assert.Equal(t, lines2, lines2After, "re-init must not change scene IDs for conf 1002")
 }
@@ -467,17 +467,17 @@ func TestInitMainScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
 // Main scene channel (分线) tests
 // ---------------------------------------------------------------------------
 
-func TestInitMainScenes_MultipleChannels(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
-	sc.Config.MainSceneChannelCount = 3
+func TestInitWorldScenes_MultipleChannels(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "20")
 
-	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
 
-	lines, err := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
+	lines, err := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	require.NoError(t, err)
 	assert.Len(t, lines, 3, "should create 3 channels")
 
@@ -489,34 +489,34 @@ func TestInitMainScenes_MultipleChannels(t *testing.T) {
 	}
 }
 
-func TestInitMainScenes_MultipleChannels_Idempotent(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
-	sc.Config.MainSceneChannelCount = 3
+func TestInitWorldScenes_MultipleChannels_Idempotent(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
 	// First init.
-	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
-	linesBefore, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
+	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	linesBefore, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, linesBefore, 3)
 
 	// Second init — must not add extra channels.
-	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
-	linesAfter, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
+	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	linesAfter, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, linesAfter, 3, "re-init must not create extra channels")
 }
 
-func TestGetBestMainSceneChannel_SelectsLowestPlayerCount(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
-	sc.Config.MainSceneChannelCount = 3
+func TestGetBestWorldChannel_SelectsLowestPlayerCount(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
-	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
 
-	lines, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
+	lines, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	require.Len(t, lines, 3)
 
 	// Set different player counts: lines[0]=10, lines[1]=2, lines[2]=5.
@@ -524,30 +524,30 @@ func TestGetBestMainSceneChannel_SelectsLowestPlayerCount(t *testing.T) {
 	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, lines[1]), "2")
 	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, lines[2]), "5")
 
-	bestId, bestNode, err := GetBestMainSceneChannel(ctx, sc, 1001, testZoneId)
+	bestId, bestNode, err := GetBestWorldChannel(ctx, sc, 1001, testZoneId)
 	require.NoError(t, err)
 	assert.Equal(t, lines[1], bestId, "should pick channel with lowest player count")
 	assert.NotEmpty(t, bestNode)
 }
 
-func TestGetBestMainSceneChannel_AllEmpty(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
-	sc.Config.MainSceneChannelCount = 3
+func TestGetBestWorldChannel_AllEmpty(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
-	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
 
 	// All channels have player_count = 0 (initialized by init).
-	bestId, _, err := GetBestMainSceneChannel(ctx, sc, 1001, testZoneId)
+	bestId, _, err := GetBestWorldChannel(ctx, sc, 1001, testZoneId)
 	require.NoError(t, err)
 	assert.NotEqual(t, uint64(0), bestId, "should return some channel even when all empty")
 }
 
 func TestCreateScene_MainWorld_MultipleChannels_ReturnsLeastLoaded(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
-	sc.Config.MainSceneChannelCount = 3
+	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(testLoadKey(), 0, "10")
@@ -563,7 +563,7 @@ func TestCreateScene_MainWorld_MultipleChannels_ReturnsLeastLoaded(t *testing.T)
 	assert.Equal(t, uint32(0), resp1.ErrorCode)
 
 	// 3 channels should now exist.
-	lines, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
+	lines, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, lines, 3)
 
 	// Simulate load: put 100 players on the channel that was returned.
@@ -579,8 +579,8 @@ func TestCreateScene_MainWorld_MultipleChannels_ReturnsLeastLoaded(t *testing.T)
 }
 
 func TestCreateScene_MainWorld_ChannelCountDefault1_BackwardCompat(t *testing.T) {
-	sc, mr := newTestSvcCtxWithMainScenes(t, []uint64{1001})
-	// MainSceneChannelCount defaults to 1 via newTestSvcCtxWithMainScenes.
+	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	// WorldChannelCount defaults to 1 via newTestSvcCtxWithWorldScenes.
 	ctx := context.Background()
 
 	mr.ZAdd(testLoadKey(), 0, "10")
@@ -598,6 +598,6 @@ func TestCreateScene_MainWorld_ChannelCountDefault1_BackwardCompat(t *testing.T)
 
 	assert.Equal(t, resp1.SceneId, resp2.SceneId, "ChannelCount=1 -> same scene every time")
 
-	lines, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
+	lines, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, lines, 1, "should have exactly 1 channel")
 }

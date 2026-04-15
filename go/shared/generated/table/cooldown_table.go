@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -6,16 +7,16 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
+    "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
 
-var CooldownTableManagerInstance = NewCooldownTableManager()
-
-
 type CooldownTableManager struct {
-    data []*pb.CooldownTable
+    data   []*pb.CooldownTable
     kvData map[uint32]*pb.CooldownTable
 }
+
+var CooldownTableManagerInstance = NewCooldownTableManager()
 
 func NewCooldownTableManager() *CooldownTableManager {
     return &CooldownTableManager{
@@ -23,16 +24,27 @@ func NewCooldownTableManager() *CooldownTableManager {
     }
 }
 
-func (m *CooldownTableManager) Load(configDir string) error {
-    path := filepath.Join(configDir, "cooldown.json")
-    raw, err := os.ReadFile(path)
-    if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
-    }
-
+func (m *CooldownTableManager) Load(configDir string, useBinary bool) error {
     var container pb.CooldownTableData
-    if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+
+    if useBinary {
+        path := filepath.Join(configDir, "cooldown.pb")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := proto.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse binary: %w", err)
+        }
+    } else {
+        path := filepath.Join(configDir, "cooldown.json")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := protojson.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse json: %w", err)
+        }
     }
 
     for _, row := range container.Data {
@@ -43,7 +55,12 @@ func (m *CooldownTableManager) Load(configDir string) error {
     return nil
 }
 
+func (m *CooldownTableManager) GetAll() []*pb.CooldownTable {
+    return m.data
+}
+
 func (m *CooldownTableManager) GetById(id uint32) (*pb.CooldownTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

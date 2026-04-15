@@ -36,8 +36,8 @@ func NewCreateSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 	}
 }
 
-// CreateScene routes to main-world or instance creation based on scene type.
-// If scene_type is unset, it auto-detects from the MainScene table.
+// CreateScene routes to world or instance creation based on scene type.
+// If scene_type is unset, it auto-detects from the World table.
 func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
 	sceneType := l.resolveSceneType(in)
 
@@ -60,28 +60,28 @@ func (l *CreateSceneLogic) resolveSceneType(in *scene_manager.CreateSceneRequest
 	if in.SceneType > 0 {
 		return uint32(in.SceneType)
 	}
-	if IsMainSceneConf(l.svcCtx, in.SceneConfId) {
+	if IsWorldConf(l.svcCtx, in.SceneConfId) {
 		return constants.SceneTypeMainWorld
 	}
 	return constants.SceneTypeInstance
 }
 
-// createMainWorldScene returns the least-loaded channel for a main-world scene.
-// Channels are pre-created by initMainScenesForZone at startup; this is a fallback
+// createMainWorldScene returns the least-loaded channel for a world scene.
+// Channels are pre-created by initWorldScenesForZone at startup; this is a fallback
 // that also creates channels on-demand if they somehow don't exist yet.
 func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
 	// Fast path: channels already exist — return the least-loaded one.
-	sceneId, nodeId, _ := GetBestMainSceneChannel(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
+	sceneId, nodeId, _ := GetBestWorldChannel(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
 	if sceneId > 0 {
 		l.Logger.Infof("[MainWorld] Best channel: scene=%d conf=%d node=%s", sceneId, in.SceneConfId, nodeId)
 		return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: nodeId}, nil
 	}
 
-	// Slow path: no channels exist — create them now (startup race or missing init).
+	// Slow path: no channels exist -- create them now (startup race or missing init).
 	l.Logger.Infof("[MainWorld] No channels for conf %d in zone %d, creating on demand", in.SceneConfId, in.ZoneId)
-	initMainScenesForZone(l.ctx, l.svcCtx, in.ZoneId, []uint64{in.SceneConfId})
+	initWorldScenesForZone(l.ctx, l.svcCtx, in.ZoneId, []uint64{in.SceneConfId})
 
-	sceneId, nodeId, _ = GetBestMainSceneChannel(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
+	sceneId, nodeId, _ = GetBestWorldChannel(l.ctx, l.svcCtx, in.SceneConfId, in.ZoneId)
 	if sceneId > 0 {
 		return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: nodeId}, nil
 	}

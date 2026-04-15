@@ -93,15 +93,15 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 
 	// Need a scene_conf_id to allocate.
 	if sceneConfId == 0 {
-		if len(l.svcCtx.MainSceneConfIds) > 0 {
-			sceneConfId = l.svcCtx.MainSceneConfIds[0]
+		if len(l.svcCtx.WorldConfIds) > 0 {
+			sceneConfId = l.svcCtx.WorldConfIds[0]
 		} else {
-			return 0, "", fmt.Errorf("no scene_conf_id provided and no default main scene configured")
+			return 0, "", fmt.Errorf("no scene_conf_id provided and no default world scene configured")
 		}
 	}
 
 	// Case 2: auto-select least-loaded channel.
-	sid, nid, err := GetBestMainSceneChannel(l.ctx, l.svcCtx, sceneConfId, zoneId)
+	sid, nid, err := GetBestWorldChannel(l.ctx, l.svcCtx, sceneConfId, zoneId)
 	if err != nil || sid == 0 {
 		return 0, "", fmt.Errorf("no available channel for conf %d in zone %d", sceneConfId, zoneId)
 	}
