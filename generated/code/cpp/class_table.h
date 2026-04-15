@@ -101,25 +101,25 @@ inline const ClassTableData& FindAllClassTable() {
 }
 
 #define FetchAndValidateClassTable(tableId) \
-    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindById(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomClassTable(prefix, tableId) \
-    const auto [prefix##ClassTable, prefix##fetchResult] = ClassTableManager::Instance().FindById(tableId); \
+    const auto [prefix##ClassTable, prefix##fetchResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##ClassTable)) { LOG_ERROR << "Class table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchClassTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindById(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchClassTableOrReturnVoid(tableId) \
-    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindById(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchClassTableOrContinue(tableId) \
-    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindById(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchClassTableOrReturnFalse(tableId) \
-    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindById(tableId); \
+    const auto [classTable, fetchResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << tableId; return false; } } while(0)

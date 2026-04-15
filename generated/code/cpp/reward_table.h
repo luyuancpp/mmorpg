@@ -97,25 +97,25 @@ inline const RewardTableData& FindAllRewardTable() {
 }
 
 #define FetchAndValidateRewardTable(tableId) \
-    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindById(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardTable)) { LOG_ERROR << "Reward table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomRewardTable(prefix, tableId) \
-    const auto [prefix##RewardTable, prefix##fetchResult] = RewardTableManager::Instance().FindById(tableId); \
+    const auto [prefix##RewardTable, prefix##fetchResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##RewardTable)) { LOG_ERROR << "Reward table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchRewardTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindById(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardTable)) { LOG_ERROR << "Reward table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchRewardTableOrReturnVoid(tableId) \
-    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindById(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardTable)) { LOG_ERROR << "Reward table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchRewardTableOrContinue(tableId) \
-    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindById(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardTable)) { LOG_ERROR << "Reward table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchRewardTableOrReturnFalse(tableId) \
-    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindById(tableId); \
+    const auto [rewardTable, fetchResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardTable)) { LOG_ERROR << "Reward table not found for ID: " << tableId; return false; } } while(0)

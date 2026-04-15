@@ -34,9 +34,8 @@ public:
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
     double GetHealth_regeneration(uint32_t tableId) {
-        auto [table, ok] = FindById(tableId);
-        if (!ok || table == nullptr) {
-            LOG_ERROR << "Health_regeneration table not found for ID: " << tableId;
+        auto [table, fetchResult] = FindById(tableId);
+        if (table == nullptr) {
             return double();
         }
         return expression_health_regeneration_.Value(table->health_regeneration());
@@ -46,9 +45,8 @@ public:
     }
 
     double GetBonus_damage(uint32_t tableId) {
-        auto [table, ok] = FindById(tableId);
-        if (!ok || table == nullptr) {
-            LOG_ERROR << "Bonus_damage table not found for ID: " << tableId;
+        auto [table, fetchResult] = FindById(tableId);
+        if (table == nullptr) {
             return double();
         }
         return expression_bonus_damage_.Value(table->bonus_damage());
@@ -133,25 +131,25 @@ inline const BuffTableData& FindAllBuffTable() {
 }
 
 #define FetchAndValidateBuffTable(tableId) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomBuffTable(prefix, tableId) \
-    const auto [prefix##BuffTable, prefix##fetchResult] = BuffTableManager::Instance().FindById(tableId); \
+    const auto [prefix##BuffTable, prefix##fetchResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##BuffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchBuffTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchBuffTableOrReturnVoid(tableId) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchBuffTableOrContinue(tableId) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchBuffTableOrReturnFalse(tableId) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return false; } } while(0)

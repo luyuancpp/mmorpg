@@ -33,22 +33,22 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByString_key(const std::string& tableId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByString_key(const std::string& key) const;
     const std::unordered_map<std::string, const TestMultiKeyTable*>& GetString_keyData() const { return kv_string_keydata_; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByUint32_key(uint32_t tableId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByUint32_key(uint32_t key) const;
     const std::unordered_map<uint32_t, const TestMultiKeyTable*>& GetUint32_keyData() const { return kv_uint32_keydata_; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByInt32_key(int32_t tableId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByInt32_key(int32_t key) const;
     const std::unordered_map<int32_t, const TestMultiKeyTable*>& GetInt32_keyData() const { return kv_int32_keydata_; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_string_key(const std::string& tableId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_string_key(const std::string& key) const;
     const std::unordered_multimap<std::string, const TestMultiKeyTable*>& GetM_string_keyData() const { return kv_m_string_keydata_; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_uint32_key(uint32_t tableId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_uint32_key(uint32_t key) const;
     const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetM_uint32_keyData() const { return kv_m_uint32_keydata_; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_int32_key(int32_t tableId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_int32_key(int32_t key) const;
     const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetM_int32_keyData() const { return kv_m_int32_keydata_; }
 
     const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetEffectIndex() const { return idx_effect_; }
@@ -131,25 +131,25 @@ inline const TestMultiKeyTableData& FindAllTestMultiKeyTable() {
 }
 
 #define FetchAndValidateTestMultiKeyTable(tableId) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindById(tableId); \
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomTestMultiKeyTable(prefix, tableId) \
-    const auto [prefix##TestMultiKeyTable, prefix##fetchResult] = TestMultiKeyTableManager::Instance().FindById(tableId); \
+    const auto [prefix##TestMultiKeyTable, prefix##fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##TestMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchTestMultiKeyTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindById(tableId); \
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchTestMultiKeyTableOrReturnVoid(tableId) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindById(tableId); \
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchTestMultiKeyTableOrContinue(tableId) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindById(tableId); \
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchTestMultiKeyTableOrReturnFalse(tableId) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindById(tableId); \
+    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return false; } } while(0)

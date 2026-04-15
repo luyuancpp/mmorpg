@@ -55,55 +55,55 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindById
     return {it->second, kSuccess};
 }
 
-std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByString_key(const std::string& tableId) const {
-    const auto it = kv_string_keydata_.find(tableId);
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByString_key(const std::string& key) const {
+    const auto it = kv_string_keydata_.find(key);
     if (it == kv_string_keydata_.end()) {
-        LOG_ERROR << "TestMultiKey table not found for string_key: " << tableId;
+        LOG_ERROR << "TestMultiKey table not found for string_key: " << key;
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
 }
 
-std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByUint32_key(uint32_t tableId) const {
-    const auto it = kv_uint32_keydata_.find(tableId);
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByUint32_key(uint32_t key) const {
+    const auto it = kv_uint32_keydata_.find(key);
     if (it == kv_uint32_keydata_.end()) {
-        LOG_ERROR << "TestMultiKey table not found for uint32_key: " << tableId;
+        LOG_ERROR << "TestMultiKey table not found for uint32_key: " << key;
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
 }
 
-std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByInt32_key(int32_t tableId) const {
-    const auto it = kv_int32_keydata_.find(tableId);
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByInt32_key(int32_t key) const {
+    const auto it = kv_int32_keydata_.find(key);
     if (it == kv_int32_keydata_.end()) {
-        LOG_ERROR << "TestMultiKey table not found for int32_key: " << tableId;
+        LOG_ERROR << "TestMultiKey table not found for int32_key: " << key;
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
 }
 
-std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_string_key(const std::string& tableId) const {
-    const auto it = kv_m_string_keydata_.find(tableId);
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_string_key(const std::string& key) const {
+    const auto it = kv_m_string_keydata_.find(key);
     if (it == kv_m_string_keydata_.end()) {
-        LOG_ERROR << "TestMultiKey table not found for m_string_key: " << tableId;
+        LOG_ERROR << "TestMultiKey table not found for m_string_key: " << key;
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
 }
 
-std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_uint32_key(uint32_t tableId) const {
-    const auto it = kv_m_uint32_keydata_.find(tableId);
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_uint32_key(uint32_t key) const {
+    const auto it = kv_m_uint32_keydata_.find(key);
     if (it == kv_m_uint32_keydata_.end()) {
-        LOG_ERROR << "TestMultiKey table not found for m_uint32_key: " << tableId;
+        LOG_ERROR << "TestMultiKey table not found for m_uint32_key: " << key;
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
 }
 
-std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_int32_key(int32_t tableId) const {
-    const auto it = kv_m_int32_keydata_.find(tableId);
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyTableManager::FindByM_int32_key(int32_t key) const {
+    const auto it = kv_m_int32_keydata_.find(key);
     if (it == kv_m_int32_keydata_.end()) {
-        LOG_ERROR << "TestMultiKey table not found for m_int32_key: " << tableId;
+        LOG_ERROR << "TestMultiKey table not found for m_int32_key: " << key;
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};

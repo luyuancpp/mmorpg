@@ -97,25 +97,25 @@ inline const MonsterTableData& FindAllMonsterTable() {
 }
 
 #define FetchAndValidateMonsterTable(tableId) \
-    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindById(tableId); \
+    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterTable)) { LOG_ERROR << "Monster table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMonsterTable(prefix, tableId) \
-    const auto [prefix##MonsterTable, prefix##fetchResult] = MonsterTableManager::Instance().FindById(tableId); \
+    const auto [prefix##MonsterTable, prefix##fetchResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##MonsterTable)) { LOG_ERROR << "Monster table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchMonsterTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindById(tableId); \
+    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterTable)) { LOG_ERROR << "Monster table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMonsterTableOrReturnVoid(tableId) \
-    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindById(tableId); \
+    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterTable)) { LOG_ERROR << "Monster table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMonsterTableOrContinue(tableId) \
-    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindById(tableId); \
+    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterTable)) { LOG_ERROR << "Monster table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMonsterTableOrReturnFalse(tableId) \
-    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindById(tableId); \
+    const auto [monsterTable, fetchResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterTable)) { LOG_ERROR << "Monster table not found for ID: " << tableId; return false; } } while(0)

@@ -34,9 +34,8 @@ public:
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
     double GetDamage(uint32_t tableId) {
-        auto [table, ok] = FindById(tableId);
-        if (!ok || table == nullptr) {
-            LOG_ERROR << "Damage table not found for ID: " << tableId;
+        auto [table, fetchResult] = FindById(tableId);
+        if (table == nullptr) {
             return double();
         }
         return expression_damage_.Value(table->damage());
@@ -120,25 +119,25 @@ inline const SkillTableData& FindAllSkillTable() {
 }
 
 #define FetchAndValidateSkillTable(tableId) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomSkillTable(prefix, tableId) \
-    const auto [prefix##SkillTable, prefix##fetchResult] = SkillTableManager::Instance().FindById(tableId); \
+    const auto [prefix##SkillTable, prefix##fetchResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##SkillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchSkillTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchSkillTableOrReturnVoid(tableId) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchSkillTableOrContinue(tableId) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchSkillTableOrReturnFalse(tableId) \
-    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindById(tableId); \
+    const auto [skillTable, fetchResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId; return false; } } while(0)

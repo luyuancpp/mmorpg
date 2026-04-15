@@ -97,25 +97,25 @@ inline const CooldownTableData& FindAllCooldownTable() {
 }
 
 #define FetchAndValidateCooldownTable(tableId) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomCooldownTable(prefix, tableId) \
-    const auto [prefix##CooldownTable, prefix##fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
+    const auto [prefix##CooldownTable, prefix##fetchResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##CooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchCooldownTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchCooldownTableOrReturnVoid(tableId) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchCooldownTableOrContinue(tableId) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchCooldownTableOrReturnFalse(tableId) \
-    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindById(tableId); \
+    const auto [cooldownTable, fetchResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId; return false; } } while(0)

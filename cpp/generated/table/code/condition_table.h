@@ -110,25 +110,25 @@ inline const ConditionTableData& FindAllConditionTable() {
 }
 
 #define FetchAndValidateConditionTable(tableId) \
-    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindById(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomConditionTable(prefix, tableId) \
-    const auto [prefix##ConditionTable, prefix##fetchResult] = ConditionTableManager::Instance().FindById(tableId); \
+    const auto [prefix##ConditionTable, prefix##fetchResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##ConditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchConditionTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindById(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchConditionTableOrReturnVoid(tableId) \
-    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindById(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchConditionTableOrContinue(tableId) \
-    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindById(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchConditionTableOrReturnFalse(tableId) \
-    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindById(tableId); \
+    const auto [conditionTable, fetchResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId; return false; } } while(0)
