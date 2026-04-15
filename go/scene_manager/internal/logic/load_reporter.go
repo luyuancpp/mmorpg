@@ -218,9 +218,9 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 	}
 
 	// Ensure main scenes for all zones (handles SceneManager restart).
-	if len(svcCtx.Config.MainSceneConfIds) > 0 {
+	if len(svcCtx.MainSceneConfIds) > 0 {
 		for _, z := range zones {
-			initMainScenesForZone(ctx, svcCtx, z, svcCtx.Config.MainSceneConfIds)
+			initMainScenesForZone(ctx, svcCtx, z, svcCtx.MainSceneConfIds)
 		}
 	}
 
@@ -288,9 +288,9 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		updateNodeLoad(svcCtx, entry)
 		rebuildActiveZones()
 
-		if !existed && len(svcCtx.Config.MainSceneConfIds) > 0 {
+		if !existed && len(svcCtx.MainSceneConfIds) > 0 {
 			logx.Infof("[LoadReporter] Zone %d: node %s appeared (watch PUT)", entry.reg.ZoneId, entry.nodeID)
-			initMainScenesForZone(ctx, svcCtx, entry.reg.ZoneId, svcCtx.Config.MainSceneConfIds)
+			initMainScenesForZone(ctx, svcCtx, entry.reg.ZoneId, svcCtx.MainSceneConfIds)
 		}
 
 	case clientv3.EventTypeDelete:

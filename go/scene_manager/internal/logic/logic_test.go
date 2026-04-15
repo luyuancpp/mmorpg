@@ -224,14 +224,14 @@ func newTestSvcCtxWithMainScenes(t *testing.T, mainConfIds []uint64) (*svc.Servi
 	rds := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
 
 	c := config.Config{}
-	c.MainSceneConfIds = mainConfIds
 	c.MainSceneChannelCount = 1
 	c.InstanceIdleTimeoutSeconds = 300
 	c.InstanceCheckIntervalSeconds = 10
 
 	return &svc.ServiceContext{
-		Config: c,
-		Redis:  rds,
+		Config:           c,
+		Redis:            rds,
+		MainSceneConfIds: mainConfIds,
 	}, mr
 }
 
@@ -446,7 +446,7 @@ func TestInitMainScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
 	// First init: allocates scene IDs in Redis.
-	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
 
 	lines1, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
 	lines2, _ := GetAllMainSceneChannels(ctx, sc, 1002, testZoneId)
@@ -455,7 +455,7 @@ func TestInitMainScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
 	assert.NotEqual(t, lines1[0], lines2[0], "different configs should get different scene IDs")
 
 	// Second init (simulates node re-appearance): must NOT allocate new IDs.
-	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
 
 	lines1After, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
 	lines2After, _ := GetAllMainSceneChannels(ctx, sc, 1002, testZoneId)
@@ -475,7 +475,7 @@ func TestInitMainScenes_MultipleChannels(t *testing.T) {
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "20")
 
-	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
 
 	lines, err := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
 	require.NoError(t, err)
@@ -497,12 +497,12 @@ func TestInitMainScenes_MultipleChannels_Idempotent(t *testing.T) {
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
 	// First init.
-	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
 	linesBefore, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, linesBefore, 3)
 
 	// Second init — must not add extra channels.
-	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
 	linesAfter, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, linesAfter, 3, "re-init must not create extra channels")
 }
@@ -514,7 +514,7 @@ func TestGetBestMainSceneChannel_SelectsLowestPlayerCount(t *testing.T) {
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
-	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
 
 	lines, _ := GetAllMainSceneChannels(ctx, sc, 1001, testZoneId)
 	require.Len(t, lines, 3)
@@ -537,7 +537,7 @@ func TestGetBestMainSceneChannel_AllEmpty(t *testing.T) {
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
-	initMainScenesForZone(ctx, sc, testZoneId, sc.Config.MainSceneConfIds)
+	initMainScenesForZone(ctx, sc, testZoneId, sc.MainSceneConfIds)
 
 	// All channels have player_count = 0 (initialized by init).
 	bestId, _, err := GetBestMainSceneChannel(ctx, sc, 1001, testZoneId)

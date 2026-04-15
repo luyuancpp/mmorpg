@@ -37,7 +37,7 @@ func NewCreateSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 }
 
 // CreateScene routes to main-world or instance creation based on scene type.
-// If scene_type is unset, it auto-detects from the MainSceneConfIds config.
+// If scene_type is unset, it auto-detects from the MainScene table.
 func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
 	sceneType := l.resolveSceneType(in)
 
