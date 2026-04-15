@@ -15,10 +15,9 @@ type Config struct {
 	// 0 = immediate removal (production default).
 	NodeRemovalGraceSeconds int64 `json:",default=0"`
 
-	// MainSceneConfIds: scene_conf_ids that are persistent main-world scenes.
-	// These are created at startup and never auto-destroyed.
-	// Anything not in this list is treated as an instance.
-	MainSceneConfIds []uint64 `json:",optional"`
+	// TableDir: directory containing exported table JSON files (e.g. MainScene.json).
+	// Default assumes the service runs from go/scene_manager/ with repo root two levels up.
+	TableDir string `json:",default=../../generated/tables"`
 
 	// MainSceneChannelCount: number of channels per main-world scene.
 	// Each channel is a separate ECS scene entity sharing the same config_id.

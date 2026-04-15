@@ -93,8 +93,8 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 
 	// Need a scene_conf_id to allocate.
 	if sceneConfId == 0 {
-		if len(l.svcCtx.Config.MainSceneConfIds) > 0 {
-			sceneConfId = l.svcCtx.Config.MainSceneConfIds[0]
+		if len(l.svcCtx.MainSceneConfIds) > 0 {
+			sceneConfId = l.svcCtx.MainSceneConfIds[0]
 		} else {
 			return 0, "", fmt.Errorf("no scene_conf_id provided and no default main scene configured")
 		}

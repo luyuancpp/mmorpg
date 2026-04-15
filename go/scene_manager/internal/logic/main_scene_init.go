@@ -160,7 +160,7 @@ func GetAllMainSceneChannels(ctx context.Context, svcCtx *svc.ServiceContext, co
 
 // IsMainSceneConf checks if a scene_conf_id is a main world scene.
 func IsMainSceneConf(svcCtx *svc.ServiceContext, confId uint64) bool {
-	for _, id := range svcCtx.Config.MainSceneConfIds {
+	for _, id := range svcCtx.MainSceneConfIds {
 		if id == confId {
 			return true
 		}
