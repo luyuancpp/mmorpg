@@ -14,6 +14,13 @@ inline const BaseSceneTable* GetDungeonSceneIdRow(const DungeonTable& row) {
     return ptr;
 }
 
+/// Resolve Dungeon.scene_id -> BaseScene row (by Dungeon id).
+inline const BaseSceneTable* GetDungeonSceneIdRow(uint32_t tableId) {
+    auto [row, _] = DungeonTableManager::Instance().FindByIdSilent(tableId);
+    if (!row) return nullptr;
+    return GetDungeonSceneIdRow(*row);
+}
+
 // ---------------------------------------------------------------------------
 // Reverse FK (HasMany): find source rows by FK column value
 // ---------------------------------------------------------------------------

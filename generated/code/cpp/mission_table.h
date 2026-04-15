@@ -23,6 +23,7 @@ public:
         std::unordered_multimap<uint32_t, const MissionTable*> conditionIdIndex;
         std::unordered_multimap<uint32_t, const MissionTable*> nextMissionIdIndex;
         std::unordered_multimap<uint32_t, const MissionTable*> targetCountIndex;
+        std::unordered_map<uint32_t, std::vector<const MissionTable*>> rewardIdIndex;
     };
 
     static MissionTableManager& Instance() {
@@ -46,9 +47,16 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback) { loadSuccessCallback(); } }
 
+    // FK: reward_id -> Reward.id
     const std::unordered_multimap<uint32_t, const MissionTable*>& GetConditionIdIndex() const { return snapshot->conditionIdIndex; }
     const std::unordered_multimap<uint32_t, const MissionTable*>& GetNextMissionIdIndex() const { return snapshot->nextMissionIdIndex; }
     const std::unordered_multimap<uint32_t, const MissionTable*>& GetTargetCountIndex() const { return snapshot->targetCountIndex; }
+    const std::unordered_map<uint32_t, std::vector<const MissionTable*>>& GetRewardIdIndex() const { return snapshot->rewardIdIndex; }
+    const std::vector<const MissionTable*>& GetByRewardId(uint32_t key) const {
+        static const std::vector<const MissionTable*> kEmpty;
+        auto it = snapshot->rewardIdIndex.find(key);
+        return it != snapshot->rewardIdIndex.end() ? it->second : kEmpty;
+    }
 
     // ---- Exists ----
 
@@ -60,6 +68,10 @@ public:
     std::size_t CountByConditionIdIndex(uint32_t key) const { return snapshot->conditionIdIndex.count(key); }
     std::size_t CountByNextMissionIdIndex(uint32_t key) const { return snapshot->nextMissionIdIndex.count(key); }
     std::size_t CountByTargetCountIndex(uint32_t key) const { return snapshot->targetCountIndex.count(key); }
+    std::size_t CountByRewardIdIndex(uint32_t key) const {
+        auto it = snapshot->rewardIdIndex.find(key);
+        return it != snapshot->rewardIdIndex.end() ? it->second.size() : 0;
+    }
 
     // ---- FindByIds (IN) ----
 

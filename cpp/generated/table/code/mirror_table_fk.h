@@ -16,10 +16,24 @@ inline const BaseSceneTable* GetMirrorSceneIdRow(const MirrorTable& row) {
     return ptr;
 }
 
+/// Resolve Mirror.scene_id -> BaseScene row (by Mirror id).
+inline const BaseSceneTable* GetMirrorSceneIdRow(uint32_t tableId) {
+    auto [row, _] = MirrorTableManager::Instance().FindByIdSilent(tableId);
+    if (!row) return nullptr;
+    return GetMirrorSceneIdRow(*row);
+}
+
 /// Resolve Mirror.main_scene_id -> World row.
 inline const WorldTable* GetMirrorMainSceneIdRow(const MirrorTable& row) {
     auto [ptr, _] = WorldTableManager::Instance().FindByIdSilent(row.main_scene_id());
     return ptr;
+}
+
+/// Resolve Mirror.main_scene_id -> World row (by Mirror id).
+inline const WorldTable* GetMirrorMainSceneIdRow(uint32_t tableId) {
+    auto [row, _] = MirrorTableManager::Instance().FindByIdSilent(tableId);
+    if (!row) return nullptr;
+    return GetMirrorMainSceneIdRow(*row);
 }
 
 // ---------------------------------------------------------------------------

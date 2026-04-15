@@ -35,6 +35,7 @@ void MissionTableManager::Load() {
         for (const auto& elem : row_data.target_count()) {
             snap->targetCountIndex.emplace(elem, &row_data);
         }
+        snap->rewardIdIndex[row_data.reward_id()].push_back(&row_data);
     }
 
     snapshot = std::move(snap);
