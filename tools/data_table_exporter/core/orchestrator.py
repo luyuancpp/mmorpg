@@ -74,13 +74,13 @@ def run(cfg: ExporterConfig) -> None:
 
 def _ensure_output_dirs(cfg: ExporterConfig) -> None:
     dirs: list[Path] = [cfg.json_dir, cfg.binary_dir, cfg.proto_dir, cfg.proto_python_output_dir, cfg.state_dir]
-    for lang: LangConfig in (cfg.cpp, cfg.go, cfg.java):
+    for lang in (cfg.cpp, cfg.go, cfg.java):
         if lang.enabled:
             dirs.extend([
                 lang.code_dir, lang.proto_output_dir,
                 lang.constants_dir, lang.table_id_dir, lang.bit_index_dir,
             ])
-    ensure_dirs(*[d for d: Path in dirs if d and str(d)])
+    ensure_dirs(*[d for d in dirs if d and str(d)])
 
 
 def _deploy(cfg: ExporterConfig) -> None:
@@ -89,28 +89,28 @@ def _deploy(cfg: ExporterConfig) -> None:
     tasks: list[tuple] = []
 
     if cfg.cpp.enabled:
-        tasks.extend((d["src"], d["dst"]) for d: dict[str, Path] in cfg.cpp.deploy)
+        tasks.extend((d["src"], d["dst"]) for d in cfg.cpp.deploy)
 
     if cfg.go.enabled:
         if cfg.go.deploy:
-            tasks.extend((d["src"], d["dst"]) for d: dict[str, Path] in cfg.go.deploy)
+            tasks.extend((d["src"], d["dst"]) for d in cfg.go.deploy)
         else:
             scan: Path = cfg.go.grpc_service_scan_dir
             base: Path = cfg.go.grpc_deploy_base
             if scan.exists() and scan.is_dir():
-                for svc: Path in scan.iterdir():
+                for svc in scan.iterdir():
                     if svc.is_dir():
                         tasks.append((cfg.go.code_dir.parent, base / svc.name / "generated"))
 
     if cfg.java.enabled:
-        tasks.extend((d["src"], d["dst"]) for d: dict[str, Path] in cfg.java.deploy)
+        tasks.extend((d["src"], d["dst"]) for d in cfg.java.deploy)
 
     ok, fail = 0, 0
     for src, dst in tasks:
         try:
             md5_copy(src, dst)
             ok += 1
-        except Exception as exc: Exception:
+        except Exception as exc:
             logger.error("Deploy failed %s -> %s: %s", src, dst, exc)
             fail += 1
     logger.info("Deploy: %d OK, %d failed", ok, fail)
