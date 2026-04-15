@@ -24,6 +24,8 @@
     <ClInclude Include="code\actoractionstate_table.h" />
     <ClInclude Include="code\actoractionstate_table_comp.h" />
     <ClInclude Include="code\all_table.h" />
+    <ClInclude Include="code\basescene_table.h" />
+    <ClInclude Include="code\basescene_table_comp.h" />
     <ClInclude Include="code\bit_index\mission_table_id_bit_index.h" />
     <ClInclude Include="code\bit_index\reward_table_id_bit_index.h" />
     <ClInclude Include="code\buff_table.h" />
@@ -38,12 +40,16 @@
     <ClInclude Include="code\constants\global_abnormal_logout_table_id_constants.h" />
     <ClInclude Include="code\cooldown_table.h" />
     <ClInclude Include="code\cooldown_table_comp.h" />
+    <ClInclude Include="code\dungeon_table.h" />
+    <ClInclude Include="code\dungeon_table_comp.h" />
     <ClInclude Include="code\globalvariable_table.h" />
     <ClInclude Include="code\globalvariable_table_comp.h" />
     <ClInclude Include="code\item_table.h" />
     <ClInclude Include="code\item_table_comp.h" />
     <ClInclude Include="code\messagelimiter_table.h" />
     <ClInclude Include="code\messagelimiter_table_comp.h" />
+    <ClInclude Include="code\mirror_table.h" />
+    <ClInclude Include="code\mirror_table_comp.h" />
     <ClInclude Include="code\mission_table.h" />
     <ClInclude Include="code\mission_table_comp.h" />
     <ClInclude Include="code\monster_table.h" />
@@ -59,6 +65,8 @@
     <ClInclude Include="code\testmultikey_table_comp.h" />
     <ClInclude Include="code\test_table.h" />
     <ClInclude Include="code\test_table_comp.h" />
+    <ClInclude Include="code\world_table.h" />
+    <ClInclude Include="code\world_table_comp.h" />
     <ClInclude Include="cpp_table_id_bit_index\mission_table_id_bit_index.h" />
     <ClInclude Include="cpp_table_id_bit_index\reward_table_id_bit_index.h" />
     <ClInclude Include="cpp_table_id_constants_name\actoractioncombatstate_table_id_constants.h" />
@@ -67,13 +75,16 @@
     <ClInclude Include="cpp_table_id_constants_name\global_abnormal_logout_table_id_constants.h" />
     <ClInclude Include="proto\actoractioncombatstate_table.pb.h" />
     <ClInclude Include="proto\actoractionstate_table.pb.h" />
+    <ClInclude Include="proto\basescene_table.pb.h" />
     <ClInclude Include="proto\buff_table.pb.h" />
     <ClInclude Include="proto\class_table.pb.h" />
     <ClInclude Include="proto\condition_table.pb.h" />
     <ClInclude Include="proto\cooldown_table.pb.h" />
+    <ClInclude Include="proto\dungeon_table.pb.h" />
     <ClInclude Include="proto\globalvariable_table.pb.h" />
     <ClInclude Include="proto\item_table.pb.h" />
     <ClInclude Include="proto\messagelimiter_table.pb.h" />
+    <ClInclude Include="proto\mirror_table.pb.h" />
     <ClInclude Include="proto\mission_table.pb.h" />
     <ClInclude Include="proto\monster_table.pb.h" />
     <ClInclude Include="proto\operator\ability_operator.pb.h" />
@@ -97,18 +108,22 @@
     <ClInclude Include="proto\tip\scene_error_tip.pb.h" />
     <ClInclude Include="proto\tip\skill_error_tip.pb.h" />
     <ClInclude Include="proto\tip\team_error_tip.pb.h" />
+    <ClInclude Include="proto\world_table.pb.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code\actoractioncombatstate_table.cpp" />
     <ClCompile Include="code\actoractionstate_table.cpp" />
     <ClCompile Include="code\all_table.cpp" />
+    <ClCompile Include="code\basescene_table.cpp" />
     <ClCompile Include="code\buff_table.cpp" />
     <ClCompile Include="code\class_table.cpp" />
     <ClCompile Include="code\condition_table.cpp" />
     <ClCompile Include="code\cooldown_table.cpp" />
+    <ClCompile Include="code\dungeon_table.cpp" />
     <ClCompile Include="code\globalvariable_table.cpp" />
     <ClCompile Include="code\item_table.cpp" />
     <ClCompile Include="code\messagelimiter_table.cpp" />
+    <ClCompile Include="code\mirror_table.cpp" />
     <ClCompile Include="code\mission_table.cpp" />
     <ClCompile Include="code\monster_table.cpp" />
     <ClCompile Include="code\reward_table.cpp" />
@@ -116,15 +131,19 @@
     <ClCompile Include="code\skill_table.cpp" />
     <ClCompile Include="code\testmultikey_table.cpp" />
     <ClCompile Include="code\test_table.cpp" />
+    <ClCompile Include="code\world_table.cpp" />
     <ClCompile Include="proto\actoractioncombatstate_table.pb.cc" />
     <ClCompile Include="proto\actoractionstate_table.pb.cc" />
+    <ClCompile Include="proto\basescene_table.pb.cc" />
     <ClCompile Include="proto\buff_table.pb.cc" />
     <ClCompile Include="proto\class_table.pb.cc" />
     <ClCompile Include="proto\condition_table.pb.cc" />
     <ClCompile Include="proto\cooldown_table.pb.cc" />
+    <ClCompile Include="proto\dungeon_table.pb.cc" />
     <ClCompile Include="proto\globalvariable_table.pb.cc" />
     <ClCompile Include="proto\item_table.pb.cc" />
     <ClCompile Include="proto\messagelimiter_table.pb.cc" />
+    <ClCompile Include="proto\mirror_table.pb.cc" />
     <ClCompile Include="proto\mission_table.pb.cc" />
     <ClCompile Include="proto\monster_table.pb.cc" />
     <ClCompile Include="proto\operator\ability_operator.pb.cc" />
@@ -148,6 +167,7 @@
     <ClCompile Include="proto\tip\scene_error_tip.pb.cc" />
     <ClCompile Include="proto\tip\skill_error_tip.pb.cc" />
     <ClCompile Include="proto\tip\team_error_tip.pb.cc" />
+    <ClCompile Include="proto\world_table.pb.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

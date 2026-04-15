@@ -3,14 +3,14 @@
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
 #include "muduo/base/Logging.h"
 #include "config/config.h"
-#include "table/code/world_table.h"
+#include "table/code/basescene_table.h"
 #include "spatial/system/recast.h"
 #include "spatial/constants/nav.h"
 #include "spatial/manager/scene_nav.h"
 
-void NavigationSystem::LoadWorldNavBins()
+void NavigationSystem::LoadNavBins()
 {
-	auto &configAll = FindAllWorldTable();
+	auto &configAll = FindAllBaseSceneTable();
 	for (auto &item : configAll.data())
 	{
 		NavComp nav;

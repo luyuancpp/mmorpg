@@ -3,5 +3,5 @@
 class NavigationSystem
 {
 public:
-	static void LoadWorldNavBins();
+	static void LoadNavBins();
 };
