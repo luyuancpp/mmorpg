@@ -8,8 +8,8 @@
 // Foreign key helpers for DungeonTable
 // ---------------------------------------------------------------------------
 
-/// Resolve Dungeon.scene_id → BaseScene row.
-inline const BaseSceneTable* GetSceneIdRow(const DungeonTable& row) {
+/// Resolve Dungeon.scene_id -> BaseScene row.
+inline const BaseSceneTable* GetDungeonSceneIdRow(const DungeonTable& row) {
     auto [ptr, _] = BaseSceneTableManager::Instance().FindByIdSilent(row.scene_id());
     return ptr;
 }

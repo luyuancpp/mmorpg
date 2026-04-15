@@ -276,7 +276,7 @@ TEST(ConfigTableTest, ScalarForeignKeyLookup)
 	auto [row, ok] = TestMultiKeyTableManager::Instance().FindById(1);
 	ASSERT_NE(row, nullptr);
 
-	const auto *testRow = GetTestRefRow(*row);
+	const auto *testRow = GetTestMultiKeyTestRefRow(*row);
 	ASSERT_NE(testRow, nullptr);
 	EXPECT_EQ(testRow->id(), row->test_ref());
 }
@@ -286,11 +286,11 @@ TEST(ConfigTableTest, GroupForeignKeyLookup)
 	auto [row, ok] = TestMultiKeyTableManager::Instance().FindById(1);
 	ASSERT_NE(row, nullptr);
 
-	auto testRows = GetTestRefsRows(*row);
-	EXPECT_EQ(testRows.size(), static_cast<size_t>(row->test_refs_size()));
-	for (size_t i = 0; i < testRows.size(); ++i)
+	auto testRows = GetTestMultiKeyTestRefsRows(*row);
+	EXPECT_EQ(static_cast<int>(testRows.size()), row->test_refs_size());
+	for (int i = 0; i < static_cast<int>(testRows.size()); ++i)
 	{
-		EXPECT_EQ(testRows[i]->id(), static_cast<uint32_t>(row->test_refs(i)));
+		EXPECT_EQ(testRows[i]->id(), row->test_refs(i));
 	}
 }
 
@@ -300,18 +300,19 @@ TEST(ConfigTableTest, ForeignKeyAfterReload)
 
 	auto [rowBefore, ok1] = mgr.FindById(1);
 	ASSERT_NE(rowBefore, nullptr);
-	const auto *fkBefore = GetTestRefRow(*rowBefore);
+	const auto *fkBefore = GetTestMultiKeyTestRefRow(*rowBefore);
 	ASSERT_NE(fkBefore, nullptr);
+	const auto fkIdBefore = fkBefore->id();
 
 	mgr.Load();
 	TestTableManager::Instance().Load();
 
 	auto [rowAfter, ok2] = mgr.FindById(1);
 	ASSERT_NE(rowAfter, nullptr);
-	const auto *fkAfter = GetTestRefRow(*rowAfter);
+	const auto *fkAfter = GetTestMultiKeyTestRefRow(*rowAfter);
 	ASSERT_NE(fkAfter, nullptr);
 
-	EXPECT_EQ(fkAfter->id(), fkBefore->id());
+	EXPECT_EQ(fkAfter->id(), fkIdBefore);
 	EXPECT_NE(fkAfter, fkBefore) << "reload should produce new snapshot";
 }
 

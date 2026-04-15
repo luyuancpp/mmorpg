@@ -9,15 +9,29 @@ import (
 // Foreign key helpers for {{ sheetname }}Table
 // ---------------------------------------------------------------------------
 {% for col in table.foreign_key_columns %}
+{% if col.is_repeated %}
 
-// Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Row resolves {{ sheetname }}.{{ col.name }} → {{ col.foreign_key.target_table }} row.
+// Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Rows resolves {{ sheetname }}.{{ col.name }}[] -> {{ col.foreign_key.target_table }} rows.
+func Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Rows(row *pb.{{ sheetname }}Table) []*pb.{{ col.foreign_key.target_table }}Table {
+    var result []*pb.{{ col.foreign_key.target_table }}Table
+    for _, id := range row.{{ to_go_proto_field(col.name) }} {
+        if r, ok := {{ col.foreign_key.target_table }}TableManagerInstance.FindById(id); ok {
+            result = append(result, r)
+        }
+    }
+    return result
+}
+{% else %}
+
+// Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Row resolves {{ sheetname }}.{{ col.name }} -> {{ col.foreign_key.target_table }} row.
 func Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Row(row *pb.{{ sheetname }}Table) (*pb.{{ col.foreign_key.target_table }}Table, bool) {
     return {{ col.foreign_key.target_table }}TableManagerInstance.FindById(row.{{ to_go_proto_field(col.name) }})
 }
+{% endif %}
 {% endfor %}
 {% for col in table.group_foreign_key_columns %}
 
-// Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Rows resolves {{ sheetname }}.{{ col.name }}[] → {{ col.group_foreign_key.target_table }} rows.
+// Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Rows resolves {{ sheetname }}.{{ col.name }}[] -> {{ col.group_foreign_key.target_table }} rows.
 func Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Rows(row *pb.{{ sheetname }}Table) []*pb.{{ col.group_foreign_key.target_table }}Table {
     var result []*pb.{{ col.group_foreign_key.target_table }}Table
     for _, id := range row.{{ to_go_proto_field(col.name) }} {
