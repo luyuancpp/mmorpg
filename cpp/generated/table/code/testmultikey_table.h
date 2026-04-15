@@ -12,21 +12,21 @@
 
 class TestMultiKeyTableManager {
 public:
-    using KeyValueDataType = std::unordered_map<uint32_t, const TestMultiKeyTable*>;
+    using IdMapType = std::unordered_map<uint32_t, const TestMultiKeyTable*>;
     using LoadSuccessCallback = std::function<void()>;
 
     // Internal snapshot holding all parsed data and indices.
     // Load() builds a new snapshot and swaps it in, replacing the old one.
     struct Snapshot {
         TestMultiKeyTableData data;
-        KeyValueDataType kvData;
-        std::unordered_map<std::string, const TestMultiKeyTable*> kvstring_key;
-        std::unordered_map<uint32_t, const TestMultiKeyTable*> kvuint32_key;
-        std::unordered_map<int32_t, const TestMultiKeyTable*> kvint32_key;
-        std::unordered_multimap<std::string, const TestMultiKeyTable*> kvm_string_key;
-        std::unordered_multimap<uint32_t, const TestMultiKeyTable*> kvm_uint32_key;
-        std::unordered_multimap<int32_t, const TestMultiKeyTable*> kvm_int32_key;
-        std::unordered_multimap<uint32_t, const TestMultiKeyTable*> idxeffect;
+        IdMapType idMap;
+        std::unordered_map<std::string, const TestMultiKeyTable*> stringKeyMap;
+        std::unordered_map<uint32_t, const TestMultiKeyTable*> uint32KeyMap;
+        std::unordered_map<int32_t, const TestMultiKeyTable*> int32KeyMap;
+        std::unordered_multimap<std::string, const TestMultiKeyTable*> mStringKeyMap;
+        std::unordered_multimap<uint32_t, const TestMultiKeyTable*> mUint32KeyMap;
+        std::unordered_multimap<int32_t, const TestMultiKeyTable*> mInt32KeyMap;
+        std::unordered_multimap<uint32_t, const TestMultiKeyTable*> effectIndex;
     };
 
     static TestMultiKeyTableManager& Instance() {
@@ -34,56 +34,56 @@ public:
         return instance;
     }
 
-    const Snapshot& GetSnapshot() const { return *snapshot_; }
+    const Snapshot& GetSnapshot() const { return *snapshot; }
 
-    const TestMultiKeyTableData& FindAll() const { return snapshot_->data; }
+    const TestMultiKeyTableData& FindAll() const { return snapshot->data; }
 
     std::pair<const TestMultiKeyTable*, uint32_t> FindById(uint32_t tableId);
     std::pair<const TestMultiKeyTable*, uint32_t> FindByIdSilent(uint32_t tableId);
-    const KeyValueDataType& KeyValueData() const { return snapshot_->kvData; }
+    const IdMapType& GetIdMap() const { return snapshot->idMap; }
 
     void Load();
 
     void SetLoadSuccessCallback(const LoadSuccessCallback& callback) {
-        loadSuccessCallback_ = callback;
+        loadSuccessCallback = callback;
     }
 
-    void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
+    void LoadSuccess() { if (loadSuccessCallback) { loadSuccessCallback(); } }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByString_key(const std::string& key) const;
-    const std::unordered_map<std::string, const TestMultiKeyTable*>& GetString_keyData() const { return snapshot_->kvstring_key; }
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByStringKey(const std::string& key) const;
+    const std::unordered_map<std::string, const TestMultiKeyTable*>& GetStringKeyMap() const { return snapshot->stringKeyMap; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByUint32_key(uint32_t key) const;
-    const std::unordered_map<uint32_t, const TestMultiKeyTable*>& GetUint32_keyData() const { return snapshot_->kvuint32_key; }
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByUint32Key(uint32_t key) const;
+    const std::unordered_map<uint32_t, const TestMultiKeyTable*>& GetUint32KeyMap() const { return snapshot->uint32KeyMap; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByInt32_key(int32_t key) const;
-    const std::unordered_map<int32_t, const TestMultiKeyTable*>& GetInt32_keyData() const { return snapshot_->kvint32_key; }
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByInt32Key(int32_t key) const;
+    const std::unordered_map<int32_t, const TestMultiKeyTable*>& GetInt32KeyMap() const { return snapshot->int32KeyMap; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_string_key(const std::string& key) const;
-    const std::unordered_multimap<std::string, const TestMultiKeyTable*>& GetM_string_keyData() const { return snapshot_->kvm_string_key; }
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByMStringKey(const std::string& key) const;
+    const std::unordered_multimap<std::string, const TestMultiKeyTable*>& GetMStringKeyMap() const { return snapshot->mStringKeyMap; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_uint32_key(uint32_t key) const;
-    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetM_uint32_keyData() const { return snapshot_->kvm_uint32_key; }
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByMUint32Key(uint32_t key) const;
+    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetMUint32KeyMap() const { return snapshot->mUint32KeyMap; }
 
-    std::pair<const TestMultiKeyTable*, uint32_t> FindByM_int32_key(int32_t key) const;
-    const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetM_int32_keyData() const { return snapshot_->kvm_int32_key; }
+    std::pair<const TestMultiKeyTable*, uint32_t> FindByMInt32Key(int32_t key) const;
+    const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetMInt32KeyMap() const { return snapshot->mInt32KeyMap; }
 
-    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetEffectIndex() const { return snapshot_->idxeffect; }
+    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetEffectIndex() const { return snapshot->effectIndex; }
 
     // ---- Exists ----
 
-    bool Exists(uint32_t id) const { return snapshot_->kvData.count(id) > 0; }
-    bool ExistsByString_key(const std::string& key) const { return snapshot_->kvstring_key.count(key) > 0; }
-    bool ExistsByUint32_key(uint32_t key) const { return snapshot_->kvuint32_key.count(key) > 0; }
-    bool ExistsByInt32_key(int32_t key) const { return snapshot_->kvint32_key.count(key) > 0; }
+    bool Exists(uint32_t id) const { return snapshot->idMap.count(id) > 0; }
+    bool ExistsByStringKey(const std::string& key) const { return snapshot->stringKeyMap.count(key) > 0; }
+    bool ExistsByUint32Key(uint32_t key) const { return snapshot->uint32KeyMap.count(key) > 0; }
+    bool ExistsByInt32Key(int32_t key) const { return snapshot->int32KeyMap.count(key) > 0; }
 
     // ---- Count ----
 
-    std::size_t Count() const { return snapshot_->kvData.size(); }
-    std::size_t CountByM_string_key(const std::string& key) const { return snapshot_->kvm_string_key.count(key); }
-    std::size_t CountByM_uint32_key(uint32_t key) const { return snapshot_->kvm_uint32_key.count(key); }
-    std::size_t CountByM_int32_key(int32_t key) const { return snapshot_->kvm_int32_key.count(key); }
-    std::size_t CountByEffectIndex(uint32_t key) const { return snapshot_->idxeffect.count(key); }
+    std::size_t Count() const { return snapshot->idMap.size(); }
+    std::size_t CountByMStringKey(const std::string& key) const { return snapshot->mStringKeyMap.count(key); }
+    std::size_t CountByMUint32Key(uint32_t key) const { return snapshot->mUint32KeyMap.count(key); }
+    std::size_t CountByMInt32Key(int32_t key) const { return snapshot->mInt32KeyMap.count(key); }
+    std::size_t CountByEffectIndex(uint32_t key) const { return snapshot->effectIndex.count(key); }
 
     // ---- FindByIds (IN) ----
 
@@ -91,7 +91,7 @@ public:
         std::vector<const TestMultiKeyTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
-            if (auto it = snapshot_->kvData.find(id); it != snapshot_->kvData.end()) {
+            if (auto it = snapshot->idMap.find(id); it != snapshot->idMap.end()) {
                 result.push_back(it->second);
             }
         }
@@ -101,28 +101,28 @@ public:
     // ---- RandOne ----
 
     const TestMultiKeyTable* RandOne() const {
-        if (snapshot_->data.data_size() == 0) return nullptr;
+        if (snapshot->data.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
-        std::uniform_int_distribution<int> dist(0, snapshot_->data.data_size() - 1);
-        return &snapshot_->data.data(dist(rng));
+        std::uniform_int_distribution<int> dist(0, snapshot->data.data_size() - 1);
+        return &snapshot->data.data(dist(rng));
     }
 
     // ---- Where / First ----
 
     std::vector<const TestMultiKeyTable*> Where(const std::function<bool(const TestMultiKeyTable&)>& pred) const {
         std::vector<const TestMultiKeyTable*> result;
-        for (int i = 0; i < snapshot_->data.data_size(); ++i) {
-            if (pred(snapshot_->data.data(i))) {
-                result.push_back(&snapshot_->data.data(i));
+        for (int i = 0; i < snapshot->data.data_size(); ++i) {
+            if (pred(snapshot->data.data(i))) {
+                result.push_back(&snapshot->data.data(i));
             }
         }
         return result;
     }
 
     const TestMultiKeyTable* First(const std::function<bool(const TestMultiKeyTable&)>& pred) const {
-        for (int i = 0; i < snapshot_->data.data_size(); ++i) {
-            if (pred(snapshot_->data.data(i))) {
-                return &snapshot_->data.data(i);
+        for (int i = 0; i < snapshot->data.data_size(); ++i) {
+            if (pred(snapshot->data.data(i))) {
+                return &snapshot->data.data(i);
             }
         }
         return nullptr;
@@ -131,34 +131,34 @@ public:
     // ---- Composite Key ----
 
 private:
-    LoadSuccessCallback loadSuccessCallback_;
-    std::unique_ptr<Snapshot> snapshot_ = std::make_unique<Snapshot>();
+    LoadSuccessCallback loadSuccessCallback;
+    std::unique_ptr<Snapshot> snapshot = std::make_unique<Snapshot>();
 };
 
 inline const TestMultiKeyTableData& FindAllTestMultiKeyTable() {
     return TestMultiKeyTableManager::Instance().FindAll();
 }
 
-#define FetchAndValidateTestMultiKeyTable(tableId) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
-    do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return fetchResult; } } while(0)
+#define LookupTestMultiKey(tableId) \
+    const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
+    do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return testMultiKeyResult; } } while(0)
 
-#define FetchAndValidateCustomTestMultiKeyTable(prefix, tableId) \
-    const auto [prefix##TestMultiKeyTable, prefix##fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
-    do { if (!(prefix##TestMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
+#define LookupTestMultiKeyAs(prefix, tableId) \
+    const auto [prefix##TestMultiKeyRow, prefix##TestMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
+    do { if (!(prefix##TestMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return prefix##TestMultiKeyResult; } } while(0)
 
-#define FetchTestMultiKeyTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
-    do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return customReturnValue; } } while(0)
+#define LookupTestMultiKeyOrReturn(tableId, customReturnValue) \
+    const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
+    do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define FetchTestMultiKeyTableOrReturnVoid(tableId) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
-    do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return; } } while(0)
+#define LookupTestMultiKeyOrVoid(tableId) \
+    const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
+    do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return; } } while(0)
 
-#define FetchTestMultiKeyTableOrContinue(tableId) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
-    do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; continue; } } while(0)
+#define LookupTestMultiKeyOrContinue(tableId) \
+    const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
+    do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; continue; } } while(0)
 
-#define FetchTestMultiKeyTableOrReturnFalse(tableId) \
-    const auto [testMultiKeyTable, fetchResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
-    do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId; return false; } } while(0)
+#define LookupTestMultiKeyOrFalse(tableId) \
+    const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
+    do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return false; } } while(0)

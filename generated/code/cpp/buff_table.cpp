@@ -25,30 +25,30 @@ void BuffTableManager::Load() {
 
     for (int32_t i = 0; i < snap->data.data_size(); ++i) {
         const auto& row_data = snap->data.data(i);
-        snap->kvData.emplace(row_data.id(), &row_data);
+        snap->idMap.emplace(row_data.id(), &row_data);
         for (const auto& elem : row_data.interval_effect()) {
-            snap->idxinterval_effect.emplace(elem, &row_data);
+            snap->intervalEffectIndex.emplace(elem, &row_data);
         }
         for (const auto& elem : row_data.sub_buff()) {
-            snap->idxsub_buff.emplace(elem, &row_data);
+            snap->subBuffIndex.emplace(elem, &row_data);
         }
         for (const auto& elem : row_data.target_sub_buff()) {
-            snap->idxtarget_sub_buff.emplace(elem, &row_data);
+            snap->targetSubBuffIndex.emplace(elem, &row_data);
         }
     }
 
-    snap->expressionhealth_regeneration.Init({
+    snap->healthRegenerationExpr.Init({
         "level", 
         "health"
     });
 
-    snapshot_ = std::move(snap);
+    snapshot = std::move(snap);
 }
 
 std::pair<const BuffTable*, uint32_t> BuffTableManager::FindById(const uint32_t tableId) {
     const auto& snap = GetSnapshot();
-    const auto it = snap.kvData.find(tableId);
-    if (it == snap.kvData.end()) {
+    const auto it = snap.idMap.find(tableId);
+    if (it == snap.idMap.end()) {
         LOG_ERROR << "Buff table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -57,8 +57,8 @@ std::pair<const BuffTable*, uint32_t> BuffTableManager::FindById(const uint32_t 
 
 std::pair<const BuffTable*, uint32_t> BuffTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto& snap = GetSnapshot();
-    const auto it = snap.kvData.find(tableId);
-    if (it == snap.kvData.end()) {
+    const auto it = snap.idMap.find(tableId);
+    if (it == snap.idMap.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};

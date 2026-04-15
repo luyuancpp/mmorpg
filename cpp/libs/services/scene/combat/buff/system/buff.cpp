@@ -34,9 +34,9 @@ uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTableParam)
 {
     for (const auto& buff : buffList | std::views::values) {
-        FetchAndValidateBuffTable(buff.buffPb.buff_table_id());
+        LookupBuff(buff.buffPb.buff_table_id());
         for (const auto& tag : buffTableParam->tag() | std::views::keys) {
-            if (buffTable->immune_tag().contains(tag)) {
+            if (buffRow->immune_tag().contains(tag)) {
                 return true;
             }
         }
@@ -64,7 +64,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
         return {kThisEntityIsInvalid, UINT64_MAX};
     }
 
-    FetchBuffTableOrReturnCustom(buffTableId, (std::make_tuple(fetchResult, UINT64_MAX)));
+    LookupBuffOrReturn(buffTableId, (std::make_tuple(buffResult, UINT64_MAX)));
 
     auto result = CanCreateBuff(parent, buffTableId);
     if (result != kSuccess) {
@@ -78,7 +78,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     {
         newBuff.buffPb.set_caster(abilityContext->caster());
     }
-    newBuff.buffPb.set_processed_caster(buffTable->no_caster() ? entt::null : (abilityContext ? abilityContext->caster() : entt::null));
+    newBuff.buffPb.set_processed_caster(buffRow->no_caster() ? entt::null : (abilityContext ? abilityContext->caster() : entt::null));
 
     if (OnBuffAwake(parent, buffTableId) == kSuccess) {
         return {result, UINT64_MAX};
@@ -92,13 +92,13 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     newBuff.buffPb.set_buff_id(newBuffId);
     newBuff.buffPb.set_buff_table_id(buffTableId);
     newBuff.skillContext = abilityContext;
-    newBuff.dataPbPtr = CreateBuffDataPtr(buffTable);
+    newBuff.dataPbPtr = CreateBuffDataPtr(buffRow);
 
     auto [fst, snd] = buffList.emplace(newBuffId, std::move(newBuff));
-    OnBuffStart(parent, fst->second, buffTable);
+    OnBuffStart(parent, fst->second, buffRow);
 
-    if (buffTable->duration() > 0) {
-        fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
+    if (buffRow->duration() > 0) {
+        fst->second.expireTimerTaskComp.RunAfter(buffRow->duration(), [parent, newBuffId] {
             if (!tlsEcs.actorRegistry.valid(parent))
             {
                 return;
@@ -106,7 +106,7 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
             OnBuffExpire(parent, newBuffId);
             });
     }
-    else if (IsZero(buffTable->duration())) {
+    else if (IsZero(buffRow->duration())) {
         OnBuffExpire(parent, newBuffId);
     }
 
@@ -173,20 +173,20 @@ void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
     }
 
     const auto buffTableId = buffIt->second.buffPb.buff_table_id();
-    FetchBuffTableOrReturnVoid(buffTableId);
+    LookupBuffOrVoid(buffTableId);
 
-    OnBuffRemove(parent, buffIt->second, buffTable);
+    OnBuffRemove(parent, buffIt->second, buffRow);
     buffList.erase(buffId);
-    OnBuffDestroy(parent, buffId, buffTable);
+    OnBuffDestroy(parent, buffId, buffRow);
 }
 
 // Check if buff can be created
 uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32_t buffTableId)
 {
-    FetchAndValidateBuffTable(buffTableId);
+    LookupBuff(buffTableId);
 
     const auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
-    if (const bool isImmune = IsTargetImmune(buffList, buffTable)) {
+    if (const bool isImmune = IsTargetImmune(buffList, buffRow)) {
         return MAKE_ERROR_MSG(kBuffTargetImmuneToBuff,
             "entity=" << entt::to_integral(parentEntity)
             << " buffTableId=" << buffTableId);
@@ -200,7 +200,7 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
     const uint32_t buffTableId,
     const SkillContextPtrComp& abilityContext)
 {
-    FetchBuffTableOrReturnFalse(buffTableId);
+    LookupBuffOrFalse(buffTableId);
 
     if (!abilityContext) {
         return false;
@@ -209,7 +209,7 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
     auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
     for (auto& buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
-            if (buffComp.buffPb.layer() < buffTable->max_layer()) {
+            if (buffComp.buffPb.layer() < buffRow->max_layer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
             }
             OnBuffRefresh(parentEntity, buffTableId, abilityContext, buffComp);
@@ -222,14 +222,14 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
 // Buff awake handler (dispel on instantiation, before activation)
 uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId)
 {
-    FetchAndValidateCustomBuffTable(add, buffTableId);
+    LookupBuffAs(add, buffTableId);
 
     UInt64Vector dispelBuffIdList;
     auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
     for (auto& [buffId, buffPbComp] : buffList) {
-        FetchBuffTableOrContinue(buffTableId);
-        for (const auto& removeTag : addBuffTable->dispel_tag() | std::views::keys) {
-            if (buffTable->tag().contains(removeTag)) {
+        LookupBuffOrContinue(buffTableId);
+        for (const auto& removeTag : addBuffRow->dispel_tag() | std::views::keys) {
+            if (buffRow->tag().contains(removeTag)) {
                 dispelBuffIdList.emplace_back(buffId);
                 break;
             }
@@ -240,9 +240,9 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
         BuffSystem::OnBuffExpire(parent, buffId);
     }
 
-    if (addBuffTable->buff_type() != kBuffTypeDispel) {
+    if (addBuffRow->buff_type() != kBuffTypeDispel) {
         return MAKE_ERROR_MSG(kInvalidTableData,
-            "buff_type=" << addBuffTable->buff_type()
+            "buff_type=" << addBuffRow->buff_type()
             << " buffTableId=" << buffTableId);
     }
 
@@ -294,15 +294,15 @@ void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
     }
 
     const auto buffTableId = buffIt->second.buffPb.buff_table_id();
-    FetchBuffTableOrReturnVoid(buffTableId);
+    LookupBuffOrVoid(buffTableId);
 
-    if (BuffImplSystem::OnIntervalThink(parent, buffIt->second, buffTable)) {
+    if (BuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow)) {
         return;
     }
-    else if (ModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffTable)) {
+    else if (ModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow)) {
         return;
     }
-    else if (MotionModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffTable)) {
+    else if (MotionModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow)) {
         return;
     }
 }
@@ -418,21 +418,21 @@ bool CanApplyMoreTicks(const BuffPeriodicBuffComp& periodicBuff, const BuffTable
 }
 
 void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffEntry& buffComp, double delta) {
-    FetchBuffTableOrReturnVoid(buffComp.buffPb.buff_table_id());
+    LookupBuffOrVoid(buffComp.buffPb.buff_table_id());
 
-    if (buffTable->interval() <= 0) {
+    if (buffRow->interval() <= 0) {
         return;
     }
 
     auto& periodicBuff = *buffComp.buffPb.mutable_periodic();
     double periodicTimer = periodicBuff.periodic_timer() + delta;
 
-    for (uint32_t i = 0; i < 5 && CanApplyMoreTicks(periodicBuff, buffTable); ++i ) {
-        if (periodicTimer < buffTable->interval()) {
+    for (uint32_t i = 0; i < 5 && CanApplyMoreTicks(periodicBuff, buffRow); ++i ) {
+        if (periodicTimer < buffRow->interval()) {
             break;
         }
         
-        periodicTimer -= buffTable->interval();
+        periodicTimer -= buffRow->interval();
         periodicBuff.set_ticks_done(periodicBuff.ticks_done() + 1);
         BuffSystem::OnIntervalThink(target, buffId);
     }

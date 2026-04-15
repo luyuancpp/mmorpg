@@ -53,7 +53,7 @@ TEST(ConfigTableTest, IterateTestMultiKeyTable)
 
 TEST(ConfigTableTest, MultiKeyUint32RangeQuery)
 {
-	auto &data = TestMultiKeyTableManager::Instance().GetM_uint32_keyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetMUint32KeyMap();
 	auto range = data.equal_range(17);
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -63,7 +63,7 @@ TEST(ConfigTableTest, MultiKeyUint32RangeQuery)
 
 TEST(ConfigTableTest, MultiKeyInt32RangeQuery)
 {
-	auto &data = TestMultiKeyTableManager::Instance().GetM_int32_keyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetMInt32KeyMap();
 	auto range = data.equal_range(10);
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -73,7 +73,7 @@ TEST(ConfigTableTest, MultiKeyInt32RangeQuery)
 
 TEST(ConfigTableTest, MultiKeyStringRangeQuery)
 {
-	auto &data = TestMultiKeyTableManager::Instance().GetM_string_keyData();
+	auto &data = TestMultiKeyTableManager::Instance().GetMStringKeyMap();
 	auto range = data.equal_range("aa");
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -87,19 +87,19 @@ TEST(ConfigTableTest, MultiKeyStringRangeQuery)
 
 TEST(ConfigTableTest, FindByUint32Key)
 {
-	auto result = TestMultiKeyTableManager::Instance().FindByUint32_key(14);
+	auto result = TestMultiKeyTableManager::Instance().FindByUint32Key(14);
 	EXPECT_EQ(result.first->id(), 1);
 }
 
 TEST(ConfigTableTest, FindByInt32Key)
 {
-	auto result = TestMultiKeyTableManager::Instance().FindByInt32_key(8);
+	auto result = TestMultiKeyTableManager::Instance().FindByInt32Key(8);
 	EXPECT_EQ(result.first->id(), 1);
 }
 
 TEST(ConfigTableTest, FindByStringKey)
 {
-	auto result = TestMultiKeyTableManager::Instance().FindByString_key("aa");
+	auto result = TestMultiKeyTableManager::Instance().FindByStringKey("aa");
 	EXPECT_EQ(result.first->id(), 1);
 }
 
@@ -181,7 +181,7 @@ TEST(ConfigTableTest, RepeatedEffectIndex)
 
 TEST(ConfigTableTest, BuffSubBuffIndex)
 {
-	auto &idx = BuffTableManager::Instance().GetSub_buffIndex();
+	auto &idx = BuffTableManager::Instance().GetSubBuffIndex();
 	for (auto &row : FindAllBuffTable().data())
 	{
 		for (auto val : row.sub_buff())
@@ -253,7 +253,7 @@ TEST(ConfigTableTest, ReloadMultiKeyIndicesConsistent)
 	mgr.Load();
 
 	// Multi-key range query should still work correctly.
-	auto &data = mgr.GetM_uint32_keyData();
+	auto &data = mgr.GetMUint32KeyMap();
 	auto range = data.equal_range(17);
 	std::size_t rangeCount = 0;
 	for (auto it = range.first; it != range.second; ++it)

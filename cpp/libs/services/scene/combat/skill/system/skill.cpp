@@ -97,7 +97,7 @@ void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t 
 }
 
 uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const ReleaseSkillRequest* request) {
-	FetchAndValidateSkillTable(request->skill_table_id());
+	LookupSkill(request->skill_table_id());
 
 	RETURN_ON_ERROR(CheckSkillPrerequisites(casterEntity, request));
 	LookAtTargetPosition(casterEntity, request);
@@ -106,10 +106,10 @@ uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const Releas
 	const auto context = CreateSkillContext(casterEntity, request);
 	AddSkillContext(casterEntity, request, context);
     
-	ConsumeItems(casterEntity, skillTable);
-	ConsumeResources(casterEntity, skillTable);
-	StartCooldown(casterEntity, skillTable);
-	SetupCastingTimer(casterEntity, skillTable, context->skillid());
+	ConsumeItems(casterEntity, skillRow);
+	ConsumeResources(casterEntity, skillRow);
+	StartCooldown(casterEntity, skillRow);
+	SetupCastingTimer(casterEntity, skillRow, context->skillid());
 
 	ApplySkillHitEffectIfValid(casterEntity, request->target_id());
 
@@ -122,18 +122,18 @@ uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* ski
 }
 
 uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
-	FetchAndValidateSkillPermissionTable(state);
+	LookupSkillPermission(state);
 
 	const auto skillTypeIndex = (1 << skill);
-	if (skillTypeIndex >= skillPermissionTable->skill_type_size())
+	if (skillTypeIndex >= skillPermissionRow->skill_type_size())
 	{
 		return MAKE_ERROR_MSG(kInvalidTableData,
 			"state=" << state << " skill=" << skill
 			<< " skillTypeIndex=" << skillTypeIndex
-			<< " size=" << skillPermissionTable->skill_type_size());
+			<< " size=" << skillPermissionRow->skill_type_size());
 	}
 	
-	return skillPermissionTable->skill_type(skillTypeIndex);
+	return skillPermissionRow->skill_type(skillTypeIndex);
 }
 
 
@@ -168,24 +168,24 @@ uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTa
 }
 
 uint32_t SkillSystem::CheckSkillPrerequisites(const entt::entity casterEntity, const ::ReleaseSkillRequest* request) {
-	FetchAndValidateSkillTable(request->skill_table_id());
+	LookupSkill(request->skill_table_id());
 
 	RETURN_ON_ERROR(ValidateTarget(request));
-	RETURN_ON_ERROR(CheckCooldown(casterEntity, skillTable));
-	RETURN_ON_ERROR(CheckCasting(casterEntity, skillTable));
-	RETURN_ON_ERROR(CheckRecovery(casterEntity, skillTable));
-	RETURN_ON_ERROR(CheckChannel(casterEntity, skillTable));
-	RETURN_ON_ERROR(CheckPlayerLevel(casterEntity, skillTable));
-	RETURN_ON_ERROR(CheckBuff(casterEntity, skillTable));
-	RETURN_ON_ERROR(CheckState(casterEntity, skillTable));
-	RETURN_ON_ERROR(CheckItemUse(casterEntity, skillTable));
+	RETURN_ON_ERROR(CheckCooldown(casterEntity, skillRow));
+	RETURN_ON_ERROR(CheckCasting(casterEntity, skillRow));
+	RETURN_ON_ERROR(CheckRecovery(casterEntity, skillRow));
+	RETURN_ON_ERROR(CheckChannel(casterEntity, skillRow));
+	RETURN_ON_ERROR(CheckPlayerLevel(casterEntity, skillRow));
+	RETURN_ON_ERROR(CheckBuff(casterEntity, skillRow));
+	RETURN_ON_ERROR(CheckState(casterEntity, skillRow));
+	RETURN_ON_ERROR(CheckItemUse(casterEntity, skillRow));
 	return kSuccess;
 }
 
 bool SkillSystem::IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType) {
-	FetchSkillTableOrReturnFalse(skillTableId);
+	LookupSkillOrFalse(skillTableId);
 
-	for (auto& tabSkillType : skillTable->skill_type()) {
+	for (auto& tabSkillType : skillRow->skill_type()) {
 		if ((1 << tabSkillType) == skillType) {
 			return true;
 		}
@@ -218,10 +218,10 @@ void SkillSystem::HandleSkillRecovery(const entt::entity casterEntity, uint64_t 
 		return;
 	}
 
-	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
+	LookupSkillOrVoid(skillContentIt->second->skilltableid());
 
 	auto& recoveryTimer = tlsEcs.actorRegistry.get_or_emplace<RecoveryTimerComp>(casterEntity).timer;
-	recoveryTimer.RunAfter(skillTable->recovery_time(), [casterEntity, skillId] {
+	recoveryTimer.RunAfter(skillRow->recovery_time(), [casterEntity, skillId] {
 		return HandleSkillFinish(casterEntity, skillId);
 		});
 }
@@ -251,7 +251,7 @@ void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t sk
         return;
     }
 
-	FetchSkillTableOrReturnVoid(skillId);
+	LookupSkillOrVoid(skillId);
 
 	LOG_INFO << "Handling channel skill spell. Caster: " << entt::to_integral(casterEntity)
 		<< ", Skill ID: " << skillId;
@@ -259,12 +259,12 @@ void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t sk
 	HandleSkillSpell(casterEntity, skillId);
 
 	auto& channelFinishTimer = tlsEcs.actorRegistry.get_or_emplace<ChannelFinishTimerComp>(casterEntity).timer;
-	channelFinishTimer.RunAfter(skillTable->channel_finish(), [casterEntity, skillId] {
+	channelFinishTimer.RunAfter(skillRow->channel_finish(), [casterEntity, skillId] {
 		return HandleChannelFinish(casterEntity, skillId);
 		});
 
 	auto& channelIntervalTimer = tlsEcs.actorRegistry.get_or_emplace<ChannelIntervalTimerComp>(casterEntity).timer;
-	channelIntervalTimer.RunEvery(skillTable->channel_think(), [casterEntity, skillId] {
+	channelIntervalTimer.RunEvery(skillRow->channel_think(), [casterEntity, skillId] {
 		return HandleChannelThink(casterEntity, skillId);
 		});
 }
@@ -284,10 +284,10 @@ void SkillSystem::HandleChannelFinish(const entt::entity casterEntity, const uin
 }
 
 uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
-	FetchAndValidateSkillTable(request->skill_table_id());
+	LookupSkill(request->skill_table_id());
 
 	// Validate target ID
-	if (!skillTable->targeting_mode().empty() && request->target_id() <= 0) {
+	if (!skillRow->targeting_mode().empty() && request->target_id() <= 0) {
 		return MAKE_ERROR_MSG(kSkillInvalidTargetId,
 			"target_id=" << request->target_id()
 			<< " skill_table_id=" << request->skill_table_id());
@@ -295,7 +295,7 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 
 	uint32_t err = kSuccess;
 
-	for (auto& tabSkillType : skillTable->targeting_mode()) {
+	for (auto& tabSkillType : skillRow->targeting_mode()) {
 		if ((1 << tabSkillType) == kNoTargetRequired) {
 			return kSuccess;
 		}
@@ -428,11 +428,11 @@ void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint
 
 	const auto& skillContext = skillContextIt->second;
 	
-	FetchSkillTableOrReturnVoid(skillContext->skilltableid());
+	LookupSkillOrVoid(skillContext->skilltableid());
 
 	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(casterEntity) << ", Skill ID: " << skillId;
 
-	for (const auto& effect : skillTable->effect()) {
+	for (const auto& effect : skillRow->effect()) {
 		BuffSystem::AddOrUpdateBuff(entt::to_entity(skillContext->target()), effect, skillContext);
 	}
 }
@@ -474,7 +474,7 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& dama
         return;
     }
 
-	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
+	LookupSkillOrVoid(skillContentIt->second->skilltableid());
 
     auto targetEntity = entt::to_entity(damageEvent.target());
 

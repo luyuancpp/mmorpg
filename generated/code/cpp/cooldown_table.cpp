@@ -25,16 +25,16 @@ void CooldownTableManager::Load() {
 
     for (int32_t i = 0; i < snap->data.data_size(); ++i) {
         const auto& row_data = snap->data.data(i);
-        snap->kvData.emplace(row_data.id(), &row_data);
+        snap->idMap.emplace(row_data.id(), &row_data);
     }
 
-    snapshot_ = std::move(snap);
+    snapshot = std::move(snap);
 }
 
 std::pair<const CooldownTable*, uint32_t> CooldownTableManager::FindById(const uint32_t tableId) {
     const auto& snap = GetSnapshot();
-    const auto it = snap.kvData.find(tableId);
-    if (it == snap.kvData.end()) {
+    const auto it = snap.idMap.find(tableId);
+    if (it == snap.idMap.end()) {
         LOG_ERROR << "Cooldown table not found for ID: " << tableId;
         return {nullptr, kInvalidTableId};
     }
@@ -43,8 +43,8 @@ std::pair<const CooldownTable*, uint32_t> CooldownTableManager::FindById(const u
 
 std::pair<const CooldownTable*, uint32_t> CooldownTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto& snap = GetSnapshot();
-    const auto it = snap.kvData.find(tableId);
-    if (it == snap.kvData.end()) {
+    const auto it = snap.idMap.find(tableId);
+    if (it == snap.idMap.end()) {
         return {nullptr, kInvalidTableId};
     }
     return {it->second, kSuccess};
