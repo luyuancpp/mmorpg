@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type TestMultiKeyTableManager struct {
     data   []*pb.TestMultiKeyTable
@@ -121,4 +124,125 @@ func (m *TestMultiKeyTableManager) GetByM_int32_key(key int32) []*pb.TestMultiKe
 func (m *TestMultiKeyTableManager) GetByEffectIndex(key uint32) []*pb.TestMultiKeyTable {
     return m.idxEffect[key]
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *TestMultiKeyTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+func (m *TestMultiKeyTableManager) HasString_key(key string) bool {
+    _, ok := m.kvString_keyData[key]
+    return ok
+}
+
+func (m *TestMultiKeyTableManager) HasUint32_key(key uint32) bool {
+    _, ok := m.kvUint32_keyData[key]
+    return ok
+}
+
+func (m *TestMultiKeyTableManager) HasInt32_key(key int32) bool {
+    _, ok := m.kvInt32_keyData[key]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *TestMultiKeyTableManager) Len() int {
+    return len(m.data)
+}
+
+func (m *TestMultiKeyTableManager) CountByM_string_key(key string) int {
+    return len(m.kvM_string_keyData[key])
+}
+
+func (m *TestMultiKeyTableManager) CountByM_uint32_key(key uint32) int {
+    return len(m.kvM_uint32_keyData[key])
+}
+
+func (m *TestMultiKeyTableManager) CountByM_int32_key(key int32) int {
+    return len(m.kvM_int32_keyData[key])
+}
+
+
+func (m *TestMultiKeyTableManager) CountByEffectIndex(key uint32) int {
+    return len(m.idxEffect[key])
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *TestMultiKeyTableManager) GetByIds(ids []uint32) []*pb.TestMultiKeyTable {
+    result := make([]*pb.TestMultiKeyTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *TestMultiKeyTableManager) GetRandom() (*pb.TestMultiKeyTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+func (m *TestMultiKeyTableManager) GetRandomByM_string_key(key string) (*pb.TestMultiKeyTable, bool) {
+    rows := m.kvM_string_keyData[key]
+    if len(rows) == 0 {
+        return nil, false
+    }
+    return rows[rand.IntN(len(rows))], true
+}
+
+func (m *TestMultiKeyTableManager) GetRandomByM_uint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
+    rows := m.kvM_uint32_keyData[key]
+    if len(rows) == 0 {
+        return nil, false
+    }
+    return rows[rand.IntN(len(rows))], true
+}
+
+func (m *TestMultiKeyTableManager) GetRandomByM_int32_key(key int32) (*pb.TestMultiKeyTable, bool) {
+    rows := m.kvM_int32_keyData[key]
+    if len(rows) == 0 {
+        return nil, false
+    }
+    return rows[rand.IntN(len(rows))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *TestMultiKeyTableManager) Filter(pred func(*pb.TestMultiKeyTable) bool) []*pb.TestMultiKeyTable {
+    var result []*pb.TestMultiKeyTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *TestMultiKeyTableManager) FindFirst(pred func(*pb.TestMultiKeyTable) bool) (*pb.TestMultiKeyTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

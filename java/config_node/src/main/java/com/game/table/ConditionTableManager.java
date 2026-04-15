@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for Condition.
@@ -63,66 +65,106 @@ public class ConditionTableManager {
         }
     }
 
-    /** SELECT * FROM condition */
-    public ConditionTableData selectAll() {
+    public ConditionTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM condition */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM condition WHERE id = ? */
-    public ConditionTable selectById(int id) {
+    public ConditionTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM condition WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM condition WHERE id IN (?, ?, ...) */
-    public List<ConditionTable> selectByIds(List<Integer> ids) {
-        List<ConditionTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            ConditionTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, ConditionTable> dataMap() {
+    public Map<Integer, ConditionTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
 
 
-    /** SELECT * FROM condition WHERE ? IN (condition1) */
-    public List<ConditionTable> selectWhereInCondition1(int key) {
+    public List<ConditionTable> getByCondition1Index(int key) {
         return idxCondition1.getOrDefault(key, Collections.emptyList());
     }
 
-    /** SELECT * FROM condition WHERE ? IN (condition2) */
-    public List<ConditionTable> selectWhereInCondition2(int key) {
+    public List<ConditionTable> getByCondition2Index(int key) {
         return idxCondition2.getOrDefault(key, Collections.emptyList());
     }
 
-    /** SELECT * FROM condition WHERE ? IN (condition3) */
-    public List<ConditionTable> selectWhereInCondition3(int key) {
+    public List<ConditionTable> getByCondition3Index(int key) {
         return idxCondition3.getOrDefault(key, Collections.emptyList());
     }
 
-    /** SELECT * FROM condition WHERE ? IN (condition4) */
-    public List<ConditionTable> selectWhereInCondition4(int key) {
+    public List<ConditionTable> getByCondition4Index(int key) {
         return idxCondition4.getOrDefault(key, Collections.emptyList());
     }
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+    public int countByCondition1Index(int key) {
+        return idxCondition1.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByCondition2Index(int key) {
+        return idxCondition2.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByCondition3Index(int key) {
+        return idxCondition3.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByCondition4Index(int key) {
+        return idxCondition4.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<ConditionTable> getByIds(List<Integer> ids) {
+        List<ConditionTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            ConditionTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public ConditionTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<ConditionTable> filter(Predicate<ConditionTable> pred) {
+        List<ConditionTable> result = new ArrayList<>();
+        for (ConditionTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public ConditionTable findFirst(Predicate<ConditionTable> pred) {
+        for (ConditionTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

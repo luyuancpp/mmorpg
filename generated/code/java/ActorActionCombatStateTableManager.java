@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for ActorActionCombatState.
@@ -60,4 +62,57 @@ public class ActorActionCombatStateTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<ActorActionCombatStateTable> getByIds(List<Integer> ids) {
+        List<ActorActionCombatStateTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            ActorActionCombatStateTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public ActorActionCombatStateTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<ActorActionCombatStateTable> filter(Predicate<ActorActionCombatStateTable> pred) {
+        List<ActorActionCombatStateTable> result = new ArrayList<>();
+        for (ActorActionCombatStateTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public ActorActionCombatStateTable findFirst(Predicate<ActorActionCombatStateTable> pred) {
+        for (ActorActionCombatStateTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

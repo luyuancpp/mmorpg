@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for Dungeon.
@@ -43,40 +45,15 @@ public class DungeonTableManager {
         }
     }
 
-    /** SELECT * FROM dungeon */
-    public DungeonTableData selectAll() {
+    public DungeonTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM dungeon */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM dungeon WHERE id = ? */
-    public DungeonTable selectById(int id) {
+    public DungeonTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM dungeon WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM dungeon WHERE id IN (?, ?, ...) */
-    public List<DungeonTable> selectByIds(List<Integer> ids) {
-        List<DungeonTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            DungeonTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, DungeonTable> dataMap() {
+    public Map<Integer, DungeonTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -85,6 +62,59 @@ public class DungeonTableManager {
 
 
 
-    // FK: scene_id -> BaseScene.id
+    // FK: scene_id → BaseScene.id
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<DungeonTable> getByIds(List<Integer> ids) {
+        List<DungeonTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            DungeonTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public DungeonTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<DungeonTable> filter(Predicate<DungeonTable> pred) {
+        List<DungeonTable> result = new ArrayList<>();
+        for (DungeonTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public DungeonTable findFirst(Predicate<DungeonTable> pred) {
+        for (DungeonTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

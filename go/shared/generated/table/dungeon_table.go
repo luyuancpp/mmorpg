@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type DungeonTableManager struct {
     data   []*pb.DungeonTable
@@ -65,4 +68,69 @@ func (m *DungeonTableManager) GetById(id uint32) (*pb.DungeonTable, bool) {
 }
 
 
+
+// ---- Has / Exists ----
+
+func (m *DungeonTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *DungeonTableManager) Len() int {
+    return len(m.data)
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *DungeonTableManager) GetByIds(ids []uint32) []*pb.DungeonTable {
+    result := make([]*pb.DungeonTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *DungeonTableManager) GetRandom() (*pb.DungeonTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *DungeonTableManager) Filter(pred func(*pb.DungeonTable) bool) []*pb.DungeonTable {
+    var result []*pb.DungeonTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *DungeonTableManager) FindFirst(pred func(*pb.DungeonTable) bool) (*pb.DungeonTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
 // FK: scene_id → BaseScene.id
+
+
+// ---- Composite Key ----
+

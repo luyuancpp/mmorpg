@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type ClassTableManager struct {
     data   []*pb.ClassTable
@@ -73,4 +76,74 @@ func (m *ClassTableManager) GetById(id uint32) (*pb.ClassTable, bool) {
 func (m *ClassTableManager) GetBySkillIndex(key uint32) []*pb.ClassTable {
     return m.idxSkill[key]
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *ClassTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *ClassTableManager) Len() int {
+    return len(m.data)
+}
+
+
+func (m *ClassTableManager) CountBySkillIndex(key uint32) int {
+    return len(m.idxSkill[key])
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *ClassTableManager) GetByIds(ids []uint32) []*pb.ClassTable {
+    result := make([]*pb.ClassTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *ClassTableManager) GetRandom() (*pb.ClassTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *ClassTableManager) Filter(pred func(*pb.ClassTable) bool) []*pb.ClassTable {
+    var result []*pb.ClassTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *ClassTableManager) FindFirst(pred func(*pb.ClassTable) bool) (*pb.ClassTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

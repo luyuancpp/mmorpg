@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type ActorActionStateTableManager struct {
     data   []*pb.ActorActionStateTable
@@ -63,4 +66,69 @@ func (m *ActorActionStateTableManager) GetById(id uint32) (*pb.ActorActionStateT
     row, ok := m.kvData[id]
     return row, ok
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *ActorActionStateTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *ActorActionStateTableManager) Len() int {
+    return len(m.data)
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *ActorActionStateTableManager) GetByIds(ids []uint32) []*pb.ActorActionStateTable {
+    result := make([]*pb.ActorActionStateTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *ActorActionStateTableManager) GetRandom() (*pb.ActorActionStateTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *ActorActionStateTableManager) Filter(pred func(*pb.ActorActionStateTable) bool) []*pb.ActorActionStateTable {
+    var result []*pb.ActorActionStateTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *ActorActionStateTableManager) FindFirst(pred func(*pb.ActorActionStateTable) bool) (*pb.ActorActionStateTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

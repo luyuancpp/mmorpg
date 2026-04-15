@@ -34,7 +34,7 @@ class ForeignKeyRef:
         """Parse 'fk:Table' or 'fk:Table.column' syntax."""
         if not text or not text.strip().lower().startswith("fk:"):
             return None
-        body = text.strip()[3:]
+        body: str = text.strip()[3:]
         if "." in body:
             table, column = body.split(".", 1)
             return ForeignKeyRef(target_table=table.strip(), target_column=column.strip())
@@ -54,7 +54,7 @@ class GroupForeignKeyRef:
         """Parse 'gfk:Table' syntax."""
         if not text or not text.strip().lower().startswith("gfk:"):
             return None
-        body = text.strip()[4:]
+        body: str = text.strip()[4:]
         return GroupForeignKeyRef(target_table=body.strip())
 
 
@@ -105,7 +105,7 @@ class ColumnDef:
     @property
     def composite_key_group(self) -> str:
         """Return group name if this column participates in a composite key, else ''."""
-        for opt in self.options:
+        for opt: str in self.options:
             if opt.startswith("composite:"):
                 return opt[10:]
         return ""
@@ -116,28 +116,28 @@ class ColumnDef:
 
     @property
     def expression_type(self) -> str:
-        for opt in self.options:
+        for opt: str in self.options:
             if opt.startswith("expr:"):
                 return opt[5:]
         return ""
 
     @property
     def expression_params(self) -> list[str]:
-        for opt in self.options:
+        for opt: str in self.options:
             if opt.startswith("expr_params:"):
-                return [p.strip() for p in opt[12:].split(",") if p.strip()]
+                return [p.strip() for p: str in opt[12:].split(",") if p.strip()]
         return []
 
     @property
     def foreign_key(self) -> Optional[ForeignKeyRef]:
-        for opt in self.options:
+        for opt: str in self.options:
             if opt.lower().startswith("fk:"):
                 return ForeignKeyRef.parse(opt)
         return None
 
     @property
     def group_foreign_key(self) -> Optional[GroupForeignKeyRef]:
-        for opt in self.options:
+        for opt: str in self.options:
             if opt.lower().startswith("gfk:"):
                 return GroupForeignKeyRef.parse(opt)
         return None
@@ -204,12 +204,12 @@ class TableSchema:
 
     @property
     def server_columns(self) -> list[ColumnDef]:
-        return [c for c in self.columns if c.is_server]
+        return [c for c: ColumnDef in self.columns if c.is_server]
 
     @property
     def id_column(self) -> ColumnDef:
         """The ``id`` column (always first server column named 'id')."""
-        for c in self.columns:
+        for c: ColumnDef in self.columns:
             if c.name == "id" and c.is_server:
                 return c
         # fallback: first server column
@@ -217,44 +217,44 @@ class TableSchema:
 
     @property
     def table_keys(self) -> list[ColumnDef]:
-        return [c for c in self.columns if c.is_table_key]
+        return [c for c: ColumnDef in self.columns if c.is_table_key]
 
     @property
     def expression_columns(self) -> list[ColumnDef]:
-        return [c for c in self.columns if c.expression_type]
+        return [c for c: ColumnDef in self.columns if c.expression_type]
 
     @property
     def foreign_key_columns(self) -> list[ColumnDef]:
-        return [c for c in self.columns if c.foreign_key]
+        return [c for c: ColumnDef in self.columns if c.foreign_key]
 
     @property
     def composite_keys(self) -> list[CompositeKeyDef]:
         """Columns grouped by ``composite:group_name`` option."""
         groups: dict[str, list[ColumnDef]] = {}
-        for c in self.columns:
-            grp = c.composite_key_group
+        for c: ColumnDef in self.columns:
+            grp: str = c.composite_key_group
             if grp:
                 groups.setdefault(grp, []).append(c)
         return [CompositeKeyDef(group=g, columns=cols) for g, cols in groups.items() if len(cols) >= 2]
 
     @property
     def bit_index_columns(self) -> list[ColumnDef]:
-        return [c for c in self.columns if c.has_bit_index]
+        return [c for c: ColumnDef in self.columns if c.has_bit_index]
 
     @property
     def map_keys(self) -> list[ColumnDef]:
-        return [c for c in self.columns if c.map_role == "map_key"]
+        return [c for c: ColumnDef in self.columns if c.map_role == "map_key"]
 
     @property
     def set_columns(self) -> list[ColumnDef]:
-        return [c for c in self.columns if c.map_role == "set"]
+        return [c for c: ColumnDef in self.columns if c.map_role == "set"]
 
     @property
     def col_to_group(self) -> dict[int, str]:
         """Map column index → group name for grouped columns."""
         result: dict[int, str] = {}
-        for g in self.groups.values():
-            for idx in g.indices:
+        for g: GroupField in self.groups.values():
+            for idx: int in g.indices:
                 result[idx] = g.name
         return result
 
@@ -268,11 +268,11 @@ class TableSchema:
         Returns one ColumnDef per unique field name (deduped).
         """
         group_indices = set()
-        for g in self.groups.values():
+        for g: GroupField in self.groups.values():
             group_indices.update(g.indices)
         seen: set[str] = set()
         result: list[ColumnDef] = []
-        for c in self.columns:
+        for c: ColumnDef in self.columns:
             if not c.is_server:
                 continue
             if c.map_role or c.is_repeated or c.is_set:
@@ -291,4 +291,4 @@ class TableSchema:
 
         Returns ArrayField objects (not grouped sub-messages).
         """
-        return [a for a in self.arrays.values()]
+        return [a for a: ArrayField in self.arrays.values()]

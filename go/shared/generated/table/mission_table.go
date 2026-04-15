@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type MissionTableManager struct {
     data   []*pb.MissionTable
@@ -93,4 +96,84 @@ func (m *MissionTableManager) GetByNext_mission_idIndex(key uint32) []*pb.Missio
 func (m *MissionTableManager) GetByTarget_countIndex(key uint32) []*pb.MissionTable {
     return m.idxTarget_count[key]
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *MissionTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *MissionTableManager) Len() int {
+    return len(m.data)
+}
+
+
+func (m *MissionTableManager) CountByCondition_idIndex(key uint32) int {
+    return len(m.idxCondition_id[key])
+}
+
+
+func (m *MissionTableManager) CountByNext_mission_idIndex(key uint32) int {
+    return len(m.idxNext_mission_id[key])
+}
+
+
+func (m *MissionTableManager) CountByTarget_countIndex(key uint32) int {
+    return len(m.idxTarget_count[key])
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *MissionTableManager) GetByIds(ids []uint32) []*pb.MissionTable {
+    result := make([]*pb.MissionTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *MissionTableManager) GetRandom() (*pb.MissionTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *MissionTableManager) Filter(pred func(*pb.MissionTable) bool) []*pb.MissionTable {
+    var result []*pb.MissionTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *MissionTableManager) FindFirst(pred func(*pb.MissionTable) bool) (*pb.MissionTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

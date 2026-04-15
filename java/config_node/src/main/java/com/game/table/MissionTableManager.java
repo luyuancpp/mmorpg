@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for Mission.
@@ -58,61 +60,98 @@ public class MissionTableManager {
         }
     }
 
-    /** SELECT * FROM mission */
-    public MissionTableData selectAll() {
+    public MissionTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM mission */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM mission WHERE id = ? */
-    public MissionTable selectById(int id) {
+    public MissionTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM mission WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM mission WHERE id IN (?, ?, ...) */
-    public List<MissionTable> selectByIds(List<Integer> ids) {
-        List<MissionTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            MissionTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, MissionTable> dataMap() {
+    public Map<Integer, MissionTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
 
 
-    /** SELECT * FROM mission WHERE ? IN (condition_id) */
-    public List<MissionTable> selectWhereInCondition_id(int key) {
+    public List<MissionTable> getByCondition_idIndex(int key) {
         return idxCondition_id.getOrDefault(key, Collections.emptyList());
     }
 
-    /** SELECT * FROM mission WHERE ? IN (next_mission_id) */
-    public List<MissionTable> selectWhereInNext_mission_id(int key) {
+    public List<MissionTable> getByNext_mission_idIndex(int key) {
         return idxNext_mission_id.getOrDefault(key, Collections.emptyList());
     }
 
-    /** SELECT * FROM mission WHERE ? IN (target_count) */
-    public List<MissionTable> selectWhereInTarget_count(int key) {
+    public List<MissionTable> getByTarget_countIndex(int key) {
         return idxTarget_count.getOrDefault(key, Collections.emptyList());
     }
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+    public int countByCondition_idIndex(int key) {
+        return idxCondition_id.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByNext_mission_idIndex(int key) {
+        return idxNext_mission_id.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByTarget_countIndex(int key) {
+        return idxTarget_count.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<MissionTable> getByIds(List<Integer> ids) {
+        List<MissionTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            MissionTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public MissionTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<MissionTable> filter(Predicate<MissionTable> pred) {
+        List<MissionTable> result = new ArrayList<>();
+        for (MissionTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public MissionTable findFirst(Predicate<MissionTable> pred) {
+        for (MissionTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

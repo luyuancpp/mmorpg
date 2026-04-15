@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type SkillPermissionTableManager struct {
     data   []*pb.SkillPermissionTable
@@ -73,4 +76,74 @@ func (m *SkillPermissionTableManager) GetById(id uint32) (*pb.SkillPermissionTab
 func (m *SkillPermissionTableManager) GetBySkill_typeIndex(key uint32) []*pb.SkillPermissionTable {
     return m.idxSkill_type[key]
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *SkillPermissionTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *SkillPermissionTableManager) Len() int {
+    return len(m.data)
+}
+
+
+func (m *SkillPermissionTableManager) CountBySkill_typeIndex(key uint32) int {
+    return len(m.idxSkill_type[key])
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *SkillPermissionTableManager) GetByIds(ids []uint32) []*pb.SkillPermissionTable {
+    result := make([]*pb.SkillPermissionTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *SkillPermissionTableManager) GetRandom() (*pb.SkillPermissionTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *SkillPermissionTableManager) Filter(pred func(*pb.SkillPermissionTable) bool) []*pb.SkillPermissionTable {
+    var result []*pb.SkillPermissionTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *SkillPermissionTableManager) FindFirst(pred func(*pb.SkillPermissionTable) bool) (*pb.SkillPermissionTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

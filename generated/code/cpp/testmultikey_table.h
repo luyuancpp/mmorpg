@@ -1,7 +1,10 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <random>
 #include <unordered_map>
+#include <vector>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
 #include "table/proto/testmultikey_table.pb.h"
@@ -49,6 +52,66 @@ public:
     const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetM_int32_keyData() const { return kv_m_int32_keydata_; }
 
     const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetEffectIndex() const { return idx_effect_; }
+
+    // ---- Has / Exists ----
+
+    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool HasString_key(const std::string& key) const { return kv_string_keydata_.count(key) > 0; }
+    bool HasUint32_key(uint32_t key) const { return kv_uint32_keydata_.count(key) > 0; }
+    bool HasInt32_key(int32_t key) const { return kv_int32_keydata_.count(key) > 0; }
+
+    // ---- Len / Count ----
+
+    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t CountByM_string_key(const std::string& key) const { return kv_m_string_keydata_.count(key); }
+    std::size_t CountByM_uint32_key(uint32_t key) const { return kv_m_uint32_keydata_.count(key); }
+    std::size_t CountByM_int32_key(int32_t key) const { return kv_m_int32_keydata_.count(key); }
+    std::size_t CountByEffectIndex(uint32_t key) const { return idx_effect_.count(key); }
+
+    // ---- Batch Lookup (IN) ----
+
+    std::vector<const TestMultiKeyTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+        std::vector<const TestMultiKeyTable*> result;
+        result.reserve(ids.size());
+        for (auto id : ids) {
+            if (auto it = kv_data_.find(id); it != kv_data_.end()) {
+                result.push_back(it->second);
+            }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    const TestMultiKeyTable* GetRandom() const {
+        if (data_.data_size() == 0) return nullptr;
+        thread_local std::mt19937 rng{std::random_device{}()};
+        std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
+        return &data_.data(dist(rng));
+    }
+
+    // ---- Filter / FindFirst ----
+
+    std::vector<const TestMultiKeyTable*> Filter(const std::function<bool(const TestMultiKeyTable&)>& pred) const {
+        std::vector<const TestMultiKeyTable*> result;
+        for (int i = 0; i < data_.data_size(); ++i) {
+            if (pred(data_.data(i))) {
+                result.push_back(&data_.data(i));
+            }
+        }
+        return result;
+    }
+
+    const TestMultiKeyTable* FindFirst(const std::function<bool(const TestMultiKeyTable&)>& pred) const {
+        for (int i = 0; i < data_.data_size(); ++i) {
+            if (pred(data_.data(i))) {
+                return &data_.data(i);
+            }
+        }
+        return nullptr;
+    }
+
+    // ---- Composite Key ----
 
 private:
     LoadSuccessCallback loadSuccessCallback_;

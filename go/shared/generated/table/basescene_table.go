@@ -3,6 +3,7 @@ package table
 
 import (
     "fmt"
+    "math/rand/v2"
     "os"
     "path/filepath"
 
@@ -10,6 +11,8 @@ import (
     "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
+
+
 
 type BaseSceneTableManager struct {
     data   []*pb.BaseSceneTable
@@ -63,4 +66,69 @@ func (m *BaseSceneTableManager) GetById(id uint32) (*pb.BaseSceneTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+
+
+
+// ---- Has / Exists ----
+
+func (m *BaseSceneTableManager) HasId(id uint32) bool {
+    _, ok := m.kvData[id]
+    return ok
+}
+
+
+
+// ---- Len / Count ----
+
+func (m *BaseSceneTableManager) Len() int {
+    return len(m.data)
+}
+
+
+
+// ---- Batch Lookup (IN) ----
+
+func (m *BaseSceneTableManager) GetByIds(ids []uint32) []*pb.BaseSceneTable {
+    result := make([]*pb.BaseSceneTable, 0, len(ids))
+    for _, id := range ids {
+        if row, ok := m.kvData[id]; ok {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+// ---- Random ----
+
+func (m *BaseSceneTableManager) GetRandom() (*pb.BaseSceneTable, bool) {
+    if len(m.data) == 0 {
+        return nil, false
+    }
+    return m.data[rand.IntN(len(m.data))], true
+}
+
+
+
+// ---- Filter / FindFirst ----
+
+func (m *BaseSceneTableManager) Filter(pred func(*pb.BaseSceneTable) bool) []*pb.BaseSceneTable {
+    var result []*pb.BaseSceneTable
+    for _, row := range m.data {
+        if pred(row) {
+            result = append(result, row)
+        }
+    }
+    return result
+}
+
+func (m *BaseSceneTableManager) FindFirst(pred func(*pb.BaseSceneTable) bool) (*pb.BaseSceneTable, bool) {
+    for _, row := range m.data {
+        if pred(row) {
+            return row, true
+        }
+    }
+    return nil, false
+}
+
+// ---- Composite Key ----
 

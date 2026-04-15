@@ -1,7 +1,10 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <random>
 #include <unordered_map>
+#include <vector>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
 #include "table/proto/mission_table.pb.h"
@@ -33,6 +36,62 @@ public:
     const std::unordered_multimap<uint32_t, const MissionTable*>& GetCondition_idIndex() const { return idx_condition_id_; }
     const std::unordered_multimap<uint32_t, const MissionTable*>& GetNext_mission_idIndex() const { return idx_next_mission_id_; }
     const std::unordered_multimap<uint32_t, const MissionTable*>& GetTarget_countIndex() const { return idx_target_count_; }
+
+    // ---- Has / Exists ----
+
+    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+
+    // ---- Len / Count ----
+
+    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t CountByCondition_idIndex(uint32_t key) const { return idx_condition_id_.count(key); }
+    std::size_t CountByNext_mission_idIndex(uint32_t key) const { return idx_next_mission_id_.count(key); }
+    std::size_t CountByTarget_countIndex(uint32_t key) const { return idx_target_count_.count(key); }
+
+    // ---- Batch Lookup (IN) ----
+
+    std::vector<const MissionTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+        std::vector<const MissionTable*> result;
+        result.reserve(ids.size());
+        for (auto id : ids) {
+            if (auto it = kv_data_.find(id); it != kv_data_.end()) {
+                result.push_back(it->second);
+            }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    const MissionTable* GetRandom() const {
+        if (data_.data_size() == 0) return nullptr;
+        thread_local std::mt19937 rng{std::random_device{}()};
+        std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
+        return &data_.data(dist(rng));
+    }
+
+    // ---- Filter / FindFirst ----
+
+    std::vector<const MissionTable*> Filter(const std::function<bool(const MissionTable&)>& pred) const {
+        std::vector<const MissionTable*> result;
+        for (int i = 0; i < data_.data_size(); ++i) {
+            if (pred(data_.data(i))) {
+                result.push_back(&data_.data(i));
+            }
+        }
+        return result;
+    }
+
+    const MissionTable* FindFirst(const std::function<bool(const MissionTable&)>& pred) const {
+        for (int i = 0; i < data_.data_size(); ++i) {
+            if (pred(data_.data(i))) {
+                return &data_.data(i);
+            }
+        }
+        return nullptr;
+    }
+
+    // ---- Composite Key ----
 
 private:
     LoadSuccessCallback loadSuccessCallback_;

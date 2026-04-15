@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for Condition.
@@ -96,4 +98,73 @@ public class ConditionTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+    public int countByCondition1Index(int key) {
+        return idxCondition1.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByCondition2Index(int key) {
+        return idxCondition2.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByCondition3Index(int key) {
+        return idxCondition3.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByCondition4Index(int key) {
+        return idxCondition4.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<ConditionTable> getByIds(List<Integer> ids) {
+        List<ConditionTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            ConditionTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public ConditionTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<ConditionTable> filter(Predicate<ConditionTable> pred) {
+        List<ConditionTable> result = new ArrayList<>();
+        for (ConditionTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public ConditionTable findFirst(Predicate<ConditionTable> pred) {
+        for (ConditionTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for World.
@@ -43,40 +45,15 @@ public class WorldTableManager {
         }
     }
 
-    /** SELECT * FROM world */
-    public WorldTableData selectAll() {
+    public WorldTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM world */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM world WHERE id = ? */
-    public WorldTable selectById(int id) {
+    public WorldTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM world WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM world WHERE id IN (?, ?, ...) */
-    public List<WorldTable> selectByIds(List<Integer> ids) {
-        List<WorldTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            WorldTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, WorldTable> dataMap() {
+    public Map<Integer, WorldTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -85,6 +62,59 @@ public class WorldTableManager {
 
 
 
-    // FK: scene_id -> BaseScene.id
+    // FK: scene_id → BaseScene.id
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<WorldTable> getByIds(List<Integer> ids) {
+        List<WorldTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            WorldTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public WorldTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<WorldTable> filter(Predicate<WorldTable> pred) {
+        List<WorldTable> result = new ArrayList<>();
+        for (WorldTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public WorldTable findFirst(Predicate<WorldTable> pred) {
+        for (WorldTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for Mission.
@@ -87,4 +89,69 @@ public class MissionTableManager {
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+    public int countByCondition_idIndex(int key) {
+        return idxCondition_id.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByNext_mission_idIndex(int key) {
+        return idxNext_mission_id.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByTarget_countIndex(int key) {
+        return idxTarget_count.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<MissionTable> getByIds(List<Integer> ids) {
+        List<MissionTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            MissionTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public MissionTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<MissionTable> filter(Predicate<MissionTable> pred) {
+        List<MissionTable> result = new ArrayList<>();
+        for (MissionTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public MissionTable findFirst(Predicate<MissionTable> pred) {
+        for (MissionTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

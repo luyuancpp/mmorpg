@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Auto-generated config manager for SkillPermission.
@@ -48,51 +50,82 @@ public class SkillPermissionTableManager {
         }
     }
 
-    /** SELECT * FROM skillpermission */
-    public SkillPermissionTableData selectAll() {
+    public SkillPermissionTableData getAll() {
         return data;
     }
 
-    /** SELECT COUNT(*) FROM skillpermission */
-    public int count() {
-        return kvData.size();
-    }
-
-    /** SELECT * FROM skillpermission WHERE id = ? */
-    public SkillPermissionTable selectById(int id) {
+    public SkillPermissionTable getById(int id) {
         return kvData.get(id);
     }
 
-    /** SELECT EXISTS(SELECT 1 FROM skillpermission WHERE id = ?) */
-    public boolean exists(int id) {
-        return kvData.containsKey(id);
-    }
-
-    /** SELECT * FROM skillpermission WHERE id IN (?, ?, ...) */
-    public List<SkillPermissionTable> selectByIds(List<Integer> ids) {
-        List<SkillPermissionTable> result = new ArrayList<>(ids.size());
-        for (Integer id : ids) {
-            SkillPermissionTable row = kvData.get(id);
-            if (row != null) {
-                result.add(row);
-            }
-        }
-        return result;
-    }
-
-    /** Returns the primary-key map */
-    public Map<Integer, SkillPermissionTable> dataMap() {
+    public Map<Integer, SkillPermissionTable> getKvData() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
 
 
-    /** SELECT * FROM skillpermission WHERE ? IN (skill_type) */
-    public List<SkillPermissionTable> selectWhereInSkill_type(int key) {
+    public List<SkillPermissionTable> getBySkill_typeIndex(int key) {
         return idxSkill_type.getOrDefault(key, Collections.emptyList());
     }
 
 
 
+
+    // ---- Has / Exists ----
+
+    public boolean hasId(int id) {
+        return kvData.containsKey(id);
+    }
+
+
+
+    // ---- Len / Count ----
+
+    public int size() {
+        return kvData.size();
+    }
+
+
+
+    public int countBySkill_typeIndex(int key) {
+        return idxSkill_type.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    // ---- Batch Lookup (IN) ----
+
+    public List<SkillPermissionTable> getByIds(List<Integer> ids) {
+        List<SkillPermissionTable> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            SkillPermissionTable row = kvData.get(id);
+            if (row != null) { result.add(row); }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    public SkillPermissionTable getRandom() {
+        if (data == null || data.getDataCount() == 0) return null;
+        int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
+        return data.getData(idx);
+    }
+
+    // ---- Filter / FindFirst ----
+
+    public List<SkillPermissionTable> filter(Predicate<SkillPermissionTable> pred) {
+        List<SkillPermissionTable> result = new ArrayList<>();
+        for (SkillPermissionTable row : data.getDataList()) {
+            if (pred.test(row)) { result.add(row); }
+        }
+        return result;
+    }
+
+    public SkillPermissionTable findFirst(Predicate<SkillPermissionTable> pred) {
+        for (SkillPermissionTable row : data.getDataList()) {
+            if (pred.test(row)) { return row; }
+        }
+        return null;
+    }
 }

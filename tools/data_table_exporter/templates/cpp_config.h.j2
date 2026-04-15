@@ -10,6 +10,27 @@
 #include "muduo/base/Logging.h"
 #include "table/proto/{{ sheetname | lower }}_table.pb.h"
 
+{% for ck in table.composite_keys %}
+struct {{ sheetname }}{{ composite_cpp_struct_name(ck.group) }} {
+{%- for col in ck.columns %}
+    {{ to_cpp_type(col.data_type) }} {{ col.name }}{};
+{%- endfor %}
+    bool operator==(const {{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}& o) const {
+        return {% for col in ck.columns %}{{ col.name }} == o.{{ col.name }}{% if not loop.last %} && {% endif %}{% endfor %};
+    }
+};
+
+struct {{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}Hash {
+    std::size_t operator()(const {{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}& k) const {
+        std::size_t seed = 0;
+{%- for col in ck.columns %}
+        seed ^= std::hash<{{ to_cpp_type(col.data_type) }}>{}(k.{{ col.name }}) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+{%- endfor %}
+        return seed;
+    }
+};
+{% endfor %}
+
 class {{ sheetname }}TableManager {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const {{ sheetname }}Table*>;
@@ -64,17 +85,17 @@ public:
 
     bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-{% for col in table.table_keys if not col.is_multi_key -%}
+{%- for col in table.table_keys if not col.is_multi_key %}
     bool Has{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const { return kv_{{ col.name }}data_.count(key) > 0; }
-{% endfor %}
+{%- endfor %}
 
     // ---- Len / Count ----
 
     std::size_t Len() const { return kv_data_.size(); }
 
-{% for col in table.table_keys if col.is_multi_key -%}
+{%- for col in table.table_keys if col.is_multi_key %}
     std::size_t CountBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const { return kv_{{ col.name }}data_.count(key); }
-{% endfor %}
+{%- endfor %}
 {%- for arr in table.repeated_comp_arrays %}
     std::size_t CountBy{{ arr.name | title }}Index({{ to_cpp_param_type(arr.data_type) }} key) const { return idx_{{ arr.name }}_.count(key); }
 {%- endfor %}
@@ -122,6 +143,18 @@ public:
         return nullptr;
     }
 
+    // ---- Composite Key ----
+{% for ck in table.composite_keys %}
+    const {{ sheetname }}Table* GetByComposite{{ ck.group | title }}({% for col in ck.columns %}{{ to_cpp_param_type(col.data_type) }} {{ col.name }}{% if not loop.last %}, {% endif %}{% endfor %}) const {
+        auto it = composite_kv_{{ ck.group }}_.find({ {%- for col in ck.columns %}{{ col.name }}{% if not loop.last %}, {% endif %}{% endfor -%} });
+        return it != composite_kv_{{ ck.group }}_.end() ? it->second : nullptr;
+    }
+
+    bool HasComposite{{ ck.group | title }}({% for col in ck.columns %}{{ to_cpp_param_type(col.data_type) }} {{ col.name }}{% if not loop.last %}, {% endif %}{% endfor %}) const {
+        return composite_kv_{{ ck.group }}_.count({ {%- for col in ck.columns %}{{ col.name }}{% if not loop.last %}, {% endif %}{% endfor -%} }) > 0;
+    }
+{% endfor %}
+
 private:
     LoadSuccessCallback loadSuccessCallback_;
     {{ sheetname }}TableData data_;
@@ -134,6 +167,9 @@ private:
 {%- endfor %}
 {%- for arr in table.repeated_comp_arrays %}
     std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*> idx_{{ arr.name }}_;
+{%- endfor %}
+{%- for ck in table.composite_keys %}
+    std::unordered_map<{{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}, const {{ sheetname }}Table*, {{ sheetname }}{{ composite_cpp_struct_name(ck.group) }}Hash> composite_kv_{{ ck.group }}_;
 {%- endfor %}
 };
 
