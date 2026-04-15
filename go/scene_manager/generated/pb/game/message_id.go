@@ -122,3 +122,5 @@ const LoginPreGateAssignGateMessageId = 118
 const FriendServiceNotifyOnlineMessageId = 119
 const FriendServiceNotifyOfflineMessageId = 120
 const SceneDestroySceneMessageId = 121
+const SceneNodeGrpcCreateSceneMessageId = 122
+const SceneNodeGrpcDestroySceneMessageId = 123

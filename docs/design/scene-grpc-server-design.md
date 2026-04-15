@@ -91,15 +91,15 @@ message NodeInfo {
 }
 ```
 
-### 2. Proto codegen: Enabled gRPC C++ stubs for scene domain
+### 2. Proto/codegen: Added a dedicated gRPC-only Scene control proto
 
-**File:** `tools/proto_generator/protogen/etc/proto_gen.yaml`
+**File:** `proto/scene_manager/scene_node_service.proto`
 
-Changed scene domain `rpc.type` from `rpc` to `both`. The `both` type generates gRPC `.grpc.pb.h/.grpc.pb.cc` stubs while preserving muduo RPC handler generation (which checks `IsGRPC()` -> returns false for `both`).
+Added a separate gRPC-only service definition for Scene control:
+- `SceneNodeGrpc.CreateScene`
+- `SceneNodeGrpc.DestroyScene`
 
-**File:** `tools/proto_generator/protogen/internal/generator/cpp/gen.go`
-
-Added `both` to the allowed types for gRPC C++ stub generation.
+This imports the existing Scene request/response messages from the legacy Scene proto, but avoids the C++ gRPC plugin limitation with `cc_generic_services = true`.
 
 ### 3. C++ Node base class: Added optional gRPC server
 
@@ -158,15 +158,14 @@ Added `GrpcEndpoint` field to `sceneNodeRegistration` struct.
 | File | Change |
 |------|--------|
 | `proto/common/base/common.proto` | Added `grpc_endpoint` field 10 to NodeInfo |
-| `tools/proto_generator/protogen/etc/proto_gen.yaml` | Scene domain `rpc.type: rpc` -> `both` |
-| `tools/proto_generator/protogen/internal/generator/cpp/gen.go` | Added `both` to gRPC stub generation check |
+| `proto/scene_manager/scene_node_service.proto` | **New** — dedicated gRPC-only Scene control service |
 | `cpp/libs/engine/core/node/system/node/node.h` | gRPC server members and methods |
 | `cpp/libs/engine/core/node/system/node/node.cpp` | gRPC server lifecycle, banner update |
 | `cpp/libs/engine/core/node/system/node/node_allocator.cpp` | gRPC port allocation |
 | `cpp/nodes/scene/handler/grpc/scene_grpc_service.h` | **New** — gRPC service header |
 | `cpp/nodes/scene/handler/grpc/scene_grpc_service.cpp` | **New** — gRPC service implementation |
 | `cpp/nodes/scene/main.cpp` | Register gRPC service, use RunNodeMain |
-| `go/scene_manager/internal/logic/scene_node_client.go` | Use grpcEndpoint |
+| `go/scene_manager/internal/logic/scene_node_client.go` | Use grpcEndpoint and SceneNodeGrpc client |
 | `go/scene_manager/internal/logic/load_reporter.go` | Parse grpcEndpoint |
 
 ## Multi-Node Multi-Zone: No Extra Mapping Needed

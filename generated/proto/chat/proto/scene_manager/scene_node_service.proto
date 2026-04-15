@@ -1,0 +1,15 @@
+syntax = "proto3";
+package scene_node;
+
+import "proto/common/base/empty.proto";
+import "proto/scene/scene.proto";
+
+option go_package = "chat/proto/scene_manager";
+
+// Dedicated gRPC-only control plane for Scene nodes.
+// This avoids the C++ grpc plugin limitation with cc_generic_services=true
+// on the legacy Scene RPC proto.
+service SceneNodeGrpc {
+  rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}
+  rpc DestroyScene(DestroySceneRequest) returns (Empty) {}
+}

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	scenepb "proto/scene"
+	scenenodepb "proto/scene_manager"
 
 	"scene_manager/internal/svc"
 
@@ -37,7 +38,7 @@ func RequestNodeCreateScene(ctx context.Context, svcCtx *svc.ServiceContext, nod
 		return nil, fmt.Errorf("dial scene node %s: %w", nodeId, err)
 	}
 
-	client := scenepb.NewSceneClient(conn)
+	client := scenenodepb.NewSceneNodeGrpcClient(conn)
 	resp, err := client.CreateScene(ctx, &scenepb.CreateSceneRequest{ConfigId: configId, SceneId: sceneId})
 	if err != nil {
 		return nil, fmt.Errorf("CreateScene RPC to node %s: %w", nodeId, err)
@@ -58,7 +59,7 @@ func RequestNodeDestroyScene(ctx context.Context, svcCtx *svc.ServiceContext, no
 		return fmt.Errorf("dial scene node %s: %w", nodeId, err)
 	}
 
-	client := scenepb.NewSceneClient(conn)
+	client := scenenodepb.NewSceneNodeGrpcClient(conn)
 	if _, err := client.DestroyScene(ctx, &scenepb.DestroySceneRequest{SceneId: sceneId}); err != nil {
 		return fmt.Errorf("DestroyScene RPC to node %s: %w", nodeId, err)
 	}
