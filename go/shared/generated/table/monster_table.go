@@ -58,37 +58,37 @@ func (m *MonsterTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *MonsterTableManager) GetAll() []*pb.MonsterTable {
+func (m *MonsterTableManager) FindAll() []*pb.MonsterTable {
     return m.data
 }
 
-func (m *MonsterTableManager) GetById(id uint32) (*pb.MonsterTable, bool) {
+func (m *MonsterTableManager) FindById(id uint32) (*pb.MonsterTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *MonsterTableManager) HasId(id uint32) bool {
+func (m *MonsterTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *MonsterTableManager) Len() int {
+func (m *MonsterTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *MonsterTableManager) GetByIds(ids []uint32) []*pb.MonsterTable {
+func (m *MonsterTableManager) FindByIds(ids []uint32) []*pb.MonsterTable {
     result := make([]*pb.MonsterTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *MonsterTableManager) GetByIds(ids []uint32) []*pb.MonsterTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *MonsterTableManager) GetRandom() (*pb.MonsterTable, bool) {
+func (m *MonsterTableManager) RandOne() (*pb.MonsterTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *MonsterTableManager) GetRandom() (*pb.MonsterTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *MonsterTableManager) Filter(pred func(*pb.MonsterTable) bool) []*pb.MonsterTable {
+func (m *MonsterTableManager) Where(pred func(*pb.MonsterTable) bool) []*pb.MonsterTable {
     var result []*pb.MonsterTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *MonsterTableManager) Filter(pred func(*pb.MonsterTable) bool) []*pb.Mon
     return result
 }
 
-func (m *MonsterTableManager) FindFirst(pred func(*pb.MonsterTable) bool) (*pb.MonsterTable, bool) {
+func (m *MonsterTableManager) First(pred func(*pb.MonsterTable) bool) (*pb.MonsterTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

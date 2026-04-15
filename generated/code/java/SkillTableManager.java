@@ -60,11 +60,11 @@ public class SkillTableManager {
         }
     }
 
-    public SkillTableData getAll() {
+    public SkillTableData findAll() {
         return data;
     }
 
-    public SkillTable getById(int id) {
+    public SkillTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -75,32 +75,32 @@ public class SkillTableManager {
 
 
 
-    public List<SkillTable> getBySkill_typeIndex(int key) {
+    public List<SkillTable> findBySkill_typeIndex(int key) {
         return idxSkill_type.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<SkillTable> getByTargeting_modeIndex(int key) {
+    public List<SkillTable> findByTargeting_modeIndex(int key) {
         return idxTargeting_mode.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<SkillTable> getByEffectIndex(int key) {
+    public List<SkillTable> findByEffectIndex(int key) {
         return idxEffect.getOrDefault(key, Collections.emptyList());
     }
 
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -119,9 +119,9 @@ public class SkillTableManager {
     }
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<SkillTable> getByIds(List<Integer> ids) {
+    public List<SkillTable> findByIds(List<Integer> ids) {
         List<SkillTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             SkillTable row = kvData.get(id);
@@ -130,17 +130,17 @@ public class SkillTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public SkillTable getRandom() {
+    public SkillTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<SkillTable> filter(Predicate<SkillTable> pred) {
+    public List<SkillTable> where(Predicate<SkillTable> pred) {
         List<SkillTable> result = new ArrayList<>();
         for (SkillTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -148,7 +148,7 @@ public class SkillTableManager {
         return result;
     }
 
-    public SkillTable findFirst(Predicate<SkillTable> pred) {
+    public SkillTable first(Predicate<SkillTable> pred) {
         for (SkillTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

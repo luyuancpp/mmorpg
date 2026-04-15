@@ -58,37 +58,37 @@ func (m *WorldTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *WorldTableManager) GetAll() []*pb.WorldTable {
+func (m *WorldTableManager) FindAll() []*pb.WorldTable {
     return m.data
 }
 
-func (m *WorldTableManager) GetById(id uint32) (*pb.WorldTable, bool) {
+func (m *WorldTableManager) FindById(id uint32) (*pb.WorldTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *WorldTableManager) HasId(id uint32) bool {
+func (m *WorldTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *WorldTableManager) Len() int {
+func (m *WorldTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *WorldTableManager) GetByIds(ids []uint32) []*pb.WorldTable {
+func (m *WorldTableManager) FindByIds(ids []uint32) []*pb.WorldTable {
     result := make([]*pb.WorldTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *WorldTableManager) GetByIds(ids []uint32) []*pb.WorldTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *WorldTableManager) GetRandom() (*pb.WorldTable, bool) {
+func (m *WorldTableManager) RandOne() (*pb.WorldTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *WorldTableManager) GetRandom() (*pb.WorldTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *WorldTableManager) Filter(pred func(*pb.WorldTable) bool) []*pb.WorldTable {
+func (m *WorldTableManager) Where(pred func(*pb.WorldTable) bool) []*pb.WorldTable {
     var result []*pb.WorldTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *WorldTableManager) Filter(pred func(*pb.WorldTable) bool) []*pb.WorldTa
     return result
 }
 
-func (m *WorldTableManager) FindFirst(pred func(*pb.WorldTable) bool) (*pb.WorldTable, bool) {
+func (m *WorldTableManager) First(pred func(*pb.WorldTable) bool) (*pb.WorldTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

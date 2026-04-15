@@ -63,34 +63,34 @@ func (m *TestTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *TestTableManager) GetAll() []*pb.TestTable {
+func (m *TestTableManager) FindAll() []*pb.TestTable {
     return m.data
 }
 
-func (m *TestTableManager) GetById(id uint32) (*pb.TestTable, bool) {
+func (m *TestTableManager) FindById(id uint32) (*pb.TestTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
-func (m *TestTableManager) GetByEffectIndex(key uint32) []*pb.TestTable {
+func (m *TestTableManager) FindByEffectIndex(key uint32) []*pb.TestTable {
     return m.idxEffect[key]
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *TestTableManager) HasId(id uint32) bool {
+func (m *TestTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *TestTableManager) Len() int {
+func (m *TestTableManager) Count() int {
     return len(m.data)
 }
 
@@ -101,9 +101,9 @@ func (m *TestTableManager) CountByEffectIndex(key uint32) int {
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *TestTableManager) GetByIds(ids []uint32) []*pb.TestTable {
+func (m *TestTableManager) FindByIds(ids []uint32) []*pb.TestTable {
     result := make([]*pb.TestTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -113,9 +113,9 @@ func (m *TestTableManager) GetByIds(ids []uint32) []*pb.TestTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *TestTableManager) GetRandom() (*pb.TestTable, bool) {
+func (m *TestTableManager) RandOne() (*pb.TestTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -124,9 +124,9 @@ func (m *TestTableManager) GetRandom() (*pb.TestTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *TestTableManager) Filter(pred func(*pb.TestTable) bool) []*pb.TestTable {
+func (m *TestTableManager) Where(pred func(*pb.TestTable) bool) []*pb.TestTable {
     var result []*pb.TestTable
     for _, row := range m.data {
         if pred(row) {
@@ -136,7 +136,7 @@ func (m *TestTableManager) Filter(pred func(*pb.TestTable) bool) []*pb.TestTable
     return result
 }
 
-func (m *TestTableManager) FindFirst(pred func(*pb.TestTable) bool) (*pb.TestTable, bool) {
+func (m *TestTableManager) First(pred func(*pb.TestTable) bool) (*pb.TestTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

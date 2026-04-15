@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const MessageLimiterTableData& All() const { return data_; }
+    const MessageLimiterTableData& FindAll() const { return data_; }
 
-    std::pair<const MessageLimiterTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const MessageLimiterTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const MessageLimiterTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const MessageLimiterTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -33,17 +33,17 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const MessageLimiterTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const MessageLimiterTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const MessageLimiterTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -54,18 +54,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const MessageLimiterTable* GetRandom() const {
+    const MessageLimiterTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const MessageLimiterTable*> Filter(const std::function<bool(const MessageLimiterTable&)>& pred) const {
+    std::vector<const MessageLimiterTable*> Where(const std::function<bool(const MessageLimiterTable&)>& pred) const {
         std::vector<const MessageLimiterTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -75,7 +75,7 @@ public:
         return result;
     }
 
-    const MessageLimiterTable* FindFirst(const std::function<bool(const MessageLimiterTable&)>& pred) const {
+    const MessageLimiterTable* First(const std::function<bool(const MessageLimiterTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -92,30 +92,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const MessageLimiterTableData& GetMessageLimiterAllTable() {
-    return MessageLimiterTableManager::Instance().All();
+inline const MessageLimiterTableData& FindAllMessageLimiterTable() {
+    return MessageLimiterTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateMessageLimiterTable(tableId) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMessageLimiterTable(prefix, tableId) \
-    const auto [prefix##MessageLimiterTable, prefix##fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##MessageLimiterTable, prefix##fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##MessageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchMessageLimiterTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMessageLimiterTableOrReturnVoid(tableId) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMessageLimiterTableOrContinue(tableId) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMessageLimiterTableOrReturnFalse(tableId) \
-    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().GetTable(tableId); \
+    const auto [messageLimiterTable, fetchResult] = MessageLimiterTableManager::Instance().FindById(tableId); \
     do { if (!(messageLimiterTable)) { LOG_ERROR << "MessageLimiter table not found for ID: " << tableId; return false; } } while(0)

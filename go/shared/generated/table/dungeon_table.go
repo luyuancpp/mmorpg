@@ -58,37 +58,37 @@ func (m *DungeonTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *DungeonTableManager) GetAll() []*pb.DungeonTable {
+func (m *DungeonTableManager) FindAll() []*pb.DungeonTable {
     return m.data
 }
 
-func (m *DungeonTableManager) GetById(id uint32) (*pb.DungeonTable, bool) {
+func (m *DungeonTableManager) FindById(id uint32) (*pb.DungeonTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *DungeonTableManager) HasId(id uint32) bool {
+func (m *DungeonTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *DungeonTableManager) Len() int {
+func (m *DungeonTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *DungeonTableManager) GetByIds(ids []uint32) []*pb.DungeonTable {
+func (m *DungeonTableManager) FindByIds(ids []uint32) []*pb.DungeonTable {
     result := make([]*pb.DungeonTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *DungeonTableManager) GetByIds(ids []uint32) []*pb.DungeonTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *DungeonTableManager) GetRandom() (*pb.DungeonTable, bool) {
+func (m *DungeonTableManager) RandOne() (*pb.DungeonTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *DungeonTableManager) GetRandom() (*pb.DungeonTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *DungeonTableManager) Filter(pred func(*pb.DungeonTable) bool) []*pb.DungeonTable {
+func (m *DungeonTableManager) Where(pred func(*pb.DungeonTable) bool) []*pb.DungeonTable {
     var result []*pb.DungeonTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *DungeonTableManager) Filter(pred func(*pb.DungeonTable) bool) []*pb.Dun
     return result
 }
 
-func (m *DungeonTableManager) FindFirst(pred func(*pb.DungeonTable) bool) (*pb.DungeonTable, bool) {
+func (m *DungeonTableManager) First(pred func(*pb.DungeonTable) bool) (*pb.DungeonTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

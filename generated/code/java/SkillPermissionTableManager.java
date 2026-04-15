@@ -50,11 +50,11 @@ public class SkillPermissionTableManager {
         }
     }
 
-    public SkillPermissionTableData getAll() {
+    public SkillPermissionTableData findAll() {
         return data;
     }
 
-    public SkillPermissionTable getById(int id) {
+    public SkillPermissionTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -65,24 +65,24 @@ public class SkillPermissionTableManager {
 
 
 
-    public List<SkillPermissionTable> getBySkill_typeIndex(int key) {
+    public List<SkillPermissionTable> findBySkill_typeIndex(int key) {
         return idxSkill_type.getOrDefault(key, Collections.emptyList());
     }
 
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -93,9 +93,9 @@ public class SkillPermissionTableManager {
     }
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<SkillPermissionTable> getByIds(List<Integer> ids) {
+    public List<SkillPermissionTable> findByIds(List<Integer> ids) {
         List<SkillPermissionTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             SkillPermissionTable row = kvData.get(id);
@@ -104,17 +104,17 @@ public class SkillPermissionTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public SkillPermissionTable getRandom() {
+    public SkillPermissionTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<SkillPermissionTable> filter(Predicate<SkillPermissionTable> pred) {
+    public List<SkillPermissionTable> where(Predicate<SkillPermissionTable> pred) {
         List<SkillPermissionTable> result = new ArrayList<>();
         for (SkillPermissionTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -122,7 +122,7 @@ public class SkillPermissionTableManager {
         return result;
     }
 
-    public SkillPermissionTable findFirst(Predicate<SkillPermissionTable> pred) {
+    public SkillPermissionTable first(Predicate<SkillPermissionTable> pred) {
         for (SkillPermissionTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

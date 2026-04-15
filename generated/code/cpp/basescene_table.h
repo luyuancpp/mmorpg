@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const BaseSceneTableData& All() const { return data_; }
+    const BaseSceneTableData& FindAll() const { return data_; }
 
-    std::pair<const BaseSceneTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const BaseSceneTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const BaseSceneTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const BaseSceneTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -33,17 +33,17 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const BaseSceneTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const BaseSceneTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const BaseSceneTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -54,18 +54,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const BaseSceneTable* GetRandom() const {
+    const BaseSceneTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const BaseSceneTable*> Filter(const std::function<bool(const BaseSceneTable&)>& pred) const {
+    std::vector<const BaseSceneTable*> Where(const std::function<bool(const BaseSceneTable&)>& pred) const {
         std::vector<const BaseSceneTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -75,7 +75,7 @@ public:
         return result;
     }
 
-    const BaseSceneTable* FindFirst(const std::function<bool(const BaseSceneTable&)>& pred) const {
+    const BaseSceneTable* First(const std::function<bool(const BaseSceneTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -92,30 +92,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const BaseSceneTableData& GetBaseSceneAllTable() {
-    return BaseSceneTableManager::Instance().All();
+inline const BaseSceneTableData& FindAllBaseSceneTable() {
+    return BaseSceneTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateBaseSceneTable(tableId) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().GetTable(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomBaseSceneTable(prefix, tableId) \
-    const auto [prefix##BaseSceneTable, prefix##fetchResult] = BaseSceneTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##BaseSceneTable, prefix##fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##BaseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchBaseSceneTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().GetTable(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchBaseSceneTableOrReturnVoid(tableId) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().GetTable(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchBaseSceneTableOrContinue(tableId) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().GetTable(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchBaseSceneTableOrReturnFalse(tableId) \
-    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().GetTable(tableId); \
+    const auto [baseSceneTable, fetchResult] = BaseSceneTableManager::Instance().FindById(tableId); \
     do { if (!(baseSceneTable)) { LOG_ERROR << "BaseScene table not found for ID: " << tableId; return false; } } while(0)

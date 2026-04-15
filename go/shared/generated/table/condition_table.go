@@ -78,49 +78,49 @@ func (m *ConditionTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *ConditionTableManager) GetAll() []*pb.ConditionTable {
+func (m *ConditionTableManager) FindAll() []*pb.ConditionTable {
     return m.data
 }
 
-func (m *ConditionTableManager) GetById(id uint32) (*pb.ConditionTable, bool) {
+func (m *ConditionTableManager) FindById(id uint32) (*pb.ConditionTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
-func (m *ConditionTableManager) GetByCondition1Index(key uint32) []*pb.ConditionTable {
+func (m *ConditionTableManager) FindByCondition1Index(key uint32) []*pb.ConditionTable {
     return m.idxCondition1[key]
 }
 
 
-func (m *ConditionTableManager) GetByCondition2Index(key uint32) []*pb.ConditionTable {
+func (m *ConditionTableManager) FindByCondition2Index(key uint32) []*pb.ConditionTable {
     return m.idxCondition2[key]
 }
 
 
-func (m *ConditionTableManager) GetByCondition3Index(key uint32) []*pb.ConditionTable {
+func (m *ConditionTableManager) FindByCondition3Index(key uint32) []*pb.ConditionTable {
     return m.idxCondition3[key]
 }
 
 
-func (m *ConditionTableManager) GetByCondition4Index(key uint32) []*pb.ConditionTable {
+func (m *ConditionTableManager) FindByCondition4Index(key uint32) []*pb.ConditionTable {
     return m.idxCondition4[key]
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *ConditionTableManager) HasId(id uint32) bool {
+func (m *ConditionTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *ConditionTableManager) Len() int {
+func (m *ConditionTableManager) Count() int {
     return len(m.data)
 }
 
@@ -146,9 +146,9 @@ func (m *ConditionTableManager) CountByCondition4Index(key uint32) int {
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *ConditionTableManager) GetByIds(ids []uint32) []*pb.ConditionTable {
+func (m *ConditionTableManager) FindByIds(ids []uint32) []*pb.ConditionTable {
     result := make([]*pb.ConditionTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -158,9 +158,9 @@ func (m *ConditionTableManager) GetByIds(ids []uint32) []*pb.ConditionTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *ConditionTableManager) GetRandom() (*pb.ConditionTable, bool) {
+func (m *ConditionTableManager) RandOne() (*pb.ConditionTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -169,9 +169,9 @@ func (m *ConditionTableManager) GetRandom() (*pb.ConditionTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *ConditionTableManager) Filter(pred func(*pb.ConditionTable) bool) []*pb.ConditionTable {
+func (m *ConditionTableManager) Where(pred func(*pb.ConditionTable) bool) []*pb.ConditionTable {
     var result []*pb.ConditionTable
     for _, row := range m.data {
         if pred(row) {
@@ -181,7 +181,7 @@ func (m *ConditionTableManager) Filter(pred func(*pb.ConditionTable) bool) []*pb
     return result
 }
 
-func (m *ConditionTableManager) FindFirst(pred func(*pb.ConditionTable) bool) (*pb.ConditionTable, bool) {
+func (m *ConditionTableManager) First(pred func(*pb.ConditionTable) bool) (*pb.ConditionTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

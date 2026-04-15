@@ -29,7 +29,7 @@ void BaseSceneTableManager::Load() {
     }
 }
 
-std::pair<const BaseSceneTable*, uint32_t> BaseSceneTableManager::GetTable(const uint32_t tableId) {
+std::pair<const BaseSceneTable*, uint32_t> BaseSceneTableManager::FindById(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "BaseScene table not found for ID: " << tableId;
@@ -38,7 +38,7 @@ std::pair<const BaseSceneTable*, uint32_t> BaseSceneTableManager::GetTable(const
     return {it->second, kSuccess};
 }
 
-std::pair<const BaseSceneTable*, uint32_t> BaseSceneTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const BaseSceneTable*, uint32_t> BaseSceneTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId};

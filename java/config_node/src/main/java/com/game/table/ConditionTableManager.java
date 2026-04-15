@@ -65,11 +65,11 @@ public class ConditionTableManager {
         }
     }
 
-    public ConditionTableData getAll() {
+    public ConditionTableData findAll() {
         return data;
     }
 
-    public ConditionTable getById(int id) {
+    public ConditionTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -80,36 +80,36 @@ public class ConditionTableManager {
 
 
 
-    public List<ConditionTable> getByCondition1Index(int key) {
+    public List<ConditionTable> findByCondition1Index(int key) {
         return idxCondition1.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<ConditionTable> getByCondition2Index(int key) {
+    public List<ConditionTable> findByCondition2Index(int key) {
         return idxCondition2.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<ConditionTable> getByCondition3Index(int key) {
+    public List<ConditionTable> findByCondition3Index(int key) {
         return idxCondition3.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<ConditionTable> getByCondition4Index(int key) {
+    public List<ConditionTable> findByCondition4Index(int key) {
         return idxCondition4.getOrDefault(key, Collections.emptyList());
     }
 
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -132,9 +132,9 @@ public class ConditionTableManager {
     }
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<ConditionTable> getByIds(List<Integer> ids) {
+    public List<ConditionTable> findByIds(List<Integer> ids) {
         List<ConditionTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             ConditionTable row = kvData.get(id);
@@ -143,17 +143,17 @@ public class ConditionTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public ConditionTable getRandom() {
+    public ConditionTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<ConditionTable> filter(Predicate<ConditionTable> pred) {
+    public List<ConditionTable> where(Predicate<ConditionTable> pred) {
         List<ConditionTable> result = new ArrayList<>();
         for (ConditionTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -161,7 +161,7 @@ public class ConditionTableManager {
         return result;
     }
 
-    public ConditionTable findFirst(Predicate<ConditionTable> pred) {
+    public ConditionTable first(Predicate<ConditionTable> pred) {
         for (ConditionTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

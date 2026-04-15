@@ -45,11 +45,11 @@ public class DungeonTableManager {
         }
     }
 
-    public DungeonTableData getAll() {
+    public DungeonTableData findAll() {
         return data;
     }
 
-    public DungeonTable getById(int id) {
+    public DungeonTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -65,26 +65,26 @@ public class DungeonTableManager {
     // FK: scene_id → BaseScene.id
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<DungeonTable> getByIds(List<Integer> ids) {
+    public List<DungeonTable> findByIds(List<Integer> ids) {
         List<DungeonTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             DungeonTable row = kvData.get(id);
@@ -93,17 +93,17 @@ public class DungeonTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public DungeonTable getRandom() {
+    public DungeonTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<DungeonTable> filter(Predicate<DungeonTable> pred) {
+    public List<DungeonTable> where(Predicate<DungeonTable> pred) {
         List<DungeonTable> result = new ArrayList<>();
         for (DungeonTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -111,7 +111,7 @@ public class DungeonTableManager {
         return result;
     }
 
-    public DungeonTable findFirst(Predicate<DungeonTable> pred) {
+    public DungeonTable first(Predicate<DungeonTable> pred) {
         for (DungeonTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

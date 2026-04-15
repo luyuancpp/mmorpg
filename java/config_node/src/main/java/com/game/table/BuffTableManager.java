@@ -60,11 +60,11 @@ public class BuffTableManager {
         }
     }
 
-    public BuffTableData getAll() {
+    public BuffTableData findAll() {
         return data;
     }
 
-    public BuffTable getById(int id) {
+    public BuffTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -75,32 +75,32 @@ public class BuffTableManager {
 
 
 
-    public List<BuffTable> getByInterval_effectIndex(double key) {
+    public List<BuffTable> findByInterval_effectIndex(double key) {
         return idxInterval_effect.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<BuffTable> getBySub_buffIndex(int key) {
+    public List<BuffTable> findBySub_buffIndex(int key) {
         return idxSub_buff.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<BuffTable> getByTarget_sub_buffIndex(int key) {
+    public List<BuffTable> findByTarget_sub_buffIndex(int key) {
         return idxTarget_sub_buff.getOrDefault(key, Collections.emptyList());
     }
 
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -119,9 +119,9 @@ public class BuffTableManager {
     }
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<BuffTable> getByIds(List<Integer> ids) {
+    public List<BuffTable> findByIds(List<Integer> ids) {
         List<BuffTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             BuffTable row = kvData.get(id);
@@ -130,17 +130,17 @@ public class BuffTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public BuffTable getRandom() {
+    public BuffTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<BuffTable> filter(Predicate<BuffTable> pred) {
+    public List<BuffTable> where(Predicate<BuffTable> pred) {
         List<BuffTable> result = new ArrayList<>();
         for (BuffTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -148,7 +148,7 @@ public class BuffTableManager {
         return result;
     }
 
-    public BuffTable findFirst(Predicate<BuffTable> pred) {
+    public BuffTable first(Predicate<BuffTable> pred) {
         for (BuffTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

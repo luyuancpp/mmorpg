@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const WorldTableData& All() const { return data_; }
+    const WorldTableData& FindAll() const { return data_; }
 
-    std::pair<const WorldTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const WorldTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const WorldTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const WorldTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -35,17 +35,17 @@ public:
 
     // FK: scene_id → BaseScene.id
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const WorldTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const WorldTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const WorldTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -56,18 +56,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const WorldTable* GetRandom() const {
+    const WorldTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const WorldTable*> Filter(const std::function<bool(const WorldTable&)>& pred) const {
+    std::vector<const WorldTable*> Where(const std::function<bool(const WorldTable&)>& pred) const {
         std::vector<const WorldTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -77,7 +77,7 @@ public:
         return result;
     }
 
-    const WorldTable* FindFirst(const std::function<bool(const WorldTable&)>& pred) const {
+    const WorldTable* First(const std::function<bool(const WorldTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -94,30 +94,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const WorldTableData& GetWorldAllTable() {
-    return WorldTableManager::Instance().All();
+inline const WorldTableData& FindAllWorldTable() {
+    return WorldTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateWorldTable(tableId) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().GetTable(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomWorldTable(prefix, tableId) \
-    const auto [prefix##WorldTable, prefix##fetchResult] = WorldTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##WorldTable, prefix##fetchResult] = WorldTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##WorldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchWorldTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().GetTable(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchWorldTableOrReturnVoid(tableId) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().GetTable(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchWorldTableOrContinue(tableId) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().GetTable(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchWorldTableOrReturnFalse(tableId) \
-    const auto [worldTable, fetchResult] = WorldTableManager::Instance().GetTable(tableId); \
+    const auto [worldTable, fetchResult] = WorldTableManager::Instance().FindById(tableId); \
     do { if (!(worldTable)) { LOG_ERROR << "World table not found for ID: " << tableId; return false; } } while(0)

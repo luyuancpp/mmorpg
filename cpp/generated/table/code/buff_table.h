@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const BuffTableData& All() const { return data_; }
+    const BuffTableData& FindAll() const { return data_; }
 
-    std::pair<const BuffTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const BuffTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const BuffTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const BuffTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -34,7 +34,7 @@ public:
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
     double GetHealth_regeneration(uint32_t tableId) {
-        auto [table, ok] = GetTable(tableId);
+        auto [table, ok] = FindById(tableId);
         if (!ok || table == nullptr) {
             LOG_ERROR << "Health_regeneration table not found for ID: " << tableId;
             return double();
@@ -46,7 +46,7 @@ public:
     }
 
     double GetBonus_damage(uint32_t tableId) {
-        auto [table, ok] = GetTable(tableId);
+        auto [table, ok] = FindById(tableId);
         if (!ok || table == nullptr) {
             LOG_ERROR << "Bonus_damage table not found for ID: " << tableId;
             return double();
@@ -61,20 +61,20 @@ public:
     const std::unordered_multimap<uint32_t, const BuffTable*>& GetSub_buffIndex() const { return idx_sub_buff_; }
     const std::unordered_multimap<uint32_t, const BuffTable*>& GetTarget_sub_buffIndex() const { return idx_target_sub_buff_; }
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
     std::size_t CountByInterval_effectIndex(double key) const { return idx_interval_effect_.count(key); }
     std::size_t CountBySub_buffIndex(uint32_t key) const { return idx_sub_buff_.count(key); }
     std::size_t CountByTarget_sub_buffIndex(uint32_t key) const { return idx_target_sub_buff_.count(key); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const BuffTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const BuffTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const BuffTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -85,18 +85,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const BuffTable* GetRandom() const {
+    const BuffTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const BuffTable*> Filter(const std::function<bool(const BuffTable&)>& pred) const {
+    std::vector<const BuffTable*> Where(const std::function<bool(const BuffTable&)>& pred) const {
         std::vector<const BuffTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -106,7 +106,7 @@ public:
         return result;
     }
 
-    const BuffTable* FindFirst(const std::function<bool(const BuffTable&)>& pred) const {
+    const BuffTable* First(const std::function<bool(const BuffTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -128,30 +128,30 @@ private:
     std::unordered_multimap<uint32_t, const BuffTable*> idx_target_sub_buff_;
 };
 
-inline const BuffTableData& GetBuffAllTable() {
-    return BuffTableManager::Instance().All();
+inline const BuffTableData& FindAllBuffTable() {
+    return BuffTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateBuffTable(tableId) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().GetTable(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomBuffTable(prefix, tableId) \
-    const auto [prefix##BuffTable, prefix##fetchResult] = BuffTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##BuffTable, prefix##fetchResult] = BuffTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##BuffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchBuffTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().GetTable(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchBuffTableOrReturnVoid(tableId) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().GetTable(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchBuffTableOrContinue(tableId) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().GetTable(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchBuffTableOrReturnFalse(tableId) \
-    const auto [buffTable, fetchResult] = BuffTableManager::Instance().GetTable(tableId); \
+    const auto [buffTable, fetchResult] = BuffTableManager::Instance().FindById(tableId); \
     do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << tableId; return false; } } while(0)

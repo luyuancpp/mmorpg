@@ -45,11 +45,11 @@ public class MirrorTableManager {
         }
     }
 
-    public MirrorTableData getAll() {
+    public MirrorTableData findAll() {
         return data;
     }
 
-    public MirrorTable getById(int id) {
+    public MirrorTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -67,26 +67,26 @@ public class MirrorTableManager {
     // FK: main_scene_id → World.id
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<MirrorTable> getByIds(List<Integer> ids) {
+    public List<MirrorTable> findByIds(List<Integer> ids) {
         List<MirrorTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             MirrorTable row = kvData.get(id);
@@ -95,17 +95,17 @@ public class MirrorTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public MirrorTable getRandom() {
+    public MirrorTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<MirrorTable> filter(Predicate<MirrorTable> pred) {
+    public List<MirrorTable> where(Predicate<MirrorTable> pred) {
         List<MirrorTable> result = new ArrayList<>();
         for (MirrorTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -113,7 +113,7 @@ public class MirrorTableManager {
         return result;
     }
 
-    public MirrorTable findFirst(Predicate<MirrorTable> pred) {
+    public MirrorTable first(Predicate<MirrorTable> pred) {
         for (MirrorTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

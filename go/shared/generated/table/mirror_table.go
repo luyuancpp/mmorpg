@@ -58,37 +58,37 @@ func (m *MirrorTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *MirrorTableManager) GetAll() []*pb.MirrorTable {
+func (m *MirrorTableManager) FindAll() []*pb.MirrorTable {
     return m.data
 }
 
-func (m *MirrorTableManager) GetById(id uint32) (*pb.MirrorTable, bool) {
+func (m *MirrorTableManager) FindById(id uint32) (*pb.MirrorTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *MirrorTableManager) HasId(id uint32) bool {
+func (m *MirrorTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *MirrorTableManager) Len() int {
+func (m *MirrorTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *MirrorTableManager) GetByIds(ids []uint32) []*pb.MirrorTable {
+func (m *MirrorTableManager) FindByIds(ids []uint32) []*pb.MirrorTable {
     result := make([]*pb.MirrorTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *MirrorTableManager) GetByIds(ids []uint32) []*pb.MirrorTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *MirrorTableManager) GetRandom() (*pb.MirrorTable, bool) {
+func (m *MirrorTableManager) RandOne() (*pb.MirrorTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *MirrorTableManager) GetRandom() (*pb.MirrorTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *MirrorTableManager) Filter(pred func(*pb.MirrorTable) bool) []*pb.MirrorTable {
+func (m *MirrorTableManager) Where(pred func(*pb.MirrorTable) bool) []*pb.MirrorTable {
     var result []*pb.MirrorTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *MirrorTableManager) Filter(pred func(*pb.MirrorTable) bool) []*pb.Mirro
     return result
 }
 
-func (m *MirrorTableManager) FindFirst(pred func(*pb.MirrorTable) bool) (*pb.MirrorTable, bool) {
+func (m *MirrorTableManager) First(pred func(*pb.MirrorTable) bool) (*pb.MirrorTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

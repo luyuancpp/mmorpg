@@ -58,37 +58,37 @@ func (m *CooldownTableManager) Load(configDir string, useBinary bool) error {
     return nil
 }
 
-func (m *CooldownTableManager) GetAll() []*pb.CooldownTable {
+func (m *CooldownTableManager) FindAll() []*pb.CooldownTable {
     return m.data
 }
 
-func (m *CooldownTableManager) GetById(id uint32) (*pb.CooldownTable, bool) {
+func (m *CooldownTableManager) FindById(id uint32) (*pb.CooldownTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *CooldownTableManager) HasId(id uint32) bool {
+func (m *CooldownTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *CooldownTableManager) Len() int {
+func (m *CooldownTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *CooldownTableManager) GetByIds(ids []uint32) []*pb.CooldownTable {
+func (m *CooldownTableManager) FindByIds(ids []uint32) []*pb.CooldownTable {
     result := make([]*pb.CooldownTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *CooldownTableManager) GetByIds(ids []uint32) []*pb.CooldownTable {
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *CooldownTableManager) GetRandom() (*pb.CooldownTable, bool) {
+func (m *CooldownTableManager) RandOne() (*pb.CooldownTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *CooldownTableManager) GetRandom() (*pb.CooldownTable, bool) {
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *CooldownTableManager) Filter(pred func(*pb.CooldownTable) bool) []*pb.CooldownTable {
+func (m *CooldownTableManager) Where(pred func(*pb.CooldownTable) bool) []*pb.CooldownTable {
     var result []*pb.CooldownTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *CooldownTableManager) Filter(pred func(*pb.CooldownTable) bool) []*pb.C
     return result
 }
 
-func (m *CooldownTableManager) FindFirst(pred func(*pb.CooldownTable) bool) (*pb.CooldownTable, bool) {
+func (m *CooldownTableManager) First(pred func(*pb.CooldownTable) bool) (*pb.CooldownTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

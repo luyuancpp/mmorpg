@@ -29,7 +29,7 @@ void MonsterTableManager::Load() {
     }
 }
 
-std::pair<const MonsterTable*, uint32_t> MonsterTableManager::GetTable(const uint32_t tableId) {
+std::pair<const MonsterTable*, uint32_t> MonsterTableManager::FindById(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Monster table not found for ID: " << tableId;
@@ -38,7 +38,7 @@ std::pair<const MonsterTable*, uint32_t> MonsterTableManager::GetTable(const uin
     return {it->second, kSuccess};
 }
 
-std::pair<const MonsterTable*, uint32_t> MonsterTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const MonsterTable*, uint32_t> MonsterTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId};

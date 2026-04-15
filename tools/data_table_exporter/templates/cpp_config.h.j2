@@ -41,10 +41,10 @@ public:
         return instance;
     }
 
-    const {{ sheetname }}TableData& All() const { return data_; }
+    const {{ sheetname }}TableData& FindAll() const { return data_; }
 
-    std::pair<const {{ sheetname }}Table*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const {{ sheetname }}Table*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const {{ sheetname }}Table*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const {{ sheetname }}Table*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -56,13 +56,13 @@ public:
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
 {% for col in table.table_keys %}
-    std::pair<const {{ sheetname }}Table*, uint32_t> GetBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} tableId) const;
+    std::pair<const {{ sheetname }}Table*, uint32_t> FindBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} tableId) const;
     const std::{{ cpp_map_type(col.is_multi_key) }}<{{ to_cpp_type(col.data_type) }}, const {{ sheetname }}Table*>& Get{{ col.name | title }}Data() const { return kv_{{ col.name }}data_; }
 {% endfor %}
 
 {% for col in table.expression_columns %}
     {{ col.expression_type }} Get{{ col.name | title }}(uint32_t tableId) {
-        auto [table, ok] = GetTable(tableId);
+        auto [table, ok] = FindById(tableId);
         if (!ok || table == nullptr) {
             LOG_ERROR << "{{ col.name | title }} table not found for ID: " << tableId;
             return {{ col.expression_type }}();
@@ -81,17 +81,17 @@ public:
     const std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*>& Get{{ arr.name | title }}Index() const { return idx_{{ arr.name }}_; }
 {%- endfor %}
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
 {%- for col in table.table_keys if not col.is_multi_key %}
-    bool Has{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const { return kv_{{ col.name }}data_.count(key) > 0; }
+    bool ExistsBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const { return kv_{{ col.name }}data_.count(key) > 0; }
 {%- endfor %}
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
 {%- for col in table.table_keys if col.is_multi_key %}
     std::size_t CountBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const { return kv_{{ col.name }}data_.count(key); }
@@ -100,9 +100,9 @@ public:
     std::size_t CountBy{{ arr.name | title }}Index({{ to_cpp_param_type(arr.data_type) }} key) const { return idx_{{ arr.name }}_.count(key); }
 {%- endfor %}
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const {{ sheetname }}Table*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const {{ sheetname }}Table*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const {{ sheetname }}Table*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -113,18 +113,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const {{ sheetname }}Table* GetRandom() const {
+    const {{ sheetname }}Table* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const {{ sheetname }}Table*> Filter(const std::function<bool(const {{ sheetname }}Table&)>& pred) const {
+    std::vector<const {{ sheetname }}Table*> Where(const std::function<bool(const {{ sheetname }}Table&)>& pred) const {
         std::vector<const {{ sheetname }}Table*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -134,7 +134,7 @@ public:
         return result;
     }
 
-    const {{ sheetname }}Table* FindFirst(const std::function<bool(const {{ sheetname }}Table&)>& pred) const {
+    const {{ sheetname }}Table* First(const std::function<bool(const {{ sheetname }}Table&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -145,12 +145,12 @@ public:
 
     // ---- Composite Key ----
 {% for ck in table.composite_keys %}
-    const {{ sheetname }}Table* GetByComposite{{ ck.group | title }}({% for col in ck.columns %}{{ to_cpp_param_type(col.data_type) }} {{ col.name }}{% if not loop.last %}, {% endif %}{% endfor %}) const {
+    const {{ sheetname }}Table* FindBy{{ ck.group | title }}({% for col in ck.columns %}{{ to_cpp_param_type(col.data_type) }} {{ col.name }}{% if not loop.last %}, {% endif %}{% endfor %}) const {
         auto it = composite_kv_{{ ck.group }}_.find({ {%- for col in ck.columns %}{{ col.name }}{% if not loop.last %}, {% endif %}{% endfor -%} });
         return it != composite_kv_{{ ck.group }}_.end() ? it->second : nullptr;
     }
 
-    bool HasComposite{{ ck.group | title }}({% for col in ck.columns %}{{ to_cpp_param_type(col.data_type) }} {{ col.name }}{% if not loop.last %}, {% endif %}{% endfor %}) const {
+    bool ExistsBy{{ ck.group | title }}({% for col in ck.columns %}{{ to_cpp_param_type(col.data_type) }} {{ col.name }}{% if not loop.last %}, {% endif %}{% endfor %}) const {
         return composite_kv_{{ ck.group }}_.count({ {%- for col in ck.columns %}{{ col.name }}{% if not loop.last %}, {% endif %}{% endfor -%} }) > 0;
     }
 {% endfor %}
@@ -173,30 +173,30 @@ private:
 {%- endfor %}
 };
 
-inline const {{ sheetname }}TableData& Get{{ sheetname }}AllTable() {
-    return {{ sheetname }}TableManager::Instance().All();
+inline const {{ sheetname }}TableData& FindAll{{ sheetname }}Table() {
+    return {{ sheetname }}TableManager::Instance().FindAll();
 }
 
 #define FetchAndValidate{{ sheetname }}Table(tableId) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustom{{ sheetname }}Table(prefix, tableId) \
-    const auto [prefix##{{ sheetname }}Table, prefix##fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    const auto [prefix##{{ sheetname }}Table, prefix##fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
     do { if (!(prefix##{{ sheetname }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnCustom(tableId, customReturnValue) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnVoid(tableId) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrContinue(tableId) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; continue; } } while(0)
 
 #define Fetch{{ sheetname }}TableOrReturnFalse(tableId) \
-    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().GetTable(tableId); \
+    const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Table, fetchResult] = {{ sheetname }}TableManager::Instance().FindById(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Table)) { LOG_ERROR << "{{ sheetname }} table not found for ID: " << tableId; return false; } } while(0)

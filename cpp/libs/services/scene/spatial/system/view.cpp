@@ -133,7 +133,7 @@ bool ViewSystem::IsStealthed(entt::entity entity)
 
     for (const auto &[_, buffEntry] : *buffList)
     {
-        const auto [table, result] = BuffTableManager::Instance().GetTable(buffEntry.buffPb.buff_table_id());
+        const auto [table, result] = BuffTableManager::Instance().FindById(buffEntry.buffPb.buff_table_id());
         if (table && table->buff_type() == kBuffTypeStealth)
         {
             return true;

@@ -45,11 +45,11 @@ public class MonsterTableManager {
         }
     }
 
-    public MonsterTableData getAll() {
+    public MonsterTableData findAll() {
         return data;
     }
 
-    public MonsterTable getById(int id) {
+    public MonsterTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -63,26 +63,26 @@ public class MonsterTableManager {
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
 
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<MonsterTable> getByIds(List<Integer> ids) {
+    public List<MonsterTable> findByIds(List<Integer> ids) {
         List<MonsterTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             MonsterTable row = kvData.get(id);
@@ -91,17 +91,17 @@ public class MonsterTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public MonsterTable getRandom() {
+    public MonsterTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<MonsterTable> filter(Predicate<MonsterTable> pred) {
+    public List<MonsterTable> where(Predicate<MonsterTable> pred) {
         List<MonsterTable> result = new ArrayList<>();
         for (MonsterTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -109,7 +109,7 @@ public class MonsterTableManager {
         return result;
     }
 
-    public MonsterTable findFirst(Predicate<MonsterTable> pred) {
+    public MonsterTable first(Predicate<MonsterTable> pred) {
         for (MonsterTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

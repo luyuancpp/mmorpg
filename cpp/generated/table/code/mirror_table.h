@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const MirrorTableData& All() const { return data_; }
+    const MirrorTableData& FindAll() const { return data_; }
 
-    std::pair<const MirrorTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const MirrorTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const MirrorTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const MirrorTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -36,17 +36,17 @@ public:
     // FK: scene_id → BaseScene.id
     // FK: main_scene_id → World.id
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const MirrorTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const MirrorTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const MirrorTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -57,18 +57,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const MirrorTable* GetRandom() const {
+    const MirrorTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const MirrorTable*> Filter(const std::function<bool(const MirrorTable&)>& pred) const {
+    std::vector<const MirrorTable*> Where(const std::function<bool(const MirrorTable&)>& pred) const {
         std::vector<const MirrorTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -78,7 +78,7 @@ public:
         return result;
     }
 
-    const MirrorTable* FindFirst(const std::function<bool(const MirrorTable&)>& pred) const {
+    const MirrorTable* First(const std::function<bool(const MirrorTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -95,30 +95,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const MirrorTableData& GetMirrorAllTable() {
-    return MirrorTableManager::Instance().All();
+inline const MirrorTableData& FindAllMirrorTable() {
+    return MirrorTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateMirrorTable(tableId) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().GetTable(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomMirrorTable(prefix, tableId) \
-    const auto [prefix##MirrorTable, prefix##fetchResult] = MirrorTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##MirrorTable, prefix##fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##MirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchMirrorTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().GetTable(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchMirrorTableOrReturnVoid(tableId) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().GetTable(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchMirrorTableOrContinue(tableId) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().GetTable(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchMirrorTableOrReturnFalse(tableId) \
-    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().GetTable(tableId); \
+    const auto [mirrorTable, fetchResult] = MirrorTableManager::Instance().FindById(tableId); \
     do { if (!(mirrorTable)) { LOG_ERROR << "Mirror table not found for ID: " << tableId; return false; } } while(0)

@@ -50,11 +50,11 @@ public class ClassTableManager {
         }
     }
 
-    public ClassTableData getAll() {
+    public ClassTableData findAll() {
         return data;
     }
 
-    public ClassTable getById(int id) {
+    public ClassTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -65,24 +65,24 @@ public class ClassTableManager {
 
 
 
-    public List<ClassTable> getBySkillIndex(int key) {
+    public List<ClassTable> findBySkillIndex(int key) {
         return idxSkill.getOrDefault(key, Collections.emptyList());
     }
 
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -93,9 +93,9 @@ public class ClassTableManager {
     }
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<ClassTable> getByIds(List<Integer> ids) {
+    public List<ClassTable> findByIds(List<Integer> ids) {
         List<ClassTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             ClassTable row = kvData.get(id);
@@ -104,17 +104,17 @@ public class ClassTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public ClassTable getRandom() {
+    public ClassTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<ClassTable> filter(Predicate<ClassTable> pred) {
+    public List<ClassTable> where(Predicate<ClassTable> pred) {
         List<ClassTable> result = new ArrayList<>();
         for (ClassTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -122,7 +122,7 @@ public class ClassTableManager {
         return result;
     }
 
-    public ClassTable findFirst(Predicate<ClassTable> pred) {
+    public ClassTable first(Predicate<ClassTable> pred) {
         for (ClassTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

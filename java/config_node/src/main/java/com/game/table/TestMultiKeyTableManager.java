@@ -68,11 +68,11 @@ public class TestMultiKeyTableManager {
         }
     }
 
-    public TestMultiKeyTableData getAll() {
+    public TestMultiKeyTableData findAll() {
         return data;
     }
 
-    public TestMultiKeyTable getById(int id) {
+    public TestMultiKeyTable findById(int id) {
         return kvData.get(id);
     }
 
@@ -81,62 +81,62 @@ public class TestMultiKeyTableManager {
     }
 
 
-    public TestMultiKeyTable getByString_key(String key) {
+    public TestMultiKeyTable findByString_key(String key) {
         return kvString_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByUint32_key(int key) {
+    public TestMultiKeyTable findByUint32_key(int key) {
         return kvUint32_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByInt32_key(int key) {
+    public TestMultiKeyTable findByInt32_key(int key) {
         return kvInt32_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByM_string_key(String key) {
+    public TestMultiKeyTable findByM_string_key(String key) {
         return kvM_string_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByM_uint32_key(int key) {
+    public TestMultiKeyTable findByM_uint32_key(int key) {
         return kvM_uint32_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByM_int32_key(int key) {
+    public TestMultiKeyTable findByM_int32_key(int key) {
         return kvM_int32_keyData.get(key);
     }
 
 
 
-    public List<TestMultiKeyTable> getByEffectIndex(int key) {
+    public List<TestMultiKeyTable> findByEffectIndex(int key) {
         return idxEffect.getOrDefault(key, Collections.emptyList());
     }
 
 
 
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    public boolean hasId(int id) {
+    public boolean exists(int id) {
         return kvData.containsKey(id);
     }
 
 
-    public boolean hasString_key(String key) {
+    public boolean existsByString_key(String key) {
         return kvString_keyData.containsKey(key);
     }
 
-    public boolean hasUint32_key(int key) {
+    public boolean existsByUint32_key(int key) {
         return kvUint32_keyData.containsKey(key);
     }
 
-    public boolean hasInt32_key(int key) {
+    public boolean existsByInt32_key(int key) {
         return kvInt32_keyData.containsKey(key);
     }
 
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    public int size() {
+    public int count() {
         return kvData.size();
     }
 
@@ -159,9 +159,9 @@ public class TestMultiKeyTableManager {
     }
 
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    public List<TestMultiKeyTable> getByIds(List<Integer> ids) {
+    public List<TestMultiKeyTable> findByIds(List<Integer> ids) {
         List<TestMultiKeyTable> result = new ArrayList<>(ids.size());
         for (int id : ids) {
             TestMultiKeyTable row = kvData.get(id);
@@ -170,17 +170,17 @@ public class TestMultiKeyTableManager {
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    public TestMultiKeyTable getRandom() {
+    public TestMultiKeyTable randOne() {
         if (data == null || data.getDataCount() == 0) return null;
         int idx = ThreadLocalRandom.current().nextInt(data.getDataCount());
         return data.getData(idx);
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    public List<TestMultiKeyTable> filter(Predicate<TestMultiKeyTable> pred) {
+    public List<TestMultiKeyTable> where(Predicate<TestMultiKeyTable> pred) {
         List<TestMultiKeyTable> result = new ArrayList<>();
         for (TestMultiKeyTable row : data.getDataList()) {
             if (pred.test(row)) { result.add(row); }
@@ -188,7 +188,7 @@ public class TestMultiKeyTableManager {
         return result;
     }
 
-    public TestMultiKeyTable findFirst(Predicate<TestMultiKeyTable> pred) {
+    public TestMultiKeyTable first(Predicate<TestMultiKeyTable> pred) {
         for (TestMultiKeyTable row : data.getDataList()) {
             if (pred.test(row)) { return row; }
         }

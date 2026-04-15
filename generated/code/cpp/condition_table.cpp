@@ -41,7 +41,7 @@ void ConditionTableManager::Load() {
     }
 }
 
-std::pair<const ConditionTable*, uint32_t> ConditionTableManager::GetTable(const uint32_t tableId) {
+std::pair<const ConditionTable*, uint32_t> ConditionTableManager::FindById(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Condition table not found for ID: " << tableId;
@@ -50,7 +50,7 @@ std::pair<const ConditionTable*, uint32_t> ConditionTableManager::GetTable(const
     return {it->second, kSuccess};
 }
 
-std::pair<const ConditionTable*, uint32_t> ConditionTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const ConditionTable*, uint32_t> ConditionTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId};

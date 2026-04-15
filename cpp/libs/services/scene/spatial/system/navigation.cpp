@@ -10,7 +10,7 @@
 
 void NavigationSystem::LoadWorldNavBins()
 {
-	auto &configAll = GetWorldAllTable();
+	auto &configAll = FindAllWorldTable();
 	for (auto &item : configAll.data())
 	{
 		NavComp nav;

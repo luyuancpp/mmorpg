@@ -58,37 +58,37 @@ func (m *GlobalVariableTableManager) Load(configDir string, useBinary bool) erro
     return nil
 }
 
-func (m *GlobalVariableTableManager) GetAll() []*pb.GlobalVariableTable {
+func (m *GlobalVariableTableManager) FindAll() []*pb.GlobalVariableTable {
     return m.data
 }
 
-func (m *GlobalVariableTableManager) GetById(id uint32) (*pb.GlobalVariableTable, bool) {
+func (m *GlobalVariableTableManager) FindById(id uint32) (*pb.GlobalVariableTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *GlobalVariableTableManager) HasId(id uint32) bool {
+func (m *GlobalVariableTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *GlobalVariableTableManager) Len() int {
+func (m *GlobalVariableTableManager) Count() int {
     return len(m.data)
 }
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *GlobalVariableTableManager) GetByIds(ids []uint32) []*pb.GlobalVariableTable {
+func (m *GlobalVariableTableManager) FindByIds(ids []uint32) []*pb.GlobalVariableTable {
     result := make([]*pb.GlobalVariableTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -98,9 +98,9 @@ func (m *GlobalVariableTableManager) GetByIds(ids []uint32) []*pb.GlobalVariable
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *GlobalVariableTableManager) GetRandom() (*pb.GlobalVariableTable, bool) {
+func (m *GlobalVariableTableManager) RandOne() (*pb.GlobalVariableTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
@@ -109,9 +109,9 @@ func (m *GlobalVariableTableManager) GetRandom() (*pb.GlobalVariableTable, bool)
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *GlobalVariableTableManager) Filter(pred func(*pb.GlobalVariableTable) bool) []*pb.GlobalVariableTable {
+func (m *GlobalVariableTableManager) Where(pred func(*pb.GlobalVariableTable) bool) []*pb.GlobalVariableTable {
     var result []*pb.GlobalVariableTable
     for _, row := range m.data {
         if pred(row) {
@@ -121,7 +121,7 @@ func (m *GlobalVariableTableManager) Filter(pred func(*pb.GlobalVariableTable) b
     return result
 }
 
-func (m *GlobalVariableTableManager) FindFirst(pred func(*pb.GlobalVariableTable) bool) (*pb.GlobalVariableTable, bool) {
+func (m *GlobalVariableTableManager) First(pred func(*pb.GlobalVariableTable) bool) (*pb.GlobalVariableTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

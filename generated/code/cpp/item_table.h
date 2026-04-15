@@ -19,10 +19,10 @@ public:
         return instance;
     }
 
-    const ItemTableData& All() const { return data_; }
+    const ItemTableData& FindAll() const { return data_; }
 
-    std::pair<const ItemTable*, uint32_t> GetTable(uint32_t tableId);
-    std::pair<const ItemTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
+    std::pair<const ItemTable*, uint32_t> FindById(uint32_t tableId);
+    std::pair<const ItemTable*, uint32_t> FindByIdSilent(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
 
     void Load();
@@ -33,17 +33,17 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback_) { loadSuccessCallback_(); } }
 
-    // ---- Has / Exists ----
+    // ---- Exists ----
 
-    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+    bool Exists(uint32_t id) const { return kv_data_.count(id) > 0; }
 
-    // ---- Len / Count ----
+    // ---- Count ----
 
-    std::size_t Len() const { return kv_data_.size(); }
+    std::size_t Count() const { return kv_data_.size(); }
 
-    // ---- Batch Lookup (IN) ----
+    // ---- FindByIds (IN) ----
 
-    std::vector<const ItemTable*> GetByIds(const std::vector<uint32_t>& ids) const {
+    std::vector<const ItemTable*> FindByIds(const std::vector<uint32_t>& ids) const {
         std::vector<const ItemTable*> result;
         result.reserve(ids.size());
         for (auto id : ids) {
@@ -54,18 +54,18 @@ public:
         return result;
     }
 
-    // ---- Random ----
+    // ---- RandOne ----
 
-    const ItemTable* GetRandom() const {
+    const ItemTable* RandOne() const {
         if (data_.data_size() == 0) return nullptr;
         thread_local std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
         return &data_.data(dist(rng));
     }
 
-    // ---- Filter / FindFirst ----
+    // ---- Where / First ----
 
-    std::vector<const ItemTable*> Filter(const std::function<bool(const ItemTable&)>& pred) const {
+    std::vector<const ItemTable*> Where(const std::function<bool(const ItemTable&)>& pred) const {
         std::vector<const ItemTable*> result;
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
@@ -75,7 +75,7 @@ public:
         return result;
     }
 
-    const ItemTable* FindFirst(const std::function<bool(const ItemTable&)>& pred) const {
+    const ItemTable* First(const std::function<bool(const ItemTable&)>& pred) const {
         for (int i = 0; i < data_.data_size(); ++i) {
             if (pred(data_.data(i))) {
                 return &data_.data(i);
@@ -92,30 +92,30 @@ private:
     KeyValueDataType kv_data_;
 };
 
-inline const ItemTableData& GetItemAllTable() {
-    return ItemTableManager::Instance().All();
+inline const ItemTableData& FindAllItemTable() {
+    return ItemTableManager::Instance().FindAll();
 }
 
 #define FetchAndValidateItemTable(tableId) \
-    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().FindById(tableId); \
     do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return fetchResult; } } while(0)
 
 #define FetchAndValidateCustomItemTable(prefix, tableId) \
-    const auto [prefix##ItemTable, prefix##fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
+    const auto [prefix##ItemTable, prefix##fetchResult] = ItemTableManager::Instance().FindById(tableId); \
     do { if (!(prefix##ItemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return prefix##fetchResult; } } while(0)
 
 #define FetchItemTableOrReturnCustom(tableId, customReturnValue) \
-    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().FindById(tableId); \
     do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return customReturnValue; } } while(0)
 
 #define FetchItemTableOrReturnVoid(tableId) \
-    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().FindById(tableId); \
     do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return; } } while(0)
 
 #define FetchItemTableOrContinue(tableId) \
-    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().FindById(tableId); \
     do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; continue; } } while(0)
 
 #define FetchItemTableOrReturnFalse(tableId) \
-    const auto [itemTable, fetchResult] = ItemTableManager::Instance().GetTable(tableId); \
+    const auto [itemTable, fetchResult] = ItemTableManager::Instance().FindById(tableId); \
     do { if (!(itemTable)) { LOG_ERROR << "Item table not found for ID: " << tableId; return false; } } while(0)

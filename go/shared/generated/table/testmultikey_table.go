@@ -81,79 +81,79 @@ func (m *TestMultiKeyTableManager) Load(configDir string, useBinary bool) error 
     return nil
 }
 
-func (m *TestMultiKeyTableManager) GetAll() []*pb.TestMultiKeyTable {
+func (m *TestMultiKeyTableManager) FindAll() []*pb.TestMultiKeyTable {
     return m.data
 }
 
-func (m *TestMultiKeyTableManager) GetById(id uint32) (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) FindById(id uint32) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByString_key(key string) (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) FindByString_key(key string) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvString_keyData[key]
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByUint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) FindByUint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvUint32_keyData[key]
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByInt32_key(key int32) (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) FindByInt32_key(key int32) (*pb.TestMultiKeyTable, bool) {
     row, ok := m.kvInt32_keyData[key]
     return row, ok
 }
 
 
-func (m *TestMultiKeyTableManager) GetByM_string_key(key string) []*pb.TestMultiKeyTable {
+func (m *TestMultiKeyTableManager) FindByM_string_key(key string) []*pb.TestMultiKeyTable {
     return m.kvM_string_keyData[key]
 }
 
 
-func (m *TestMultiKeyTableManager) GetByM_uint32_key(key uint32) []*pb.TestMultiKeyTable {
+func (m *TestMultiKeyTableManager) FindByM_uint32_key(key uint32) []*pb.TestMultiKeyTable {
     return m.kvM_uint32_keyData[key]
 }
 
 
-func (m *TestMultiKeyTableManager) GetByM_int32_key(key int32) []*pb.TestMultiKeyTable {
+func (m *TestMultiKeyTableManager) FindByM_int32_key(key int32) []*pb.TestMultiKeyTable {
     return m.kvM_int32_keyData[key]
 }
 
 
-func (m *TestMultiKeyTableManager) GetByEffectIndex(key uint32) []*pb.TestMultiKeyTable {
+func (m *TestMultiKeyTableManager) FindByEffectIndex(key uint32) []*pb.TestMultiKeyTable {
     return m.idxEffect[key]
 }
 
 
 
-// ---- Has / Exists ----
+// ---- Exists ----
 
-func (m *TestMultiKeyTableManager) HasId(id uint32) bool {
+func (m *TestMultiKeyTableManager) Exists(id uint32) bool {
     _, ok := m.kvData[id]
     return ok
 }
 
-func (m *TestMultiKeyTableManager) HasString_key(key string) bool {
+func (m *TestMultiKeyTableManager) ExistsByString_key(key string) bool {
     _, ok := m.kvString_keyData[key]
     return ok
 }
 
-func (m *TestMultiKeyTableManager) HasUint32_key(key uint32) bool {
+func (m *TestMultiKeyTableManager) ExistsByUint32_key(key uint32) bool {
     _, ok := m.kvUint32_keyData[key]
     return ok
 }
 
-func (m *TestMultiKeyTableManager) HasInt32_key(key int32) bool {
+func (m *TestMultiKeyTableManager) ExistsByInt32_key(key int32) bool {
     _, ok := m.kvInt32_keyData[key]
     return ok
 }
 
 
 
-// ---- Len / Count ----
+// ---- Count ----
 
-func (m *TestMultiKeyTableManager) Len() int {
+func (m *TestMultiKeyTableManager) Count() int {
     return len(m.data)
 }
 
@@ -176,9 +176,9 @@ func (m *TestMultiKeyTableManager) CountByEffectIndex(key uint32) int {
 
 
 
-// ---- Batch Lookup (IN) ----
+// ---- FindByIds (IN) ----
 
-func (m *TestMultiKeyTableManager) GetByIds(ids []uint32) []*pb.TestMultiKeyTable {
+func (m *TestMultiKeyTableManager) FindByIds(ids []uint32) []*pb.TestMultiKeyTable {
     result := make([]*pb.TestMultiKeyTable, 0, len(ids))
     for _, id := range ids {
         if row, ok := m.kvData[id]; ok {
@@ -188,16 +188,16 @@ func (m *TestMultiKeyTableManager) GetByIds(ids []uint32) []*pb.TestMultiKeyTabl
     return result
 }
 
-// ---- Random ----
+// ---- RandOne ----
 
-func (m *TestMultiKeyTableManager) GetRandom() (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) RandOne() (*pb.TestMultiKeyTable, bool) {
     if len(m.data) == 0 {
         return nil, false
     }
     return m.data[rand.IntN(len(m.data))], true
 }
 
-func (m *TestMultiKeyTableManager) GetRandomByM_string_key(key string) (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) RandOneByM_string_key(key string) (*pb.TestMultiKeyTable, bool) {
     rows := m.kvM_string_keyData[key]
     if len(rows) == 0 {
         return nil, false
@@ -205,7 +205,7 @@ func (m *TestMultiKeyTableManager) GetRandomByM_string_key(key string) (*pb.Test
     return rows[rand.IntN(len(rows))], true
 }
 
-func (m *TestMultiKeyTableManager) GetRandomByM_uint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) RandOneByM_uint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
     rows := m.kvM_uint32_keyData[key]
     if len(rows) == 0 {
         return nil, false
@@ -213,7 +213,7 @@ func (m *TestMultiKeyTableManager) GetRandomByM_uint32_key(key uint32) (*pb.Test
     return rows[rand.IntN(len(rows))], true
 }
 
-func (m *TestMultiKeyTableManager) GetRandomByM_int32_key(key int32) (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) RandOneByM_int32_key(key int32) (*pb.TestMultiKeyTable, bool) {
     rows := m.kvM_int32_keyData[key]
     if len(rows) == 0 {
         return nil, false
@@ -223,9 +223,9 @@ func (m *TestMultiKeyTableManager) GetRandomByM_int32_key(key int32) (*pb.TestMu
 
 
 
-// ---- Filter / FindFirst ----
+// ---- Where / First ----
 
-func (m *TestMultiKeyTableManager) Filter(pred func(*pb.TestMultiKeyTable) bool) []*pb.TestMultiKeyTable {
+func (m *TestMultiKeyTableManager) Where(pred func(*pb.TestMultiKeyTable) bool) []*pb.TestMultiKeyTable {
     var result []*pb.TestMultiKeyTable
     for _, row := range m.data {
         if pred(row) {
@@ -235,7 +235,7 @@ func (m *TestMultiKeyTableManager) Filter(pred func(*pb.TestMultiKeyTable) bool)
     return result
 }
 
-func (m *TestMultiKeyTableManager) FindFirst(pred func(*pb.TestMultiKeyTable) bool) (*pb.TestMultiKeyTable, bool) {
+func (m *TestMultiKeyTableManager) First(pred func(*pb.TestMultiKeyTable) bool) (*pb.TestMultiKeyTable, bool) {
     for _, row := range m.data {
         if pred(row) {
             return row, true

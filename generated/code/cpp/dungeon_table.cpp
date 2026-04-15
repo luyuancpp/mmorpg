@@ -29,7 +29,7 @@ void DungeonTableManager::Load() {
     }
 }
 
-std::pair<const DungeonTable*, uint32_t> DungeonTableManager::GetTable(const uint32_t tableId) {
+std::pair<const DungeonTable*, uint32_t> DungeonTableManager::FindById(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Dungeon table not found for ID: " << tableId;
@@ -38,7 +38,7 @@ std::pair<const DungeonTable*, uint32_t> DungeonTableManager::GetTable(const uin
     return {it->second, kSuccess};
 }
 
-std::pair<const DungeonTable*, uint32_t> DungeonTableManager::GetTableWithoutErrorLogging(const uint32_t tableId) {
+std::pair<const DungeonTable*, uint32_t> DungeonTableManager::FindByIdSilent(const uint32_t tableId) {
     const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
         return {nullptr, kInvalidTableId};
