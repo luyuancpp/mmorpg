@@ -15,6 +15,13 @@ public final class MissionTableForeignKeys {
         return RewardTableManager.getInstance().findById(row.getRewardId());
     }
 
+    /** Resolve Mission.reward_id -> Reward row (by Mission id). */
+    public static RewardTable getRewardIdRow(int tableId) {
+        MissionTable row = MissionTableManager.getInstance().findById(tableId);
+        if (row == null) { return null; }
+        return getRewardIdRow(row);
+    }
+
     /** Resolve Mission.condition_id[] -> Condition rows. */
     public static List<ConditionTable> getConditionIdRows(MissionTable row) {
         List<ConditionTable> result = new ArrayList<>();
@@ -23,6 +30,13 @@ public final class MissionTableForeignKeys {
             if (r != null) { result.add(r); }
         }
         return result;
+    }
+
+    /** Resolve Mission.condition_id[] -> Condition rows (by Mission id). */
+    public static List<ConditionTable> getConditionIdRows(int tableId) {
+        MissionTable row = MissionTableManager.getInstance().findById(tableId);
+        if (row == null) { return List.of(); }
+        return getConditionIdRows(row);
     }
 
     // ---- Reverse FK (HasMany): find source rows by FK column value ----

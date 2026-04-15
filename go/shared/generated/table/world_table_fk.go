@@ -13,6 +13,15 @@ func GetWorldSceneIdRow(row *pb.WorldTable) (*pb.BaseSceneTable, bool) {
     return BaseSceneTableManagerInstance.FindById(row.SceneId)
 }
 
+// GetWorldSceneIdRowById resolves World.scene_id -> BaseScene row (by World id).
+func GetWorldSceneIdRowById(tableId uint32) (*pb.BaseSceneTable, bool) {
+    row, ok := WorldTableManagerInstance.FindById(tableId)
+    if !ok {
+        return nil, false
+    }
+    return GetWorldSceneIdRow(row)
+}
+
 // ---------------------------------------------------------------------------
 // Reverse FK (HasMany): find source rows by FK column value
 // ---------------------------------------------------------------------------

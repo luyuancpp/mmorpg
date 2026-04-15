@@ -13,6 +13,15 @@ func GetDungeonSceneIdRow(row *pb.DungeonTable) (*pb.BaseSceneTable, bool) {
     return BaseSceneTableManagerInstance.FindById(row.SceneId)
 }
 
+// GetDungeonSceneIdRowById resolves Dungeon.scene_id -> BaseScene row (by Dungeon id).
+func GetDungeonSceneIdRowById(tableId uint32) (*pb.BaseSceneTable, bool) {
+    row, ok := DungeonTableManagerInstance.FindById(tableId)
+    if !ok {
+        return nil, false
+    }
+    return GetDungeonSceneIdRow(row)
+}
+
 // ---------------------------------------------------------------------------
 // Reverse FK (HasMany): find source rows by FK column value
 // ---------------------------------------------------------------------------

@@ -13,6 +13,15 @@ func GetMissionRewardIdRow(row *pb.MissionTable) (*pb.RewardTable, bool) {
     return RewardTableManagerInstance.FindById(row.RewardId)
 }
 
+// GetMissionRewardIdRowById resolves Mission.reward_id -> Reward row (by Mission id).
+func GetMissionRewardIdRowById(tableId uint32) (*pb.RewardTable, bool) {
+    row, ok := MissionTableManagerInstance.FindById(tableId)
+    if !ok {
+        return nil, false
+    }
+    return GetMissionRewardIdRow(row)
+}
+
 // GetMissionConditionIdRows resolves Mission.condition_id[] -> Condition rows.
 func GetMissionConditionIdRows(row *pb.MissionTable) []*pb.ConditionTable {
     var result []*pb.ConditionTable
@@ -22,6 +31,15 @@ func GetMissionConditionIdRows(row *pb.MissionTable) []*pb.ConditionTable {
         }
     }
     return result
+}
+
+// GetMissionConditionIdRowsById resolves Mission.condition_id[] -> Condition rows (by Mission id).
+func GetMissionConditionIdRowsById(tableId uint32) []*pb.ConditionTable {
+    row, ok := MissionTableManagerInstance.FindById(tableId)
+    if !ok {
+        return nil
+    }
+    return GetMissionConditionIdRows(row)
 }
 
 // ---------------------------------------------------------------------------

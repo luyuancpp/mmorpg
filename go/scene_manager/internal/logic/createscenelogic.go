@@ -60,7 +60,7 @@ func (l *CreateSceneLogic) resolveSceneType(in *scene_manager.CreateSceneRequest
 	if in.SceneType > 0 {
 		return uint32(in.SceneType)
 	}
-	if IsWorldConf(l.svcCtx, in.SceneConfId) {
+	if IsWorldConf(in.SceneConfId) {
 		return constants.SceneTypeMainWorld
 	}
 	return constants.SceneTypeInstance
@@ -132,12 +132,7 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 // allocateScene generates a scene ID and registers it in Redis.
 // Shared by both main-world and instance creation.
 func (l *CreateSceneLogic) allocateScene(confId uint64, targetNode string) (uint64, error) {
-	id, err := l.svcCtx.Redis.Incr("scene:id_counter")
-	if err != nil {
-		l.Logger.Errorf("Failed to generate scene id: %v", err)
-		return 0, fmt.Errorf("redis incr failed: %w", err)
-	}
-	sceneId := uint64(id)
+	sceneId := l.svcCtx.SceneIDGen.Generate()
 
 	// scene -> node mapping.
 	if err := l.svcCtx.Redis.Set(fmt.Sprintf("scene:%d:node", sceneId), targetNode); err != nil {

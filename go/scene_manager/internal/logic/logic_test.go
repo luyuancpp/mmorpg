@@ -13,6 +13,7 @@ import (
 	"proto/scene_manager"
 	"scene_manager/internal/config"
 	"scene_manager/internal/svc"
+	"shared/snowflake"
 )
 
 // testZoneId is the zone ID used across all tests.
@@ -40,8 +41,9 @@ func newTestSvcCtx(t *testing.T, nodeID string) (*svc.ServiceContext, *miniredis
 	c.NodeID = nodeID
 
 	return &svc.ServiceContext{
-		Config: c,
-		Redis:  rds,
+		Config:     c,
+		Redis:      rds,
+		SceneIDGen: snowflake.NewNode(0),
 	}, mr
 }
 
@@ -218,7 +220,7 @@ func TestMultiplePlayersLocation(t *testing.T) {
 // World scene helpers
 // ---------------------------------------------------------------------------
 
-func newTestSvcCtxWithWorldScenes(t *testing.T, worldConfIds []uint64) (*svc.ServiceContext, *miniredis.Miniredis) {
+func newTestSvcCtxWithWorldScenes(t *testing.T) (*svc.ServiceContext, *miniredis.Miniredis) {
 	t.Helper()
 	mr := miniredis.RunT(t)
 	rds := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
@@ -229,23 +231,20 @@ func newTestSvcCtxWithWorldScenes(t *testing.T, worldConfIds []uint64) (*svc.Ser
 	c.InstanceCheckIntervalSeconds = 10
 
 	return &svc.ServiceContext{
-		Config:           c,
-		Redis:            rds,
-		WorldConfIds: worldConfIds,
+		Config:     c,
+		Redis:      rds,
+		SceneIDGen: snowflake.NewNode(0),
 	}, mr
 }
 
 func TestIsWorldConf(t *testing.T) {
-	sc, _ := newTestSvcCtxWithWorldScenes(t, []uint64{1001, 1002, 1003})
-
-	assert.True(t, IsWorldConf(sc, 1001))
-	assert.True(t, IsWorldConf(sc, 1003))
-	assert.False(t, IsWorldConf(sc, 2001))
-	assert.False(t, IsWorldConf(sc, 0))
+	// IsWorldConf reads from the World table, which is empty in unit tests.
+	assert.False(t, IsWorldConf(1001))
+	assert.False(t, IsWorldConf(0))
 }
 
 func TestGetBestWorldChannel_NotFound(t *testing.T) {
-	sc, _ := newTestSvcCtxWithWorldScenes(t, nil)
+	sc, _ := newTestSvcCtxWithWorldScenes(t)
 	ctx := context.Background()
 
 	id, nodeId, _ := GetBestWorldChannel(ctx, sc, 9999, testZoneId)
@@ -273,7 +272,7 @@ func TestAssignNodeByHash_Deterministic(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestInstancePlayerCount_IncrDecr(t *testing.T) {
-	sc, _ := newTestSvcCtxWithWorldScenes(t, nil)
+	sc, _ := newTestSvcCtxWithWorldScenes(t)
 
 	sceneId := uint64(42)
 	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "0")
@@ -291,7 +290,7 @@ func TestInstancePlayerCount_IncrDecr(t *testing.T) {
 }
 
 func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	ctx := context.Background()
 
 	// Register a node so GetBestNode works.
@@ -303,6 +302,7 @@ func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
 	resp1, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
 		ZoneId:      testZoneId,
+		SceneType:   1,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, uint32(0), resp1.ErrorCode)
@@ -312,6 +312,7 @@ func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
 	resp2, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
 		ZoneId:      testZoneId,
+		SceneType:   1,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, resp1.SceneId, resp2.SceneId, "single-channel main scene should be idempotent")
@@ -319,7 +320,7 @@ func TestCreateScene_MainWorld_Idempotent(t *testing.T) {
 }
 
 func TestCreateScene_Instance_UniquIds(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, nil)
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	ctx := context.Background()
 
 	mr.ZAdd(testLoadKey(), 0, "10")
@@ -343,7 +344,7 @@ func TestCreateScene_Instance_UniquIds(t *testing.T) {
 }
 
 func TestCreateScene_Instance_TrackedInActiveSet(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, nil)
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	ctx := context.Background()
 
 	mr.ZAdd(testLoadKey(), 0, "10")
@@ -367,7 +368,7 @@ func TestCreateScene_Instance_TrackedInActiveSet(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestEnterScene_IncrementsPlayerCount(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, nil)
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	ctx := context.Background()
 
 	// Setup: create an instance scene so there's a scene->node mapping.
@@ -396,7 +397,7 @@ func TestEnterScene_IncrementsPlayerCount(t *testing.T) {
 }
 
 func TestLeaveScene_DecrementsPlayerCount(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, nil)
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	ctx := context.Background()
 
 	mr.ZAdd(testLoadKey(), 0, "10")
@@ -439,14 +440,15 @@ func TestDecrPlayerCount_NeverGoesNegative(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestInitWorldScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001, 1002})
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	confIds := []uint64{1001, 1002}
 	ctx := context.Background()
 
 	// Register a node in the load set.
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
 	// First init: allocates scene IDs in Redis.
-	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, confIds)
 
 	lines1, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	lines2, _ := GetAllWorldChannels(ctx, sc, 1002, testZoneId)
@@ -455,7 +457,7 @@ func TestInitWorldScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
 	assert.NotEqual(t, lines1[0], lines2[0], "different configs should get different scene IDs")
 
 	// Second init (simulates node re-appearance): must NOT allocate new IDs.
-	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, confIds)
 
 	lines1After, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	lines2After, _ := GetAllWorldChannels(ctx, sc, 1002, testZoneId)
@@ -468,14 +470,15 @@ func TestInitWorldScenes_Idempotent_NoDuplicateRedisEntries(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestInitWorldScenes_MultipleChannels(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	confIds := []uint64{1001}
 	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "20")
 
-	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, confIds)
 
 	lines, err := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	require.NoError(t, err)
@@ -490,31 +493,33 @@ func TestInitWorldScenes_MultipleChannels(t *testing.T) {
 }
 
 func TestInitWorldScenes_MultipleChannels_Idempotent(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	confIds := []uint64{1001}
 	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
 	// First init.
-	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, confIds)
 	linesBefore, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, linesBefore, 3)
 
 	// Second init — must not add extra channels.
-	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, confIds)
 	linesAfter, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, linesAfter, 3, "re-init must not create extra channels")
 }
 
 func TestGetBestWorldChannel_SelectsLowestPlayerCount(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	confIds := []uint64{1001}
 	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
-	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, confIds)
 
 	lines, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	require.Len(t, lines, 3)
@@ -531,13 +536,14 @@ func TestGetBestWorldChannel_SelectsLowestPlayerCount(t *testing.T) {
 }
 
 func TestGetBestWorldChannel_AllEmpty(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	confIds := []uint64{1001}
 	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
 	mr.ZAdd(nodeLoadKey(testZoneId), 0, "10")
 
-	initWorldScenesForZone(ctx, sc, testZoneId, sc.WorldConfIds)
+	initWorldScenesForZone(ctx, sc, testZoneId, confIds)
 
 	// All channels have player_count = 0 (initialized by init).
 	bestId, _, err := GetBestWorldChannel(ctx, sc, 1001, testZoneId)
@@ -546,7 +552,7 @@ func TestGetBestWorldChannel_AllEmpty(t *testing.T) {
 }
 
 func TestCreateScene_MainWorld_MultipleChannels_ReturnsLeastLoaded(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	sc.Config.WorldChannelCount = 3
 	ctx := context.Background()
 
@@ -558,6 +564,7 @@ func TestCreateScene_MainWorld_MultipleChannels_ReturnsLeastLoaded(t *testing.T)
 	resp1, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
 		ZoneId:      testZoneId,
+		SceneType:   1,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, uint32(0), resp1.ErrorCode)
@@ -573,13 +580,14 @@ func TestCreateScene_MainWorld_MultipleChannels_ReturnsLeastLoaded(t *testing.T)
 	resp2, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
 		ZoneId:      testZoneId,
+		SceneType:   1,
 	})
 	require.NoError(t, err)
 	assert.NotEqual(t, resp1.SceneId, resp2.SceneId, "should pick a less loaded channel")
 }
 
 func TestCreateScene_MainWorld_ChannelCountDefault1_BackwardCompat(t *testing.T) {
-	sc, mr := newTestSvcCtxWithWorldScenes(t, []uint64{1001})
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	// WorldChannelCount defaults to 1 via newTestSvcCtxWithWorldScenes.
 	ctx := context.Background()
 
@@ -590,10 +598,12 @@ func TestCreateScene_MainWorld_ChannelCountDefault1_BackwardCompat(t *testing.T)
 	resp1, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
 		ZoneId:      testZoneId,
+		SceneType:   1,
 	})
 	resp2, _ := logic.CreateScene(&scene_manager.CreateSceneRequest{
 		SceneConfId: 1001,
 		ZoneId:      testZoneId,
+		SceneType:   1,
 	})
 
 	assert.Equal(t, resp1.SceneId, resp2.SceneId, "ChannelCount=1 -> same scene every time")
