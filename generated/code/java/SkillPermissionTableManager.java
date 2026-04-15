@@ -33,6 +33,7 @@ public class SkillPermissionTableManager {
         final Map<Integer, List<SkillPermissionTable>> idxSkill_type;
 
 
+
         Snapshot(SkillPermissionTableData data,
                  Map<Integer, SkillPermissionTable> kvData,
                  Map<Integer, List<SkillPermissionTable>> idxSkill_type) {
@@ -99,6 +100,8 @@ public class SkillPermissionTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -118,6 +121,7 @@ public class SkillPermissionTableManager {
     public int countBySkill_typeIndex(int key) {
         return snapshot.idxSkill_type.getOrDefault(key, Collections.emptyList()).size();
     }
+
 
 
     // ---- FindByIds (IN) ----

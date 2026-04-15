@@ -31,6 +31,7 @@ public class ActorActionStateTableManager {
 
 
 
+
         Snapshot(ActorActionStateTableData data,
                  Map<Integer, ActorActionStateTable> kvData) {
             this.data = data;
@@ -86,6 +87,8 @@ public class ActorActionStateTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -99,6 +102,7 @@ public class ActorActionStateTableManager {
     public int count() {
         return snapshot.kvData.size();
     }
+
 
 
 

@@ -31,6 +31,7 @@ public class ItemTableManager {
 
 
 
+
         Snapshot(ItemTableData data,
                  Map<Integer, ItemTable> kvData) {
             this.data = data;
@@ -86,6 +87,8 @@ public class ItemTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -99,6 +102,7 @@ public class ItemTableManager {
     public int count() {
         return snapshot.kvData.size();
     }
+
 
 
 

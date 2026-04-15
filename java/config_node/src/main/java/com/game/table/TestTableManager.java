@@ -33,6 +33,7 @@ public class TestTableManager {
         final Map<Integer, List<TestTable>> idxEffect;
 
 
+
         Snapshot(TestTableData data,
                  Map<Integer, TestTable> kvData,
                  Map<Integer, List<TestTable>> idxEffect) {
@@ -99,6 +100,8 @@ public class TestTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -118,6 +121,7 @@ public class TestTableManager {
     public int countByEffectIndex(int key) {
         return snapshot.idxEffect.getOrDefault(key, Collections.emptyList()).size();
     }
+
 
 
     // ---- FindByIds (IN) ----

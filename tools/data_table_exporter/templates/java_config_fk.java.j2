@@ -42,4 +42,13 @@ public final class {{ sheetname }}TableForeignKeys {
         return result;
     }
 {% endfor %}
+
+    // ---- Reverse FK (HasMany): find source rows by FK column value ----
+{% for col in table.foreign_key_columns if not col.is_repeated %}
+
+    /** Reverse FK: find all {{ sheetname }} rows whose {{ col.name }} == key. */
+    public static List<{{ sheetname }}Table> findRowsBy{{ to_pascal_case(col.name) }}({{ to_java_type(col.data_type) }} key) {
+        return {{ sheetname }}TableManager.getInstance().getBy{{ to_pascal_case(col.name) }}(key);
+    }
+{% endfor %}
 }

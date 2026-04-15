@@ -31,6 +31,7 @@ public class CooldownTableManager {
 
 
 
+
         Snapshot(CooldownTableData data,
                  Map<Integer, CooldownTable> kvData) {
             this.data = data;
@@ -86,6 +87,8 @@ public class CooldownTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -99,6 +102,7 @@ public class CooldownTableManager {
     public int count() {
         return snapshot.kvData.size();
     }
+
 
 
 

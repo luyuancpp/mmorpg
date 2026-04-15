@@ -20,6 +20,8 @@ public:
     struct Snapshot {
         MirrorTableData data;
         IdMapType idMap;
+        std::unordered_multimap<uint32_t, const MirrorTable*> sceneIdIndex;
+        std::unordered_multimap<uint32_t, const MirrorTable*> mainSceneIdIndex;
     };
 
     static MirrorTableManager& Instance() {
@@ -45,6 +47,24 @@ public:
 
     // FK: scene_id -> BaseScene.id
     // FK: main_scene_id -> World.id
+    const std::unordered_multimap<uint32_t, const MirrorTable*>& GetSceneIdIndex() const { return snapshot->sceneIdIndex; }
+    std::vector<const MirrorTable*> GetBySceneId(uint32_t key) const {
+        auto range = snapshot->sceneIdIndex.equal_range(key);
+        std::vector<const MirrorTable*> result;
+        for (auto it = range.first; it != range.second; ++it) {
+            result.push_back(it->second);
+        }
+        return result;
+    }
+    const std::unordered_multimap<uint32_t, const MirrorTable*>& GetMainSceneIdIndex() const { return snapshot->mainSceneIdIndex; }
+    std::vector<const MirrorTable*> GetByMainSceneId(uint32_t key) const {
+        auto range = snapshot->mainSceneIdIndex.equal_range(key);
+        std::vector<const MirrorTable*> result;
+        for (auto it = range.first; it != range.second; ++it) {
+            result.push_back(it->second);
+        }
+        return result;
+    }
 
     // ---- Exists ----
 
@@ -53,6 +73,8 @@ public:
     // ---- Count ----
 
     std::size_t Count() const { return snapshot->idMap.size(); }
+    std::size_t CountBySceneIdIndex(uint32_t key) const { return snapshot->sceneIdIndex.count(key); }
+    std::size_t CountByMainSceneIdIndex(uint32_t key) const { return snapshot->mainSceneIdIndex.count(key); }
 
     // ---- FindByIds (IN) ----
 

@@ -36,6 +36,9 @@ public class {{ sheetname }}TableManager {
 {% for arr in table.repeated_comp_arrays %}
         final Map<{{ to_java_repeated_elem_type(arr.data_type) }}, List<{{ sheetname }}Table>> idx{{ arr.name | title }};
 {% endfor %}
+{% for col in table.index_columns %}
+        final Map<{{ to_java_boxed(col.data_type) }}, List<{{ sheetname }}Table>> idx{{ to_pascal_case(col.name) }};
+{% endfor %}
 
         Snapshot({{ sheetname }}TableData data,
                  Map<Integer, {{ sheetname }}Table> kvData
@@ -47,6 +50,9 @@ public class {{ sheetname }}TableManager {
 {%- endfor %}
 {%- for arr in table.repeated_comp_arrays %},
                  Map<{{ to_java_repeated_elem_type(arr.data_type) }}, List<{{ sheetname }}Table>> idx{{ arr.name | title }}
+{%- endfor %}
+{%- for col in table.index_columns %},
+                 Map<{{ to_java_boxed(col.data_type) }}, List<{{ sheetname }}Table>> idx{{ to_pascal_case(col.name) }}
 {%- endfor %}) {
             this.data = data;
             this.kvData = kvData;
@@ -55,6 +61,9 @@ public class {{ sheetname }}TableManager {
 {%- endfor %}
 {%- for arr in table.repeated_comp_arrays %}
             this.idx{{ arr.name | title }} = idx{{ arr.name | title }};
+{%- endfor %}
+{%- for col in table.index_columns %}
+            this.idx{{ to_pascal_case(col.name) }} = idx{{ to_pascal_case(col.name) }};
 {%- endfor %}
         }
     }
@@ -66,6 +75,9 @@ public class {{ sheetname }}TableManager {
             Collections.emptyMap()
 {%- endfor %}
 {%- for arr in table.repeated_comp_arrays %},
+            Collections.emptyMap()
+{%- endfor %}
+{%- for col in table.index_columns %},
             Collections.emptyMap()
 {%- endfor %}
     );
@@ -95,6 +107,9 @@ public class {{ sheetname }}TableManager {
 {%- for arr in table.repeated_comp_arrays %}
         Map<{{ to_java_repeated_elem_type(arr.data_type) }}, List<{{ sheetname }}Table>> idx{{ arr.name | title }} = new HashMap<>();
 {%- endfor %}
+{%- for col in table.index_columns %}
+        Map<{{ to_java_boxed(col.data_type) }}, List<{{ sheetname }}Table>> idx{{ to_pascal_case(col.name) }} = new HashMap<>();
+{%- endfor %}
 
         for ({{ sheetname }}Table row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -109,11 +124,15 @@ public class {{ sheetname }}TableManager {
                 idx{{ arr.name | title }}.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
 {%- endfor %}
+{%- for col in table.index_columns %}
+            idx{{ to_pascal_case(col.name) }}.computeIfAbsent(row.{{ to_java_proto_getter(col.name) }}(), k -> new ArrayList<>()).add(row);
+{%- endfor %}
         }
 
         this.snapshot = new Snapshot(data, kvData
 {%- for col in table.table_keys %}, kv{{ col.name | title }}Data{% endfor %}
-{%- for arr in table.repeated_comp_arrays %}, idx{{ arr.name | title }}{% endfor %});
+{%- for arr in table.repeated_comp_arrays %}, idx{{ arr.name | title }}{% endfor %}
+{%- for col in table.index_columns %}, idx{{ to_pascal_case(col.name) }}{% endfor %});
     }
 
     public {{ sheetname }}TableData findAll() {
@@ -142,6 +161,12 @@ public class {{ sheetname }}TableManager {
 {% for arr in table.repeated_comp_arrays %}
     public List<{{ sheetname }}Table> findBy{{ arr.name | title }}Index({{ to_java_type(arr.data_type) }} key) {
         return snapshot.idx{{ arr.name | title }}.getOrDefault(key, Collections.emptyList());
+    }
+{% endfor %}
+
+{% for col in table.index_columns %}
+    public List<{{ sheetname }}Table> getBy{{ to_pascal_case(col.name) }}({{ to_java_type(col.data_type) }} key) {
+        return snapshot.idx{{ to_pascal_case(col.name) }}.getOrDefault(key, Collections.emptyList());
     }
 {% endfor %}
 
@@ -175,6 +200,11 @@ public class {{ sheetname }}TableManager {
 {% for arr in table.repeated_comp_arrays %}
     public int countBy{{ arr.name | title }}Index({{ to_java_type(arr.data_type) }} key) {
         return snapshot.idx{{ arr.name | title }}.getOrDefault(key, Collections.emptyList()).size();
+    }
+{% endfor %}
+{% for col in table.index_columns %}
+    public int countBy{{ to_pascal_case(col.name) }}Index({{ to_java_type(col.data_type) }} key) {
+        return snapshot.idx{{ to_pascal_case(col.name) }}.getOrDefault(key, Collections.emptyList()).size();
     }
 {% endfor %}
 

@@ -31,6 +31,7 @@ public class RewardTableManager {
 
 
 
+
         Snapshot(RewardTableData data,
                  Map<Integer, RewardTable> kvData) {
             this.data = data;
@@ -86,6 +87,8 @@ public class RewardTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -99,6 +102,7 @@ public class RewardTableManager {
     public int count() {
         return snapshot.kvData.size();
     }
+
 
 
 

@@ -31,6 +31,7 @@ public class GlobalVariableTableManager {
 
 
 
+
         Snapshot(GlobalVariableTableData data,
                  Map<Integer, GlobalVariableTable> kvData) {
             this.data = data;
@@ -86,6 +87,8 @@ public class GlobalVariableTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -99,6 +102,7 @@ public class GlobalVariableTableManager {
     public int count() {
         return snapshot.kvData.size();
     }
+
 
 
 

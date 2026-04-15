@@ -20,6 +20,7 @@ public:
     struct Snapshot {
         WorldTableData data;
         IdMapType idMap;
+        std::unordered_multimap<uint32_t, const WorldTable*> sceneIdIndex;
     };
 
     static WorldTableManager& Instance() {
@@ -44,6 +45,15 @@ public:
     void LoadSuccess() { if (loadSuccessCallback) { loadSuccessCallback(); } }
 
     // FK: scene_id -> BaseScene.id
+    const std::unordered_multimap<uint32_t, const WorldTable*>& GetSceneIdIndex() const { return snapshot->sceneIdIndex; }
+    std::vector<const WorldTable*> GetBySceneId(uint32_t key) const {
+        auto range = snapshot->sceneIdIndex.equal_range(key);
+        std::vector<const WorldTable*> result;
+        for (auto it = range.first; it != range.second; ++it) {
+            result.push_back(it->second);
+        }
+        return result;
+    }
 
     // ---- Exists ----
 
@@ -52,6 +62,7 @@ public:
     // ---- Count ----
 
     std::size_t Count() const { return snapshot->idMap.size(); }
+    std::size_t CountBySceneIdIndex(uint32_t key) const { return snapshot->sceneIdIndex.count(key); }
 
     // ---- FindByIds (IN) ----
 

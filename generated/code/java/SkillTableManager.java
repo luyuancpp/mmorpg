@@ -37,6 +37,7 @@ public class SkillTableManager {
         final Map<Integer, List<SkillTable>> idxEffect;
 
 
+
         Snapshot(SkillTableData data,
                  Map<Integer, SkillTable> kvData,
                  Map<Integer, List<SkillTable>> idxSkill_type,
@@ -125,6 +126,8 @@ public class SkillTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -152,6 +155,7 @@ public class SkillTableManager {
     public int countByEffectIndex(int key) {
         return snapshot.idxEffect.getOrDefault(key, Collections.emptyList()).size();
     }
+
 
 
     // ---- FindByIds (IN) ----

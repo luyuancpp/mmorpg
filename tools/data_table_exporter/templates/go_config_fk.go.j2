@@ -42,3 +42,14 @@ func Get{{ sheetname }}{{ to_go_proto_field(col.name) }}Rows(row *pb.{{ sheetnam
     return result
 }
 {% endfor %}
+
+// ---------------------------------------------------------------------------
+// Reverse FK (HasMany): find source rows by FK column value
+// ---------------------------------------------------------------------------
+{% for col in table.foreign_key_columns if not col.is_repeated %}
+
+// Find{{ sheetname }}RowsBy{{ to_go_proto_field(col.name) }} returns all {{ sheetname }} rows whose {{ col.name }} == key.
+func Find{{ sheetname }}RowsBy{{ to_go_proto_field(col.name) }}(key {{ to_go_type(col.data_type) }}) []*pb.{{ sheetname }}Table {
+    return {{ sheetname }}TableManagerInstance.GetBy{{ to_go_proto_field(col.name) }}(key)
+}
+{% endfor %}
