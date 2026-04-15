@@ -33,6 +33,7 @@ public class ClassTableManager {
         final Map<Integer, List<ClassTable>> idxSkill;
 
 
+
         Snapshot(ClassTableData data,
                  Map<Integer, ClassTable> kvData,
                  Map<Integer, List<ClassTable>> idxSkill) {
@@ -99,6 +100,8 @@ public class ClassTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -118,6 +121,7 @@ public class ClassTableManager {
     public int countBySkillIndex(int key) {
         return snapshot.idxSkill.getOrDefault(key, Collections.emptyList()).size();
     }
+
 
 
     // ---- FindByIds (IN) ----

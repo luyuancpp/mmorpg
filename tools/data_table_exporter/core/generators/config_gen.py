@@ -59,7 +59,7 @@ def _gen_all_cpp(tables: list[TableSchema], env: Environment, cfg: ExporterConfi
     cpp_tpl: Template = env.get_template("cpp_config.cpp.j2")
     fk_tpl: Template = env.get_template("cpp_config_fk.h.j2")
 
-    for t in tables:
+    for t: TableSchema in tables:
         ctx = _cpp_ctx(t)
         write_file(cfg.cpp.code_dir / f"{t.name.lower()}_table.h", _clean_output(h_tpl.render(**ctx)))
         write_file(cfg.cpp.code_dir / f"{t.name.lower()}_table.cpp", _clean_output(cpp_tpl.render(**ctx)))
@@ -70,7 +70,7 @@ def _gen_all_cpp(tables: list[TableSchema], env: Environment, cfg: ExporterConfi
         logger.info("Generated C++ config: %s", t.name)
 
     # all_table aggregator
-    names: list[str] = sorted(t.name for t in tables)
+    names: list[str] = sorted(t.name for t: TableSchema in tables)
     ah_tpl: Template = env.get_template("cpp_all_table.h.j2")
     ac_tpl: Template = env.get_template("cpp_all_table.cpp.j2")
     write_file(cfg.cpp.code_dir / "all_table.h", ah_tpl.render())
@@ -96,6 +96,8 @@ def _cpp_fk_ctx(table: TableSchema) -> dict:
         sheetname=table.name,
         fk_targets=table.fk_target_tables,
         to_pascal_case=type_mapping.to_pascal_case,
+        to_cpp_type=type_mapping.to_cpp_type,
+        to_cpp_param_type=type_mapping.to_cpp_param_type,
     )
 
 
@@ -107,7 +109,7 @@ def _gen_all_go(tables: list[TableSchema], env: Environment, cfg: ExporterConfig
     go_tpl: Template = env.get_template("go_config.go.j2")
     fk_tpl: Template = env.get_template("go_config_fk.go.j2")
 
-    for t in tables:
+    for t: TableSchema in tables:
         ctx = _go_ctx(t, cfg)
         write_file(cfg.go.code_dir / f"{t.name.lower()}_table.go", go_tpl.render(**ctx))
         if t.has_foreign_keys:
@@ -116,7 +118,7 @@ def _gen_all_go(tables: list[TableSchema], env: Environment, cfg: ExporterConfig
             logger.info("Generated Go FK: %s", t.name)
         logger.info("Generated Go config: %s", t.name)
 
-    names: list[str] = sorted(t.name for t in tables)
+    names: list[str] = sorted(t.name for t: TableSchema in tables)
     all_tpl: Template = env.get_template("go_all_table.go.j2")
     write_file(cfg.go.code_dir / "all_table.go", all_tpl.render(sheetnames=names))
 
@@ -137,6 +139,7 @@ def _go_fk_ctx(table: TableSchema, cfg: ExporterConfig) -> dict:
         table=table,
         sheetname=table.name,
         to_go_proto_field=type_mapping.to_go_proto_field,
+        to_go_type=type_mapping.to_go_type,
         proto_import_path=cfg.go.proto_import_path,
     )
 
@@ -149,7 +152,7 @@ def _gen_all_java(tables: list[TableSchema], env: Environment, cfg: ExporterConf
     java_tpl: Template = env.get_template("java_config.java.j2")
     fk_tpl: Template = env.get_template("java_config_fk.java.j2")
 
-    for t in tables:
+    for t: TableSchema in tables:
         ctx = _java_ctx(t, cfg)
         write_file(cfg.java.code_dir / f"{t.name}TableManager.java", java_tpl.render(**ctx))
         if t.has_foreign_keys:
@@ -158,7 +161,7 @@ def _gen_all_java(tables: list[TableSchema], env: Environment, cfg: ExporterConf
             logger.info("Generated Java FK: %s", t.name)
         logger.info("Generated Java config: %s", t.name)
 
-    names: list[str] = sorted(t.name for t in tables)
+    names: list[str] = sorted(t.name for t: TableSchema in tables)
     all_tpl: Template = env.get_template("java_all_table.java.j2")
     write_file(cfg.java.code_dir / "AllTable.java", all_tpl.render(
         sheetnames=names, package=cfg.java.package
@@ -186,5 +189,6 @@ def _java_fk_ctx(table: TableSchema, cfg: ExporterConfig) -> dict:
         sheetname=table.name,
         to_pascal_case=type_mapping.to_pascal_case,
         to_java_proto_getter=type_mapping.to_java_proto_getter,
+        to_java_type=type_mapping.to_java_type,
         package=cfg.java.package,
     )

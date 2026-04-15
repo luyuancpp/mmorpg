@@ -47,6 +47,11 @@ public class TestMultiKeyTableManager {
         final Map<Integer, List<TestMultiKeyTable>> idxTest_refs;
 
 
+        final Map<Integer, List<TestMultiKeyTable>> idxLevel;
+
+        final Map<Integer, List<TestMultiKeyTable>> idxTestRef;
+
+
         Snapshot(TestMultiKeyTableData data,
                  Map<Integer, TestMultiKeyTable> kvData,
                  Map<String, TestMultiKeyTable> kvString_keyData,
@@ -56,7 +61,9 @@ public class TestMultiKeyTableManager {
                  Map<Integer, List<TestMultiKeyTable>> kvM_uint32_keyData,
                  Map<Integer, List<TestMultiKeyTable>> kvM_int32_keyData,
                  Map<Integer, List<TestMultiKeyTable>> idxEffect,
-                 Map<Integer, List<TestMultiKeyTable>> idxTest_refs) {
+                 Map<Integer, List<TestMultiKeyTable>> idxTest_refs,
+                 Map<Integer, List<TestMultiKeyTable>> idxLevel,
+                 Map<Integer, List<TestMultiKeyTable>> idxTestRef) {
             this.data = data;
             this.kvData = kvData;
             this.kvString_keyData = kvString_keyData;
@@ -67,11 +74,15 @@ public class TestMultiKeyTableManager {
             this.kvM_int32_keyData = kvM_int32_keyData;
             this.idxEffect = idxEffect;
             this.idxTest_refs = idxTest_refs;
+            this.idxLevel = idxLevel;
+            this.idxTestRef = idxTestRef;
         }
     }
 
     private Snapshot snapshot = new Snapshot(
             TestMultiKeyTableData.getDefaultInstance(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
@@ -107,6 +118,8 @@ public class TestMultiKeyTableManager {
         Map<Integer, List<TestMultiKeyTable>> kvM_int32_keyData = new HashMap<>();
         Map<Integer, List<TestMultiKeyTable>> idxEffect = new HashMap<>();
         Map<Integer, List<TestMultiKeyTable>> idxTest_refs = new HashMap<>();
+        Map<Integer, List<TestMultiKeyTable>> idxLevel = new HashMap<>();
+        Map<Integer, List<TestMultiKeyTable>> idxTestRef = new HashMap<>();
 
         for (TestMultiKeyTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -122,9 +135,11 @@ public class TestMultiKeyTableManager {
             for (Integer elem : row.getTestRefsList()) {
                 idxTest_refs.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
+            idxLevel.computeIfAbsent(row.getLevel(), k -> new ArrayList<>()).add(row);
+            idxTestRef.computeIfAbsent(row.getTestRef(), k -> new ArrayList<>()).add(row);
         }
 
-        this.snapshot = new Snapshot(data, kvData, kvString_keyData, kvUint32_keyData, kvInt32_keyData, kvM_string_keyData, kvM_uint32_keyData, kvM_int32_keyData, idxEffect, idxTest_refs);
+        this.snapshot = new Snapshot(data, kvData, kvString_keyData, kvUint32_keyData, kvInt32_keyData, kvM_string_keyData, kvM_uint32_keyData, kvM_int32_keyData, idxEffect, idxTest_refs, idxLevel, idxTestRef);
     }
 
     public TestMultiKeyTableData findAll() {
@@ -173,6 +188,16 @@ public class TestMultiKeyTableManager {
 
     public List<TestMultiKeyTable> findByTest_refsIndex(int key) {
         return snapshot.idxTest_refs.getOrDefault(key, Collections.emptyList());
+    }
+
+
+
+    public List<TestMultiKeyTable> getByLevel(int key) {
+        return snapshot.idxLevel.getOrDefault(key, Collections.emptyList());
+    }
+
+    public List<TestMultiKeyTable> getByTestRef(int key) {
+        return snapshot.idxTestRef.getOrDefault(key, Collections.emptyList());
     }
 
 
@@ -226,6 +251,15 @@ public class TestMultiKeyTableManager {
 
     public int countByTest_refsIndex(int key) {
         return snapshot.idxTest_refs.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+
+    public int countByLevelIndex(int key) {
+        return snapshot.idxLevel.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByTestRefIndex(int key) {
+        return snapshot.idxTestRef.getOrDefault(key, Collections.emptyList()).size();
     }
 
 

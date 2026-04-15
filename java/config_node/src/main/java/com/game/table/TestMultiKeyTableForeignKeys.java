@@ -25,4 +25,11 @@ public final class TestMultiKeyTableForeignKeys {
         return result;
     }
 
+    // ---- Reverse FK (HasMany): find source rows by FK column value ----
+
+    /** Reverse FK: find all TestMultiKey rows whose test_ref == key. */
+    public static List<TestMultiKeyTable> findRowsByTestRef(int key) {
+        return TestMultiKeyTableManager.getInstance().getByTestRef(key);
+    }
+
 }

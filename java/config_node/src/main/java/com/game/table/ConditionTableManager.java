@@ -39,6 +39,7 @@ public class ConditionTableManager {
         final Map<Integer, List<ConditionTable>> idxCondition4;
 
 
+
         Snapshot(ConditionTableData data,
                  Map<Integer, ConditionTable> kvData,
                  Map<Integer, List<ConditionTable>> idxCondition1,
@@ -138,6 +139,8 @@ public class ConditionTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -169,6 +172,7 @@ public class ConditionTableManager {
     public int countByCondition4Index(int key) {
         return snapshot.idxCondition4.getOrDefault(key, Collections.emptyList()).size();
     }
+
 
 
     // ---- FindByIds (IN) ----

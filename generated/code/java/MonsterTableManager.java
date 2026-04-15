@@ -31,6 +31,7 @@ public class MonsterTableManager {
 
 
 
+
         Snapshot(MonsterTableData data,
                  Map<Integer, MonsterTable> kvData) {
             this.data = data;
@@ -86,6 +87,8 @@ public class MonsterTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -99,6 +102,7 @@ public class MonsterTableManager {
     public int count() {
         return snapshot.kvData.size();
     }
+
 
 
 

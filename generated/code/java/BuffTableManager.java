@@ -37,6 +37,7 @@ public class BuffTableManager {
         final Map<Integer, List<BuffTable>> idxTarget_sub_buff;
 
 
+
         Snapshot(BuffTableData data,
                  Map<Integer, BuffTable> kvData,
                  Map<Double, List<BuffTable>> idxInterval_effect,
@@ -125,6 +126,8 @@ public class BuffTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -152,6 +155,7 @@ public class BuffTableManager {
     public int countByTarget_sub_buffIndex(int key) {
         return snapshot.idxTarget_sub_buff.getOrDefault(key, Collections.emptyList()).size();
     }
+
 
 
     // ---- FindByIds (IN) ----

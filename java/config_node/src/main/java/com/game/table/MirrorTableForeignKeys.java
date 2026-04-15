@@ -20,4 +20,16 @@ public final class MirrorTableForeignKeys {
         return WorldTableManager.getInstance().findById(row.getMainSceneId());
     }
 
+    // ---- Reverse FK (HasMany): find source rows by FK column value ----
+
+    /** Reverse FK: find all Mirror rows whose scene_id == key. */
+    public static List<MirrorTable> findRowsBySceneId(int key) {
+        return MirrorTableManager.getInstance().getBySceneId(key);
+    }
+
+    /** Reverse FK: find all Mirror rows whose main_scene_id == key. */
+    public static List<MirrorTable> findRowsByMainSceneId(int key) {
+        return MirrorTableManager.getInstance().getByMainSceneId(key);
+    }
+
 }

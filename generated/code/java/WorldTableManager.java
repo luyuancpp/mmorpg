@@ -31,15 +31,21 @@ public class WorldTableManager {
 
 
 
+        final Map<Integer, List<WorldTable>> idxSceneId;
+
+
         Snapshot(WorldTableData data,
-                 Map<Integer, WorldTable> kvData) {
+                 Map<Integer, WorldTable> kvData,
+                 Map<Integer, List<WorldTable>> idxSceneId) {
             this.data = data;
             this.kvData = kvData;
+            this.idxSceneId = idxSceneId;
         }
     }
 
     private Snapshot snapshot = new Snapshot(
             WorldTableData.getDefaultInstance(),
+            Collections.emptyMap(),
             Collections.emptyMap()
     );
 
@@ -59,12 +65,14 @@ public class WorldTableManager {
         WorldTableData data = builder.build();
 
         Map<Integer, WorldTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<WorldTable>> idxSceneId = new HashMap<>();
 
         for (WorldTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
+            idxSceneId.computeIfAbsent(row.getSceneId(), k -> new ArrayList<>()).add(row);
         }
 
-        this.snapshot = new Snapshot(data, kvData);
+        this.snapshot = new Snapshot(data, kvData, idxSceneId);
     }
 
     public WorldTableData findAll() {
@@ -82,6 +90,12 @@ public class WorldTableManager {
 
 
 
+
+
+
+    public List<WorldTable> getBySceneId(int key) {
+        return snapshot.idxSceneId.getOrDefault(key, Collections.emptyList());
+    }
 
 
 
@@ -103,6 +117,11 @@ public class WorldTableManager {
     }
 
 
+
+
+    public int countBySceneIdIndex(int key) {
+        return snapshot.idxSceneId.getOrDefault(key, Collections.emptyList()).size();
+    }
 
 
     // ---- FindByIds (IN) ----

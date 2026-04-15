@@ -34,6 +34,9 @@ type {{ sheetname | lower }}Snapshot struct {
 {%- for arr in table.repeated_comp_arrays %}
     idx{{ arr.name | title }} map[{{ to_go_type(arr.data_type) }}][]*pb.{{ sheetname }}Table
 {%- endfor %}
+{%- for col in table.index_columns %}
+    idx{{ to_go_proto_field(col.name) }} map[{{ to_go_type(col.data_type) }}][]*pb.{{ sheetname }}Table
+{%- endfor %}
 {%- for ck in table.composite_keys %}
     compositeKv{{ ck.group | title }} map[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}]*pb.{{ sheetname }}Table
 {%- endfor %}
@@ -57,8 +60,9 @@ func New{{ sheetname }}TableManager() *{{ sheetname }}TableManager {
 {%- endfor %}
 {%- for arr in table.repeated_comp_arrays %}
             idx{{ arr.name | title }}: make(map[{{ to_go_type(arr.data_type) }}][]*pb.{{ sheetname }}Table),
-{%- endfor %}
-{%- for ck in table.composite_keys %}
+{%- endfor %}{%- for col in table.index_columns %}
+            idx{{ to_go_proto_field(col.name) }}: make(map[{{ to_go_type(col.data_type) }}][]*pb.{{ sheetname }}Table),
+{%- endfor %}{%- for ck in table.composite_keys %}
             compositeKv{{ ck.group | title }}: make(map[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}]*pb.{{ sheetname }}Table),
 {%- endfor %}
         },
@@ -99,6 +103,9 @@ func (m *{{ sheetname }}TableManager) Load(configDir string, useBinary bool) err
 {%- for arr in table.repeated_comp_arrays %}
         idx{{ arr.name | title }}: make(map[{{ to_go_type(arr.data_type) }}][]*pb.{{ sheetname }}Table),
 {%- endfor %}
+{%- for col in table.index_columns %}
+        idx{{ to_go_proto_field(col.name) }}: make(map[{{ to_go_type(col.data_type) }}][]*pb.{{ sheetname }}Table),
+{%- endfor %}
 {%- for ck in table.composite_keys %}
         compositeKv{{ ck.group | title }}: make(map[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}]*pb.{{ sheetname }}Table, len(container.Data)),
 {%- endfor %}
@@ -116,6 +123,9 @@ func (m *{{ sheetname }}TableManager) Load(configDir string, useBinary bool) err
         for _, elem := range row.{{ to_go_proto_field(arr.name) }} {
             snap.idx{{ arr.name | title }}[elem] = append(snap.idx{{ arr.name | title }}[elem], row)
         }
+{%- endfor %}
+{%- for col in table.index_columns %}
+        snap.idx{{ to_go_proto_field(col.name) }}[row.{{ to_go_proto_field(col.name) }}] = append(snap.idx{{ to_go_proto_field(col.name) }}[row.{{ to_go_proto_field(col.name) }}], row)
 {%- endfor %}
 {%- for ck in table.composite_keys %}
         snap.compositeKv{{ ck.group | title }}[{{ sheetname }}{{ composite_go_struct_name(ck.group) }}{ {%- for col in ck.columns %}{{ to_go_proto_field(col.name) }}: row.{{ to_go_proto_field(col.name) }}, {% endfor -%} }] = row
@@ -155,6 +165,12 @@ func (m *{{ sheetname }}TableManager) FindBy{{ arr.name | title }}Index(key {{ t
 }
 
 {% endfor %}
+{%- for col in table.index_columns %}
+func (m *{{ sheetname }}TableManager) GetBy{{ to_go_proto_field(col.name) }}(key {{ to_go_type(col.data_type) }}) []*pb.{{ sheetname }}Table {
+    return m.snap.idx{{ to_go_proto_field(col.name) }}[key]
+}
+
+{% endfor %}
 
 // ---- Exists ----
 
@@ -186,6 +202,12 @@ func (m *{{ sheetname }}TableManager) CountBy{{ col.name | title }}(key {{ to_go
 {%- for arr in table.repeated_comp_arrays %}
 func (m *{{ sheetname }}TableManager) CountBy{{ arr.name | title }}Index(key {{ to_go_type(arr.data_type) }}) int {
     return len(m.snap.idx{{ arr.name | title }}[key])
+}
+
+{% endfor %}
+{%- for col in table.index_columns %}
+func (m *{{ sheetname }}TableManager) CountBy{{ to_go_proto_field(col.name) }}Index(key {{ to_go_type(col.data_type) }}) int {
+    return len(m.snap.idx{{ to_go_proto_field(col.name) }}[key])
 }
 
 {% endfor %}

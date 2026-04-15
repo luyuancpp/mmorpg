@@ -37,6 +37,7 @@ public class MissionTableManager {
         final Map<Integer, List<MissionTable>> idxTarget_count;
 
 
+
         Snapshot(MissionTableData data,
                  Map<Integer, MissionTable> kvData,
                  Map<Integer, List<MissionTable>> idxCondition_id,
@@ -125,6 +126,8 @@ public class MissionTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -152,6 +155,7 @@ public class MissionTableManager {
     public int countByTarget_countIndex(int key) {
         return snapshot.idxTarget_count.getOrDefault(key, Collections.emptyList()).size();
     }
+
 
 
     // ---- FindByIds (IN) ----

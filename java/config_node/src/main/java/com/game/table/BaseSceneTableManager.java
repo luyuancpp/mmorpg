@@ -31,6 +31,7 @@ public class BaseSceneTableManager {
 
 
 
+
         Snapshot(BaseSceneTableData data,
                  Map<Integer, BaseSceneTable> kvData) {
             this.data = data;
@@ -86,6 +87,8 @@ public class BaseSceneTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -99,6 +102,7 @@ public class BaseSceneTableManager {
     public int count() {
         return snapshot.kvData.size();
     }
+
 
 
 

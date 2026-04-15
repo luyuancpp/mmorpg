@@ -23,3 +23,12 @@ func GetTestMultiKeyTestRefsRows(row *pb.TestMultiKeyTable) []*pb.TestTable {
     }
     return result
 }
+
+// ---------------------------------------------------------------------------
+// Reverse FK (HasMany): find source rows by FK column value
+// ---------------------------------------------------------------------------
+
+// FindTestMultiKeyRowsByTestRef returns all TestMultiKey rows whose test_ref == key.
+func FindTestMultiKeyRowsByTestRef(key uint32) []*pb.TestMultiKeyTable {
+    return TestMultiKeyTableManagerInstance.GetByTestRef(key)
+}

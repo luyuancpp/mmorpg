@@ -19,6 +19,7 @@ import (
 type dungeonSnapshot struct {
     data   []*pb.DungeonTable
     kvData map[uint32]*pb.DungeonTable
+    idxSceneId map[uint32][]*pb.DungeonTable
 }
 
 type DungeonTableManager struct {
@@ -31,6 +32,7 @@ func NewDungeonTableManager() *DungeonTableManager {
     return &DungeonTableManager{
         snap: &dungeonSnapshot{
             kvData: make(map[uint32]*pb.DungeonTable),
+            idxSceneId: make(map[uint32][]*pb.DungeonTable),
         },
     }
 }
@@ -60,10 +62,12 @@ func (m *DungeonTableManager) Load(configDir string, useBinary bool) error {
 
     snap := &dungeonSnapshot{
         kvData: make(map[uint32]*pb.DungeonTable, len(container.Data)),
+        idxSceneId: make(map[uint32][]*pb.DungeonTable),
     }
 
     for _, row := range container.Data {
         snap.kvData[row.Id] = row
+        snap.idxSceneId[row.SceneId] = append(snap.idxSceneId[row.SceneId], row)
     }
 
     snap.data = container.Data
@@ -81,6 +85,11 @@ func (m *DungeonTableManager) FindById(id uint32) (*pb.DungeonTable, bool) {
 }
 
 
+func (m *DungeonTableManager) GetBySceneId(key uint32) []*pb.DungeonTable {
+    return m.snap.idxSceneId[key]
+}
+
+
 
 // ---- Exists ----
 
@@ -95,6 +104,11 @@ func (m *DungeonTableManager) Exists(id uint32) bool {
 
 func (m *DungeonTableManager) Count() int {
     return len(m.snap.data)
+}
+
+
+func (m *DungeonTableManager) CountBySceneIdIndex(key uint32) int {
+    return len(m.snap.idxSceneId[key])
 }
 
 

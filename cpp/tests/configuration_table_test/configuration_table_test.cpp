@@ -316,6 +316,120 @@ TEST(ConfigTableTest, ForeignKeyAfterReload)
 	EXPECT_NE(fkAfter, fkBefore) << "reload should produce new snapshot";
 }
 
+// ---------------------------------------------------------------------------
+// Secondary index (idx option)
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, SecondaryIndexByLevel)
+{
+	// level column has idx option -> GetByLevel(value) returns matching rows
+	auto rows = TestMultiKeyTableManager::Instance().GetByLevel(1);
+	EXPECT_EQ(rows.size(), 3u) << "3 rows have level=1";
+	for (const auto *r : rows)
+	{
+		EXPECT_EQ(r->level(), 1u);
+	}
+}
+
+TEST(ConfigTableTest, SecondaryIndexByLevelUnique)
+{
+	auto rows = TestMultiKeyTableManager::Instance().GetByLevel(0);
+	EXPECT_EQ(rows.size(), 1u) << "1 row has level=0";
+	if (!rows.empty())
+	{
+		EXPECT_EQ(rows[0]->id(), 1u);
+	}
+}
+
+TEST(ConfigTableTest, SecondaryIndexByLevelNotFound)
+{
+	auto rows = TestMultiKeyTableManager::Instance().GetByLevel(999);
+	EXPECT_TRUE(rows.empty());
+}
+
+TEST(ConfigTableTest, SecondaryIndexCountByLevel)
+{
+	EXPECT_EQ(TestMultiKeyTableManager::Instance().CountByLevelIndex(1), 3u);
+	EXPECT_EQ(TestMultiKeyTableManager::Instance().CountByLevelIndex(100), 2u);
+	EXPECT_EQ(TestMultiKeyTableManager::Instance().CountByLevelIndex(999), 0u);
+}
+
+// ---------------------------------------------------------------------------
+// FK auto-indexed (scalar FK columns get a secondary index automatically)
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, ForeignKeyAutoIndex)
+{
+	// test_ref has fk:Test -> auto-indexed
+	auto rows = TestMultiKeyTableManager::Instance().GetByTestRef(1);
+	EXPECT_EQ(rows.size(), 1u);
+	if (!rows.empty())
+	{
+		EXPECT_EQ(rows[0]->id(), 1u);
+	}
+}
+
+TEST(ConfigTableTest, ForeignKeyAutoIndexMultiple)
+{
+	// Rows with test_ref=0 (default, no FK set)
+	auto rows = TestMultiKeyTableManager::Instance().GetByTestRef(0);
+	EXPECT_EQ(rows.size(), 3u) << "3 rows have test_ref=0";
+}
+
+// ---------------------------------------------------------------------------
+// Reverse FK (HasMany): find source rows by FK column value
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, ReverseForeignKeyLookup)
+{
+	// FindTestMultiKeyRowsByTestRef delegates to GetByTestRef
+	auto rows = FindTestMultiKeyRowsByTestRef(1);
+	EXPECT_EQ(rows.size(), 1u);
+	if (!rows.empty())
+	{
+		EXPECT_EQ(rows[0]->test_ref(), 1u);
+	}
+}
+
+TEST(ConfigTableTest, ReverseForeignKeyLookupNotFound)
+{
+	auto rows = FindTestMultiKeyRowsByTestRef(999);
+	EXPECT_TRUE(rows.empty());
+}
+
+// ---------------------------------------------------------------------------
+// Index survives hot-reload
+// ---------------------------------------------------------------------------
+
+TEST(ConfigTableTest, SecondaryIndexAfterReload)
+{
+	auto &mgr = TestMultiKeyTableManager::Instance();
+
+	auto rowsBefore = mgr.GetByLevel(1);
+	ASSERT_EQ(rowsBefore.size(), 3u);
+
+	mgr.Load();
+
+	auto rowsAfter = mgr.GetByLevel(1);
+	EXPECT_EQ(rowsAfter.size(), 3u);
+	// Pointers should differ (new snapshot)
+	EXPECT_NE(rowsBefore[0], rowsAfter[0]);
+}
+
+TEST(ConfigTableTest, ReverseFKAfterReload)
+{
+	auto &mgr = TestMultiKeyTableManager::Instance();
+
+	auto before = FindTestMultiKeyRowsByTestRef(2);
+	ASSERT_EQ(before.size(), 1u);
+
+	mgr.Load();
+
+	auto after = FindTestMultiKeyRowsByTestRef(2);
+	EXPECT_EQ(after.size(), 1u);
+	EXPECT_NE(before[0], after[0]) << "reload should produce new snapshot";
+}
+
 int main(int argc, char **argv)
 {
 	::testing::InitGoogleTest(&argc, argv);

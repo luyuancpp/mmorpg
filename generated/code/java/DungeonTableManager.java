@@ -31,15 +31,21 @@ public class DungeonTableManager {
 
 
 
+        final Map<Integer, List<DungeonTable>> idxSceneId;
+
+
         Snapshot(DungeonTableData data,
-                 Map<Integer, DungeonTable> kvData) {
+                 Map<Integer, DungeonTable> kvData,
+                 Map<Integer, List<DungeonTable>> idxSceneId) {
             this.data = data;
             this.kvData = kvData;
+            this.idxSceneId = idxSceneId;
         }
     }
 
     private Snapshot snapshot = new Snapshot(
             DungeonTableData.getDefaultInstance(),
+            Collections.emptyMap(),
             Collections.emptyMap()
     );
 
@@ -59,12 +65,14 @@ public class DungeonTableManager {
         DungeonTableData data = builder.build();
 
         Map<Integer, DungeonTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<DungeonTable>> idxSceneId = new HashMap<>();
 
         for (DungeonTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
+            idxSceneId.computeIfAbsent(row.getSceneId(), k -> new ArrayList<>()).add(row);
         }
 
-        this.snapshot = new Snapshot(data, kvData);
+        this.snapshot = new Snapshot(data, kvData, idxSceneId);
     }
 
     public DungeonTableData findAll() {
@@ -82,6 +90,12 @@ public class DungeonTableManager {
 
 
 
+
+
+
+    public List<DungeonTable> getBySceneId(int key) {
+        return snapshot.idxSceneId.getOrDefault(key, Collections.emptyList());
+    }
 
 
 
@@ -103,6 +117,11 @@ public class DungeonTableManager {
     }
 
 
+
+
+    public int countBySceneIdIndex(int key) {
+        return snapshot.idxSceneId.getOrDefault(key, Collections.emptyList()).size();
+    }
 
 
     // ---- FindByIds (IN) ----

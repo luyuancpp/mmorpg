@@ -31,15 +31,26 @@ public class MirrorTableManager {
 
 
 
+        final Map<Integer, List<MirrorTable>> idxSceneId;
+
+        final Map<Integer, List<MirrorTable>> idxMainSceneId;
+
+
         Snapshot(MirrorTableData data,
-                 Map<Integer, MirrorTable> kvData) {
+                 Map<Integer, MirrorTable> kvData,
+                 Map<Integer, List<MirrorTable>> idxSceneId,
+                 Map<Integer, List<MirrorTable>> idxMainSceneId) {
             this.data = data;
             this.kvData = kvData;
+            this.idxSceneId = idxSceneId;
+            this.idxMainSceneId = idxMainSceneId;
         }
     }
 
     private Snapshot snapshot = new Snapshot(
             MirrorTableData.getDefaultInstance(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
             Collections.emptyMap()
     );
 
@@ -59,12 +70,16 @@ public class MirrorTableManager {
         MirrorTableData data = builder.build();
 
         Map<Integer, MirrorTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<MirrorTable>> idxSceneId = new HashMap<>();
+        Map<Integer, List<MirrorTable>> idxMainSceneId = new HashMap<>();
 
         for (MirrorTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
+            idxSceneId.computeIfAbsent(row.getSceneId(), k -> new ArrayList<>()).add(row);
+            idxMainSceneId.computeIfAbsent(row.getMainSceneId(), k -> new ArrayList<>()).add(row);
         }
 
-        this.snapshot = new Snapshot(data, kvData);
+        this.snapshot = new Snapshot(data, kvData, idxSceneId, idxMainSceneId);
     }
 
     public MirrorTableData findAll() {
@@ -82,6 +97,16 @@ public class MirrorTableManager {
 
 
 
+
+
+
+    public List<MirrorTable> getBySceneId(int key) {
+        return snapshot.idxSceneId.getOrDefault(key, Collections.emptyList());
+    }
+
+    public List<MirrorTable> getByMainSceneId(int key) {
+        return snapshot.idxMainSceneId.getOrDefault(key, Collections.emptyList());
+    }
 
 
 
@@ -105,6 +130,15 @@ public class MirrorTableManager {
     }
 
 
+
+
+    public int countBySceneIdIndex(int key) {
+        return snapshot.idxSceneId.getOrDefault(key, Collections.emptyList()).size();
+    }
+
+    public int countByMainSceneIdIndex(int key) {
+        return snapshot.idxMainSceneId.getOrDefault(key, Collections.emptyList()).size();
+    }
 
 
     // ---- FindByIds (IN) ----

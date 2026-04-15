@@ -28,6 +28,8 @@ public:
         std::unordered_multimap<int32_t, const TestMultiKeyTable*> mInt32KeyMap;
         std::unordered_multimap<uint32_t, const TestMultiKeyTable*> effectIndex;
         std::unordered_multimap<uint32_t, const TestMultiKeyTable*> testRefsIndex;
+        std::unordered_multimap<uint32_t, const TestMultiKeyTable*> levelIndex;
+        std::unordered_multimap<uint32_t, const TestMultiKeyTable*> testRefIndex;
     };
 
     static TestMultiKeyTableManager& Instance() {
@@ -72,6 +74,24 @@ public:
     // FK: test_ref -> Test.id
     const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetEffectIndex() const { return snapshot->effectIndex; }
     const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetTestRefsIndex() const { return snapshot->testRefsIndex; }
+    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetLevelIndex() const { return snapshot->levelIndex; }
+    std::vector<const TestMultiKeyTable*> GetByLevel(uint32_t key) const {
+        auto range = snapshot->levelIndex.equal_range(key);
+        std::vector<const TestMultiKeyTable*> result;
+        for (auto it = range.first; it != range.second; ++it) {
+            result.push_back(it->second);
+        }
+        return result;
+    }
+    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetTestRefIndex() const { return snapshot->testRefIndex; }
+    std::vector<const TestMultiKeyTable*> GetByTestRef(uint32_t key) const {
+        auto range = snapshot->testRefIndex.equal_range(key);
+        std::vector<const TestMultiKeyTable*> result;
+        for (auto it = range.first; it != range.second; ++it) {
+            result.push_back(it->second);
+        }
+        return result;
+    }
 
     // ---- Exists ----
 
@@ -88,6 +108,8 @@ public:
     std::size_t CountByMInt32Key(int32_t key) const { return snapshot->mInt32KeyMap.count(key); }
     std::size_t CountByEffectIndex(uint32_t key) const { return snapshot->effectIndex.count(key); }
     std::size_t CountByTestRefsIndex(uint32_t key) const { return snapshot->testRefsIndex.count(key); }
+    std::size_t CountByLevelIndex(uint32_t key) const { return snapshot->levelIndex.count(key); }
+    std::size_t CountByTestRefIndex(uint32_t key) const { return snapshot->testRefIndex.count(key); }
 
     // ---- FindByIds (IN) ----
 

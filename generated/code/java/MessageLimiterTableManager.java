@@ -31,6 +31,7 @@ public class MessageLimiterTableManager {
 
 
 
+
         Snapshot(MessageLimiterTableData data,
                  Map<Integer, MessageLimiterTable> kvData) {
             this.data = data;
@@ -86,6 +87,8 @@ public class MessageLimiterTableManager {
 
 
 
+
+
     // ---- Exists ----
 
     public boolean exists(int id) {
@@ -99,6 +102,7 @@ public class MessageLimiterTableManager {
     public int count() {
         return snapshot.kvData.size();
     }
+
 
 
 

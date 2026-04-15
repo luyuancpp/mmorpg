@@ -19,6 +19,8 @@ import (
 type mirrorSnapshot struct {
     data   []*pb.MirrorTable
     kvData map[uint32]*pb.MirrorTable
+    idxSceneId map[uint32][]*pb.MirrorTable
+    idxMainSceneId map[uint32][]*pb.MirrorTable
 }
 
 type MirrorTableManager struct {
@@ -31,6 +33,8 @@ func NewMirrorTableManager() *MirrorTableManager {
     return &MirrorTableManager{
         snap: &mirrorSnapshot{
             kvData: make(map[uint32]*pb.MirrorTable),
+            idxSceneId: make(map[uint32][]*pb.MirrorTable),
+            idxMainSceneId: make(map[uint32][]*pb.MirrorTable),
         },
     }
 }
@@ -60,10 +64,14 @@ func (m *MirrorTableManager) Load(configDir string, useBinary bool) error {
 
     snap := &mirrorSnapshot{
         kvData: make(map[uint32]*pb.MirrorTable, len(container.Data)),
+        idxSceneId: make(map[uint32][]*pb.MirrorTable),
+        idxMainSceneId: make(map[uint32][]*pb.MirrorTable),
     }
 
     for _, row := range container.Data {
         snap.kvData[row.Id] = row
+        snap.idxSceneId[row.SceneId] = append(snap.idxSceneId[row.SceneId], row)
+        snap.idxMainSceneId[row.MainSceneId] = append(snap.idxMainSceneId[row.MainSceneId], row)
     }
 
     snap.data = container.Data
@@ -81,6 +89,16 @@ func (m *MirrorTableManager) FindById(id uint32) (*pb.MirrorTable, bool) {
 }
 
 
+func (m *MirrorTableManager) GetBySceneId(key uint32) []*pb.MirrorTable {
+    return m.snap.idxSceneId[key]
+}
+
+
+func (m *MirrorTableManager) GetByMainSceneId(key uint32) []*pb.MirrorTable {
+    return m.snap.idxMainSceneId[key]
+}
+
+
 
 // ---- Exists ----
 
@@ -95,6 +113,16 @@ func (m *MirrorTableManager) Exists(id uint32) bool {
 
 func (m *MirrorTableManager) Count() int {
     return len(m.snap.data)
+}
+
+
+func (m *MirrorTableManager) CountBySceneIdIndex(key uint32) int {
+    return len(m.snap.idxSceneId[key])
+}
+
+
+func (m *MirrorTableManager) CountByMainSceneIdIndex(key uint32) int {
+    return len(m.snap.idxMainSceneId[key])
 }
 
 

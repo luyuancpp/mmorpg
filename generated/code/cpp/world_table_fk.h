@@ -13,3 +13,12 @@ inline const BaseSceneTable* GetWorldSceneIdRow(const WorldTable& row) {
     auto [ptr, _] = BaseSceneTableManager::Instance().FindByIdSilent(row.scene_id());
     return ptr;
 }
+
+// ---------------------------------------------------------------------------
+// Reverse FK (HasMany): find source rows by FK column value
+// ---------------------------------------------------------------------------
+
+/// Reverse FK: find all World rows whose scene_id == key.
+inline std::vector<const WorldTable*> FindWorldRowsBySceneId(uint32_t key) {
+    return WorldTableManager::Instance().GetBySceneId(key);
+}

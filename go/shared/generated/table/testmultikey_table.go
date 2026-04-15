@@ -27,6 +27,8 @@ type testmultikeySnapshot struct {
     kvM_int32_keyData map[int32][]*pb.TestMultiKeyTable
     idxEffect map[uint32][]*pb.TestMultiKeyTable
     idxTest_refs map[uint32][]*pb.TestMultiKeyTable
+    idxLevel map[uint32][]*pb.TestMultiKeyTable
+    idxTestRef map[uint32][]*pb.TestMultiKeyTable
 }
 
 type TestMultiKeyTableManager struct {
@@ -47,6 +49,8 @@ func NewTestMultiKeyTableManager() *TestMultiKeyTableManager {
             kvM_int32_keyData: make(map[int32][]*pb.TestMultiKeyTable),
             idxEffect: make(map[uint32][]*pb.TestMultiKeyTable),
             idxTest_refs: make(map[uint32][]*pb.TestMultiKeyTable),
+            idxLevel: make(map[uint32][]*pb.TestMultiKeyTable),
+            idxTestRef: make(map[uint32][]*pb.TestMultiKeyTable),
         },
     }
 }
@@ -84,6 +88,8 @@ func (m *TestMultiKeyTableManager) Load(configDir string, useBinary bool) error 
         kvM_int32_keyData: make(map[int32][]*pb.TestMultiKeyTable),
         idxEffect: make(map[uint32][]*pb.TestMultiKeyTable),
         idxTest_refs: make(map[uint32][]*pb.TestMultiKeyTable),
+        idxLevel: make(map[uint32][]*pb.TestMultiKeyTable),
+        idxTestRef: make(map[uint32][]*pb.TestMultiKeyTable),
     }
 
     for _, row := range container.Data {
@@ -100,6 +106,8 @@ func (m *TestMultiKeyTableManager) Load(configDir string, useBinary bool) error 
         for _, elem := range row.TestRefs {
             snap.idxTest_refs[elem] = append(snap.idxTest_refs[elem], row)
         }
+        snap.idxLevel[row.Level] = append(snap.idxLevel[row.Level], row)
+        snap.idxTestRef[row.TestRef] = append(snap.idxTestRef[row.TestRef], row)
     }
 
     snap.data = container.Data
@@ -157,6 +165,16 @@ func (m *TestMultiKeyTableManager) FindByTest_refsIndex(key uint32) []*pb.TestMu
 }
 
 
+func (m *TestMultiKeyTableManager) GetByLevel(key uint32) []*pb.TestMultiKeyTable {
+    return m.snap.idxLevel[key]
+}
+
+
+func (m *TestMultiKeyTableManager) GetByTestRef(key uint32) []*pb.TestMultiKeyTable {
+    return m.snap.idxTestRef[key]
+}
+
+
 
 // ---- Exists ----
 
@@ -208,6 +226,16 @@ func (m *TestMultiKeyTableManager) CountByEffectIndex(key uint32) int {
 
 func (m *TestMultiKeyTableManager) CountByTest_refsIndex(key uint32) int {
     return len(m.snap.idxTest_refs[key])
+}
+
+
+func (m *TestMultiKeyTableManager) CountByLevelIndex(key uint32) int {
+    return len(m.snap.idxLevel[key])
+}
+
+
+func (m *TestMultiKeyTableManager) CountByTestRefIndex(key uint32) int {
+    return len(m.snap.idxTestRef[key])
 }
 
 

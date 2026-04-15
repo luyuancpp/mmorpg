@@ -19,6 +19,7 @@ import (
 type worldSnapshot struct {
     data   []*pb.WorldTable
     kvData map[uint32]*pb.WorldTable
+    idxSceneId map[uint32][]*pb.WorldTable
 }
 
 type WorldTableManager struct {
@@ -31,6 +32,7 @@ func NewWorldTableManager() *WorldTableManager {
     return &WorldTableManager{
         snap: &worldSnapshot{
             kvData: make(map[uint32]*pb.WorldTable),
+            idxSceneId: make(map[uint32][]*pb.WorldTable),
         },
     }
 }
@@ -60,10 +62,12 @@ func (m *WorldTableManager) Load(configDir string, useBinary bool) error {
 
     snap := &worldSnapshot{
         kvData: make(map[uint32]*pb.WorldTable, len(container.Data)),
+        idxSceneId: make(map[uint32][]*pb.WorldTable),
     }
 
     for _, row := range container.Data {
         snap.kvData[row.Id] = row
+        snap.idxSceneId[row.SceneId] = append(snap.idxSceneId[row.SceneId], row)
     }
 
     snap.data = container.Data
@@ -81,6 +85,11 @@ func (m *WorldTableManager) FindById(id uint32) (*pb.WorldTable, bool) {
 }
 
 
+func (m *WorldTableManager) GetBySceneId(key uint32) []*pb.WorldTable {
+    return m.snap.idxSceneId[key]
+}
+
+
 
 // ---- Exists ----
 
@@ -95,6 +104,11 @@ func (m *WorldTableManager) Exists(id uint32) bool {
 
 func (m *WorldTableManager) Count() int {
     return len(m.snap.data)
+}
+
+
+func (m *WorldTableManager) CountBySceneIdIndex(key uint32) int {
+    return len(m.snap.idxSceneId[key])
 }
 
 
