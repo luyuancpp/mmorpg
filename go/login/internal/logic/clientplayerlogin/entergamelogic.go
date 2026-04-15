@@ -2,7 +2,6 @@ package clientplayerloginlogic
 
 import (
 	"context"
-	"login/generated/pb/table"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -15,6 +14,7 @@ import (
 	login_proto_database "proto/common/database"
 	login_proto "proto/login"
 	smpb "proto/scene_manager"
+	"shared/generated/pb/table"
 	"strconv"
 	"time"
 
