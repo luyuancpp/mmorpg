@@ -27,6 +27,7 @@ public:
         std::unordered_multimap<uint32_t, const TestMultiKeyTable*> mUint32KeyMap;
         std::unordered_multimap<int32_t, const TestMultiKeyTable*> mInt32KeyMap;
         std::unordered_multimap<uint32_t, const TestMultiKeyTable*> effectIndex;
+        std::unordered_multimap<uint32_t, const TestMultiKeyTable*> testRefsIndex;
     };
 
     static TestMultiKeyTableManager& Instance() {
@@ -68,7 +69,9 @@ public:
     std::pair<const TestMultiKeyTable*, uint32_t> FindByMInt32Key(int32_t key) const;
     const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetMInt32KeyMap() const { return snapshot->mInt32KeyMap; }
 
+    // FK: test_ref -> Test.id
     const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetEffectIndex() const { return snapshot->effectIndex; }
+    const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetTestRefsIndex() const { return snapshot->testRefsIndex; }
 
     // ---- Exists ----
 
@@ -84,6 +87,7 @@ public:
     std::size_t CountByMUint32Key(uint32_t key) const { return snapshot->mUint32KeyMap.count(key); }
     std::size_t CountByMInt32Key(int32_t key) const { return snapshot->mInt32KeyMap.count(key); }
     std::size_t CountByEffectIndex(uint32_t key) const { return snapshot->effectIndex.count(key); }
+    std::size_t CountByTestRefsIndex(uint32_t key) const { return snapshot->testRefsIndex.count(key); }
 
     // ---- FindByIds (IN) ----
 

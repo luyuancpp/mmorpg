@@ -1,0 +1,32 @@
+{# java_config_fk.java.j2 -- foreign key cross-table lookup helpers #}
+package {{ package }};
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Foreign key helpers for {{ sheetname }}Table.
+ * DO NOT EDIT — regenerate from Excel via Data Table Exporter.
+ */
+public final class {{ sheetname }}TableForeignKeys {
+    private {{ sheetname }}TableForeignKeys() {}
+{% for col in table.foreign_key_columns %}
+
+    /** Resolve {{ sheetname }}.{{ col.name }} → {{ col.foreign_key.target_table }} row. */
+    public static {{ col.foreign_key.target_table }}Table get{{ to_pascal_case(col.name) }}Row({{ sheetname }}Table row) {
+        return {{ col.foreign_key.target_table }}TableManager.getInstance().findById(row.{{ to_java_proto_getter(col.name) }}());
+    }
+{% endfor %}
+{% for col in table.group_foreign_key_columns %}
+
+    /** Resolve {{ sheetname }}.{{ col.name }}[] → {{ col.group_foreign_key.target_table }} rows. */
+    public static List<{{ col.group_foreign_key.target_table }}Table> get{{ to_pascal_case(col.name) }}Rows({{ sheetname }}Table row) {
+        List<{{ col.group_foreign_key.target_table }}Table> result = new ArrayList<>();
+        for (int id : row.{{ to_java_proto_getter(col.name) }}List()) {
+            {{ col.group_foreign_key.target_table }}Table r = {{ col.group_foreign_key.target_table }}TableManager.getInstance().findById(id);
+            if (r != null) { result.add(r); }
+        }
+        return result;
+    }
+{% endfor %}
+}

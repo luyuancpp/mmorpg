@@ -45,7 +45,15 @@ type TestMultiKeyM_int32_keyComp struct {
     Value int32
 }
 
+type TestMultiKeyTest_refComp struct {
+    Value uint32
+}
+
 type TestMultiKeyEffectComp struct {
+    Values []uint32
+}
+
+type TestMultiKeyTest_refsComp struct {
     Values []uint32
 }
 
@@ -86,7 +94,15 @@ func MakeTestMultiKeyM_int32_keyComp(row *pb.TestMultiKeyTable) TestMultiKeyM_in
     return TestMultiKeyM_int32_keyComp{Value: row.MInt32Key}
 }
 
+func MakeTestMultiKeyTest_refComp(row *pb.TestMultiKeyTable) TestMultiKeyTest_refComp {
+    return TestMultiKeyTest_refComp{Value: row.TestRef}
+}
+
 func MakeTestMultiKeyEffectComp(row *pb.TestMultiKeyTable) TestMultiKeyEffectComp {
     return TestMultiKeyEffectComp{Values: row.Effect}
+}
+
+func MakeTestMultiKeyTest_refsComp(row *pb.TestMultiKeyTable) TestMultiKeyTest_refsComp {
+    return TestMultiKeyTest_refsComp{Values: row.TestRefs}
 }
 

@@ -46,7 +46,15 @@ struct TestMultiKeyM_int32_keyComp {
     int32_t value;
 };
 
+struct TestMultiKeyTest_refComp {
+    uint32_t value;
+};
+
 struct TestMultiKeyEffectComp {
+    std::span<const uint32_t> values;
+};
+
+struct TestMultiKeyTest_refsComp {
     std::span<const uint32_t> values;
 };
 
@@ -79,7 +87,14 @@ inline TestMultiKeyM_uint32_keyComp MakeTestMultiKeyM_uint32_keyComp(const TestM
 inline TestMultiKeyM_int32_keyComp MakeTestMultiKeyM_int32_keyComp(const TestMultiKeyTable& row) {
     return { row.m_int32_key() };
 }
+inline TestMultiKeyTest_refComp MakeTestMultiKeyTest_refComp(const TestMultiKeyTable& row) {
+    return { row.test_ref() };
+}
 inline TestMultiKeyEffectComp MakeTestMultiKeyEffectComp(const TestMultiKeyTable& row) {
     const auto& rf = row.effect();
+    return { std::span<const uint32_t>(rf.data(), rf.size()) };
+}
+inline TestMultiKeyTest_refsComp MakeTestMultiKeyTest_refsComp(const TestMultiKeyTable& row) {
+    const auto& rf = row.test_refs();
     return { std::span<const uint32_t>(rf.data(), rf.size()) };
 }

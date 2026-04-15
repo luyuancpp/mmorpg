@@ -1,0 +1,31 @@
+{# cpp_config_fk.h.j2 -- foreign key cross-table lookup helpers #}
+#pragma once
+#include <vector>
+#include "{{ sheetname | lower }}_table.h"
+{% for target in fk_targets %}
+#include "{{ target | lower }}_table.h"
+{% endfor %}
+
+// ---------------------------------------------------------------------------
+// Foreign key helpers for {{ sheetname }}Table
+// ---------------------------------------------------------------------------
+{% for col in table.foreign_key_columns %}
+
+/// Resolve {{ sheetname }}.{{ col.name }} → {{ col.foreign_key.target_table }} row.
+inline const {{ col.foreign_key.target_table }}Table* Get{{ to_pascal_case(col.name) }}Row(const {{ sheetname }}Table& row) {
+    auto [ptr, _] = {{ col.foreign_key.target_table }}TableManager::Instance().FindByIdSilent(row.{{ col.name }}());
+    return ptr;
+}
+{% endfor %}
+{% for col in table.group_foreign_key_columns %}
+
+/// Resolve {{ sheetname }}.{{ col.name }}[] → {{ col.group_foreign_key.target_table }} rows.
+inline std::vector<const {{ col.group_foreign_key.target_table }}Table*> Get{{ to_pascal_case(col.name) }}Rows(const {{ sheetname }}Table& row) {
+    std::vector<const {{ col.group_foreign_key.target_table }}Table*> result;
+    for (auto id : row.{{ col.name }}()) {
+        auto [ptr, _] = {{ col.group_foreign_key.target_table }}TableManager::Instance().FindByIdSilent(id);
+        if (ptr) result.push_back(ptr);
+    }
+    return result;
+}
+{% endfor %}

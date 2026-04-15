@@ -225,7 +225,41 @@ class TableSchema:
 
     @property
     def foreign_key_columns(self) -> list[ColumnDef]:
-        return [c for c in self.columns if c.foreign_key]
+        seen: set[str] = set()
+        result: list[ColumnDef] = []
+        for c in self.columns:
+            if c.foreign_key and c.name not in seen:
+                seen.add(c.name)
+                result.append(c)
+        return result
+
+    @property
+    def group_foreign_key_columns(self) -> list[ColumnDef]:
+        seen: set[str] = set()
+        result: list[ColumnDef] = []
+        for c in self.columns:
+            if c.group_foreign_key and c.name not in seen:
+                seen.add(c.name)
+                result.append(c)
+        return result
+
+    @property
+    def has_foreign_keys(self) -> bool:
+        return bool(self.foreign_key_columns or self.group_foreign_key_columns)
+
+    @property
+    def fk_target_tables(self) -> list[str]:
+        """Unique sorted list of target table names referenced by FK/GFK."""
+        targets: set[str] = set()
+        for c in self.foreign_key_columns:
+            fk: ForeignKeyRef | None = c.foreign_key
+            if fk:
+                targets.add(fk.target_table)
+        for c in self.group_foreign_key_columns:
+            gfk: GroupForeignKeyRef | None = c.group_foreign_key
+            if gfk:
+                targets.add(gfk.target_table)
+        return sorted(targets)
 
     @property
     def composite_keys(self) -> list[CompositeKeyDef]:

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18testmultikey_table.proto\"D\n\x14TestMultiKeytestobj1\x12\x14\n\x0ctestobj1_key\x18\x01 \x01(\r\x12\x16\n\x0etestobj1_value\x18\x02 \x01(\r\"\xa8\x03\n\x11TestMultiKeyTable\x12\n\n\x02id\x18\x01 \x01(\r\x12\r\n\x05level\x18\x02 \x01(\r\x12\x0e\n\x06\x65\x66\x66\x65\x63t\x18\x03 \x03(\r\x12\x12\n\nstring_key\x18\x04 \x01(\t\x12\x12\n\nuint32_key\x18\x05 \x01(\r\x12\x11\n\tint32_key\x18\x06 \x01(\x05\x12\x14\n\x0cm_string_key\x18\x07 \x01(\t\x12\x14\n\x0cm_uint32_key\x18\x08 \x01(\r\x12\x13\n\x0bm_int32_key\x18\t \x01(\x05\x12*\n\x04tag1\x18\n \x03(\x0b\x32\x1c.TestMultiKeyTable.Tag1Entry\x12\x37\n\x0bimmune_tag1\x18\x0b \x03(\x0b\x32\".TestMultiKeyTable.ImmuneTag1Entry\x12\'\n\x08testobj1\x18\x0c \x03(\x0b\x32\x15.TestMultiKeytestobj1\x1a+\n\tTag1Entry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a\x31\n\x0fImmuneTag1Entry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"9\n\x15TestMultiKeyTableData\x12 \n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x12.TestMultiKeyTableBC\n\x0e\x63om.game.tableB\x1bTestMultiKeyTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18testmultikey_table.proto\"D\n\x14TestMultiKeytestobj1\x12\x14\n\x0ctestobj1_key\x18\x01 \x01(\r\x12\x16\n\x0etestobj1_value\x18\x02 \x01(\r\"\xcd\x03\n\x11TestMultiKeyTable\x12\n\n\x02id\x18\x01 \x01(\r\x12\r\n\x05level\x18\x02 \x01(\r\x12\x0e\n\x06\x65\x66\x66\x65\x63t\x18\x03 \x03(\r\x12\x12\n\nstring_key\x18\x04 \x01(\t\x12\x12\n\nuint32_key\x18\x05 \x01(\r\x12\x11\n\tint32_key\x18\x06 \x01(\x05\x12\x14\n\x0cm_string_key\x18\x07 \x01(\t\x12\x14\n\x0cm_uint32_key\x18\x08 \x01(\r\x12\x13\n\x0bm_int32_key\x18\t \x01(\x05\x12\x10\n\x08test_ref\x18\n \x01(\r\x12\x11\n\ttest_refs\x18\x0b \x03(\r\x12*\n\x04tag1\x18\x0c \x03(\x0b\x32\x1c.TestMultiKeyTable.Tag1Entry\x12\x37\n\x0bimmune_tag1\x18\r \x03(\x0b\x32\".TestMultiKeyTable.ImmuneTag1Entry\x12\'\n\x08testobj1\x18\x0e \x03(\x0b\x32\x15.TestMultiKeytestobj1\x1a+\n\tTag1Entry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a\x31\n\x0fImmuneTag1Entry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"9\n\x15TestMultiKeyTableData\x12 \n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x12.TestMultiKeyTableBC\n\x0e\x63om.game.tableB\x1bTestMultiKeyTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -39,11 +39,11 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_TESTMULTIKEYTESTOBJ1']._serialized_start=28
   _globals['_TESTMULTIKEYTESTOBJ1']._serialized_end=96
   _globals['_TESTMULTIKEYTABLE']._serialized_start=99
-  _globals['_TESTMULTIKEYTABLE']._serialized_end=523
-  _globals['_TESTMULTIKEYTABLE_TAG1ENTRY']._serialized_start=429
-  _globals['_TESTMULTIKEYTABLE_TAG1ENTRY']._serialized_end=472
-  _globals['_TESTMULTIKEYTABLE_IMMUNETAG1ENTRY']._serialized_start=474
-  _globals['_TESTMULTIKEYTABLE_IMMUNETAG1ENTRY']._serialized_end=523
-  _globals['_TESTMULTIKEYTABLEDATA']._serialized_start=525
-  _globals['_TESTMULTIKEYTABLEDATA']._serialized_end=582
+  _globals['_TESTMULTIKEYTABLE']._serialized_end=560
+  _globals['_TESTMULTIKEYTABLE_TAG1ENTRY']._serialized_start=466
+  _globals['_TESTMULTIKEYTABLE_TAG1ENTRY']._serialized_end=509
+  _globals['_TESTMULTIKEYTABLE_IMMUNETAG1ENTRY']._serialized_start=511
+  _globals['_TESTMULTIKEYTABLE_IMMUNETAG1ENTRY']._serialized_end=560
+  _globals['_TESTMULTIKEYTABLEDATA']._serialized_start=562
+  _globals['_TESTMULTIKEYTABLEDATA']._serialized_end=619
 # @@protoc_insertion_point(module_scope)

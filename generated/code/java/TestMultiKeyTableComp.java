@@ -65,9 +65,21 @@ public final class TestMultiKeyTableComp {
         }
     }
 
+    public record Test_ref(int value) {
+        public static Test_ref from(TestMultiKeyTable row) {
+            return new Test_ref(row.getTestRef());
+        }
+    }
+
     public record Effect(List<Integer> values) {
         public static Effect from(TestMultiKeyTable row) {
             return new Effect(row.getEffectList());
+        }
+    }
+
+    public record Test_refs(List<Integer> values) {
+        public static Test_refs from(TestMultiKeyTable row) {
+            return new Test_refs(row.getTestRefsList());
         }
     }
 

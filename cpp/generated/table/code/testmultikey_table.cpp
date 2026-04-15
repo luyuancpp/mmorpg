@@ -35,6 +35,9 @@ void TestMultiKeyTableManager::Load() {
         for (const auto& elem : row_data.effect()) {
             snap->effectIndex.emplace(elem, &row_data);
         }
+        for (const auto& elem : row_data.test_refs()) {
+            snap->testRefsIndex.emplace(elem, &row_data);
+        }
     }
 
     snapshot = std::move(snap);
