@@ -103,10 +103,13 @@ int main(int argc, char *argv[])
                 mc.set_message_id(typeIt->second);
                 context.rpcClientHandler.SendMessageToClient(it->second.conn, mc); });
 
-            // Post-startup: attach client TCP callbacks + initialize session ID generator
+            // Post-startup: attach client TCP callbacks + initialize session ID generator.
+            // Override connection/message callbacks BEFORE WaitAndRun so that any
+            // client connecting while dependencies are still pending gets the correct
+            // ProtobufCodec (type-name format) instead of the default RPC0 codec,
+            // which would cause kUnknownMessageType errors.
             node.SetAfterStart([&context](Node &n)
-                               { context.dependencyGate.WaitAndRun(n, {LoginNodeService, SceneNodeService}, [&context](Node &n)
-                                                                   {
+                               {
                         n.GetTcpServer().setConnectionCallback(
                             [&context](const TcpConnectionPtr& conn) {
                                 context.rpcClientHandler.OnConnection(conn);
@@ -115,6 +118,9 @@ int main(int argc, char *argv[])
                             [&context](const TcpConnectionPtr& conn, muduo::net::Buffer* buf, Timestamp ts) {
                                 context.codec.onMessage(conn, buf, ts);
                             });
+
+                        context.dependencyGate.WaitAndRun(n, {LoginNodeService, SceneNodeService}, [&context](Node &n)
+                                                                   {
                         tlsSessionManager.session_id_gen().set_node_id(n.GetNodeId());
 
                         // Report player_count to etcd every 10 seconds for load balancing
