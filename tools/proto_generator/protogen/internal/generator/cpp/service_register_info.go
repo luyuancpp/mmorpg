@@ -2,7 +2,6 @@ package cpp
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"math"
 	"os"
@@ -12,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"text/template"
 
 	messageoption "github.com/luyuancpp/protooption"
 
@@ -256,64 +254,6 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		SenderFunctions      []string
 	}
 
-	const serviceInfoCppTemplate = `#include <array>
-#include "rpc_event_registry.h"
-#include "proto/common/base/node.pb.h"
-#include "thread_context/dispatcher_manager.h"
-
-{{range .Includes -}}
-{{ . }}
-{{- end }}
-{{range .ServiceInfoIncludes -}}
-{{ . }}
-{{- end }}
-{{ .EventIncludesBlock }}
-{{range .HandlerClasses}}
-{{ . }}
-{{- end }}
-
-{{range .SenderFunctions}}
-{{ . }}
-{{- end }}
-
-std::array<RpcMethodMeta, {{ .MessageIdArraySize }}> gRpcMethodRegistry;
-
-void InitMessageInfo()
-{
-{{- range .InitLines }}
-    {{ . }}
-{{- end }}
-}
-
-bool IsClientMessageId(uint32_t messageId)
-{
-	switch (messageId) {
-{{- range .ClientMessageIdCases }}
-	{{ . }}
-{{- end }}
-		return true;
-	default:
-		return false;
-	}
-}
-
-bool IsValidEventId(uint32_t eventId)
-{
-	return eventId < kMaxEventCount;
-}
-
-bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
-{
-	switch (eventId) {
-{{- range .EventDispatchCases }}
-	{{ . }}
-{{- end }}
-	default:
-		return false;
-	}
-}
-`
-
 	var (
 		includes            []string
 		serviceInfoIncludes []string
@@ -442,24 +382,13 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		SenderFunctions:      senderFunction,
 	}
 
-	tmpl, err := template.New("serviceInfoCpp").Parse(serviceInfoCppTemplate)
-	if err != nil {
-		logger.Global.Fatal("Failed to generate service info cpp file: template parsing failed",
-			zap.String("template_name", "serviceInfoCpp"),
+	if err := utils2.RenderTemplateToFile("internal/template/rpc_event_registry.cpp.tmpl", _config.Global.Paths.ServiceCppFile, tmplData); err != nil {
+		logger.Global.Fatal("Failed to generate service info cpp file",
+			zap.String("template_path", "internal/template/rpc_event_registry.cpp.tmpl"),
+			zap.String("output_path", _config.Global.Paths.ServiceCppFile),
 			zap.Error(err),
 		)
 	}
-
-	var output bytes.Buffer
-	if err := tmpl.Execute(&output, tmplData); err != nil {
-		logger.Global.Fatal("Failed to generate service info cpp file: template execution failed",
-			zap.String("template_name", "serviceInfoCpp"),
-			zap.Error(err),
-		)
-	}
-
-	normalized := utils2.NormalizeGeneratedLayout(output.String())
-	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceCppFile, []byte(normalized))
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
@@ -488,27 +417,6 @@ func writeServiceInfoHeadFile(wg *sync.WaitGroup) {
 
 // Helper function to generate instance data for player services.
 func generateInstanceData(serviceList []string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir string, serviceName string) string {
-	const playerInstanceTemplate = `#include <memory>
-#include <string>
-#include <unordered_map>
-#include "{{ .SelfHeader }}"
-{{- range .Includes }}
-{{ . }}
-{{- end }}
-
-{{- range .HandlerClasses }}
-{{ . }}
-{{- end }}
-
-std::unordered_map<std::string, std::unique_ptr<PlayerService>> gPlayerService;
-
-void InitPlayerService()
-{
-{{- range .InitLines }}
-    {{ . }}
-{{- end }}
-}
-`
 	type PlayerServiceInstanceData struct {
 		SelfHeader     string   // e.g. login_player_service.h
 		Includes       []string // list of #include "...Handler.h"
@@ -540,51 +448,19 @@ void InitPlayerService()
 		InitLines:      initLines,
 	}
 
-	tmpl, err := template.New("playerInstance").Parse(playerInstanceTemplate)
-	if err != nil {
-		logger.Global.Fatal("Failed to generate player service instance: template parsing failed",
-			zap.String("template_name", "playerInstance"),
-			zap.String("service_name", serviceName),
+	outputPath := handlerDir + serviceName
+	if err := utils2.RenderTemplateToFile("internal/template/player_service_instance.cpp.tmpl", outputPath, data); err != nil {
+		logger.Global.Fatal("Failed to generate player service instance",
+			zap.String("template_path", "internal/template/player_service_instance.cpp.tmpl"),
+			zap.String("output_path", outputPath),
 			zap.Error(err),
 		)
 	}
-
-	var output bytes.Buffer
-	if err := tmpl.Execute(&output, data); err != nil {
-		logger.Global.Fatal("Failed to generate player service instance: template execution failed",
-			zap.String("template_name", "playerInstance"),
-			zap.String("service_name", serviceName),
-			zap.Error(err),
-		)
-	}
-
-	normalized := utils2.NormalizeGeneratedLayout(output.String())
-	utils2.WriteFileIfChanged(handlerDir+serviceName, []byte(normalized))
-	return normalized
+	return ""
 }
 
 // Helper function to generate instance data for player services.
 func generateRepliedInstanceData(serviceList []string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir string, serviceName string) string {
-	const repliedInstanceTemplate = `#include <memory>
-#include <unordered_map>
-#include "{{ .SelfHeader }}"
-{{- range .Includes }}
-{{ . }}
-{{- end }}
-
-{{- range .HandlerClasses }}
-{{ . }}
-{{- end }}
-
-std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> gPlayerServiceReplied;
-
-void InitPlayerServiceReplied()
-{
-{{- range .InitLines }}
-    {{ . }}
-{{- end }}
-}
-`
 	type PlayerServiceRepliedInstanceData struct {
 		SelfHeader     string
 		Includes       []string
@@ -617,27 +493,15 @@ void InitPlayerServiceReplied()
 		InitLines:      initLines,
 	}
 
-	tmpl, err := template.New("repliedInstance").Parse(repliedInstanceTemplate)
-	if err != nil {
-		logger.Global.Fatal("Failed to generate player replied service instance: template parsing failed",
-			zap.String("template_name", "repliedInstance"),
-			zap.String("service_name", serviceName),
+	outputPath := handlerDir + serviceName
+	if err := utils2.RenderTemplateToFile("internal/template/player_service_replied_instance.cpp.tmpl", outputPath, templateData); err != nil {
+		logger.Global.Fatal("Failed to generate player replied service instance",
+			zap.String("template_path", "internal/template/player_service_replied_instance.cpp.tmpl"),
+			zap.String("output_path", outputPath),
 			zap.Error(err),
 		)
 	}
-
-	var output bytes.Buffer
-	if err := tmpl.Execute(&output, templateData); err != nil {
-		logger.Global.Fatal("Failed to generate player replied service instance: template execution failed",
-			zap.String("template_name", "repliedInstance"),
-			zap.String("service_name", serviceName),
-			zap.Error(err),
-		)
-	}
-
-	normalized := utils2.NormalizeGeneratedLayout(output.String())
-	utils2.WriteFileIfChanged(handlerDir+serviceName, []byte(normalized))
-	return normalized
+	return ""
 }
 
 func writePlayerServiceInstanceFiles(wg *sync.WaitGroup, serviceType string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir, serviceName string) {

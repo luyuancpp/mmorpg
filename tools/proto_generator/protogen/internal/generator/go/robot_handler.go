@@ -15,17 +15,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const handlerTemplate = `package handler
-
-import (
-	"proto/{{.ImportDir}}"
-	"robot/logic/gameobject"
-)
-
-func {{.HandlerName}}(player *gameobject.Player, response *{{.ResponseType}}) {
-}
-`
-
 type ServiceData struct {
 	HandlerName  string
 	ResponseType string
@@ -128,7 +117,7 @@ func generateHandlerFile(fileName, handlerName, responseType, importDir string) 
 	}
 	defer file.Close()
 
-	tmpl, err := template.New("handler").Parse(handlerTemplate)
+	tmpl, err := template.ParseFiles("internal/template/robot_handler.go.tmpl")
 	if err != nil {
 		logger.Global.Fatal("Failed to parse handler template",
 			zap.String("file_name", fileName),

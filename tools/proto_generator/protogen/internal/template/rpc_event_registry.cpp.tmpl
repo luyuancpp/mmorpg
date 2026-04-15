@@ -1,0 +1,56 @@
+#include <array>
+#include "rpc_event_registry.h"
+#include "proto/common/base/node.pb.h"
+#include "thread_context/dispatcher_manager.h"
+
+{{range .Includes -}}
+{{ . }}
+{{- end }}
+{{range .ServiceInfoIncludes -}}
+{{ . }}
+{{- end }}
+{{ .EventIncludesBlock }}
+{{range .HandlerClasses}}
+{{ . }}
+{{- end }}
+
+{{range .SenderFunctions}}
+{{ . }}
+{{- end }}
+
+std::array<RpcMethodMeta, {{ .MessageIdArraySize }}> gRpcMethodRegistry;
+
+void InitMessageInfo()
+{
+{{- range .InitLines }}
+    {{ . }}
+{{- end }}
+}
+
+bool IsClientMessageId(uint32_t messageId)
+{
+	switch (messageId) {
+{{- range .ClientMessageIdCases }}
+	{{ . }}
+{{- end }}
+		return true;
+	default:
+		return false;
+	}
+}
+
+bool IsValidEventId(uint32_t eventId)
+{
+	return eventId < kMaxEventCount;
+}
+
+bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
+{
+	switch (eventId) {
+{{- range .EventDispatchCases }}
+	{{ . }}
+{{- end }}
+	default:
+		return false;
+	}
+}

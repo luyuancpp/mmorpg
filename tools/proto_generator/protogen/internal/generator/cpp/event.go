@@ -350,17 +350,6 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 }
 
 func GenerateEventHandlersTemplate(protoFiles []os.DirEntry, outputDir string) error {
-	// Template for the header file content
-	const eventHandlerHeaderTemplate = `#pragma once
-
-class EventHandler
-{
-public:
-	static void Register();
-	static void UnRegister();
-};
-`
-
 	// Prepare the dynamic data
 	var cppIncludeData, registerData, unRegisterData string
 	for _, protoFile := range protoFiles {
@@ -374,8 +363,6 @@ public:
 		registerData += className + "::Register();\n"
 		unRegisterData += className + "::UnRegister();\n"
 	}
-
-	eventHeadData := eventHandlerHeaderTemplate
 
 	eventCppData := struct {
 		IncludeBegin               string
@@ -395,7 +382,7 @@ public:
 
 	headerFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Header)
 	cppFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Cpp)
-	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, eventHeadData); err != nil {
+	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, nil); err != nil {
 		logger.Global.Error("Failed to generate aggregate header file",
 			zap.String("header_file", headerFilePath),
 			zap.Error(err),
