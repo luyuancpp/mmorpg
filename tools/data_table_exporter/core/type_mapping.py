@@ -137,3 +137,17 @@ def to_java_proto_getter(snake_name: str) -> str:
 def to_java_repeated_elem_type(proto_type: str) -> str:
     """Java element type inside a proto repeated field (boxed for generics)."""
     return _JAVA_BOXED_MAP.get(proto_type, proto_type)
+
+
+# ---------------------------------------------------------------------------
+# Composite key helpers
+# ---------------------------------------------------------------------------
+
+def composite_go_struct_name(group: str) -> str:
+    """Go struct name for a composite key: ``class_level`` → ``ClassLevelKey``."""
+    return "".join(word.capitalize() for word in group.split("_")) + "Key"
+
+
+def composite_cpp_struct_name(group: str) -> str:
+    """C++ struct name for a composite key: ``class_level`` → ``ClassLevelKey``."""
+    return "".join(word.capitalize() for word in group.split("_")) + "Key"

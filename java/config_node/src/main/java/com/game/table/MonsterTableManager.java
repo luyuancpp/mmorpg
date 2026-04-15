@@ -43,15 +43,40 @@ public class MonsterTableManager {
         }
     }
 
-    public MonsterTableData getAll() {
+    /** SELECT * FROM monster */
+    public MonsterTableData selectAll() {
         return data;
     }
 
-    public MonsterTable getById(int id) {
+    /** SELECT COUNT(*) FROM monster */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM monster WHERE id = ? */
+    public MonsterTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, MonsterTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM monster WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM monster WHERE id IN (?, ?, ...) */
+    public List<MonsterTable> selectByIds(List<Integer> ids) {
+        List<MonsterTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            MonsterTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, MonsterTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 

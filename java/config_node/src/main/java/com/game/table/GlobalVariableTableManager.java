@@ -43,15 +43,40 @@ public class GlobalVariableTableManager {
         }
     }
 
-    public GlobalVariableTableData getAll() {
+    /** SELECT * FROM globalvariable */
+    public GlobalVariableTableData selectAll() {
         return data;
     }
 
-    public GlobalVariableTable getById(int id) {
+    /** SELECT COUNT(*) FROM globalvariable */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM globalvariable WHERE id = ? */
+    public GlobalVariableTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, GlobalVariableTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM globalvariable WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM globalvariable WHERE id IN (?, ?, ...) */
+    public List<GlobalVariableTable> selectByIds(List<Integer> ids) {
+        List<GlobalVariableTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            GlobalVariableTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, GlobalVariableTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 

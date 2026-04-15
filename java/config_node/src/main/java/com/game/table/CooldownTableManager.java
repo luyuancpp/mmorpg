@@ -43,15 +43,40 @@ public class CooldownTableManager {
         }
     }
 
-    public CooldownTableData getAll() {
+    /** SELECT * FROM cooldown */
+    public CooldownTableData selectAll() {
         return data;
     }
 
-    public CooldownTable getById(int id) {
+    /** SELECT COUNT(*) FROM cooldown */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM cooldown WHERE id = ? */
+    public CooldownTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, CooldownTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM cooldown WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM cooldown WHERE id IN (?, ?, ...) */
+    public List<CooldownTable> selectByIds(List<Integer> ids) {
+        List<CooldownTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            CooldownTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, CooldownTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 

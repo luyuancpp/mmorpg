@@ -58,30 +58,58 @@ public class MissionTableManager {
         }
     }
 
-    public MissionTableData getAll() {
+    /** SELECT * FROM mission */
+    public MissionTableData selectAll() {
         return data;
     }
 
-    public MissionTable getById(int id) {
+    /** SELECT COUNT(*) FROM mission */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM mission WHERE id = ? */
+    public MissionTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, MissionTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM mission WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM mission WHERE id IN (?, ?, ...) */
+    public List<MissionTable> selectByIds(List<Integer> ids) {
+        List<MissionTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            MissionTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, MissionTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
 
 
-    public List<MissionTable> getByCondition_idIndex(int key) {
+    /** SELECT * FROM mission WHERE ? IN (condition_id) */
+    public List<MissionTable> selectWhereInCondition_id(int key) {
         return idxCondition_id.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<MissionTable> getByNext_mission_idIndex(int key) {
+    /** SELECT * FROM mission WHERE ? IN (next_mission_id) */
+    public List<MissionTable> selectWhereInNext_mission_id(int key) {
         return idxNext_mission_id.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<MissionTable> getByTarget_countIndex(int key) {
+    /** SELECT * FROM mission WHERE ? IN (target_count) */
+    public List<MissionTable> selectWhereInTarget_count(int key) {
         return idxTarget_count.getOrDefault(key, Collections.emptyList());
     }
 

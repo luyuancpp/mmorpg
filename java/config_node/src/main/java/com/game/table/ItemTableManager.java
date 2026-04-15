@@ -43,15 +43,40 @@ public class ItemTableManager {
         }
     }
 
-    public ItemTableData getAll() {
+    /** SELECT * FROM item */
+    public ItemTableData selectAll() {
         return data;
     }
 
-    public ItemTable getById(int id) {
+    /** SELECT COUNT(*) FROM item */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM item WHERE id = ? */
+    public ItemTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, ItemTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM item WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM item WHERE id IN (?, ?, ...) */
+    public List<ItemTable> selectByIds(List<Integer> ids) {
+        List<ItemTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            ItemTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, ItemTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 

@@ -1,8 +1,11 @@
 {# cpp_config.h.j2 — per-table config manager header #}
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <random>
 #include <unordered_map>
+#include <vector>
 #include "table_expression.h"
 #include "muduo/base/Logging.h"
 #include "table/proto/{{ sheetname | lower }}_table.pb.h"
@@ -56,6 +59,68 @@ public:
 {%- for arr in table.repeated_comp_arrays %}
     const std::unordered_multimap<{{ to_cpp_type(arr.data_type) }}, const {{ sheetname }}Table*>& Get{{ arr.name | title }}Index() const { return idx_{{ arr.name }}_; }
 {%- endfor %}
+
+    // ---- Has / Exists ----
+
+    bool HasId(uint32_t id) const { return kv_data_.count(id) > 0; }
+
+{% for col in table.table_keys if not col.is_multi_key -%}
+    bool Has{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const { return kv_{{ col.name }}data_.count(key) > 0; }
+{% endfor %}
+
+    // ---- Len / Count ----
+
+    std::size_t Len() const { return kv_data_.size(); }
+
+{% for col in table.table_keys if col.is_multi_key -%}
+    std::size_t CountBy{{ col.name | title }}({{ to_cpp_param_type(col.data_type) }} key) const { return kv_{{ col.name }}data_.count(key); }
+{% endfor %}
+{%- for arr in table.repeated_comp_arrays %}
+    std::size_t CountBy{{ arr.name | title }}Index({{ to_cpp_param_type(arr.data_type) }} key) const { return idx_{{ arr.name }}_.count(key); }
+{%- endfor %}
+
+    // ---- Batch Lookup (IN) ----
+
+    std::vector<const {{ sheetname }}Table*> GetByIds(const std::vector<uint32_t>& ids) const {
+        std::vector<const {{ sheetname }}Table*> result;
+        result.reserve(ids.size());
+        for (auto id : ids) {
+            if (auto it = kv_data_.find(id); it != kv_data_.end()) {
+                result.push_back(it->second);
+            }
+        }
+        return result;
+    }
+
+    // ---- Random ----
+
+    const {{ sheetname }}Table* GetRandom() const {
+        if (data_.data_size() == 0) return nullptr;
+        thread_local std::mt19937 rng{std::random_device{}()};
+        std::uniform_int_distribution<int> dist(0, data_.data_size() - 1);
+        return &data_.data(dist(rng));
+    }
+
+    // ---- Filter / FindFirst ----
+
+    std::vector<const {{ sheetname }}Table*> Filter(const std::function<bool(const {{ sheetname }}Table&)>& pred) const {
+        std::vector<const {{ sheetname }}Table*> result;
+        for (int i = 0; i < data_.data_size(); ++i) {
+            if (pred(data_.data(i))) {
+                result.push_back(&data_.data(i));
+            }
+        }
+        return result;
+    }
+
+    const {{ sheetname }}Table* FindFirst(const std::function<bool(const {{ sheetname }}Table&)>& pred) const {
+        for (int i = 0; i < data_.data_size(); ++i) {
+            if (pred(data_.data(i))) {
+                return &data_.data(i);
+            }
+        }
+        return nullptr;
+    }
 
 private:
     LoadSuccessCallback loadSuccessCallback_;

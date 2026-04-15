@@ -43,15 +43,40 @@ public class DungeonTableManager {
         }
     }
 
-    public DungeonTableData getAll() {
+    /** SELECT * FROM dungeon */
+    public DungeonTableData selectAll() {
         return data;
     }
 
-    public DungeonTable getById(int id) {
+    /** SELECT COUNT(*) FROM dungeon */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM dungeon WHERE id = ? */
+    public DungeonTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, DungeonTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM dungeon WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM dungeon WHERE id IN (?, ?, ...) */
+    public List<DungeonTable> selectByIds(List<Integer> ids) {
+        List<DungeonTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            DungeonTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, DungeonTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -60,6 +85,6 @@ public class DungeonTableManager {
 
 
 
-    // FK: scene_id → BaseScene.id
+    // FK: scene_id -> BaseScene.id
 
 }

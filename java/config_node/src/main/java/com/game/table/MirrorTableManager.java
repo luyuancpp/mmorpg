@@ -43,15 +43,40 @@ public class MirrorTableManager {
         }
     }
 
-    public MirrorTableData getAll() {
+    /** SELECT * FROM mirror */
+    public MirrorTableData selectAll() {
         return data;
     }
 
-    public MirrorTable getById(int id) {
+    /** SELECT COUNT(*) FROM mirror */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM mirror WHERE id = ? */
+    public MirrorTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, MirrorTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM mirror WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM mirror WHERE id IN (?, ?, ...) */
+    public List<MirrorTable> selectByIds(List<Integer> ids) {
+        List<MirrorTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            MirrorTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, MirrorTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -60,8 +85,8 @@ public class MirrorTableManager {
 
 
 
-    // FK: scene_id → BaseScene.id
+    // FK: scene_id -> BaseScene.id
 
-    // FK: main_scene_id → World.id
+    // FK: main_scene_id -> World.id
 
 }

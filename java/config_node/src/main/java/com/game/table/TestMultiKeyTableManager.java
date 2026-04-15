@@ -66,46 +66,78 @@ public class TestMultiKeyTableManager {
         }
     }
 
-    public TestMultiKeyTableData getAll() {
+    /** SELECT * FROM testmultikey */
+    public TestMultiKeyTableData selectAll() {
         return data;
     }
 
-    public TestMultiKeyTable getById(int id) {
+    /** SELECT COUNT(*) FROM testmultikey */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM testmultikey WHERE id = ? */
+    public TestMultiKeyTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, TestMultiKeyTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM testmultikey WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM testmultikey WHERE id IN (?, ?, ...) */
+    public List<TestMultiKeyTable> selectByIds(List<Integer> ids) {
+        List<TestMultiKeyTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            TestMultiKeyTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, TestMultiKeyTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
-    public TestMultiKeyTable getByString_key(String key) {
+    /** SELECT * FROM testmultikey WHERE string_key = ? */
+    public TestMultiKeyTable selectByString_key(String key) {
         return kvString_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByUint32_key(int key) {
+    /** SELECT * FROM testmultikey WHERE uint32_key = ? */
+    public TestMultiKeyTable selectByUint32_key(int key) {
         return kvUint32_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByInt32_key(int key) {
+    /** SELECT * FROM testmultikey WHERE int32_key = ? */
+    public TestMultiKeyTable selectByInt32_key(int key) {
         return kvInt32_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByM_string_key(String key) {
+    /** SELECT * FROM testmultikey WHERE m_string_key = ? */
+    public TestMultiKeyTable selectByM_string_key(String key) {
         return kvM_string_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByM_uint32_key(int key) {
+    /** SELECT * FROM testmultikey WHERE m_uint32_key = ? */
+    public TestMultiKeyTable selectByM_uint32_key(int key) {
         return kvM_uint32_keyData.get(key);
     }
 
-    public TestMultiKeyTable getByM_int32_key(int key) {
+    /** SELECT * FROM testmultikey WHERE m_int32_key = ? */
+    public TestMultiKeyTable selectByM_int32_key(int key) {
         return kvM_int32_keyData.get(key);
     }
 
 
 
-    public List<TestMultiKeyTable> getByEffectIndex(int key) {
+    /** SELECT * FROM testmultikey WHERE ? IN (effect) */
+    public List<TestMultiKeyTable> selectWhereInEffect(int key) {
         return idxEffect.getOrDefault(key, Collections.emptyList());
     }
 

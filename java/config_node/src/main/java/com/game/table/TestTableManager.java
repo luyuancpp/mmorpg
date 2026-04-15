@@ -48,22 +48,48 @@ public class TestTableManager {
         }
     }
 
-    public TestTableData getAll() {
+    /** SELECT * FROM test */
+    public TestTableData selectAll() {
         return data;
     }
 
-    public TestTable getById(int id) {
+    /** SELECT COUNT(*) FROM test */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM test WHERE id = ? */
+    public TestTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, TestTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM test WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM test WHERE id IN (?, ?, ...) */
+    public List<TestTable> selectByIds(List<Integer> ids) {
+        List<TestTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            TestTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, TestTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
 
 
-    public List<TestTable> getByEffectIndex(int key) {
+    /** SELECT * FROM test WHERE ? IN (effect) */
+    public List<TestTable> selectWhereInEffect(int key) {
         return idxEffect.getOrDefault(key, Collections.emptyList());
     }
 

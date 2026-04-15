@@ -79,6 +79,7 @@ def _cpp_ctx(table: TableSchema) -> dict:
         to_cpp_type=type_mapping.to_cpp_type,
         to_cpp_param_type=type_mapping.to_cpp_param_type,
         cpp_map_type=type_mapping.cpp_map_type,
+        composite_cpp_struct_name=type_mapping.composite_cpp_struct_name,
     )
 
 
@@ -106,6 +107,7 @@ def _go_ctx(table: TableSchema, cfg: ExporterConfig) -> dict:
         to_go_type=type_mapping.to_go_type,
         to_go_proto_field=type_mapping.to_go_proto_field,
         proto_import_path=cfg.go.proto_import_path,
+        composite_go_struct_name=type_mapping.composite_go_struct_name,
     )
 
 
@@ -137,4 +139,5 @@ def _java_ctx(table: TableSchema, cfg: ExporterConfig) -> dict:
         to_java_proto_getter=type_mapping.to_java_proto_getter,
         to_java_repeated_elem_type=type_mapping.to_java_repeated_elem_type,
         package=cfg.java.package,
+        composite_go_struct_name=type_mapping.composite_go_struct_name,
     )

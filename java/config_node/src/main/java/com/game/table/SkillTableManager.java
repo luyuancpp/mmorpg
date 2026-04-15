@@ -58,30 +58,58 @@ public class SkillTableManager {
         }
     }
 
-    public SkillTableData getAll() {
+    /** SELECT * FROM skill */
+    public SkillTableData selectAll() {
         return data;
     }
 
-    public SkillTable getById(int id) {
+    /** SELECT COUNT(*) FROM skill */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM skill WHERE id = ? */
+    public SkillTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, SkillTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM skill WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM skill WHERE id IN (?, ?, ...) */
+    public List<SkillTable> selectByIds(List<Integer> ids) {
+        List<SkillTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            SkillTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, SkillTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
 
 
 
-    public List<SkillTable> getBySkill_typeIndex(int key) {
+    /** SELECT * FROM skill WHERE ? IN (skill_type) */
+    public List<SkillTable> selectWhereInSkill_type(int key) {
         return idxSkill_type.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<SkillTable> getByTargeting_modeIndex(int key) {
+    /** SELECT * FROM skill WHERE ? IN (targeting_mode) */
+    public List<SkillTable> selectWhereInTargeting_mode(int key) {
         return idxTargeting_mode.getOrDefault(key, Collections.emptyList());
     }
 
-    public List<SkillTable> getByEffectIndex(int key) {
+    /** SELECT * FROM skill WHERE ? IN (effect) */
+    public List<SkillTable> selectWhereInEffect(int key) {
         return idxEffect.getOrDefault(key, Collections.emptyList());
     }
 

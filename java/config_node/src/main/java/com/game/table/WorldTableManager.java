@@ -43,15 +43,40 @@ public class WorldTableManager {
         }
     }
 
-    public WorldTableData getAll() {
+    /** SELECT * FROM world */
+    public WorldTableData selectAll() {
         return data;
     }
 
-    public WorldTable getById(int id) {
+    /** SELECT COUNT(*) FROM world */
+    public int count() {
+        return kvData.size();
+    }
+
+    /** SELECT * FROM world WHERE id = ? */
+    public WorldTable selectById(int id) {
         return kvData.get(id);
     }
 
-    public Map<Integer, WorldTable> getKvData() {
+    /** SELECT EXISTS(SELECT 1 FROM world WHERE id = ?) */
+    public boolean exists(int id) {
+        return kvData.containsKey(id);
+    }
+
+    /** SELECT * FROM world WHERE id IN (?, ?, ...) */
+    public List<WorldTable> selectByIds(List<Integer> ids) {
+        List<WorldTable> result = new ArrayList<>(ids.size());
+        for (Integer id : ids) {
+            WorldTable row = kvData.get(id);
+            if (row != null) {
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the primary-key map */
+    public Map<Integer, WorldTable> dataMap() {
         return Collections.unmodifiableMap(kvData);
     }
 
@@ -60,6 +85,6 @@ public class WorldTableManager {
 
 
 
-    // FK: scene_id → BaseScene.id
+    // FK: scene_id -> BaseScene.id
 
 }
