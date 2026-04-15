@@ -75,6 +75,10 @@ func (m *{{ sheetname }}TableManager) Load(configDir string, useBinary bool) err
     return nil
 }
 
+func (m *{{ sheetname }}TableManager) GetAll() []*pb.{{ sheetname }}Table {
+    return m.data
+}
+
 func (m *{{ sheetname }}TableManager) GetById(id {{ to_go_type(table.id_column.data_type) }}) (*pb.{{ sheetname }}Table, bool) {
     row, ok := m.kvData[id]
     return row, ok

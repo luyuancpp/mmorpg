@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -6,16 +7,16 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
+    "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
 
-var MessageLimiterTableManagerInstance = NewMessageLimiterTableManager()
-
-
 type MessageLimiterTableManager struct {
-    data []*pb.MessageLimiterTable
+    data   []*pb.MessageLimiterTable
     kvData map[uint32]*pb.MessageLimiterTable
 }
+
+var MessageLimiterTableManagerInstance = NewMessageLimiterTableManager()
 
 func NewMessageLimiterTableManager() *MessageLimiterTableManager {
     return &MessageLimiterTableManager{
@@ -23,16 +24,27 @@ func NewMessageLimiterTableManager() *MessageLimiterTableManager {
     }
 }
 
-func (m *MessageLimiterTableManager) Load(configDir string) error {
-    path := filepath.Join(configDir, "messagelimiter.json")
-    raw, err := os.ReadFile(path)
-    if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
-    }
-
+func (m *MessageLimiterTableManager) Load(configDir string, useBinary bool) error {
     var container pb.MessageLimiterTableData
-    if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+
+    if useBinary {
+        path := filepath.Join(configDir, "messagelimiter.pb")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := proto.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse binary: %w", err)
+        }
+    } else {
+        path := filepath.Join(configDir, "messagelimiter.json")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := protojson.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse json: %w", err)
+        }
     }
 
     for _, row := range container.Data {
@@ -43,7 +55,12 @@ func (m *MessageLimiterTableManager) Load(configDir string) error {
     return nil
 }
 
+func (m *MessageLimiterTableManager) GetAll() []*pb.MessageLimiterTable {
+    return m.data
+}
+
 func (m *MessageLimiterTableManager) GetById(id uint32) (*pb.MessageLimiterTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

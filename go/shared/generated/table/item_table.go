@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -6,16 +7,16 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
+    "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
 
-var ItemTableManagerInstance = NewItemTableManager()
-
-
 type ItemTableManager struct {
-    data []*pb.ItemTable
+    data   []*pb.ItemTable
     kvData map[uint32]*pb.ItemTable
 }
+
+var ItemTableManagerInstance = NewItemTableManager()
 
 func NewItemTableManager() *ItemTableManager {
     return &ItemTableManager{
@@ -23,16 +24,27 @@ func NewItemTableManager() *ItemTableManager {
     }
 }
 
-func (m *ItemTableManager) Load(configDir string) error {
-    path := filepath.Join(configDir, "item.json")
-    raw, err := os.ReadFile(path)
-    if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
-    }
-
+func (m *ItemTableManager) Load(configDir string, useBinary bool) error {
     var container pb.ItemTableData
-    if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+
+    if useBinary {
+        path := filepath.Join(configDir, "item.pb")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := proto.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse binary: %w", err)
+        }
+    } else {
+        path := filepath.Join(configDir, "item.json")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := protojson.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse json: %w", err)
+        }
     }
 
     for _, row := range container.Data {
@@ -43,7 +55,12 @@ func (m *ItemTableManager) Load(configDir string) error {
     return nil
 }
 
+func (m *ItemTableManager) GetAll() []*pb.ItemTable {
+    return m.data
+}
+
 func (m *ItemTableManager) GetById(id uint32) (*pb.ItemTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

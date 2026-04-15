@@ -13,7 +13,7 @@ The scene system supports two scene types managed by Go SceneManager and hosted 
 SceneManager is **stateless and horizontally scalable**. It does not bind to any specific zone:
 - Zone information flows through **RPC requests** (`zone_id` field), not config.
 - `LoadReporter` uses **list-watch** (etcd Watch) to reactively discover scene node changes. No polling.
-- On Watch PUT (node appeared) → triggers `initMainScenesForZone`. On Watch DELETE → grace period then cleanup.
+- On Watch PUT (node appeared) → triggers `initWorldScenesForZone`. On Watch DELETE → grace period then cleanup.
 - `fullSync` on startup / watch reconnect does full etcd Get, rebuilds `knownNodes` baseline.
 - `InstanceLifecycleManager` iterates over `GetActiveZones()` when cleaning up idle instances.
 - Multiple SceneManager instances can run behind a load balancer, each serving any zone.
@@ -22,10 +22,10 @@ SceneManager is **stateless and horizontally scalable**. It does not bind to any
 
 | Type | Constant | Behavior |
 |------|----------|----------|
-| Main World | `SceneTypeMainWorld=1` | Persistent. Created at startup via `InitMainScenes`. Idempotent (returns existing if already created). Never auto-destroyed. |
+| Main World | `SceneTypeMainWorld=1` | Persistent. Created at startup via `InitWorldScenes`. Idempotent (returns existing if already created). Never auto-destroyed. |
 | Instance | `SceneTypeInstance=2` | On-demand. Unique per request. Tracked in Redis sorted set. Auto-destroyed after `InstanceIdleTimeoutSeconds` with 0 players. |
 
-Auto-detection: if `scene_type` is unset in the request, the system checks `MainSceneConfIds` config. If the `scene_conf_id` is in that list → main world; otherwise → instance.
+Auto-detection: if `scene_type` is unset in the request, the system checks `WorldConfIds` config. If the `scene_conf_id` is in that list → main world; otherwise → instance.
 
 ## Create Flow
 
@@ -37,7 +37,7 @@ Client/System → Go SceneManager.CreateScene(scene_conf_id)
 ├─ Main World path:
 │  ├─ Check Redis hash → return existing (idempotent)
 │  ├─ allocateScene → INCR scene:id_counter, SET scene:{id}:node
-│  ├─ HSET main_scenes:zone:{zoneId} confId → sceneId
+│  ├─ HSET world_channels:zone:{zoneId} confId → sceneId
 │  └─ RequestNodeCreateScene → gRPC → C++ Scene.CreateScene(config_id)
 │
 └─ Instance path:
@@ -124,7 +124,7 @@ StartLoadReporter (外层 for 循环)
   │   ├─ etcd Get 全量拉取
   │   ├─ 建立 knownNodes (= indexer)
   │   ├─ 清理 Redis 中的陈旧节点
-  │   ├─ 对所有 zone 执行 initMainScenesForZone (= 全量 reconcile)
+  │   ├─ 对所有 zone 执行 initWorldScenesForZone (= 全量 reconcile)
   │   └─ 返回 revision
   │
   └─ watchAndRefresh(rev)                ← K8s Watch
@@ -132,7 +132,7 @@ StartLoadReporter (外层 for 循环)
       ├─ SELECT:
       │   ├─ watchCh event
       │   │   └─ handleWatchEvent()      ← Event handler (增量 reconcile)
-      │   │       ├─ PUT  → 更新 knownNodes, 更新 Redis load, 触发 initMainScenesForZone
+      │   │       ├─ PUT  → 更新 knownNodes, 更新 Redis load, 触发 initWorldScenesForZone
       │   │       └─ DELETE → 从 knownNodes 移除, 启动 grace period
       │   └─ 5s ticker
       │       ├─ refreshLoadScores()     ← 定期刷新负载分数
@@ -152,17 +152,17 @@ StartLoadReporter (外层 for 循环)
 
 | K8s Controller 概念 | 本项目实现 |
 |--------------------|-----------|
-| Desired State | `MainSceneConfIds` 配置："每个 zone 应该有这些主场景" |
-| Current State | Redis `main_scenes:zone:{zoneId}` 哈希 + C++ ECS registry |
-| Reconcile 函数 | `initMainScenesForZone()` — 对比 + 收敛 |
+| Desired State | `WorldConfIds` 配置："每个 zone 应该有这些主场景" |
+| Current State | Redis `world_channels:zone:{zoneId}` 哈希 + C++ ECS registry |
+| Reconcile 函数 | `initWorldScenesForZone()` — 对比 + 收敛 |
 | Reconcile 触发方式 | Watch PUT event（增量）或 fullSync（全量） |
 | 幂等保证 | Redis 层跳过已有 ID + C++ CreateScene 按 config_id 去重 |
 
 ```
-Reconcile (initMainScenesForZone):
+Reconcile (initWorldScenesForZone):
 
-  for each confId in MainSceneConfIds:
-      ┌─ Redis Hget(main_scenes:zone:X, confId)
+  for each confId in WorldConfIds:
+      ┌─ Redis Hget(world_channels:zone:X, confId)
       │
       ├─ 不存在 → 分配 scene ID (INCR), 写 Redis (HSET)
       │           └─ 调 C++ CreateScene RPC → 创建 ECS entity
@@ -180,13 +180,13 @@ Reconcile (initMainScenesForZone):
 etcd Watch (事件驱动，不轮询)
   │
   ├─ PUT event (节点新增/重现)
-  │   └─ handleWatchEvent → initMainScenesForZone (reconcile)
+  │   └─ handleWatchEvent → initWorldScenesForZone (reconcile)
   │
   ├─ DELETE event (节点消失)
   │   └─ handleWatchEvent → 启动 grace period → 超时后清理 Redis
   │
   └─ Watch 断开
-      └─ fullSync (re-list) → 对所有 zone 执行 initMainScenesForZone (全量 reconcile)
+      └─ fullSync (re-list) → 对所有 zone 执行 initWorldScenesForZone (全量 reconcile)
 ```
 
 旧方案（轮询）vs 新方案（list-watch）对比：
@@ -205,7 +205,7 @@ etcd Watch (事件驱动，不轮询)
 
 1. **C++ CreateScene idempotent by `config_id`**: Before creating a new entity, scans `sceneRegistry.view<SceneInfoComp>()` for an existing entity with the same `scene_confid`. If found, returns the existing scene info. This makes the RPC safe to call any number of times.
 
-2. **Go `initMainScenesForZone` dual-layer idempotency**:
+2. **Go `initWorldScenesForZone` dual-layer idempotency**:
    - Redis layer: `Hget` checks if `confId` already has a scene ID → skips ID allocation.
    - C++ layer: **always sends `CreateScene` RPC** regardless of Redis state (C++ deduplicates).
    - This handles the scenario where Redis has stale data (scene ID exists) but the C++ node restarted and its ECS registry is empty.
@@ -225,9 +225,9 @@ etcd Watch (事件驱动，不轮询)
 ## Main Scene Initialization
 
 事件驱动，不阻塞启动：
-1. `StartLoadReporter` → `fullSync()` 全量拉 etcd → 对所有发现的 zone 执行 `initMainScenesForZone`（全量 reconcile）。
-2. 之后 Watch 接管：每当有 C++ 场景节点注册（PUT 事件），`handleWatchEvent` 触发该 zone 的 `initMainScenesForZone`（增量 reconcile）。
-3. `initMainScenesForZone`: iterates `MainSceneConfIds`, performs Redis idempotent check (skip ID allocation if exists), always sends C++ CreateScene RPC, assigns nodes via FNV-1a consistent hashing.
+1. `StartLoadReporter` → `fullSync()` 全量拉 etcd → 对所有发现的 zone 执行 `initWorldScenesForZone`（全量 reconcile）。
+2. 之后 Watch 接管：每当有 C++ 场景节点注册（PUT 事件），`handleWatchEvent` 触发该 zone 的 `initWorldScenesForZone`（增量 reconcile）。
+3. `initWorldScenesForZone`: iterates `WorldConfIds`, performs Redis idempotent check (skip ID allocation if exists), always sends C++ CreateScene RPC, assigns nodes via FNV-1a consistent hashing.
 
 ## Key Redis Keys
 
@@ -235,7 +235,7 @@ etcd Watch (事件驱动，不轮询)
 |-----|------|---------|
 | `scene:id_counter` | String (int) | Auto-increment scene ID |
 | `scene:{id}:node` | String | Scene → node mapping |
-| `main_scenes:zone:{zoneId}` | Hash | confId → sceneId for main worlds |
+| `world_channels:zone:{zoneId}` | Hash | confId → sceneId for main worlds |
 | `instances:zone:{zoneId}:active` | ZSet | Active instances (score = create/last-active timestamp) |
 | `instance:{id}:player_count` | String (int) | Player count per instance |
 | `scene_nodes:zone:{zoneId}:load` | ZSet | Node load balancing (score = scene count) |
@@ -246,7 +246,7 @@ etcd Watch (事件驱动，不轮询)
 In `etc/scene_manager_service.yaml`:
 
 ```yaml
-MainSceneConfIds:         # List of scene_conf_ids that are main world scenes
+WorldConfIds:         # List of scene_conf_ids that are main world scenes
   - 1001
   - 1002
 InstanceIdleTimeoutSeconds: 300   # Auto-destroy idle instances after this (0 = disabled)
@@ -258,7 +258,7 @@ InstanceCheckIntervalSeconds: 30  # How often to check for idle instances
 | File | Purpose |
 |------|---------|
 | `go/scene_manager/internal/logic/createscenelogic.go` | CreateScene routing: main world vs instance |
-| `go/scene_manager/internal/logic/main_scene_init.go` | Startup init of persistent main world scenes |
+| `go/scene_manager/internal/logic/world_init.go` | Startup init of persistent world scenes |
 | `go/scene_manager/internal/logic/instance_lifecycle.go` | Auto-destroy idle instances + player count helpers |
 | `go/scene_manager/internal/logic/scene_node_client.go` | gRPC client cache + RequestNodeCreateScene/DestroyScene |
 | `go/scene_manager/internal/logic/enterscenelogic.go` | EnterScene: location update, gate routing, player count |

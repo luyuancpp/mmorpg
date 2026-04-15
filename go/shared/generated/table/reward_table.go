@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -6,16 +7,16 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
+    "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
 
-var RewardTableManagerInstance = NewRewardTableManager()
-
-
 type RewardTableManager struct {
-    data []*pb.RewardTable
+    data   []*pb.RewardTable
     kvData map[uint32]*pb.RewardTable
 }
+
+var RewardTableManagerInstance = NewRewardTableManager()
 
 func NewRewardTableManager() *RewardTableManager {
     return &RewardTableManager{
@@ -23,16 +24,27 @@ func NewRewardTableManager() *RewardTableManager {
     }
 }
 
-func (m *RewardTableManager) Load(configDir string) error {
-    path := filepath.Join(configDir, "reward.json")
-    raw, err := os.ReadFile(path)
-    if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
-    }
-
+func (m *RewardTableManager) Load(configDir string, useBinary bool) error {
     var container pb.RewardTableData
-    if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+
+    if useBinary {
+        path := filepath.Join(configDir, "reward.pb")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := proto.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse binary: %w", err)
+        }
+    } else {
+        path := filepath.Join(configDir, "reward.json")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := protojson.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse json: %w", err)
+        }
     }
 
     for _, row := range container.Data {
@@ -43,7 +55,12 @@ func (m *RewardTableManager) Load(configDir string) error {
     return nil
 }
 
+func (m *RewardTableManager) GetAll() []*pb.RewardTable {
+    return m.data
+}
+
 func (m *RewardTableManager) GetById(id uint32) (*pb.RewardTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

@@ -1,3 +1,4 @@
+
 package table
 
 import (
@@ -6,16 +7,16 @@ import (
     "path/filepath"
 
     "google.golang.org/protobuf/encoding/protojson"
+    "google.golang.org/protobuf/proto"
     pb "shared/generated/pb/table"
 )
 
-var ActorActionCombatStateTableManagerInstance = NewActorActionCombatStateTableManager()
-
-
 type ActorActionCombatStateTableManager struct {
-    data []*pb.ActorActionCombatStateTable
+    data   []*pb.ActorActionCombatStateTable
     kvData map[uint32]*pb.ActorActionCombatStateTable
 }
+
+var ActorActionCombatStateTableManagerInstance = NewActorActionCombatStateTableManager()
 
 func NewActorActionCombatStateTableManager() *ActorActionCombatStateTableManager {
     return &ActorActionCombatStateTableManager{
@@ -23,16 +24,27 @@ func NewActorActionCombatStateTableManager() *ActorActionCombatStateTableManager
     }
 }
 
-func (m *ActorActionCombatStateTableManager) Load(configDir string) error {
-    path := filepath.Join(configDir, "actoractioncombatstate.json")
-    raw, err := os.ReadFile(path)
-    if err != nil {
-        return fmt.Errorf("failed to read file: %%w", err)
-    }
-
+func (m *ActorActionCombatStateTableManager) Load(configDir string, useBinary bool) error {
     var container pb.ActorActionCombatStateTableData
-    if err := protojson.Unmarshal(raw, &container); err != nil {
-        return fmt.Errorf("failed to parse json: %%w", err)
+
+    if useBinary {
+        path := filepath.Join(configDir, "actoractioncombatstate.pb")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := proto.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse binary: %w", err)
+        }
+    } else {
+        path := filepath.Join(configDir, "actoractioncombatstate.json")
+        raw, err := os.ReadFile(path)
+        if err != nil {
+            return fmt.Errorf("failed to read file: %w", err)
+        }
+        if err := protojson.Unmarshal(raw, &container); err != nil {
+            return fmt.Errorf("failed to parse json: %w", err)
+        }
     }
 
     for _, row := range container.Data {
@@ -43,7 +55,12 @@ func (m *ActorActionCombatStateTableManager) Load(configDir string) error {
     return nil
 }
 
+func (m *ActorActionCombatStateTableManager) GetAll() []*pb.ActorActionCombatStateTable {
+    return m.data
+}
+
 func (m *ActorActionCombatStateTableManager) GetById(id uint32) (*pb.ActorActionCombatStateTable, bool) {
     row, ok := m.kvData[id]
     return row, ok
 }
+

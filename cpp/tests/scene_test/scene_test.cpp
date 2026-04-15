@@ -18,10 +18,10 @@
 const std::size_t kConfigSceneListSize = 50;
 const std::size_t kPerSceneConfigSize = 2;
 
-entt::entity CreateMainSceneNode()
+entt::entity CreateWorldNode()
 {
 	const auto node = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).create();
-	AddMainSceneToNodeComponent(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService), node);
+	AddWorldToNodeComponent(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService), node);
 	return node;
 }
 
@@ -29,12 +29,12 @@ entt::entity CreateMainSceneNode()
 // 场景创建 / 销毁
 // ---------------------------------------------------------------------------
 
-TEST(SceneSystemTests, CreateMainScene)
+TEST(SceneSystemTests, CreateWorldScene)
 {
 	const SceneSystem sceneSystem;
 
 	CreateSceneOnNodeSceneParam createParams;
-	const auto serverEntity1 = CreateMainSceneNode();
+	const auto serverEntity1 = CreateWorldNode();
 
 	createParams.node = serverEntity1;
 	for (uint32_t i = 0; i < kConfigSceneListSize; ++i)
@@ -52,8 +52,8 @@ TEST(SceneSystemTests, CreateMainScene)
 TEST(SceneSystemTests, CreateScene2Server)
 {
 	SceneSystem sceneSystem;
-	const auto node1 = CreateMainSceneNode();
-	const auto node2 = CreateMainSceneNode();
+	const auto node1 = CreateWorldNode();
+	const auto node2 = CreateWorldNode();
 
 	CreateSceneOnNodeSceneParam createParams1;
 	CreateSceneOnNodeSceneParam createParams2;
@@ -87,7 +87,7 @@ TEST(SceneSystemTests, CreateScene2Server)
 TEST(SceneSystemTests, DestroyScene)
 {
 	SceneSystem sceneSystem;
-	const auto node1 = CreateMainSceneNode();
+	const auto node1 = CreateWorldNode();
 
 	CreateSceneOnNodeSceneParam createParams1;
 	createParams1.node = node1;
@@ -115,8 +115,8 @@ TEST(SceneSystemTests, DestroyServer)
 {
 	SceneSystem sceneSystem;
 
-	auto node1 = CreateMainSceneNode();
-	auto node2 = CreateMainSceneNode();
+	auto node1 = CreateWorldNode();
+	auto node2 = CreateWorldNode();
 
 	CreateSceneOnNodeSceneParam createParams1;
 	CreateSceneOnNodeSceneParam createParams2;
@@ -169,8 +169,8 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 {
 	SceneSystem sceneSystem;
 
-	auto node1 = CreateMainSceneNode();
-	auto node2 = CreateMainSceneNode();
+	auto node1 = CreateWorldNode();
+	auto node2 = CreateWorldNode();
 
 	CreateSceneOnNodeSceneParam createParams1;
 	CreateSceneOnNodeSceneParam createParams2;
@@ -266,7 +266,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 // 节点维护模式下的场景分配
 // ---------------------------------------------------------------------------
 
-TEST(SceneNodeTest, MaintainModeWeightRoundRobinMainScene)
+TEST(SceneNodeTest, MaintainModeWeightRoundRobinWorld)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	SceneSystem sm;
@@ -278,7 +278,7 @@ TEST(SceneNodeTest, MaintainModeWeightRoundRobinMainScene)
 
 	for (uint32_t i = 0; i < serverSize; ++i)
 	{
-		serverEntities.emplace(CreateMainSceneNode());
+		serverEntities.emplace(CreateWorldNode());
 	}
 
 	CreateSceneOnNodeSceneParam createServerSceneParam;
@@ -338,8 +338,8 @@ TEST(SceneNodeTest, CompelPlayerChangeScene)
 {
 	SceneSystem sm;
 
-	auto node1 = CreateMainSceneNode();
-	auto node2 = CreateMainSceneNode();
+	auto node1 = CreateWorldNode();
+	auto node2 = CreateWorldNode();
 
 	CreateSceneOnNodeSceneParam server1Param;
 	CreateSceneOnNodeSceneParam server2Param;
@@ -390,7 +390,7 @@ TEST(SceneNodeTest, CompelPlayerChangeScene)
 // 节点崩溃场景下的场景分配
 // ---------------------------------------------------------------------------
 
-TEST(SceneNodeTest, CrashModeWeightRoundRobinMainScene)
+TEST(SceneNodeTest, CrashModeWeightRoundRobinWorld)
 {
 	SceneSystem sm;
 	EntityUnorderedSet serverEntities;
@@ -401,7 +401,7 @@ TEST(SceneNodeTest, CrashModeWeightRoundRobinMainScene)
 
 	for (uint32_t i = 0; i < serverSize; ++i)
 	{
-		serverEntities.emplace(CreateMainSceneNode());
+		serverEntities.emplace(CreateWorldNode());
 	}
 
 	CreateSceneOnNodeSceneParam createServerSceneParam;
@@ -461,7 +461,7 @@ TEST(SceneNodeTest, CrashNodeReplaceMovePlayersToNewNode)
 
 	for (uint32_t i = 0; i < nodeSize; ++i)
 	{
-		nodeList.emplace(CreateMainSceneNode());
+		nodeList.emplace(CreateWorldNode());
 	}
 
 	CreateSceneOnNodeSceneParam createNodeSceneParam;
@@ -514,7 +514,7 @@ TEST(SceneNodeTest, CrashNodeReplaceMovePlayersToNewNode)
 // 权重轮循场景分配
 // ---------------------------------------------------------------------------
 
-TEST(SceneNodeTest, WeightRoundRobinMainScene)
+TEST(SceneNodeTest, WeightRoundRobinWorld)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	SceneSystem sm;
@@ -524,7 +524,7 @@ TEST(SceneNodeTest, WeightRoundRobinMainScene)
 	for (uint32_t i = 0; i < server_size; ++i)
 	{
 
-		node_list.emplace(CreateMainSceneNode());
+		node_list.emplace(CreateWorldNode());
 	}
 
 	CreateSceneOnNodeSceneParam create_server_scene_param;
@@ -650,7 +650,7 @@ TEST(SceneNodeTest, PressureModeEnterLeave)
 	// Create server nodes
 	for (uint32_t i = 0; i < serverSize; ++i)
 	{
-		serverEntities.emplace(CreateMainSceneNode());
+		serverEntities.emplace(CreateWorldNode());
 	}
 
 	// Create scenes on each server node
@@ -712,7 +712,7 @@ TEST(SceneNodeTest, PressureModeEnterLeave)
 
 TEST(SceneNodeTest, EnterDefaultScene)
 {
-	const auto gameNode = CreateMainSceneNode();
+	const auto gameNode = CreateWorldNode();
 	CreateSceneOnNodeSceneParam createGSSceneParam{gameNode};
 
 	// Create multiple scenes for the game node
@@ -747,7 +747,7 @@ struct TestNodeId
 // 场景人数满时的场景分配
 // ---------------------------------------------------------------------------
 
-TEST(SceneNodeTest, GetNotFullMainSceneWhenSceneFull)
+TEST(SceneNodeTest, GetNotFullWorldWhenSceneFull)
 {
 	tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).clear();
 	SceneSystem sm;
@@ -759,7 +759,7 @@ TEST(SceneNodeTest, GetNotFullMainSceneWhenSceneFull)
 	// Create server entities and assign node IDs
 	for (uint32_t i = 0; i < serverSize; ++i)
 	{
-		auto server = CreateMainSceneNode();
+		auto server = CreateWorldNode();
 		serverEntities.emplace(server);
 		tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get_or_emplace<TestNodeId>(server).node_id_ = i;
 	}
@@ -930,7 +930,7 @@ TEST(SceneNodeTest, CheckEnterSceneWithCreators)
 	{
 		sceneInfo.mutable_creators()->emplace(i, false); // Assuming creators are added with a boolean indicating creator status
 	}
-	auto scene = SceneCommon::CreateSceneOnSceneNode({.node = CreateMainSceneNode(), .sceneInfo = sceneInfo});
+	auto scene = SceneCommon::CreateSceneOnSceneNode({.node = CreateWorldNode(), .sceneInfo = sceneInfo});
 
 	// Create players with different GUIDs
 	const auto player1 = tlsEcs.actorRegistry.create();
