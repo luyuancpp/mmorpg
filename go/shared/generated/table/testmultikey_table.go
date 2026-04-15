@@ -17,9 +17,9 @@ type TestMultiKeyTableManager struct {
     kvString_keyData map[string]*pb.TestMultiKeyTable
     kvUint32_keyData map[uint32]*pb.TestMultiKeyTable
     kvInt32_keyData map[int32]*pb.TestMultiKeyTable
-    kvM_string_keyData map[string]*pb.TestMultiKeyTable
-    kvM_uint32_keyData map[uint32]*pb.TestMultiKeyTable
-    kvM_int32_keyData map[int32]*pb.TestMultiKeyTable
+    kvM_string_keyData map[string][]*pb.TestMultiKeyTable
+    kvM_uint32_keyData map[uint32][]*pb.TestMultiKeyTable
+    kvM_int32_keyData map[int32][]*pb.TestMultiKeyTable
     idxEffect map[uint32][]*pb.TestMultiKeyTable
 }
 
@@ -31,9 +31,9 @@ func NewTestMultiKeyTableManager() *TestMultiKeyTableManager {
         kvString_keyData: make(map[string]*pb.TestMultiKeyTable),
         kvUint32_keyData: make(map[uint32]*pb.TestMultiKeyTable),
         kvInt32_keyData: make(map[int32]*pb.TestMultiKeyTable),
-        kvM_string_keyData: make(map[string]*pb.TestMultiKeyTable),
-        kvM_uint32_keyData: make(map[uint32]*pb.TestMultiKeyTable),
-        kvM_int32_keyData: make(map[int32]*pb.TestMultiKeyTable),
+        kvM_string_keyData: make(map[string][]*pb.TestMultiKeyTable),
+        kvM_uint32_keyData: make(map[uint32][]*pb.TestMultiKeyTable),
+        kvM_int32_keyData: make(map[int32][]*pb.TestMultiKeyTable),
         idxEffect: make(map[uint32][]*pb.TestMultiKeyTable),
     }
 }
@@ -66,9 +66,9 @@ func (m *TestMultiKeyTableManager) Load(configDir string, useBinary bool) error 
         m.kvString_keyData[row.StringKey] = row
         m.kvUint32_keyData[row.Uint32Key] = row
         m.kvInt32_keyData[row.Int32Key] = row
-        m.kvM_string_keyData[row.MStringKey] = row
-        m.kvM_uint32_keyData[row.MUint32Key] = row
-        m.kvM_int32_keyData[row.MInt32Key] = row
+        m.kvM_string_keyData[row.MStringKey] = append(m.kvM_string_keyData[row.MStringKey], row)
+        m.kvM_uint32_keyData[row.MUint32Key] = append(m.kvM_uint32_keyData[row.MUint32Key], row)
+        m.kvM_int32_keyData[row.MInt32Key] = append(m.kvM_int32_keyData[row.MInt32Key], row)
         for _, elem := range row.Effect {
             m.idxEffect[elem] = append(m.idxEffect[elem], row)
         }
@@ -102,19 +102,19 @@ func (m *TestMultiKeyTableManager) GetByInt32_key(key int32) (*pb.TestMultiKeyTa
     return row, ok
 }
 
-func (m *TestMultiKeyTableManager) GetByM_string_key(key string) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvM_string_keyData[key]
-    return row, ok
+
+func (m *TestMultiKeyTableManager) GetByM_string_key(key string) []*pb.TestMultiKeyTable {
+    return m.kvM_string_keyData[key]
 }
 
-func (m *TestMultiKeyTableManager) GetByM_uint32_key(key uint32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvM_uint32_keyData[key]
-    return row, ok
+
+func (m *TestMultiKeyTableManager) GetByM_uint32_key(key uint32) []*pb.TestMultiKeyTable {
+    return m.kvM_uint32_keyData[key]
 }
 
-func (m *TestMultiKeyTableManager) GetByM_int32_key(key int32) (*pb.TestMultiKeyTable, bool) {
-    row, ok := m.kvM_int32_keyData[key]
-    return row, ok
+
+func (m *TestMultiKeyTableManager) GetByM_int32_key(key int32) []*pb.TestMultiKeyTable {
+    return m.kvM_int32_keyData[key]
 }
 
 
