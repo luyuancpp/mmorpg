@@ -37,22 +37,27 @@ public class MissionTableManager {
         final Map<Integer, List<MissionTable>> idxTarget_count;
 
 
+        final Map<Integer, List<MissionTable>> idxRewardId;
+
 
         Snapshot(MissionTableData data,
                  Map<Integer, MissionTable> kvData,
                  Map<Integer, List<MissionTable>> idxCondition_id,
                  Map<Integer, List<MissionTable>> idxNext_mission_id,
-                 Map<Integer, List<MissionTable>> idxTarget_count) {
+                 Map<Integer, List<MissionTable>> idxTarget_count,
+                 Map<Integer, List<MissionTable>> idxRewardId) {
             this.data = data;
             this.kvData = kvData;
             this.idxCondition_id = idxCondition_id;
             this.idxNext_mission_id = idxNext_mission_id;
             this.idxTarget_count = idxTarget_count;
+            this.idxRewardId = idxRewardId;
         }
     }
 
     private Snapshot snapshot = new Snapshot(
             MissionTableData.getDefaultInstance(),
+            Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
@@ -78,6 +83,7 @@ public class MissionTableManager {
         Map<Integer, List<MissionTable>> idxCondition_id = new HashMap<>();
         Map<Integer, List<MissionTable>> idxNext_mission_id = new HashMap<>();
         Map<Integer, List<MissionTable>> idxTarget_count = new HashMap<>();
+        Map<Integer, List<MissionTable>> idxRewardId = new HashMap<>();
 
         for (MissionTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
@@ -90,9 +96,10 @@ public class MissionTableManager {
             for (Integer elem : row.getTargetCountList()) {
                 idxTarget_count.computeIfAbsent(elem, k -> new ArrayList<>()).add(row);
             }
+            idxRewardId.computeIfAbsent(row.getRewardId(), k -> new ArrayList<>()).add(row);
         }
 
-        this.snapshot = new Snapshot(data, kvData, idxCondition_id, idxNext_mission_id, idxTarget_count);
+        this.snapshot = new Snapshot(data, kvData, idxCondition_id, idxNext_mission_id, idxTarget_count, idxRewardId);
     }
 
     public MissionTableData findAll() {
@@ -125,7 +132,13 @@ public class MissionTableManager {
 
 
 
+    public List<MissionTable> getByRewardId(int key) {
+        return snapshot.idxRewardId.getOrDefault(key, Collections.emptyList());
+    }
 
+
+
+    // FK: reward_id → Reward.id
 
 
     // ---- Exists ----
@@ -156,6 +169,10 @@ public class MissionTableManager {
         return snapshot.idxTarget_count.getOrDefault(key, Collections.emptyList()).size();
     }
 
+
+    public int countByRewardIdIndex(int key) {
+        return snapshot.idxRewardId.getOrDefault(key, Collections.emptyList()).size();
+    }
 
 
     // ---- FindByIds (IN) ----

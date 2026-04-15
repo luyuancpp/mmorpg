@@ -22,6 +22,7 @@ type missionSnapshot struct {
     idxCondition_id map[uint32][]*pb.MissionTable
     idxNext_mission_id map[uint32][]*pb.MissionTable
     idxTarget_count map[uint32][]*pb.MissionTable
+    idxRewardId map[uint32][]*pb.MissionTable
 }
 
 type MissionTableManager struct {
@@ -37,6 +38,7 @@ func NewMissionTableManager() *MissionTableManager {
             idxCondition_id: make(map[uint32][]*pb.MissionTable),
             idxNext_mission_id: make(map[uint32][]*pb.MissionTable),
             idxTarget_count: make(map[uint32][]*pb.MissionTable),
+            idxRewardId: make(map[uint32][]*pb.MissionTable),
         },
     }
 }
@@ -69,6 +71,7 @@ func (m *MissionTableManager) Load(configDir string, useBinary bool) error {
         idxCondition_id: make(map[uint32][]*pb.MissionTable),
         idxNext_mission_id: make(map[uint32][]*pb.MissionTable),
         idxTarget_count: make(map[uint32][]*pb.MissionTable),
+        idxRewardId: make(map[uint32][]*pb.MissionTable),
     }
 
     for _, row := range container.Data {
@@ -82,6 +85,7 @@ func (m *MissionTableManager) Load(configDir string, useBinary bool) error {
         for _, elem := range row.TargetCount {
             snap.idxTarget_count[elem] = append(snap.idxTarget_count[elem], row)
         }
+        snap.idxRewardId[row.RewardId] = append(snap.idxRewardId[row.RewardId], row)
     }
 
     snap.data = container.Data
@@ -114,6 +118,11 @@ func (m *MissionTableManager) FindByTarget_countIndex(key uint32) []*pb.MissionT
 }
 
 
+func (m *MissionTableManager) GetByRewardId(key uint32) []*pb.MissionTable {
+    return m.snap.idxRewardId[key]
+}
+
+
 
 // ---- Exists ----
 
@@ -143,6 +152,11 @@ func (m *MissionTableManager) CountByNext_mission_idIndex(key uint32) int {
 
 func (m *MissionTableManager) CountByTarget_countIndex(key uint32) int {
     return len(m.snap.idxTarget_count[key])
+}
+
+
+func (m *MissionTableManager) CountByRewardIdIndex(key uint32) int {
+    return len(m.snap.idxRewardId[key])
 }
 
 
@@ -190,6 +204,8 @@ func (m *MissionTableManager) First(pred func(*pb.MissionTable) bool) (*pb.Missi
     }
     return nil, false
 }
+// FK: reward_id → Reward.id
+
 
 // ---- Composite Key ----
 
