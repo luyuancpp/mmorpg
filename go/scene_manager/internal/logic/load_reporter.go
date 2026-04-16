@@ -289,6 +289,9 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		delete(pendingRemovals, entry.nodeID)
 		pendingRemovalsMu.Unlock()
 
+		// Clear stale gRPC connection: endpoint may have changed after restart.
+		RemoveNodeConn(entry.nodeID)
+
 		updateNodeLoad(svcCtx, entry)
 		rebuildActiveZones()
 

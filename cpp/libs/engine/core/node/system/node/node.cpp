@@ -102,11 +102,6 @@ namespace
 		return static_cast<uint16_t>(parsedPort);
 	}
 
-	void StdoutOutput(const char *msg, int len)
-	{
-		std::fwrite(msg, 1, static_cast<size_t>(len), stdout);
-	}
-
 	std::string FormatKafkaPartitions(const std::vector<int32_t> &partitions)
 	{
 		if (partitions.empty())
@@ -543,7 +538,12 @@ void Node::ShutdownInLoop()
 	kafkaManager.Shutdown();
 	// Cleared by tlsEcs.Clear() below.
 	tlsEcs.Clear();
-	muduo::Logger::setOutput(StdoutOutput);
+#ifdef WIN32
+	muduo::Logger::setOutput(LogToConsole);
+#else
+	muduo::Logger::setOutput([](const char *msg, int len)
+							 { std::fwrite(msg, 1, static_cast<size_t>(len), stdout); });
+#endif
 	logSystem.stop();
 	LOG_DEBUG << "Node shutdown complete.";
 
@@ -617,14 +617,11 @@ void Node::AsyncOutput(const char *msg, int len)
 	if (activeNode != nullptr)
 	{
 		activeNode->Log().append(msg, len);
-#ifdef WIN32
-		LogToConsole(msg, len);
-#endif
-		return;
 	}
-	StdoutOutput(msg, len);
 #ifdef WIN32
 	LogToConsole(msg, len);
+#else
+	std::fwrite(msg, 1, static_cast<size_t>(len), stdout);
 #endif
 }
 

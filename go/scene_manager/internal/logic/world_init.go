@@ -7,6 +7,7 @@ import (
 	"math"
 	"sort"
 	"strconv"
+	"strings"
 
 	"scene_manager/internal/svc"
 
@@ -47,6 +48,11 @@ func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zon
 	logx.Infof("[World] Zone %d: ensuring %d world scenes x %d channels across %d nodes",
 		zoneId, len(confIds), channelCount, len(nodes))
 
+	// Track nodes proven dead during this batch to avoid repeated failures.
+	deadNodes := make(map[string]struct{})
+	liveNodes := make([]string, len(nodes))
+	copy(liveNodes, nodes)
+
 	created, ensured := 0, 0
 
 	for _, confId := range confIds {
@@ -56,12 +62,17 @@ func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zon
 		existingMembers, _ := svcCtx.Redis.Smembers(channelSetKey)
 		existingCount := len(existingMembers)
 
-		// Create missing channels.
+		// Create missing channels — only assign to live nodes.
 		for i := existingCount; i < channelCount; i++ {
+			if len(liveNodes) == 0 {
+				logx.Errorf("[World] No live nodes remaining for zone %d, stopping allocation", zoneId)
+				break
+			}
+
 			sceneId := svcCtx.SceneIDGen.Generate()
 
 			// Vary hash input per channel so channels may land on different nodes.
-			targetNode := assignNodeByHash(confId*1000+uint64(i), nodes)
+			targetNode := assignNodeByHash(confId*1000+uint64(i), liveNodes)
 
 			sceneNodeKey := fmt.Sprintf("scene:%d:node", sceneId)
 			if err := svcCtx.Redis.Set(sceneNodeKey, targetNode); err != nil {
@@ -86,6 +97,7 @@ func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zon
 		}
 
 		// Always send CreateScene RPC for all channels — C++ deduplicates by scene_id.
+		// If a channel's target node is dead, reassign to a live node.
 		allMembers, _ := svcCtx.Redis.Smembers(channelSetKey)
 		for _, sceneIdStr := range allMembers {
 			sceneId, _ := strconv.ParseUint(sceneIdStr, 10, 64)
@@ -95,14 +107,41 @@ func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zon
 				logx.Errorf("[World] Missing node for scene %d, skipping RPC", sceneId)
 				continue
 			}
+
+			// Reassign if the target node is known dead.
+			if _, dead := deadNodes[targetNode]; dead {
+				if len(liveNodes) == 0 {
+					logx.Errorf("[World] No live nodes remaining, skipping scene %d", sceneId)
+					continue
+				}
+				newNode := assignNodeByHash(confId*1000+uint64(ensured), liveNodes)
+				logx.Infof("[World] Reassigning scene %d from dead node %s to live node %s", sceneId, targetNode, newNode)
+				svcCtx.Redis.Set(nodeKey, newNode)
+				targetNode = newNode
+			}
+
 			if _, err := RequestNodeCreateScene(ctx, svcCtx, targetNode, uint32(confId), sceneId); err != nil {
 				logx.Errorf("[World] Failed to call CreateScene for conf %d scene %d: %v", confId, sceneId, err)
+				// Mark node as dead so we don't keep retrying it for remaining scenes.
+				if isNodeUnreachableError(err) {
+					markNodeDead(svcCtx, zoneId, targetNode, deadNodes, &liveNodes)
+					// Reassign this scene to a live node and retry once.
+					if len(liveNodes) > 0 {
+						newNode := assignNodeByHash(confId*1000+uint64(ensured), liveNodes)
+						logx.Infof("[World] Retrying scene %d on live node %s after dead node %s", sceneId, newNode, targetNode)
+						svcCtx.Redis.Set(nodeKey, newNode)
+						if _, err := RequestNodeCreateScene(ctx, svcCtx, newNode, uint32(confId), sceneId); err != nil {
+							logx.Errorf("[World] Retry also failed for conf %d scene %d on node %s: %v", confId, sceneId, newNode, err)
+						}
+					}
+				}
 			}
 			ensured++
 		}
 	}
 
-	logx.Infof("[World] Zone %d done: created=%d channels, ensured=%d RPCs", zoneId, created, ensured)
+	logx.Infof("[World] Zone %d done: created=%d channels, ensured=%d RPCs, dead_nodes=%d",
+		zoneId, created, ensured, len(deadNodes))
 }
 
 // GetBestWorldChannel returns the (sceneId, nodeId) of the least-loaded channel
@@ -197,4 +236,45 @@ func assignNodeByHash(key uint64, sortedNodes []string) string {
 	h.Write([]byte(fmt.Sprintf("%d", key)))
 	idx := int(h.Sum32()) % len(sortedNodes)
 	return sortedNodes[idx]
+}
+
+// isNodeUnreachableError returns true if the error indicates the node process is
+// not reachable (connection refused, unavailable). This identifies zombie nodes
+// whose etcd lease hasn't expired yet but whose process is dead.
+func isNodeUnreachableError(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "Unavailable") ||
+		strings.Contains(s, "connection refused") ||
+		strings.Contains(s, "connectex") ||
+		strings.Contains(s, "not found in etcd")
+}
+
+// markNodeDead removes a zombie node from Redis load set and connection cache,
+// and updates the local liveNodes slice.
+func markNodeDead(svcCtx *svc.ServiceContext, zoneId uint32, nodeId string, deadNodes map[string]struct{}, liveNodes *[]string) {
+	if _, already := deadNodes[nodeId]; already {
+		return
+	}
+	deadNodes[nodeId] = struct{}{}
+
+	// Remove from the local live list.
+	filtered := (*liveNodes)[:0]
+	for _, n := range *liveNodes {
+		if n != nodeId {
+			filtered = append(filtered, n)
+		}
+	}
+	*liveNodes = filtered
+
+	// Remove from Redis load set so future calls don't pick this node.
+	loadKey := nodeLoadKey(zoneId)
+	svcCtx.Redis.Zrem(loadKey, nodeId)
+
+	// Remove cached gRPC connection (stale endpoint).
+	RemoveNodeConn(nodeId)
+
+	logx.Infof("[World] Marked node %s as dead (zone %d), removed from load set", nodeId, zoneId)
 }
