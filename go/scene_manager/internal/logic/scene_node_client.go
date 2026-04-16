@@ -104,9 +104,16 @@ func getOrDialNode(ctx context.Context, svcCtx *svc.ServiceContext, nodeId strin
 	return conn, nil
 }
 
-// resolveNodeEndpoint looks up the SceneNode registration in etcd and returns
-// the "ip:port" address string. Scans all zones (zone-agnostic).
+// resolveNodeEndpoint returns the "ip:port" gRPC address for a scene node.
+// It first checks the in-memory knownNodes map (maintained by the watch loop),
+// then falls back to a fresh etcd query.
 func resolveNodeEndpoint(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string) (string, error) {
+	// Fast path: use the watch-maintained in-memory registry.
+	if ep, ok := resolveFromKnownNodes(nodeId); ok {
+		return ep, nil
+	}
+
+	// Slow path: query etcd directly (covers race at startup before first fullSync).
 	prefix := "SceneNodeService.rpc/"
 	resp, err := svcCtx.Etcd.Get(ctx, prefix, clientv3.WithPrefix())
 	if err != nil {
@@ -122,12 +129,26 @@ func resolveNodeEndpoint(ctx context.Context, svcCtx *svc.ServiceContext, nodeId
 			if reg.GrpcEndpoint.Port > 0 {
 				return fmt.Sprintf("%s:%d", reg.GrpcEndpoint.IP, reg.GrpcEndpoint.Port), nil
 			}
-			// Fallback to TCP endpoint if gRPC endpoint not yet available.
 			return fmt.Sprintf("%s:%d", reg.Endpoint.IP, reg.Endpoint.Port), nil
 		}
 	}
 
 	return "", fmt.Errorf("scene node %s not found in etcd", nodeId)
+}
+
+// resolveFromKnownNodes checks the in-memory node registry for the endpoint.
+func resolveFromKnownNodes(nodeId string) (string, bool) {
+	knownNodesMu.RLock()
+	defer knownNodesMu.RUnlock()
+	for _, entry := range knownNodes {
+		if entry.nodeID == nodeId {
+			if entry.reg.GrpcEndpoint.Port > 0 {
+				return fmt.Sprintf("%s:%d", entry.reg.GrpcEndpoint.IP, entry.reg.GrpcEndpoint.Port), true
+			}
+			return fmt.Sprintf("%s:%d", entry.reg.Endpoint.IP, entry.reg.Endpoint.Port), true
+		}
+	}
+	return "", false
 }
 
 // RemoveNodeConn closes and removes the cached connection for a node.
