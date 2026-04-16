@@ -3,7 +3,7 @@ option go_package = "guild/proto/common/event";
 
 
 
-message InitializeNpcComponentsEvent
+message InitializeNpcCompsEvent
 {
   uint64 actor_entity = 1;
 }

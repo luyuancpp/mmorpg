@@ -4,6 +4,7 @@ option go_package = "db/proto/gate";
 import "proto/db/proto_option.proto";
 import "proto/common/base/empty.proto";
 import "proto/common/base/message.proto";
+import "proto/common/base/gm_admin.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_GATE;
@@ -34,5 +35,5 @@ service Gate {
   rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
   rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
   rpc BindSessionToGate(BindSessionToGateRequest) returns (BindSessionToGateResponse);
-  
+  rpc GmGracefulShutdown (GmGracefulShutdownRequest) returns (GmGracefulShutdownResponse);
 }

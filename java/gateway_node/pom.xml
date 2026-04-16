@@ -22,6 +22,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jetcd.version>0.8.5</jetcd.version>
         <protobuf.version>3.25.5</protobuf.version>
+        <jvm.warning.suppression.args>-XX:+EnableDynamicAgentLoading -Xshare:off</jvm.warning.suppression.args>
     </properties>
 
     <dependencies>
@@ -91,6 +92,16 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <jvmArguments>${jvm.warning.suppression.args}</jvmArguments>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>${jvm.warning.suppression.args} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>

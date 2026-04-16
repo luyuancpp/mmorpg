@@ -199,7 +199,7 @@ var File_proto_gate_gate_service_proto protoreflect.FileDescriptor
 
 const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/gate/gate_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1fproto/common/base/message.proto\"\x7f\n" +
+	"\x1dproto/gate/gate_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1fproto/common/base/message.proto\x1a proto/common/base/gm_admin.proto\"\x7f\n" +
 	"\x18BindSessionToGateRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
@@ -212,7 +212,7 @@ const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersion\"x\n" +
 	"\x19BroadcastToPlayersRequest\x12!\n" +
 	"\fsession_list\x18\x01 \x03(\x04R\vsessionList\x128\n" +
-	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xef\x03\n" +
+	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xbe\x04\n" +
 	"\x04Gate\x12X\n" +
 	"\x13PlayerEnterGameNode\x12\x1f.RegisterGameNodeSessionRequest\x1a .RegisterGameNodeSessionResponse\x127\n" +
 	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x06.Empty\x12?\n" +
@@ -220,7 +220,8 @@ const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\x12RoutePlayerMessage\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\x128\n" +
 	"\x12BroadcastToPlayers\x12\x1a.BroadcastToPlayersRequest\x1a\x06.Empty\x12>\n" +
 	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponse\x12J\n" +
-	"\x11BindSessionToGate\x12\x19.BindSessionToGateRequest\x1a\x1a.BindSessionToGateResponseB\x19\x98\xd4a\x02Z\x10login/proto/gate\x80\x01\x01b\x06proto3"
+	"\x11BindSessionToGate\x12\x19.BindSessionToGateRequest\x1a\x1a.BindSessionToGateResponse\x12M\n" +
+	"\x12GmGracefulShutdown\x12\x1a.GmGracefulShutdownRequest\x1a\x1b.GmGracefulShutdownResponseB\x19\x98\xd4a\x02Z\x10login/proto/gate\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_gate_gate_service_proto_rawDescOnce sync.Once
@@ -245,11 +246,13 @@ var file_proto_gate_gate_service_proto_goTypes = []any{
 	(*base.RouteMessageRequest)(nil),             // 6: RouteMessageRequest
 	(*base.RoutePlayerMessageRequest)(nil),       // 7: RoutePlayerMessageRequest
 	(*base.NodeHandshakeRequest)(nil),            // 8: NodeHandshakeRequest
-	(*base.RegisterGameNodeSessionResponse)(nil), // 9: RegisterGameNodeSessionResponse
-	(*base.Empty)(nil),                           // 10: Empty
-	(*base.RouteMessageResponse)(nil),            // 11: RouteMessageResponse
-	(*base.RoutePlayerMessageResponse)(nil),      // 12: RoutePlayerMessageResponse
-	(*base.NodeHandshakeResponse)(nil),           // 13: NodeHandshakeResponse
+	(*base.GmGracefulShutdownRequest)(nil),       // 9: GmGracefulShutdownRequest
+	(*base.RegisterGameNodeSessionResponse)(nil), // 10: RegisterGameNodeSessionResponse
+	(*base.Empty)(nil),                           // 11: Empty
+	(*base.RouteMessageResponse)(nil),            // 12: RouteMessageResponse
+	(*base.RoutePlayerMessageResponse)(nil),      // 13: RoutePlayerMessageResponse
+	(*base.NodeHandshakeResponse)(nil),           // 14: NodeHandshakeResponse
+	(*base.GmGracefulShutdownResponse)(nil),      // 15: GmGracefulShutdownResponse
 }
 var file_proto_gate_gate_service_proto_depIdxs = []int32{
 	3,  // 0: BroadcastToPlayersRequest.message_content:type_name -> MessageContent
@@ -260,15 +263,17 @@ var file_proto_gate_gate_service_proto_depIdxs = []int32{
 	2,  // 5: Gate.BroadcastToPlayers:input_type -> BroadcastToPlayersRequest
 	8,  // 6: Gate.NodeHandshake:input_type -> NodeHandshakeRequest
 	0,  // 7: Gate.BindSessionToGate:input_type -> BindSessionToGateRequest
-	9,  // 8: Gate.PlayerEnterGameNode:output_type -> RegisterGameNodeSessionResponse
-	10, // 9: Gate.SendMessageToPlayer:output_type -> Empty
-	11, // 10: Gate.RouteNodeMessage:output_type -> RouteMessageResponse
-	12, // 11: Gate.RoutePlayerMessage:output_type -> RoutePlayerMessageResponse
-	10, // 12: Gate.BroadcastToPlayers:output_type -> Empty
-	13, // 13: Gate.NodeHandshake:output_type -> NodeHandshakeResponse
-	1,  // 14: Gate.BindSessionToGate:output_type -> BindSessionToGateResponse
-	8,  // [8:15] is the sub-list for method output_type
-	1,  // [1:8] is the sub-list for method input_type
+	9,  // 8: Gate.GmGracefulShutdown:input_type -> GmGracefulShutdownRequest
+	10, // 9: Gate.PlayerEnterGameNode:output_type -> RegisterGameNodeSessionResponse
+	11, // 10: Gate.SendMessageToPlayer:output_type -> Empty
+	12, // 11: Gate.RouteNodeMessage:output_type -> RouteMessageResponse
+	13, // 12: Gate.RoutePlayerMessage:output_type -> RoutePlayerMessageResponse
+	11, // 13: Gate.BroadcastToPlayers:output_type -> Empty
+	14, // 14: Gate.NodeHandshake:output_type -> NodeHandshakeResponse
+	1,  // 15: Gate.BindSessionToGate:output_type -> BindSessionToGateResponse
+	15, // 16: Gate.GmGracefulShutdown:output_type -> GmGracefulShutdownResponse
+	9,  // [9:17] is the sub-list for method output_type
+	1,  // [1:9] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name

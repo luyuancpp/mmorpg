@@ -8,5 +8,5 @@ public:
     static void Register();
 
     static void UnRegister();
-    static void InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event);
+    static void InitializeNpcCompsEventHandler(const InitializeNpcCompsEvent& event);
 };

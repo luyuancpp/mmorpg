@@ -123,3 +123,5 @@
 122=SceneNodeGrpcCreateScene
 123=SceneNodeGrpcDestroyScene
 124=SceneClientPlayerCommonRedirectToGate
+125=GateGmGracefulShutdown
+126=SceneSceneGmGracefulShutdown

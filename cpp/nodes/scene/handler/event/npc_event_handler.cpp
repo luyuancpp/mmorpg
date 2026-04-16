@@ -7,14 +7,14 @@
 ///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
 {
-    tlsEcs.dispatcher.sink<InitializeNpcComponentsEvent>().connect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
+    tlsEcs.dispatcher.sink<InitializeNpcCompsEvent>().connect<&NpcEventHandler::InitializeNpcCompsEventHandler>();
 }
 
 void NpcEventHandler::UnRegister()
 {
-    tlsEcs.dispatcher.sink<InitializeNpcComponentsEvent>().disconnect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
+    tlsEcs.dispatcher.sink<InitializeNpcCompsEvent>().disconnect<&NpcEventHandler::InitializeNpcCompsEventHandler>();
 }
-void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event)
+void NpcEventHandler::InitializeNpcCompsEventHandler(const InitializeNpcCompsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	auto npc = entt::to_entity(event.actor_entity());

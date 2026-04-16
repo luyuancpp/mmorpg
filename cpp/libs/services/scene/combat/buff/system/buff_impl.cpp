@@ -71,7 +71,7 @@ void BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::entity casterEntity, e
 }
 
 bool BuffImplSystem::HandleBuffStartSilence(entt::entity parent, const BuffEntry& buffComp) {
-    CombatStateAddedPbEvent event;
+    CombatStateAddedEvent event;
     event.set_actor_entity(entt::to_integral(parent));
     event.set_source_buff_id(buffComp.buffPb.buff_id());
     event.set_state_type(kActorCombatStateSilence);
@@ -81,7 +81,7 @@ bool BuffImplSystem::HandleBuffStartSilence(entt::entity parent, const BuffEntry
 }
 
 bool BuffImplSystem::HandleBuffDestroySilence(entt::entity parent, uint64_t buffId) {
-    CombatStateRemovedPbEvent event;
+    CombatStateRemovedEvent event;
     event.set_actor_entity(entt::to_integral(parent));
     event.set_source_buff_id(buffId);
     event.set_state_type(kActorCombatStateSilence);

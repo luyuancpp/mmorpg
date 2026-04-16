@@ -122,7 +122,7 @@ void NodeHandshakeManager::TriggerNodeConnectionEvent(entt::registry& registry, 
 			client->peer_addr().port() != response.peer_node().endpoint().port()) {
 			continue;
 		}
-		ConnectToNodePbEvent connectEvent;
+		ConnectToNodeEvent connectEvent;
 		connectEvent.set_entity(entt::to_integral(entity));
 		connectEvent.set_node_type(nodeInfo.node_type());
 		tlsEcs.dispatcher.trigger(connectEvent);

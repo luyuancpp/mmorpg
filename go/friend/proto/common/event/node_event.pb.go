@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type OnNodeAddPbEvent struct {
+type OnNodeAddEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	NodeType      uint32                 `protobuf:"varint,2,opt,name=node_type,json=nodeType,proto3" json:"node_type,omitempty"`
@@ -30,20 +30,20 @@ type OnNodeAddPbEvent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OnNodeAddPbEvent) Reset() {
-	*x = OnNodeAddPbEvent{}
+func (x *OnNodeAddEvent) Reset() {
+	*x = OnNodeAddEvent{}
 	mi := &file_proto_common_event_node_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OnNodeAddPbEvent) String() string {
+func (x *OnNodeAddEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OnNodeAddPbEvent) ProtoMessage() {}
+func (*OnNodeAddEvent) ProtoMessage() {}
 
-func (x *OnNodeAddPbEvent) ProtoReflect() protoreflect.Message {
+func (x *OnNodeAddEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_node_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,33 +55,33 @@ func (x *OnNodeAddPbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OnNodeAddPbEvent.ProtoReflect.Descriptor instead.
-func (*OnNodeAddPbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use OnNodeAddEvent.ProtoReflect.Descriptor instead.
+func (*OnNodeAddEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_node_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *OnNodeAddPbEvent) GetEntity() uint64 {
+func (x *OnNodeAddEvent) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-func (x *OnNodeAddPbEvent) GetNodeType() uint32 {
+func (x *OnNodeAddEvent) GetNodeType() uint32 {
 	if x != nil {
 		return x.NodeType
 	}
 	return 0
 }
 
-func (x *OnNodeAddPbEvent) GetScenenodeType() uint32 {
+func (x *OnNodeAddEvent) GetScenenodeType() uint32 {
 	if x != nil {
 		return x.ScenenodeType
 	}
 	return 0
 }
 
-type OnNodeRemovePbEvent struct {
+type OnNodeRemoveEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	NodeType      uint32                 `protobuf:"varint,2,opt,name=node_type,json=nodeType,proto3" json:"node_type,omitempty"`
@@ -90,20 +90,20 @@ type OnNodeRemovePbEvent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OnNodeRemovePbEvent) Reset() {
-	*x = OnNodeRemovePbEvent{}
+func (x *OnNodeRemoveEvent) Reset() {
+	*x = OnNodeRemoveEvent{}
 	mi := &file_proto_common_event_node_event_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OnNodeRemovePbEvent) String() string {
+func (x *OnNodeRemoveEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OnNodeRemovePbEvent) ProtoMessage() {}
+func (*OnNodeRemoveEvent) ProtoMessage() {}
 
-func (x *OnNodeRemovePbEvent) ProtoReflect() protoreflect.Message {
+func (x *OnNodeRemoveEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_node_event_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -115,33 +115,33 @@ func (x *OnNodeRemovePbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OnNodeRemovePbEvent.ProtoReflect.Descriptor instead.
-func (*OnNodeRemovePbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use OnNodeRemoveEvent.ProtoReflect.Descriptor instead.
+func (*OnNodeRemoveEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_node_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *OnNodeRemovePbEvent) GetEntity() uint64 {
+func (x *OnNodeRemoveEvent) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-func (x *OnNodeRemovePbEvent) GetNodeType() uint32 {
+func (x *OnNodeRemoveEvent) GetNodeType() uint32 {
 	if x != nil {
 		return x.NodeType
 	}
 	return 0
 }
 
-func (x *OnNodeRemovePbEvent) GetSceneNodeType() uint32 {
+func (x *OnNodeRemoveEvent) GetSceneNodeType() uint32 {
 	if x != nil {
 		return x.SceneNodeType
 	}
 	return 0
 }
 
-type ConnectToNodePbEvent struct {
+type ConnectToNodeEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint32                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	NodeType      uint32                 `protobuf:"varint,2,opt,name=node_type,json=nodeType,proto3" json:"node_type,omitempty"`
@@ -149,20 +149,20 @@ type ConnectToNodePbEvent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ConnectToNodePbEvent) Reset() {
-	*x = ConnectToNodePbEvent{}
+func (x *ConnectToNodeEvent) Reset() {
+	*x = ConnectToNodeEvent{}
 	mi := &file_proto_common_event_node_event_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ConnectToNodePbEvent) String() string {
+func (x *ConnectToNodeEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ConnectToNodePbEvent) ProtoMessage() {}
+func (*ConnectToNodeEvent) ProtoMessage() {}
 
-func (x *ConnectToNodePbEvent) ProtoReflect() protoreflect.Message {
+func (x *ConnectToNodeEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_node_event_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -174,45 +174,45 @@ func (x *ConnectToNodePbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ConnectToNodePbEvent.ProtoReflect.Descriptor instead.
-func (*ConnectToNodePbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use ConnectToNodeEvent.ProtoReflect.Descriptor instead.
+func (*ConnectToNodeEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_node_event_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ConnectToNodePbEvent) GetEntity() uint32 {
+func (x *ConnectToNodeEvent) GetEntity() uint32 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-func (x *ConnectToNodePbEvent) GetNodeType() uint32 {
+func (x *ConnectToNodeEvent) GetNodeType() uint32 {
 	if x != nil {
 		return x.NodeType
 	}
 	return 0
 }
 
-type OnNodeConnectedPbEvent struct {
+type OnNodeConnectedEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OnNodeConnectedPbEvent) Reset() {
-	*x = OnNodeConnectedPbEvent{}
+func (x *OnNodeConnectedEvent) Reset() {
+	*x = OnNodeConnectedEvent{}
 	mi := &file_proto_common_event_node_event_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OnNodeConnectedPbEvent) String() string {
+func (x *OnNodeConnectedEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OnNodeConnectedPbEvent) ProtoMessage() {}
+func (*OnNodeConnectedEvent) ProtoMessage() {}
 
-func (x *OnNodeConnectedPbEvent) ProtoReflect() protoreflect.Message {
+func (x *OnNodeConnectedEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_node_event_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -224,8 +224,8 @@ func (x *OnNodeConnectedPbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OnNodeConnectedPbEvent.ProtoReflect.Descriptor instead.
-func (*OnNodeConnectedPbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use OnNodeConnectedEvent.ProtoReflect.Descriptor instead.
+func (*OnNodeConnectedEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_node_event_proto_rawDescGZIP(), []int{3}
 }
 
@@ -233,19 +233,19 @@ var File_proto_common_event_node_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_node_event_proto_rawDesc = "" +
 	"\n" +
-	"#proto/common/event/node_event.proto\"n\n" +
-	"\x10OnNodeAddPbEvent\x12\x16\n" +
+	"#proto/common/event/node_event.proto\"l\n" +
+	"\x0eOnNodeAddEvent\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\x12\x1b\n" +
 	"\tnode_type\x18\x02 \x01(\rR\bnodeType\x12%\n" +
-	"\x0escenenode_type\x18\x03 \x01(\rR\rscenenodeType\"r\n" +
-	"\x13OnNodeRemovePbEvent\x12\x16\n" +
+	"\x0escenenode_type\x18\x03 \x01(\rR\rscenenodeType\"p\n" +
+	"\x11OnNodeRemoveEvent\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\x12\x1b\n" +
 	"\tnode_type\x18\x02 \x01(\rR\bnodeType\x12&\n" +
-	"\x0fscene_node_type\x18\x03 \x01(\rR\rsceneNodeType\"K\n" +
-	"\x14ConnectToNodePbEvent\x12\x16\n" +
+	"\x0fscene_node_type\x18\x03 \x01(\rR\rsceneNodeType\"I\n" +
+	"\x12ConnectToNodeEvent\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\rR\x06entity\x12\x1b\n" +
-	"\tnode_type\x18\x02 \x01(\rR\bnodeType\"\x18\n" +
-	"\x16OnNodeConnectedPbEventB\x1bZ\x19friend/proto/common/eventb\x06proto3"
+	"\tnode_type\x18\x02 \x01(\rR\bnodeType\"\x16\n" +
+	"\x14OnNodeConnectedEventB\x1bZ\x19friend/proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_node_event_proto_rawDescOnce sync.Once
@@ -261,10 +261,10 @@ func file_proto_common_event_node_event_proto_rawDescGZIP() []byte {
 
 var file_proto_common_event_node_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_common_event_node_event_proto_goTypes = []any{
-	(*OnNodeAddPbEvent)(nil),       // 0: OnNodeAddPbEvent
-	(*OnNodeRemovePbEvent)(nil),    // 1: OnNodeRemovePbEvent
-	(*ConnectToNodePbEvent)(nil),   // 2: ConnectToNodePbEvent
-	(*OnNodeConnectedPbEvent)(nil), // 3: OnNodeConnectedPbEvent
+	(*OnNodeAddEvent)(nil),       // 0: OnNodeAddEvent
+	(*OnNodeRemoveEvent)(nil),    // 1: OnNodeRemoveEvent
+	(*ConnectToNodeEvent)(nil),   // 2: ConnectToNodeEvent
+	(*OnNodeConnectedEvent)(nil), // 3: OnNodeConnectedEvent
 }
 var file_proto_common_event_node_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

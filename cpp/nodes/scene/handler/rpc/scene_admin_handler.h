@@ -7,4 +7,6 @@ public:
 
 	void Test(::google::protobuf::RpcController* controller,  const ::GameSceneTest* request, ::Empty* response, ::google::protobuf::Closure* done) override;
 
+	void GmGracefulShutdown(::google::protobuf::RpcController* controller,  const ::GmGracefulShutdownRequest* request, ::GmGracefulShutdownResponse* response, ::google::protobuf::Closure* done) override;
+
 };

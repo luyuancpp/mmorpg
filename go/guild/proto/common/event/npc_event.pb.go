@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type InitializeNpcComponentsEvent struct {
+type InitializeNpcCompsEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorEntity   uint64                 `protobuf:"varint,1,opt,name=actor_entity,json=actorEntity,proto3" json:"actor_entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *InitializeNpcComponentsEvent) Reset() {
-	*x = InitializeNpcComponentsEvent{}
+func (x *InitializeNpcCompsEvent) Reset() {
+	*x = InitializeNpcCompsEvent{}
 	mi := &file_proto_common_event_npc_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *InitializeNpcComponentsEvent) String() string {
+func (x *InitializeNpcCompsEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InitializeNpcComponentsEvent) ProtoMessage() {}
+func (*InitializeNpcCompsEvent) ProtoMessage() {}
 
-func (x *InitializeNpcComponentsEvent) ProtoReflect() protoreflect.Message {
+func (x *InitializeNpcCompsEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_npc_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,12 +53,12 @@ func (x *InitializeNpcComponentsEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InitializeNpcComponentsEvent.ProtoReflect.Descriptor instead.
-func (*InitializeNpcComponentsEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use InitializeNpcCompsEvent.ProtoReflect.Descriptor instead.
+func (*InitializeNpcCompsEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_npc_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *InitializeNpcComponentsEvent) GetActorEntity() uint64 {
+func (x *InitializeNpcCompsEvent) GetActorEntity() uint64 {
 	if x != nil {
 		return x.ActorEntity
 	}
@@ -69,8 +69,8 @@ var File_proto_common_event_npc_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_npc_event_proto_rawDesc = "" +
 	"\n" +
-	"\"proto/common/event/npc_event.proto\"A\n" +
-	"\x1cInitializeNpcComponentsEvent\x12!\n" +
+	"\"proto/common/event/npc_event.proto\"<\n" +
+	"\x17InitializeNpcCompsEvent\x12!\n" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntityB\x1aZ\x18guild/proto/common/eventb\x06proto3"
 
 var (
@@ -87,7 +87,7 @@ func file_proto_common_event_npc_event_proto_rawDescGZIP() []byte {
 
 var file_proto_common_event_npc_event_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_common_event_npc_event_proto_goTypes = []any{
-	(*InitializeNpcComponentsEvent)(nil), // 0: InitializeNpcComponentsEvent
+	(*InitializeNpcCompsEvent)(nil), // 0: InitializeNpcCompsEvent
 }
 var file_proto_common_event_npc_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

@@ -117,27 +117,27 @@ func (x *PlayerUpgradeEvent) GetNewLevel() uint32 {
 	return 0
 }
 
-type InitializePlayerComponentsEvent struct {
+type InitializePlayerCompsEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorEntity   uint64                 `protobuf:"varint,1,opt,name=actor_entity,json=actorEntity,proto3" json:"actor_entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *InitializePlayerComponentsEvent) Reset() {
-	*x = InitializePlayerComponentsEvent{}
+func (x *InitializePlayerCompsEvent) Reset() {
+	*x = InitializePlayerCompsEvent{}
 	mi := &file_proto_common_event_player_event_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *InitializePlayerComponentsEvent) String() string {
+func (x *InitializePlayerCompsEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InitializePlayerComponentsEvent) ProtoMessage() {}
+func (*InitializePlayerCompsEvent) ProtoMessage() {}
 
-func (x *InitializePlayerComponentsEvent) ProtoReflect() protoreflect.Message {
+func (x *InitializePlayerCompsEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_player_event_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -149,12 +149,12 @@ func (x *InitializePlayerComponentsEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InitializePlayerComponentsEvent.ProtoReflect.Descriptor instead.
-func (*InitializePlayerComponentsEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use InitializePlayerCompsEvent.ProtoReflect.Descriptor instead.
+func (*InitializePlayerCompsEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_player_event_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *InitializePlayerComponentsEvent) GetActorEntity() uint64 {
+func (x *InitializePlayerCompsEvent) GetActorEntity() uint64 {
 	if x != nil {
 		return x.ActorEntity
 	}
@@ -229,8 +229,8 @@ const file_proto_common_event_player_event_proto_rawDesc = "" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\"T\n" +
 	"\x12PlayerUpgradeEvent\x12!\n" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12\x1b\n" +
-	"\tnew_level\x18\x02 \x01(\rR\bnewLevel\"D\n" +
-	"\x1fInitializePlayerComponentsEvent\x12!\n" +
+	"\tnew_level\x18\x02 \x01(\rR\bnewLevel\"?\n" +
+	"\x1aInitializePlayerCompsEvent\x12!\n" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\"Y\n" +
 	"\x10PlayerLoginEvent\x12!\n" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12\"\n" +
@@ -250,10 +250,10 @@ func file_proto_common_event_player_event_proto_rawDescGZIP() []byte {
 
 var file_proto_common_event_player_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_common_event_player_event_proto_goTypes = []any{
-	(*RegisterPlayerEvent)(nil),             // 0: RegisterPlayerEvent
-	(*PlayerUpgradeEvent)(nil),              // 1: PlayerUpgradeEvent
-	(*InitializePlayerComponentsEvent)(nil), // 2: InitializePlayerComponentsEvent
-	(*PlayerLoginEvent)(nil),                // 3: PlayerLoginEvent
+	(*RegisterPlayerEvent)(nil),        // 0: RegisterPlayerEvent
+	(*PlayerUpgradeEvent)(nil),         // 1: PlayerUpgradeEvent
+	(*InitializePlayerCompsEvent)(nil), // 2: InitializePlayerCompsEvent
+	(*PlayerLoginEvent)(nil),           // 3: PlayerLoginEvent
 }
 var file_proto_common_event_player_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

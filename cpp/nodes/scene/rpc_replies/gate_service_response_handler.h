@@ -9,3 +9,4 @@ void OnGateRoutePlayerMessageReply(const muduo::net::TcpConnectionPtr& conn, con
 void OnGateBroadcastToPlayersReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp);
 void OnGateNodeHandshakeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, muduo::Timestamp timestamp);
 void OnGateBindSessionToGateReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::BindSessionToGateResponse>& replied, muduo::Timestamp timestamp);
+void OnGateGmGracefulShutdownReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::GmGracefulShutdownResponse>& replied, muduo::Timestamp timestamp);

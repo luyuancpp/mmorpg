@@ -52,10 +52,10 @@ struct TableStruct_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto;
 }  // extern "C"
-class InitializeNpcComponentsEvent;
-struct InitializeNpcComponentsEventDefaultTypeInternal;
-extern InitializeNpcComponentsEventDefaultTypeInternal _InitializeNpcComponentsEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull InitializeNpcComponentsEvent_class_data_;
+class InitializeNpcCompsEvent;
+struct InitializeNpcCompsEventDefaultTypeInternal;
+extern InitializeNpcCompsEventDefaultTypeInternal _InitializeNpcCompsEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull InitializeNpcCompsEvent_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -67,30 +67,30 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:InitializeNpcComponentsEvent) */ {
+class InitializeNpcCompsEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:InitializeNpcCompsEvent) */ {
  public:
-  inline InitializeNpcComponentsEvent() : InitializeNpcComponentsEvent(nullptr) {}
-  ~InitializeNpcComponentsEvent() PROTOBUF_FINAL;
+  inline InitializeNpcCompsEvent() : InitializeNpcCompsEvent(nullptr) {}
+  ~InitializeNpcCompsEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(InitializeNpcComponentsEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(InitializeNpcCompsEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(InitializeNpcComponentsEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(InitializeNpcCompsEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR InitializeNpcComponentsEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR InitializeNpcCompsEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline InitializeNpcComponentsEvent(const InitializeNpcComponentsEvent& from) : InitializeNpcComponentsEvent(nullptr, from) {}
-  inline InitializeNpcComponentsEvent(InitializeNpcComponentsEvent&& from) noexcept
-      : InitializeNpcComponentsEvent(nullptr, ::std::move(from)) {}
-  inline InitializeNpcComponentsEvent& operator=(const InitializeNpcComponentsEvent& from) {
+  inline InitializeNpcCompsEvent(const InitializeNpcCompsEvent& from) : InitializeNpcCompsEvent(nullptr, from) {}
+  inline InitializeNpcCompsEvent(InitializeNpcCompsEvent&& from) noexcept
+      : InitializeNpcCompsEvent(nullptr, ::std::move(from)) {}
+  inline InitializeNpcCompsEvent& operator=(const InitializeNpcCompsEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline InitializeNpcComponentsEvent& operator=(InitializeNpcComponentsEvent&& from) noexcept {
+  inline InitializeNpcCompsEvent& operator=(InitializeNpcCompsEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -118,13 +118,13 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const InitializeNpcComponentsEvent& default_instance() {
-    return *reinterpret_cast<const InitializeNpcComponentsEvent*>(
-        &_InitializeNpcComponentsEvent_default_instance_);
+  static const InitializeNpcCompsEvent& default_instance() {
+    return *reinterpret_cast<const InitializeNpcCompsEvent*>(
+        &_InitializeNpcCompsEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(InitializeNpcComponentsEvent& a, InitializeNpcComponentsEvent& b) { a.Swap(&b); }
-  inline void Swap(InitializeNpcComponentsEvent* PROTOBUF_NONNULL other) {
+  friend void swap(InitializeNpcCompsEvent& a, InitializeNpcCompsEvent& b) { a.Swap(&b); }
+  inline void Swap(InitializeNpcCompsEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -132,7 +132,7 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(InitializeNpcComponentsEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(InitializeNpcCompsEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -140,13 +140,13 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  InitializeNpcComponentsEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<InitializeNpcComponentsEvent>(arena);
+  InitializeNpcCompsEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<InitializeNpcCompsEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const InitializeNpcComponentsEvent& from);
+  void CopyFrom(const InitializeNpcCompsEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const InitializeNpcComponentsEvent& from) { InitializeNpcComponentsEvent::MergeImpl(*this, from); }
+  void MergeFrom(const InitializeNpcCompsEvent& from) { InitializeNpcCompsEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -182,18 +182,18 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(InitializeNpcComponentsEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(InitializeNpcCompsEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "InitializeNpcComponentsEvent"; }
+  static ::absl::string_view FullMessageName() { return "InitializeNpcCompsEvent"; }
 
  protected:
-  explicit InitializeNpcComponentsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  InitializeNpcComponentsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InitializeNpcComponentsEvent& from);
-  InitializeNpcComponentsEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InitializeNpcComponentsEvent&& from) noexcept
-      : InitializeNpcComponentsEvent(arena) {
+  explicit InitializeNpcCompsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  InitializeNpcCompsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InitializeNpcCompsEvent& from);
+  InitializeNpcCompsEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InitializeNpcCompsEvent&& from) noexcept
+      : InitializeNpcCompsEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -222,7 +222,7 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
   void _internal_set_actor_entity(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:InitializeNpcComponentsEvent)
+  // @@protoc_insertion_point(class_scope:InitializeNpcCompsEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -245,7 +245,7 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const InitializeNpcComponentsEvent& from_msg);
+        const InitializeNpcCompsEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t actor_entity_;
@@ -255,7 +255,7 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull InitializeNpcComponentsEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull InitializeNpcCompsEvent_class_data_;
 
 // ===================================================================
 
@@ -271,28 +271,28 @@ extern const ::google::protobuf::internal::ClassDataFull InitializeNpcComponents
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// InitializeNpcComponentsEvent
+// InitializeNpcCompsEvent
 
 // uint64 actor_entity = 1;
-inline void InitializeNpcComponentsEvent::clear_actor_entity() {
+inline void InitializeNpcCompsEvent::clear_actor_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t InitializeNpcComponentsEvent::actor_entity() const {
-  // @@protoc_insertion_point(field_get:InitializeNpcComponentsEvent.actor_entity)
+inline ::uint64_t InitializeNpcCompsEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:InitializeNpcCompsEvent.actor_entity)
   return _internal_actor_entity();
 }
-inline void InitializeNpcComponentsEvent::set_actor_entity(::uint64_t value) {
+inline void InitializeNpcCompsEvent::set_actor_entity(::uint64_t value) {
   _internal_set_actor_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:InitializeNpcComponentsEvent.actor_entity)
+  // @@protoc_insertion_point(field_set:InitializeNpcCompsEvent.actor_entity)
 }
-inline ::uint64_t InitializeNpcComponentsEvent::_internal_actor_entity() const {
+inline ::uint64_t InitializeNpcCompsEvent::_internal_actor_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.actor_entity_;
 }
-inline void InitializeNpcComponentsEvent::_internal_set_actor_entity(::uint64_t value) {
+inline void InitializeNpcCompsEvent::_internal_set_actor_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = value;
 }

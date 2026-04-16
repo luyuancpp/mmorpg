@@ -33,6 +33,7 @@
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/db/proto_option.pb.h"
 #include "proto/common/base/empty.pb.h"
+#include "proto/common/base/gm_admin.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -239,6 +240,10 @@ class SceneScene : public ::google::protobuf::Service {
                         const ::GameSceneTest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
+  virtual void GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request,
+                        ::GmGracefulShutdownResponse* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
 
   // implements Service ----------------------------------------------
   const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL GetDescriptor() override;
@@ -274,6 +279,10 @@ class SceneScene_Stub final : public SceneScene {
   void Test(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::GameSceneTest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
+  void GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request,
+                        ::GmGracefulShutdownResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
 
  private:

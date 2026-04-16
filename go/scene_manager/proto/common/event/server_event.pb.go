@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type OnConnect2CentrePbEvent struct {
+type OnConnect2CentreEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OnConnect2CentrePbEvent) Reset() {
-	*x = OnConnect2CentrePbEvent{}
+func (x *OnConnect2CentreEvent) Reset() {
+	*x = OnConnect2CentreEvent{}
 	mi := &file_proto_common_event_server_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OnConnect2CentrePbEvent) String() string {
+func (x *OnConnect2CentreEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OnConnect2CentrePbEvent) ProtoMessage() {}
+func (*OnConnect2CentreEvent) ProtoMessage() {}
 
-func (x *OnConnect2CentrePbEvent) ProtoReflect() protoreflect.Message {
+func (x *OnConnect2CentreEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_server_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,12 +53,12 @@ func (x *OnConnect2CentrePbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OnConnect2CentrePbEvent.ProtoReflect.Descriptor instead.
-func (*OnConnect2CentrePbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use OnConnect2CentreEvent.ProtoReflect.Descriptor instead.
+func (*OnConnect2CentreEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_server_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *OnConnect2CentrePbEvent) GetEntity() uint64 {
+func (x *OnConnect2CentreEvent) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
@@ -149,8 +149,8 @@ var File_proto_common_event_server_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_server_event_proto_rawDesc = "" +
 	"\n" +
-	"%proto/common/event/server_event.proto\"1\n" +
-	"\x17OnConnect2CentrePbEvent\x12\x16\n" +
+	"%proto/common/event/server_event.proto\"/\n" +
+	"\x15OnConnect2CentreEvent\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
 	"\x0fOnConnect2Login\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\"\x0f\n" +
@@ -170,9 +170,9 @@ func file_proto_common_event_server_event_proto_rawDescGZIP() []byte {
 
 var file_proto_common_event_server_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_common_event_server_event_proto_goTypes = []any{
-	(*OnConnect2CentrePbEvent)(nil), // 0: OnConnect2CentrePbEvent
-	(*OnConnect2Login)(nil),         // 1: OnConnect2Login
-	(*OnServerStart)(nil),           // 2: OnServerStart
+	(*OnConnect2CentreEvent)(nil), // 0: OnConnect2CentreEvent
+	(*OnConnect2Login)(nil),       // 1: OnConnect2Login
+	(*OnServerStart)(nil),         // 2: OnServerStart
 }
 var file_proto_common_event_server_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

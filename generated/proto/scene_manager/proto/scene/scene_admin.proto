@@ -3,6 +3,7 @@ option go_package = "scene_manager/proto/scene";
 
 import "proto/db/proto_option.proto";
 import "proto/common/base/empty.proto";
+import "proto/common/base/gm_admin.proto";
 
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_SCENE;
@@ -12,10 +13,10 @@ message GameSceneTest
 {
 }
 
-
 // Normal or session-takeover enter scene
 // Reconnect enter scene (time-dependent)
 service SceneScene
 {
   rpc Test (GameSceneTest) returns (Empty);
+  rpc GmGracefulShutdown (GmGracefulShutdownRequest) returns (GmGracefulShutdownResponse);
 }

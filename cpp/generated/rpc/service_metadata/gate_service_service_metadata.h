@@ -30,3 +30,7 @@ constexpr uint32_t GateNodeHandshakeIndex = 5;
 constexpr uint32_t GateBindSessionToGateMessageId = 56;
 constexpr uint32_t GateBindSessionToGateIndex = 6;
 #define GateBindSessionToGateMethod  ::Gate_Stub::descriptor()->method(6)
+
+constexpr uint32_t GateGmGracefulShutdownMessageId = 125;
+constexpr uint32_t GateGmGracefulShutdownIndex = 7;
+#define GateGmGracefulShutdownMethod  ::Gate_Stub::descriptor()->method(7)

@@ -8,6 +8,6 @@ public:
     static void Register();
 
     static void UnRegister();
-    static void CombatStateAddedPbEventHandler(const CombatStateAddedPbEvent& event);
-    static void CombatStateRemovedPbEventHandler(const CombatStateRemovedPbEvent& event);
+    static void CombatStateAddedEventHandler(const CombatStateAddedEvent& event);
+    static void CombatStateRemovedEventHandler(const CombatStateRemovedEvent& event);
 };

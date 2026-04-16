@@ -51,6 +51,9 @@
     <ClCompile Include="common\base\empty.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="common\base\gm_admin.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="common\base\rpc_message.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -300,6 +303,15 @@
     <ClCompile Include="common\rollback\transaction_log.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="db\proto_option.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="scene_manager\scene_node_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="scene_manager\scene_node_service.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="etcd\etcd.pb.h">
@@ -339,6 +351,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\base\empty.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base\gm_admin.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\base\rpc_message.pb.h">
@@ -585,6 +600,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\rollback\transaction_log.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="db\proto_option.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene_manager\scene_node_service.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene_manager\scene_node_service.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,7 +5,7 @@
 
 class PlayerGameNodeEntryInfoComp;
 class ChangeSceneInfoComp;
-class PlayerMigrationPbEvent;
+class PlayerMigrationEvent;
 
 class PlayerLifecycleSystem
 {
@@ -20,7 +20,7 @@ public:
 	static void DestroyPlayer(Guid player_id);
 	static void HandleExitGameNode(entt::entity player);
 	static void HandleCrossZoneTransfer(entt::entity playerEntity);
-	static void HandlePlayerMigration(const PlayerMigrationPbEvent& msg);
+	static void HandlePlayerMigration(const PlayerMigrationEvent& msg);
 	static entt::entity InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEntryInfoComp& enterInfo);
 	static void SavePlayerToRedis(entt::entity player);
 

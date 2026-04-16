@@ -53,10 +53,10 @@ struct TableStruct_proto_2fcommon_2fevent_2fplayer_5fmigration_5fevent_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fplayer_5fmigration_5fevent_2eproto;
 }  // extern "C"
-class PlayerMigrationPbEvent;
-struct PlayerMigrationPbEventDefaultTypeInternal;
-extern PlayerMigrationPbEventDefaultTypeInternal _PlayerMigrationPbEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull PlayerMigrationPbEvent_class_data_;
+class PlayerMigrationEvent;
+struct PlayerMigrationEventDefaultTypeInternal;
+extern PlayerMigrationEventDefaultTypeInternal _PlayerMigrationEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerMigrationEvent_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -68,30 +68,30 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class PlayerMigrationPbEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerMigrationPbEvent) */ {
+class PlayerMigrationEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerMigrationEvent) */ {
  public:
-  inline PlayerMigrationPbEvent() : PlayerMigrationPbEvent(nullptr) {}
-  ~PlayerMigrationPbEvent() PROTOBUF_FINAL;
+  inline PlayerMigrationEvent() : PlayerMigrationEvent(nullptr) {}
+  ~PlayerMigrationEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(PlayerMigrationPbEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(PlayerMigrationEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerMigrationPbEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerMigrationEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerMigrationPbEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR PlayerMigrationEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerMigrationPbEvent(const PlayerMigrationPbEvent& from) : PlayerMigrationPbEvent(nullptr, from) {}
-  inline PlayerMigrationPbEvent(PlayerMigrationPbEvent&& from) noexcept
-      : PlayerMigrationPbEvent(nullptr, ::std::move(from)) {}
-  inline PlayerMigrationPbEvent& operator=(const PlayerMigrationPbEvent& from) {
+  inline PlayerMigrationEvent(const PlayerMigrationEvent& from) : PlayerMigrationEvent(nullptr, from) {}
+  inline PlayerMigrationEvent(PlayerMigrationEvent&& from) noexcept
+      : PlayerMigrationEvent(nullptr, ::std::move(from)) {}
+  inline PlayerMigrationEvent& operator=(const PlayerMigrationEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerMigrationPbEvent& operator=(PlayerMigrationPbEvent&& from) noexcept {
+  inline PlayerMigrationEvent& operator=(PlayerMigrationEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -119,13 +119,13 @@ class PlayerMigrationPbEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerMigrationPbEvent& default_instance() {
-    return *reinterpret_cast<const PlayerMigrationPbEvent*>(
-        &_PlayerMigrationPbEvent_default_instance_);
+  static const PlayerMigrationEvent& default_instance() {
+    return *reinterpret_cast<const PlayerMigrationEvent*>(
+        &_PlayerMigrationEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(PlayerMigrationPbEvent& a, PlayerMigrationPbEvent& b) { a.Swap(&b); }
-  inline void Swap(PlayerMigrationPbEvent* PROTOBUF_NONNULL other) {
+  friend void swap(PlayerMigrationEvent& a, PlayerMigrationEvent& b) { a.Swap(&b); }
+  inline void Swap(PlayerMigrationEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -133,7 +133,7 @@ class PlayerMigrationPbEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerMigrationPbEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(PlayerMigrationEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -141,13 +141,13 @@ class PlayerMigrationPbEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerMigrationPbEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerMigrationPbEvent>(arena);
+  PlayerMigrationEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerMigrationEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerMigrationPbEvent& from);
+  void CopyFrom(const PlayerMigrationEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerMigrationPbEvent& from) { PlayerMigrationPbEvent::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerMigrationEvent& from) { PlayerMigrationEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -183,18 +183,18 @@ class PlayerMigrationPbEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(PlayerMigrationPbEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(PlayerMigrationEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "PlayerMigrationPbEvent"; }
+  static ::absl::string_view FullMessageName() { return "PlayerMigrationEvent"; }
 
  protected:
-  explicit PlayerMigrationPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  PlayerMigrationPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerMigrationPbEvent& from);
-  PlayerMigrationPbEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerMigrationPbEvent&& from) noexcept
-      : PlayerMigrationPbEvent(arena) {
+  explicit PlayerMigrationEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PlayerMigrationEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerMigrationEvent& from);
+  PlayerMigrationEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerMigrationEvent&& from) noexcept
+      : PlayerMigrationEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -321,7 +321,7 @@ class PlayerMigrationPbEvent final : public ::google::protobuf::Message
   void _internal_set_centre_node_id(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerMigrationPbEvent)
+  // @@protoc_insertion_point(class_scope:PlayerMigrationEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -344,7 +344,7 @@ class PlayerMigrationPbEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const PlayerMigrationPbEvent& from_msg);
+        const PlayerMigrationEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr serialized_player_data_;
@@ -362,7 +362,7 @@ class PlayerMigrationPbEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2fplayer_5fmigration_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull PlayerMigrationPbEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerMigrationEvent_class_data_;
 
 // ===================================================================
 
@@ -378,121 +378,121 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerMigrationPbEvent_
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// PlayerMigrationPbEvent
+// PlayerMigrationEvent
 
 // uint64 player_id = 1;
-inline void PlayerMigrationPbEvent::clear_player_id() {
+inline void PlayerMigrationEvent::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint64_t PlayerMigrationPbEvent::player_id() const {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.player_id)
+inline ::uint64_t PlayerMigrationEvent::player_id() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.player_id)
   return _internal_player_id();
 }
-inline void PlayerMigrationPbEvent::set_player_id(::uint64_t value) {
+inline void PlayerMigrationEvent::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.player_id)
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.player_id)
 }
-inline ::uint64_t PlayerMigrationPbEvent::_internal_player_id() const {
+inline ::uint64_t PlayerMigrationEvent::_internal_player_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.player_id_;
 }
-inline void PlayerMigrationPbEvent::_internal_set_player_id(::uint64_t value) {
+inline void PlayerMigrationEvent::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
 }
 
 // uint64 source_scene_id = 2;
-inline void PlayerMigrationPbEvent::clear_source_scene_id() {
+inline void PlayerMigrationEvent::clear_source_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.source_scene_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint64_t PlayerMigrationPbEvent::source_scene_id() const {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.source_scene_id)
+inline ::uint64_t PlayerMigrationEvent::source_scene_id() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.source_scene_id)
   return _internal_source_scene_id();
 }
-inline void PlayerMigrationPbEvent::set_source_scene_id(::uint64_t value) {
+inline void PlayerMigrationEvent::set_source_scene_id(::uint64_t value) {
   _internal_set_source_scene_id(value);
   _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.source_scene_id)
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.source_scene_id)
 }
-inline ::uint64_t PlayerMigrationPbEvent::_internal_source_scene_id() const {
+inline ::uint64_t PlayerMigrationEvent::_internal_source_scene_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.source_scene_id_;
 }
-inline void PlayerMigrationPbEvent::_internal_set_source_scene_id(::uint64_t value) {
+inline void PlayerMigrationEvent::_internal_set_source_scene_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.source_scene_id_ = value;
 }
 
 // uint64 target_scene_id = 3;
-inline void PlayerMigrationPbEvent::clear_target_scene_id() {
+inline void PlayerMigrationEvent::clear_target_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_scene_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint64_t PlayerMigrationPbEvent::target_scene_id() const {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.target_scene_id)
+inline ::uint64_t PlayerMigrationEvent::target_scene_id() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.target_scene_id)
   return _internal_target_scene_id();
 }
-inline void PlayerMigrationPbEvent::set_target_scene_id(::uint64_t value) {
+inline void PlayerMigrationEvent::set_target_scene_id(::uint64_t value) {
   _internal_set_target_scene_id(value);
   _impl_._has_bits_[0] |= 0x00000010u;
-  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.target_scene_id)
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.target_scene_id)
 }
-inline ::uint64_t PlayerMigrationPbEvent::_internal_target_scene_id() const {
+inline ::uint64_t PlayerMigrationEvent::_internal_target_scene_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.target_scene_id_;
 }
-inline void PlayerMigrationPbEvent::_internal_set_target_scene_id(::uint64_t value) {
+inline void PlayerMigrationEvent::_internal_set_target_scene_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_scene_id_ = value;
 }
 
 // bytes serialized_player_data = 4;
-inline void PlayerMigrationPbEvent::clear_serialized_player_data() {
+inline void PlayerMigrationEvent::clear_serialized_player_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.serialized_player_data_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::std::string& PlayerMigrationPbEvent::serialized_player_data() const
+inline const ::std::string& PlayerMigrationEvent::serialized_player_data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.serialized_player_data)
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.serialized_player_data)
   return _internal_serialized_player_data();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void PlayerMigrationPbEvent::set_serialized_player_data(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void PlayerMigrationEvent::set_serialized_player_data(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.serialized_player_data_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.serialized_player_data)
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.serialized_player_data)
 }
-inline ::std::string* PROTOBUF_NONNULL PlayerMigrationPbEvent::mutable_serialized_player_data()
+inline ::std::string* PROTOBUF_NONNULL PlayerMigrationEvent::mutable_serialized_player_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_serialized_player_data();
-  // @@protoc_insertion_point(field_mutable:PlayerMigrationPbEvent.serialized_player_data)
+  // @@protoc_insertion_point(field_mutable:PlayerMigrationEvent.serialized_player_data)
   return _s;
 }
-inline const ::std::string& PlayerMigrationPbEvent::_internal_serialized_player_data() const {
+inline const ::std::string& PlayerMigrationEvent::_internal_serialized_player_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.serialized_player_data_.Get();
 }
-inline void PlayerMigrationPbEvent::_internal_set_serialized_player_data(const ::std::string& value) {
+inline void PlayerMigrationEvent::_internal_set_serialized_player_data(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   _impl_.serialized_player_data_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL PlayerMigrationPbEvent::_internal_mutable_serialized_player_data() {
+inline ::std::string* PROTOBUF_NONNULL PlayerMigrationEvent::_internal_mutable_serialized_player_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001u;
   return _impl_.serialized_player_data_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE PlayerMigrationPbEvent::release_serialized_player_data() {
+inline ::std::string* PROTOBUF_NULLABLE PlayerMigrationEvent::release_serialized_player_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:PlayerMigrationPbEvent.serialized_player_data)
+  // @@protoc_insertion_point(field_release:PlayerMigrationEvent.serialized_player_data)
   if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
     return nullptr;
   }
@@ -503,7 +503,7 @@ inline ::std::string* PROTOBUF_NULLABLE PlayerMigrationPbEvent::release_serializ
   }
   return released;
 }
-inline void PlayerMigrationPbEvent::set_allocated_serialized_player_data(::std::string* PROTOBUF_NULLABLE value) {
+inline void PlayerMigrationEvent::set_allocated_serialized_player_data(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
@@ -514,121 +514,121 @@ inline void PlayerMigrationPbEvent::set_allocated_serialized_player_data(::std::
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.serialized_player_data_.IsDefault()) {
     _impl_.serialized_player_data_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:PlayerMigrationPbEvent.serialized_player_data)
+  // @@protoc_insertion_point(field_set_allocated:PlayerMigrationEvent.serialized_player_data)
 }
 
 // uint32 from_zone = 5;
-inline void PlayerMigrationPbEvent::clear_from_zone() {
+inline void PlayerMigrationEvent::clear_from_zone() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.from_zone_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000020u;
 }
-inline ::uint32_t PlayerMigrationPbEvent::from_zone() const {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.from_zone)
+inline ::uint32_t PlayerMigrationEvent::from_zone() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.from_zone)
   return _internal_from_zone();
 }
-inline void PlayerMigrationPbEvent::set_from_zone(::uint32_t value) {
+inline void PlayerMigrationEvent::set_from_zone(::uint32_t value) {
   _internal_set_from_zone(value);
   _impl_._has_bits_[0] |= 0x00000020u;
-  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.from_zone)
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.from_zone)
 }
-inline ::uint32_t PlayerMigrationPbEvent::_internal_from_zone() const {
+inline ::uint32_t PlayerMigrationEvent::_internal_from_zone() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.from_zone_;
 }
-inline void PlayerMigrationPbEvent::_internal_set_from_zone(::uint32_t value) {
+inline void PlayerMigrationEvent::_internal_set_from_zone(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.from_zone_ = value;
 }
 
 // uint32 to_zone = 6;
-inline void PlayerMigrationPbEvent::clear_to_zone() {
+inline void PlayerMigrationEvent::clear_to_zone() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.to_zone_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000040u;
 }
-inline ::uint32_t PlayerMigrationPbEvent::to_zone() const {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.to_zone)
+inline ::uint32_t PlayerMigrationEvent::to_zone() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.to_zone)
   return _internal_to_zone();
 }
-inline void PlayerMigrationPbEvent::set_to_zone(::uint32_t value) {
+inline void PlayerMigrationEvent::set_to_zone(::uint32_t value) {
   _internal_set_to_zone(value);
   _impl_._has_bits_[0] |= 0x00000040u;
-  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.to_zone)
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.to_zone)
 }
-inline ::uint32_t PlayerMigrationPbEvent::_internal_to_zone() const {
+inline ::uint32_t PlayerMigrationEvent::_internal_to_zone() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.to_zone_;
 }
-inline void PlayerMigrationPbEvent::_internal_set_to_zone(::uint32_t value) {
+inline void PlayerMigrationEvent::_internal_set_to_zone(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.to_zone_ = value;
 }
 
 // int64 timestamp = 7;
-inline void PlayerMigrationPbEvent::clear_timestamp() {
+inline void PlayerMigrationEvent::clear_timestamp() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.timestamp_ = ::int64_t{0};
   _impl_._has_bits_[0] &= ~0x00000080u;
 }
-inline ::int64_t PlayerMigrationPbEvent::timestamp() const {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.timestamp)
+inline ::int64_t PlayerMigrationEvent::timestamp() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.timestamp)
   return _internal_timestamp();
 }
-inline void PlayerMigrationPbEvent::set_timestamp(::int64_t value) {
+inline void PlayerMigrationEvent::set_timestamp(::int64_t value) {
   _internal_set_timestamp(value);
   _impl_._has_bits_[0] |= 0x00000080u;
-  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.timestamp)
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.timestamp)
 }
-inline ::int64_t PlayerMigrationPbEvent::_internal_timestamp() const {
+inline ::int64_t PlayerMigrationEvent::_internal_timestamp() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.timestamp_;
 }
-inline void PlayerMigrationPbEvent::_internal_set_timestamp(::int64_t value) {
+inline void PlayerMigrationEvent::_internal_set_timestamp(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.timestamp_ = value;
 }
 
 // uint32 centre_node_id = 8;
-inline void PlayerMigrationPbEvent::clear_centre_node_id() {
+inline void PlayerMigrationEvent::clear_centre_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.centre_node_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000100u;
 }
-inline ::uint32_t PlayerMigrationPbEvent::centre_node_id() const {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.centre_node_id)
+inline ::uint32_t PlayerMigrationEvent::centre_node_id() const {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.centre_node_id)
   return _internal_centre_node_id();
 }
-inline void PlayerMigrationPbEvent::set_centre_node_id(::uint32_t value) {
+inline void PlayerMigrationEvent::set_centre_node_id(::uint32_t value) {
   _internal_set_centre_node_id(value);
   _impl_._has_bits_[0] |= 0x00000100u;
-  // @@protoc_insertion_point(field_set:PlayerMigrationPbEvent.centre_node_id)
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.centre_node_id)
 }
-inline ::uint32_t PlayerMigrationPbEvent::_internal_centre_node_id() const {
+inline ::uint32_t PlayerMigrationEvent::_internal_centre_node_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.centre_node_id_;
 }
-inline void PlayerMigrationPbEvent::_internal_set_centre_node_id(::uint32_t value) {
+inline void PlayerMigrationEvent::_internal_set_centre_node_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.centre_node_id_ = value;
 }
 
 // .ChangeSceneInfoComp scene_info = 9;
-inline bool PlayerMigrationPbEvent::has_scene_info() const {
+inline bool PlayerMigrationEvent::has_scene_info() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);
   return value;
 }
-inline const ::ChangeSceneInfoComp& PlayerMigrationPbEvent::_internal_scene_info() const {
+inline const ::ChangeSceneInfoComp& PlayerMigrationEvent::_internal_scene_info() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::ChangeSceneInfoComp* p = _impl_.scene_info_;
   return p != nullptr ? *p : reinterpret_cast<const ::ChangeSceneInfoComp&>(::_ChangeSceneInfoComp_default_instance_);
 }
-inline const ::ChangeSceneInfoComp& PlayerMigrationPbEvent::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerMigrationPbEvent.scene_info)
+inline const ::ChangeSceneInfoComp& PlayerMigrationEvent::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.scene_info)
   return _internal_scene_info();
 }
-inline void PlayerMigrationPbEvent::unsafe_arena_set_allocated_scene_info(
+inline void PlayerMigrationEvent::unsafe_arena_set_allocated_scene_info(
     ::ChangeSceneInfoComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -640,9 +640,9 @@ inline void PlayerMigrationPbEvent::unsafe_arena_set_allocated_scene_info(
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerMigrationPbEvent.scene_info)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerMigrationEvent.scene_info)
 }
-inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE PlayerMigrationPbEvent::release_scene_info() {
+inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE PlayerMigrationEvent::release_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
@@ -661,16 +661,16 @@ inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE PlayerMigrationPbEvent::release_
   }
   return released;
 }
-inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE PlayerMigrationPbEvent::unsafe_arena_release_scene_info() {
+inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE PlayerMigrationEvent::unsafe_arena_release_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:PlayerMigrationPbEvent.scene_info)
+  // @@protoc_insertion_point(field_release:PlayerMigrationEvent.scene_info)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::ChangeSceneInfoComp* temp = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   return temp;
 }
-inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL PlayerMigrationPbEvent::_internal_mutable_scene_info() {
+inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL PlayerMigrationEvent::_internal_mutable_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.scene_info_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::ChangeSceneInfoComp>(GetArena());
@@ -678,14 +678,14 @@ inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL PlayerMigrationPbEvent::_internal
   }
   return _impl_.scene_info_;
 }
-inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL PlayerMigrationPbEvent::mutable_scene_info()
+inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL PlayerMigrationEvent::mutable_scene_info()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::ChangeSceneInfoComp* _msg = _internal_mutable_scene_info();
-  // @@protoc_insertion_point(field_mutable:PlayerMigrationPbEvent.scene_info)
+  // @@protoc_insertion_point(field_mutable:PlayerMigrationEvent.scene_info)
   return _msg;
 }
-inline void PlayerMigrationPbEvent::set_allocated_scene_info(::ChangeSceneInfoComp* PROTOBUF_NULLABLE value) {
+inline void PlayerMigrationEvent::set_allocated_scene_info(::ChangeSceneInfoComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -703,7 +703,7 @@ inline void PlayerMigrationPbEvent::set_allocated_scene_info(::ChangeSceneInfoCo
   }
 
   _impl_.scene_info_ = reinterpret_cast<::ChangeSceneInfoComp*>(value);
-  // @@protoc_insertion_point(field_set_allocated:PlayerMigrationPbEvent.scene_info)
+  // @@protoc_insertion_point(field_set_allocated:PlayerMigrationEvent.scene_info)
 }
 
 #ifdef __GNUC__

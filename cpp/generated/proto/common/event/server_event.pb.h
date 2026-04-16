@@ -53,10 +53,10 @@ struct TableStruct_proto_2fcommon_2fevent_2fserver_5fevent_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fserver_5fevent_2eproto;
 }  // extern "C"
-class OnConnect2CentrePbEvent;
-struct OnConnect2CentrePbEventDefaultTypeInternal;
-extern OnConnect2CentrePbEventDefaultTypeInternal _OnConnect2CentrePbEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull OnConnect2CentrePbEvent_class_data_;
+class OnConnect2CentreEvent;
+struct OnConnect2CentreEventDefaultTypeInternal;
+extern OnConnect2CentreEventDefaultTypeInternal _OnConnect2CentreEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull OnConnect2CentreEvent_class_data_;
 class OnConnect2Login;
 struct OnConnect2LoginDefaultTypeInternal;
 extern OnConnect2LoginDefaultTypeInternal _OnConnect2Login_default_instance_;
@@ -413,30 +413,30 @@ class OnConnect2Login final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull OnConnect2Login_class_data_;
 // -------------------------------------------------------------------
 
-class OnConnect2CentrePbEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:OnConnect2CentrePbEvent) */ {
+class OnConnect2CentreEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:OnConnect2CentreEvent) */ {
  public:
-  inline OnConnect2CentrePbEvent() : OnConnect2CentrePbEvent(nullptr) {}
-  ~OnConnect2CentrePbEvent() PROTOBUF_FINAL;
+  inline OnConnect2CentreEvent() : OnConnect2CentreEvent(nullptr) {}
+  ~OnConnect2CentreEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(OnConnect2CentrePbEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(OnConnect2CentreEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(OnConnect2CentrePbEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(OnConnect2CentreEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR OnConnect2CentrePbEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR OnConnect2CentreEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline OnConnect2CentrePbEvent(const OnConnect2CentrePbEvent& from) : OnConnect2CentrePbEvent(nullptr, from) {}
-  inline OnConnect2CentrePbEvent(OnConnect2CentrePbEvent&& from) noexcept
-      : OnConnect2CentrePbEvent(nullptr, ::std::move(from)) {}
-  inline OnConnect2CentrePbEvent& operator=(const OnConnect2CentrePbEvent& from) {
+  inline OnConnect2CentreEvent(const OnConnect2CentreEvent& from) : OnConnect2CentreEvent(nullptr, from) {}
+  inline OnConnect2CentreEvent(OnConnect2CentreEvent&& from) noexcept
+      : OnConnect2CentreEvent(nullptr, ::std::move(from)) {}
+  inline OnConnect2CentreEvent& operator=(const OnConnect2CentreEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline OnConnect2CentrePbEvent& operator=(OnConnect2CentrePbEvent&& from) noexcept {
+  inline OnConnect2CentreEvent& operator=(OnConnect2CentreEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -464,13 +464,13 @@ class OnConnect2CentrePbEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const OnConnect2CentrePbEvent& default_instance() {
-    return *reinterpret_cast<const OnConnect2CentrePbEvent*>(
-        &_OnConnect2CentrePbEvent_default_instance_);
+  static const OnConnect2CentreEvent& default_instance() {
+    return *reinterpret_cast<const OnConnect2CentreEvent*>(
+        &_OnConnect2CentreEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(OnConnect2CentrePbEvent& a, OnConnect2CentrePbEvent& b) { a.Swap(&b); }
-  inline void Swap(OnConnect2CentrePbEvent* PROTOBUF_NONNULL other) {
+  friend void swap(OnConnect2CentreEvent& a, OnConnect2CentreEvent& b) { a.Swap(&b); }
+  inline void Swap(OnConnect2CentreEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -478,7 +478,7 @@ class OnConnect2CentrePbEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(OnConnect2CentrePbEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(OnConnect2CentreEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -486,13 +486,13 @@ class OnConnect2CentrePbEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  OnConnect2CentrePbEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<OnConnect2CentrePbEvent>(arena);
+  OnConnect2CentreEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<OnConnect2CentreEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const OnConnect2CentrePbEvent& from);
+  void CopyFrom(const OnConnect2CentreEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const OnConnect2CentrePbEvent& from) { OnConnect2CentrePbEvent::MergeImpl(*this, from); }
+  void MergeFrom(const OnConnect2CentreEvent& from) { OnConnect2CentreEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -528,18 +528,18 @@ class OnConnect2CentrePbEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(OnConnect2CentrePbEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(OnConnect2CentreEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "OnConnect2CentrePbEvent"; }
+  static ::absl::string_view FullMessageName() { return "OnConnect2CentreEvent"; }
 
  protected:
-  explicit OnConnect2CentrePbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  OnConnect2CentrePbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const OnConnect2CentrePbEvent& from);
-  OnConnect2CentrePbEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, OnConnect2CentrePbEvent&& from) noexcept
-      : OnConnect2CentrePbEvent(arena) {
+  explicit OnConnect2CentreEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  OnConnect2CentreEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const OnConnect2CentreEvent& from);
+  OnConnect2CentreEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, OnConnect2CentreEvent&& from) noexcept
+      : OnConnect2CentreEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -568,7 +568,7 @@ class OnConnect2CentrePbEvent final : public ::google::protobuf::Message
   void _internal_set_entity(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:OnConnect2CentrePbEvent)
+  // @@protoc_insertion_point(class_scope:OnConnect2CentreEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -591,7 +591,7 @@ class OnConnect2CentrePbEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const OnConnect2CentrePbEvent& from_msg);
+        const OnConnect2CentreEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t entity_;
@@ -601,7 +601,7 @@ class OnConnect2CentrePbEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2fserver_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull OnConnect2CentrePbEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull OnConnect2CentreEvent_class_data_;
 
 // ===================================================================
 
@@ -617,28 +617,28 @@ extern const ::google::protobuf::internal::ClassDataFull OnConnect2CentrePbEvent
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// OnConnect2CentrePbEvent
+// OnConnect2CentreEvent
 
 // uint64 entity = 1;
-inline void OnConnect2CentrePbEvent::clear_entity() {
+inline void OnConnect2CentreEvent::clear_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t OnConnect2CentrePbEvent::entity() const {
-  // @@protoc_insertion_point(field_get:OnConnect2CentrePbEvent.entity)
+inline ::uint64_t OnConnect2CentreEvent::entity() const {
+  // @@protoc_insertion_point(field_get:OnConnect2CentreEvent.entity)
   return _internal_entity();
 }
-inline void OnConnect2CentrePbEvent::set_entity(::uint64_t value) {
+inline void OnConnect2CentreEvent::set_entity(::uint64_t value) {
   _internal_set_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:OnConnect2CentrePbEvent.entity)
+  // @@protoc_insertion_point(field_set:OnConnect2CentreEvent.entity)
 }
-inline ::uint64_t OnConnect2CentrePbEvent::_internal_entity() const {
+inline ::uint64_t OnConnect2CentreEvent::_internal_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.entity_;
 }
-inline void OnConnect2CentrePbEvent::_internal_set_entity(::uint64_t value) {
+inline void OnConnect2CentreEvent::_internal_set_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.entity_ = value;
 }

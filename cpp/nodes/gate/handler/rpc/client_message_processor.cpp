@@ -107,7 +107,7 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
 	messageDispatcher.registerMessageCallback<ClientTokenVerifyRequest>(
 		std::bind(&RpcClientSessionHandler::DispatchTokenVerify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-	tlsEcs.dispatcher.sink<OnNodeRemovePbEvent>().connect<&RpcClientSessionHandler::OnNodeRemovePbEventHandler>(*this);
+	tlsEcs.dispatcher.sink<OnNodeRemoveEvent>().connect<&RpcClientSessionHandler::OnNodeRemoveEventHandler>(*this);
 }
 
 // Scene node binding must be set explicitly by scene manager (e.g. EnterScene).
@@ -518,7 +518,7 @@ void RpcClientSessionHandler::DispatchTokenVerify(const muduo::net::TcpConnectio
 	LOG_INFO << "[Token] Session verified, session_id: " << sessionId;
 }
 
-void RpcClientSessionHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent &pb)
+void RpcClientSessionHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent &pb)
 {
 	auto &registry = tlsNodeContextManager.GetRegistry(pb.node_type());
 	for (auto &session : tlsSessionManager.sessions())

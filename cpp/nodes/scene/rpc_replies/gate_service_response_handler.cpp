@@ -25,6 +25,8 @@ void InitGateReply()
         std::bind(&OnGateNodeHandshakeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::BindSessionToGateResponse>(GateBindSessionToGateMessageId,
         std::bind(&OnGateBindSessionToGateReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gRpcResponseDispatcher.registerMessageCallback<::GmGracefulShutdownResponse>(GateGmGracefulShutdownMessageId,
+        std::bind(&OnGateGmGracefulShutdownReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnGatePlayerEnterGameNodeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::RegisterGameNodeSessionResponse>& replied, muduo::Timestamp timestamp)
@@ -67,4 +69,10 @@ void OnGateBindSessionToGateReply(const muduo::net::TcpConnectionPtr& conn, cons
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+}
+
+void OnGateGmGracefulShutdownReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::GmGracefulShutdownResponse>& replied, muduo::Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE}
 }

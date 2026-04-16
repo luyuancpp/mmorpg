@@ -3,7 +3,7 @@ option go_package = "contracts/proto/common/event";
 
 import "proto/common/component/scene_comp.proto";
 
-message PlayerMigrationPbEvent {
+message PlayerMigrationEvent {
   uint64 player_id = 1;
   uint64 source_scene_id = 2;
   uint64 target_scene_id = 3;

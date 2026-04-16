@@ -25,30 +25,30 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr InitializeNpcComponentsEvent::Impl_::Impl_(
+inline constexpr InitializeNpcCompsEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         actor_entity_{::uint64_t{0u}} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR InitializeNpcComponentsEvent::InitializeNpcComponentsEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR InitializeNpcCompsEvent::InitializeNpcCompsEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(InitializeNpcComponentsEvent_class_data_.base()),
+    : ::google::protobuf::Message(InitializeNpcCompsEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct InitializeNpcComponentsEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR InitializeNpcComponentsEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~InitializeNpcComponentsEventDefaultTypeInternal() {}
+struct InitializeNpcCompsEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR InitializeNpcCompsEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~InitializeNpcCompsEventDefaultTypeInternal() {}
   union {
-    InitializeNpcComponentsEvent _instance;
+    InitializeNpcCompsEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InitializeNpcComponentsEventDefaultTypeInternal _InitializeNpcComponentsEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InitializeNpcCompsEventDefaultTypeInternal _InitializeNpcCompsEvent_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -57,30 +57,30 @@ const ::uint32_t
     TableStruct_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::InitializeNpcComponentsEvent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::InitializeNpcCompsEvent, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::InitializeNpcComponentsEvent, _impl_.actor_entity_),
+        PROTOBUF_FIELD_OFFSET(::InitializeNpcCompsEvent, _impl_.actor_entity_),
         0,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::InitializeNpcComponentsEvent)},
+        {0, sizeof(::InitializeNpcCompsEvent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_InitializeNpcComponentsEvent_default_instance_._instance,
+    &::_InitializeNpcCompsEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\"proto/common/event/npc_event.proto\"4\n\034"
-    "InitializeNpcComponentsEvent\022\024\n\014actor_en"
-    "tity\030\001 \001(\004B\016Z\014common/eventb\006proto3"
+    "\n\"proto/common/event/npc_event.proto\"/\n\027"
+    "InitializeNpcCompsEvent\022\024\n\014actor_entity\030"
+    "\001 \001(\004B\016Z\014common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto = {
     false,
     false,
-    114,
+    109,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto,
     "proto/common/event/npc_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto_once,
@@ -95,27 +95,27 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
 };
 // ===================================================================
 
-class InitializeNpcComponentsEvent::_Internal {
+class InitializeNpcCompsEvent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<InitializeNpcComponentsEvent>()._impl_._has_bits_);
+      decltype(::std::declval<InitializeNpcCompsEvent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(InitializeNpcCompsEvent, _impl_._has_bits_);
 };
 
-InitializeNpcComponentsEvent::InitializeNpcComponentsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+InitializeNpcCompsEvent::InitializeNpcCompsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, InitializeNpcComponentsEvent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, InitializeNpcCompsEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:InitializeNpcComponentsEvent)
+  // @@protoc_insertion_point(arena_constructor:InitializeNpcCompsEvent)
 }
-InitializeNpcComponentsEvent::InitializeNpcComponentsEvent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InitializeNpcComponentsEvent& from)
+InitializeNpcCompsEvent::InitializeNpcCompsEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InitializeNpcCompsEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, InitializeNpcComponentsEvent_class_data_.base()),
+    : ::google::protobuf::Message(arena, InitializeNpcCompsEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -123,73 +123,73 @@ InitializeNpcComponentsEvent::InitializeNpcComponentsEvent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE InitializeNpcComponentsEvent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE InitializeNpcCompsEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void InitializeNpcComponentsEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void InitializeNpcCompsEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.actor_entity_ = {};
 }
-InitializeNpcComponentsEvent::~InitializeNpcComponentsEvent() {
-  // @@protoc_insertion_point(destructor:InitializeNpcComponentsEvent)
+InitializeNpcCompsEvent::~InitializeNpcCompsEvent() {
+  // @@protoc_insertion_point(destructor:InitializeNpcCompsEvent)
   SharedDtor(*this);
 }
-inline void InitializeNpcComponentsEvent::SharedDtor(MessageLite& self) {
-  InitializeNpcComponentsEvent& this_ = static_cast<InitializeNpcComponentsEvent&>(self);
+inline void InitializeNpcCompsEvent::SharedDtor(MessageLite& self) {
+  InitializeNpcCompsEvent& this_ = static_cast<InitializeNpcCompsEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL InitializeNpcComponentsEvent::PlacementNew_(
+inline void* PROTOBUF_NONNULL InitializeNpcCompsEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) InitializeNpcComponentsEvent(arena);
+  return ::new (mem) InitializeNpcCompsEvent(arena);
 }
-constexpr auto InitializeNpcComponentsEvent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(InitializeNpcComponentsEvent),
-                                            alignof(InitializeNpcComponentsEvent));
+constexpr auto InitializeNpcCompsEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(InitializeNpcCompsEvent),
+                                            alignof(InitializeNpcCompsEvent));
 }
-constexpr auto InitializeNpcComponentsEvent::InternalGenerateClassData_() {
+constexpr auto InitializeNpcCompsEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_InitializeNpcComponentsEvent_default_instance_._instance,
+          &_InitializeNpcCompsEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &InitializeNpcComponentsEvent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<InitializeNpcComponentsEvent>(),
+          &InitializeNpcCompsEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<InitializeNpcCompsEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &InitializeNpcComponentsEvent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<InitializeNpcComponentsEvent>(), &InitializeNpcComponentsEvent::ByteSizeLong,
-              &InitializeNpcComponentsEvent::_InternalSerialize,
+          &InitializeNpcCompsEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<InitializeNpcCompsEvent>(), &InitializeNpcCompsEvent::ByteSizeLong,
+              &InitializeNpcCompsEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(InitializeNpcCompsEvent, _impl_._cached_size_),
           false,
       },
-      &InitializeNpcComponentsEvent::kDescriptorMethods,
+      &InitializeNpcCompsEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2fnpc_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull InitializeNpcComponentsEvent_class_data_ =
-        InitializeNpcComponentsEvent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull InitializeNpcCompsEvent_class_data_ =
+        InitializeNpcCompsEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-InitializeNpcComponentsEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&InitializeNpcComponentsEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(InitializeNpcComponentsEvent_class_data_.tc_table);
-  return InitializeNpcComponentsEvent_class_data_.base();
+InitializeNpcCompsEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&InitializeNpcCompsEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(InitializeNpcCompsEvent_class_data_.tc_table);
+  return InitializeNpcCompsEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
-InitializeNpcComponentsEvent::_table_ = {
+InitializeNpcCompsEvent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(InitializeNpcCompsEvent, _impl_._has_bits_),
     0, // no _extensions_
     1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -198,29 +198,29 @@ InitializeNpcComponentsEvent::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    InitializeNpcComponentsEvent_class_data_.base(),
+    InitializeNpcCompsEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::InitializeNpcComponentsEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::InitializeNpcCompsEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 actor_entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(InitializeNpcComponentsEvent, _impl_.actor_entity_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_.actor_entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(InitializeNpcCompsEvent, _impl_.actor_entity_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(InitializeNpcCompsEvent, _impl_.actor_entity_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 actor_entity = 1;
-    {PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_.actor_entity_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(InitializeNpcCompsEvent, _impl_.actor_entity_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void InitializeNpcComponentsEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:InitializeNpcComponentsEvent)
+PROTOBUF_NOINLINE void InitializeNpcCompsEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:InitializeNpcCompsEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -232,17 +232,17 @@ PROTOBUF_NOINLINE void InitializeNpcComponentsEvent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL InitializeNpcComponentsEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL InitializeNpcCompsEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const InitializeNpcComponentsEvent& this_ = static_cast<const InitializeNpcComponentsEvent&>(base);
+  const InitializeNpcCompsEvent& this_ = static_cast<const InitializeNpcCompsEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL InitializeNpcComponentsEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL InitializeNpcCompsEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const InitializeNpcComponentsEvent& this_ = *this;
+  const InitializeNpcCompsEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:InitializeNpcComponentsEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:InitializeNpcCompsEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -260,18 +260,18 @@ PROTOBUF_NOINLINE void InitializeNpcComponentsEvent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:InitializeNpcComponentsEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:InitializeNpcCompsEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t InitializeNpcComponentsEvent::ByteSizeLong(const MessageLite& base) {
-  const InitializeNpcComponentsEvent& this_ = static_cast<const InitializeNpcComponentsEvent&>(base);
+::size_t InitializeNpcCompsEvent::ByteSizeLong(const MessageLite& base) {
+  const InitializeNpcCompsEvent& this_ = static_cast<const InitializeNpcCompsEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t InitializeNpcComponentsEvent::ByteSizeLong() const {
-  const InitializeNpcComponentsEvent& this_ = *this;
+::size_t InitializeNpcCompsEvent::ByteSizeLong() const {
+  const InitializeNpcCompsEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:InitializeNpcComponentsEvent)
+  // @@protoc_insertion_point(message_byte_size_start:InitializeNpcCompsEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -292,10 +292,10 @@ PROTOBUF_NOINLINE void InitializeNpcComponentsEvent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void InitializeNpcComponentsEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<InitializeNpcComponentsEvent*>(&to_msg);
-  auto& from = static_cast<const InitializeNpcComponentsEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:InitializeNpcComponentsEvent)
+void InitializeNpcCompsEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<InitializeNpcCompsEvent*>(&to_msg);
+  auto& from = static_cast<const InitializeNpcCompsEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:InitializeNpcCompsEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -310,22 +310,22 @@ void InitializeNpcComponentsEvent::MergeImpl(::google::protobuf::MessageLite& to
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void InitializeNpcComponentsEvent::CopyFrom(const InitializeNpcComponentsEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:InitializeNpcComponentsEvent)
+void InitializeNpcCompsEvent::CopyFrom(const InitializeNpcCompsEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:InitializeNpcCompsEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void InitializeNpcComponentsEvent::InternalSwap(InitializeNpcComponentsEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void InitializeNpcCompsEvent::InternalSwap(InitializeNpcCompsEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   swap(_impl_.actor_entity_, other->_impl_.actor_entity_);
 }
 
-::google::protobuf::Metadata InitializeNpcComponentsEvent::GetMetadata() const {
+::google::protobuf::Metadata InitializeNpcCompsEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

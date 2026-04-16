@@ -8,6 +8,7 @@
 #include "world/world.h"
 #include "core/system/redis.h"
 #include "frame/manager/frame_time.h"
+#include "player/system/player_lifecycle.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
 
 using namespace muduo;
@@ -53,8 +54,27 @@ int main(int argc, char *argv[])
 
         node.RegisterGrpcService(&context->grpcService);
 
+        node::entry::detail::InstallSignalHandlers(loop);
+
         tlsRedisSystem.Initialize();
         World::InitializeSystemBeforeConnect();
+
+        // SIGTERM / conflict safety net: save all players via the full exit flow.
+        // The preferred shutdown path is GmGracefulShutdown RPC, which also calls
+        // HandleExitGameNode for each player before triggering Shutdown().
+        auto exitAllPlayers = [](Node &)
+        {
+            auto view = tlsEcs.actorRegistry.view<Player>();
+            LOG_INFO << "Emergency save: exiting " << view.size() << " online players before shutdown...";
+            for (auto entity : view)
+            {
+                PlayerLifecycleSystem::HandleExitGameNode(entity);
+            }
+            LOG_INFO << "All players exited.";
+        };
+        node.SetBeforeShutdown(exitAllPlayers);
+        node.SetOnConflictShutdown([exitAllPlayers](Node &n, NodeIdConflictReason)
+                                   { exitAllPlayers(n); });
 
         node.SetAfterStart([&context](Node& n) {
             context->dependencyGate.WaitAndRun(n, { SceneManagerNodeService },

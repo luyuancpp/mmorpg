@@ -25,7 +25,7 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr CombatStateRemovedPbEvent::Impl_::Impl_(
+inline constexpr CombatStateRemovedEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         actor_entity_{::uint64_t{0u}},
@@ -33,26 +33,26 @@ inline constexpr CombatStateRemovedPbEvent::Impl_::Impl_(
         state_type_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CombatStateRemovedPbEvent::CombatStateRemovedPbEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CombatStateRemovedEvent::CombatStateRemovedEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(CombatStateRemovedPbEvent_class_data_.base()),
+    : ::google::protobuf::Message(CombatStateRemovedEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct CombatStateRemovedPbEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CombatStateRemovedPbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CombatStateRemovedPbEventDefaultTypeInternal() {}
+struct CombatStateRemovedEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CombatStateRemovedEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CombatStateRemovedEventDefaultTypeInternal() {}
   union {
-    CombatStateRemovedPbEvent _instance;
+    CombatStateRemovedEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateRemovedPbEventDefaultTypeInternal _CombatStateRemovedPbEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateRemovedEventDefaultTypeInternal _CombatStateRemovedEvent_default_instance_;
 
-inline constexpr CombatStateAddedPbEvent::Impl_::Impl_(
+inline constexpr CombatStateAddedEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         actor_entity_{::uint64_t{0u}},
@@ -60,24 +60,24 @@ inline constexpr CombatStateAddedPbEvent::Impl_::Impl_(
         state_type_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CombatStateAddedPbEvent::CombatStateAddedPbEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CombatStateAddedEvent::CombatStateAddedEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(CombatStateAddedPbEvent_class_data_.base()),
+    : ::google::protobuf::Message(CombatStateAddedEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct CombatStateAddedPbEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CombatStateAddedPbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CombatStateAddedPbEventDefaultTypeInternal() {}
+struct CombatStateAddedEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CombatStateAddedEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CombatStateAddedEventDefaultTypeInternal() {}
   union {
-    CombatStateAddedPbEvent _instance;
+    CombatStateAddedEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateAddedPbEventDefaultTypeInternal _CombatStateAddedPbEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateAddedEventDefaultTypeInternal _CombatStateAddedEvent_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -86,20 +86,20 @@ const ::uint32_t
     TableStruct_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::CombatStateAddedPbEvent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateAddedEvent, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::CombatStateAddedPbEvent, _impl_.actor_entity_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateAddedPbEvent, _impl_.source_buff_id_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateAddedPbEvent, _impl_.state_type_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateAddedEvent, _impl_.actor_entity_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateAddedEvent, _impl_.source_buff_id_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateAddedEvent, _impl_.state_type_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::CombatStateRemovedPbEvent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateRemovedEvent, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::CombatStateRemovedPbEvent, _impl_.actor_entity_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateRemovedPbEvent, _impl_.source_buff_id_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateRemovedPbEvent, _impl_.state_type_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateRemovedEvent, _impl_.actor_entity_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateRemovedEvent, _impl_.source_buff_id_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateRemovedEvent, _impl_.state_type_),
         0,
         1,
         2,
@@ -107,28 +107,28 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::CombatStateAddedPbEvent)},
-        {9, sizeof(::CombatStateRemovedPbEvent)},
+        {0, sizeof(::CombatStateAddedEvent)},
+        {9, sizeof(::CombatStateRemovedEvent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_CombatStateAddedPbEvent_default_instance_._instance,
-    &::_CombatStateRemovedPbEvent_default_instance_._instance,
+    &::_CombatStateAddedEvent_default_instance_._instance,
+    &::_CombatStateRemovedEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n1proto/common/event/actor_combat_state_"
-    "event.proto\"[\n\027CombatStateAddedPbEvent\022\024"
-    "\n\014actor_entity\030\001 \001(\004\022\026\n\016source_buff_id\030\002"
-    " \001(\004\022\022\n\nstate_type\030\003 \001(\r\"]\n\031CombatStateR"
-    "emovedPbEvent\022\024\n\014actor_entity\030\001 \001(\004\022\026\n\016s"
-    "ource_buff_id\030\002 \001(\004\022\022\n\nstate_type\030\003 \001(\rB"
-    "\016Z\014common/eventb\006proto3"
+    "event.proto\"Y\n\025CombatStateAddedEvent\022\024\n\014"
+    "actor_entity\030\001 \001(\004\022\026\n\016source_buff_id\030\002 \001"
+    "(\004\022\022\n\nstate_type\030\003 \001(\r\"[\n\027CombatStateRem"
+    "ovedEvent\022\024\n\014actor_entity\030\001 \001(\004\022\026\n\016sourc"
+    "e_buff_id\030\002 \001(\004\022\022\n\nstate_type\030\003 \001(\rB\016Z\014c"
+    "ommon/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto = {
     false,
     false,
-    263,
+    259,
     descriptor_table_protodef_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto,
     "proto/common/event/actor_combat_state_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto_once,
@@ -143,27 +143,27 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
 };
 // ===================================================================
 
-class CombatStateAddedPbEvent::_Internal {
+class CombatStateAddedEvent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<CombatStateAddedPbEvent>()._impl_._has_bits_);
+      decltype(::std::declval<CombatStateAddedEvent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_._has_bits_);
 };
 
-CombatStateAddedPbEvent::CombatStateAddedPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+CombatStateAddedEvent::CombatStateAddedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CombatStateAddedPbEvent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, CombatStateAddedEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CombatStateAddedPbEvent)
+  // @@protoc_insertion_point(arena_constructor:CombatStateAddedEvent)
 }
-CombatStateAddedPbEvent::CombatStateAddedPbEvent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatStateAddedPbEvent& from)
+CombatStateAddedEvent::CombatStateAddedEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatStateAddedEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CombatStateAddedPbEvent_class_data_.base()),
+    : ::google::protobuf::Message(arena, CombatStateAddedEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -171,12 +171,12 @@ CombatStateAddedPbEvent::CombatStateAddedPbEvent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE CombatStateAddedPbEvent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE CombatStateAddedEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void CombatStateAddedPbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void CombatStateAddedEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, actor_entity_),
@@ -185,64 +185,64 @@ inline void CombatStateAddedPbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE 
                offsetof(Impl_, actor_entity_) +
                sizeof(Impl_::state_type_));
 }
-CombatStateAddedPbEvent::~CombatStateAddedPbEvent() {
-  // @@protoc_insertion_point(destructor:CombatStateAddedPbEvent)
+CombatStateAddedEvent::~CombatStateAddedEvent() {
+  // @@protoc_insertion_point(destructor:CombatStateAddedEvent)
   SharedDtor(*this);
 }
-inline void CombatStateAddedPbEvent::SharedDtor(MessageLite& self) {
-  CombatStateAddedPbEvent& this_ = static_cast<CombatStateAddedPbEvent&>(self);
+inline void CombatStateAddedEvent::SharedDtor(MessageLite& self) {
+  CombatStateAddedEvent& this_ = static_cast<CombatStateAddedEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL CombatStateAddedPbEvent::PlacementNew_(
+inline void* PROTOBUF_NONNULL CombatStateAddedEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) CombatStateAddedPbEvent(arena);
+  return ::new (mem) CombatStateAddedEvent(arena);
 }
-constexpr auto CombatStateAddedPbEvent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CombatStateAddedPbEvent),
-                                            alignof(CombatStateAddedPbEvent));
+constexpr auto CombatStateAddedEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CombatStateAddedEvent),
+                                            alignof(CombatStateAddedEvent));
 }
-constexpr auto CombatStateAddedPbEvent::InternalGenerateClassData_() {
+constexpr auto CombatStateAddedEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_CombatStateAddedPbEvent_default_instance_._instance,
+          &_CombatStateAddedEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &CombatStateAddedPbEvent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<CombatStateAddedPbEvent>(),
+          &CombatStateAddedEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CombatStateAddedEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &CombatStateAddedPbEvent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<CombatStateAddedPbEvent>(), &CombatStateAddedPbEvent::ByteSizeLong,
-              &CombatStateAddedPbEvent::_InternalSerialize,
+          &CombatStateAddedEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CombatStateAddedEvent>(), &CombatStateAddedEvent::ByteSizeLong,
+              &CombatStateAddedEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_._cached_size_),
           false,
       },
-      &CombatStateAddedPbEvent::kDescriptorMethods,
+      &CombatStateAddedEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull CombatStateAddedPbEvent_class_data_ =
-        CombatStateAddedPbEvent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull CombatStateAddedEvent_class_data_ =
+        CombatStateAddedEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-CombatStateAddedPbEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&CombatStateAddedPbEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(CombatStateAddedPbEvent_class_data_.tc_table);
-  return CombatStateAddedPbEvent_class_data_.base();
+CombatStateAddedEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CombatStateAddedEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CombatStateAddedEvent_class_data_.tc_table);
+  return CombatStateAddedEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
-CombatStateAddedPbEvent::_table_ = {
+CombatStateAddedEvent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_._has_bits_),
     0, // no _extensions_
     3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -251,42 +251,42 @@ CombatStateAddedPbEvent::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    CombatStateAddedPbEvent_class_data_.base(),
+    CombatStateAddedEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CombatStateAddedPbEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CombatStateAddedEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 actor_entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CombatStateAddedPbEvent, _impl_.actor_entity_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_.actor_entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CombatStateAddedEvent, _impl_.actor_entity_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_.actor_entity_)}},
     // uint64 source_buff_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CombatStateAddedPbEvent, _impl_.source_buff_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_.source_buff_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CombatStateAddedEvent, _impl_.source_buff_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_.source_buff_id_)}},
     // uint32 state_type = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CombatStateAddedPbEvent, _impl_.state_type_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_.state_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CombatStateAddedEvent, _impl_.state_type_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_.state_type_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 actor_entity = 1;
-    {PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_.actor_entity_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_.actor_entity_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 source_buff_id = 2;
-    {PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_.source_buff_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_.source_buff_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 state_type = 3;
-    {PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_.state_type_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_.state_type_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void CombatStateAddedPbEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:CombatStateAddedPbEvent)
+PROTOBUF_NOINLINE void CombatStateAddedEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:CombatStateAddedEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -303,17 +303,17 @@ PROTOBUF_NOINLINE void CombatStateAddedPbEvent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL CombatStateAddedPbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CombatStateAddedEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const CombatStateAddedPbEvent& this_ = static_cast<const CombatStateAddedPbEvent&>(base);
+  const CombatStateAddedEvent& this_ = static_cast<const CombatStateAddedEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL CombatStateAddedPbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CombatStateAddedEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const CombatStateAddedPbEvent& this_ = *this;
+  const CombatStateAddedEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:CombatStateAddedPbEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:CombatStateAddedEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -349,18 +349,18 @@ PROTOBUF_NOINLINE void CombatStateAddedPbEvent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:CombatStateAddedPbEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:CombatStateAddedEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t CombatStateAddedPbEvent::ByteSizeLong(const MessageLite& base) {
-  const CombatStateAddedPbEvent& this_ = static_cast<const CombatStateAddedPbEvent&>(base);
+::size_t CombatStateAddedEvent::ByteSizeLong(const MessageLite& base) {
+  const CombatStateAddedEvent& this_ = static_cast<const CombatStateAddedEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t CombatStateAddedPbEvent::ByteSizeLong() const {
-  const CombatStateAddedPbEvent& this_ = *this;
+::size_t CombatStateAddedEvent::ByteSizeLong() const {
+  const CombatStateAddedEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:CombatStateAddedPbEvent)
+  // @@protoc_insertion_point(message_byte_size_start:CombatStateAddedEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -396,10 +396,10 @@ PROTOBUF_NOINLINE void CombatStateAddedPbEvent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void CombatStateAddedPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CombatStateAddedPbEvent*>(&to_msg);
-  auto& from = static_cast<const CombatStateAddedPbEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateAddedPbEvent)
+void CombatStateAddedEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CombatStateAddedEvent*>(&to_msg);
+  auto& from = static_cast<const CombatStateAddedEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateAddedEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -426,52 +426,52 @@ void CombatStateAddedPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CombatStateAddedPbEvent::CopyFrom(const CombatStateAddedPbEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateAddedPbEvent)
+void CombatStateAddedEvent::CopyFrom(const CombatStateAddedEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateAddedEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void CombatStateAddedPbEvent::InternalSwap(CombatStateAddedPbEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void CombatStateAddedEvent::InternalSwap(CombatStateAddedEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_.state_type_)
-      + sizeof(CombatStateAddedPbEvent::_impl_.state_type_)
-      - PROTOBUF_FIELD_OFFSET(CombatStateAddedPbEvent, _impl_.actor_entity_)>(
+      PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_.state_type_)
+      + sizeof(CombatStateAddedEvent::_impl_.state_type_)
+      - PROTOBUF_FIELD_OFFSET(CombatStateAddedEvent, _impl_.actor_entity_)>(
           reinterpret_cast<char*>(&_impl_.actor_entity_),
           reinterpret_cast<char*>(&other->_impl_.actor_entity_));
 }
 
-::google::protobuf::Metadata CombatStateAddedPbEvent::GetMetadata() const {
+::google::protobuf::Metadata CombatStateAddedEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class CombatStateRemovedPbEvent::_Internal {
+class CombatStateRemovedEvent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<CombatStateRemovedPbEvent>()._impl_._has_bits_);
+      decltype(::std::declval<CombatStateRemovedEvent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_._has_bits_);
 };
 
-CombatStateRemovedPbEvent::CombatStateRemovedPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+CombatStateRemovedEvent::CombatStateRemovedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CombatStateRemovedPbEvent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, CombatStateRemovedEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CombatStateRemovedPbEvent)
+  // @@protoc_insertion_point(arena_constructor:CombatStateRemovedEvent)
 }
-CombatStateRemovedPbEvent::CombatStateRemovedPbEvent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatStateRemovedPbEvent& from)
+CombatStateRemovedEvent::CombatStateRemovedEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatStateRemovedEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, CombatStateRemovedPbEvent_class_data_.base()),
+    : ::google::protobuf::Message(arena, CombatStateRemovedEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -479,12 +479,12 @@ CombatStateRemovedPbEvent::CombatStateRemovedPbEvent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE CombatStateRemovedPbEvent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE CombatStateRemovedEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void CombatStateRemovedPbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void CombatStateRemovedEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, actor_entity_),
@@ -493,64 +493,64 @@ inline void CombatStateRemovedPbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABL
                offsetof(Impl_, actor_entity_) +
                sizeof(Impl_::state_type_));
 }
-CombatStateRemovedPbEvent::~CombatStateRemovedPbEvent() {
-  // @@protoc_insertion_point(destructor:CombatStateRemovedPbEvent)
+CombatStateRemovedEvent::~CombatStateRemovedEvent() {
+  // @@protoc_insertion_point(destructor:CombatStateRemovedEvent)
   SharedDtor(*this);
 }
-inline void CombatStateRemovedPbEvent::SharedDtor(MessageLite& self) {
-  CombatStateRemovedPbEvent& this_ = static_cast<CombatStateRemovedPbEvent&>(self);
+inline void CombatStateRemovedEvent::SharedDtor(MessageLite& self) {
+  CombatStateRemovedEvent& this_ = static_cast<CombatStateRemovedEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL CombatStateRemovedPbEvent::PlacementNew_(
+inline void* PROTOBUF_NONNULL CombatStateRemovedEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) CombatStateRemovedPbEvent(arena);
+  return ::new (mem) CombatStateRemovedEvent(arena);
 }
-constexpr auto CombatStateRemovedPbEvent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CombatStateRemovedPbEvent),
-                                            alignof(CombatStateRemovedPbEvent));
+constexpr auto CombatStateRemovedEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(CombatStateRemovedEvent),
+                                            alignof(CombatStateRemovedEvent));
 }
-constexpr auto CombatStateRemovedPbEvent::InternalGenerateClassData_() {
+constexpr auto CombatStateRemovedEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_CombatStateRemovedPbEvent_default_instance_._instance,
+          &_CombatStateRemovedEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &CombatStateRemovedPbEvent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<CombatStateRemovedPbEvent>(),
+          &CombatStateRemovedEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<CombatStateRemovedEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &CombatStateRemovedPbEvent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<CombatStateRemovedPbEvent>(), &CombatStateRemovedPbEvent::ByteSizeLong,
-              &CombatStateRemovedPbEvent::_InternalSerialize,
+          &CombatStateRemovedEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<CombatStateRemovedEvent>(), &CombatStateRemovedEvent::ByteSizeLong,
+              &CombatStateRemovedEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_._cached_size_),
           false,
       },
-      &CombatStateRemovedPbEvent::kDescriptorMethods,
+      &CombatStateRemovedEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull CombatStateRemovedPbEvent_class_data_ =
-        CombatStateRemovedPbEvent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull CombatStateRemovedEvent_class_data_ =
+        CombatStateRemovedEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-CombatStateRemovedPbEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&CombatStateRemovedPbEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(CombatStateRemovedPbEvent_class_data_.tc_table);
-  return CombatStateRemovedPbEvent_class_data_.base();
+CombatStateRemovedEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&CombatStateRemovedEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(CombatStateRemovedEvent_class_data_.tc_table);
+  return CombatStateRemovedEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
-CombatStateRemovedPbEvent::_table_ = {
+CombatStateRemovedEvent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_._has_bits_),
     0, // no _extensions_
     3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -559,42 +559,42 @@ CombatStateRemovedPbEvent::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    CombatStateRemovedPbEvent_class_data_.base(),
+    CombatStateRemovedEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CombatStateRemovedPbEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CombatStateRemovedEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 actor_entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CombatStateRemovedPbEvent, _impl_.actor_entity_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_.actor_entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CombatStateRemovedEvent, _impl_.actor_entity_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_.actor_entity_)}},
     // uint64 source_buff_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CombatStateRemovedPbEvent, _impl_.source_buff_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_.source_buff_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CombatStateRemovedEvent, _impl_.source_buff_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_.source_buff_id_)}},
     // uint32 state_type = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CombatStateRemovedPbEvent, _impl_.state_type_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_.state_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CombatStateRemovedEvent, _impl_.state_type_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_.state_type_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 actor_entity = 1;
-    {PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_.actor_entity_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_.actor_entity_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint64 source_buff_id = 2;
-    {PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_.source_buff_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_.source_buff_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 state_type = 3;
-    {PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_.state_type_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_.state_type_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void CombatStateRemovedPbEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:CombatStateRemovedPbEvent)
+PROTOBUF_NOINLINE void CombatStateRemovedEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:CombatStateRemovedEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -611,17 +611,17 @@ PROTOBUF_NOINLINE void CombatStateRemovedPbEvent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL CombatStateRemovedPbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CombatStateRemovedEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const CombatStateRemovedPbEvent& this_ = static_cast<const CombatStateRemovedPbEvent&>(base);
+  const CombatStateRemovedEvent& this_ = static_cast<const CombatStateRemovedEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL CombatStateRemovedPbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL CombatStateRemovedEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const CombatStateRemovedPbEvent& this_ = *this;
+  const CombatStateRemovedEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:CombatStateRemovedPbEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:CombatStateRemovedEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -657,18 +657,18 @@ PROTOBUF_NOINLINE void CombatStateRemovedPbEvent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:CombatStateRemovedPbEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:CombatStateRemovedEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t CombatStateRemovedPbEvent::ByteSizeLong(const MessageLite& base) {
-  const CombatStateRemovedPbEvent& this_ = static_cast<const CombatStateRemovedPbEvent&>(base);
+::size_t CombatStateRemovedEvent::ByteSizeLong(const MessageLite& base) {
+  const CombatStateRemovedEvent& this_ = static_cast<const CombatStateRemovedEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t CombatStateRemovedPbEvent::ByteSizeLong() const {
-  const CombatStateRemovedPbEvent& this_ = *this;
+::size_t CombatStateRemovedEvent::ByteSizeLong() const {
+  const CombatStateRemovedEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:CombatStateRemovedPbEvent)
+  // @@protoc_insertion_point(message_byte_size_start:CombatStateRemovedEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -704,10 +704,10 @@ PROTOBUF_NOINLINE void CombatStateRemovedPbEvent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void CombatStateRemovedPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CombatStateRemovedPbEvent*>(&to_msg);
-  auto& from = static_cast<const CombatStateRemovedPbEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateRemovedPbEvent)
+void CombatStateRemovedEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CombatStateRemovedEvent*>(&to_msg);
+  auto& from = static_cast<const CombatStateRemovedEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateRemovedEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -734,27 +734,27 @@ void CombatStateRemovedPbEvent::MergeImpl(::google::protobuf::MessageLite& to_ms
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CombatStateRemovedPbEvent::CopyFrom(const CombatStateRemovedPbEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateRemovedPbEvent)
+void CombatStateRemovedEvent::CopyFrom(const CombatStateRemovedEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateRemovedEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void CombatStateRemovedPbEvent::InternalSwap(CombatStateRemovedPbEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void CombatStateRemovedEvent::InternalSwap(CombatStateRemovedEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_.state_type_)
-      + sizeof(CombatStateRemovedPbEvent::_impl_.state_type_)
-      - PROTOBUF_FIELD_OFFSET(CombatStateRemovedPbEvent, _impl_.actor_entity_)>(
+      PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_.state_type_)
+      + sizeof(CombatStateRemovedEvent::_impl_.state_type_)
+      - PROTOBUF_FIELD_OFFSET(CombatStateRemovedEvent, _impl_.actor_entity_)>(
           reinterpret_cast<char*>(&_impl_.actor_entity_),
           reinterpret_cast<char*>(&other->_impl_.actor_entity_));
 }
 
-::google::protobuf::Metadata CombatStateRemovedPbEvent::GetMetadata() const {
+::google::protobuf::Metadata CombatStateRemovedEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -146,7 +146,7 @@ namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::
 namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 125> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 127> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -387,6 +387,11 @@ void InitMessageInfo()
         "Gate", "BindSessionToGate",
         std::make_unique<::BindSessionToGateRequest>(),
         std::make_unique<::BindSessionToGateResponse>(),
+        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+    gRpcMethodRegistry[GateGmGracefulShutdownMessageId] = RpcMethodMeta{
+        "Gate", "GmGracefulShutdown",
+        std::make_unique<::GmGracefulShutdownRequest>(),
+        std::make_unique<::GmGracefulShutdownResponse>(),
         std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
 
     // --- GuildService ---
@@ -781,6 +786,11 @@ void InitMessageInfo()
         std::make_unique<::GameSceneTest>(),
         std::make_unique<::Empty>(),
         std::make_unique<SceneSceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneSceneGmGracefulShutdownMessageId] = RpcMethodMeta{
+        "SceneScene", "GmGracefulShutdown",
+        std::make_unique<::GmGracefulShutdownRequest>(),
+        std::make_unique<::GmGracefulShutdownResponse>(),
+        std::make_unique<SceneSceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneManager ---
     gRpcMethodRegistry[SceneManagerCreateSceneMessageId] = RpcMethodMeta{
@@ -912,16 +922,16 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case CombatStateAddedPbEventEventId: {
-		CombatStateAddedPbEvent event;
+	case CombatStateAddedEventEventId: {
+		CombatStateAddedEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case CombatStateRemovedPbEventEventId: {
-		CombatStateRemovedPbEvent event;
+	case CombatStateRemovedEventEventId: {
+		CombatStateRemovedEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
@@ -936,8 +946,8 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case ConnectToNodePbEventEventId: {
-		ConnectToNodePbEvent event;
+	case ConnectToNodeEventEventId: {
+		ConnectToNodeEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
@@ -1000,32 +1010,32 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case InitializeActorComponentsEventEventId: {
-		InitializeActorComponentsEvent event;
+	case InitializeActorCompsEventEventId: {
+		InitializeActorCompsEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case InitializeNpcComponentsEventEventId: {
-		InitializeNpcComponentsEvent event;
+	case InitializeNpcCompsEventEventId: {
+		InitializeNpcCompsEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case InitializePlayerComponentsEventEventId: {
-		InitializePlayerComponentsEvent event;
+	case InitializePlayerCompsEventEventId: {
+		InitializePlayerCompsEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case InterruptCurrentStatePbEventEventId: {
-		InterruptCurrentStatePbEvent event;
+	case InterruptCurrentStateEventEventId: {
+		InterruptCurrentStateEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
@@ -1040,8 +1050,8 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case OnConnect2CentrePbEventEventId: {
-		OnConnect2CentrePbEvent event;
+	case OnConnect2CentreEventEventId: {
+		OnConnect2CentreEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
@@ -1064,24 +1074,24 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case OnNodeAddPbEventEventId: {
-		OnNodeAddPbEvent event;
+	case OnNodeAddEventEventId: {
+		OnNodeAddEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case OnNodeConnectedPbEventEventId: {
-		OnNodeConnectedPbEvent event;
+	case OnNodeConnectedEventEventId: {
+		OnNodeConnectedEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case OnNodeRemovePbEventEventId: {
-		OnNodeRemovePbEvent event;
+	case OnNodeRemoveEventEventId: {
+		OnNodeRemoveEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}
@@ -1120,8 +1130,8 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case PlayerMigrationPbEventEventId: {
-		PlayerMigrationPbEvent event;
+	case PlayerMigrationEventEventId: {
+		PlayerMigrationEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}

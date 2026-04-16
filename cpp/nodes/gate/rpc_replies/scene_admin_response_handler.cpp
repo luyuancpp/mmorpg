@@ -13,10 +13,18 @@ void InitSceneSceneReply()
 {
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(SceneSceneTestMessageId,
         std::bind(&OnSceneSceneTestReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gRpcResponseDispatcher.registerMessageCallback<::GmGracefulShutdownResponse>(SceneSceneGmGracefulShutdownMessageId,
+        std::bind(&OnSceneSceneGmGracefulShutdownReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnSceneSceneTestReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp)
 {
     ///<<< BEGIN WRITING YOUR CODE
     ///<<< END WRITING YOUR CODE
+}
+
+void OnSceneSceneGmGracefulShutdownReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::GmGracefulShutdownResponse>& replied, muduo::Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE}
 }

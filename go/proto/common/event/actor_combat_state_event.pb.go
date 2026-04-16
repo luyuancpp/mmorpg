@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type CombatStateAddedPbEvent struct {
+type CombatStateAddedEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorEntity   uint64                 `protobuf:"varint,1,opt,name=actor_entity,json=actorEntity,proto3" json:"actor_entity,omitempty"`
 	SourceBuffId  uint64                 `protobuf:"varint,2,opt,name=source_buff_id,json=sourceBuffId,proto3" json:"source_buff_id,omitempty"`
@@ -30,20 +30,20 @@ type CombatStateAddedPbEvent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CombatStateAddedPbEvent) Reset() {
-	*x = CombatStateAddedPbEvent{}
+func (x *CombatStateAddedEvent) Reset() {
+	*x = CombatStateAddedEvent{}
 	mi := &file_proto_common_event_actor_combat_state_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CombatStateAddedPbEvent) String() string {
+func (x *CombatStateAddedEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CombatStateAddedPbEvent) ProtoMessage() {}
+func (*CombatStateAddedEvent) ProtoMessage() {}
 
-func (x *CombatStateAddedPbEvent) ProtoReflect() protoreflect.Message {
+func (x *CombatStateAddedEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_actor_combat_state_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,33 +55,33 @@ func (x *CombatStateAddedPbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CombatStateAddedPbEvent.ProtoReflect.Descriptor instead.
-func (*CombatStateAddedPbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use CombatStateAddedEvent.ProtoReflect.Descriptor instead.
+func (*CombatStateAddedEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_actor_combat_state_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CombatStateAddedPbEvent) GetActorEntity() uint64 {
+func (x *CombatStateAddedEvent) GetActorEntity() uint64 {
 	if x != nil {
 		return x.ActorEntity
 	}
 	return 0
 }
 
-func (x *CombatStateAddedPbEvent) GetSourceBuffId() uint64 {
+func (x *CombatStateAddedEvent) GetSourceBuffId() uint64 {
 	if x != nil {
 		return x.SourceBuffId
 	}
 	return 0
 }
 
-func (x *CombatStateAddedPbEvent) GetStateType() uint32 {
+func (x *CombatStateAddedEvent) GetStateType() uint32 {
 	if x != nil {
 		return x.StateType
 	}
 	return 0
 }
 
-type CombatStateRemovedPbEvent struct {
+type CombatStateRemovedEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorEntity   uint64                 `protobuf:"varint,1,opt,name=actor_entity,json=actorEntity,proto3" json:"actor_entity,omitempty"`
 	SourceBuffId  uint64                 `protobuf:"varint,2,opt,name=source_buff_id,json=sourceBuffId,proto3" json:"source_buff_id,omitempty"`
@@ -90,20 +90,20 @@ type CombatStateRemovedPbEvent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CombatStateRemovedPbEvent) Reset() {
-	*x = CombatStateRemovedPbEvent{}
+func (x *CombatStateRemovedEvent) Reset() {
+	*x = CombatStateRemovedEvent{}
 	mi := &file_proto_common_event_actor_combat_state_event_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CombatStateRemovedPbEvent) String() string {
+func (x *CombatStateRemovedEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CombatStateRemovedPbEvent) ProtoMessage() {}
+func (*CombatStateRemovedEvent) ProtoMessage() {}
 
-func (x *CombatStateRemovedPbEvent) ProtoReflect() protoreflect.Message {
+func (x *CombatStateRemovedEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_actor_combat_state_event_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -115,26 +115,26 @@ func (x *CombatStateRemovedPbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CombatStateRemovedPbEvent.ProtoReflect.Descriptor instead.
-func (*CombatStateRemovedPbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use CombatStateRemovedEvent.ProtoReflect.Descriptor instead.
+func (*CombatStateRemovedEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_actor_combat_state_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CombatStateRemovedPbEvent) GetActorEntity() uint64 {
+func (x *CombatStateRemovedEvent) GetActorEntity() uint64 {
 	if x != nil {
 		return x.ActorEntity
 	}
 	return 0
 }
 
-func (x *CombatStateRemovedPbEvent) GetSourceBuffId() uint64 {
+func (x *CombatStateRemovedEvent) GetSourceBuffId() uint64 {
 	if x != nil {
 		return x.SourceBuffId
 	}
 	return 0
 }
 
-func (x *CombatStateRemovedPbEvent) GetStateType() uint32 {
+func (x *CombatStateRemovedEvent) GetStateType() uint32 {
 	if x != nil {
 		return x.StateType
 	}
@@ -145,13 +145,13 @@ var File_proto_common_event_actor_combat_state_event_proto protoreflect.FileDesc
 
 const file_proto_common_event_actor_combat_state_event_proto_rawDesc = "" +
 	"\n" +
-	"1proto/common/event/actor_combat_state_event.proto\"\x81\x01\n" +
-	"\x17CombatStateAddedPbEvent\x12!\n" +
+	"1proto/common/event/actor_combat_state_event.proto\"\x7f\n" +
+	"\x15CombatStateAddedEvent\x12!\n" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12$\n" +
 	"\x0esource_buff_id\x18\x02 \x01(\x04R\fsourceBuffId\x12\x1d\n" +
 	"\n" +
-	"state_type\x18\x03 \x01(\rR\tstateType\"\x83\x01\n" +
-	"\x19CombatStateRemovedPbEvent\x12!\n" +
+	"state_type\x18\x03 \x01(\rR\tstateType\"\x81\x01\n" +
+	"\x17CombatStateRemovedEvent\x12!\n" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12$\n" +
 	"\x0esource_buff_id\x18\x02 \x01(\x04R\fsourceBuffId\x12\x1d\n" +
 	"\n" +
@@ -171,8 +171,8 @@ func file_proto_common_event_actor_combat_state_event_proto_rawDescGZIP() []byte
 
 var file_proto_common_event_actor_combat_state_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_common_event_actor_combat_state_event_proto_goTypes = []any{
-	(*CombatStateAddedPbEvent)(nil),   // 0: CombatStateAddedPbEvent
-	(*CombatStateRemovedPbEvent)(nil), // 1: CombatStateRemovedPbEvent
+	(*CombatStateAddedEvent)(nil),   // 0: CombatStateAddedEvent
+	(*CombatStateRemovedEvent)(nil), // 1: CombatStateRemovedEvent
 }
 var file_proto_common_event_actor_combat_state_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
