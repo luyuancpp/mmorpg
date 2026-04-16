@@ -68,6 +68,11 @@ void ProtobufCodecLite::onMessage(const TcpConnectionPtr& conn,
     const int32_t len = buf->peekInt32();
     if (len > kMaxMessageLen || len < kMinMessageLen)
     {
+      LOG_ERROR << "ProtobufCodecLite::onMessage InvalidLength"
+                << " len=" << len
+                << " (min=" << kMinMessageLen << " max=" << kMaxMessageLen << ")"
+                << " readable=" << buf->readableBytes()
+                << " peer=" << (conn ? conn->peerAddress().toIpPort() : "N/A");
       errorCallback_(conn, buf, receiveTime, kInvalidLength);
       break;
     }
