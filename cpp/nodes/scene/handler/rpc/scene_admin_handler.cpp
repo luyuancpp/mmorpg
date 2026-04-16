@@ -2,6 +2,11 @@
 #include "scene_admin_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
+#include <muduo/base/Logging.h>
+#include <node/system/node/node.h>
+#include <proto/common/component/player_comp.pb.h>
+#include <player/system/player_lifecycle.h>
+#include <thread_context/ecs_context.h>
 ///<<< END WRITING YOUR CODE
 
 void SceneSceneHandler::Test(::google::protobuf::RpcController* controller, const ::GameSceneTest* request,

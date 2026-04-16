@@ -30,5 +30,5 @@ private:
     static void HandleCreateScene(const ::CreateSceneRequest* request, ::CreateSceneResponse* response);
     static void HandleDestroyScene(const ::DestroySceneRequest* request);
 
-    muduo::net::EventLoop* loop_;
+    muduo::net::EventLoop& loop_;
 };
