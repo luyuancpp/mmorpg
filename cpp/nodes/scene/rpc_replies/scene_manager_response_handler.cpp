@@ -5,7 +5,7 @@
 
 void InitSceneManagerReply()
 {
-    AsyncSceneManagerEnterSceneHandler =
+    scene_manager::AsyncSceneManagerEnterSceneHandler =
         [](const grpc::ClientContext& /*ctx*/, const ::scene_manager::EnterSceneResponse& resp)
     {
         if (resp.error_code() != 0)
