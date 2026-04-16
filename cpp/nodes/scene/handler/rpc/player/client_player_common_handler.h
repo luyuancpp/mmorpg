@@ -17,6 +17,9 @@ public:
     static void KickPlayer(entt::entity player,
         const ::GameKickPlayerRequest* request,
         ::Empty* response);
+    static void RedirectToGate(entt::entity player,
+        const ::RedirectToGateNotify* request,
+        ::Empty* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         entt::entity player,
@@ -36,6 +39,13 @@ public:
 			{
             KickPlayer(player,
                 static_cast<const ::GameKickPlayerRequest*>(request),
+                static_cast<::Empty*>(response));
+			}
+            break;
+        case 2:
+			{
+            RedirectToGate(player,
+                static_cast<const ::RedirectToGateNotify*>(request),
                 static_cast<::Empty*>(response));
 			}
             break;

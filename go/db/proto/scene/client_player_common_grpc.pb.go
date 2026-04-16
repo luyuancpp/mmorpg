@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	SceneClientPlayerCommon_SendTipToClient_FullMethodName = "/SceneClientPlayerCommon/SendTipToClient"
 	SceneClientPlayerCommon_KickPlayer_FullMethodName      = "/SceneClientPlayerCommon/KickPlayer"
+	SceneClientPlayerCommon_RedirectToGate_FullMethodName  = "/SceneClientPlayerCommon/RedirectToGate"
 )
 
 // SceneClientPlayerCommonClient is the client API for SceneClientPlayerCommon service.
@@ -30,6 +31,7 @@ const (
 type SceneClientPlayerCommonClient interface {
 	SendTipToClient(ctx context.Context, in *base.TipInfoMessage, opts ...grpc.CallOption) (*base.Empty, error)
 	KickPlayer(ctx context.Context, in *GameKickPlayerRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	RedirectToGate(ctx context.Context, in *RedirectToGateNotify, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type sceneClientPlayerCommonClient struct {
@@ -60,12 +62,23 @@ func (c *sceneClientPlayerCommonClient) KickPlayer(ctx context.Context, in *Game
 	return out, nil
 }
 
+func (c *sceneClientPlayerCommonClient) RedirectToGate(ctx context.Context, in *RedirectToGateNotify, opts ...grpc.CallOption) (*base.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.Empty)
+	err := c.cc.Invoke(ctx, SceneClientPlayerCommon_RedirectToGate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SceneClientPlayerCommonServer is the server API for SceneClientPlayerCommon service.
 // All implementations must embed UnimplementedSceneClientPlayerCommonServer
 // for forward compatibility.
 type SceneClientPlayerCommonServer interface {
 	SendTipToClient(context.Context, *base.TipInfoMessage) (*base.Empty, error)
 	KickPlayer(context.Context, *GameKickPlayerRequest) (*base.Empty, error)
+	RedirectToGate(context.Context, *RedirectToGateNotify) (*base.Empty, error)
 	mustEmbedUnimplementedSceneClientPlayerCommonServer()
 }
 
@@ -81,6 +94,9 @@ func (UnimplementedSceneClientPlayerCommonServer) SendTipToClient(context.Contex
 }
 func (UnimplementedSceneClientPlayerCommonServer) KickPlayer(context.Context, *GameKickPlayerRequest) (*base.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method KickPlayer not implemented")
+}
+func (UnimplementedSceneClientPlayerCommonServer) RedirectToGate(context.Context, *RedirectToGateNotify) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RedirectToGate not implemented")
 }
 func (UnimplementedSceneClientPlayerCommonServer) mustEmbedUnimplementedSceneClientPlayerCommonServer() {
 }
@@ -140,6 +156,24 @@ func _SceneClientPlayerCommon_KickPlayer_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneClientPlayerCommon_RedirectToGate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RedirectToGateNotify)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneClientPlayerCommonServer).RedirectToGate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneClientPlayerCommon_RedirectToGate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneClientPlayerCommonServer).RedirectToGate(ctx, req.(*RedirectToGateNotify))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SceneClientPlayerCommon_ServiceDesc is the grpc.ServiceDesc for SceneClientPlayerCommon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -154,6 +188,10 @@ var SceneClientPlayerCommon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "KickPlayer",
 			Handler:    _SceneClientPlayerCommon_KickPlayer_Handler,
+		},
+		{
+			MethodName: "RedirectToGate",
+			Handler:    _SceneClientPlayerCommon_RedirectToGate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

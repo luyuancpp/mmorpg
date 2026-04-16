@@ -25,6 +25,41 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
+inline constexpr RedirectToGateNotify::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_ip_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_payload_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_signature_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_deadline_{::int64_t{0}},
+        target_port_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RedirectToGateNotify::RedirectToGateNotify(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(RedirectToGateNotify_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RedirectToGateNotifyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RedirectToGateNotifyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RedirectToGateNotifyDefaultTypeInternal() {}
+  union {
+    RedirectToGateNotify _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RedirectToGateNotifyDefaultTypeInternal _RedirectToGateNotify_default_instance_;
+
 inline constexpr GameKickPlayerRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -66,14 +101,29 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::GameKickPlayerRequest, _impl_.operator__),
         1,
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::RedirectToGateNotify, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::RedirectToGateNotify, _impl_.target_ip_),
+        PROTOBUF_FIELD_OFFSET(::RedirectToGateNotify, _impl_.target_port_),
+        PROTOBUF_FIELD_OFFSET(::RedirectToGateNotify, _impl_.token_payload_),
+        PROTOBUF_FIELD_OFFSET(::RedirectToGateNotify, _impl_.token_signature_),
+        PROTOBUF_FIELD_OFFSET(::RedirectToGateNotify, _impl_.token_deadline_),
+        0,
+        4,
+        1,
+        2,
+        3,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::GameKickPlayerRequest)},
+        {7, sizeof(::RedirectToGateNotify)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_GameKickPlayerRequest_default_instance_._instance,
+    &::_RedirectToGateNotify_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -82,10 +132,15 @@ const char descriptor_table_protodef_proto_2fscene_2fclient_5fplayer_5fcommon_2e
     "mon/base/tip.proto\032\035proto/common/base/em"
     "pty.proto\"J\n\025GameKickPlayerRequest\022\037\n\006re"
     "ason\030\001 \001(\0132\017.TipInfoMessage\022\020\n\010operator\030"
-    "\002 \001(\t2\177\n\027SceneClientPlayerCommon\022*\n\017Send"
-    "TipToClient\022\017.TipInfoMessage\032\006.Empty\022,\n\n"
-    "KickPlayer\022\026.GameKickPlayerRequest\032\006.Emp"
-    "ty\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003b\006proto3"
+    "\002 \001(\t\"\206\001\n\024RedirectToGateNotify\022\021\n\ttarget"
+    "_ip\030\001 \001(\t\022\023\n\013target_port\030\002 \001(\r\022\025\n\rtoken_"
+    "payload\030\003 \001(\014\022\027\n\017token_signature\030\004 \001(\014\022\026"
+    "\n\016token_deadline\030\005 \001(\0032\260\001\n\027SceneClientPl"
+    "ayerCommon\022*\n\017SendTipToClient\022\017.TipInfoM"
+    "essage\032\006.Empty\022,\n\nKickPlayer\022\026.GameKickP"
+    "layerRequest\032\006.Empty\022/\n\016RedirectToGate\022\025"
+    ".RedirectToGateNotify\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001"
+    "\001B\016Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto_deps[3] = {
@@ -97,13 +152,13 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fclient_5fplayer_5fcomm
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto = {
     false,
     false,
-    358,
+    545,
     descriptor_table_protodef_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto,
     "proto/scene/client_player_common.proto",
     &descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto_once,
     descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto_deps,
     3,
-    1,
+    2,
     schemas,
     file_default_instances,
     TableStruct_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto::offsets,
@@ -425,6 +480,428 @@ void GameKickPlayerRequest::InternalSwap(GameKickPlayerRequest* PROTOBUF_RESTRIC
 }
 // ===================================================================
 
+class RedirectToGateNotify::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<RedirectToGateNotify>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_._has_bits_);
+};
+
+RedirectToGateNotify::RedirectToGateNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RedirectToGateNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:RedirectToGateNotify)
+}
+PROTOBUF_NDEBUG_INLINE RedirectToGateNotify::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::RedirectToGateNotify& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_ip_(arena, from.target_ip_),
+        token_payload_(arena, from.token_payload_),
+        token_signature_(arena, from.token_signature_) {}
+
+RedirectToGateNotify::RedirectToGateNotify(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RedirectToGateNotify& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RedirectToGateNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  RedirectToGateNotify* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, token_deadline_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, token_deadline_),
+           offsetof(Impl_, target_port_) -
+               offsetof(Impl_, token_deadline_) +
+               sizeof(Impl_::target_port_));
+
+  // @@protoc_insertion_point(copy_constructor:RedirectToGateNotify)
+}
+PROTOBUF_NDEBUG_INLINE RedirectToGateNotify::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_ip_(arena),
+        token_payload_(arena),
+        token_signature_(arena) {}
+
+inline void RedirectToGateNotify::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, token_deadline_),
+           0,
+           offsetof(Impl_, target_port_) -
+               offsetof(Impl_, token_deadline_) +
+               sizeof(Impl_::target_port_));
+}
+RedirectToGateNotify::~RedirectToGateNotify() {
+  // @@protoc_insertion_point(destructor:RedirectToGateNotify)
+  SharedDtor(*this);
+}
+inline void RedirectToGateNotify::SharedDtor(MessageLite& self) {
+  RedirectToGateNotify& this_ = static_cast<RedirectToGateNotify&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.target_ip_.Destroy();
+  this_._impl_.token_payload_.Destroy();
+  this_._impl_.token_signature_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL RedirectToGateNotify::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RedirectToGateNotify(arena);
+}
+constexpr auto RedirectToGateNotify::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RedirectToGateNotify),
+                                            alignof(RedirectToGateNotify));
+}
+constexpr auto RedirectToGateNotify::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_RedirectToGateNotify_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &RedirectToGateNotify::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RedirectToGateNotify>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RedirectToGateNotify::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RedirectToGateNotify>(), &RedirectToGateNotify::ByteSizeLong,
+              &RedirectToGateNotify::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_._cached_size_),
+          false,
+      },
+      &RedirectToGateNotify::kDescriptorMethods,
+      &descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RedirectToGateNotify_class_data_ =
+        RedirectToGateNotify::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RedirectToGateNotify::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RedirectToGateNotify_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RedirectToGateNotify_class_data_.tc_table);
+  return RedirectToGateNotify_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 38, 2>
+RedirectToGateNotify::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    RedirectToGateNotify_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::RedirectToGateNotify>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string target_ip = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.target_ip_)}},
+    // uint32 target_port = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RedirectToGateNotify, _impl_.target_port_), 4>(),
+     {16, 4, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.target_port_)}},
+    // bytes token_payload = 3;
+    {::_pbi::TcParser::FastBS1,
+     {26, 1, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.token_payload_)}},
+    // bytes token_signature = 4;
+    {::_pbi::TcParser::FastBS1,
+     {34, 2, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.token_signature_)}},
+    // int64 token_deadline = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RedirectToGateNotify, _impl_.token_deadline_), 3>(),
+     {40, 3, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.token_deadline_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string target_ip = 1;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.target_ip_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 target_port = 2;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.target_port_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // bytes token_payload = 3;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.token_payload_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // bytes token_signature = 4;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.token_signature_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // int64 token_deadline = 5;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.token_deadline_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\24\11\0\0\0\0\0\0"
+    "RedirectToGateNotify"
+    "target_ip"
+  }},
+};
+PROTOBUF_NOINLINE void RedirectToGateNotify::Clear() {
+// @@protoc_insertion_point(message_clear_start:RedirectToGateNotify)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.target_ip_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.token_payload_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      _impl_.token_signature_.ClearNonDefaultToEmpty();
+    }
+  }
+  if ((cached_has_bits & 0x00000018u) != 0) {
+    ::memset(&_impl_.token_deadline_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.target_port_) -
+        reinterpret_cast<char*>(&_impl_.token_deadline_)) + sizeof(_impl_.target_port_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RedirectToGateNotify::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RedirectToGateNotify& this_ = static_cast<const RedirectToGateNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RedirectToGateNotify::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RedirectToGateNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:RedirectToGateNotify)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // string target_ip = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_target_ip().empty()) {
+      const ::std::string& _s = this_._internal_target_ip();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "RedirectToGateNotify.target_ip");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // uint32 target_port = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (this_._internal_target_port() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_target_port(), target);
+    }
+  }
+
+  // bytes token_payload = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_token_payload().empty()) {
+      const ::std::string& _s = this_._internal_token_payload();
+      target = stream->WriteBytesMaybeAliased(3, _s, target);
+    }
+  }
+
+  // bytes token_signature = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (!this_._internal_token_signature().empty()) {
+      const ::std::string& _s = this_._internal_token_signature();
+      target = stream->WriteBytesMaybeAliased(4, _s, target);
+    }
+  }
+
+  // int64 token_deadline = 5;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_token_deadline() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<5>(
+              stream, this_._internal_token_deadline(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:RedirectToGateNotify)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RedirectToGateNotify::ByteSizeLong(const MessageLite& base) {
+  const RedirectToGateNotify& this_ = static_cast<const RedirectToGateNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RedirectToGateNotify::ByteSizeLong() const {
+  const RedirectToGateNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:RedirectToGateNotify)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000001fu) != 0) {
+    // string target_ip = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_target_ip().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_ip());
+      }
+    }
+    // bytes token_payload = 3;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_token_payload().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_token_payload());
+      }
+    }
+    // bytes token_signature = 4;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!this_._internal_token_signature().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_token_signature());
+      }
+    }
+    // int64 token_deadline = 5;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_token_deadline() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_token_deadline());
+      }
+    }
+    // uint32 target_port = 2;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_target_port() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_target_port());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RedirectToGateNotify::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RedirectToGateNotify*>(&to_msg);
+  auto& from = static_cast<const RedirectToGateNotify&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:RedirectToGateNotify)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000001fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_target_ip().empty()) {
+        _this->_internal_set_target_ip(from._internal_target_ip());
+      } else {
+        if (_this->_impl_.target_ip_.IsDefault()) {
+          _this->_internal_set_target_ip("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_token_payload().empty()) {
+        _this->_internal_set_token_payload(from._internal_token_payload());
+      } else {
+        if (_this->_impl_.token_payload_.IsDefault()) {
+          _this->_internal_set_token_payload("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!from._internal_token_signature().empty()) {
+        _this->_internal_set_token_signature(from._internal_token_signature());
+      } else {
+        if (_this->_impl_.token_signature_.IsDefault()) {
+          _this->_internal_set_token_signature("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_token_deadline() != 0) {
+        _this->_impl_.token_deadline_ = from._impl_.token_deadline_;
+      }
+    }
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (from._internal_target_port() != 0) {
+        _this->_impl_.target_port_ = from._impl_.target_port_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void RedirectToGateNotify::CopyFrom(const RedirectToGateNotify& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:RedirectToGateNotify)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RedirectToGateNotify::InternalSwap(RedirectToGateNotify* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_ip_, &other->_impl_.target_ip_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_payload_, &other->_impl_.token_payload_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_signature_, &other->_impl_.token_signature_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.target_port_)
+      + sizeof(RedirectToGateNotify::_impl_.target_port_)
+      - PROTOBUF_FIELD_OFFSET(RedirectToGateNotify, _impl_.token_deadline_)>(
+          reinterpret_cast<char*>(&_impl_.token_deadline_),
+          reinterpret_cast<char*>(&other->_impl_.token_deadline_));
+}
+
+::google::protobuf::Metadata RedirectToGateNotify::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
 const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL SceneClientPlayerCommon::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fclient_5fplayer_5fcommon_2eproto[0];
@@ -448,6 +925,13 @@ void SceneClientPlayerCommon::KickPlayer(::google::protobuf::RpcController* PROT
   controller->SetFailed("Method KickPlayer() not implemented.");
   done->Run();
 }
+void SceneClientPlayerCommon::RedirectToGate(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                         const ::RedirectToGateNotify* PROTOBUF_NONNULL,
+                         ::Empty* PROTOBUF_NONNULL,
+                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  controller->SetFailed("Method RedirectToGate() not implemented.");
+  done->Run();
+}
 
 void SceneClientPlayerCommon::CallMethod(
     const ::google::protobuf::MethodDescriptor* PROTOBUF_NONNULL method,
@@ -462,6 +946,10 @@ void SceneClientPlayerCommon::CallMethod(
       break;
     case 1:
       this->KickPlayer(controller, ::google::protobuf::DownCastMessage<::GameKickPlayerRequest>(request),
+                   ::google::protobuf::DownCastMessage<::Empty>(response), done);
+      break;
+    case 2:
+      this->RedirectToGate(controller, ::google::protobuf::DownCastMessage<::RedirectToGateNotify>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
 
@@ -479,6 +967,8 @@ const ::google::protobuf::Message& SceneClientPlayerCommon::GetRequestPrototype(
       return ::TipInfoMessage::default_instance();
     case 1:
       return ::GameKickPlayerRequest::default_instance();
+    case 2:
+      return ::RedirectToGateNotify::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -494,6 +984,8 @@ const ::google::protobuf::Message& SceneClientPlayerCommon::GetResponsePrototype
     case 0:
       return ::Empty::default_instance();
     case 1:
+      return ::Empty::default_instance();
+    case 2:
       return ::Empty::default_instance();
 
     default:
@@ -528,6 +1020,13 @@ void SceneClientPlayerCommon_Stub::KickPlayer(
     const ::GameKickPlayerRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   channel_->CallMethod(descriptor()->method(1), controller,
+                       request, response, done);
+}
+void SceneClientPlayerCommon_Stub::RedirectToGate(
+    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+    const ::RedirectToGateNotify* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
+    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

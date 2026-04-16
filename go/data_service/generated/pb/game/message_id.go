@@ -124,3 +124,4 @@ const FriendServiceNotifyOfflineMessageId = 120
 const SceneDestroySceneMessageId = 121
 const SceneNodeGrpcCreateSceneMessageId = 122
 const SceneNodeGrpcDestroySceneMessageId = 123
+const SceneClientPlayerCommonRedirectToGateMessageId = 124

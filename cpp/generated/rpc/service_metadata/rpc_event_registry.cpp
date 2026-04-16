@@ -146,7 +146,7 @@ namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::
 namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 124> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 125> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -493,6 +493,11 @@ void InitMessageInfo()
         std::make_unique<::GameKickPlayerRequest>(),
         std::make_unique<::Empty>(),
         std::make_unique<SceneClientPlayerCommonImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneClientPlayerCommonRedirectToGateMessageId] = RpcMethodMeta{
+        "SceneClientPlayerCommon", "RedirectToGate",
+        std::make_unique<::RedirectToGateNotify>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneClientPlayerCommonImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneCurrencyClientPlayer ---
     gRpcMethodRegistry[SceneCurrencyClientPlayerGmAddCurrencyMessageId] = RpcMethodMeta{
@@ -824,6 +829,7 @@ bool IsClientMessageId(uint32_t messageId)
 	case ClientPlayerLoginDisconnectMessageId:
 	case SceneClientPlayerCommonSendTipToClientMessageId:
 	case SceneClientPlayerCommonKickPlayerMessageId:
+	case SceneClientPlayerCommonRedirectToGateMessageId:
 	case SceneSceneClientPlayerEnterSceneMessageId:
 	case SceneSceneClientPlayerNotifyEnterSceneMessageId:
 	case SceneSceneClientPlayerSceneInfoC2SMessageId:
@@ -972,6 +978,14 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 	}
 	case ContractsKafkaPlayerLifecycleCommandEventId: {
 		contracts::kafka::PlayerLifecycleCommand event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return true;
+	}
+	case ContractsKafkaRedirectToGateEventEventId: {
+		contracts::kafka::RedirectToGateEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}

@@ -19,3 +19,11 @@ void SceneClientPlayerCommonHandler::KickPlayer(entt::entity player,const ::Game
 	///<<< END WRITING YOUR CODE
 
 }
+
+void SceneClientPlayerCommonHandler::RedirectToGate(entt::entity player,const ::RedirectToGateNotify* request,
+	::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+}

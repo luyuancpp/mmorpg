@@ -71,6 +71,7 @@ set(SOURCE_FILES
     handler/rpc/register_handler.cpp
     main.cpp
     rpc_replies/gate_service_response_handler.cpp
+    rpc_replies/scene_manager_response_handler.cpp
     rpc_replies/player/player_lifecycle_response_handler.cpp
     rpc_replies/player/s2s_player_scene_response_handler.cpp
     rpc_replies/player/player_currency_response_handler.cpp

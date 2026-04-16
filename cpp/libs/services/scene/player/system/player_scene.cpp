@@ -17,6 +17,7 @@
 #include "proto/scene_manager/storage.pb.h"
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "grpc_client/scene_manager/scene_manager_service_grpc_client.h"
+#include "network/node_utils.h"
 #include <modules/scene/comp/scene_comp.h>
 #include <modules/scene/comp/scene_node_comp.h>
 #include <proto/common/component/player_network_comp.pb.h>
@@ -145,6 +146,7 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 		req.set_session_id(playerSessionPB->gate_session_id());
 		req.set_gate_id(std::to_string(gateNodeId));
 		req.set_gate_instance_id(gateInstanceId);
+		req.set_gate_zone_id(GetZoneId());
 
 		scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req);
 

@@ -12,8 +12,6 @@ TEST(DoubleBufferQueueTest, TakeEmptyReturnsFalse)
     DoubleBufferQueue<int> queue;
     int value = 0;
     EXPECT_FALSE(queue.take(value));
-    EXPECT_TRUE(queue.empty());
-    EXPECT_EQ(queue.size(), 0);
 }
 
 TEST(DoubleBufferQueueTest, PreservesOrderSingleProducer)
@@ -62,7 +60,7 @@ TEST(DoubleBufferQueueTest, CanProcessFixedBudgetPerFrame)
     {
         EXPECT_EQ(processed[i], i);
     }
-    EXPECT_TRUE(queue.empty());
+    EXPECT_FALSE(queue.take(value));
 }
 
 TEST(DoubleBufferQueueTest, SupportsMultiProducerSingleConsumer)

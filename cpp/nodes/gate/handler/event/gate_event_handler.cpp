@@ -59,6 +59,7 @@ void GateEventHandler::Register()
     tlsEcs.dispatcher.sink<contracts::kafka::PlayerDisconnectedEvent>().connect<&GateEventHandler::PlayerDisconnectedEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().connect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BindSessionEvent>().connect<&GateEventHandler::BindSessionEventHandler>();
+    tlsEcs.dispatcher.sink<contracts::kafka::RedirectToGateEvent>().connect<&GateEventHandler::RedirectToGateEventHandler>();
 }
 
 void GateEventHandler::UnRegister()
@@ -68,6 +69,7 @@ void GateEventHandler::UnRegister()
     tlsEcs.dispatcher.sink<contracts::kafka::PlayerDisconnectedEvent>().disconnect<&GateEventHandler::PlayerDisconnectedEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().disconnect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BindSessionEvent>().disconnect<&GateEventHandler::BindSessionEventHandler>();
+    tlsEcs.dispatcher.sink<contracts::kafka::RedirectToGateEvent>().disconnect<&GateEventHandler::RedirectToGateEventHandler>();
 }
 void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
 {
@@ -184,5 +186,42 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
     LOG_INFO << "BindSession: bound session_id=" << sessionId
              << " player_id=" << playerId
              << " enter_gs_type=" << enterGsType;
+///<<< END WRITING YOUR CODE
+}
+void GateEventHandler::RedirectToGateEventHandler(const contracts::kafka::RedirectToGateEvent& event)
+{
+///<<< BEGIN WRITING YOUR CODE
+    const auto sessionId = event.session_id();
+    auto &sessions = tlsSessionManager.sessions();
+    auto it = sessions.find(sessionId);
+    if (it == sessions.end())
+    {
+        LOG_ERROR << "RedirectToGate: session not found, session_id=" << sessionId;
+        return;
+    }
+
+    auto conn = it->second.conn;
+    if (!conn || !conn->connected())
+    {
+        LOG_DEBUG << "RedirectToGate: connection already closed, session_id=" << sessionId;
+        return;
+    }
+
+    // Build client-facing redirect message.
+    RedirectToGateNotify notify;
+    notify.set_target_ip(event.target_gate_ip());
+    notify.set_target_port(event.target_gate_port());
+    notify.set_token_payload(event.token_payload().data(), event.token_payload().size());
+    notify.set_token_signature(event.token_signature().data(), event.token_signature().size());
+    notify.set_token_deadline(event.token_deadline());
+
+    MessageContent mc;
+    mc.set_message_id(SceneClientPlayerCommonRedirectToGateMessageId);
+    mc.set_serialized_message(notify.SerializeAsString());
+    GetGateCodec().send(conn, mc);
+
+    LOG_INFO << "RedirectToGate: sent redirect to player " << event.player_id()
+             << " session_id=" << sessionId
+             << " target=" << event.target_gate_ip() << ":" << event.target_gate_port();
 ///<<< END WRITING YOUR CODE
 }

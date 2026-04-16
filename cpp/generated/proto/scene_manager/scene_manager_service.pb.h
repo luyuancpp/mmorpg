@@ -83,6 +83,10 @@ class LeaveSceneRequest;
 struct LeaveSceneRequestDefaultTypeInternal;
 extern LeaveSceneRequestDefaultTypeInternal _LeaveSceneRequest_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull LeaveSceneRequest_class_data_;
+class RedirectToGateInfo;
+struct RedirectToGateInfoDefaultTypeInternal;
+extern RedirectToGateInfoDefaultTypeInternal _RedirectToGateInfo_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RedirectToGateInfo_class_data_;
 }  // namespace scene_manager
 namespace google {
 namespace protobuf {
@@ -134,6 +138,260 @@ inline bool SceneType_Parse(
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class RedirectToGateInfo final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:scene_manager.RedirectToGateInfo) */ {
+ public:
+  inline RedirectToGateInfo() : RedirectToGateInfo(nullptr) {}
+  ~RedirectToGateInfo() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RedirectToGateInfo* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RedirectToGateInfo));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RedirectToGateInfo(::google::protobuf::internal::ConstantInitialized);
+
+  inline RedirectToGateInfo(const RedirectToGateInfo& from) : RedirectToGateInfo(nullptr, from) {}
+  inline RedirectToGateInfo(RedirectToGateInfo&& from) noexcept
+      : RedirectToGateInfo(nullptr, ::std::move(from)) {}
+  inline RedirectToGateInfo& operator=(const RedirectToGateInfo& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RedirectToGateInfo& operator=(RedirectToGateInfo&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RedirectToGateInfo& default_instance() {
+    return *reinterpret_cast<const RedirectToGateInfo*>(
+        &_RedirectToGateInfo_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 5;
+  friend void swap(RedirectToGateInfo& a, RedirectToGateInfo& b) { a.Swap(&b); }
+  inline void Swap(RedirectToGateInfo* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RedirectToGateInfo* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RedirectToGateInfo* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RedirectToGateInfo>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RedirectToGateInfo& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RedirectToGateInfo& from) { RedirectToGateInfo::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RedirectToGateInfo* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "scene_manager.RedirectToGateInfo"; }
+
+ protected:
+  explicit RedirectToGateInfo(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RedirectToGateInfo(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RedirectToGateInfo& from);
+  RedirectToGateInfo(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RedirectToGateInfo&& from) noexcept
+      : RedirectToGateInfo(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kTargetGateIpFieldNumber = 1,
+    kTokenPayloadFieldNumber = 3,
+    kTokenSignatureFieldNumber = 4,
+    kTokenDeadlineFieldNumber = 5,
+    kTargetGatePortFieldNumber = 2,
+  };
+  // string target_gate_ip = 1;
+  void clear_target_gate_ip() ;
+  const ::std::string& target_gate_ip() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_target_gate_ip(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_target_gate_ip();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_gate_ip();
+  void set_allocated_target_gate_ip(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_target_gate_ip() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_target_gate_ip(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_gate_ip();
+
+  public:
+  // bytes token_payload = 3;
+  void clear_token_payload() ;
+  const ::std::string& token_payload() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_token_payload(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_token_payload();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_token_payload();
+  void set_allocated_token_payload(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_token_payload() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_token_payload(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_token_payload();
+
+  public:
+  // bytes token_signature = 4;
+  void clear_token_signature() ;
+  const ::std::string& token_signature() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_token_signature(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_token_signature();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_token_signature();
+  void set_allocated_token_signature(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_token_signature() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_token_signature(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_token_signature();
+
+  public:
+  // int64 token_deadline = 5;
+  void clear_token_deadline() ;
+  ::int64_t token_deadline() const;
+  void set_token_deadline(::int64_t value);
+
+  private:
+  ::int64_t _internal_token_deadline() const;
+  void _internal_set_token_deadline(::int64_t value);
+
+  public:
+  // uint32 target_gate_port = 2;
+  void clear_target_gate_port() ;
+  ::uint32_t target_gate_port() const;
+  void set_target_gate_port(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_target_gate_port() const;
+  void _internal_set_target_gate_port(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:scene_manager.RedirectToGateInfo)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   0, 55,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RedirectToGateInfo& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr target_gate_ip_;
+    ::google::protobuf::internal::ArenaStringPtr token_payload_;
+    ::google::protobuf::internal::ArenaStringPtr token_signature_;
+    ::int64_t token_deadline_;
+    ::uint32_t target_gate_port_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull RedirectToGateInfo_class_data_;
 // -------------------------------------------------------------------
 
 class LeaveSceneRequest final : public ::google::protobuf::Message
@@ -191,7 +449,7 @@ class LeaveSceneRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const LeaveSceneRequest*>(
         &_LeaveSceneRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(LeaveSceneRequest& a, LeaveSceneRequest& b) { a.Swap(&b); }
   inline void Swap(LeaveSceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -368,214 +626,6 @@ class LeaveSceneRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull LeaveSceneRequest_class_data_;
 // -------------------------------------------------------------------
 
-class EnterSceneResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:scene_manager.EnterSceneResponse) */ {
- public:
-  inline EnterSceneResponse() : EnterSceneResponse(nullptr) {}
-  ~EnterSceneResponse() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(EnterSceneResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterSceneResponse));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR EnterSceneResponse(::google::protobuf::internal::ConstantInitialized);
-
-  inline EnterSceneResponse(const EnterSceneResponse& from) : EnterSceneResponse(nullptr, from) {}
-  inline EnterSceneResponse(EnterSceneResponse&& from) noexcept
-      : EnterSceneResponse(nullptr, ::std::move(from)) {}
-  inline EnterSceneResponse& operator=(const EnterSceneResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline EnterSceneResponse& operator=(EnterSceneResponse&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const EnterSceneResponse& default_instance() {
-    return *reinterpret_cast<const EnterSceneResponse*>(
-        &_EnterSceneResponse_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 4;
-  friend void swap(EnterSceneResponse& a, EnterSceneResponse& b) { a.Swap(&b); }
-  inline void Swap(EnterSceneResponse* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(EnterSceneResponse* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  EnterSceneResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<EnterSceneResponse>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const EnterSceneResponse& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const EnterSceneResponse& from) { EnterSceneResponse::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(EnterSceneResponse* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "scene_manager.EnterSceneResponse"; }
-
- protected:
-  explicit EnterSceneResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  EnterSceneResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterSceneResponse& from);
-  EnterSceneResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EnterSceneResponse&& from) noexcept
-      : EnterSceneResponse(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kErrorMessageFieldNumber = 2,
-    kErrorCodeFieldNumber = 1,
-  };
-  // string error_message = 2;
-  void clear_error_message() ;
-  const ::std::string& error_message() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_error_message(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_error_message();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_error_message();
-  void set_allocated_error_message(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_error_message() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_error_message(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_error_message();
-
-  public:
-  // uint32 error_code = 1;
-  void clear_error_code() ;
-  ::uint32_t error_code() const;
-  void set_error_code(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_error_code() const;
-  void _internal_set_error_code(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneResponse)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 54,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const EnterSceneResponse& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr error_message_;
-    ::uint32_t error_code_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull EnterSceneResponse_class_data_;
-// -------------------------------------------------------------------
-
 class EnterSceneRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:scene_manager.EnterSceneRequest) */ {
  public:
@@ -727,6 +777,7 @@ class EnterSceneRequest final : public ::google::protobuf::Message
     kSessionIdFieldNumber = 3,
     kSceneConfIdFieldNumber = 8,
     kZoneIdFieldNumber = 7,
+    kGateZoneIdFieldNumber = 9,
   };
   // string request_id = 4;
   void clear_request_id() ;
@@ -823,11 +874,21 @@ class EnterSceneRequest final : public ::google::protobuf::Message
   void _internal_set_zone_id(::uint32_t value);
 
   public:
+  // uint32 gate_zone_id = 9;
+  void clear_gate_zone_id() ;
+  ::uint32_t gate_zone_id() const;
+  void set_gate_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_gate_zone_id() const;
+  void _internal_set_gate_zone_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 8,
+  static const ::google::protobuf::internal::TcParseTable<4, 9,
                                    0, 81,
                                    2>
       _table_;
@@ -857,6 +918,7 @@ class EnterSceneRequest final : public ::google::protobuf::Message
     ::uint64_t session_id_;
     ::uint64_t scene_conf_id_;
     ::uint32_t zone_id_;
+    ::uint32_t gate_zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1557,6 +1619,231 @@ class CreateSceneRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull CreateSceneRequest_class_data_;
+// -------------------------------------------------------------------
+
+class EnterSceneResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:scene_manager.EnterSceneResponse) */ {
+ public:
+  inline EnterSceneResponse() : EnterSceneResponse(nullptr) {}
+  ~EnterSceneResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(EnterSceneResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(EnterSceneResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR EnterSceneResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline EnterSceneResponse(const EnterSceneResponse& from) : EnterSceneResponse(nullptr, from) {}
+  inline EnterSceneResponse(EnterSceneResponse&& from) noexcept
+      : EnterSceneResponse(nullptr, ::std::move(from)) {}
+  inline EnterSceneResponse& operator=(const EnterSceneResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline EnterSceneResponse& operator=(EnterSceneResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const EnterSceneResponse& default_instance() {
+    return *reinterpret_cast<const EnterSceneResponse*>(
+        &_EnterSceneResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(EnterSceneResponse& a, EnterSceneResponse& b) { a.Swap(&b); }
+  inline void Swap(EnterSceneResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(EnterSceneResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  EnterSceneResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<EnterSceneResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const EnterSceneResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const EnterSceneResponse& from) { EnterSceneResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(EnterSceneResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "scene_manager.EnterSceneResponse"; }
+
+ protected:
+  explicit EnterSceneResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  EnterSceneResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnterSceneResponse& from);
+  EnterSceneResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, EnterSceneResponse&& from) noexcept
+      : EnterSceneResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kErrorMessageFieldNumber = 2,
+    kRedirectFieldNumber = 3,
+    kErrorCodeFieldNumber = 1,
+  };
+  // string error_message = 2;
+  void clear_error_message() ;
+  const ::std::string& error_message() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_error_message(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_error_message();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_error_message();
+  void set_allocated_error_message(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_error_message() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_error_message(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_error_message();
+
+  public:
+  // .scene_manager.RedirectToGateInfo redirect = 3;
+  bool has_redirect() const;
+  void clear_redirect() ;
+  const ::scene_manager::RedirectToGateInfo& redirect() const;
+  [[nodiscard]] ::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE release_redirect();
+  ::scene_manager::RedirectToGateInfo* PROTOBUF_NONNULL mutable_redirect();
+  void set_allocated_redirect(::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_redirect(::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE value);
+  ::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE unsafe_arena_release_redirect();
+
+  private:
+  const ::scene_manager::RedirectToGateInfo& _internal_redirect() const;
+  ::scene_manager::RedirectToGateInfo* PROTOBUF_NONNULL _internal_mutable_redirect();
+
+  public:
+  // uint32 error_code = 1;
+  void clear_error_code() ;
+  ::uint32_t error_code() const;
+  void set_error_code(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_error_code() const;
+  void _internal_set_error_code(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:scene_manager.EnterSceneResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   1, 54,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const EnterSceneResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr error_message_;
+    ::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE redirect_;
+    ::uint32_t error_code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull EnterSceneResponse_class_data_;
 
 // ===================================================================
 
@@ -2310,6 +2597,30 @@ inline void EnterSceneRequest::_internal_set_scene_conf_id(::uint64_t value) {
   _impl_.scene_conf_id_ = value;
 }
 
+// uint32 gate_zone_id = 9;
+inline void EnterSceneRequest::clear_gate_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gate_zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000100u;
+}
+inline ::uint32_t EnterSceneRequest::gate_zone_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.gate_zone_id)
+  return _internal_gate_zone_id();
+}
+inline void EnterSceneRequest::set_gate_zone_id(::uint32_t value) {
+  _internal_set_gate_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000100u;
+  // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.gate_zone_id)
+}
+inline ::uint32_t EnterSceneRequest::_internal_gate_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.gate_zone_id_;
+}
+inline void EnterSceneRequest::_internal_set_gate_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gate_zone_id_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // EnterSceneResponse
@@ -2318,7 +2629,7 @@ inline void EnterSceneRequest::_internal_set_scene_conf_id(::uint64_t value) {
 inline void EnterSceneResponse::clear_error_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.error_code_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint32_t EnterSceneResponse::error_code() const {
   // @@protoc_insertion_point(field_get:scene_manager.EnterSceneResponse.error_code)
@@ -2326,7 +2637,7 @@ inline ::uint32_t EnterSceneResponse::error_code() const {
 }
 inline void EnterSceneResponse::set_error_code(::uint32_t value) {
   _internal_set_error_code(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:scene_manager.EnterSceneResponse.error_code)
 }
 inline ::uint32_t EnterSceneResponse::_internal_error_code() const {
@@ -2401,6 +2712,351 @@ inline void EnterSceneResponse::set_allocated_error_message(::std::string* PROTO
     _impl_.error_message_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneResponse.error_message)
+}
+
+// .scene_manager.RedirectToGateInfo redirect = 3;
+inline bool EnterSceneResponse::has_redirect() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.redirect_ != nullptr);
+  return value;
+}
+inline void EnterSceneResponse::clear_redirect() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.redirect_ != nullptr) _impl_.redirect_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::scene_manager::RedirectToGateInfo& EnterSceneResponse::_internal_redirect() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::scene_manager::RedirectToGateInfo* p = _impl_.redirect_;
+  return p != nullptr ? *p : reinterpret_cast<const ::scene_manager::RedirectToGateInfo&>(::scene_manager::_RedirectToGateInfo_default_instance_);
+}
+inline const ::scene_manager::RedirectToGateInfo& EnterSceneResponse::redirect() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:scene_manager.EnterSceneResponse.redirect)
+  return _internal_redirect();
+}
+inline void EnterSceneResponse::unsafe_arena_set_allocated_redirect(
+    ::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.redirect_);
+  }
+  _impl_.redirect_ = reinterpret_cast<::scene_manager::RedirectToGateInfo*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:scene_manager.EnterSceneResponse.redirect)
+}
+inline ::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE EnterSceneResponse::release_redirect() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::scene_manager::RedirectToGateInfo* released = _impl_.redirect_;
+  _impl_.redirect_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE EnterSceneResponse::unsafe_arena_release_redirect() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:scene_manager.EnterSceneResponse.redirect)
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::scene_manager::RedirectToGateInfo* temp = _impl_.redirect_;
+  _impl_.redirect_ = nullptr;
+  return temp;
+}
+inline ::scene_manager::RedirectToGateInfo* PROTOBUF_NONNULL EnterSceneResponse::_internal_mutable_redirect() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.redirect_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::scene_manager::RedirectToGateInfo>(GetArena());
+    _impl_.redirect_ = reinterpret_cast<::scene_manager::RedirectToGateInfo*>(p);
+  }
+  return _impl_.redirect_;
+}
+inline ::scene_manager::RedirectToGateInfo* PROTOBUF_NONNULL EnterSceneResponse::mutable_redirect()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000002u;
+  ::scene_manager::RedirectToGateInfo* _msg = _internal_mutable_redirect();
+  // @@protoc_insertion_point(field_mutable:scene_manager.EnterSceneResponse.redirect)
+  return _msg;
+}
+inline void EnterSceneResponse::set_allocated_redirect(::scene_manager::RedirectToGateInfo* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.redirect_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+
+  _impl_.redirect_ = reinterpret_cast<::scene_manager::RedirectToGateInfo*>(value);
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.EnterSceneResponse.redirect)
+}
+
+// -------------------------------------------------------------------
+
+// RedirectToGateInfo
+
+// string target_gate_ip = 1;
+inline void RedirectToGateInfo::clear_target_gate_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_gate_ip_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& RedirectToGateInfo::target_gate_ip() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:scene_manager.RedirectToGateInfo.target_gate_ip)
+  return _internal_target_gate_ip();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RedirectToGateInfo::set_target_gate_ip(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.target_gate_ip_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:scene_manager.RedirectToGateInfo.target_gate_ip)
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateInfo::mutable_target_gate_ip()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_target_gate_ip();
+  // @@protoc_insertion_point(field_mutable:scene_manager.RedirectToGateInfo.target_gate_ip)
+  return _s;
+}
+inline const ::std::string& RedirectToGateInfo::_internal_target_gate_ip() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_gate_ip_.Get();
+}
+inline void RedirectToGateInfo::_internal_set_target_gate_ip(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.target_gate_ip_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateInfo::_internal_mutable_target_gate_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.target_gate_ip_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RedirectToGateInfo::release_target_gate_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:scene_manager.RedirectToGateInfo.target_gate_ip)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.target_gate_ip_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.target_gate_ip_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RedirectToGateInfo::set_allocated_target_gate_ip(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.target_gate_ip_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_gate_ip_.IsDefault()) {
+    _impl_.target_gate_ip_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.RedirectToGateInfo.target_gate_ip)
+}
+
+// uint32 target_gate_port = 2;
+inline void RedirectToGateInfo::clear_target_gate_port() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_gate_port_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::uint32_t RedirectToGateInfo::target_gate_port() const {
+  // @@protoc_insertion_point(field_get:scene_manager.RedirectToGateInfo.target_gate_port)
+  return _internal_target_gate_port();
+}
+inline void RedirectToGateInfo::set_target_gate_port(::uint32_t value) {
+  _internal_set_target_gate_port(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:scene_manager.RedirectToGateInfo.target_gate_port)
+}
+inline ::uint32_t RedirectToGateInfo::_internal_target_gate_port() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_gate_port_;
+}
+inline void RedirectToGateInfo::_internal_set_target_gate_port(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_gate_port_ = value;
+}
+
+// bytes token_payload = 3;
+inline void RedirectToGateInfo::clear_token_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_payload_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::std::string& RedirectToGateInfo::token_payload() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:scene_manager.RedirectToGateInfo.token_payload)
+  return _internal_token_payload();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RedirectToGateInfo::set_token_payload(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.token_payload_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:scene_manager.RedirectToGateInfo.token_payload)
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateInfo::mutable_token_payload()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_token_payload();
+  // @@protoc_insertion_point(field_mutable:scene_manager.RedirectToGateInfo.token_payload)
+  return _s;
+}
+inline const ::std::string& RedirectToGateInfo::_internal_token_payload() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_payload_.Get();
+}
+inline void RedirectToGateInfo::_internal_set_token_payload(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.token_payload_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateInfo::_internal_mutable_token_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  return _impl_.token_payload_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RedirectToGateInfo::release_token_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:scene_manager.RedirectToGateInfo.token_payload)
+  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  auto* released = _impl_.token_payload_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.token_payload_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RedirectToGateInfo::set_allocated_token_payload(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.token_payload_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.token_payload_.IsDefault()) {
+    _impl_.token_payload_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.RedirectToGateInfo.token_payload)
+}
+
+// bytes token_signature = 4;
+inline void RedirectToGateInfo::clear_token_signature() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_signature_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline const ::std::string& RedirectToGateInfo::token_signature() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:scene_manager.RedirectToGateInfo.token_signature)
+  return _internal_token_signature();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RedirectToGateInfo::set_token_signature(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_.token_signature_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:scene_manager.RedirectToGateInfo.token_signature)
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateInfo::mutable_token_signature()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_token_signature();
+  // @@protoc_insertion_point(field_mutable:scene_manager.RedirectToGateInfo.token_signature)
+  return _s;
+}
+inline const ::std::string& RedirectToGateInfo::_internal_token_signature() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_signature_.Get();
+}
+inline void RedirectToGateInfo::_internal_set_token_signature(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_.token_signature_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateInfo::_internal_mutable_token_signature() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  return _impl_.token_signature_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RedirectToGateInfo::release_token_signature() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:scene_manager.RedirectToGateInfo.token_signature)
+  if ((_impl_._has_bits_[0] & 0x00000004u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  auto* released = _impl_.token_signature_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.token_signature_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RedirectToGateInfo::set_allocated_token_signature(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+  _impl_.token_signature_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.token_signature_.IsDefault()) {
+    _impl_.token_signature_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:scene_manager.RedirectToGateInfo.token_signature)
+}
+
+// int64 token_deadline = 5;
+inline void RedirectToGateInfo::clear_token_deadline() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_deadline_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::int64_t RedirectToGateInfo::token_deadline() const {
+  // @@protoc_insertion_point(field_get:scene_manager.RedirectToGateInfo.token_deadline)
+  return _internal_token_deadline();
+}
+inline void RedirectToGateInfo::set_token_deadline(::int64_t value) {
+  _internal_set_token_deadline(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:scene_manager.RedirectToGateInfo.token_deadline)
+}
+inline ::int64_t RedirectToGateInfo::_internal_token_deadline() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_deadline_;
+}
+inline void RedirectToGateInfo::_internal_set_token_deadline(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_deadline_ = value;
 }
 
 // -------------------------------------------------------------------

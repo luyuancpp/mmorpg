@@ -73,11 +73,25 @@ message EnterSceneRequest {
   // Scene config ID (map template). Required when scene_id == 0.
   // Used to resolve the actual scene instance from main_scene_channels.
   uint64 scene_conf_id = 8;
+  // Zone ID of the player's current Gate. Used to detect cross-zone transitions.
+  uint32 gate_zone_id = 9;
 }
 
 message EnterSceneResponse {
   uint32 error_code = 1;
   string error_message = 2;
+  // Non-empty when cross-zone redirect is needed instead of direct routing.
+  // Client should disconnect from current Gate and reconnect to the target Gate.
+  RedirectToGateInfo redirect = 3;
+}
+
+// Redirect info returned when player needs to switch to a different zone's Gate.
+message RedirectToGateInfo {
+  string target_gate_ip = 1;
+  uint32 target_gate_port = 2;
+  bytes  token_payload = 3;    // serialized GateTokenPayload for target gate
+  bytes  token_signature = 4;  // HMAC-SHA256 signature
+  int64  token_deadline = 5;   // unix seconds
 }
 
 message LeaveSceneRequest {

@@ -192,6 +192,7 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 		RequestId:      state.requestID,
 		GateId:         state.gateID,
 		GateInstanceId: state.gateInstanceID,
+		GateZoneId:     config.AppConfig.Node.ZoneId,
 	}, zrpc.WithCallTimeout(smTimeout))
 	if err != nil {
 		logx.Errorf("SceneManager.EnterScene failed for player %d: %v", state.playerID, err)
@@ -200,6 +201,14 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	if enterResp.ErrorCode != 0 {
 		logx.Errorf("SceneManager.EnterScene returned error for player %d: code=%d msg=%s",
 			state.playerID, enterResp.ErrorCode, enterResp.ErrorMessage)
+	}
+
+	// Cross-zone redirect: SceneManager already pushed RedirectToGateEvent to the gate.
+	// Skip idempotency — the player hasn't entered a scene yet; they'll re-login in the new zone.
+	if enterResp.Redirect != nil {
+		logx.Infof("Player %d cross-zone redirect to %s:%d",
+			state.playerID, enterResp.Redirect.TargetGateIp, enterResp.Redirect.TargetGatePort)
+		return decision, nil
 	}
 
 	if err := sessionmanager.SetIdempotency(ctx, l.svcCtx.RedisClient, state.playerID, state.requestID); err != nil {

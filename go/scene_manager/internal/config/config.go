@@ -34,4 +34,8 @@ type Config struct {
 	// InstanceCheckIntervalSeconds: how often the lifecycle manager scans
 	// for idle instances. Default 30s.
 	InstanceCheckIntervalSeconds int64 `json:",default=30"`
+
+	// GateTokenSecret: HMAC-SHA256 secret shared with Gate nodes for signing
+	// connection tokens during cross-zone redirect.
+	GateTokenSecret string `json:",optional"`
 }

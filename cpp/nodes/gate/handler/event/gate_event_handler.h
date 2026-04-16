@@ -13,4 +13,5 @@ public:
     static void PlayerDisconnectedEventHandler(const contracts::kafka::PlayerDisconnectedEvent& event);
     static void PlayerLeaseExpiredEventHandler(const contracts::kafka::PlayerLeaseExpiredEvent& event);
     static void BindSessionEventHandler(const contracts::kafka::BindSessionEvent& event);
+    static void RedirectToGateEventHandler(const contracts::kafka::RedirectToGateEvent& event);
 };

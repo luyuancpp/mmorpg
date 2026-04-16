@@ -55,6 +55,43 @@ struct RoutePlayerEventDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutePlayerEventDefaultTypeInternal _RoutePlayerEvent_default_instance_;
 
+inline constexpr RedirectToGateEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_gate_ip_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_payload_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_signature_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_id_{::uint64_t{0u}},
+        session_id_{::uint64_t{0u}},
+        token_deadline_{::int64_t{0}},
+        target_gate_port_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RedirectToGateEvent::RedirectToGateEvent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(RedirectToGateEvent_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RedirectToGateEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RedirectToGateEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RedirectToGateEventDefaultTypeInternal() {}
+  union {
+    RedirectToGateEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RedirectToGateEventDefaultTypeInternal _RedirectToGateEvent_default_instance_;
+
 inline constexpr PlayerLeaseExpiredEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -237,6 +274,23 @@ const ::uint32_t
         1,
         2,
         3,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_._has_bits_),
+        10, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_.target_gate_ip_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_.target_gate_port_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_.token_payload_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_.token_signature_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_.token_deadline_),
+        3,
+        4,
+        0,
+        6,
+        1,
+        2,
+        5,
 };
 
 static const ::_pbi::MigrationSchema
@@ -246,6 +300,7 @@ static const ::_pbi::MigrationSchema
         {16, sizeof(::contracts::kafka::PlayerDisconnectedEvent)},
         {27, sizeof(::contracts::kafka::PlayerLeaseExpiredEvent)},
         {42, sizeof(::contracts::kafka::BindSessionEvent)},
+        {53, sizeof(::contracts::kafka::RedirectToGateEvent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::contracts::kafka::_RoutePlayerEvent_default_instance_._instance,
@@ -253,6 +308,7 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::contracts::kafka::_PlayerDisconnectedEvent_default_instance_._instance,
     &::contracts::kafka::_PlayerLeaseExpiredEvent_default_instance_._instance,
     &::contracts::kafka::_BindSessionEvent_default_instance_._instance,
+    &::contracts::kafka::_RedirectToGateEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -270,19 +326,24 @@ const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2e
     "instance_id\030\006 \001(\t\"i\n\020BindSessionEvent\022\022\n"
     "\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017"
     "session_version\030\003 \001(\004\022\025\n\renter_gs_type\030\004"
-    " \001(\rB\021Z\017contracts/kafkab\006proto3"
+    " \001(\r\"\266\001\n\023RedirectToGateEvent\022\021\n\tplayer_i"
+    "d\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\004\022\026\n\016target_ga"
+    "te_ip\030\003 \001(\t\022\030\n\020target_gate_port\030\004 \001(\r\022\025\n"
+    "\rtoken_payload\030\005 \001(\014\022\027\n\017token_signature\030"
+    "\006 \001(\014\022\026\n\016token_deadline\030\007 \001(\003B\021Z\017contrac"
+    "ts/kafkab\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto = {
     false,
     false,
-    591,
+    776,
     descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
     "proto/contracts/kafka/gate_event.proto",
     &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once,
     nullptr,
     0,
-    5,
+    6,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto::offsets,
@@ -2031,6 +2092,480 @@ void BindSessionEvent::InternalSwap(BindSessionEvent* PROTOBUF_RESTRICT PROTOBUF
 }
 
 ::google::protobuf::Metadata BindSessionEvent::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class RedirectToGateEvent::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<RedirectToGateEvent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_._has_bits_);
+};
+
+RedirectToGateEvent::RedirectToGateEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RedirectToGateEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:contracts.kafka.RedirectToGateEvent)
+}
+PROTOBUF_NDEBUG_INLINE RedirectToGateEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::contracts::kafka::RedirectToGateEvent& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_gate_ip_(arena, from.target_gate_ip_),
+        token_payload_(arena, from.token_payload_),
+        token_signature_(arena, from.token_signature_) {}
+
+RedirectToGateEvent::RedirectToGateEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RedirectToGateEvent& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RedirectToGateEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  RedirectToGateEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, player_id_),
+           offsetof(Impl_, target_gate_port_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::target_gate_port_));
+
+  // @@protoc_insertion_point(copy_constructor:contracts.kafka.RedirectToGateEvent)
+}
+PROTOBUF_NDEBUG_INLINE RedirectToGateEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_gate_ip_(arena),
+        token_payload_(arena),
+        token_signature_(arena) {}
+
+inline void RedirectToGateEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           0,
+           offsetof(Impl_, target_gate_port_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::target_gate_port_));
+}
+RedirectToGateEvent::~RedirectToGateEvent() {
+  // @@protoc_insertion_point(destructor:contracts.kafka.RedirectToGateEvent)
+  SharedDtor(*this);
+}
+inline void RedirectToGateEvent::SharedDtor(MessageLite& self) {
+  RedirectToGateEvent& this_ = static_cast<RedirectToGateEvent&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.target_gate_ip_.Destroy();
+  this_._impl_.token_payload_.Destroy();
+  this_._impl_.token_signature_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL RedirectToGateEvent::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RedirectToGateEvent(arena);
+}
+constexpr auto RedirectToGateEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RedirectToGateEvent),
+                                            alignof(RedirectToGateEvent));
+}
+constexpr auto RedirectToGateEvent::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_RedirectToGateEvent_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &RedirectToGateEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RedirectToGateEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RedirectToGateEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RedirectToGateEvent>(), &RedirectToGateEvent::ByteSizeLong,
+              &RedirectToGateEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_._cached_size_),
+          false,
+      },
+      &RedirectToGateEvent::kDescriptorMethods,
+      &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RedirectToGateEvent_class_data_ =
+        RedirectToGateEvent::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RedirectToGateEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RedirectToGateEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RedirectToGateEvent_class_data_.tc_table);
+  return RedirectToGateEvent_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 7, 0, 58, 2>
+RedirectToGateEvent::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_._has_bits_),
+    0, // no _extensions_
+    7, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967168,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    7,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    RedirectToGateEvent_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::contracts::kafka::RedirectToGateEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 player_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RedirectToGateEvent, _impl_.player_id_), 3>(),
+     {8, 3, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.player_id_)}},
+    // uint64 session_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RedirectToGateEvent, _impl_.session_id_), 4>(),
+     {16, 4, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.session_id_)}},
+    // string target_gate_ip = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 0, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.target_gate_ip_)}},
+    // uint32 target_gate_port = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RedirectToGateEvent, _impl_.target_gate_port_), 6>(),
+     {32, 6, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.target_gate_port_)}},
+    // bytes token_payload = 5;
+    {::_pbi::TcParser::FastBS1,
+     {42, 1, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.token_payload_)}},
+    // bytes token_signature = 6;
+    {::_pbi::TcParser::FastBS1,
+     {50, 2, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.token_signature_)}},
+    // int64 token_deadline = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RedirectToGateEvent, _impl_.token_deadline_), 5>(),
+     {56, 5, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.token_deadline_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 session_id = 2;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.session_id_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // string target_gate_ip = 3;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.target_gate_ip_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 target_gate_port = 4;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.target_gate_port_), _Internal::kHasBitsOffset + 6, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // bytes token_payload = 5;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.token_payload_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // bytes token_signature = 6;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.token_signature_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // int64 token_deadline = 7;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.token_deadline_), _Internal::kHasBitsOffset + 5, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\43\0\0\16\0\0\0\0"
+    "contracts.kafka.RedirectToGateEvent"
+    "target_gate_ip"
+  }},
+};
+PROTOBUF_NOINLINE void RedirectToGateEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:contracts.kafka.RedirectToGateEvent)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.target_gate_ip_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.token_payload_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      _impl_.token_signature_.ClearNonDefaultToEmpty();
+    }
+  }
+  if ((cached_has_bits & 0x00000078u) != 0) {
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.target_gate_port_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.target_gate_port_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RedirectToGateEvent::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RedirectToGateEvent& this_ = static_cast<const RedirectToGateEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RedirectToGateEvent::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RedirectToGateEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:contracts.kafka.RedirectToGateEvent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 player_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_player_id(), target);
+    }
+  }
+
+  // uint64 session_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (this_._internal_session_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_session_id(), target);
+    }
+  }
+
+  // string target_gate_ip = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_target_gate_ip().empty()) {
+      const ::std::string& _s = this_._internal_target_gate_ip();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "contracts.kafka.RedirectToGateEvent.target_gate_ip");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // uint32 target_gate_port = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+    if (this_._internal_target_gate_port() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          4, this_._internal_target_gate_port(), target);
+    }
+  }
+
+  // bytes token_payload = 5;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_token_payload().empty()) {
+      const ::std::string& _s = this_._internal_token_payload();
+      target = stream->WriteBytesMaybeAliased(5, _s, target);
+    }
+  }
+
+  // bytes token_signature = 6;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (!this_._internal_token_signature().empty()) {
+      const ::std::string& _s = this_._internal_token_signature();
+      target = stream->WriteBytesMaybeAliased(6, _s, target);
+    }
+  }
+
+  // int64 token_deadline = 7;
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+    if (this_._internal_token_deadline() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<7>(
+              stream, this_._internal_token_deadline(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:contracts.kafka.RedirectToGateEvent)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RedirectToGateEvent::ByteSizeLong(const MessageLite& base) {
+  const RedirectToGateEvent& this_ = static_cast<const RedirectToGateEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RedirectToGateEvent::ByteSizeLong() const {
+  const RedirectToGateEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:contracts.kafka.RedirectToGateEvent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000007fu) != 0) {
+    // string target_gate_ip = 3;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_target_gate_ip().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_gate_ip());
+      }
+    }
+    // bytes token_payload = 5;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_token_payload().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_token_payload());
+      }
+    }
+    // bytes token_signature = 6;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!this_._internal_token_signature().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_token_signature());
+      }
+    }
+    // uint64 player_id = 1;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+    // uint64 session_id = 2;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_session_id());
+      }
+    }
+    // int64 token_deadline = 7;
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (this_._internal_token_deadline() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_token_deadline());
+      }
+    }
+    // uint32 target_gate_port = 4;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (this_._internal_target_gate_port() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_target_gate_port());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RedirectToGateEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RedirectToGateEvent*>(&to_msg);
+  auto& from = static_cast<const RedirectToGateEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:contracts.kafka.RedirectToGateEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000007fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_target_gate_ip().empty()) {
+        _this->_internal_set_target_gate_ip(from._internal_target_gate_ip());
+      } else {
+        if (_this->_impl_.target_gate_ip_.IsDefault()) {
+          _this->_internal_set_target_gate_ip("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_token_payload().empty()) {
+        _this->_internal_set_token_payload(from._internal_token_payload());
+      } else {
+        if (_this->_impl_.token_payload_.IsDefault()) {
+          _this->_internal_set_token_payload("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!from._internal_token_signature().empty()) {
+        _this->_internal_set_token_signature(from._internal_token_signature());
+      } else {
+        if (_this->_impl_.token_signature_.IsDefault()) {
+          _this->_internal_set_token_signature("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (from._internal_token_deadline() != 0) {
+        _this->_impl_.token_deadline_ = from._impl_.token_deadline_;
+      }
+    }
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (from._internal_target_gate_port() != 0) {
+        _this->_impl_.target_gate_port_ = from._impl_.target_gate_port_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void RedirectToGateEvent::CopyFrom(const RedirectToGateEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:contracts.kafka.RedirectToGateEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RedirectToGateEvent::InternalSwap(RedirectToGateEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_gate_ip_, &other->_impl_.target_gate_ip_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_payload_, &other->_impl_.token_payload_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_signature_, &other->_impl_.token_signature_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.target_gate_port_)
+      + sizeof(RedirectToGateEvent::_impl_.target_gate_port_)
+      - PROTOBUF_FIELD_OFFSET(RedirectToGateEvent, _impl_.player_id_)>(
+          reinterpret_cast<char*>(&_impl_.player_id_),
+          reinterpret_cast<char*>(&other->_impl_.player_id_));
+}
+
+::google::protobuf::Metadata RedirectToGateEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

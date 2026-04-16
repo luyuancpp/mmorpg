@@ -70,6 +70,10 @@ class PlayerLeaseExpiredEvent;
 struct PlayerLeaseExpiredEventDefaultTypeInternal;
 extern PlayerLeaseExpiredEventDefaultTypeInternal _PlayerLeaseExpiredEvent_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull PlayerLeaseExpiredEvent_class_data_;
+class RedirectToGateEvent;
+struct RedirectToGateEventDefaultTypeInternal;
+extern RedirectToGateEventDefaultTypeInternal _RedirectToGateEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RedirectToGateEvent_class_data_;
 class RoutePlayerEvent;
 struct RoutePlayerEventDefaultTypeInternal;
 extern RoutePlayerEventDefaultTypeInternal _RoutePlayerEvent_default_instance_;
@@ -314,6 +318,284 @@ class RoutePlayerEvent final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull RoutePlayerEvent_class_data_;
+// -------------------------------------------------------------------
+
+class RedirectToGateEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:contracts.kafka.RedirectToGateEvent) */ {
+ public:
+  inline RedirectToGateEvent() : RedirectToGateEvent(nullptr) {}
+  ~RedirectToGateEvent() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RedirectToGateEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RedirectToGateEvent));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RedirectToGateEvent(::google::protobuf::internal::ConstantInitialized);
+
+  inline RedirectToGateEvent(const RedirectToGateEvent& from) : RedirectToGateEvent(nullptr, from) {}
+  inline RedirectToGateEvent(RedirectToGateEvent&& from) noexcept
+      : RedirectToGateEvent(nullptr, ::std::move(from)) {}
+  inline RedirectToGateEvent& operator=(const RedirectToGateEvent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RedirectToGateEvent& operator=(RedirectToGateEvent&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RedirectToGateEvent& default_instance() {
+    return *reinterpret_cast<const RedirectToGateEvent*>(
+        &_RedirectToGateEvent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 5;
+  friend void swap(RedirectToGateEvent& a, RedirectToGateEvent& b) { a.Swap(&b); }
+  inline void Swap(RedirectToGateEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RedirectToGateEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RedirectToGateEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RedirectToGateEvent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RedirectToGateEvent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RedirectToGateEvent& from) { RedirectToGateEvent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RedirectToGateEvent* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "contracts.kafka.RedirectToGateEvent"; }
+
+ protected:
+  explicit RedirectToGateEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RedirectToGateEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RedirectToGateEvent& from);
+  RedirectToGateEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RedirectToGateEvent&& from) noexcept
+      : RedirectToGateEvent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kTargetGateIpFieldNumber = 3,
+    kTokenPayloadFieldNumber = 5,
+    kTokenSignatureFieldNumber = 6,
+    kPlayerIdFieldNumber = 1,
+    kSessionIdFieldNumber = 2,
+    kTokenDeadlineFieldNumber = 7,
+    kTargetGatePortFieldNumber = 4,
+  };
+  // string target_gate_ip = 3;
+  void clear_target_gate_ip() ;
+  const ::std::string& target_gate_ip() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_target_gate_ip(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_target_gate_ip();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_gate_ip();
+  void set_allocated_target_gate_ip(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_target_gate_ip() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_target_gate_ip(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_gate_ip();
+
+  public:
+  // bytes token_payload = 5;
+  void clear_token_payload() ;
+  const ::std::string& token_payload() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_token_payload(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_token_payload();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_token_payload();
+  void set_allocated_token_payload(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_token_payload() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_token_payload(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_token_payload();
+
+  public:
+  // bytes token_signature = 6;
+  void clear_token_signature() ;
+  const ::std::string& token_signature() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_token_signature(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_token_signature();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_token_signature();
+  void set_allocated_token_signature(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_token_signature() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_token_signature(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_token_signature();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 session_id = 2;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // int64 token_deadline = 7;
+  void clear_token_deadline() ;
+  ::int64_t token_deadline() const;
+  void set_token_deadline(::int64_t value);
+
+  private:
+  ::int64_t _internal_token_deadline() const;
+  void _internal_set_token_deadline(::int64_t value);
+
+  public:
+  // uint32 target_gate_port = 4;
+  void clear_target_gate_port() ;
+  ::uint32_t target_gate_port() const;
+  void set_target_gate_port(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_target_gate_port() const;
+  void _internal_set_target_gate_port(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:contracts.kafka.RedirectToGateEvent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
+                                   0, 58,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RedirectToGateEvent& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr target_gate_ip_;
+    ::google::protobuf::internal::ArenaStringPtr token_payload_;
+    ::google::protobuf::internal::ArenaStringPtr token_signature_;
+    ::uint64_t player_id_;
+    ::uint64_t session_id_;
+    ::int64_t token_deadline_;
+    ::uint32_t target_gate_port_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull RedirectToGateEvent_class_data_;
 // -------------------------------------------------------------------
 
 class PlayerLeaseExpiredEvent final : public ::google::protobuf::Message
@@ -1927,6 +2209,301 @@ inline ::uint32_t BindSessionEvent::_internal_enter_gs_type() const {
 inline void BindSessionEvent::_internal_set_enter_gs_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// RedirectToGateEvent
+
+// uint64 player_id = 1;
+inline void RedirectToGateEvent::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint64_t RedirectToGateEvent::player_id() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.player_id)
+  return _internal_player_id();
+}
+inline void RedirectToGateEvent::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.player_id)
+}
+inline ::uint64_t RedirectToGateEvent::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void RedirectToGateEvent::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint64 session_id = 2;
+inline void RedirectToGateEvent::clear_session_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::uint64_t RedirectToGateEvent::session_id() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.session_id)
+  return _internal_session_id();
+}
+inline void RedirectToGateEvent::set_session_id(::uint64_t value) {
+  _internal_set_session_id(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.session_id)
+}
+inline ::uint64_t RedirectToGateEvent::_internal_session_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.session_id_;
+}
+inline void RedirectToGateEvent::_internal_set_session_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_ = value;
+}
+
+// string target_gate_ip = 3;
+inline void RedirectToGateEvent::clear_target_gate_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_gate_ip_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& RedirectToGateEvent::target_gate_ip() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.target_gate_ip)
+  return _internal_target_gate_ip();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RedirectToGateEvent::set_target_gate_ip(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.target_gate_ip_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.target_gate_ip)
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateEvent::mutable_target_gate_ip()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_target_gate_ip();
+  // @@protoc_insertion_point(field_mutable:contracts.kafka.RedirectToGateEvent.target_gate_ip)
+  return _s;
+}
+inline const ::std::string& RedirectToGateEvent::_internal_target_gate_ip() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_gate_ip_.Get();
+}
+inline void RedirectToGateEvent::_internal_set_target_gate_ip(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.target_gate_ip_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateEvent::_internal_mutable_target_gate_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.target_gate_ip_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RedirectToGateEvent::release_target_gate_ip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:contracts.kafka.RedirectToGateEvent.target_gate_ip)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.target_gate_ip_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.target_gate_ip_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RedirectToGateEvent::set_allocated_target_gate_ip(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.target_gate_ip_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_gate_ip_.IsDefault()) {
+    _impl_.target_gate_ip_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:contracts.kafka.RedirectToGateEvent.target_gate_ip)
+}
+
+// uint32 target_gate_port = 4;
+inline void RedirectToGateEvent::clear_target_gate_port() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_gate_port_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
+}
+inline ::uint32_t RedirectToGateEvent::target_gate_port() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.target_gate_port)
+  return _internal_target_gate_port();
+}
+inline void RedirectToGateEvent::set_target_gate_port(::uint32_t value) {
+  _internal_set_target_gate_port(value);
+  _impl_._has_bits_[0] |= 0x00000040u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.target_gate_port)
+}
+inline ::uint32_t RedirectToGateEvent::_internal_target_gate_port() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_gate_port_;
+}
+inline void RedirectToGateEvent::_internal_set_target_gate_port(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_gate_port_ = value;
+}
+
+// bytes token_payload = 5;
+inline void RedirectToGateEvent::clear_token_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_payload_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::std::string& RedirectToGateEvent::token_payload() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.token_payload)
+  return _internal_token_payload();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RedirectToGateEvent::set_token_payload(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.token_payload_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.token_payload)
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateEvent::mutable_token_payload()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_token_payload();
+  // @@protoc_insertion_point(field_mutable:contracts.kafka.RedirectToGateEvent.token_payload)
+  return _s;
+}
+inline const ::std::string& RedirectToGateEvent::_internal_token_payload() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_payload_.Get();
+}
+inline void RedirectToGateEvent::_internal_set_token_payload(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.token_payload_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateEvent::_internal_mutable_token_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  return _impl_.token_payload_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RedirectToGateEvent::release_token_payload() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:contracts.kafka.RedirectToGateEvent.token_payload)
+  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  auto* released = _impl_.token_payload_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.token_payload_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RedirectToGateEvent::set_allocated_token_payload(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.token_payload_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.token_payload_.IsDefault()) {
+    _impl_.token_payload_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:contracts.kafka.RedirectToGateEvent.token_payload)
+}
+
+// bytes token_signature = 6;
+inline void RedirectToGateEvent::clear_token_signature() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_signature_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline const ::std::string& RedirectToGateEvent::token_signature() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.token_signature)
+  return _internal_token_signature();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RedirectToGateEvent::set_token_signature(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_.token_signature_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.token_signature)
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateEvent::mutable_token_signature()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_token_signature();
+  // @@protoc_insertion_point(field_mutable:contracts.kafka.RedirectToGateEvent.token_signature)
+  return _s;
+}
+inline const ::std::string& RedirectToGateEvent::_internal_token_signature() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_signature_.Get();
+}
+inline void RedirectToGateEvent::_internal_set_token_signature(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_.token_signature_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RedirectToGateEvent::_internal_mutable_token_signature() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  return _impl_.token_signature_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RedirectToGateEvent::release_token_signature() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:contracts.kafka.RedirectToGateEvent.token_signature)
+  if ((_impl_._has_bits_[0] & 0x00000004u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  auto* released = _impl_.token_signature_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.token_signature_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RedirectToGateEvent::set_allocated_token_signature(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+  _impl_.token_signature_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.token_signature_.IsDefault()) {
+    _impl_.token_signature_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:contracts.kafka.RedirectToGateEvent.token_signature)
+}
+
+// int64 token_deadline = 7;
+inline void RedirectToGateEvent::clear_token_deadline() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_deadline_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000020u;
+}
+inline ::int64_t RedirectToGateEvent::token_deadline() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.token_deadline)
+  return _internal_token_deadline();
+}
+inline void RedirectToGateEvent::set_token_deadline(::int64_t value) {
+  _internal_set_token_deadline(value);
+  _impl_._has_bits_[0] |= 0x00000020u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.token_deadline)
+}
+inline ::int64_t RedirectToGateEvent::_internal_token_deadline() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.token_deadline_;
+}
+inline void RedirectToGateEvent::_internal_set_token_deadline(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.token_deadline_ = value;
 }
 
 #ifdef __GNUC__

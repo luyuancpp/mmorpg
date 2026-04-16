@@ -75,6 +75,83 @@ func (x *GameKickPlayerRequest) GetOperator() string {
 	return ""
 }
 
+// Server tells client to disconnect and reconnect to a different Gate (cross-zone transition).
+type RedirectToGateNotify struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TargetIp       string                 `protobuf:"bytes,1,opt,name=target_ip,json=targetIp,proto3" json:"target_ip,omitempty"`
+	TargetPort     uint32                 `protobuf:"varint,2,opt,name=target_port,json=targetPort,proto3" json:"target_port,omitempty"`
+	TokenPayload   []byte                 `protobuf:"bytes,3,opt,name=token_payload,json=tokenPayload,proto3" json:"token_payload,omitempty"`       // serialized GateTokenPayload for target gate
+	TokenSignature []byte                 `protobuf:"bytes,4,opt,name=token_signature,json=tokenSignature,proto3" json:"token_signature,omitempty"` // HMAC-SHA256 signature
+	TokenDeadline  int64                  `protobuf:"varint,5,opt,name=token_deadline,json=tokenDeadline,proto3" json:"token_deadline,omitempty"`   // unix seconds
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RedirectToGateNotify) Reset() {
+	*x = RedirectToGateNotify{}
+	mi := &file_proto_scene_client_player_common_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RedirectToGateNotify) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RedirectToGateNotify) ProtoMessage() {}
+
+func (x *RedirectToGateNotify) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_client_player_common_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RedirectToGateNotify.ProtoReflect.Descriptor instead.
+func (*RedirectToGateNotify) Descriptor() ([]byte, []int) {
+	return file_proto_scene_client_player_common_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *RedirectToGateNotify) GetTargetIp() string {
+	if x != nil {
+		return x.TargetIp
+	}
+	return ""
+}
+
+func (x *RedirectToGateNotify) GetTargetPort() uint32 {
+	if x != nil {
+		return x.TargetPort
+	}
+	return 0
+}
+
+func (x *RedirectToGateNotify) GetTokenPayload() []byte {
+	if x != nil {
+		return x.TokenPayload
+	}
+	return nil
+}
+
+func (x *RedirectToGateNotify) GetTokenSignature() []byte {
+	if x != nil {
+		return x.TokenSignature
+	}
+	return nil
+}
+
+func (x *RedirectToGateNotify) GetTokenDeadline() int64 {
+	if x != nil {
+		return x.TokenDeadline
+	}
+	return 0
+}
+
 var File_proto_scene_client_player_common_proto protoreflect.FileDescriptor
 
 const file_proto_scene_client_player_common_proto_rawDesc = "" +
@@ -82,11 +159,19 @@ const file_proto_scene_client_player_common_proto_rawDesc = "" +
 	"&proto/scene/client_player_common.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1dproto/common/base/empty.proto\"\\\n" +
 	"\x15GameKickPlayerRequest\x12'\n" +
 	"\x06reason\x18\x01 \x01(\v2\x0f.TipInfoMessageR\x06reason\x12\x1a\n" +
-	"\boperator\x18\x02 \x01(\tR\boperator2\x7f\n" +
+	"\boperator\x18\x02 \x01(\tR\boperator\"\xc9\x01\n" +
+	"\x14RedirectToGateNotify\x12\x1b\n" +
+	"\ttarget_ip\x18\x01 \x01(\tR\btargetIp\x12\x1f\n" +
+	"\vtarget_port\x18\x02 \x01(\rR\n" +
+	"targetPort\x12#\n" +
+	"\rtoken_payload\x18\x03 \x01(\fR\ftokenPayload\x12'\n" +
+	"\x0ftoken_signature\x18\x04 \x01(\fR\x0etokenSignature\x12%\n" +
+	"\x0etoken_deadline\x18\x05 \x01(\x03R\rtokenDeadline2\xb0\x01\n" +
 	"\x17SceneClientPlayerCommon\x12*\n" +
 	"\x0fSendTipToClient\x12\x0f.TipInfoMessage\x1a\x06.Empty\x12,\n" +
 	"\n" +
-	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.Empty\x1a\n" +
+	"KickPlayer\x12\x16.GameKickPlayerRequest\x1a\x06.Empty\x12/\n" +
+	"\x0eRedirectToGate\x12\x15.RedirectToGateNotify\x1a\x06.Empty\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (
@@ -101,20 +186,23 @@ func file_proto_scene_client_player_common_proto_rawDescGZIP() []byte {
 	return file_proto_scene_client_player_common_proto_rawDescData
 }
 
-var file_proto_scene_client_player_common_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_scene_client_player_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_scene_client_player_common_proto_goTypes = []any{
 	(*GameKickPlayerRequest)(nil), // 0: GameKickPlayerRequest
-	(*base.TipInfoMessage)(nil),   // 1: TipInfoMessage
-	(*base.Empty)(nil),            // 2: Empty
+	(*RedirectToGateNotify)(nil),  // 1: RedirectToGateNotify
+	(*base.TipInfoMessage)(nil),   // 2: TipInfoMessage
+	(*base.Empty)(nil),            // 3: Empty
 }
 var file_proto_scene_client_player_common_proto_depIdxs = []int32{
-	1, // 0: GameKickPlayerRequest.reason:type_name -> TipInfoMessage
-	1, // 1: SceneClientPlayerCommon.SendTipToClient:input_type -> TipInfoMessage
+	2, // 0: GameKickPlayerRequest.reason:type_name -> TipInfoMessage
+	2, // 1: SceneClientPlayerCommon.SendTipToClient:input_type -> TipInfoMessage
 	0, // 2: SceneClientPlayerCommon.KickPlayer:input_type -> GameKickPlayerRequest
-	2, // 3: SceneClientPlayerCommon.SendTipToClient:output_type -> Empty
-	2, // 4: SceneClientPlayerCommon.KickPlayer:output_type -> Empty
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
+	1, // 3: SceneClientPlayerCommon.RedirectToGate:input_type -> RedirectToGateNotify
+	3, // 4: SceneClientPlayerCommon.SendTipToClient:output_type -> Empty
+	3, // 5: SceneClientPlayerCommon.KickPlayer:output_type -> Empty
+	3, // 6: SceneClientPlayerCommon.RedirectToGate:output_type -> Empty
+	4, // [4:7] is the sub-list for method output_type
+	1, // [1:4] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -131,7 +219,7 @@ func file_proto_scene_client_player_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_client_player_common_proto_rawDesc), len(file_proto_scene_client_player_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
