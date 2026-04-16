@@ -132,6 +132,10 @@ Node::Node(muduo::net::EventLoop *loop, const std::string &logFilePath)
 		LOG_FATAL << "Node requires a valid EventLoop pointer.";
 	}
 
+	// Start async log system early so all constructor logs have correct formatting/colors.
+	muduo::Logger::setOutput(AsyncOutput);
+	logSystem.start();
+
 	LOG_INFO << "Node created, log file: " << logFilePath;
 	if (gNode != nullptr && gNode != this)
 	{
@@ -185,8 +189,8 @@ void Node::Initialize()
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();
-	InitRpcServer();
 	InitLogSystem();
+	InitRpcServer();
 	LoadAllConfigData();
 	InitKafka();
 	InitEtcdService();
@@ -318,6 +322,12 @@ void Node::StartGrpcServer()
 
 	grpc::ServerBuilder builder;
 	builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
+
+	// Limit gRPC sync server thread pool: control-plane RPCs (CreateScene, DestroyScene)
+	// are low-frequency and dispatched to the muduo loop anyway, so 1-2 pollers suffice.
+	builder.SetSyncServerOption(grpc::ServerBuilder::NUM_CQS, 1);
+	builder.SetSyncServerOption(grpc::ServerBuilder::MIN_POLLERS, 1);
+	builder.SetSyncServerOption(grpc::ServerBuilder::MAX_POLLERS, 2);
 
 	for (auto *svc : grpcServices_)
 	{
@@ -540,9 +550,6 @@ void Node::ShutdownInLoop()
 	tlsEcs.Clear();
 #ifdef WIN32
 	muduo::Logger::setOutput(LogToConsole);
-#else
-	muduo::Logger::setOutput([](const char *msg, int len)
-							 { std::fwrite(msg, 1, static_cast<size_t>(len), stdout); });
 #endif
 	logSystem.stop();
 	LOG_DEBUG << "Node shutdown complete.";
@@ -552,11 +559,10 @@ void Node::ShutdownInLoop()
 
 void Node::InitLogSystem()
 {
+	// Log system already started in constructor; just apply config-driven log level.
 	auto logLevel = static_cast<muduo::Logger::LogLevel>(
 		tlsNodeConfigManager.GetBaseDeployConfig().log_level());
 	muduo::Logger::setLogLevel(logLevel);
-	muduo::Logger::setOutput(AsyncOutput);
-	logSystem.start();
 }
 
 void Node::RegisterEventHandlers()
@@ -620,8 +626,6 @@ void Node::AsyncOutput(const char *msg, int len)
 	}
 #ifdef WIN32
 	LogToConsole(msg, len);
-#else
-	std::fwrite(msg, 1, static_cast<size_t>(len), stdout);
 #endif
 }
 

@@ -28,6 +28,13 @@
 3. **Bitset type**: Prefer `std::bitset` per system (compile-time size from table generation, cache-friendly, zero allocation). Switch to `boost::dynamic_bitset` or `std::vector<bool>` only if runtime hot-reload of tables without recompilation is required.
 4. **`RewardClaimSystem` role**: Becomes a pure "dispatch reward items" utility. It no longer manages claimed state — each business system manages its own.
 
+## SnowFlake Node ID Isolation Constraint
+- SnowFlake uses a 17-bit node field (`kNodeBits=17`, max 131071). The node ID comes from etcd-allocated `node_id`.
+- Node IDs are allocated **per (zone, node_type)**: different node types in the same zone can have the same `node_id` value.
+- **Invariant**: Each SnowFlake-generated ID type must be produced by only ONE node type. If Scene nodes generate item GUIDs and Gate nodes generate session IDs, those are separate ID spaces and safe.
+- **NEVER** introduce a SnowFlake-generated ID that is produced by multiple node types — the 17-bit worker field will collide since different node types share the same `node_id` range.
+- If a globally-unique cross-node-type ID is ever needed, either encode `node_type` into the worker field (e.g. 5-bit type + 12-bit node) or switch node ID allocation to a single global namespace.
+
 ## Traffic Statistics System
 - **C++**: `TrafficStatsCollector` singleton in `cpp/libs/engine/core/network/traffic_statistics.h/.cpp`. Per-message atomic counters (send/recv count, bytes, max size). Registered automatically in `Node` constructor via `RegisterTrafficStatsReporter()`. Old `LogMessageStatistics()` in `GameChannel` is legacy (per-message logging, not thread-safe); new system replaces it with periodic summary logging.
 - **Go**: `grpcstats.Collector` in `go/shared/grpcstats/collector.go`. gRPC `UnaryServerInterceptor` tracking per-method call count, request/response bytes, latency avg/max. Wired into all Go services.

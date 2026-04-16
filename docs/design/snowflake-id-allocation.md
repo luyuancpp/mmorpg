@@ -32,3 +32,18 @@ Call sites:
 - `world_init.go` — world scene channel allocation
 - `main_scene_init.go` — main scene channel allocation  
 - `createscenelogic.go` → `allocateScene()` — instance creation
+
+## Cross-Node-Type ID Isolation Invariant (2026-04-16)
+
+Node IDs are allocated **per (zone, node_type)** — different node types can share the same `node_id` value. This means two SnowFlake generators on different node types can produce identical 64-bit IDs.
+
+**Rule**: Each SnowFlake-generated ID type must be produced by exactly ONE node type:
+- Scene nodes → item GUIDs (`SnowFlakeManager`)
+- Gate nodes → session IDs (`session_id_gen`)
+- Scene Manager (Go) → scene IDs (`SceneIDGen`)
+
+**NEVER** introduce a SnowFlake ID that is produced by multiple node types — the 17-bit worker field will collide.
+
+If a cross-node-type globally-unique ID is ever needed:
+1. Encode `node_type` into the worker field (e.g. 5-bit type + 12-bit node)
+2. Switch node ID allocation to a single global namespace (remove `node_type` from etcd key)
