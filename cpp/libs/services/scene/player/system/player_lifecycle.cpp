@@ -253,7 +253,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	playerAllDataMessage.mutable_player_database_data()->set_player_id(playerId);
 	playerAllDataMessage.mutable_player_database_1_data()->set_player_id(playerId);
 
-	PlayerMigrationPbEvent request;
+	PlayerMigrationEvent request;
 	request.set_player_id(playerId);
 	request.set_from_zone(GetZoneId());
 	request.set_to_zone(changeInfo->to_zone_id());
@@ -270,7 +270,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	tlsEcs.actorRegistry.remove<ChangeSceneInfoComp>(playerEntity);
 }
 
-void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationPbEvent &msg)
+void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationEvent &msg)
 {
 	PlayerAllData playerAllDataMessage;
 	if (!playerAllDataMessage.ParseFromString(msg.serialized_player_data()))
@@ -329,11 +329,11 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 	// player_locator (Go) owns the canonical session/location record.
 
 	// Fire component initialization events
-	InitializeActorComponentsEvent initActorEvent;
+	InitializeActorCompsEvent initActorEvent;
 	initActorEvent.set_actor_entity(entt::to_integral(player));
 	tlsEcs.dispatcher.trigger(initActorEvent);
 
-	InitializePlayerComponentsEvent initPlayerEvent;
+	InitializePlayerCompsEvent initPlayerEvent;
 	initPlayerEvent.set_actor_entity(entt::to_integral(player));
 	tlsEcs.dispatcher.trigger(initPlayerEvent);
 

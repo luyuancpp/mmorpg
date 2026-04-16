@@ -125,3 +125,5 @@ const SceneDestroySceneMessageId = 121
 const SceneNodeGrpcCreateSceneMessageId = 122
 const SceneNodeGrpcDestroySceneMessageId = 123
 const SceneClientPlayerCommonRedirectToGateMessageId = 124
+const GateGmGracefulShutdownMessageId = 125
+const SceneSceneGmGracefulShutdownMessageId = 126

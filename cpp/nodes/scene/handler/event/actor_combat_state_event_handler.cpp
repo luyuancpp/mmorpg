@@ -6,22 +6,22 @@
 ///<<< END WRITING YOUR CODE
 void ActorCombatStateEventHandler::Register()
 {
-    tlsEcs.dispatcher.sink<CombatStateAddedPbEvent>().connect<&ActorCombatStateEventHandler::CombatStateAddedPbEventHandler>();
-    tlsEcs.dispatcher.sink<CombatStateRemovedPbEvent>().connect<&ActorCombatStateEventHandler::CombatStateRemovedPbEventHandler>();
+    tlsEcs.dispatcher.sink<CombatStateAddedEvent>().connect<&ActorCombatStateEventHandler::CombatStateAddedEventHandler>();
+    tlsEcs.dispatcher.sink<CombatStateRemovedEvent>().connect<&ActorCombatStateEventHandler::CombatStateRemovedEventHandler>();
 }
 
 void ActorCombatStateEventHandler::UnRegister()
 {
-    tlsEcs.dispatcher.sink<CombatStateAddedPbEvent>().disconnect<&ActorCombatStateEventHandler::CombatStateAddedPbEventHandler>();
-    tlsEcs.dispatcher.sink<CombatStateRemovedPbEvent>().disconnect<&ActorCombatStateEventHandler::CombatStateRemovedPbEventHandler>();
+    tlsEcs.dispatcher.sink<CombatStateAddedEvent>().disconnect<&ActorCombatStateEventHandler::CombatStateAddedEventHandler>();
+    tlsEcs.dispatcher.sink<CombatStateRemovedEvent>().disconnect<&ActorCombatStateEventHandler::CombatStateRemovedEventHandler>();
 }
-void ActorCombatStateEventHandler::CombatStateAddedPbEventHandler(const CombatStateAddedPbEvent& event)
+void ActorCombatStateEventHandler::CombatStateAddedEventHandler(const CombatStateAddedEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	CombatStateSystem::AddCombatState(event);
 ///<<< END WRITING YOUR CODE
 }
-void ActorCombatStateEventHandler::CombatStateRemovedPbEventHandler(const CombatStateRemovedPbEvent& event)
+void ActorCombatStateEventHandler::CombatStateRemovedEventHandler(const CombatStateRemovedEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	CombatStateSystem::RemoveCombatState(event);

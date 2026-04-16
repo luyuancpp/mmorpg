@@ -50,6 +50,8 @@ public:
 
     using AfterStartFn = std::function<void(Node &)>;
     using KafkaHandlersFn = std::function<bool(Node &)>;
+    using BeforeShutdownFn = std::function<void(Node &)>;
+    using OnConflictShutdownFn = std::function<void(Node &, NodeIdConflictReason)>;
 
     explicit Node(muduo::net::EventLoop *loop, const std::string &logFilePath);
 
@@ -90,6 +92,16 @@ public:
     Node &SetKafkaHandlers(KafkaHandlersFn fn)
     {
         kafkaHandlersFn_ = std::move(fn);
+        return *this;
+    }
+    Node &SetBeforeShutdown(BeforeShutdownFn fn)
+    {
+        beforeShutdownFn_ = std::move(fn);
+        return *this;
+    }
+    Node &SetOnConflictShutdown(OnConflictShutdownFn fn)
+    {
+        onConflictShutdownFn_ = std::move(fn);
         return *this;
     }
     bool HasDiscoveredServiceNode(uint32_t nodeType) const
@@ -152,6 +164,9 @@ public:
     // After this returns, the process will terminate.
     virtual void OnNodeIdConflictShutdown(NodeIdConflictReason reason);
 
+    // Graceful shutdown (public so OS signal handlers can invoke it).
+    void Shutdown();
+
     // Utility and state queries
     bool IsCurrentNode(const NodeInfo &candidateNode) const;
     bool IsServiceStarted() { return rpcServer != nullptr; }
@@ -184,7 +199,6 @@ protected:
     // Event handling
     void OnServerConnected(const OnConnected2TcpServerEvent &connectedEvent);
 
-    void Shutdown();
     void ShutdownInLoop();
 
     // Member variables
@@ -218,6 +232,8 @@ protected:
     ::google::protobuf::Service *replyService_{nullptr};
     AfterStartFn afterStartFn_;
     KafkaHandlersFn kafkaHandlersFn_;
+    BeforeShutdownFn beforeShutdownFn_;
+    OnConflictShutdownFn onConflictShutdownFn_;
 
     // gRPC server (optional, started only when services are registered via RegisterGrpcService).
     std::vector<grpc::Service *> grpcServices_;

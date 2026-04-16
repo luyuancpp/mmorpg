@@ -23,6 +23,7 @@
         <justauth.version>1.16.6</justauth.version>
         <!-- Reuse parent's Jackson 2.x version (3.5.8 defaults to 2.x, no override needed) -->
         <jackson.version>2.17.2</jackson.version>
+        <jvm.warning.suppression.args>-XX:+EnableDynamicAgentLoading -Xshare:off</jvm.warning.suppression.args>
     </properties>
 
     <!-- Removed redundant dependencyManagement: parent already locks Jackson 2.x -->
@@ -122,12 +123,20 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <jvmArguments>${jvm.warning.suppression.args}</jvmArguments>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>${jvm.warning.suppression.args} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
                 </configuration>
             </plugin>
             <!-- Keep dependency tree plugin for verifying Jackson version -->

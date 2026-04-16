@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "core/network/codec/codec.h"
 #include "muduo/net/EventLoop.h"
@@ -11,7 +11,7 @@ using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 using ClientTokenVerifyRequestPtr = std::shared_ptr<ClientTokenVerifyRequest>;
 
 struct SessionInfo;
-class OnNodeRemovePbEvent;
+class OnNodeRemoveEvent;
 
 class RpcClientSessionHandler : muduo::noncopyable
 {
@@ -42,7 +42,7 @@ public:
                              const ClientTokenVerifyRequestPtr &message,
                              muduo::Timestamp);
 
-    void OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent &pb);
+    void OnNodeRemoveEventHandler(const OnNodeRemoveEvent &pb);
 
 private:
     static void HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn);

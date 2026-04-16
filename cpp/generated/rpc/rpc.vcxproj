@@ -46,6 +46,7 @@
     <ClInclude Include="service_metadata\player_currency_service_metadata.h" />
     <ClInclude Include="service_metadata\player_rollback_service_metadata.h" />
     <ClInclude Include="service_metadata\scene_manager_service_service_metadata.h" />
+    <ClInclude Include="service_metadata\scene_node_service_service_metadata.h" />
     <ClInclude Include="service_metadata\scene_service_metadata.h" />
     <ClInclude Include="service_metadata\gate_service_service_metadata.h" />
     <ClInclude Include="service_metadata\login_service_metadata.h" />

@@ -34,7 +34,7 @@ namespace {
         if (const auto& state = actorActionStateTable->state(static_cast<int32_t>(actorState));
             state.state_mode() == kActionStateInterrupt) {
             // Trigger interrupt event
-            InterruptCurrentStatePbEvent interruptEvent;
+            InterruptCurrentStateEvent interruptEvent;
             interruptEvent.set_actor_entity(entt::to_integral(actorEntity));
             interruptEvent.set_actor_state(actorState);
             tlsEcs.dispatcher.trigger(interruptEvent);

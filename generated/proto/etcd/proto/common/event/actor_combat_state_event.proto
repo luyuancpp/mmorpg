@@ -4,14 +4,14 @@ option go_package = "etcd/proto/common/event";
 
 
 
-message CombatStateAddedPbEvent 
+message CombatStateAddedEvent 
 {
     uint64 actor_entity = 1;
     uint64 source_buff_id = 2;
 	uint32 state_type = 3;
 }
 
-message CombatStateRemovedPbEvent 
+message CombatStateRemovedEvent 
 {
     uint64 actor_entity = 1;
     uint64 source_buff_id = 2;

@@ -25,7 +25,7 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr OnNodeRemovePbEvent::Impl_::Impl_(
+inline constexpr OnNodeRemoveEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         entity_{::uint64_t{0u}},
@@ -33,44 +33,44 @@ inline constexpr OnNodeRemovePbEvent::Impl_::Impl_(
         scene_node_type_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR OnNodeRemovePbEvent::OnNodeRemovePbEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR OnNodeRemoveEvent::OnNodeRemoveEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(OnNodeRemovePbEvent_class_data_.base()),
+    : ::google::protobuf::Message(OnNodeRemoveEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct OnNodeRemovePbEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR OnNodeRemovePbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~OnNodeRemovePbEventDefaultTypeInternal() {}
+struct OnNodeRemoveEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR OnNodeRemoveEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~OnNodeRemoveEventDefaultTypeInternal() {}
   union {
-    OnNodeRemovePbEvent _instance;
+    OnNodeRemoveEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeRemovePbEventDefaultTypeInternal _OnNodeRemovePbEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeRemoveEventDefaultTypeInternal _OnNodeRemoveEvent_default_instance_;
 template <typename>
-PROTOBUF_CONSTEXPR OnNodeConnectedPbEvent::OnNodeConnectedPbEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR OnNodeConnectedEvent::OnNodeConnectedEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(OnNodeConnectedPbEvent_class_data_.base()){}
+    : ::google::protobuf::internal::ZeroFieldsBase(OnNodeConnectedEvent_class_data_.base()){}
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::internal::ZeroFieldsBase() {
 }
 #endif  // PROTOBUF_CUSTOM_VTABLE
-struct OnNodeConnectedPbEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR OnNodeConnectedPbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~OnNodeConnectedPbEventDefaultTypeInternal() {}
+struct OnNodeConnectedEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR OnNodeConnectedEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~OnNodeConnectedEventDefaultTypeInternal() {}
   union {
-    OnNodeConnectedPbEvent _instance;
+    OnNodeConnectedEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeConnectedPbEventDefaultTypeInternal _OnNodeConnectedPbEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeConnectedEventDefaultTypeInternal _OnNodeConnectedEvent_default_instance_;
 
-inline constexpr OnNodeAddPbEvent::Impl_::Impl_(
+inline constexpr OnNodeAddEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         entity_{::uint64_t{0u}},
@@ -78,50 +78,50 @@ inline constexpr OnNodeAddPbEvent::Impl_::Impl_(
         scenenode_type_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR OnNodeAddPbEvent::OnNodeAddPbEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR OnNodeAddEvent::OnNodeAddEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(OnNodeAddPbEvent_class_data_.base()),
+    : ::google::protobuf::Message(OnNodeAddEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct OnNodeAddPbEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR OnNodeAddPbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~OnNodeAddPbEventDefaultTypeInternal() {}
+struct OnNodeAddEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR OnNodeAddEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~OnNodeAddEventDefaultTypeInternal() {}
   union {
-    OnNodeAddPbEvent _instance;
+    OnNodeAddEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeAddPbEventDefaultTypeInternal _OnNodeAddPbEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnNodeAddEventDefaultTypeInternal _OnNodeAddEvent_default_instance_;
 
-inline constexpr ConnectToNodePbEvent::Impl_::Impl_(
+inline constexpr ConnectToNodeEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         entity_{0u},
         node_type_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR ConnectToNodePbEvent::ConnectToNodePbEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ConnectToNodeEvent::ConnectToNodeEvent(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(ConnectToNodePbEvent_class_data_.base()),
+    : ::google::protobuf::Message(ConnectToNodeEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
       _impl_(::_pbi::ConstantInitialized()) {
 }
-struct ConnectToNodePbEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ConnectToNodePbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ConnectToNodePbEventDefaultTypeInternal() {}
+struct ConnectToNodeEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ConnectToNodeEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ConnectToNodeEventDefaultTypeInternal() {}
   union {
-    ConnectToNodePbEvent _instance;
+    ConnectToNodeEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConnectToNodePbEventDefaultTypeInternal _ConnectToNodePbEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConnectToNodeEventDefaultTypeInternal _ConnectToNodeEvent_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fevent_2fnode_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -130,28 +130,28 @@ const ::uint32_t
     TableStruct_proto_2fcommon_2fevent_2fnode_5fevent_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::OnNodeAddPbEvent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeAddEvent, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::OnNodeAddPbEvent, _impl_.entity_),
-        PROTOBUF_FIELD_OFFSET(::OnNodeAddPbEvent, _impl_.node_type_),
-        PROTOBUF_FIELD_OFFSET(::OnNodeAddPbEvent, _impl_.scenenode_type_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeAddEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeAddEvent, _impl_.node_type_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeAddEvent, _impl_.scenenode_type_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::OnNodeRemovePbEvent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeRemoveEvent, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::OnNodeRemovePbEvent, _impl_.entity_),
-        PROTOBUF_FIELD_OFFSET(::OnNodeRemovePbEvent, _impl_.node_type_),
-        PROTOBUF_FIELD_OFFSET(::OnNodeRemovePbEvent, _impl_.scene_node_type_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeRemoveEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeRemoveEvent, _impl_.node_type_),
+        PROTOBUF_FIELD_OFFSET(::OnNodeRemoveEvent, _impl_.scene_node_type_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::ConnectToNodePbEvent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ConnectToNodeEvent, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::ConnectToNodePbEvent, _impl_.entity_),
-        PROTOBUF_FIELD_OFFSET(::ConnectToNodePbEvent, _impl_.node_type_),
+        PROTOBUF_FIELD_OFFSET(::ConnectToNodeEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::ConnectToNodeEvent, _impl_.node_type_),
         0,
         1,
         0x000, // bitmap
@@ -159,33 +159,33 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::OnNodeAddPbEvent)},
-        {9, sizeof(::OnNodeRemovePbEvent)},
-        {18, sizeof(::ConnectToNodePbEvent)},
-        {25, sizeof(::OnNodeConnectedPbEvent)},
+        {0, sizeof(::OnNodeAddEvent)},
+        {9, sizeof(::OnNodeRemoveEvent)},
+        {18, sizeof(::ConnectToNodeEvent)},
+        {25, sizeof(::OnNodeConnectedEvent)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_OnNodeAddPbEvent_default_instance_._instance,
-    &::_OnNodeRemovePbEvent_default_instance_._instance,
-    &::_ConnectToNodePbEvent_default_instance_._instance,
-    &::_OnNodeConnectedPbEvent_default_instance_._instance,
+    &::_OnNodeAddEvent_default_instance_._instance,
+    &::_OnNodeRemoveEvent_default_instance_._instance,
+    &::_ConnectToNodeEvent_default_instance_._instance,
+    &::_OnNodeConnectedEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fevent_2fnode_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n#proto/common/event/node_event.proto\"M\n"
-    "\020OnNodeAddPbEvent\022\016\n\006entity\030\001 \001(\004\022\021\n\tnod"
-    "e_type\030\002 \001(\r\022\026\n\016scenenode_type\030\003 \001(\r\"Q\n\023"
-    "OnNodeRemovePbEvent\022\016\n\006entity\030\001 \001(\004\022\021\n\tn"
-    "ode_type\030\002 \001(\r\022\027\n\017scene_node_type\030\003 \001(\r\""
-    "9\n\024ConnectToNodePbEvent\022\016\n\006entity\030\001 \001(\r\022"
-    "\021\n\tnode_type\030\002 \001(\r\"\030\n\026OnNodeConnectedPbE"
-    "ventB\016Z\014common/eventb\006proto3"
+    "\n#proto/common/event/node_event.proto\"K\n"
+    "\016OnNodeAddEvent\022\016\n\006entity\030\001 \001(\004\022\021\n\tnode_"
+    "type\030\002 \001(\r\022\026\n\016scenenode_type\030\003 \001(\r\"O\n\021On"
+    "NodeRemoveEvent\022\016\n\006entity\030\001 \001(\004\022\021\n\tnode_"
+    "type\030\002 \001(\r\022\027\n\017scene_node_type\030\003 \001(\r\"7\n\022C"
+    "onnectToNodeEvent\022\016\n\006entity\030\001 \001(\r\022\021\n\tnod"
+    "e_type\030\002 \001(\r\"\026\n\024OnNodeConnectedEventB\016Z\014"
+    "common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto = {
     false,
     false,
-    308,
+    300,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fnode_5fevent_2eproto,
     "proto/common/event/node_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto_once,
@@ -200,27 +200,27 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon
 };
 // ===================================================================
 
-class OnNodeAddPbEvent::_Internal {
+class OnNodeAddEvent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<OnNodeAddPbEvent>()._impl_._has_bits_);
+      decltype(::std::declval<OnNodeAddEvent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_._has_bits_);
 };
 
-OnNodeAddPbEvent::OnNodeAddPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+OnNodeAddEvent::OnNodeAddEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, OnNodeAddPbEvent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, OnNodeAddEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:OnNodeAddPbEvent)
+  // @@protoc_insertion_point(arena_constructor:OnNodeAddEvent)
 }
-OnNodeAddPbEvent::OnNodeAddPbEvent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const OnNodeAddPbEvent& from)
+OnNodeAddEvent::OnNodeAddEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const OnNodeAddEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, OnNodeAddPbEvent_class_data_.base()),
+    : ::google::protobuf::Message(arena, OnNodeAddEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -228,12 +228,12 @@ OnNodeAddPbEvent::OnNodeAddPbEvent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE OnNodeAddPbEvent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE OnNodeAddEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void OnNodeAddPbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void OnNodeAddEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, entity_),
@@ -242,64 +242,64 @@ inline void OnNodeAddPbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) 
                offsetof(Impl_, entity_) +
                sizeof(Impl_::scenenode_type_));
 }
-OnNodeAddPbEvent::~OnNodeAddPbEvent() {
-  // @@protoc_insertion_point(destructor:OnNodeAddPbEvent)
+OnNodeAddEvent::~OnNodeAddEvent() {
+  // @@protoc_insertion_point(destructor:OnNodeAddEvent)
   SharedDtor(*this);
 }
-inline void OnNodeAddPbEvent::SharedDtor(MessageLite& self) {
-  OnNodeAddPbEvent& this_ = static_cast<OnNodeAddPbEvent&>(self);
+inline void OnNodeAddEvent::SharedDtor(MessageLite& self) {
+  OnNodeAddEvent& this_ = static_cast<OnNodeAddEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL OnNodeAddPbEvent::PlacementNew_(
+inline void* PROTOBUF_NONNULL OnNodeAddEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) OnNodeAddPbEvent(arena);
+  return ::new (mem) OnNodeAddEvent(arena);
 }
-constexpr auto OnNodeAddPbEvent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnNodeAddPbEvent),
-                                            alignof(OnNodeAddPbEvent));
+constexpr auto OnNodeAddEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnNodeAddEvent),
+                                            alignof(OnNodeAddEvent));
 }
-constexpr auto OnNodeAddPbEvent::InternalGenerateClassData_() {
+constexpr auto OnNodeAddEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_OnNodeAddPbEvent_default_instance_._instance,
+          &_OnNodeAddEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &OnNodeAddPbEvent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<OnNodeAddPbEvent>(),
+          &OnNodeAddEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<OnNodeAddEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &OnNodeAddPbEvent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<OnNodeAddPbEvent>(), &OnNodeAddPbEvent::ByteSizeLong,
-              &OnNodeAddPbEvent::_InternalSerialize,
+          &OnNodeAddEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<OnNodeAddEvent>(), &OnNodeAddEvent::ByteSizeLong,
+              &OnNodeAddEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_._cached_size_),
           false,
       },
-      &OnNodeAddPbEvent::kDescriptorMethods,
+      &OnNodeAddEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull OnNodeAddPbEvent_class_data_ =
-        OnNodeAddPbEvent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull OnNodeAddEvent_class_data_ =
+        OnNodeAddEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-OnNodeAddPbEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&OnNodeAddPbEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(OnNodeAddPbEvent_class_data_.tc_table);
-  return OnNodeAddPbEvent_class_data_.base();
+OnNodeAddEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&OnNodeAddEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(OnNodeAddEvent_class_data_.tc_table);
+  return OnNodeAddEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
-OnNodeAddPbEvent::_table_ = {
+OnNodeAddEvent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_._has_bits_),
     0, // no _extensions_
     3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -308,42 +308,42 @@ OnNodeAddPbEvent::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    OnNodeAddPbEvent_class_data_.base(),
+    OnNodeAddEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::OnNodeAddPbEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::OnNodeAddEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnNodeAddPbEvent, _impl_.entity_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_.entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnNodeAddEvent, _impl_.entity_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_.entity_)}},
     // uint32 node_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeAddPbEvent, _impl_.node_type_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_.node_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeAddEvent, _impl_.node_type_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_.node_type_)}},
     // uint32 scenenode_type = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeAddPbEvent, _impl_.scenenode_type_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_.scenenode_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeAddEvent, _impl_.scenenode_type_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_.scenenode_type_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 node_type = 2;
-    {PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_.node_type_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_.node_type_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 scenenode_type = 3;
-    {PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_.scenenode_type_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_.scenenode_type_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void OnNodeAddPbEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:OnNodeAddPbEvent)
+PROTOBUF_NOINLINE void OnNodeAddEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:OnNodeAddEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -360,17 +360,17 @@ PROTOBUF_NOINLINE void OnNodeAddPbEvent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL OnNodeAddPbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL OnNodeAddEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const OnNodeAddPbEvent& this_ = static_cast<const OnNodeAddPbEvent&>(base);
+  const OnNodeAddEvent& this_ = static_cast<const OnNodeAddEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL OnNodeAddPbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL OnNodeAddEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const OnNodeAddPbEvent& this_ = *this;
+  const OnNodeAddEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:OnNodeAddPbEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:OnNodeAddEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -406,18 +406,18 @@ PROTOBUF_NOINLINE void OnNodeAddPbEvent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:OnNodeAddPbEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:OnNodeAddEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t OnNodeAddPbEvent::ByteSizeLong(const MessageLite& base) {
-  const OnNodeAddPbEvent& this_ = static_cast<const OnNodeAddPbEvent&>(base);
+::size_t OnNodeAddEvent::ByteSizeLong(const MessageLite& base) {
+  const OnNodeAddEvent& this_ = static_cast<const OnNodeAddEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t OnNodeAddPbEvent::ByteSizeLong() const {
-  const OnNodeAddPbEvent& this_ = *this;
+::size_t OnNodeAddEvent::ByteSizeLong() const {
+  const OnNodeAddEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:OnNodeAddPbEvent)
+  // @@protoc_insertion_point(message_byte_size_start:OnNodeAddEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -453,10 +453,10 @@ PROTOBUF_NOINLINE void OnNodeAddPbEvent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void OnNodeAddPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<OnNodeAddPbEvent*>(&to_msg);
-  auto& from = static_cast<const OnNodeAddPbEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:OnNodeAddPbEvent)
+void OnNodeAddEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<OnNodeAddEvent*>(&to_msg);
+  auto& from = static_cast<const OnNodeAddEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:OnNodeAddEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -483,52 +483,52 @@ void OnNodeAddPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void OnNodeAddPbEvent::CopyFrom(const OnNodeAddPbEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:OnNodeAddPbEvent)
+void OnNodeAddEvent::CopyFrom(const OnNodeAddEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:OnNodeAddEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void OnNodeAddPbEvent::InternalSwap(OnNodeAddPbEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void OnNodeAddEvent::InternalSwap(OnNodeAddEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_.scenenode_type_)
-      + sizeof(OnNodeAddPbEvent::_impl_.scenenode_type_)
-      - PROTOBUF_FIELD_OFFSET(OnNodeAddPbEvent, _impl_.entity_)>(
+      PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_.scenenode_type_)
+      + sizeof(OnNodeAddEvent::_impl_.scenenode_type_)
+      - PROTOBUF_FIELD_OFFSET(OnNodeAddEvent, _impl_.entity_)>(
           reinterpret_cast<char*>(&_impl_.entity_),
           reinterpret_cast<char*>(&other->_impl_.entity_));
 }
 
-::google::protobuf::Metadata OnNodeAddPbEvent::GetMetadata() const {
+::google::protobuf::Metadata OnNodeAddEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class OnNodeRemovePbEvent::_Internal {
+class OnNodeRemoveEvent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<OnNodeRemovePbEvent>()._impl_._has_bits_);
+      decltype(::std::declval<OnNodeRemoveEvent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_._has_bits_);
 };
 
-OnNodeRemovePbEvent::OnNodeRemovePbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+OnNodeRemoveEvent::OnNodeRemoveEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, OnNodeRemovePbEvent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, OnNodeRemoveEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:OnNodeRemovePbEvent)
+  // @@protoc_insertion_point(arena_constructor:OnNodeRemoveEvent)
 }
-OnNodeRemovePbEvent::OnNodeRemovePbEvent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const OnNodeRemovePbEvent& from)
+OnNodeRemoveEvent::OnNodeRemoveEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const OnNodeRemoveEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, OnNodeRemovePbEvent_class_data_.base()),
+    : ::google::protobuf::Message(arena, OnNodeRemoveEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -536,12 +536,12 @@ OnNodeRemovePbEvent::OnNodeRemovePbEvent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE OnNodeRemovePbEvent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE OnNodeRemoveEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void OnNodeRemovePbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void OnNodeRemoveEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, entity_),
@@ -550,64 +550,64 @@ inline void OnNodeRemovePbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE aren
                offsetof(Impl_, entity_) +
                sizeof(Impl_::scene_node_type_));
 }
-OnNodeRemovePbEvent::~OnNodeRemovePbEvent() {
-  // @@protoc_insertion_point(destructor:OnNodeRemovePbEvent)
+OnNodeRemoveEvent::~OnNodeRemoveEvent() {
+  // @@protoc_insertion_point(destructor:OnNodeRemoveEvent)
   SharedDtor(*this);
 }
-inline void OnNodeRemovePbEvent::SharedDtor(MessageLite& self) {
-  OnNodeRemovePbEvent& this_ = static_cast<OnNodeRemovePbEvent&>(self);
+inline void OnNodeRemoveEvent::SharedDtor(MessageLite& self) {
+  OnNodeRemoveEvent& this_ = static_cast<OnNodeRemoveEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL OnNodeRemovePbEvent::PlacementNew_(
+inline void* PROTOBUF_NONNULL OnNodeRemoveEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) OnNodeRemovePbEvent(arena);
+  return ::new (mem) OnNodeRemoveEvent(arena);
 }
-constexpr auto OnNodeRemovePbEvent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnNodeRemovePbEvent),
-                                            alignof(OnNodeRemovePbEvent));
+constexpr auto OnNodeRemoveEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnNodeRemoveEvent),
+                                            alignof(OnNodeRemoveEvent));
 }
-constexpr auto OnNodeRemovePbEvent::InternalGenerateClassData_() {
+constexpr auto OnNodeRemoveEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_OnNodeRemovePbEvent_default_instance_._instance,
+          &_OnNodeRemoveEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &OnNodeRemovePbEvent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<OnNodeRemovePbEvent>(),
+          &OnNodeRemoveEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<OnNodeRemoveEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &OnNodeRemovePbEvent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<OnNodeRemovePbEvent>(), &OnNodeRemovePbEvent::ByteSizeLong,
-              &OnNodeRemovePbEvent::_InternalSerialize,
+          &OnNodeRemoveEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<OnNodeRemoveEvent>(), &OnNodeRemoveEvent::ByteSizeLong,
+              &OnNodeRemoveEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_._cached_size_),
           false,
       },
-      &OnNodeRemovePbEvent::kDescriptorMethods,
+      &OnNodeRemoveEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull OnNodeRemovePbEvent_class_data_ =
-        OnNodeRemovePbEvent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull OnNodeRemoveEvent_class_data_ =
+        OnNodeRemoveEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-OnNodeRemovePbEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&OnNodeRemovePbEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(OnNodeRemovePbEvent_class_data_.tc_table);
-  return OnNodeRemovePbEvent_class_data_.base();
+OnNodeRemoveEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&OnNodeRemoveEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(OnNodeRemoveEvent_class_data_.tc_table);
+  return OnNodeRemoveEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
-OnNodeRemovePbEvent::_table_ = {
+OnNodeRemoveEvent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_._has_bits_),
     0, // no _extensions_
     3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -616,42 +616,42 @@ OnNodeRemovePbEvent::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    OnNodeRemovePbEvent_class_data_.base(),
+    OnNodeRemoveEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::OnNodeRemovePbEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::OnNodeRemoveEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnNodeRemovePbEvent, _impl_.entity_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnNodeRemoveEvent, _impl_.entity_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_.entity_)}},
     // uint32 node_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeRemovePbEvent, _impl_.node_type_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.node_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeRemoveEvent, _impl_.node_type_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_.node_type_)}},
     // uint32 scene_node_type = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeRemovePbEvent, _impl_.scene_node_type_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scene_node_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(OnNodeRemoveEvent, _impl_.scene_node_type_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_.scene_node_type_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 node_type = 2;
-    {PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.node_type_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_.node_type_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 scene_node_type = 3;
-    {PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scene_node_type_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_.scene_node_type_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void OnNodeRemovePbEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:OnNodeRemovePbEvent)
+PROTOBUF_NOINLINE void OnNodeRemoveEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:OnNodeRemoveEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -668,17 +668,17 @@ PROTOBUF_NOINLINE void OnNodeRemovePbEvent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL OnNodeRemovePbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL OnNodeRemoveEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const OnNodeRemovePbEvent& this_ = static_cast<const OnNodeRemovePbEvent&>(base);
+  const OnNodeRemoveEvent& this_ = static_cast<const OnNodeRemoveEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL OnNodeRemovePbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL OnNodeRemoveEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const OnNodeRemovePbEvent& this_ = *this;
+  const OnNodeRemoveEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:OnNodeRemovePbEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:OnNodeRemoveEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -714,18 +714,18 @@ PROTOBUF_NOINLINE void OnNodeRemovePbEvent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:OnNodeRemovePbEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:OnNodeRemoveEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t OnNodeRemovePbEvent::ByteSizeLong(const MessageLite& base) {
-  const OnNodeRemovePbEvent& this_ = static_cast<const OnNodeRemovePbEvent&>(base);
+::size_t OnNodeRemoveEvent::ByteSizeLong(const MessageLite& base) {
+  const OnNodeRemoveEvent& this_ = static_cast<const OnNodeRemoveEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t OnNodeRemovePbEvent::ByteSizeLong() const {
-  const OnNodeRemovePbEvent& this_ = *this;
+::size_t OnNodeRemoveEvent::ByteSizeLong() const {
+  const OnNodeRemoveEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:OnNodeRemovePbEvent)
+  // @@protoc_insertion_point(message_byte_size_start:OnNodeRemoveEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -761,10 +761,10 @@ PROTOBUF_NOINLINE void OnNodeRemovePbEvent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void OnNodeRemovePbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<OnNodeRemovePbEvent*>(&to_msg);
-  auto& from = static_cast<const OnNodeRemovePbEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:OnNodeRemovePbEvent)
+void OnNodeRemoveEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<OnNodeRemoveEvent*>(&to_msg);
+  auto& from = static_cast<const OnNodeRemoveEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:OnNodeRemoveEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -791,52 +791,52 @@ void OnNodeRemovePbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void OnNodeRemovePbEvent::CopyFrom(const OnNodeRemovePbEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:OnNodeRemovePbEvent)
+void OnNodeRemoveEvent::CopyFrom(const OnNodeRemoveEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:OnNodeRemoveEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void OnNodeRemovePbEvent::InternalSwap(OnNodeRemovePbEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void OnNodeRemoveEvent::InternalSwap(OnNodeRemoveEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.scene_node_type_)
-      + sizeof(OnNodeRemovePbEvent::_impl_.scene_node_type_)
-      - PROTOBUF_FIELD_OFFSET(OnNodeRemovePbEvent, _impl_.entity_)>(
+      PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_.scene_node_type_)
+      + sizeof(OnNodeRemoveEvent::_impl_.scene_node_type_)
+      - PROTOBUF_FIELD_OFFSET(OnNodeRemoveEvent, _impl_.entity_)>(
           reinterpret_cast<char*>(&_impl_.entity_),
           reinterpret_cast<char*>(&other->_impl_.entity_));
 }
 
-::google::protobuf::Metadata OnNodeRemovePbEvent::GetMetadata() const {
+::google::protobuf::Metadata OnNodeRemoveEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class ConnectToNodePbEvent::_Internal {
+class ConnectToNodeEvent::_Internal {
  public:
   using HasBits =
-      decltype(::std::declval<ConnectToNodePbEvent>()._impl_._has_bits_);
+      decltype(::std::declval<ConnectToNodeEvent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_._has_bits_);
 };
 
-ConnectToNodePbEvent::ConnectToNodePbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+ConnectToNodeEvent::ConnectToNodeEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ConnectToNodePbEvent_class_data_.base()) {
+    : ::google::protobuf::Message(arena, ConnectToNodeEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ConnectToNodePbEvent)
+  // @@protoc_insertion_point(arena_constructor:ConnectToNodeEvent)
 }
-ConnectToNodePbEvent::ConnectToNodePbEvent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ConnectToNodePbEvent& from)
+ConnectToNodeEvent::ConnectToNodeEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ConnectToNodeEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, ConnectToNodePbEvent_class_data_.base()),
+    : ::google::protobuf::Message(arena, ConnectToNodeEvent_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
@@ -844,12 +844,12 @@ ConnectToNodePbEvent::ConnectToNodePbEvent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
-PROTOBUF_NDEBUG_INLINE ConnectToNodePbEvent::Impl_::Impl_(
+PROTOBUF_NDEBUG_INLINE ConnectToNodeEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0} {}
 
-inline void ConnectToNodePbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+inline void ConnectToNodeEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, entity_),
@@ -858,64 +858,64 @@ inline void ConnectToNodePbEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE are
                offsetof(Impl_, entity_) +
                sizeof(Impl_::node_type_));
 }
-ConnectToNodePbEvent::~ConnectToNodePbEvent() {
-  // @@protoc_insertion_point(destructor:ConnectToNodePbEvent)
+ConnectToNodeEvent::~ConnectToNodeEvent() {
+  // @@protoc_insertion_point(destructor:ConnectToNodeEvent)
   SharedDtor(*this);
 }
-inline void ConnectToNodePbEvent::SharedDtor(MessageLite& self) {
-  ConnectToNodePbEvent& this_ = static_cast<ConnectToNodePbEvent&>(self);
+inline void ConnectToNodeEvent::SharedDtor(MessageLite& self) {
+  ConnectToNodeEvent& this_ = static_cast<ConnectToNodeEvent&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.~Impl_();
 }
 
-inline void* PROTOBUF_NONNULL ConnectToNodePbEvent::PlacementNew_(
+inline void* PROTOBUF_NONNULL ConnectToNodeEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) ConnectToNodePbEvent(arena);
+  return ::new (mem) ConnectToNodeEvent(arena);
 }
-constexpr auto ConnectToNodePbEvent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ConnectToNodePbEvent),
-                                            alignof(ConnectToNodePbEvent));
+constexpr auto ConnectToNodeEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ConnectToNodeEvent),
+                                            alignof(ConnectToNodeEvent));
 }
-constexpr auto ConnectToNodePbEvent::InternalGenerateClassData_() {
+constexpr auto ConnectToNodeEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_ConnectToNodePbEvent_default_instance_._instance,
+          &_ConnectToNodeEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &ConnectToNodePbEvent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<ConnectToNodePbEvent>(),
+          &ConnectToNodeEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ConnectToNodeEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &ConnectToNodePbEvent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<ConnectToNodePbEvent>(), &ConnectToNodePbEvent::ByteSizeLong,
-              &ConnectToNodePbEvent::_InternalSerialize,
+          &ConnectToNodeEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ConnectToNodeEvent>(), &ConnectToNodeEvent::ByteSizeLong,
+              &ConnectToNodeEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_._cached_size_),
           false,
       },
-      &ConnectToNodePbEvent::kDescriptorMethods,
+      &ConnectToNodeEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull ConnectToNodePbEvent_class_data_ =
-        ConnectToNodePbEvent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull ConnectToNodeEvent_class_data_ =
+        ConnectToNodeEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-ConnectToNodePbEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&ConnectToNodePbEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(ConnectToNodePbEvent_class_data_.tc_table);
-  return ConnectToNodePbEvent_class_data_.base();
+ConnectToNodeEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ConnectToNodeEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ConnectToNodeEvent_class_data_.tc_table);
+  return ConnectToNodeEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
-ConnectToNodePbEvent::_table_ = {
+ConnectToNodeEvent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -924,35 +924,35 @@ ConnectToNodePbEvent::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    ConnectToNodePbEvent_class_data_.base(),
+    ConnectToNodeEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ConnectToNodePbEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ConnectToNodeEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 node_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConnectToNodePbEvent, _impl_.node_type_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.node_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConnectToNodeEvent, _impl_.node_type_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_.node_type_)}},
     // uint32 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConnectToNodePbEvent, _impl_.entity_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ConnectToNodeEvent, _impl_.entity_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_.entity_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 node_type = 2;
-    {PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.node_type_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_.node_type_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
-PROTOBUF_NOINLINE void ConnectToNodePbEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:ConnectToNodePbEvent)
+PROTOBUF_NOINLINE void ConnectToNodeEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:ConnectToNodeEvent)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -969,17 +969,17 @@ PROTOBUF_NOINLINE void ConnectToNodePbEvent::Clear() {
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL ConnectToNodePbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ConnectToNodeEvent::_InternalSerialize(
     const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const ConnectToNodePbEvent& this_ = static_cast<const ConnectToNodePbEvent&>(base);
+  const ConnectToNodeEvent& this_ = static_cast<const ConnectToNodeEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL ConnectToNodePbEvent::_InternalSerialize(
+::uint8_t* PROTOBUF_NONNULL ConnectToNodeEvent::_InternalSerialize(
     ::uint8_t* PROTOBUF_NONNULL target,
     ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const ConnectToNodePbEvent& this_ = *this;
+  const ConnectToNodeEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:ConnectToNodePbEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:ConnectToNodeEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1006,18 +1006,18 @@ PROTOBUF_NOINLINE void ConnectToNodePbEvent::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ConnectToNodePbEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:ConnectToNodeEvent)
   return target;
 }
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t ConnectToNodePbEvent::ByteSizeLong(const MessageLite& base) {
-  const ConnectToNodePbEvent& this_ = static_cast<const ConnectToNodePbEvent&>(base);
+::size_t ConnectToNodeEvent::ByteSizeLong(const MessageLite& base) {
+  const ConnectToNodeEvent& this_ = static_cast<const ConnectToNodeEvent&>(base);
 #else   // PROTOBUF_CUSTOM_VTABLE
-::size_t ConnectToNodePbEvent::ByteSizeLong() const {
-  const ConnectToNodePbEvent& this_ = *this;
+::size_t ConnectToNodeEvent::ByteSizeLong() const {
+  const ConnectToNodeEvent& this_ = *this;
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:ConnectToNodePbEvent)
+  // @@protoc_insertion_point(message_byte_size_start:ConnectToNodeEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1046,10 +1046,10 @@ PROTOBUF_NOINLINE void ConnectToNodePbEvent::Clear() {
                                              &this_._impl_._cached_size_);
 }
 
-void ConnectToNodePbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ConnectToNodePbEvent*>(&to_msg);
-  auto& from = static_cast<const ConnectToNodePbEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:ConnectToNodePbEvent)
+void ConnectToNodeEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ConnectToNodeEvent*>(&to_msg);
+  auto& from = static_cast<const ConnectToNodeEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ConnectToNodeEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1071,104 +1071,104 @@ void ConnectToNodePbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, co
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ConnectToNodePbEvent::CopyFrom(const ConnectToNodePbEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ConnectToNodePbEvent)
+void ConnectToNodeEvent::CopyFrom(const ConnectToNodeEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ConnectToNodeEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void ConnectToNodePbEvent::InternalSwap(ConnectToNodePbEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+void ConnectToNodeEvent::InternalSwap(ConnectToNodeEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.node_type_)
-      + sizeof(ConnectToNodePbEvent::_impl_.node_type_)
-      - PROTOBUF_FIELD_OFFSET(ConnectToNodePbEvent, _impl_.entity_)>(
+      PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_.node_type_)
+      + sizeof(ConnectToNodeEvent::_impl_.node_type_)
+      - PROTOBUF_FIELD_OFFSET(ConnectToNodeEvent, _impl_.entity_)>(
           reinterpret_cast<char*>(&_impl_.entity_),
           reinterpret_cast<char*>(&other->_impl_.entity_));
 }
 
-::google::protobuf::Metadata ConnectToNodePbEvent::GetMetadata() const {
+::google::protobuf::Metadata ConnectToNodeEvent::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 
-class OnNodeConnectedPbEvent::_Internal {
+class OnNodeConnectedEvent::_Internal {
  public:
 };
 
-OnNodeConnectedPbEvent::OnNodeConnectedPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+OnNodeConnectedEvent::OnNodeConnectedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, OnNodeConnectedPbEvent_class_data_.base()) {
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, OnNodeConnectedEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::internal::ZeroFieldsBase(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(arena_constructor:OnNodeConnectedPbEvent)
+  // @@protoc_insertion_point(arena_constructor:OnNodeConnectedEvent)
 }
-OnNodeConnectedPbEvent::OnNodeConnectedPbEvent(
+OnNodeConnectedEvent::OnNodeConnectedEvent(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const OnNodeConnectedPbEvent& from)
+    const OnNodeConnectedEvent& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, OnNodeConnectedPbEvent_class_data_.base()) {
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, OnNodeConnectedEvent_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
     : ::google::protobuf::internal::ZeroFieldsBase(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  OnNodeConnectedPbEvent* const _this = this;
+  OnNodeConnectedEvent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 
-  // @@protoc_insertion_point(copy_constructor:OnNodeConnectedPbEvent)
+  // @@protoc_insertion_point(copy_constructor:OnNodeConnectedEvent)
 }
 
-inline void* PROTOBUF_NONNULL OnNodeConnectedPbEvent::PlacementNew_(
+inline void* PROTOBUF_NONNULL OnNodeConnectedEvent::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) OnNodeConnectedPbEvent(arena);
+  return ::new (mem) OnNodeConnectedEvent(arena);
 }
-constexpr auto OnNodeConnectedPbEvent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnNodeConnectedPbEvent),
-                                            alignof(OnNodeConnectedPbEvent));
+constexpr auto OnNodeConnectedEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnNodeConnectedEvent),
+                                            alignof(OnNodeConnectedEvent));
 }
-constexpr auto OnNodeConnectedPbEvent::InternalGenerateClassData_() {
+constexpr auto OnNodeConnectedEvent::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
       ::google::protobuf::internal::ClassData{
-          &_OnNodeConnectedPbEvent_default_instance_._instance,
+          &_OnNodeConnectedEvent_default_instance_._instance,
           &_table_.header,
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
-          &OnNodeConnectedPbEvent::MergeImpl,
-          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<OnNodeConnectedPbEvent>(),
+          &OnNodeConnectedEvent::MergeImpl,
+          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<OnNodeConnectedEvent>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &OnNodeConnectedPbEvent::SharedDtor,
-          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<OnNodeConnectedPbEvent>(), &OnNodeConnectedPbEvent::ByteSizeLong,
-              &OnNodeConnectedPbEvent::_InternalSerialize,
+          &OnNodeConnectedEvent::SharedDtor,
+          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<OnNodeConnectedEvent>(), &OnNodeConnectedEvent::ByteSizeLong,
+              &OnNodeConnectedEvent::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(OnNodeConnectedPbEvent, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(OnNodeConnectedEvent, _impl_._cached_size_),
           false,
       },
-      &OnNodeConnectedPbEvent::kDescriptorMethods,
+      &OnNodeConnectedEvent::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fevent_2fnode_5fevent_2eproto,
       nullptr,  // tracker
   };
 }
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull OnNodeConnectedPbEvent_class_data_ =
-        OnNodeConnectedPbEvent::InternalGenerateClassData_();
+    ::google::protobuf::internal::ClassDataFull OnNodeConnectedEvent_class_data_ =
+        OnNodeConnectedEvent::InternalGenerateClassData_();
 
 PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-OnNodeConnectedPbEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&OnNodeConnectedPbEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(OnNodeConnectedPbEvent_class_data_.tc_table);
-  return OnNodeConnectedPbEvent_class_data_.base();
+OnNodeConnectedEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&OnNodeConnectedEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(OnNodeConnectedEvent_class_data_.tc_table);
+  return OnNodeConnectedEvent_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
 const ::_pbi::TcParseTable<0, 0, 0, 0, 2>
-OnNodeConnectedPbEvent::_table_ = {
+OnNodeConnectedEvent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -1179,11 +1179,11 @@ OnNodeConnectedPbEvent::_table_ = {
     0,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    OnNodeConnectedPbEvent_class_data_.base(),
+    OnNodeConnectedEvent_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::OnNodeConnectedPbEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::OnNodeConnectedEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -1200,7 +1200,7 @@ OnNodeConnectedPbEvent::_table_ = {
 
 
 
-::google::protobuf::Metadata OnNodeConnectedPbEvent::GetMetadata() const {
+::google::protobuf::Metadata OnNodeConnectedEvent::GetMetadata() const {
   return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

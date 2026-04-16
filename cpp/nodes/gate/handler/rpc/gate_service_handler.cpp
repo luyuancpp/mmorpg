@@ -191,3 +191,35 @@ void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controlle
 	response->set_player_id(request->player_id());
 ///<<< END WRITING YOUR CODE
 }
+
+void GateHandler::GmGracefulShutdown(::google::protobuf::RpcController* controller, const ::GmGracefulShutdownRequest* request,
+	::GmGracefulShutdownResponse* response,
+	::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+
+	LOG_INFO << "GM graceful shutdown requested by operator=" << request->operator_()
+			 << " reason=" << request->reason();
+
+	auto& sessions = tlsSessionManager.sessions();
+	uint32_t count = 0;
+	for (auto& [sessionId, info] : sessions)
+	{
+		if (info.conn)
+		{
+			info.conn->forceClose();
+			++count;
+		}
+	}
+
+	LOG_INFO << "GM graceful shutdown: closed " << count << " client sessions, scheduling node shutdown.";
+	response->set_affected_count(count);
+
+	// Reply to GM first, then shutdown.
+	done->Run();
+
+	gNode->Shutdown();
+	return;
+
+///<<< END WRITING YOUR CODE
+}

@@ -63,11 +63,12 @@ var File_proto_scene_scene_admin_proto protoreflect.FileDescriptor
 
 const file_proto_scene_scene_admin_proto_rawDesc = "" +
 	"\n" +
-	"\x1dproto/scene/scene_admin.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\"\x0f\n" +
-	"\rGameSceneTest2,\n" +
+	"\x1dproto/scene/scene_admin.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a proto/common/base/gm_admin.proto\"\x0f\n" +
+	"\rGameSceneTest2{\n" +
 	"\n" +
 	"SceneScene\x12\x1e\n" +
-	"\x04Test\x12\x0e.GameSceneTest\x1a\x06.EmptyB\x1b\x98\xd4a\x03Z\x12friend/proto/scene\x80\x01\x01b\x06proto3"
+	"\x04Test\x12\x0e.GameSceneTest\x1a\x06.Empty\x12M\n" +
+	"\x12GmGracefulShutdown\x12\x1a.GmGracefulShutdownRequest\x1a\x1b.GmGracefulShutdownResponseB\x1b\x98\xd4a\x03Z\x12friend/proto/scene\x80\x01\x01b\x06proto3"
 
 var (
 	file_proto_scene_scene_admin_proto_rawDescOnce sync.Once
@@ -83,14 +84,18 @@ func file_proto_scene_scene_admin_proto_rawDescGZIP() []byte {
 
 var file_proto_scene_scene_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_scene_scene_admin_proto_goTypes = []any{
-	(*GameSceneTest)(nil), // 0: GameSceneTest
-	(*base.Empty)(nil),    // 1: Empty
+	(*GameSceneTest)(nil),                   // 0: GameSceneTest
+	(*base.GmGracefulShutdownRequest)(nil),  // 1: GmGracefulShutdownRequest
+	(*base.Empty)(nil),                      // 2: Empty
+	(*base.GmGracefulShutdownResponse)(nil), // 3: GmGracefulShutdownResponse
 }
 var file_proto_scene_scene_admin_proto_depIdxs = []int32{
 	0, // 0: SceneScene.Test:input_type -> GameSceneTest
-	1, // 1: SceneScene.Test:output_type -> Empty
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	1, // 1: SceneScene.GmGracefulShutdown:input_type -> GmGracefulShutdownRequest
+	2, // 2: SceneScene.Test:output_type -> Empty
+	3, // 3: SceneScene.GmGracefulShutdown:output_type -> GmGracefulShutdownResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

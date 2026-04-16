@@ -120,6 +120,9 @@
     <ClInclude Include="service_metadata\player_rollback_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="service_metadata\scene_node_service_service_metadata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="service_metadata\rpc_event_registry.cpp">

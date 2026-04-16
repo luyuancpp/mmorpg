@@ -205,6 +205,29 @@ void EtcdService::StartWatchingPrefixes() {
 }
 
 void EtcdService::HandlePutEvent(const std::string& key, const std::string& value) {
+	// Hijack detection: if another node overwrote our exact node_id key
+	// with a different UUID, our identity is stolen.
+	const auto &myInfo = gNode->GetNodeInfo();
+	const auto myKey = gNode->GetEtcdManager().MakeNodeEtcdKey(myInfo);
+	if (key == myKey)
+	{
+		NodeInfo remoteInfo;
+		if (google::protobuf::util::JsonStringToMessage(value, &remoteInfo).ok())
+		{
+			if (!remoteInfo.node_uuid().empty() &&
+				remoteInfo.node_uuid() != myInfo.node_uuid())
+			{
+				LOG_ERROR << "Node ID hijack detected via Watch! key=" << key
+						  << " my_uuid=" << myInfo.node_uuid()
+						  << " remote_uuid=" << remoteInfo.node_uuid();
+				gNode->OnNodeIdConflictShutdown(NodeIdConflictReason::kReRegistrationFailed);
+				LOG_FATAL << "Another node has claimed our node_id=" << myInfo.node_id()
+						  << " via etcd Watch. Terminating to prevent SnowFlake collision.";
+				return;
+			}
+		}
+	}
+
 	gNode->GetServiceDiscoveryManager().HandleServiceNodeStart(key, value);
 }
 

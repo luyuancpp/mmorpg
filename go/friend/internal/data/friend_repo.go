@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"time"
 
+	"shared/cache"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
-	"golang.org/x/sync/singleflight"
 )
 
 var (
@@ -35,7 +36,6 @@ type FriendRequestEntry struct {
 type FriendRepo struct {
 	rdb        *redis.Client
 	db         *sql.DB
-	sfGroup    singleflight.Group
 	defaultTTL time.Duration
 }
 
@@ -66,59 +66,27 @@ const onlineTTL = 60 * time.Second
 // ── Read (cache-aside + singleflight) ──────────────────────────
 
 func (r *FriendRepo) GetFriendList(ctx context.Context, playerID uint64) ([]FriendEntry, error) {
-	// Try Redis
-	data, err := r.rdb.Get(ctx, friendListKey(playerID)).Bytes()
-	if err == nil {
-		var friends []FriendEntry
-		if err := json.Unmarshal(data, &friends); err != nil {
-			return nil, fmt.Errorf("unmarshal friend list %d: %w", playerID, err)
-		}
-		return friends, nil
-	}
-	if err != redis.Nil {
-		return nil, fmt.Errorf("redis get friends %d: %w", playerID, err)
-	}
-
-	// Cache miss → singleflight
-	result, err, _ := r.sfGroup.Do(fmt.Sprintf("fl:%d", playerID), func() (any, error) {
-		friends, err := r.loadFriendListFromMySQL(ctx, playerID)
-		if err != nil {
-			return nil, err
-		}
-		r.cacheFriendList(ctx, playerID, friends)
-		return friends, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.([]FriendEntry), nil
+	return cache.LoadOrCache[[]FriendEntry](
+		ctx, r.rdb,
+		friendListKey(playerID),
+		fmt.Sprintf("fl:%d", playerID),
+		r.defaultTTL,
+		func(ctx context.Context) ([]FriendEntry, error) {
+			return r.loadFriendListFromMySQL(ctx, playerID)
+		},
+	)
 }
 
 func (r *FriendRepo) GetPendingRequests(ctx context.Context, playerID uint64) ([]FriendRequestEntry, error) {
-	data, err := r.rdb.Get(ctx, pendingRequestsKey(playerID)).Bytes()
-	if err == nil {
-		var requests []FriendRequestEntry
-		if err := json.Unmarshal(data, &requests); err != nil {
-			return nil, fmt.Errorf("unmarshal pending requests %d: %w", playerID, err)
-		}
-		return requests, nil
-	}
-	if err != redis.Nil {
-		return nil, fmt.Errorf("redis get pending %d: %w", playerID, err)
-	}
-
-	result, err, _ := r.sfGroup.Do(fmt.Sprintf("pr:%d", playerID), func() (any, error) {
-		requests, err := r.loadPendingRequestsFromMySQL(ctx, playerID)
-		if err != nil {
-			return nil, err
-		}
-		r.cachePendingRequests(ctx, playerID, requests)
-		return requests, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.([]FriendRequestEntry), nil
+	return cache.LoadOrCache[[]FriendRequestEntry](
+		ctx, r.rdb,
+		pendingRequestsKey(playerID),
+		fmt.Sprintf("pr:%d", playerID),
+		r.defaultTTL,
+		func(ctx context.Context) ([]FriendRequestEntry, error) {
+			return r.loadPendingRequestsFromMySQL(ctx, playerID)
+		},
+	)
 }
 
 // ── Write operations ───────────────────────────────────────────

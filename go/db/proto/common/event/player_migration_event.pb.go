@@ -22,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PlayerMigrationPbEvent struct {
+type PlayerMigrationEvent struct {
 	state                protoimpl.MessageState         `protogen:"open.v1"`
 	PlayerId             uint64                         `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SourceSceneId        uint64                         `protobuf:"varint,2,opt,name=source_scene_id,json=sourceSceneId,proto3" json:"source_scene_id,omitempty"`
@@ -37,20 +37,20 @@ type PlayerMigrationPbEvent struct {
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *PlayerMigrationPbEvent) Reset() {
-	*x = PlayerMigrationPbEvent{}
+func (x *PlayerMigrationEvent) Reset() {
+	*x = PlayerMigrationEvent{}
 	mi := &file_proto_common_event_player_migration_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PlayerMigrationPbEvent) String() string {
+func (x *PlayerMigrationEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerMigrationPbEvent) ProtoMessage() {}
+func (*PlayerMigrationEvent) ProtoMessage() {}
 
-func (x *PlayerMigrationPbEvent) ProtoReflect() protoreflect.Message {
+func (x *PlayerMigrationEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_player_migration_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -62,68 +62,68 @@ func (x *PlayerMigrationPbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerMigrationPbEvent.ProtoReflect.Descriptor instead.
-func (*PlayerMigrationPbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerMigrationEvent.ProtoReflect.Descriptor instead.
+func (*PlayerMigrationEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_player_migration_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerMigrationPbEvent) GetPlayerId() uint64 {
+func (x *PlayerMigrationEvent) GetPlayerId() uint64 {
 	if x != nil {
 		return x.PlayerId
 	}
 	return 0
 }
 
-func (x *PlayerMigrationPbEvent) GetSourceSceneId() uint64 {
+func (x *PlayerMigrationEvent) GetSourceSceneId() uint64 {
 	if x != nil {
 		return x.SourceSceneId
 	}
 	return 0
 }
 
-func (x *PlayerMigrationPbEvent) GetTargetSceneId() uint64 {
+func (x *PlayerMigrationEvent) GetTargetSceneId() uint64 {
 	if x != nil {
 		return x.TargetSceneId
 	}
 	return 0
 }
 
-func (x *PlayerMigrationPbEvent) GetSerializedPlayerData() []byte {
+func (x *PlayerMigrationEvent) GetSerializedPlayerData() []byte {
 	if x != nil {
 		return x.SerializedPlayerData
 	}
 	return nil
 }
 
-func (x *PlayerMigrationPbEvent) GetFromZone() uint32 {
+func (x *PlayerMigrationEvent) GetFromZone() uint32 {
 	if x != nil {
 		return x.FromZone
 	}
 	return 0
 }
 
-func (x *PlayerMigrationPbEvent) GetToZone() uint32 {
+func (x *PlayerMigrationEvent) GetToZone() uint32 {
 	if x != nil {
 		return x.ToZone
 	}
 	return 0
 }
 
-func (x *PlayerMigrationPbEvent) GetTimestamp() int64 {
+func (x *PlayerMigrationEvent) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
 	}
 	return 0
 }
 
-func (x *PlayerMigrationPbEvent) GetCentreNodeId() uint32 {
+func (x *PlayerMigrationEvent) GetCentreNodeId() uint32 {
 	if x != nil {
 		return x.CentreNodeId
 	}
 	return 0
 }
 
-func (x *PlayerMigrationPbEvent) GetSceneInfo() *component.ChangeSceneInfoComp {
+func (x *PlayerMigrationEvent) GetSceneInfo() *component.ChangeSceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -134,8 +134,8 @@ var File_proto_common_event_player_migration_event_proto protoreflect.FileDescri
 
 const file_proto_common_event_player_migration_event_proto_rawDesc = "" +
 	"\n" +
-	"/proto/common/event/player_migration_event.proto\x1a'proto/common/component/scene_comp.proto\"\xea\x02\n" +
-	"\x16PlayerMigrationPbEvent\x12\x1b\n" +
+	"/proto/common/event/player_migration_event.proto\x1a'proto/common/component/scene_comp.proto\"\xe8\x02\n" +
+	"\x14PlayerMigrationEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0fsource_scene_id\x18\x02 \x01(\x04R\rsourceSceneId\x12&\n" +
 	"\x0ftarget_scene_id\x18\x03 \x01(\x04R\rtargetSceneId\x124\n" +
@@ -161,11 +161,11 @@ func file_proto_common_event_player_migration_event_proto_rawDescGZIP() []byte {
 
 var file_proto_common_event_player_migration_event_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_common_event_player_migration_event_proto_goTypes = []any{
-	(*PlayerMigrationPbEvent)(nil),        // 0: PlayerMigrationPbEvent
+	(*PlayerMigrationEvent)(nil),          // 0: PlayerMigrationEvent
 	(*component.ChangeSceneInfoComp)(nil), // 1: ChangeSceneInfoComp
 }
 var file_proto_common_event_player_migration_event_proto_depIdxs = []int32{
-	1, // 0: PlayerMigrationPbEvent.scene_info:type_name -> ChangeSceneInfoComp
+	1, // 0: PlayerMigrationEvent.scene_info:type_name -> ChangeSceneInfoComp
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

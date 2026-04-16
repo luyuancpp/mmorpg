@@ -52,10 +52,10 @@ struct TableStruct_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto;
 }  // extern "C"
-class InitializePlayerComponentsEvent;
-struct InitializePlayerComponentsEventDefaultTypeInternal;
-extern InitializePlayerComponentsEventDefaultTypeInternal _InitializePlayerComponentsEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull InitializePlayerComponentsEvent_class_data_;
+class InitializePlayerCompsEvent;
+struct InitializePlayerCompsEventDefaultTypeInternal;
+extern InitializePlayerCompsEventDefaultTypeInternal _InitializePlayerCompsEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull InitializePlayerCompsEvent_class_data_;
 class PlayerLoginEvent;
 struct PlayerLoginEventDefaultTypeInternal;
 extern PlayerLoginEventDefaultTypeInternal _PlayerLoginEvent_default_instance_;
@@ -676,30 +676,30 @@ class PlayerLoginEvent final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull PlayerLoginEvent_class_data_;
 // -------------------------------------------------------------------
 
-class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:InitializePlayerComponentsEvent) */ {
+class InitializePlayerCompsEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:InitializePlayerCompsEvent) */ {
  public:
-  inline InitializePlayerComponentsEvent() : InitializePlayerComponentsEvent(nullptr) {}
-  ~InitializePlayerComponentsEvent() PROTOBUF_FINAL;
+  inline InitializePlayerCompsEvent() : InitializePlayerCompsEvent(nullptr) {}
+  ~InitializePlayerCompsEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(InitializePlayerComponentsEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(InitializePlayerCompsEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(InitializePlayerComponentsEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(InitializePlayerCompsEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR InitializePlayerComponentsEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR InitializePlayerCompsEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline InitializePlayerComponentsEvent(const InitializePlayerComponentsEvent& from) : InitializePlayerComponentsEvent(nullptr, from) {}
-  inline InitializePlayerComponentsEvent(InitializePlayerComponentsEvent&& from) noexcept
-      : InitializePlayerComponentsEvent(nullptr, ::std::move(from)) {}
-  inline InitializePlayerComponentsEvent& operator=(const InitializePlayerComponentsEvent& from) {
+  inline InitializePlayerCompsEvent(const InitializePlayerCompsEvent& from) : InitializePlayerCompsEvent(nullptr, from) {}
+  inline InitializePlayerCompsEvent(InitializePlayerCompsEvent&& from) noexcept
+      : InitializePlayerCompsEvent(nullptr, ::std::move(from)) {}
+  inline InitializePlayerCompsEvent& operator=(const InitializePlayerCompsEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline InitializePlayerComponentsEvent& operator=(InitializePlayerComponentsEvent&& from) noexcept {
+  inline InitializePlayerCompsEvent& operator=(InitializePlayerCompsEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -727,13 +727,13 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const InitializePlayerComponentsEvent& default_instance() {
-    return *reinterpret_cast<const InitializePlayerComponentsEvent*>(
-        &_InitializePlayerComponentsEvent_default_instance_);
+  static const InitializePlayerCompsEvent& default_instance() {
+    return *reinterpret_cast<const InitializePlayerCompsEvent*>(
+        &_InitializePlayerCompsEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(InitializePlayerComponentsEvent& a, InitializePlayerComponentsEvent& b) { a.Swap(&b); }
-  inline void Swap(InitializePlayerComponentsEvent* PROTOBUF_NONNULL other) {
+  friend void swap(InitializePlayerCompsEvent& a, InitializePlayerCompsEvent& b) { a.Swap(&b); }
+  inline void Swap(InitializePlayerCompsEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -741,7 +741,7 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(InitializePlayerComponentsEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(InitializePlayerCompsEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -749,13 +749,13 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  InitializePlayerComponentsEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<InitializePlayerComponentsEvent>(arena);
+  InitializePlayerCompsEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<InitializePlayerCompsEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const InitializePlayerComponentsEvent& from);
+  void CopyFrom(const InitializePlayerCompsEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const InitializePlayerComponentsEvent& from) { InitializePlayerComponentsEvent::MergeImpl(*this, from); }
+  void MergeFrom(const InitializePlayerCompsEvent& from) { InitializePlayerCompsEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -791,18 +791,18 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(InitializePlayerComponentsEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(InitializePlayerCompsEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "InitializePlayerComponentsEvent"; }
+  static ::absl::string_view FullMessageName() { return "InitializePlayerCompsEvent"; }
 
  protected:
-  explicit InitializePlayerComponentsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  InitializePlayerComponentsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InitializePlayerComponentsEvent& from);
-  InitializePlayerComponentsEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InitializePlayerComponentsEvent&& from) noexcept
-      : InitializePlayerComponentsEvent(arena) {
+  explicit InitializePlayerCompsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  InitializePlayerCompsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InitializePlayerCompsEvent& from);
+  InitializePlayerCompsEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InitializePlayerCompsEvent&& from) noexcept
+      : InitializePlayerCompsEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -831,7 +831,7 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
   void _internal_set_actor_entity(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:InitializePlayerComponentsEvent)
+  // @@protoc_insertion_point(class_scope:InitializePlayerCompsEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -854,7 +854,7 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const InitializePlayerComponentsEvent& from_msg);
+        const InitializePlayerCompsEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t actor_entity_;
@@ -864,7 +864,7 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2fplayer_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull InitializePlayerComponentsEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull InitializePlayerCompsEvent_class_data_;
 
 // ===================================================================
 
@@ -960,28 +960,28 @@ inline void PlayerUpgradeEvent::_internal_set_new_level(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// InitializePlayerComponentsEvent
+// InitializePlayerCompsEvent
 
 // uint64 actor_entity = 1;
-inline void InitializePlayerComponentsEvent::clear_actor_entity() {
+inline void InitializePlayerCompsEvent::clear_actor_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t InitializePlayerComponentsEvent::actor_entity() const {
-  // @@protoc_insertion_point(field_get:InitializePlayerComponentsEvent.actor_entity)
+inline ::uint64_t InitializePlayerCompsEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:InitializePlayerCompsEvent.actor_entity)
   return _internal_actor_entity();
 }
-inline void InitializePlayerComponentsEvent::set_actor_entity(::uint64_t value) {
+inline void InitializePlayerCompsEvent::set_actor_entity(::uint64_t value) {
   _internal_set_actor_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:InitializePlayerComponentsEvent.actor_entity)
+  // @@protoc_insertion_point(field_set:InitializePlayerCompsEvent.actor_entity)
 }
-inline ::uint64_t InitializePlayerComponentsEvent::_internal_actor_entity() const {
+inline ::uint64_t InitializePlayerCompsEvent::_internal_actor_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.actor_entity_;
 }
-inline void InitializePlayerComponentsEvent::_internal_set_actor_entity(::uint64_t value) {
+inline void InitializePlayerCompsEvent::_internal_set_actor_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = value;
 }

@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type InitializeActorComponentsEvent struct {
+type InitializeActorCompsEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorEntity   uint64                 `protobuf:"varint,1,opt,name=actor_entity,json=actorEntity,proto3" json:"actor_entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *InitializeActorComponentsEvent) Reset() {
-	*x = InitializeActorComponentsEvent{}
+func (x *InitializeActorCompsEvent) Reset() {
+	*x = InitializeActorCompsEvent{}
 	mi := &file_proto_common_event_actor_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *InitializeActorComponentsEvent) String() string {
+func (x *InitializeActorCompsEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InitializeActorComponentsEvent) ProtoMessage() {}
+func (*InitializeActorCompsEvent) ProtoMessage() {}
 
-func (x *InitializeActorComponentsEvent) ProtoReflect() protoreflect.Message {
+func (x *InitializeActorCompsEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_actor_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,19 +53,19 @@ func (x *InitializeActorComponentsEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InitializeActorComponentsEvent.ProtoReflect.Descriptor instead.
-func (*InitializeActorComponentsEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use InitializeActorCompsEvent.ProtoReflect.Descriptor instead.
+func (*InitializeActorCompsEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_actor_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *InitializeActorComponentsEvent) GetActorEntity() uint64 {
+func (x *InitializeActorCompsEvent) GetActorEntity() uint64 {
 	if x != nil {
 		return x.ActorEntity
 	}
 	return 0
 }
 
-type InterruptCurrentStatePbEvent struct {
+type InterruptCurrentStateEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActorEntity   uint64                 `protobuf:"varint,1,opt,name=actor_entity,json=actorEntity,proto3" json:"actor_entity,omitempty"`
 	ActorAction   uint32                 `protobuf:"varint,2,opt,name=actor_action,json=actorAction,proto3" json:"actor_action,omitempty"`
@@ -74,20 +74,20 @@ type InterruptCurrentStatePbEvent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *InterruptCurrentStatePbEvent) Reset() {
-	*x = InterruptCurrentStatePbEvent{}
+func (x *InterruptCurrentStateEvent) Reset() {
+	*x = InterruptCurrentStateEvent{}
 	mi := &file_proto_common_event_actor_event_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *InterruptCurrentStatePbEvent) String() string {
+func (x *InterruptCurrentStateEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InterruptCurrentStatePbEvent) ProtoMessage() {}
+func (*InterruptCurrentStateEvent) ProtoMessage() {}
 
-func (x *InterruptCurrentStatePbEvent) ProtoReflect() protoreflect.Message {
+func (x *InterruptCurrentStateEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_event_actor_event_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -99,26 +99,26 @@ func (x *InterruptCurrentStatePbEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InterruptCurrentStatePbEvent.ProtoReflect.Descriptor instead.
-func (*InterruptCurrentStatePbEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use InterruptCurrentStateEvent.ProtoReflect.Descriptor instead.
+func (*InterruptCurrentStateEvent) Descriptor() ([]byte, []int) {
 	return file_proto_common_event_actor_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *InterruptCurrentStatePbEvent) GetActorEntity() uint64 {
+func (x *InterruptCurrentStateEvent) GetActorEntity() uint64 {
 	if x != nil {
 		return x.ActorEntity
 	}
 	return 0
 }
 
-func (x *InterruptCurrentStatePbEvent) GetActorAction() uint32 {
+func (x *InterruptCurrentStateEvent) GetActorAction() uint32 {
 	if x != nil {
 		return x.ActorAction
 	}
 	return 0
 }
 
-func (x *InterruptCurrentStatePbEvent) GetActorState() uint32 {
+func (x *InterruptCurrentStateEvent) GetActorState() uint32 {
 	if x != nil {
 		return x.ActorState
 	}
@@ -129,10 +129,10 @@ var File_proto_common_event_actor_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_actor_event_proto_rawDesc = "" +
 	"\n" +
-	"$proto/common/event/actor_event.proto\"C\n" +
-	"\x1eInitializeActorComponentsEvent\x12!\n" +
-	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\"\x85\x01\n" +
-	"\x1cInterruptCurrentStatePbEvent\x12!\n" +
+	"$proto/common/event/actor_event.proto\">\n" +
+	"\x19InitializeActorCompsEvent\x12!\n" +
+	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\"\x83\x01\n" +
+	"\x1aInterruptCurrentStateEvent\x12!\n" +
 	"\factor_entity\x18\x01 \x01(\x04R\vactorEntity\x12!\n" +
 	"\factor_action\x18\x02 \x01(\rR\vactorAction\x12\x1f\n" +
 	"\vactor_state\x18\x03 \x01(\rR\n" +
@@ -152,8 +152,8 @@ func file_proto_common_event_actor_event_proto_rawDescGZIP() []byte {
 
 var file_proto_common_event_actor_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_common_event_actor_event_proto_goTypes = []any{
-	(*InitializeActorComponentsEvent)(nil), // 0: InitializeActorComponentsEvent
-	(*InterruptCurrentStatePbEvent)(nil),   // 1: InterruptCurrentStatePbEvent
+	(*InitializeActorCompsEvent)(nil),  // 0: InitializeActorCompsEvent
+	(*InterruptCurrentStateEvent)(nil), // 1: InterruptCurrentStateEvent
 }
 var file_proto_common_event_actor_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

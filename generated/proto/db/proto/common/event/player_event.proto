@@ -14,7 +14,7 @@ message PlayerUpgradeEvent
   uint32 new_level = 2;
 }
 
-message InitializePlayerComponentsEvent
+message InitializePlayerCompsEvent
 {
   uint64 actor_entity = 1;
 }

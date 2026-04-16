@@ -63,6 +63,24 @@ int main(int argc, char *argv[])
                                         n, node::kafka::BuildDefaultKafkaOptions(n.GetNodeType()),
                                         DispatchGateKafkaCommand); });
 
+            // Disconnect all client sessions before shutdown (SIGTERM or conflict).
+            auto disconnectAllClients = [](Node &)
+            {
+                auto &sessions = tlsSessionManager.sessions();
+                LOG_INFO << "Disconnecting " << sessions.size() << " client sessions before shutdown...";
+                for (auto &[sessionId, info] : sessions)
+                {
+                    if (info.conn)
+                    {
+                        info.conn->forceClose();
+                    }
+                }
+                LOG_INFO << "All client sessions disconnected.";
+            };
+            node.SetBeforeShutdown(disconnectAllClients);
+            node.SetOnConflictShutdown([disconnectAllClients](Node &n, NodeIdConflictReason)
+                                       { disconnectAllClients(n); });
+
             InitGateCodec(context.codec);
 
             // Build reverse map: response proto full_name -> message_id

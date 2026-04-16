@@ -46,6 +46,20 @@ spec:
           ports:
             - containerPort: 50000
               name: grpc
+          readinessProbe:
+            grpc:
+              port: 50000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            grpc:
+              port: 50000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
           volumeMounts:
             - name: svc-config
               mountPath: /app/etc
@@ -57,6 +71,7 @@ spec:
             limits:
               cpu: "1"
               memory: 512Mi
+      terminationGracePeriodSeconds: 30
       volumes:
         - name: svc-config
           configMap:

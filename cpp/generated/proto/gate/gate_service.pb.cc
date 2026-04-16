@@ -155,31 +155,34 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "\n\035proto/gate/gate_service.proto\032\033proto/d"
     "b/proto_option.proto\032\035proto/common/base/"
     "empty.proto\032\037proto/common/base/message.p"
-    "roto\"Z\n\030BindSessionToGateRequest\022\022\n\nsess"
-    "ion_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017sessi"
-    "on_version\030\003 \001(\004\"[\n\031BindSessionToGateRes"
-    "ponse\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002"
-    " \001(\004\022\027\n\017session_version\030\003 \001(\004\"[\n\031Broadca"
-    "stToPlayersRequest\022\024\n\014session_list\030\001 \003(\004"
-    "\022(\n\017message_content\030\002 \001(\0132\017.MessageConte"
-    "nt2\357\003\n\004Gate\022X\n\023PlayerEnterGameNode\022\037.Reg"
-    "isterGameNodeSessionRequest\032 .RegisterGa"
-    "meNodeSessionResponse\0227\n\023SendMessageToPl"
-    "ayer\022\030.NodeRouteMessageRequest\032\006.Empty\022\?"
-    "\n\020RouteNodeMessage\022\024.RouteMessageRequest"
-    "\032\025.RouteMessageResponse\022M\n\022RoutePlayerMe"
-    "ssage\022\032.RoutePlayerMessageRequest\032\033.Rout"
-    "ePlayerMessageResponse\0228\n\022BroadcastToPla"
-    "yers\022\032.BroadcastToPlayersRequest\032\006.Empty"
-    "\022>\n\rNodeHandshake\022\025.NodeHandshakeRequest"
-    "\032\026.NodeHandshakeResponse\022J\n\021BindSessionT"
-    "oGate\022\031.BindSessionToGateRequest\032\032.BindS"
-    "essionToGateResponseB\rZ\004gate\200\001\001\230\324a\002b\006pro"
-    "to3"
+    "roto\032 proto/common/base/gm_admin.proto\"Z"
+    "\n\030BindSessionToGateRequest\022\022\n\nsession_id"
+    "\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017session_ver"
+    "sion\030\003 \001(\004\"[\n\031BindSessionToGateResponse\022"
+    "\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027"
+    "\n\017session_version\030\003 \001(\004\"[\n\031BroadcastToPl"
+    "ayersRequest\022\024\n\014session_list\030\001 \003(\004\022(\n\017me"
+    "ssage_content\030\002 \001(\0132\017.MessageContent2\276\004\n"
+    "\004Gate\022X\n\023PlayerEnterGameNode\022\037.RegisterG"
+    "ameNodeSessionRequest\032 .RegisterGameNode"
+    "SessionResponse\0227\n\023SendMessageToPlayer\022\030"
+    ".NodeRouteMessageRequest\032\006.Empty\022\?\n\020Rout"
+    "eNodeMessage\022\024.RouteMessageRequest\032\025.Rou"
+    "teMessageResponse\022M\n\022RoutePlayerMessage\022"
+    "\032.RoutePlayerMessageRequest\032\033.RoutePlaye"
+    "rMessageResponse\0228\n\022BroadcastToPlayers\022\032"
+    ".BroadcastToPlayersRequest\032\006.Empty\022>\n\rNo"
+    "deHandshake\022\025.NodeHandshakeRequest\032\026.Nod"
+    "eHandshakeResponse\022J\n\021BindSessionToGate\022"
+    "\031.BindSessionToGateRequest\032\032.BindSession"
+    "ToGateResponse\022M\n\022GmGracefulShutdown\022\032.G"
+    "mGracefulShutdownRequest\032\033.GmGracefulShu"
+    "tdownResponseB\rZ\004gate\200\001\001\230\324a\002b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[3] = {
+    descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[4] = {
         &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fgm_5fadmin_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
@@ -187,12 +190,12 @@ static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    923,
+    1036,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,
     descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps,
-    3,
+    4,
     3,
     schemas,
     file_default_instances,
@@ -1184,6 +1187,13 @@ void Gate::BindSessionToGate(::google::protobuf::RpcController* PROTOBUF_NULLABL
   controller->SetFailed("Method BindSessionToGate() not implemented.");
   done->Run();
 }
+void Gate::GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                         const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL,
+                         ::GmGracefulShutdownResponse* PROTOBUF_NONNULL,
+                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  controller->SetFailed("Method GmGracefulShutdown() not implemented.");
+  done->Run();
+}
 
 void Gate::CallMethod(
     const ::google::protobuf::MethodDescriptor* PROTOBUF_NONNULL method,
@@ -1220,6 +1230,10 @@ void Gate::CallMethod(
       this->BindSessionToGate(controller, ::google::protobuf::DownCastMessage<::BindSessionToGateRequest>(request),
                    ::google::protobuf::DownCastMessage<::BindSessionToGateResponse>(response), done);
       break;
+    case 7:
+      this->GmGracefulShutdown(controller, ::google::protobuf::DownCastMessage<::GmGracefulShutdownRequest>(request),
+                   ::google::protobuf::DownCastMessage<::GmGracefulShutdownResponse>(response), done);
+      break;
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -1245,6 +1259,8 @@ const ::google::protobuf::Message& Gate::GetRequestPrototype(
       return ::NodeHandshakeRequest::default_instance();
     case 6:
       return ::BindSessionToGateRequest::default_instance();
+    case 7:
+      return ::GmGracefulShutdownRequest::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -1271,6 +1287,8 @@ const ::google::protobuf::Message& Gate::GetResponsePrototype(
       return ::NodeHandshakeResponse::default_instance();
     case 6:
       return ::BindSessionToGateResponse::default_instance();
+    case 7:
+      return ::GmGracefulShutdownResponse::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -1339,6 +1357,13 @@ void Gate_Stub::BindSessionToGate(
     const ::BindSessionToGateRequest* PROTOBUF_NONNULL request, ::BindSessionToGateResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   channel_->CallMethod(descriptor()->method(6), controller,
+                       request, response, done);
+}
+void Gate_Stub::GmGracefulShutdown(
+    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+    const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request, ::GmGracefulShutdownResponse* PROTOBUF_NONNULL response,
+    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  channel_->CallMethod(descriptor()->method(7), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

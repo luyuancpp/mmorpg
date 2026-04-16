@@ -33,6 +33,7 @@
 #include "proto/db/proto_option.pb.h"
 #include "proto/common/base/empty.pb.h"
 #include "proto/common/base/message.pb.h"
+#include "proto/common/base/gm_admin.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -772,6 +773,10 @@ class Gate : public ::google::protobuf::Service {
                         const ::BindSessionToGateRequest* PROTOBUF_NONNULL request,
                         ::BindSessionToGateResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
+  virtual void GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request,
+                        ::GmGracefulShutdownResponse* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
 
   // implements Service ----------------------------------------------
   const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL GetDescriptor() override;
@@ -831,6 +836,10 @@ class Gate_Stub final : public Gate {
   void BindSessionToGate(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::BindSessionToGateRequest* PROTOBUF_NONNULL request,
                         ::BindSessionToGateResponse* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
+  void GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request,
+                        ::GmGracefulShutdownResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
 
  private:

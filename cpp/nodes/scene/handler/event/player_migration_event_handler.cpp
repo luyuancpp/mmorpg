@@ -5,14 +5,14 @@
 ///<<< END WRITING YOUR CODE
 void PlayerMigrationEventHandler::Register()
 {
-    tlsEcs.dispatcher.sink<PlayerMigrationPbEvent>().connect<&PlayerMigrationEventHandler::PlayerMigrationPbEventHandler>();
+    tlsEcs.dispatcher.sink<PlayerMigrationEvent>().connect<&PlayerMigrationEventHandler::PlayerMigrationEventHandler>();
 }
 
 void PlayerMigrationEventHandler::UnRegister()
 {
-    tlsEcs.dispatcher.sink<PlayerMigrationPbEvent>().disconnect<&PlayerMigrationEventHandler::PlayerMigrationPbEventHandler>();
+    tlsEcs.dispatcher.sink<PlayerMigrationEvent>().disconnect<&PlayerMigrationEventHandler::PlayerMigrationEventHandler>();
 }
-void PlayerMigrationEventHandler::PlayerMigrationPbEventHandler(const PlayerMigrationPbEvent& event)
+void PlayerMigrationEventHandler::PlayerMigrationEventHandler(const PlayerMigrationEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

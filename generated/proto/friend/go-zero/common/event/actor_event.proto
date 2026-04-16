@@ -3,12 +3,12 @@ option go_package = "common/event";
 
 
 
-message InitializeActorComponentsEvent
+message InitializeActorCompsEvent
 {
   uint64 actor_entity = 1;
 }
 
-message InterruptCurrentStatePbEvent
+message InterruptCurrentStateEvent
 {
   uint64 actor_entity = 1;
   uint32 actor_action = 2;

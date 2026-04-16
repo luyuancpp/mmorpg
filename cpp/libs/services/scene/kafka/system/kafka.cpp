@@ -8,7 +8,7 @@ void KafkaSystem::KafkaMessageHandler(const std::string& topic, const std::strin
 {
 	if (topic == kPlayerMigrateEventName)
 	{
-		PlayerMigrationPbEvent serverEvent;
+		PlayerMigrationEvent serverEvent;
 		if (serverEvent.ParseFromString(message))
 		{
 			PlayerLifecycleSystem::HandlePlayerMigration(serverEvent);

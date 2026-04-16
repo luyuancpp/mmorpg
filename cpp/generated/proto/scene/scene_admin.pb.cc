@@ -63,25 +63,29 @@ const char descriptor_table_protodef_proto_2fscene_2fscene_5fadmin_2eproto[] ABS
     protodesc_cold) = {
     "\n\035proto/scene/scene_admin.proto\032\033proto/d"
     "b/proto_option.proto\032\035proto/common/base/"
-    "empty.proto\"\017\n\rGameSceneTest2,\n\nSceneSce"
-    "ne\022\036\n\004Test\022\016.GameSceneTest\032\006.EmptyB\016Z\005sc"
-    "ene\200\001\001\230\324a\003b\006proto3"
+    "empty.proto\032 proto/common/base/gm_admin."
+    "proto\"\017\n\rGameSceneTest2{\n\nSceneScene\022\036\n\004"
+    "Test\022\016.GameSceneTest\032\006.Empty\022M\n\022GmGracef"
+    "ulShutdown\022\032.GmGracefulShutdownRequest\032\033"
+    ".GmGracefulShutdownResponseB\016Z\005scene\200\001\001\230"
+    "\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fscene_2fscene_5fadmin_2eproto_deps[2] = {
+    descriptor_table_proto_2fscene_2fscene_5fadmin_2eproto_deps[3] = {
         &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fbase_2fgm_5fadmin_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fscene_2fscene_5fadmin_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fscene_5fadmin_2eproto = {
     false,
     false,
-    178,
+    291,
     descriptor_table_protodef_proto_2fscene_2fscene_5fadmin_2eproto,
     "proto/scene/scene_admin.proto",
     &descriptor_table_proto_2fscene_2fscene_5fadmin_2eproto_once,
     descriptor_table_proto_2fscene_2fscene_5fadmin_2eproto_deps,
-    2,
+    3,
     1,
     schemas,
     file_default_instances,
@@ -216,6 +220,13 @@ void SceneScene::Test(::google::protobuf::RpcController* PROTOBUF_NULLABLE contr
   controller->SetFailed("Method Test() not implemented.");
   done->Run();
 }
+void SceneScene::GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                         const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL,
+                         ::GmGracefulShutdownResponse* PROTOBUF_NONNULL,
+                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  controller->SetFailed("Method GmGracefulShutdown() not implemented.");
+  done->Run();
+}
 
 void SceneScene::CallMethod(
     const ::google::protobuf::MethodDescriptor* PROTOBUF_NONNULL method,
@@ -227,6 +238,10 @@ void SceneScene::CallMethod(
     case 0:
       this->Test(controller, ::google::protobuf::DownCastMessage<::GameSceneTest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
+      break;
+    case 1:
+      this->GmGracefulShutdown(controller, ::google::protobuf::DownCastMessage<::GmGracefulShutdownRequest>(request),
+                   ::google::protobuf::DownCastMessage<::GmGracefulShutdownResponse>(response), done);
       break;
 
     default:
@@ -241,6 +256,8 @@ const ::google::protobuf::Message& SceneScene::GetRequestPrototype(
   switch (method->index()) {
     case 0:
       return ::GameSceneTest::default_instance();
+    case 1:
+      return ::GmGracefulShutdownRequest::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -255,6 +272,8 @@ const ::google::protobuf::Message& SceneScene::GetResponsePrototype(
   switch (method->index()) {
     case 0:
       return ::Empty::default_instance();
+    case 1:
+      return ::GmGracefulShutdownResponse::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -281,6 +300,13 @@ void SceneScene_Stub::Test(
     const ::GameSceneTest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   channel_->CallMethod(descriptor()->method(0), controller,
+                       request, response, done);
+}
+void SceneScene_Stub::GmGracefulShutdown(
+    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+    const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request, ::GmGracefulShutdownResponse* PROTOBUF_NONNULL response,
+    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

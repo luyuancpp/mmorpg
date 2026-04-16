@@ -52,14 +52,14 @@ struct TableStruct_proto_2fcommon_2fevent_2factor_5fevent_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2factor_5fevent_2eproto;
 }  // extern "C"
-class InitializeActorComponentsEvent;
-struct InitializeActorComponentsEventDefaultTypeInternal;
-extern InitializeActorComponentsEventDefaultTypeInternal _InitializeActorComponentsEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull InitializeActorComponentsEvent_class_data_;
-class InterruptCurrentStatePbEvent;
-struct InterruptCurrentStatePbEventDefaultTypeInternal;
-extern InterruptCurrentStatePbEventDefaultTypeInternal _InterruptCurrentStatePbEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull InterruptCurrentStatePbEvent_class_data_;
+class InitializeActorCompsEvent;
+struct InitializeActorCompsEventDefaultTypeInternal;
+extern InitializeActorCompsEventDefaultTypeInternal _InitializeActorCompsEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull InitializeActorCompsEvent_class_data_;
+class InterruptCurrentStateEvent;
+struct InterruptCurrentStateEventDefaultTypeInternal;
+extern InterruptCurrentStateEventDefaultTypeInternal _InterruptCurrentStateEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull InterruptCurrentStateEvent_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -71,30 +71,30 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:InterruptCurrentStatePbEvent) */ {
+class InterruptCurrentStateEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:InterruptCurrentStateEvent) */ {
  public:
-  inline InterruptCurrentStatePbEvent() : InterruptCurrentStatePbEvent(nullptr) {}
-  ~InterruptCurrentStatePbEvent() PROTOBUF_FINAL;
+  inline InterruptCurrentStateEvent() : InterruptCurrentStateEvent(nullptr) {}
+  ~InterruptCurrentStateEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(InterruptCurrentStatePbEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(InterruptCurrentStateEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(InterruptCurrentStatePbEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(InterruptCurrentStateEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR InterruptCurrentStatePbEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR InterruptCurrentStateEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline InterruptCurrentStatePbEvent(const InterruptCurrentStatePbEvent& from) : InterruptCurrentStatePbEvent(nullptr, from) {}
-  inline InterruptCurrentStatePbEvent(InterruptCurrentStatePbEvent&& from) noexcept
-      : InterruptCurrentStatePbEvent(nullptr, ::std::move(from)) {}
-  inline InterruptCurrentStatePbEvent& operator=(const InterruptCurrentStatePbEvent& from) {
+  inline InterruptCurrentStateEvent(const InterruptCurrentStateEvent& from) : InterruptCurrentStateEvent(nullptr, from) {}
+  inline InterruptCurrentStateEvent(InterruptCurrentStateEvent&& from) noexcept
+      : InterruptCurrentStateEvent(nullptr, ::std::move(from)) {}
+  inline InterruptCurrentStateEvent& operator=(const InterruptCurrentStateEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline InterruptCurrentStatePbEvent& operator=(InterruptCurrentStatePbEvent&& from) noexcept {
+  inline InterruptCurrentStateEvent& operator=(InterruptCurrentStateEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -122,13 +122,13 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const InterruptCurrentStatePbEvent& default_instance() {
-    return *reinterpret_cast<const InterruptCurrentStatePbEvent*>(
-        &_InterruptCurrentStatePbEvent_default_instance_);
+  static const InterruptCurrentStateEvent& default_instance() {
+    return *reinterpret_cast<const InterruptCurrentStateEvent*>(
+        &_InterruptCurrentStateEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(InterruptCurrentStatePbEvent& a, InterruptCurrentStatePbEvent& b) { a.Swap(&b); }
-  inline void Swap(InterruptCurrentStatePbEvent* PROTOBUF_NONNULL other) {
+  friend void swap(InterruptCurrentStateEvent& a, InterruptCurrentStateEvent& b) { a.Swap(&b); }
+  inline void Swap(InterruptCurrentStateEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -136,7 +136,7 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(InterruptCurrentStatePbEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(InterruptCurrentStateEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -144,13 +144,13 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  InterruptCurrentStatePbEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<InterruptCurrentStatePbEvent>(arena);
+  InterruptCurrentStateEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<InterruptCurrentStateEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const InterruptCurrentStatePbEvent& from);
+  void CopyFrom(const InterruptCurrentStateEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const InterruptCurrentStatePbEvent& from) { InterruptCurrentStatePbEvent::MergeImpl(*this, from); }
+  void MergeFrom(const InterruptCurrentStateEvent& from) { InterruptCurrentStateEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -186,18 +186,18 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(InterruptCurrentStatePbEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(InterruptCurrentStateEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "InterruptCurrentStatePbEvent"; }
+  static ::absl::string_view FullMessageName() { return "InterruptCurrentStateEvent"; }
 
  protected:
-  explicit InterruptCurrentStatePbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  InterruptCurrentStatePbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InterruptCurrentStatePbEvent& from);
-  InterruptCurrentStatePbEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InterruptCurrentStatePbEvent&& from) noexcept
-      : InterruptCurrentStatePbEvent(arena) {
+  explicit InterruptCurrentStateEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  InterruptCurrentStateEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InterruptCurrentStateEvent& from);
+  InterruptCurrentStateEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InterruptCurrentStateEvent&& from) noexcept
+      : InterruptCurrentStateEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -248,7 +248,7 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
   void _internal_set_actor_state(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:InterruptCurrentStatePbEvent)
+  // @@protoc_insertion_point(class_scope:InterruptCurrentStateEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -271,7 +271,7 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const InterruptCurrentStatePbEvent& from_msg);
+        const InterruptCurrentStateEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t actor_entity_;
@@ -283,33 +283,33 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2factor_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull InterruptCurrentStatePbEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull InterruptCurrentStateEvent_class_data_;
 // -------------------------------------------------------------------
 
-class InitializeActorComponentsEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:InitializeActorComponentsEvent) */ {
+class InitializeActorCompsEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:InitializeActorCompsEvent) */ {
  public:
-  inline InitializeActorComponentsEvent() : InitializeActorComponentsEvent(nullptr) {}
-  ~InitializeActorComponentsEvent() PROTOBUF_FINAL;
+  inline InitializeActorCompsEvent() : InitializeActorCompsEvent(nullptr) {}
+  ~InitializeActorCompsEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(InitializeActorComponentsEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(InitializeActorCompsEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(InitializeActorComponentsEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(InitializeActorCompsEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR InitializeActorComponentsEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR InitializeActorCompsEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline InitializeActorComponentsEvent(const InitializeActorComponentsEvent& from) : InitializeActorComponentsEvent(nullptr, from) {}
-  inline InitializeActorComponentsEvent(InitializeActorComponentsEvent&& from) noexcept
-      : InitializeActorComponentsEvent(nullptr, ::std::move(from)) {}
-  inline InitializeActorComponentsEvent& operator=(const InitializeActorComponentsEvent& from) {
+  inline InitializeActorCompsEvent(const InitializeActorCompsEvent& from) : InitializeActorCompsEvent(nullptr, from) {}
+  inline InitializeActorCompsEvent(InitializeActorCompsEvent&& from) noexcept
+      : InitializeActorCompsEvent(nullptr, ::std::move(from)) {}
+  inline InitializeActorCompsEvent& operator=(const InitializeActorCompsEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline InitializeActorComponentsEvent& operator=(InitializeActorComponentsEvent&& from) noexcept {
+  inline InitializeActorCompsEvent& operator=(InitializeActorCompsEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -337,13 +337,13 @@ class InitializeActorComponentsEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const InitializeActorComponentsEvent& default_instance() {
-    return *reinterpret_cast<const InitializeActorComponentsEvent*>(
-        &_InitializeActorComponentsEvent_default_instance_);
+  static const InitializeActorCompsEvent& default_instance() {
+    return *reinterpret_cast<const InitializeActorCompsEvent*>(
+        &_InitializeActorCompsEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(InitializeActorComponentsEvent& a, InitializeActorComponentsEvent& b) { a.Swap(&b); }
-  inline void Swap(InitializeActorComponentsEvent* PROTOBUF_NONNULL other) {
+  friend void swap(InitializeActorCompsEvent& a, InitializeActorCompsEvent& b) { a.Swap(&b); }
+  inline void Swap(InitializeActorCompsEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -351,7 +351,7 @@ class InitializeActorComponentsEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(InitializeActorComponentsEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(InitializeActorCompsEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -359,13 +359,13 @@ class InitializeActorComponentsEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  InitializeActorComponentsEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<InitializeActorComponentsEvent>(arena);
+  InitializeActorCompsEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<InitializeActorCompsEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const InitializeActorComponentsEvent& from);
+  void CopyFrom(const InitializeActorCompsEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const InitializeActorComponentsEvent& from) { InitializeActorComponentsEvent::MergeImpl(*this, from); }
+  void MergeFrom(const InitializeActorCompsEvent& from) { InitializeActorCompsEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -401,18 +401,18 @@ class InitializeActorComponentsEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(InitializeActorComponentsEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(InitializeActorCompsEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "InitializeActorComponentsEvent"; }
+  static ::absl::string_view FullMessageName() { return "InitializeActorCompsEvent"; }
 
  protected:
-  explicit InitializeActorComponentsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  InitializeActorComponentsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InitializeActorComponentsEvent& from);
-  InitializeActorComponentsEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InitializeActorComponentsEvent&& from) noexcept
-      : InitializeActorComponentsEvent(arena) {
+  explicit InitializeActorCompsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  InitializeActorCompsEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InitializeActorCompsEvent& from);
+  InitializeActorCompsEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InitializeActorCompsEvent&& from) noexcept
+      : InitializeActorCompsEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -441,7 +441,7 @@ class InitializeActorComponentsEvent final : public ::google::protobuf::Message
   void _internal_set_actor_entity(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:InitializeActorComponentsEvent)
+  // @@protoc_insertion_point(class_scope:InitializeActorCompsEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -464,7 +464,7 @@ class InitializeActorComponentsEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const InitializeActorComponentsEvent& from_msg);
+        const InitializeActorCompsEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t actor_entity_;
@@ -474,7 +474,7 @@ class InitializeActorComponentsEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2factor_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull InitializeActorComponentsEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull InitializeActorCompsEvent_class_data_;
 
 // ===================================================================
 
@@ -490,104 +490,104 @@ extern const ::google::protobuf::internal::ClassDataFull InitializeActorComponen
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// InitializeActorComponentsEvent
+// InitializeActorCompsEvent
 
 // uint64 actor_entity = 1;
-inline void InitializeActorComponentsEvent::clear_actor_entity() {
+inline void InitializeActorCompsEvent::clear_actor_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t InitializeActorComponentsEvent::actor_entity() const {
-  // @@protoc_insertion_point(field_get:InitializeActorComponentsEvent.actor_entity)
+inline ::uint64_t InitializeActorCompsEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:InitializeActorCompsEvent.actor_entity)
   return _internal_actor_entity();
 }
-inline void InitializeActorComponentsEvent::set_actor_entity(::uint64_t value) {
+inline void InitializeActorCompsEvent::set_actor_entity(::uint64_t value) {
   _internal_set_actor_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:InitializeActorComponentsEvent.actor_entity)
+  // @@protoc_insertion_point(field_set:InitializeActorCompsEvent.actor_entity)
 }
-inline ::uint64_t InitializeActorComponentsEvent::_internal_actor_entity() const {
+inline ::uint64_t InitializeActorCompsEvent::_internal_actor_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.actor_entity_;
 }
-inline void InitializeActorComponentsEvent::_internal_set_actor_entity(::uint64_t value) {
+inline void InitializeActorCompsEvent::_internal_set_actor_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// InterruptCurrentStatePbEvent
+// InterruptCurrentStateEvent
 
 // uint64 actor_entity = 1;
-inline void InterruptCurrentStatePbEvent::clear_actor_entity() {
+inline void InterruptCurrentStateEvent::clear_actor_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t InterruptCurrentStatePbEvent::actor_entity() const {
-  // @@protoc_insertion_point(field_get:InterruptCurrentStatePbEvent.actor_entity)
+inline ::uint64_t InterruptCurrentStateEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:InterruptCurrentStateEvent.actor_entity)
   return _internal_actor_entity();
 }
-inline void InterruptCurrentStatePbEvent::set_actor_entity(::uint64_t value) {
+inline void InterruptCurrentStateEvent::set_actor_entity(::uint64_t value) {
   _internal_set_actor_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:InterruptCurrentStatePbEvent.actor_entity)
+  // @@protoc_insertion_point(field_set:InterruptCurrentStateEvent.actor_entity)
 }
-inline ::uint64_t InterruptCurrentStatePbEvent::_internal_actor_entity() const {
+inline ::uint64_t InterruptCurrentStateEvent::_internal_actor_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.actor_entity_;
 }
-inline void InterruptCurrentStatePbEvent::_internal_set_actor_entity(::uint64_t value) {
+inline void InterruptCurrentStateEvent::_internal_set_actor_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = value;
 }
 
 // uint32 actor_action = 2;
-inline void InterruptCurrentStatePbEvent::clear_actor_action() {
+inline void InterruptCurrentStateEvent::clear_actor_action() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_action_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t InterruptCurrentStatePbEvent::actor_action() const {
-  // @@protoc_insertion_point(field_get:InterruptCurrentStatePbEvent.actor_action)
+inline ::uint32_t InterruptCurrentStateEvent::actor_action() const {
+  // @@protoc_insertion_point(field_get:InterruptCurrentStateEvent.actor_action)
   return _internal_actor_action();
 }
-inline void InterruptCurrentStatePbEvent::set_actor_action(::uint32_t value) {
+inline void InterruptCurrentStateEvent::set_actor_action(::uint32_t value) {
   _internal_set_actor_action(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:InterruptCurrentStatePbEvent.actor_action)
+  // @@protoc_insertion_point(field_set:InterruptCurrentStateEvent.actor_action)
 }
-inline ::uint32_t InterruptCurrentStatePbEvent::_internal_actor_action() const {
+inline ::uint32_t InterruptCurrentStateEvent::_internal_actor_action() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.actor_action_;
 }
-inline void InterruptCurrentStatePbEvent::_internal_set_actor_action(::uint32_t value) {
+inline void InterruptCurrentStateEvent::_internal_set_actor_action(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_action_ = value;
 }
 
 // uint32 actor_state = 3;
-inline void InterruptCurrentStatePbEvent::clear_actor_state() {
+inline void InterruptCurrentStateEvent::clear_actor_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_state_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint32_t InterruptCurrentStatePbEvent::actor_state() const {
-  // @@protoc_insertion_point(field_get:InterruptCurrentStatePbEvent.actor_state)
+inline ::uint32_t InterruptCurrentStateEvent::actor_state() const {
+  // @@protoc_insertion_point(field_get:InterruptCurrentStateEvent.actor_state)
   return _internal_actor_state();
 }
-inline void InterruptCurrentStatePbEvent::set_actor_state(::uint32_t value) {
+inline void InterruptCurrentStateEvent::set_actor_state(::uint32_t value) {
   _internal_set_actor_state(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:InterruptCurrentStatePbEvent.actor_state)
+  // @@protoc_insertion_point(field_set:InterruptCurrentStateEvent.actor_state)
 }
-inline ::uint32_t InterruptCurrentStatePbEvent::_internal_actor_state() const {
+inline ::uint32_t InterruptCurrentStateEvent::_internal_actor_state() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.actor_state_;
 }
-inline void InterruptCurrentStatePbEvent::_internal_set_actor_state(::uint32_t value) {
+inline void InterruptCurrentStateEvent::_internal_set_actor_state(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_state_ = value;
 }

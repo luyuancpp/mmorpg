@@ -24,6 +24,7 @@
     <ClCompile Include="common\base\common.pb.cc" />
     <ClCompile Include="common\base\config.pb.cc" />
     <ClCompile Include="common\base\empty.pb.cc" />
+    <ClCompile Include="common\base\gm_admin.pb.cc" />
     <ClCompile Include="common\base\rpc_message.pb.cc" />
     <ClCompile Include="common\base\message.pb.cc" />
     <ClCompile Include="common\base\node.pb.cc" />
@@ -85,6 +86,7 @@
     <ClCompile Include="db\db.grpc.pb.cc" />
     <ClCompile Include="db\db_task.pb.cc" />
     <ClCompile Include="db\db_task.grpc.pb.cc" />
+    <ClCompile Include="db\proto_option.grpc.pb.cc" />
     <ClCompile Include="db\proto_option.pb.cc" />
     <ClCompile Include="etcd\etcd.grpc.pb.cc" />
     <ClCompile Include="etcd\etcd.pb.cc" />
@@ -112,6 +114,8 @@
     <ClCompile Include="scene\scene.pb.cc" />
     <ClCompile Include="scene_manager\scene_manager_service.grpc.pb.cc" />
     <ClCompile Include="scene_manager\scene_manager_service.pb.cc" />
+    <ClCompile Include="scene_manager\scene_node_service.grpc.pb.cc" />
+    <ClCompile Include="scene_manager\scene_node_service.pb.cc" />
     <ClCompile Include="scene_manager\storage.grpc.pb.cc" />
     <ClCompile Include="scene_manager\storage.pb.cc" />
   </ItemGroup>
@@ -121,6 +125,7 @@
     <ClInclude Include="common\base\common.pb.h" />
     <ClInclude Include="common\base\config.pb.h" />
     <ClInclude Include="common\base\empty.pb.h" />
+    <ClInclude Include="common\base\gm_admin.pb.h" />
     <ClInclude Include="common\base\rpc_message.pb.h" />
     <ClInclude Include="common\base\message.pb.h" />
     <ClInclude Include="common\base\node.pb.h" />
@@ -182,6 +187,7 @@
     <ClInclude Include="db\db.grpc.pb.h" />
     <ClInclude Include="db\db_task.pb.h" />
     <ClInclude Include="db\db_task.grpc.pb.h" />
+    <ClInclude Include="db\proto_option.grpc.pb.h" />
     <ClInclude Include="db\proto_option.pb.h" />
     <ClInclude Include="etcd\etcd.grpc.pb.h" />
     <ClInclude Include="etcd\etcd.pb.h" />
@@ -209,6 +215,8 @@
     <ClInclude Include="scene\scene.pb.h" />
     <ClInclude Include="scene_manager\scene_manager_service.grpc.pb.h" />
     <ClInclude Include="scene_manager\scene_manager_service.pb.h" />
+    <ClInclude Include="scene_manager\scene_node_service.grpc.pb.h" />
+    <ClInclude Include="scene_manager\scene_node_service.pb.h" />
     <ClInclude Include="scene_manager\storage.grpc.pb.h" />
     <ClInclude Include="scene_manager\storage.pb.h" />
   </ItemGroup>

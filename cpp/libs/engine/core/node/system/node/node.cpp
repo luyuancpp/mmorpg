@@ -362,11 +362,13 @@ void Node::ShutdownGrpcServer()
 void Node::OnNodeIdConflictShutdown(NodeIdConflictReason reason)
 {
 	LOG_WARN << "Node identity conflict detected (reason="
-			 << static_cast<int>(reason) << "), node_id=" << GetNodeId()
-			 << ". Override OnNodeIdConflictShutdown() to flush players before termination.";
-	// Base implementation: no-op. Subclasses (SceneNode, GateNode, etc.)
-	// should override to: save player data, migrate/kick players, etc.
-	// For instance nodes: notify players that the dungeon is lost.
+			 << static_cast<int>(reason) << "), node_id=" << GetNodeId();
+
+	if (onConflictShutdownFn_)
+	{
+		LOG_INFO << "Running conflict-shutdown hook before termination...";
+		onConflictShutdownFn_(*this, reason);
+	}
 }
 
 void Node::StartRpcServer()
@@ -522,6 +524,13 @@ void Node::ShutdownInLoop()
 	}
 
 	LOG_DEBUG << "Node shutting down...";
+
+	if (beforeShutdownFn_)
+	{
+		LOG_INFO << "Running before-shutdown hook...";
+		beforeShutdownFn_(*this);
+	}
+
 	ShutdownGrpcServer();
 	grpcHandlerTimer.Cancel();
 	serviceHealthMonitorTimer.Cancel();
@@ -537,6 +546,8 @@ void Node::ShutdownInLoop()
 	muduo::Logger::setOutput(StdoutOutput);
 	logSystem.stop();
 	LOG_DEBUG << "Node shutdown complete.";
+
+	eventLoop->quit();
 }
 
 void Node::InitLogSystem()
@@ -754,7 +765,7 @@ void Node::ExecuteNodeRemoval(const NodeInfo &stoppedNode)
 					continue;
 				}
 
-				OnNodeRemovePbEvent nodeRemovedEvent;
+				OnNodeRemoveEvent nodeRemovedEvent;
 				nodeRemovedEvent.set_entity(entt::to_integral(entity));
 				nodeRemovedEvent.set_node_type(stoppedNodeType);
 				tlsEcs.dispatcher.trigger(nodeRemovedEvent);
@@ -778,7 +789,7 @@ void Node::ExecuteNodeRemoval(const NodeInfo &stoppedNode)
 			}
 		}
 
-		OnNodeRemovePbEvent nodeRemovedEvent;
+		OnNodeRemoveEvent nodeRemovedEvent;
 		nodeRemovedEvent.set_entity(entt::to_integral(stoppedNodeEntity));
 		nodeRemovedEvent.set_node_type(stoppedNodeType);
 		tlsEcs.dispatcher.trigger(nodeRemovedEvent);

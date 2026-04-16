@@ -27,6 +27,7 @@ const (
 	Gate_BroadcastToPlayers_FullMethodName  = "/Gate/BroadcastToPlayers"
 	Gate_NodeHandshake_FullMethodName       = "/Gate/NodeHandshake"
 	Gate_BindSessionToGate_FullMethodName   = "/Gate/BindSessionToGate"
+	Gate_GmGracefulShutdown_FullMethodName  = "/Gate/GmGracefulShutdown"
 )
 
 // GateClient is the client API for Gate service.
@@ -40,6 +41,7 @@ type GateClient interface {
 	BroadcastToPlayers(ctx context.Context, in *BroadcastToPlayersRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	NodeHandshake(ctx context.Context, in *base.NodeHandshakeRequest, opts ...grpc.CallOption) (*base.NodeHandshakeResponse, error)
 	BindSessionToGate(ctx context.Context, in *BindSessionToGateRequest, opts ...grpc.CallOption) (*BindSessionToGateResponse, error)
+	GmGracefulShutdown(ctx context.Context, in *base.GmGracefulShutdownRequest, opts ...grpc.CallOption) (*base.GmGracefulShutdownResponse, error)
 }
 
 type gateClient struct {
@@ -120,6 +122,16 @@ func (c *gateClient) BindSessionToGate(ctx context.Context, in *BindSessionToGat
 	return out, nil
 }
 
+func (c *gateClient) GmGracefulShutdown(ctx context.Context, in *base.GmGracefulShutdownRequest, opts ...grpc.CallOption) (*base.GmGracefulShutdownResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.GmGracefulShutdownResponse)
+	err := c.cc.Invoke(ctx, Gate_GmGracefulShutdown_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GateServer is the server API for Gate service.
 // All implementations must embed UnimplementedGateServer
 // for forward compatibility.
@@ -131,6 +143,7 @@ type GateServer interface {
 	BroadcastToPlayers(context.Context, *BroadcastToPlayersRequest) (*base.Empty, error)
 	NodeHandshake(context.Context, *base.NodeHandshakeRequest) (*base.NodeHandshakeResponse, error)
 	BindSessionToGate(context.Context, *BindSessionToGateRequest) (*BindSessionToGateResponse, error)
+	GmGracefulShutdown(context.Context, *base.GmGracefulShutdownRequest) (*base.GmGracefulShutdownResponse, error)
 	mustEmbedUnimplementedGateServer()
 }
 
@@ -161,6 +174,9 @@ func (UnimplementedGateServer) NodeHandshake(context.Context, *base.NodeHandshak
 }
 func (UnimplementedGateServer) BindSessionToGate(context.Context, *BindSessionToGateRequest) (*BindSessionToGateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BindSessionToGate not implemented")
+}
+func (UnimplementedGateServer) GmGracefulShutdown(context.Context, *base.GmGracefulShutdownRequest) (*base.GmGracefulShutdownResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GmGracefulShutdown not implemented")
 }
 func (UnimplementedGateServer) mustEmbedUnimplementedGateServer() {}
 func (UnimplementedGateServer) testEmbeddedByValue()              {}
@@ -309,6 +325,24 @@ func _Gate_BindSessionToGate_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Gate_GmGracefulShutdown_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(base.GmGracefulShutdownRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GateServer).GmGracefulShutdown(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Gate_GmGracefulShutdown_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GateServer).GmGracefulShutdown(ctx, req.(*base.GmGracefulShutdownRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Gate_ServiceDesc is the grpc.ServiceDesc for Gate service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -343,6 +377,10 @@ var Gate_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BindSessionToGate",
 			Handler:    _Gate_BindSessionToGate_Handler,
+		},
+		{
+			MethodName: "GmGracefulShutdown",
+			Handler:    _Gate_GmGracefulShutdown_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

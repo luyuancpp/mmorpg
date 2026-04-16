@@ -52,14 +52,14 @@ struct TableStruct_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2epro
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto;
 }  // extern "C"
-class CombatStateAddedPbEvent;
-struct CombatStateAddedPbEventDefaultTypeInternal;
-extern CombatStateAddedPbEventDefaultTypeInternal _CombatStateAddedPbEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull CombatStateAddedPbEvent_class_data_;
-class CombatStateRemovedPbEvent;
-struct CombatStateRemovedPbEventDefaultTypeInternal;
-extern CombatStateRemovedPbEventDefaultTypeInternal _CombatStateRemovedPbEvent_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull CombatStateRemovedPbEvent_class_data_;
+class CombatStateAddedEvent;
+struct CombatStateAddedEventDefaultTypeInternal;
+extern CombatStateAddedEventDefaultTypeInternal _CombatStateAddedEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull CombatStateAddedEvent_class_data_;
+class CombatStateRemovedEvent;
+struct CombatStateRemovedEventDefaultTypeInternal;
+extern CombatStateRemovedEventDefaultTypeInternal _CombatStateRemovedEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull CombatStateRemovedEvent_class_data_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -71,30 +71,30 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class CombatStateRemovedPbEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:CombatStateRemovedPbEvent) */ {
+class CombatStateRemovedEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CombatStateRemovedEvent) */ {
  public:
-  inline CombatStateRemovedPbEvent() : CombatStateRemovedPbEvent(nullptr) {}
-  ~CombatStateRemovedPbEvent() PROTOBUF_FINAL;
+  inline CombatStateRemovedEvent() : CombatStateRemovedEvent(nullptr) {}
+  ~CombatStateRemovedEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(CombatStateRemovedPbEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(CombatStateRemovedEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(CombatStateRemovedPbEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CombatStateRemovedEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR CombatStateRemovedPbEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR CombatStateRemovedEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline CombatStateRemovedPbEvent(const CombatStateRemovedPbEvent& from) : CombatStateRemovedPbEvent(nullptr, from) {}
-  inline CombatStateRemovedPbEvent(CombatStateRemovedPbEvent&& from) noexcept
-      : CombatStateRemovedPbEvent(nullptr, ::std::move(from)) {}
-  inline CombatStateRemovedPbEvent& operator=(const CombatStateRemovedPbEvent& from) {
+  inline CombatStateRemovedEvent(const CombatStateRemovedEvent& from) : CombatStateRemovedEvent(nullptr, from) {}
+  inline CombatStateRemovedEvent(CombatStateRemovedEvent&& from) noexcept
+      : CombatStateRemovedEvent(nullptr, ::std::move(from)) {}
+  inline CombatStateRemovedEvent& operator=(const CombatStateRemovedEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline CombatStateRemovedPbEvent& operator=(CombatStateRemovedPbEvent&& from) noexcept {
+  inline CombatStateRemovedEvent& operator=(CombatStateRemovedEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -122,13 +122,13 @@ class CombatStateRemovedPbEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const CombatStateRemovedPbEvent& default_instance() {
-    return *reinterpret_cast<const CombatStateRemovedPbEvent*>(
-        &_CombatStateRemovedPbEvent_default_instance_);
+  static const CombatStateRemovedEvent& default_instance() {
+    return *reinterpret_cast<const CombatStateRemovedEvent*>(
+        &_CombatStateRemovedEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(CombatStateRemovedPbEvent& a, CombatStateRemovedPbEvent& b) { a.Swap(&b); }
-  inline void Swap(CombatStateRemovedPbEvent* PROTOBUF_NONNULL other) {
+  friend void swap(CombatStateRemovedEvent& a, CombatStateRemovedEvent& b) { a.Swap(&b); }
+  inline void Swap(CombatStateRemovedEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -136,7 +136,7 @@ class CombatStateRemovedPbEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(CombatStateRemovedPbEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(CombatStateRemovedEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -144,13 +144,13 @@ class CombatStateRemovedPbEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  CombatStateRemovedPbEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<CombatStateRemovedPbEvent>(arena);
+  CombatStateRemovedEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CombatStateRemovedEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const CombatStateRemovedPbEvent& from);
+  void CopyFrom(const CombatStateRemovedEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const CombatStateRemovedPbEvent& from) { CombatStateRemovedPbEvent::MergeImpl(*this, from); }
+  void MergeFrom(const CombatStateRemovedEvent& from) { CombatStateRemovedEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -186,18 +186,18 @@ class CombatStateRemovedPbEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(CombatStateRemovedPbEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(CombatStateRemovedEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "CombatStateRemovedPbEvent"; }
+  static ::absl::string_view FullMessageName() { return "CombatStateRemovedEvent"; }
 
  protected:
-  explicit CombatStateRemovedPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  CombatStateRemovedPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatStateRemovedPbEvent& from);
-  CombatStateRemovedPbEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CombatStateRemovedPbEvent&& from) noexcept
-      : CombatStateRemovedPbEvent(arena) {
+  explicit CombatStateRemovedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  CombatStateRemovedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatStateRemovedEvent& from);
+  CombatStateRemovedEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CombatStateRemovedEvent&& from) noexcept
+      : CombatStateRemovedEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -248,7 +248,7 @@ class CombatStateRemovedPbEvent final : public ::google::protobuf::Message
   void _internal_set_state_type(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:CombatStateRemovedPbEvent)
+  // @@protoc_insertion_point(class_scope:CombatStateRemovedEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -271,7 +271,7 @@ class CombatStateRemovedPbEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const CombatStateRemovedPbEvent& from_msg);
+        const CombatStateRemovedEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t actor_entity_;
@@ -283,33 +283,33 @@ class CombatStateRemovedPbEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull CombatStateRemovedPbEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull CombatStateRemovedEvent_class_data_;
 // -------------------------------------------------------------------
 
-class CombatStateAddedPbEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:CombatStateAddedPbEvent) */ {
+class CombatStateAddedEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CombatStateAddedEvent) */ {
  public:
-  inline CombatStateAddedPbEvent() : CombatStateAddedPbEvent(nullptr) {}
-  ~CombatStateAddedPbEvent() PROTOBUF_FINAL;
+  inline CombatStateAddedEvent() : CombatStateAddedEvent(nullptr) {}
+  ~CombatStateAddedEvent() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(CombatStateAddedPbEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(CombatStateAddedEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(CombatStateAddedPbEvent));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CombatStateAddedEvent));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR CombatStateAddedPbEvent(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR CombatStateAddedEvent(::google::protobuf::internal::ConstantInitialized);
 
-  inline CombatStateAddedPbEvent(const CombatStateAddedPbEvent& from) : CombatStateAddedPbEvent(nullptr, from) {}
-  inline CombatStateAddedPbEvent(CombatStateAddedPbEvent&& from) noexcept
-      : CombatStateAddedPbEvent(nullptr, ::std::move(from)) {}
-  inline CombatStateAddedPbEvent& operator=(const CombatStateAddedPbEvent& from) {
+  inline CombatStateAddedEvent(const CombatStateAddedEvent& from) : CombatStateAddedEvent(nullptr, from) {}
+  inline CombatStateAddedEvent(CombatStateAddedEvent&& from) noexcept
+      : CombatStateAddedEvent(nullptr, ::std::move(from)) {}
+  inline CombatStateAddedEvent& operator=(const CombatStateAddedEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline CombatStateAddedPbEvent& operator=(CombatStateAddedPbEvent&& from) noexcept {
+  inline CombatStateAddedEvent& operator=(CombatStateAddedEvent&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -337,13 +337,13 @@ class CombatStateAddedPbEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const CombatStateAddedPbEvent& default_instance() {
-    return *reinterpret_cast<const CombatStateAddedPbEvent*>(
-        &_CombatStateAddedPbEvent_default_instance_);
+  static const CombatStateAddedEvent& default_instance() {
+    return *reinterpret_cast<const CombatStateAddedEvent*>(
+        &_CombatStateAddedEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(CombatStateAddedPbEvent& a, CombatStateAddedPbEvent& b) { a.Swap(&b); }
-  inline void Swap(CombatStateAddedPbEvent* PROTOBUF_NONNULL other) {
+  friend void swap(CombatStateAddedEvent& a, CombatStateAddedEvent& b) { a.Swap(&b); }
+  inline void Swap(CombatStateAddedEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -351,7 +351,7 @@ class CombatStateAddedPbEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(CombatStateAddedPbEvent* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(CombatStateAddedEvent* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -359,13 +359,13 @@ class CombatStateAddedPbEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  CombatStateAddedPbEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<CombatStateAddedPbEvent>(arena);
+  CombatStateAddedEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CombatStateAddedEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const CombatStateAddedPbEvent& from);
+  void CopyFrom(const CombatStateAddedEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const CombatStateAddedPbEvent& from) { CombatStateAddedPbEvent::MergeImpl(*this, from); }
+  void MergeFrom(const CombatStateAddedEvent& from) { CombatStateAddedEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -401,18 +401,18 @@ class CombatStateAddedPbEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(CombatStateAddedPbEvent* PROTOBUF_NONNULL other);
+  void InternalSwap(CombatStateAddedEvent* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "CombatStateAddedPbEvent"; }
+  static ::absl::string_view FullMessageName() { return "CombatStateAddedEvent"; }
 
  protected:
-  explicit CombatStateAddedPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  CombatStateAddedPbEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatStateAddedPbEvent& from);
-  CombatStateAddedPbEvent(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CombatStateAddedPbEvent&& from) noexcept
-      : CombatStateAddedPbEvent(arena) {
+  explicit CombatStateAddedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  CombatStateAddedEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatStateAddedEvent& from);
+  CombatStateAddedEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CombatStateAddedEvent&& from) noexcept
+      : CombatStateAddedEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -463,7 +463,7 @@ class CombatStateAddedPbEvent final : public ::google::protobuf::Message
   void _internal_set_state_type(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:CombatStateAddedPbEvent)
+  // @@protoc_insertion_point(class_scope:CombatStateAddedEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -486,7 +486,7 @@ class CombatStateAddedPbEvent final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const CombatStateAddedPbEvent& from_msg);
+        const CombatStateAddedEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t actor_entity_;
@@ -498,7 +498,7 @@ class CombatStateAddedPbEvent final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fcommon_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull CombatStateAddedPbEvent_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull CombatStateAddedEvent_class_data_;
 
 // ===================================================================
 
@@ -514,152 +514,152 @@ extern const ::google::protobuf::internal::ClassDataFull CombatStateAddedPbEvent
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// CombatStateAddedPbEvent
+// CombatStateAddedEvent
 
 // uint64 actor_entity = 1;
-inline void CombatStateAddedPbEvent::clear_actor_entity() {
+inline void CombatStateAddedEvent::clear_actor_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t CombatStateAddedPbEvent::actor_entity() const {
-  // @@protoc_insertion_point(field_get:CombatStateAddedPbEvent.actor_entity)
+inline ::uint64_t CombatStateAddedEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:CombatStateAddedEvent.actor_entity)
   return _internal_actor_entity();
 }
-inline void CombatStateAddedPbEvent::set_actor_entity(::uint64_t value) {
+inline void CombatStateAddedEvent::set_actor_entity(::uint64_t value) {
   _internal_set_actor_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:CombatStateAddedPbEvent.actor_entity)
+  // @@protoc_insertion_point(field_set:CombatStateAddedEvent.actor_entity)
 }
-inline ::uint64_t CombatStateAddedPbEvent::_internal_actor_entity() const {
+inline ::uint64_t CombatStateAddedEvent::_internal_actor_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.actor_entity_;
 }
-inline void CombatStateAddedPbEvent::_internal_set_actor_entity(::uint64_t value) {
+inline void CombatStateAddedEvent::_internal_set_actor_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = value;
 }
 
 // uint64 source_buff_id = 2;
-inline void CombatStateAddedPbEvent::clear_source_buff_id() {
+inline void CombatStateAddedEvent::clear_source_buff_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.source_buff_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t CombatStateAddedPbEvent::source_buff_id() const {
-  // @@protoc_insertion_point(field_get:CombatStateAddedPbEvent.source_buff_id)
+inline ::uint64_t CombatStateAddedEvent::source_buff_id() const {
+  // @@protoc_insertion_point(field_get:CombatStateAddedEvent.source_buff_id)
   return _internal_source_buff_id();
 }
-inline void CombatStateAddedPbEvent::set_source_buff_id(::uint64_t value) {
+inline void CombatStateAddedEvent::set_source_buff_id(::uint64_t value) {
   _internal_set_source_buff_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:CombatStateAddedPbEvent.source_buff_id)
+  // @@protoc_insertion_point(field_set:CombatStateAddedEvent.source_buff_id)
 }
-inline ::uint64_t CombatStateAddedPbEvent::_internal_source_buff_id() const {
+inline ::uint64_t CombatStateAddedEvent::_internal_source_buff_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.source_buff_id_;
 }
-inline void CombatStateAddedPbEvent::_internal_set_source_buff_id(::uint64_t value) {
+inline void CombatStateAddedEvent::_internal_set_source_buff_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.source_buff_id_ = value;
 }
 
 // uint32 state_type = 3;
-inline void CombatStateAddedPbEvent::clear_state_type() {
+inline void CombatStateAddedEvent::clear_state_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_type_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint32_t CombatStateAddedPbEvent::state_type() const {
-  // @@protoc_insertion_point(field_get:CombatStateAddedPbEvent.state_type)
+inline ::uint32_t CombatStateAddedEvent::state_type() const {
+  // @@protoc_insertion_point(field_get:CombatStateAddedEvent.state_type)
   return _internal_state_type();
 }
-inline void CombatStateAddedPbEvent::set_state_type(::uint32_t value) {
+inline void CombatStateAddedEvent::set_state_type(::uint32_t value) {
   _internal_set_state_type(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:CombatStateAddedPbEvent.state_type)
+  // @@protoc_insertion_point(field_set:CombatStateAddedEvent.state_type)
 }
-inline ::uint32_t CombatStateAddedPbEvent::_internal_state_type() const {
+inline ::uint32_t CombatStateAddedEvent::_internal_state_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.state_type_;
 }
-inline void CombatStateAddedPbEvent::_internal_set_state_type(::uint32_t value) {
+inline void CombatStateAddedEvent::_internal_set_state_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_type_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// CombatStateRemovedPbEvent
+// CombatStateRemovedEvent
 
 // uint64 actor_entity = 1;
-inline void CombatStateRemovedPbEvent::clear_actor_entity() {
+inline void CombatStateRemovedEvent::clear_actor_entity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t CombatStateRemovedPbEvent::actor_entity() const {
-  // @@protoc_insertion_point(field_get:CombatStateRemovedPbEvent.actor_entity)
+inline ::uint64_t CombatStateRemovedEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:CombatStateRemovedEvent.actor_entity)
   return _internal_actor_entity();
 }
-inline void CombatStateRemovedPbEvent::set_actor_entity(::uint64_t value) {
+inline void CombatStateRemovedEvent::set_actor_entity(::uint64_t value) {
   _internal_set_actor_entity(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:CombatStateRemovedPbEvent.actor_entity)
+  // @@protoc_insertion_point(field_set:CombatStateRemovedEvent.actor_entity)
 }
-inline ::uint64_t CombatStateRemovedPbEvent::_internal_actor_entity() const {
+inline ::uint64_t CombatStateRemovedEvent::_internal_actor_entity() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.actor_entity_;
 }
-inline void CombatStateRemovedPbEvent::_internal_set_actor_entity(::uint64_t value) {
+inline void CombatStateRemovedEvent::_internal_set_actor_entity(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.actor_entity_ = value;
 }
 
 // uint64 source_buff_id = 2;
-inline void CombatStateRemovedPbEvent::clear_source_buff_id() {
+inline void CombatStateRemovedEvent::clear_source_buff_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.source_buff_id_ = ::uint64_t{0u};
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t CombatStateRemovedPbEvent::source_buff_id() const {
-  // @@protoc_insertion_point(field_get:CombatStateRemovedPbEvent.source_buff_id)
+inline ::uint64_t CombatStateRemovedEvent::source_buff_id() const {
+  // @@protoc_insertion_point(field_get:CombatStateRemovedEvent.source_buff_id)
   return _internal_source_buff_id();
 }
-inline void CombatStateRemovedPbEvent::set_source_buff_id(::uint64_t value) {
+inline void CombatStateRemovedEvent::set_source_buff_id(::uint64_t value) {
   _internal_set_source_buff_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:CombatStateRemovedPbEvent.source_buff_id)
+  // @@protoc_insertion_point(field_set:CombatStateRemovedEvent.source_buff_id)
 }
-inline ::uint64_t CombatStateRemovedPbEvent::_internal_source_buff_id() const {
+inline ::uint64_t CombatStateRemovedEvent::_internal_source_buff_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.source_buff_id_;
 }
-inline void CombatStateRemovedPbEvent::_internal_set_source_buff_id(::uint64_t value) {
+inline void CombatStateRemovedEvent::_internal_set_source_buff_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.source_buff_id_ = value;
 }
 
 // uint32 state_type = 3;
-inline void CombatStateRemovedPbEvent::clear_state_type() {
+inline void CombatStateRemovedEvent::clear_state_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_type_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint32_t CombatStateRemovedPbEvent::state_type() const {
-  // @@protoc_insertion_point(field_get:CombatStateRemovedPbEvent.state_type)
+inline ::uint32_t CombatStateRemovedEvent::state_type() const {
+  // @@protoc_insertion_point(field_get:CombatStateRemovedEvent.state_type)
   return _internal_state_type();
 }
-inline void CombatStateRemovedPbEvent::set_state_type(::uint32_t value) {
+inline void CombatStateRemovedEvent::set_state_type(::uint32_t value) {
   _internal_set_state_type(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:CombatStateRemovedPbEvent.state_type)
+  // @@protoc_insertion_point(field_set:CombatStateRemovedEvent.state_type)
 }
-inline ::uint32_t CombatStateRemovedPbEvent::_internal_state_type() const {
+inline ::uint32_t CombatStateRemovedEvent::_internal_state_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.state_type_;
 }
-inline void CombatStateRemovedPbEvent::_internal_set_state_type(::uint32_t value) {
+inline void CombatStateRemovedEvent::_internal_set_state_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.state_type_ = value;
 }

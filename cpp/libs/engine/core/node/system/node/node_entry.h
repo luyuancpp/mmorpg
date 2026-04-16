@@ -2,8 +2,10 @@
 
 #ifdef __linux__
 #include <absl/log/initialize.h>
+#include <csignal>
 #else
 #include "grpc/third_party/abseil-cpp/absl/log/initialize.h"
+#include <Windows.h>
 #endif
 #include "muduo/net/EventLoop.h"
 #include "node/system/node/node.h"
@@ -70,6 +72,38 @@ void ApplyPostConstructionHooks(Node& node)
 
 // ── Entry helper ──────────────────────────────────────────────────
 
+namespace detail
+{
+
+    // Install OS signal handlers so SIGTERM/SIGINT trigger graceful shutdown
+    // via gNode->Shutdown() + loop.quit().
+    inline void InstallSignalHandlers(muduo::net::EventLoop &loop)
+    {
+#ifdef __linux__
+        auto handler = [](int sig)
+        {
+            if (gNode)
+                gNode->Shutdown();
+        };
+        ::signal(SIGTERM, handler);
+        ::signal(SIGINT, handler);
+#else
+        // Windows: use SetConsoleCtrlHandler for Ctrl+C / service stop.
+        static muduo::net::EventLoop *sLoop = &loop;
+        ::SetConsoleCtrlHandler([](DWORD ctrlType) -> BOOL
+                                {
+        if (ctrlType == CTRL_C_EVENT || ctrlType == CTRL_CLOSE_EVENT ||
+            ctrlType == CTRL_SHUTDOWN_EVENT) {
+            if (gNode) gNode->Shutdown();
+            if (sLoop) sLoop->quit();
+            return TRUE;
+        }
+        return FALSE; }, TRUE);
+#endif
+    }
+
+} // namespace detail (signal)
+
 template <typename StartNodeFn>
 int RunNodeMain(StartNodeFn&& startNode)
 {
@@ -96,6 +130,7 @@ int RunSimpleNodeMainWithOwnedContext(uint32_t nodeType,
         THandler handler;
         Node node(&loop, nodeType, std::move(connectTo), &handler);
         detail::ApplyPostConstructionHooks<THooks>(node);
+        detail::InstallSignalHandlers(loop);
         configure(node, *context);
         loop.loop();
     });

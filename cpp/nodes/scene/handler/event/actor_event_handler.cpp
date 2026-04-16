@@ -14,21 +14,21 @@
 ///<<< END WRITING YOUR CODE
 void ActorEventHandler::Register()
 {
-    tlsEcs.dispatcher.sink<InitializeActorComponentsEvent>().connect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
-    tlsEcs.dispatcher.sink<InterruptCurrentStatePbEvent>().connect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
+    tlsEcs.dispatcher.sink<InitializeActorCompsEvent>().connect<&ActorEventHandler::InitializeActorCompsEventHandler>();
+    tlsEcs.dispatcher.sink<InterruptCurrentStateEvent>().connect<&ActorEventHandler::InterruptCurrentStateEventHandler>();
 }
 
 void ActorEventHandler::UnRegister()
 {
-    tlsEcs.dispatcher.sink<InitializeActorComponentsEvent>().disconnect<&ActorEventHandler::InitializeActorComponentsEventHandler>();
-    tlsEcs.dispatcher.sink<InterruptCurrentStatePbEvent>().disconnect<&ActorEventHandler::InterruptCurrentStatePbEventHandler>();
+    tlsEcs.dispatcher.sink<InitializeActorCompsEvent>().disconnect<&ActorEventHandler::InitializeActorCompsEventHandler>();
+    tlsEcs.dispatcher.sink<InterruptCurrentStateEvent>().disconnect<&ActorEventHandler::InterruptCurrentStateEventHandler>();
 }
-void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeActorComponentsEvent& event)
+void ActorEventHandler::InitializeActorCompsEventHandler(const InitializeActorCompsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurrentStatePbEvent& event)
+void ActorEventHandler::InterruptCurrentStateEventHandler(const InterruptCurrentStateEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

@@ -5,35 +5,35 @@
 ///<<< END WRITING YOUR CODE
 void NodeEventHandler::Register()
 {
-    tlsEcs.dispatcher.sink<OnNodeAddPbEvent>().connect<&NodeEventHandler::OnNodeAddPbEventHandler>();
-    tlsEcs.dispatcher.sink<OnNodeRemovePbEvent>().connect<&NodeEventHandler::OnNodeRemovePbEventHandler>();
-    tlsEcs.dispatcher.sink<ConnectToNodePbEvent>().connect<&NodeEventHandler::ConnectToNodePbEventHandler>();
-    tlsEcs.dispatcher.sink<OnNodeConnectedPbEvent>().connect<&NodeEventHandler::OnNodeConnectedPbEventHandler>();
+    tlsEcs.dispatcher.sink<OnNodeAddEvent>().connect<&NodeEventHandler::OnNodeAddEventHandler>();
+    tlsEcs.dispatcher.sink<OnNodeRemoveEvent>().connect<&NodeEventHandler::OnNodeRemoveEventHandler>();
+    tlsEcs.dispatcher.sink<ConnectToNodeEvent>().connect<&NodeEventHandler::ConnectToNodeEventHandler>();
+    tlsEcs.dispatcher.sink<OnNodeConnectedEvent>().connect<&NodeEventHandler::OnNodeConnectedEventHandler>();
 }
 
 void NodeEventHandler::UnRegister()
 {
-    tlsEcs.dispatcher.sink<OnNodeAddPbEvent>().disconnect<&NodeEventHandler::OnNodeAddPbEventHandler>();
-    tlsEcs.dispatcher.sink<OnNodeRemovePbEvent>().disconnect<&NodeEventHandler::OnNodeRemovePbEventHandler>();
-    tlsEcs.dispatcher.sink<ConnectToNodePbEvent>().disconnect<&NodeEventHandler::ConnectToNodePbEventHandler>();
-    tlsEcs.dispatcher.sink<OnNodeConnectedPbEvent>().disconnect<&NodeEventHandler::OnNodeConnectedPbEventHandler>();
+    tlsEcs.dispatcher.sink<OnNodeAddEvent>().disconnect<&NodeEventHandler::OnNodeAddEventHandler>();
+    tlsEcs.dispatcher.sink<OnNodeRemoveEvent>().disconnect<&NodeEventHandler::OnNodeRemoveEventHandler>();
+    tlsEcs.dispatcher.sink<ConnectToNodeEvent>().disconnect<&NodeEventHandler::ConnectToNodeEventHandler>();
+    tlsEcs.dispatcher.sink<OnNodeConnectedEvent>().disconnect<&NodeEventHandler::OnNodeConnectedEventHandler>();
 }
-void NodeEventHandler::OnNodeAddPbEventHandler(const OnNodeAddPbEvent& event)
+void NodeEventHandler::OnNodeAddEventHandler(const OnNodeAddEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void NodeEventHandler::OnNodeRemovePbEventHandler(const OnNodeRemovePbEvent& event)
+void NodeEventHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void NodeEventHandler::ConnectToNodePbEventHandler(const ConnectToNodePbEvent& event)
+void NodeEventHandler::ConnectToNodeEventHandler(const ConnectToNodeEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-void NodeEventHandler::OnNodeConnectedPbEventHandler(const OnNodeConnectedPbEvent& event)
+void NodeEventHandler::OnNodeConnectedEventHandler(const OnNodeConnectedEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

@@ -8,9 +8,10 @@ import (
 	"strconv"
 	"time"
 
+	"shared/cache"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
-	"golang.org/x/sync/singleflight"
 )
 
 // GuildData is the persistence-layer representation of a guild (stored in Redis + MySQL).
@@ -40,7 +41,6 @@ type MemberData struct {
 type GuildRepo struct {
 	rdb        *redis.Client
 	db         *sql.DB
-	sfGroup    singleflight.Group
 	defaultTTL time.Duration
 }
 
@@ -73,64 +73,33 @@ func zoneRankKey(zoneID uint32) string {
 // GetGuild loads a guild by ID. On Redis miss, uses singleflight to coalesce
 // concurrent MySQL queries for the same guild.
 func (r *GuildRepo) GetGuild(ctx context.Context, guildID uint64) (*GuildData, error) {
-	// 1. Try Redis
-	data, err := r.rdb.Get(ctx, guildKey(guildID)).Bytes()
-	if err == nil {
-		var guild GuildData
-		if err := json.Unmarshal(data, &guild); err != nil {
-			return nil, fmt.Errorf("unmarshal guild %d from cache: %w", guildID, err)
-		}
-		return &guild, nil
-	}
-	if err != redis.Nil {
-		return nil, fmt.Errorf("redis get guild %d: %w", guildID, err)
-	}
-
-	// 2. Cache miss → singleflight coalesced MySQL load
-	result, err, _ := r.sfGroup.Do(fmt.Sprintf("guild:%d", guildID), func() (any, error) {
-		guild, err := r.loadGuildFromMySQL(ctx, guildID)
-		if err != nil {
-			return nil, err
-		}
-		if guild == nil {
-			return nil, nil // guild does not exist
-		}
-		// Write back to Redis
-		if err := r.cacheGuild(ctx, guild); err != nil {
-			logx.Errorf("cache guild %d after MySQL load: %v", guildID, err)
-			// non-fatal: serve from memory
-		}
-		return guild, nil
-	})
-
+	result, err := cache.LoadOrCache[*GuildData](
+		ctx, r.rdb,
+		guildKey(guildID),
+		fmt.Sprintf("guild:%d", guildID),
+		r.defaultTTL,
+		func(ctx context.Context) (*GuildData, error) {
+			return r.loadGuildFromMySQL(ctx, guildID)
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
-	if result == nil {
-		return nil, nil
-	}
-	return result.(*GuildData), nil
+	return result, nil
 }
 
 // GetPlayerGuildID returns the guild ID a player belongs to (0 if none).
 func (r *GuildRepo) GetPlayerGuildID(ctx context.Context, playerID uint64) (uint64, error) {
 	val, err := r.rdb.Get(ctx, playerGuildKey(playerID)).Uint64()
 	if err == redis.Nil {
-		// Cache miss → load from MySQL
-		result, err, _ := r.sfGroup.Do(fmt.Sprintf("pguild:%d", playerID), func() (any, error) {
-			guildID, err := r.loadPlayerGuildFromMySQL(ctx, playerID)
-			if err != nil {
-				return nil, err
-			}
-			if guildID > 0 {
-				r.rdb.Set(ctx, playerGuildKey(playerID), guildID, r.defaultTTL)
-			}
-			return guildID, nil
-		})
-		if err != nil {
-			return 0, err
+		guildID, loadErr := r.loadPlayerGuildFromMySQL(ctx, playerID)
+		if loadErr != nil {
+			return 0, loadErr
 		}
-		return result.(uint64), nil
+		if guildID > 0 {
+			r.rdb.Set(ctx, playerGuildKey(playerID), guildID, r.defaultTTL)
+		}
+		return guildID, nil
 	}
 	if err != nil {
 		return 0, fmt.Errorf("redis get player guild %d: %w", playerID, err)

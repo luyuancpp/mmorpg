@@ -9,6 +9,8 @@
     <ClCompile Include="chat\chat_grpc_client.cpp" />
     <ClCompile Include="guild\guild_grpc_client.cpp" />
     <ClCompile Include="friend\friend_grpc_client.cpp" />
+    <ClCompile Include="scene_manager\scene_node_service_grpc_client.cpp" />
+    <ClCompile Include="db\db_grpc_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="grpc_init_client.h" />
@@ -20,5 +22,7 @@
     <ClInclude Include="chat\chat_grpc_client.h" />
     <ClInclude Include="guild\guild_grpc_client.h" />
     <ClInclude Include="friend\friend_grpc_client.h" />
+    <ClInclude Include="scene_manager\scene_node_service_grpc_client.h" />
+    <ClInclude Include="db\db_grpc_client.h" />
   </ItemGroup>
 </Project>
