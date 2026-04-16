@@ -167,6 +167,7 @@
     <ClCompile Include="handler\grpc\scene_node_service.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="rpc_replies\gate_service_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\scene_manager_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\player_lifecycle_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\s2s_player_scene_response_handler.cpp" />
     <ClCompile Include="rpc_replies\player\player_currency_response_handler.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="handler\rpc\player\player_state_attribute_sync_handler.h" />
     <ClInclude Include="handler\grpc\scene_node_service.h" />
     <ClInclude Include="rpc_replies\gate_service_response_handler.h" />
+    <ClInclude Include="rpc_replies\scene_manager_response_handler.h" />
     <ClInclude Include="rpc_replies\player\player_lifecycle_response_handler.h" />
     <ClInclude Include="rpc_replies\player\s2s_player_scene_response_handler.h" />
     <ClInclude Include="rpc_replies\player\player_currency_response_handler.h" />

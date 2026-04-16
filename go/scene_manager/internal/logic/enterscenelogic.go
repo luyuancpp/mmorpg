@@ -42,7 +42,12 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		return errResp(constants.ErrNoAvailableNode, err.Error()), nil
 	}
 
-	// 2. IDEMPOTENCY CHECK: Is player already here?
+	// 2. CROSS-ZONE CHECK: If gate is in a different zone, redirect the player.
+	if in.GateZoneId != 0 && in.ZoneId != 0 && in.GateZoneId != in.ZoneId {
+		return l.handleCrossZoneRedirect(in)
+	}
+
+	// 3. IDEMPOTENCY CHECK: Is player already here?
 	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
 	if err == nil && currentLoc != nil {
 		if currentLoc.SceneId == sceneId && currentLoc.NodeId == nodeId {
@@ -51,13 +56,13 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		}
 	}
 
-	// 3. Update Player Location (Source of Truth)
+	// 4. Update Player Location (Source of Truth)
 	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, sceneId, nodeId); err != nil {
 		l.Logger.Errorf("Failed to update player location: %v", err)
 		return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
 	}
 
-	// 4. Send Route Command to Gate (via Kafka) — best-effort notification.
+	// 5. Send Route Command to Gate (via Kafka) — best-effort notification.
 	// The gate Kafka consumer may not be implemented yet; location in Redis
 	// is the source of truth so we log but do not fail the request.
 	if in.GateId != "" {
@@ -68,12 +73,85 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
 
-	// 5. Track instance player count.
+	// 6. Track instance player count.
 	// For main world scenes the key is unused by lifecycle cleanup (harmless).
 	IncrInstancePlayerCount(l.svcCtx, sceneId)
 
 	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, sceneId, nodeId)
 	return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
+}
+
+// handleCrossZoneRedirect assigns a Gate in the target zone and returns redirect info.
+// It also sends a RedirectToGateEvent to the current Gate via Kafka so the Gate can
+// push the redirect to the client immediately.
+func (l *EnterSceneLogic) handleCrossZoneRedirect(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
+	l.Logger.Infof("Cross-zone detected: player %d gate_zone=%d target_zone=%d, redirecting",
+		in.PlayerId, in.GateZoneId, in.ZoneId)
+
+	redirect, err := AssignGateForZone(l.ctx, l.svcCtx, in.ZoneId)
+	if err != nil {
+		l.Logger.Errorf("Cross-zone redirect failed for player %d: %v", in.PlayerId, err)
+		return errResp(constants.ErrNoAvailableNode, "no gate available in target zone"), nil
+	}
+
+	// Best-effort: push redirect event to current Gate via Kafka.
+	if in.GateId != "" {
+		if err := l.sendRedirectToGate(in, redirect); err != nil {
+			l.Logger.Errorf("Failed to push redirect to gate (non-fatal): %v", err)
+		}
+	}
+
+	return &scene_manager.EnterSceneResponse{
+		ErrorCode: 0,
+		Redirect:  redirect,
+	}, nil
+}
+
+// sendRedirectToGate pushes a RedirectToGateEvent to the current Gate via Kafka.
+func (l *EnterSceneLogic) sendRedirectToGate(in *scene_manager.EnterSceneRequest, redirect *scene_manager.RedirectToGateInfo) error {
+	targetGateId, err := strconv.ParseUint(in.GateId, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid gate id %q: %w", in.GateId, err)
+	}
+
+	event := &kafkacontracts.RedirectToGateEvent{
+		PlayerId:         in.PlayerId,
+		SessionId:        in.SessionId,
+		TargetGateIp:     redirect.TargetGateIp,
+		TargetGatePort:   redirect.TargetGatePort,
+		TokenPayload:     redirect.TokenPayload,
+		TokenSignature:   redirect.TokenSignature,
+		TokenDeadline:    redirect.TokenDeadline,
+	}
+	payload, err := proto.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("marshal RedirectToGateEvent: %w", err)
+	}
+
+	cmd := &kafkacontracts.GateCommand{
+		PlayerId:         in.PlayerId,
+		SessionId:        in.SessionId,
+		TargetGateId:     uint32(targetGateId),
+		TargetInstanceId: in.GateInstanceId,
+		Payload:          payload,
+		EventId:          uint32(game.ContractsKafkaRedirectToGateEventEventId),
+	}
+	bytes, err := proto.Marshal(cmd)
+	if err != nil {
+		return fmt.Errorf("marshal GateCommand: %w", err)
+	}
+
+	topic := GateTopicName(in.GateId)
+	if err := l.svcCtx.Kafka.WriteMessages(l.ctx, kafkago.Message{
+		Topic: topic,
+		Key:   []byte(fmt.Sprintf("%d", in.PlayerId)),
+		Value: bytes,
+	}); err != nil {
+		return fmt.Errorf("push to Kafka topic %s: %w", topic, err)
+	}
+
+	l.Logger.Infof("Pushed RedirectToGate to Kafka topic %s for player %d", topic, in.PlayerId)
+	return nil
 }
 
 // resolveScene resolves the concrete (sceneId, nodeId) for an EnterScene request.

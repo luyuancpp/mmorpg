@@ -44,3 +44,15 @@ message BindSessionEvent {
   uint64 session_version = 3;
   uint32 enter_gs_type = 4;  // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
 }
+
+// Sent by SceneManager to Gate when a player requests a cross-zone scene.
+// Gate forwards the redirect info to the client so it can reconnect to the target zone's Gate.
+message RedirectToGateEvent {
+  uint64 player_id = 1;
+  uint64 session_id = 2;
+  string target_gate_ip = 3;
+  uint32 target_gate_port = 4;
+  bytes  token_payload = 5;    // serialized GateTokenPayload for target gate
+  bytes  token_signature = 6;  // HMAC-SHA256 signature
+  int64  token_deadline = 7;   // unix seconds
+}

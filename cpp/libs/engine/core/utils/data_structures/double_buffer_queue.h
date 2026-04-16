@@ -3,8 +3,8 @@
 #include "muduo/base/Mutex.h"
 #include "muduo/base/noncopyable.h"
 
-#include <atomic>
 #include <cstddef>
+#include <new>
 #include <utility>
 #include <vector>
 
@@ -45,14 +45,19 @@ public:
     {
         muduo::MutexLockGuard lock(mutex_);
         buffers_[writeIndex_].push_back(x);
-        pendingSize_.fetch_add(1, std::memory_order_relaxed);
     }
 
     void put(T&& x)
     {
         muduo::MutexLockGuard lock(mutex_);
         buffers_[writeIndex_].push_back(std::move(x));
-        pendingSize_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    template <typename... Args>
+    void emplace(Args&&... args)
+    {
+        muduo::MutexLockGuard lock(mutex_);
+        buffers_[writeIndex_].emplace_back(std::forward<Args>(args)...);
     }
 
     // Non-blocking. Returns false immediately when no item is available.
@@ -72,16 +77,6 @@ public:
         return true;
     }
 
-    size_t size() const
-    {
-        return pendingSize_.load(std::memory_order_relaxed);
-    }
-
-    bool empty() const
-    {
-        return size() == 0;
-    }
-
 private:
     bool swapReadBuffer()
     {
@@ -97,19 +92,17 @@ private:
 
         std::swap(readIndex_, writeIndex_);
         readEnd_ = buffers_[readIndex_].size();
-        pendingSize_.fetch_sub(readEnd_, std::memory_order_relaxed);
         return true;
     }
 
 private:
-    mutable muduo::MutexLock mutex_;
+    // -- Producer-side (written under mutex) --
+    alignas(std::hardware_destructive_interference_size) mutable muduo::MutexLock mutex_;
     queue_type buffers_[2];
     int writeIndex_ GUARDED_BY(mutex_) = 0;
 
-    // Consumer-thread only.
-    int readIndex_ = 1;
+    // -- Consumer-side (single-thread, no lock) --
+    alignas(std::hardware_destructive_interference_size) int readIndex_ = 1;
     size_t readPos_ = 0;
     size_t readEnd_ = 0;
-
-    std::atomic<size_t> pendingSize_{0};
 };

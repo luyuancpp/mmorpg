@@ -26,6 +26,41 @@ namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 namespace scene_manager {
 
+inline constexpr RedirectToGateInfo::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_gate_ip_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_payload_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_signature_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_deadline_{::int64_t{0}},
+        target_gate_port_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RedirectToGateInfo::RedirectToGateInfo(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(RedirectToGateInfo_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RedirectToGateInfoDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RedirectToGateInfoDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RedirectToGateInfoDefaultTypeInternal() {}
+  union {
+    RedirectToGateInfo _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RedirectToGateInfoDefaultTypeInternal _RedirectToGateInfo_default_instance_;
+
 inline constexpr LeaveSceneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -56,34 +91,6 @@ struct LeaveSceneRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaveSceneRequestDefaultTypeInternal _LeaveSceneRequest_default_instance_;
 
-inline constexpr EnterSceneResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        error_message_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        error_code_{0u} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR EnterSceneResponse::EnterSceneResponse(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(EnterSceneResponse_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct EnterSceneResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR EnterSceneResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~EnterSceneResponseDefaultTypeInternal() {}
-  union {
-    EnterSceneResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterSceneResponseDefaultTypeInternal _EnterSceneResponse_default_instance_;
-
 inline constexpr EnterSceneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -100,7 +107,8 @@ inline constexpr EnterSceneRequest::Impl_::Impl_(
         scene_id_{::uint64_t{0u}},
         session_id_{::uint64_t{0u}},
         scene_conf_id_{::uint64_t{0u}},
-        zone_id_{0u} {}
+        zone_id_{0u},
+        gate_zone_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR EnterSceneRequest::EnterSceneRequest(::_pbi::ConstantInitialized)
@@ -211,6 +219,35 @@ struct CreateSceneRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CreateSceneRequestDefaultTypeInternal _CreateSceneRequest_default_instance_;
+
+inline constexpr EnterSceneResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        error_message_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        redirect_{nullptr},
+        error_code_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR EnterSceneResponse::EnterSceneResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(EnterSceneResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct EnterSceneResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR EnterSceneResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~EnterSceneResponseDefaultTypeInternal() {}
+  union {
+    EnterSceneResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterSceneResponseDefaultTypeInternal _EnterSceneResponse_default_instance_;
 }  // namespace scene_manager
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
     file_level_enum_descriptors_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto[1];
@@ -252,7 +289,7 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_._has_bits_),
-        11, // hasbit index offset
+        12, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.scene_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.session_id_),
@@ -261,6 +298,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.gate_instance_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.zone_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.scene_conf_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneRequest, _impl_.gate_zone_id_),
         3,
         4,
         5,
@@ -269,13 +307,29 @@ const ::uint32_t
         2,
         7,
         6,
+        8,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_._has_bits_),
-        5, // hasbit index offset
+        6, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_.error_code_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_.error_message_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_.redirect_),
+        2,
         0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::scene_manager::RedirectToGateInfo, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::scene_manager::RedirectToGateInfo, _impl_.target_gate_ip_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::RedirectToGateInfo, _impl_.target_gate_port_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::RedirectToGateInfo, _impl_.token_payload_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::RedirectToGateInfo, _impl_.token_signature_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::RedirectToGateInfo, _impl_.token_deadline_),
+        0,
+        4,
+        1,
+        2,
+        3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::LeaveSceneRequest, _impl_._has_bits_),
         7, // hasbit index offset
@@ -295,8 +349,9 @@ static const ::_pbi::MigrationSchema
         {13, sizeof(::scene_manager::CreateSceneResponse)},
         {24, sizeof(::scene_manager::DestroySceneRequest)},
         {31, sizeof(::scene_manager::EnterSceneRequest)},
-        {50, sizeof(::scene_manager::EnterSceneResponse)},
-        {57, sizeof(::scene_manager::LeaveSceneRequest)},
+        {52, sizeof(::scene_manager::EnterSceneResponse)},
+        {61, sizeof(::scene_manager::RedirectToGateInfo)},
+        {74, sizeof(::scene_manager::LeaveSceneRequest)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::scene_manager::_CreateSceneRequest_default_instance_._instance,
@@ -304,6 +359,7 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::scene_manager::_DestroySceneRequest_default_instance_._instance,
     &::scene_manager::_EnterSceneRequest_default_instance_._instance,
     &::scene_manager::_EnterSceneResponse_default_instance_._instance,
+    &::scene_manager::_RedirectToGateInfo_default_instance_._instance,
     &::scene_manager::_LeaveSceneRequest_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
@@ -320,26 +376,32 @@ const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5
     "(\004\022\017\n\007node_id\030\002 \001(\t\022\022\n\nerror_code\030\003 \001(\r\022"
     "\025\n\rerror_message\030\004 \001(\t\"8\n\023DestroySceneRe"
     "quest\022\020\n\010scene_id\030\001 \001(\004\022\017\n\007zone_id\030\002 \001(\r"
-    "\"\263\001\n\021EnterSceneRequest\022\021\n\tplayer_id\030\001 \001("
+    "\"\311\001\n\021EnterSceneRequest\022\021\n\tplayer_id\030\001 \001("
     "\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\004\022"
     "\022\n\nrequest_id\030\004 \001(\t\022\017\n\007gate_id\030\005 \001(\t\022\030\n\020"
     "gate_instance_id\030\006 \001(\t\022\017\n\007zone_id\030\007 \001(\r\022"
-    "\025\n\rscene_conf_id\030\010 \001(\004\"\?\n\022EnterSceneResp"
-    "onse\022\022\n\nerror_code\030\001 \001(\r\022\025\n\rerror_messag"
-    "e\030\002 \001(\t\"]\n\021LeaveSceneRequest\022\021\n\tplayer_i"
-    "d\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n\nrequest_id\030"
-    "\003 \001(\t\022\017\n\007zone_id\030\004 \001(\r*[\n\tSceneType\022\032\n\026S"
-    "CENE_TYPE_UNSPECIFIED\020\000\022\031\n\025SCENE_TYPE_MA"
-    "IN_WORLD\020\001\022\027\n\023SCENE_TYPE_INSTANCE\020\0022\263\002\n\014"
-    "SceneManager\022V\n\013CreateScene\022!.scene_mana"
-    "ger.CreateSceneRequest\032\".scene_manager.C"
-    "reateSceneResponse\"\000\022<\n\014DestroyScene\022\".s"
-    "cene_manager.DestroySceneRequest\032\006.Empty"
-    "\"\000\022S\n\nEnterScene\022 .scene_manager.EnterSc"
-    "eneRequest\032!.scene_manager.EnterSceneRes"
-    "ponse\"\000\0228\n\nLeaveScene\022 .scene_manager.Le"
-    "aveSceneRequest\032\006.Empty\"\000B\035Z\033scene_manag"
-    "er/scene_managerb\006proto3"
+    "\025\n\rscene_conf_id\030\010 \001(\004\022\024\n\014gate_zone_id\030\t"
+    " \001(\r\"t\n\022EnterSceneResponse\022\022\n\nerror_code"
+    "\030\001 \001(\r\022\025\n\rerror_message\030\002 \001(\t\0223\n\010redirec"
+    "t\030\003 \001(\0132!.scene_manager.RedirectToGateIn"
+    "fo\"\216\001\n\022RedirectToGateInfo\022\026\n\016target_gate"
+    "_ip\030\001 \001(\t\022\030\n\020target_gate_port\030\002 \001(\r\022\025\n\rt"
+    "oken_payload\030\003 \001(\014\022\027\n\017token_signature\030\004 "
+    "\001(\014\022\026\n\016token_deadline\030\005 \001(\003\"]\n\021LeaveScen"
+    "eRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030"
+    "\002 \001(\004\022\022\n\nrequest_id\030\003 \001(\t\022\017\n\007zone_id\030\004 \001"
+    "(\r*[\n\tSceneType\022\032\n\026SCENE_TYPE_UNSPECIFIE"
+    "D\020\000\022\031\n\025SCENE_TYPE_MAIN_WORLD\020\001\022\027\n\023SCENE_"
+    "TYPE_INSTANCE\020\0022\263\002\n\014SceneManager\022V\n\013Crea"
+    "teScene\022!.scene_manager.CreateSceneReque"
+    "st\032\".scene_manager.CreateSceneResponse\"\000"
+    "\022<\n\014DestroyScene\022\".scene_manager.Destroy"
+    "SceneRequest\032\006.Empty\"\000\022S\n\nEnterScene\022 .s"
+    "cene_manager.EnterSceneRequest\032!.scene_m"
+    "anager.EnterSceneResponse\"\000\0228\n\nLeaveScen"
+    "e\022 .scene_manager.LeaveSceneRequest\032\006.Em"
+    "pty\"\000B\035Z\033scene_manager/scene_managerb\006pr"
+    "oto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_deps[3] = {
@@ -351,13 +413,13 @@ static ::absl::once_flag descriptor_table_proto_2fscene_5fmanager_2fscene_5fmana
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto = {
     false,
     false,
-    1264,
+    1484,
     descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto,
     "proto/scene_manager/scene_manager_service.proto",
     &descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_once,
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_deps,
     3,
-    6,
+    7,
     schemas,
     file_default_instances,
     TableStruct_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto::offsets,
@@ -1498,9 +1560,9 @@ EnterSceneRequest::EnterSceneRequest(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, zone_id_) -
+           offsetof(Impl_, gate_zone_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::zone_id_));
+               sizeof(Impl_::gate_zone_id_));
 
   // @@protoc_insertion_point(copy_constructor:scene_manager.EnterSceneRequest)
 }
@@ -1517,9 +1579,9 @@ inline void EnterSceneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena)
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, zone_id_) -
+           offsetof(Impl_, gate_zone_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::zone_id_));
+               sizeof(Impl_::gate_zone_id_));
 }
 EnterSceneRequest::~EnterSceneRequest() {
   // @@protoc_insertion_point(destructor:scene_manager.EnterSceneRequest)
@@ -1578,16 +1640,16 @@ EnterSceneRequest::GetClassData() const {
   return EnterSceneRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 8, 0, 81, 2>
+const ::_pbi::TcParseTable<4, 9, 0, 81, 2>
 EnterSceneRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_._has_bits_),
     0, // no _extensions_
-    8, 56,  // max_field_number, fast_idx_mask
+    9, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967040,  // skipmap
+    4294966784,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    8,  // num_field_entries
+    9,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     EnterSceneRequest_class_data_.base(),
@@ -1597,9 +1659,7 @@ EnterSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::scene_manager::EnterSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 scene_conf_id = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.scene_conf_id_), 6>(),
-     {64, 6, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_conf_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint64 player_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.player_id_), 3>(),
      {8, 3, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.player_id_)}},
@@ -1621,6 +1681,18 @@ EnterSceneRequest::_table_ = {
     // uint32 zone_id = 7;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneRequest, _impl_.zone_id_), 7>(),
      {56, 7, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_)}},
+    // uint64 scene_conf_id = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.scene_conf_id_), 6>(),
+     {64, 6, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_conf_id_)}},
+    // uint32 gate_zone_id = 9;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneRequest, _impl_.gate_zone_id_), 8>(),
+     {72, 8, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_zone_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -1648,6 +1720,9 @@ EnterSceneRequest::_table_ = {
     // uint64 scene_conf_id = 8;
     {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_conf_id_), _Internal::kHasBitsOffset + 6, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 gate_zone_id = 9;
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_zone_id_), _Internal::kHasBitsOffset + 8, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -1682,6 +1757,7 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
         reinterpret_cast<char*>(&_impl_.zone_id_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.zone_id_));
   }
+  _impl_.gate_zone_id_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -1776,6 +1852,15 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
     }
   }
 
+  // uint32 gate_zone_id = 9;
+  if ((this_._impl_._has_bits_[0] & 0x00000100u) != 0) {
+    if (this_._internal_gate_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          9, this_._internal_gate_zone_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1859,6 +1944,15 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
       }
     }
   }
+   {
+    // uint32 gate_zone_id = 9;
+    if ((cached_has_bits & 0x00000100u) != 0) {
+      if (this_._internal_gate_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_gate_zone_id());
+      }
+    }
+  }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
 }
@@ -1926,6 +2020,11 @@ void EnterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const
       }
     }
   }
+  if ((cached_has_bits & 0x00000100u) != 0) {
+    if (from._internal_gate_zone_id() != 0) {
+      _this->_impl_.gate_zone_id_ = from._impl_.gate_zone_id_;
+    }
+  }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -1948,8 +2047,8 @@ void EnterSceneRequest::InternalSwap(EnterSceneRequest* PROTOBUF_RESTRICT PROTOB
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_id_, &other->_impl_.gate_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_instance_id_, &other->_impl_.gate_instance_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_)
-      + sizeof(EnterSceneRequest::_impl_.zone_id_)
+      PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_zone_id_)
+      + sizeof(EnterSceneRequest::_impl_.gate_zone_id_)
       - PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));
@@ -1998,6 +2097,10 @@ EnterSceneResponse::EnterSceneResponse(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.redirect_ = ((cached_has_bits & 0x00000002u) != 0)
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.redirect_)
+                : nullptr;
   _impl_.error_code_ = from._impl_.error_code_;
 
   // @@protoc_insertion_point(copy_constructor:scene_manager.EnterSceneResponse)
@@ -2010,7 +2113,12 @@ PROTOBUF_NDEBUG_INLINE EnterSceneResponse::Impl_::Impl_(
 
 inline void EnterSceneResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.error_code_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, redirect_),
+           0,
+           offsetof(Impl_, error_code_) -
+               offsetof(Impl_, redirect_) +
+               sizeof(Impl_::error_code_));
 }
 EnterSceneResponse::~EnterSceneResponse() {
   // @@protoc_insertion_point(destructor:scene_manager.EnterSceneResponse)
@@ -2021,6 +2129,7 @@ inline void EnterSceneResponse::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.error_message_.Destroy();
+  delete this_._impl_.redirect_;
   this_._impl_.~Impl_();
 }
 
@@ -2067,18 +2176,18 @@ EnterSceneResponse::GetClassData() const {
   return EnterSceneResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 54, 2>
+const ::_pbi::TcParseTable<2, 3, 1, 54, 2>
 EnterSceneResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_._has_bits_),
     0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
+    3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
+    4294967288,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
+    3,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
     EnterSceneResponse_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -2086,23 +2195,32 @@ EnterSceneResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::scene_manager::EnterSceneResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 error_code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneResponse, _impl_.error_code_), 2>(),
+     {8, 2, 0, PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_code_)}},
     // string error_message = 2;
     {::_pbi::TcParser::FastUS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_message_)}},
-    // uint32 error_code = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneResponse, _impl_.error_code_), 1>(),
-     {8, 1, 0, PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_code_)}},
+    // .scene_manager.RedirectToGateInfo redirect = 3;
+    {::_pbi::TcParser::FastMtS1,
+     {26, 1, 0, PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.redirect_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 error_code = 1;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // string error_message = 2;
     {PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .scene_manager.RedirectToGateInfo redirect = 3;
+    {PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.redirect_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
-  // no aux_entries
+  {{
+      {::_pbi::TcParser::GetTable<::scene_manager::RedirectToGateInfo>()},
+  }},
   {{
     "\40\0\15\0\0\0\0\0"
     "scene_manager.EnterSceneResponse"
@@ -2117,8 +2235,14 @@ PROTOBUF_NOINLINE void EnterSceneResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    _impl_.error_message_.ClearNonDefaultToEmpty();
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.error_message_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      ABSL_DCHECK(_impl_.redirect_ != nullptr);
+      _impl_.redirect_->Clear();
+    }
   }
   _impl_.error_code_ = 0u;
   _impl_._has_bits_.Clear();
@@ -2141,7 +2265,7 @@ PROTOBUF_NOINLINE void EnterSceneResponse::Clear() {
   (void)cached_has_bits;
 
   // uint32 error_code = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_error_code() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2157,6 +2281,14 @@ PROTOBUF_NOINLINE void EnterSceneResponse::Clear() {
           _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.EnterSceneResponse.error_message");
       target = stream->WriteStringMaybeAliased(2, _s, target);
     }
+  }
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .scene_manager.RedirectToGateInfo redirect = 3;
+  if ((cached_has_bits & 0x00000002u) != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        3, *this_._impl_.redirect_, this_._impl_.redirect_->GetCachedSize(), target,
+        stream);
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -2184,7 +2316,7 @@ PROTOBUF_NOINLINE void EnterSceneResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
+  if ((cached_has_bits & 0x00000007u) != 0) {
     // string error_message = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_error_message().empty()) {
@@ -2192,8 +2324,13 @@ PROTOBUF_NOINLINE void EnterSceneResponse::Clear() {
                                         this_._internal_error_message());
       }
     }
-    // uint32 error_code = 1;
+    // .scene_manager.RedirectToGateInfo redirect = 3;
     if ((cached_has_bits & 0x00000002u) != 0) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.redirect_);
+    }
+    // uint32 error_code = 1;
+    if ((cached_has_bits & 0x00000004u) != 0) {
       if (this_._internal_error_code() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_error_code());
@@ -2207,13 +2344,14 @@ PROTOBUF_NOINLINE void EnterSceneResponse::Clear() {
 void EnterSceneResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<EnterSceneResponse*>(&to_msg);
   auto& from = static_cast<const EnterSceneResponse&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:scene_manager.EnterSceneResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
+  if ((cached_has_bits & 0x00000007u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_error_message().empty()) {
         _this->_internal_set_error_message(from._internal_error_message());
@@ -2224,6 +2362,14 @@ void EnterSceneResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
+      ABSL_DCHECK(from._impl_.redirect_ != nullptr);
+      if (_this->_impl_.redirect_ == nullptr) {
+        _this->_impl_.redirect_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.redirect_);
+      } else {
+        _this->_impl_.redirect_->MergeFrom(*from._impl_.redirect_);
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
       if (from._internal_error_code() != 0) {
         _this->_impl_.error_code_ = from._impl_.error_code_;
       }
@@ -2248,10 +2394,437 @@ void EnterSceneResponse::InternalSwap(EnterSceneResponse* PROTOBUF_RESTRICT PROT
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.error_message_, &other->_impl_.error_message_, arena);
-  swap(_impl_.error_code_, other->_impl_.error_code_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.error_code_)
+      + sizeof(EnterSceneResponse::_impl_.error_code_)
+      - PROTOBUF_FIELD_OFFSET(EnterSceneResponse, _impl_.redirect_)>(
+          reinterpret_cast<char*>(&_impl_.redirect_),
+          reinterpret_cast<char*>(&other->_impl_.redirect_));
 }
 
 ::google::protobuf::Metadata EnterSceneResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class RedirectToGateInfo::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<RedirectToGateInfo>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_._has_bits_);
+};
+
+RedirectToGateInfo::RedirectToGateInfo(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RedirectToGateInfo_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:scene_manager.RedirectToGateInfo)
+}
+PROTOBUF_NDEBUG_INLINE RedirectToGateInfo::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::scene_manager::RedirectToGateInfo& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_gate_ip_(arena, from.target_gate_ip_),
+        token_payload_(arena, from.token_payload_),
+        token_signature_(arena, from.token_signature_) {}
+
+RedirectToGateInfo::RedirectToGateInfo(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RedirectToGateInfo& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RedirectToGateInfo_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  RedirectToGateInfo* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, token_deadline_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, token_deadline_),
+           offsetof(Impl_, target_gate_port_) -
+               offsetof(Impl_, token_deadline_) +
+               sizeof(Impl_::target_gate_port_));
+
+  // @@protoc_insertion_point(copy_constructor:scene_manager.RedirectToGateInfo)
+}
+PROTOBUF_NDEBUG_INLINE RedirectToGateInfo::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_gate_ip_(arena),
+        token_payload_(arena),
+        token_signature_(arena) {}
+
+inline void RedirectToGateInfo::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, token_deadline_),
+           0,
+           offsetof(Impl_, target_gate_port_) -
+               offsetof(Impl_, token_deadline_) +
+               sizeof(Impl_::target_gate_port_));
+}
+RedirectToGateInfo::~RedirectToGateInfo() {
+  // @@protoc_insertion_point(destructor:scene_manager.RedirectToGateInfo)
+  SharedDtor(*this);
+}
+inline void RedirectToGateInfo::SharedDtor(MessageLite& self) {
+  RedirectToGateInfo& this_ = static_cast<RedirectToGateInfo&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.target_gate_ip_.Destroy();
+  this_._impl_.token_payload_.Destroy();
+  this_._impl_.token_signature_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL RedirectToGateInfo::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RedirectToGateInfo(arena);
+}
+constexpr auto RedirectToGateInfo::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RedirectToGateInfo),
+                                            alignof(RedirectToGateInfo));
+}
+constexpr auto RedirectToGateInfo::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_RedirectToGateInfo_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &RedirectToGateInfo::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RedirectToGateInfo>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RedirectToGateInfo::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RedirectToGateInfo>(), &RedirectToGateInfo::ByteSizeLong,
+              &RedirectToGateInfo::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_._cached_size_),
+          false,
+      },
+      &RedirectToGateInfo::kDescriptorMethods,
+      &descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RedirectToGateInfo_class_data_ =
+        RedirectToGateInfo::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RedirectToGateInfo::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RedirectToGateInfo_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RedirectToGateInfo_class_data_.tc_table);
+  return RedirectToGateInfo_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 55, 2>
+RedirectToGateInfo::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    RedirectToGateInfo_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::scene_manager::RedirectToGateInfo>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string target_gate_ip = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.target_gate_ip_)}},
+    // uint32 target_gate_port = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RedirectToGateInfo, _impl_.target_gate_port_), 4>(),
+     {16, 4, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.target_gate_port_)}},
+    // bytes token_payload = 3;
+    {::_pbi::TcParser::FastBS1,
+     {26, 1, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.token_payload_)}},
+    // bytes token_signature = 4;
+    {::_pbi::TcParser::FastBS1,
+     {34, 2, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.token_signature_)}},
+    // int64 token_deadline = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RedirectToGateInfo, _impl_.token_deadline_), 3>(),
+     {40, 3, 0, PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.token_deadline_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string target_gate_ip = 1;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.target_gate_ip_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 target_gate_port = 2;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.target_gate_port_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // bytes token_payload = 3;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.token_payload_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // bytes token_signature = 4;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.token_signature_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // int64 token_deadline = 5;
+    {PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.token_deadline_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\40\16\0\0\0\0\0\0"
+    "scene_manager.RedirectToGateInfo"
+    "target_gate_ip"
+  }},
+};
+PROTOBUF_NOINLINE void RedirectToGateInfo::Clear() {
+// @@protoc_insertion_point(message_clear_start:scene_manager.RedirectToGateInfo)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.target_gate_ip_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.token_payload_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      _impl_.token_signature_.ClearNonDefaultToEmpty();
+    }
+  }
+  if ((cached_has_bits & 0x00000018u) != 0) {
+    ::memset(&_impl_.token_deadline_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.target_gate_port_) -
+        reinterpret_cast<char*>(&_impl_.token_deadline_)) + sizeof(_impl_.target_gate_port_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RedirectToGateInfo::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RedirectToGateInfo& this_ = static_cast<const RedirectToGateInfo&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RedirectToGateInfo::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RedirectToGateInfo& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:scene_manager.RedirectToGateInfo)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // string target_gate_ip = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_target_gate_ip().empty()) {
+      const ::std::string& _s = this_._internal_target_gate_ip();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_manager.RedirectToGateInfo.target_gate_ip");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // uint32 target_gate_port = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (this_._internal_target_gate_port() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_target_gate_port(), target);
+    }
+  }
+
+  // bytes token_payload = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_token_payload().empty()) {
+      const ::std::string& _s = this_._internal_token_payload();
+      target = stream->WriteBytesMaybeAliased(3, _s, target);
+    }
+  }
+
+  // bytes token_signature = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (!this_._internal_token_signature().empty()) {
+      const ::std::string& _s = this_._internal_token_signature();
+      target = stream->WriteBytesMaybeAliased(4, _s, target);
+    }
+  }
+
+  // int64 token_deadline = 5;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_token_deadline() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<5>(
+              stream, this_._internal_token_deadline(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:scene_manager.RedirectToGateInfo)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RedirectToGateInfo::ByteSizeLong(const MessageLite& base) {
+  const RedirectToGateInfo& this_ = static_cast<const RedirectToGateInfo&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RedirectToGateInfo::ByteSizeLong() const {
+  const RedirectToGateInfo& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:scene_manager.RedirectToGateInfo)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000001fu) != 0) {
+    // string target_gate_ip = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_target_gate_ip().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_gate_ip());
+      }
+    }
+    // bytes token_payload = 3;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_token_payload().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_token_payload());
+      }
+    }
+    // bytes token_signature = 4;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!this_._internal_token_signature().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_token_signature());
+      }
+    }
+    // int64 token_deadline = 5;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_token_deadline() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_token_deadline());
+      }
+    }
+    // uint32 target_gate_port = 2;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_target_gate_port() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_target_gate_port());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RedirectToGateInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RedirectToGateInfo*>(&to_msg);
+  auto& from = static_cast<const RedirectToGateInfo&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:scene_manager.RedirectToGateInfo)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000001fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_target_gate_ip().empty()) {
+        _this->_internal_set_target_gate_ip(from._internal_target_gate_ip());
+      } else {
+        if (_this->_impl_.target_gate_ip_.IsDefault()) {
+          _this->_internal_set_target_gate_ip("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_token_payload().empty()) {
+        _this->_internal_set_token_payload(from._internal_token_payload());
+      } else {
+        if (_this->_impl_.token_payload_.IsDefault()) {
+          _this->_internal_set_token_payload("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!from._internal_token_signature().empty()) {
+        _this->_internal_set_token_signature(from._internal_token_signature());
+      } else {
+        if (_this->_impl_.token_signature_.IsDefault()) {
+          _this->_internal_set_token_signature("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_token_deadline() != 0) {
+        _this->_impl_.token_deadline_ = from._impl_.token_deadline_;
+      }
+    }
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (from._internal_target_gate_port() != 0) {
+        _this->_impl_.target_gate_port_ = from._impl_.target_gate_port_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void RedirectToGateInfo::CopyFrom(const RedirectToGateInfo& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:scene_manager.RedirectToGateInfo)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RedirectToGateInfo::InternalSwap(RedirectToGateInfo* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_gate_ip_, &other->_impl_.target_gate_ip_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_payload_, &other->_impl_.token_payload_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_signature_, &other->_impl_.token_signature_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.target_gate_port_)
+      + sizeof(RedirectToGateInfo::_impl_.target_gate_port_)
+      - PROTOBUF_FIELD_OFFSET(RedirectToGateInfo, _impl_.token_deadline_)>(
+          reinterpret_cast<char*>(&_impl_.token_deadline_),
+          reinterpret_cast<char*>(&other->_impl_.token_deadline_));
+}
+
+::google::protobuf::Metadata RedirectToGateInfo::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

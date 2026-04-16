@@ -14,6 +14,15 @@ message GameKickPlayerRequest {
   string operator = 2;
 }
 
+// Server tells client to disconnect and reconnect to a different Gate (cross-zone transition).
+message RedirectToGateNotify {
+  string target_ip = 1;
+  uint32 target_port = 2;
+  bytes  token_payload = 3;    // serialized GateTokenPayload for target gate
+  bytes  token_signature = 4;  // HMAC-SHA256 signature
+  int64  token_deadline = 5;   // unix seconds
+}
+
 service SceneClientPlayerCommon 
 {
   option (OptionIsPlayerService) = true;
@@ -21,4 +30,5 @@ service SceneClientPlayerCommon
   
   rpc SendTipToClient (TipInfoMessage) returns (Empty);
   rpc KickPlayer (GameKickPlayerRequest) returns (Empty);
+  rpc RedirectToGate (RedirectToGateNotify) returns (Empty);
 }

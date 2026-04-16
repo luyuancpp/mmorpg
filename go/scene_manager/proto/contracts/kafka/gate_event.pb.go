@@ -361,6 +361,100 @@ func (x *BindSessionEvent) GetEnterGsType() uint32 {
 	return 0
 }
 
+// Sent by SceneManager to Gate when a player requests a cross-zone scene.
+// Gate forwards the redirect info to the client so it can reconnect to the target zone's Gate.
+type RedirectToGateEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	TargetGateIp   string                 `protobuf:"bytes,3,opt,name=target_gate_ip,json=targetGateIp,proto3" json:"target_gate_ip,omitempty"`
+	TargetGatePort uint32                 `protobuf:"varint,4,opt,name=target_gate_port,json=targetGatePort,proto3" json:"target_gate_port,omitempty"`
+	TokenPayload   []byte                 `protobuf:"bytes,5,opt,name=token_payload,json=tokenPayload,proto3" json:"token_payload,omitempty"`       // serialized GateTokenPayload for target gate
+	TokenSignature []byte                 `protobuf:"bytes,6,opt,name=token_signature,json=tokenSignature,proto3" json:"token_signature,omitempty"` // HMAC-SHA256 signature
+	TokenDeadline  int64                  `protobuf:"varint,7,opt,name=token_deadline,json=tokenDeadline,proto3" json:"token_deadline,omitempty"`   // unix seconds
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RedirectToGateEvent) Reset() {
+	*x = RedirectToGateEvent{}
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RedirectToGateEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RedirectToGateEvent) ProtoMessage() {}
+
+func (x *RedirectToGateEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RedirectToGateEvent.ProtoReflect.Descriptor instead.
+func (*RedirectToGateEvent) Descriptor() ([]byte, []int) {
+	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RedirectToGateEvent) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *RedirectToGateEvent) GetSessionId() uint64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *RedirectToGateEvent) GetTargetGateIp() string {
+	if x != nil {
+		return x.TargetGateIp
+	}
+	return ""
+}
+
+func (x *RedirectToGateEvent) GetTargetGatePort() uint32 {
+	if x != nil {
+		return x.TargetGatePort
+	}
+	return 0
+}
+
+func (x *RedirectToGateEvent) GetTokenPayload() []byte {
+	if x != nil {
+		return x.TokenPayload
+	}
+	return nil
+}
+
+func (x *RedirectToGateEvent) GetTokenSignature() []byte {
+	if x != nil {
+		return x.TokenSignature
+	}
+	return nil
+}
+
+func (x *RedirectToGateEvent) GetTokenDeadline() int64 {
+	if x != nil {
+		return x.TokenDeadline
+	}
+	return 0
+}
+
 var File_proto_contracts_kafka_gate_event_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
@@ -394,7 +488,16 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
 	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersion\x12\"\n" +
-	"\renter_gs_type\x18\x04 \x01(\rR\venterGsTypeB%Z#scene_manager/proto/contracts/kafkab\x06proto3"
+	"\renter_gs_type\x18\x04 \x01(\rR\venterGsType\"\x96\x02\n" +
+	"\x13RedirectToGateEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\x04R\tsessionId\x12$\n" +
+	"\x0etarget_gate_ip\x18\x03 \x01(\tR\ftargetGateIp\x12(\n" +
+	"\x10target_gate_port\x18\x04 \x01(\rR\x0etargetGatePort\x12#\n" +
+	"\rtoken_payload\x18\x05 \x01(\fR\ftokenPayload\x12'\n" +
+	"\x0ftoken_signature\x18\x06 \x01(\fR\x0etokenSignature\x12%\n" +
+	"\x0etoken_deadline\x18\a \x01(\x03R\rtokenDeadlineB%Z#scene_manager/proto/contracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_gate_event_proto_rawDescOnce sync.Once
@@ -408,13 +511,14 @@ func file_proto_contracts_kafka_gate_event_proto_rawDescGZIP() []byte {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescData
 }
 
-var file_proto_contracts_kafka_gate_event_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_proto_contracts_kafka_gate_event_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_contracts_kafka_gate_event_proto_goTypes = []any{
 	(*RoutePlayerEvent)(nil),        // 0: contracts.kafka.RoutePlayerEvent
 	(*KickPlayerEvent)(nil),         // 1: contracts.kafka.KickPlayerEvent
 	(*PlayerDisconnectedEvent)(nil), // 2: contracts.kafka.PlayerDisconnectedEvent
 	(*PlayerLeaseExpiredEvent)(nil), // 3: contracts.kafka.PlayerLeaseExpiredEvent
 	(*BindSessionEvent)(nil),        // 4: contracts.kafka.BindSessionEvent
+	(*RedirectToGateEvent)(nil),     // 5: contracts.kafka.RedirectToGateEvent
 }
 var file_proto_contracts_kafka_gate_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -435,7 +539,7 @@ func file_proto_contracts_kafka_gate_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_contracts_kafka_gate_event_proto_rawDesc), len(file_proto_contracts_kafka_gate_event_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

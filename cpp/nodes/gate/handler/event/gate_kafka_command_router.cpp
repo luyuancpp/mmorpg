@@ -65,6 +65,13 @@ void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::
         tlsEcs.dispatcher.trigger(event);
         return;
     }
+    case ContractsKafkaRedirectToGateEventEventId: {
+        contracts::kafka::RedirectToGateEvent event;
+        event.set_player_id(command.player_id());
+        event.set_session_id(command.session_id());
+        tlsEcs.dispatcher.trigger(event);
+        return;
+    }
     default:
         LOG_WARN << "GateCommand unknown event_id=" << command.event_id() << ", topic=" << topic;
         return;

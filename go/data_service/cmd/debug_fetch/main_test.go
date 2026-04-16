@@ -1,6 +1,13 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"data_service/cmd/debugutil"
+	database "data_service/proto/common/database"
+
+	"google.golang.org/protobuf/proto"
+)
 
 func TestEnsureReadOnlyQueryAllowsSafeStatements(t *testing.T) {
 	tests := []string{
@@ -50,7 +57,54 @@ func TestRenderValueKind(t *testing.T) {
 
 	binaryValue := []byte{0x08, 0x96, 0x01}
 	decoded = renderValue(binaryValue)
-	if decoded.Kind != "base64" {
-		t.Fatalf("expected base64 kind, got %q", decoded.Kind)
+	if decoded.Kind != "binary" {
+		t.Fatalf("expected binary kind, got %q", decoded.Kind)
+	}
+}
+
+func TestResolveModeNameAliases(t *testing.T) {
+	cases := map[string]string{
+		"zone":      "zone",
+		"server":    "zone",
+		"player-db": "playerdb",
+		"player_db": "playerdb",
+	}
+
+	for input, want := range cases {
+		if got := resolveModeName(input); got != want {
+			t.Fatalf("resolveModeName(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestQuoteIdentifierRejectsUnsafeNames(t *testing.T) {
+	if _, err := debugutil.QuoteIdentifier("player_table"); err != nil {
+		t.Fatalf("expected safe identifier to pass, got %v", err)
+	}
+
+	badNames := []string{"player-table", "player;drop", ""}
+	for _, name := range badNames {
+		if _, err := debugutil.QuoteIdentifier(name); err == nil {
+			t.Fatalf("expected identifier %q to be rejected", name)
+		}
+	}
+}
+
+func TestRenderValueWithHintsDecodesKnownProto(t *testing.T) {
+	msg := &database.PlayerDatabase{PlayerId: 42}
+	raw, err := proto.Marshal(msg)
+	if err != nil {
+		t.Fatalf("marshal proto: %v", err)
+	}
+
+	decoded := renderValueWithHints("player_database_blob", raw, "")
+	if decoded.Kind != "protobuf" {
+		t.Fatalf("expected protobuf kind, got %q", decoded.Kind)
+	}
+	if decoded.ProtoType == "" {
+		t.Fatalf("expected resolved proto type")
+	}
+	if decoded.ProtoJSON == nil {
+		t.Fatalf("expected decoded proto json content")
 	}
 }

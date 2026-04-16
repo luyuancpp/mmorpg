@@ -292,7 +292,9 @@ type EnterSceneRequest struct {
 	ZoneId uint32 `protobuf:"varint,7,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
 	// Scene config ID (map template). Required when scene_id == 0.
 	// Used to resolve the actual scene instance from main_scene_channels.
-	SceneConfId   uint64 `protobuf:"varint,8,opt,name=scene_conf_id,json=sceneConfId,proto3" json:"scene_conf_id,omitempty"`
+	SceneConfId uint64 `protobuf:"varint,8,opt,name=scene_conf_id,json=sceneConfId,proto3" json:"scene_conf_id,omitempty"`
+	// Zone ID of the player's current Gate. Used to detect cross-zone transitions.
+	GateZoneId    uint32 `protobuf:"varint,9,opt,name=gate_zone_id,json=gateZoneId,proto3" json:"gate_zone_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -383,10 +385,20 @@ func (x *EnterSceneRequest) GetSceneConfId() uint64 {
 	return 0
 }
 
+func (x *EnterSceneRequest) GetGateZoneId() uint32 {
+	if x != nil {
+		return x.GateZoneId
+	}
+	return 0
+}
+
 type EnterSceneResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorCode     uint32                 `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	ErrorCode    uint32                 `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	ErrorMessage string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	// Non-empty when cross-zone redirect is needed instead of direct routing.
+	// Client should disconnect from current Gate and reconnect to the target Gate.
+	Redirect      *RedirectToGateInfo `protobuf:"bytes,3,opt,name=redirect,proto3" json:"redirect,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -435,6 +447,90 @@ func (x *EnterSceneResponse) GetErrorMessage() string {
 	return ""
 }
 
+func (x *EnterSceneResponse) GetRedirect() *RedirectToGateInfo {
+	if x != nil {
+		return x.Redirect
+	}
+	return nil
+}
+
+// Redirect info returned when player needs to switch to a different zone's Gate.
+type RedirectToGateInfo struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TargetGateIp   string                 `protobuf:"bytes,1,opt,name=target_gate_ip,json=targetGateIp,proto3" json:"target_gate_ip,omitempty"`
+	TargetGatePort uint32                 `protobuf:"varint,2,opt,name=target_gate_port,json=targetGatePort,proto3" json:"target_gate_port,omitempty"`
+	TokenPayload   []byte                 `protobuf:"bytes,3,opt,name=token_payload,json=tokenPayload,proto3" json:"token_payload,omitempty"`       // serialized GateTokenPayload for target gate
+	TokenSignature []byte                 `protobuf:"bytes,4,opt,name=token_signature,json=tokenSignature,proto3" json:"token_signature,omitempty"` // HMAC-SHA256 signature
+	TokenDeadline  int64                  `protobuf:"varint,5,opt,name=token_deadline,json=tokenDeadline,proto3" json:"token_deadline,omitempty"`   // unix seconds
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RedirectToGateInfo) Reset() {
+	*x = RedirectToGateInfo{}
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RedirectToGateInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RedirectToGateInfo) ProtoMessage() {}
+
+func (x *RedirectToGateInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RedirectToGateInfo.ProtoReflect.Descriptor instead.
+func (*RedirectToGateInfo) Descriptor() ([]byte, []int) {
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RedirectToGateInfo) GetTargetGateIp() string {
+	if x != nil {
+		return x.TargetGateIp
+	}
+	return ""
+}
+
+func (x *RedirectToGateInfo) GetTargetGatePort() uint32 {
+	if x != nil {
+		return x.TargetGatePort
+	}
+	return 0
+}
+
+func (x *RedirectToGateInfo) GetTokenPayload() []byte {
+	if x != nil {
+		return x.TokenPayload
+	}
+	return nil
+}
+
+func (x *RedirectToGateInfo) GetTokenSignature() []byte {
+	if x != nil {
+		return x.TokenSignature
+	}
+	return nil
+}
+
+func (x *RedirectToGateInfo) GetTokenDeadline() int64 {
+	if x != nil {
+		return x.TokenDeadline
+	}
+	return 0
+}
+
 type LeaveSceneRequest struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId  uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -448,7 +544,7 @@ type LeaveSceneRequest struct {
 
 func (x *LeaveSceneRequest) Reset() {
 	*x = LeaveSceneRequest{}
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -460,7 +556,7 @@ func (x *LeaveSceneRequest) String() string {
 func (*LeaveSceneRequest) ProtoMessage() {}
 
 func (x *LeaveSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[5]
+	mi := &file_proto_scene_manager_scene_manager_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -473,7 +569,7 @@ func (x *LeaveSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveSceneRequest.ProtoReflect.Descriptor instead.
 func (*LeaveSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{5}
+	return file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *LeaveSceneRequest) GetPlayerId() uint64 {
@@ -525,7 +621,7 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"I\n" +
 	"\x13DestroySceneRequest\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
-	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\x89\x02\n" +
+	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\xab\x02\n" +
 	"\x11EnterSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12\x1d\n" +
@@ -536,11 +632,20 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +
 	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\x12\x17\n" +
 	"\azone_id\x18\a \x01(\rR\x06zoneId\x12\"\n" +
-	"\rscene_conf_id\x18\b \x01(\x04R\vsceneConfId\"X\n" +
+	"\rscene_conf_id\x18\b \x01(\x04R\vsceneConfId\x12 \n" +
+	"\fgate_zone_id\x18\t \x01(\rR\n" +
+	"gateZoneId\"\x97\x01\n" +
 	"\x12EnterSceneResponse\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x01 \x01(\rR\terrorCode\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"\x83\x01\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12=\n" +
+	"\bredirect\x18\x03 \x01(\v2!.scene_manager.RedirectToGateInfoR\bredirect\"\xd9\x01\n" +
+	"\x12RedirectToGateInfo\x12$\n" +
+	"\x0etarget_gate_ip\x18\x01 \x01(\tR\ftargetGateIp\x12(\n" +
+	"\x10target_gate_port\x18\x02 \x01(\rR\x0etargetGatePort\x12#\n" +
+	"\rtoken_payload\x18\x03 \x01(\fR\ftokenPayload\x12'\n" +
+	"\x0ftoken_signature\x18\x04 \x01(\fR\x0etokenSignature\x12%\n" +
+	"\x0etoken_deadline\x18\x05 \x01(\x03R\rtokenDeadline\"\x83\x01\n" +
 	"\x11LeaveSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12\x1d\n" +
@@ -572,7 +677,7 @@ func file_proto_scene_manager_scene_manager_service_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_scene_manager_scene_manager_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_scene_manager_scene_manager_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_scene_manager_scene_manager_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_scene_manager_scene_manager_service_proto_goTypes = []any{
 	(SceneType)(0),              // 0: scene_manager.SceneType
 	(*CreateSceneRequest)(nil),  // 1: scene_manager.CreateSceneRequest
@@ -580,24 +685,26 @@ var file_proto_scene_manager_scene_manager_service_proto_goTypes = []any{
 	(*DestroySceneRequest)(nil), // 3: scene_manager.DestroySceneRequest
 	(*EnterSceneRequest)(nil),   // 4: scene_manager.EnterSceneRequest
 	(*EnterSceneResponse)(nil),  // 5: scene_manager.EnterSceneResponse
-	(*LeaveSceneRequest)(nil),   // 6: scene_manager.LeaveSceneRequest
-	(*base.Empty)(nil),          // 7: Empty
+	(*RedirectToGateInfo)(nil),  // 6: scene_manager.RedirectToGateInfo
+	(*LeaveSceneRequest)(nil),   // 7: scene_manager.LeaveSceneRequest
+	(*base.Empty)(nil),          // 8: Empty
 }
 var file_proto_scene_manager_scene_manager_service_proto_depIdxs = []int32{
 	0, // 0: scene_manager.CreateSceneRequest.scene_type:type_name -> scene_manager.SceneType
-	1, // 1: scene_manager.SceneManager.CreateScene:input_type -> scene_manager.CreateSceneRequest
-	3, // 2: scene_manager.SceneManager.DestroyScene:input_type -> scene_manager.DestroySceneRequest
-	4, // 3: scene_manager.SceneManager.EnterScene:input_type -> scene_manager.EnterSceneRequest
-	6, // 4: scene_manager.SceneManager.LeaveScene:input_type -> scene_manager.LeaveSceneRequest
-	2, // 5: scene_manager.SceneManager.CreateScene:output_type -> scene_manager.CreateSceneResponse
-	7, // 6: scene_manager.SceneManager.DestroyScene:output_type -> Empty
-	5, // 7: scene_manager.SceneManager.EnterScene:output_type -> scene_manager.EnterSceneResponse
-	7, // 8: scene_manager.SceneManager.LeaveScene:output_type -> Empty
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	6, // 1: scene_manager.EnterSceneResponse.redirect:type_name -> scene_manager.RedirectToGateInfo
+	1, // 2: scene_manager.SceneManager.CreateScene:input_type -> scene_manager.CreateSceneRequest
+	3, // 3: scene_manager.SceneManager.DestroyScene:input_type -> scene_manager.DestroySceneRequest
+	4, // 4: scene_manager.SceneManager.EnterScene:input_type -> scene_manager.EnterSceneRequest
+	7, // 5: scene_manager.SceneManager.LeaveScene:input_type -> scene_manager.LeaveSceneRequest
+	2, // 6: scene_manager.SceneManager.CreateScene:output_type -> scene_manager.CreateSceneResponse
+	8, // 7: scene_manager.SceneManager.DestroyScene:output_type -> Empty
+	5, // 8: scene_manager.SceneManager.EnterScene:output_type -> scene_manager.EnterSceneResponse
+	8, // 9: scene_manager.SceneManager.LeaveScene:output_type -> Empty
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_manager_scene_manager_service_proto_init() }
@@ -611,7 +718,7 @@ func file_proto_scene_manager_scene_manager_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_manager_scene_manager_service_proto_rawDesc), len(file_proto_scene_manager_scene_manager_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

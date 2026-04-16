@@ -122,3 +122,4 @@
 121=SceneDestroyScene
 122=SceneNodeGrpcCreateScene
 123=SceneNodeGrpcDestroyScene
+124=SceneClientPlayerCommonRedirectToGate
