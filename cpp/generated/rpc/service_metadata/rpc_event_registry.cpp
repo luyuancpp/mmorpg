@@ -146,7 +146,7 @@ namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::
 namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 122> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 124> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {

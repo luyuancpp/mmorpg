@@ -1,4 +1,4 @@
-# Gate-Scene Relay Architecture (Gate-Scene 连接爆炸与 Relay 架构)
+# Gate-Scene Connection Explosion & Solution
 
 ## Problem
 
@@ -25,9 +25,77 @@
 - More cross-zone interaction = larger connection fan-out per Gate
 - Worst case: every Gate connects to every Scene = N x M
 
-## Solution: Relay Node
+## Recommended Solution: Gate Per Zone + Client Gate-Switching
 
-### Architecture
+### Core Idea
+
+Gates are grouped by zone. Each Gate only connects to Scenes in its own zone. When a player crosses zones, the **client switches to a Gate in the target zone**.
+
+```
+Zone A:  Gate-A1, Gate-A2  <-->  Scene-A1 ~ Scene-A20   (40 x 20 = 800 connections)
+Zone B:  Gate-B1, Gate-B2  <-->  Scene-B1 ~ Scene-B20   (40 x 20 = 800 connections)
+
+Gate-to-Scene connections are ALWAYS local to the zone. Connection explosion eliminated.
+```
+
+### Why This Works
+
+The existing codebase **already supports Gate switching** (Different-Gate Reconnect, Scenario B):
+
+```
+1. Client -> Gate B (TCP) -> Login (gRPC EnterGame)
+2. player_locator: update gate_id = B, session_version++
+3. Kafka -> gate-{B}: BindSession
+4. SceneManager.EnterScene -> Kafka -> gate-{B}: RoutePlayer
+5. Gate B -> Scene (gRPC, in-zone direct connect)
+```
+
+### Cross-Zone Flow
+
+```
+Player is in Zone A, wants to enter a scene in Zone B:
+
+1. Client -> Gate-A -> SceneManager: EnterScene(scene_in_zone_b)
+
+2. SceneManager detects target Scene is in Zone B, current Gate is in Zone A
+   -> Does NOT directly RoutePlayer
+   -> Triggers gate redirect flow
+
+3. Login/SceneManager assigns a Zone B Gate:
+   AssignGate(zone_id = B) -> {gate_b_ip, gate_b_port, token}
+
+4. Gate-A sends RedirectToGate {ip, port, token} to client
+   (Client sees: server transfer / loading screen)
+
+5. Client disconnects Gate-A, connects Gate-B, verifies token
+
+6. Standard Scenario B reconnect flow:
+   Login.EnterGame -> player_locator update -> BindSession -> RoutePlayer
+   Gate-B direct-connects Zone B Scene -> player enters scene
+```
+
+### What Needs to Change
+
+1. **Proto**: Add `RedirectToGate` message (Gate -> Client)
+2. **SceneManager**: When cross-zone, trigger Gate redirect instead of direct RoutePlayer
+3. **Client**: Handle `RedirectToGate` -> disconnect -> connect new Gate -> normal login
+4. **Gate etcd registration**: Include zone_id label (for zone-filtered discovery)
+
+### What Does NOT Change
+
+- Gate -> Scene connection logic (still in-zone lazy gRPC direct connect)
+- Kafka control plane
+- No new node types needed
+- Token verification flow (reuse existing HMAC-SHA256 mechanism)
+
+### Player Experience
+
+- Cross-zone: 1~2s loading screen (same as WoW cross-realm instances, FF14 World Visit)
+- In-zone: zero impact, no additional latency
+
+## Alternative: Relay Node (Not Adopted)
+
+An intermediate stateless forwarding layer between Gate and Scene.
 
 ```
                     +----------+
@@ -36,47 +104,29 @@
                     |  (~50)   |
                     +----------+
 
-Connections: 40,000 x 3 (redundancy) + 50 x 2,000 = 220K  vs  80M
+Connections: 40,000 x 3 + 50 x 2,000 = 220K
 ```
 
-### Relay Node Properties
-- **Stateless**: pure message forwarding, holds no player data
-- **Horizontally scalable**: assign by region/hash, add/remove dynamically
-- **Latency impact**: +0.1~0.5ms within same datacenter, acceptable for MMO
-- **Connection management**: each Relay maintains long-lived connections to all Scenes; Gates connect to only a few Relays
+- **Pros**: Client doesn't notice cross-zone transitions
+- **Cons**: Higher architecture complexity, persistent forwarding overhead, new node type required
+- **Not adopted because**: Gate-switching is simpler, reuses existing infrastructure, zero runtime overhead
 
-## Recommended: Hybrid Architecture
+## Comparison
 
-```
-In-zone:   Gate --gRPC direct--> Scene         (connections under control, lowest latency)
-Cross-zone: Gate --gRPC--> Relay --gRPC--> Scene  (connections: N x K + K x M)
-Control:   All via Kafka                        (already implemented)
-```
-
-### Routing Decision
-
-Gate determines local vs cross-zone by Scene ID:
-- **Local Scene** -> reuse existing lazy gRPC direct connection
-- **Cross-zone Scene** -> route through Relay
-
-Most gameplay (in-zone) has zero additional latency; only cross-zone interaction adds one hop.
-
-## Alternative Comparison
-
-| Approach | Latency | Connections | Complexity | Use Case |
-|----------|---------|-------------|-----------|----------|
-| **Relay Node** | +0.1~0.5ms | N x K + K x M | Medium | General recommendation |
-| **Local direct + cross-zone Relay** | local 0 / cross +0.5ms | Greatly reduced | Medium | **Recommended** |
-| **Kafka data plane** | +2~10ms | 0 direct | Low | Non-realtime messages only |
-| **Aggressive connection reclaim** | 0 | Peak still high | Low | Cross-zone rare |
+| Approach | Latency | Connections | Complexity | Player Experience |
+|----------|---------|-------------|-----------|-------------------|
+| **Client Gate-Switch (recommended)** | Cross-zone: one-time 1~2s | Per-zone ~thousands | Low | Loading screen on cross-zone |
+| Relay Node | Per-message +0.1~0.5ms | ~220K | Medium | Seamless |
+| Kafka data plane | +2~10ms | 0 | Low | Non-realtime only |
 
 ## Integration with Existing Architecture
 
 ### Compatibility
 - Consistent with **cross-server architecture principle**: Scene doesn't care about player origin
-- Complementary to **gate-kafka-consumer**: control plane via Kafka, data plane via Relay
-- Relay can reuse existing `grpc_channel_cache.h` connection pooling pattern
-- Gate routing decision point: `Scene ID -> zone_id -> local/cross-zone -> direct/relay`
+- Reuses **existing Gate-switch flow** (Scenario B: Different-Gate Reconnect)
+- Reuses **existing AssignGate with zone_id** parameter (`getgatelistlogic.go`)
+- Reuses **existing token mechanism** (HMAC-SHA256 sign/verify)
+- Control plane stays on Kafka, unchanged
 
 ### Data Flow
 
@@ -88,40 +138,45 @@ Player -> Gate -> Scene (gRPC direct)
                    v
                  Redis (home realm)
 
-[Cross-Zone]
-Player -> Gate -> Relay -> Scene (gRPC)
-                            |
-                            | gRPC (Data Service)
-                            v
-                          Redis (home realm)
+[Cross-Zone Transition]
+Player -> Gate-A -> SceneManager: "target is Zone B"
+                         |
+                         v
+                    AssignGate(zone_id=B) -> token
+                         |
+                         v
+Gate-A -> Client: RedirectToGate {ip, port, token}
+Client disconnects Gate-A
+Client connects Gate-B -> token verify -> EnterGame -> BindSession -> RoutePlayer
+Gate-B -> Scene-B (gRPC direct, in-zone)
 
 [Control Plane]
 SceneManager/Login -> Kafka topic gate-{id} -> Gate
 ```
 
-### Connection Count Example
+### Connection Count
 
-| Scale | Direct Mesh | Hybrid with 50 Relays |
-|-------|------------|----------------------|
-| 100 Gate x 50 Scene | 5,000 | 300 + 2,500 = 2,800 |
-| 1,000 Gate x 200 Scene | 200,000 | 3,000 + 10,000 = 13,000 |
-| 40,000 Gate x 2,000 Scene | 80,000,000 | 120,000 + 100,000 = 220,000 |
+| Scale | Direct Mesh (no zoning) | Gate-Per-Zone (recommended) |
+|-------|------------------------|----------------------------|
+| 100 Gate x 50 Scene (1 zone) | 5,000 | 5,000 (same, single zone) |
+| 1,000 Gate x 200 Scene (10 zones) | 200,000 | 100 x 20 x 10 = 20,000 |
+| 40,000 Gate x 2,000 Scene (100 zones) | 80,000,000 | 400 x 20 x 100 = 800,000 |
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
+| `go/login/internal/logic/pregate/getgatelistlogic.go` | AssignGate (already supports zone_id) |
+| `cpp/nodes/gate/handler/rpc/client_message_processor.cpp` | Gate token verify + message routing |
 | `cpp/libs/engine/core/node/system/grpc_channel_cache.h` | Existing channel pooling |
-| `cpp/libs/engine/core/node/system/node/node_connector.cpp` | Node discovery and connection |
 | `cpp/nodes/gate/main.cpp` | Gate startup (Kafka consumer + gRPC direct) |
-| `cpp/nodes/scene/main.cpp` | Scene startup (gRPC server + Kafka consumer) |
+| `go/scene_manager/` | SceneManager (add cross-zone redirect logic) |
 
 ## TODO (Implementation)
 
-- [ ] Define Relay Node service in proto (pure forwarding service)
-- [ ] Implement Relay Node (Go or C++, stateless forwarder)
-- [ ] Gate: add routing logic -- local Scene direct, cross-zone via Relay
-- [ ] Gate: add Relay discovery via etcd (same pattern as Scene discovery)
-- [ ] Relay: connection management to all Scene nodes
-- [ ] Load test: verify connection count reduction at scale
-- [ ] Relay health check and failover strategy
+- [ ] Proto: define `RedirectToGate` message (Gate -> Client)
+- [ ] SceneManager: detect cross-zone and trigger gate redirect flow
+- [ ] Gate: send `RedirectToGate` to client when instructed
+- [ ] Client: handle `RedirectToGate` (disconnect + reconnect + re-login)
+- [ ] Gate etcd registration: ensure zone_id label is present
+- [ ] Integration test: cross-zone scene entry via gate switch

@@ -86,3 +86,22 @@ func IsSceneNodeReceivedProtocolResponseHandler(methodList *internal.RPCMethods)
 		},
 	)
 }
+
+// IsSceneNodeGrpcHandler checks if the handler is a gRPC service targeting the Scene node.
+// Matches proto files that:
+//   - use gRPC (not cc_generic_services)
+//   - belong to scene_manager domain (which has rpc.type: grpc)
+//   - contain "scene_node" in the proto file name (convention for scene-targeted gRPC services)
+func IsSceneNodeGrpcHandler(methods *internal.RPCMethods) bool {
+	return checkFirstMethod(methods,
+		func(m *internal.MethodInfo) bool {
+			return !m.CcGenericServices()
+		},
+		func(m *internal.MethodInfo) bool {
+			return utils.HasGrpcService(m.Path())
+		},
+		func(m *internal.MethodInfo) bool {
+			return strings.Contains(strings.ToLower(m.FileBaseNameNoEx()), "scene_node")
+		},
+	)
+}
