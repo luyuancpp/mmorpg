@@ -2,15 +2,12 @@
 
 #include <cstdio>
 #include <cstring>
-#include <string>
 
 #include "log/macros/game_log.h"
 
 #include "log/constants/log_color_constants.h"
 
 // https://www.cnblogs.com/xutopia/p/15820428.html
-
-thread_local std::string console_msg;
 
 void LogToConsole(const char *msg, int len)
 {
@@ -20,25 +17,45 @@ void LogToConsole(const char *msg, int len)
         return;
     }
 
-    const char *levelStart = msg + kLoginInfoInex;
     const char *color = log_color::kLightRed;
 
-    if (std::strncmp(levelStart, "TRACE", 5) == 0)
+    switch (msg[kLoginInfoInex])
+    {
+    case 'T':
         color = log_color::kLightGray;
-    else if (std::strncmp(levelStart, "DEBUG", 5) == 0)
+        break; // TRACE
+    case 'D':
         color = log_color::kWhite;
-    else if (std::strncmp(levelStart, "INFO", 4) == 0)
+        break; // DEBUG
+    case 'I':
         color = log_color::kGreen;
-    else if (std::strncmp(levelStart, "WARN", 4) == 0)
+        break; // INFO
+    case 'W':
         color = log_color::kYellow;
-    else if (std::strncmp(levelStart, "ERROR", 5) == 0)
+        break; // WARN
+    case 'E':
         color = log_color::kRed;
-    else if (std::strncmp(levelStart, "FATAL", 5) == 0)
-        color = log_color::kLightRed;
+        break; // ERROR
+    case 'F':
+        break; // FATAL (already kLightRed)
+    default:
+        break;
+    }
 
-    console_msg.clear();
-    console_msg.append(color);
-    console_msg.append(msg, len);
-    console_msg.append(log_color::kNone);
-    fwrite(console_msg.data(), 1, console_msg.length(), stdout);
+    const auto colorLen = std::strlen(color);
+    constexpr auto resetLen = sizeof("\033[m") - 1;
+
+#ifdef _WIN32
+    _lock_file(stdout);
+    _fwrite_nolock(color, 1, colorLen, stdout);
+    _fwrite_nolock(msg, 1, len, stdout);
+    _fwrite_nolock(log_color::kNone, 1, resetLen, stdout);
+    _unlock_file(stdout);
+#else
+    flockfile(stdout);
+    fwrite_unlocked(color, 1, colorLen, stdout);
+    fwrite_unlocked(msg, 1, len, stdout);
+    fwrite_unlocked(log_color::kNone, 1, resetLen, stdout);
+    funlockfile(stdout);
+#endif
 }
