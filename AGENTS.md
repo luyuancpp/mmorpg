@@ -113,6 +113,12 @@ The following were removed from git tracking:
 - Toggle Go: env `GRPC_TRAFFIC_STATS_ENABLED=1`, optional `GRPC_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `GRPC_TRAFFIC_STATS_INTERVAL_SECONDS`.
 - Safe for temporary production use: atomic-only counters, periodic summary logging (not per-message).
 
+### gRPC server thread pool (C++ nodes)
+- C++ nodes embed a gRPC sync server for control-plane RPCs (CreateScene, DestroyScene, etc.).
+- All RPC handlers dispatch to the muduo EventLoop via `runInLoop` + `promise/future`; business logic stays single-threaded.
+- Toggle: env `GRPC_SERVER_MAX_POLLERS` (default `2`). Controls the max gRPC server poller threads. 1-2 is enough for control-plane operations.
+- Multiple gRPC services (scene, mail, guild, etc.) share the same port and thread pool.
+
 ### Proto source conventions
 - All source `.proto` files in `proto/` should include `option go_package = "{service}/proto/{subdir}";` for documentation clarity.
 - Proto-gen tool rewrites `go_package` in generated copies under `generated/proto/`; source values serve as documentation.
