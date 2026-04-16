@@ -20,6 +20,7 @@ type HandlerConfig struct {
 	HeaderExt           string
 	CppExt              string
 	IsRepliedHandler    bool
+	IsGrpcHandler       bool
 }
 
 func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg HandlerConfig) {
@@ -28,7 +29,8 @@ func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cf
 	}
 
 	first := methodList[0]
-	if !first.CcGenericServices() {
+	// Legacy handlers require cc_generic_services; gRPC handlers do not.
+	if !cfg.IsGrpcHandler && !first.CcGenericServices() {
 		return
 	}
 	fileName := first.FileBaseNameNoEx() + cfg.HeaderExt
@@ -51,7 +53,8 @@ func writeHandlerCppFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg
 	}
 
 	first := methodList[0]
-	if !first.CcGenericServices() {
+	// Legacy handlers require cc_generic_services; gRPC handlers do not.
+	if !cfg.IsGrpcHandler && !first.CcGenericServices() {
 		return
 	}
 	fileName := strings.ToLower(first.FileBaseNameNoEx()) + cfg.CppExt

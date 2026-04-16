@@ -120,3 +120,5 @@
 119=FriendServiceNotifyOnline
 120=FriendServiceNotifyOffline
 121=SceneDestroyScene
+122=SceneNodeGrpcCreateScene
+123=SceneNodeGrpcDestroyScene

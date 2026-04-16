@@ -128,6 +128,8 @@ type FileExtensions struct {
 	GrpcClient      string `yaml:"grpc_client"`
 	GrpcClientH     string `yaml:"grpc_client_h"`
 	GrpcClientCpp   string `yaml:"grpc_client_cpp"`
+	GrpcHandlerH    string `yaml:"grpc_handler_h"`
+	GrpcHandlerCpp  string `yaml:"grpc_handler_cpp"`
 	LoaderCpp       string `yaml:"loader_cpp"`
 
 	// extensions from original config
@@ -224,6 +226,7 @@ type MethodHandlerDirs struct {
 	SceneNodePlayer        string `yaml:"scene_node_player"`
 	SceneNodeReplied       string `yaml:"scene_node_replied"`
 	SceneNodePlayerReplied string `yaml:"scene_node_player_replied"`
+	SceneNodeGrpc          string `yaml:"scene_node_grpc"`
 	GateNode               string `yaml:"gate_node"`
 	GateNodeReplied        string `yaml:"gate_node_replied"`
 	GateNodePlayer         string `yaml:"gate_node_player"`

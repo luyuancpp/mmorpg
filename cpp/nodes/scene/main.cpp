@@ -3,7 +3,7 @@
 
 #include "node/system/node/node_entry.h"
 #include "handler/rpc/scene_handler.h"
-#include "handler/grpc/scene_grpc_service.h"
+#include "handler/grpc/scene_node_service.h"
 #include "core/config/config.h"
 #include "world/world.h"
 #include "core/system/redis.h"
@@ -13,26 +13,33 @@
 using namespace muduo;
 using namespace muduo::net;
 
-namespace {
+namespace
+{
 
-struct SceneRuntimeContext {
-    TimerTaskComp worldTimer;
-    DependencyGate dependencyGate;
-    SceneGrpcServiceImpl grpcService;
+    struct SceneRuntimeContext
+    {
+        TimerTaskComp worldTimer;
+        DependencyGate dependencyGate;
+        SceneNodeGrpcImpl grpcService;
 
-    explicit SceneRuntimeContext(EventLoop *loop) : grpcService(loop) {}
-};
+        explicit SceneRuntimeContext(EventLoop *loop) : grpcService(loop) {}
+    };
 
-struct SceneNodeHooks {
-    struct TableLoadHandler { static void OnLoaded() { ConfigSystem::OnConfigLoadSuccessful(); } };
-    using KafkaCommandType = contracts::kafka::SceneCommand;
-};
+    struct SceneNodeHooks
+    {
+        struct TableLoadHandler
+        {
+            static void OnLoaded() { ConfigSystem::OnConfigLoadSuccessful(); }
+        };
+        using KafkaCommandType = contracts::kafka::SceneCommand;
+    };
 
 } // namespace
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-    return node::entry::RunNodeMain([](EventLoop& loop) {
+    return node::entry::RunNodeMain([](EventLoop &loop)
+                                    {
         node::entry::detail::ApplyPreConstructionHooks<SceneNodeHooks>();
 
         auto context = std::make_unique<SceneRuntimeContext>(&loop);
@@ -56,6 +63,5 @@ int main(int argc, char* argv[])
                 }, "Scene");
         });
 
-        loop.loop();
-    });
+        loop.loop(); });
 }

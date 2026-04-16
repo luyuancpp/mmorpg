@@ -106,6 +106,8 @@ file_extensions:
   grpc_client: "_grpc_client"
   grpc_client_h: "_grpc_client.h"
   grpc_client_cpp: "_grpc_client.cpp"
+  grpc_handler_h: ".h"
+  grpc_handler_cpp: ".cpp"
   loader_cpp: "_loader.cpp"
 
   # Original config extensions
@@ -189,6 +191,7 @@ path_lists:
     scene_node_player: "{{scene_node_dir}}handler/rpc/player/"
     scene_node_replied: "{{scene_node_dir}}rpc_replies/"
     scene_node_player_replied: "{{scene_node_dir}}rpc_replies/player/"
+    scene_node_grpc: "{{scene_node_dir}}handler/grpc/"
     gate_node: "{{gate_node_dir}}handler/rpc/"
     gate_node_replied: "{{gate_node_dir}}rpc_replies/"
     gate_node_player: "{{gate_node_dir}}handler/rpc/player/"

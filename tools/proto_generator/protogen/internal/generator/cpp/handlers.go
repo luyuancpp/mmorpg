@@ -68,6 +68,17 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
 			IsRepliedHandler:    true,
 		},
+		{
+			IsValidFunc:         IsSceneNodeGrpcHandler,
+			GenerateDataFunc:    internal.GetGrpcServiceHandlerHeadStr,
+			GenerateCppDataFunc: internal.GetGrpcServiceHandlerCppStr,
+			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.SceneNodeGrpc,
+			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.SceneNodeGrpc,
+			HeaderExt:           _config.Global.FileExtensions.GrpcHandlerH,
+			CppExt:              _config.Global.FileExtensions.GrpcHandlerCpp,
+			IsRepliedHandler:    false,
+			IsGrpcHandler:       true,
+		},
 	}
 
 	for _, cfg := range handlerConfigs {
