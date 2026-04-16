@@ -56,10 +56,10 @@ public:
     }
 
     // Non-blocking. Returns false immediately when no item is available.
-    // Single-consumer only.
+    // Single-consumer only.  Zero atomic ops in the steady-state hot path.
     bool take(T& out)
     {
-        if (readPos_ >= buffers_[readIndex_].size())
+        if (readPos_ >= readEnd_)
         {
             if (!swapReadBuffer())
             {
@@ -69,7 +69,6 @@ public:
 
         out = std::move(buffers_[readIndex_][readPos_]);
         ++readPos_;
-        pendingSize_.fetch_sub(1, std::memory_order_relaxed);
         return true;
     }
 
@@ -88,6 +87,7 @@ private:
     {
         buffers_[readIndex_].clear();
         readPos_ = 0;
+        readEnd_ = 0;
 
         muduo::MutexLockGuard lock(mutex_);
         if (buffers_[writeIndex_].empty())
@@ -96,6 +96,8 @@ private:
         }
 
         std::swap(readIndex_, writeIndex_);
+        readEnd_ = buffers_[readIndex_].size();
+        pendingSize_.fetch_sub(readEnd_, std::memory_order_relaxed);
         return true;
     }
 
@@ -107,6 +109,7 @@ private:
     // Consumer-thread only.
     int readIndex_ = 1;
     size_t readPos_ = 0;
+    size_t readEnd_ = 0;
 
     std::atomic<size_t> pendingSize_{0};
 };
