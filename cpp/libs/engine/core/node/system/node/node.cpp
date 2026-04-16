@@ -325,9 +325,19 @@ void Node::StartGrpcServer()
 
 	// Limit gRPC sync server thread pool: control-plane RPCs (CreateScene, DestroyScene)
 	// are low-frequency and dispatched to the muduo loop anyway, so 1-2 pollers suffice.
+	int maxPollers = 2;
+	if (const char *env = GetNonEmptyEnv("GRPC_SERVER_MAX_POLLERS"))
+	{
+		const int parsed = std::atoi(env);
+		if (parsed >= 1)
+		{
+			maxPollers = parsed;
+		}
+	}
 	builder.SetSyncServerOption(grpc::ServerBuilder::NUM_CQS, 1);
 	builder.SetSyncServerOption(grpc::ServerBuilder::MIN_POLLERS, 1);
-	builder.SetSyncServerOption(grpc::ServerBuilder::MAX_POLLERS, 2);
+	builder.SetSyncServerOption(grpc::ServerBuilder::MAX_POLLERS, maxPollers);
+	LOG_INFO << "gRPC server config: max_pollers=" << maxPollers;
 
 	for (auto *svc : grpcServices_)
 	{

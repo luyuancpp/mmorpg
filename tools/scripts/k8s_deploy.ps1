@@ -25,6 +25,7 @@ param(
 	[int]$GateReplicas = 2,
 	[int]$SceneReplicas = 4,
 	[int]$GrpcThreadPoolReserveThreads = 1,
+	[int]$GrpcServerMaxPollers = 2,
 	[ValidateSet("ClusterIP", "NodePort", "LoadBalancer")]
 	[string]$GateServiceType = "NodePort",
 	[int]$GateServicePort = 18000,
@@ -273,9 +274,15 @@ function New-NodeDeploymentYaml {
 
 	$grpcEnvBlock = ""
 	if ($NodeName -eq "gate" -and $GrpcThreadPoolReserveThreads -gt 0) {
-		$grpcEnvBlock = @"
+		$grpcEnvBlock += @"
 			- name: GRPC_THREAD_POOL_RESERVE_THREADS
 			  value: "$GrpcThreadPoolReserveThreads"
+"@
+	}
+	if ($GrpcServerMaxPollers -gt 0) {
+		$grpcEnvBlock += @"
+			- name: GRPC_SERVER_MAX_POLLERS
+			  value: "$GrpcServerMaxPollers"
 "@
 	}
 

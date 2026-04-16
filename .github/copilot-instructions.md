@@ -42,6 +42,12 @@
 - **Toggle Go**: env `GRPC_TRAFFIC_STATS_ENABLED=1`, optional `GRPC_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `GRPC_TRAFFIC_STATS_INTERVAL_SECONDS` (default 30s).
 - **Production safe**: atomic-only counters, periodic summary (not per-message), auto-disable timeout.
 
+## gRPC Server Thread Pool (C++ Nodes)
+- C++ nodes embed a gRPC sync server for control-plane RPCs (CreateScene, DestroyScene, etc.).
+- All RPC handlers dispatch to the muduo EventLoop via `runInLoop` + `promise/future`; business logic stays single-threaded.
+- **Toggle**: env `GRPC_SERVER_MAX_POLLERS` (default `2`). Controls the max gRPC server poller threads. 1-2 is enough for control-plane operations.
+- Multiple gRPC services (scene, mail, guild, etc.) share the same port and thread pool.
+
 ## Recent Architectural Decisions (2025-03-09)
 
 ### Scene Manager & Gate Communication
