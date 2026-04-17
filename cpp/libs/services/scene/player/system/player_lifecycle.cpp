@@ -108,8 +108,18 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 	//    SendMessageToClientViaGate can find the gate node.
 	if (enterInfo.session_id() != 0)
 	{
-		SessionMap().emplace(enterInfo.session_id(), playerId);
+		// Clean up old session mapping if player already had a different session
+		// (e.g. reconnect with new Gate connection). Prevents orphaned entries.
 		auto &snapshot = tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(player);
+		const auto oldSessionId = snapshot.gate_session_id();
+		if (oldSessionId != 0 && oldSessionId != enterInfo.session_id())
+		{
+			SessionMap().erase(oldSessionId);
+			LOG_INFO << "EnterScene: cleaned up old session " << oldSessionId
+			         << " for player " << playerId;
+		}
+
+		SessionMap().emplace(enterInfo.session_id(), playerId);
 		snapshot.set_gate_session_id(enterInfo.session_id());
 	}
 
