@@ -137,9 +137,10 @@ void NodeConnector::ConnectAllNodes()
 {
 	auto &serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 
+	const auto &whitelist = gNode->GetTargetNodeTypeWhitelist();
 	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
 	{
-		if (!gNode->GetTargetNodeTypeWhitelist().contains(nodeType))
+		if (!whitelist.empty() && !whitelist.contains(nodeType))
 			continue;
 
 		for (const auto &serviceNode : serviceNodesByType[nodeType].node_list())

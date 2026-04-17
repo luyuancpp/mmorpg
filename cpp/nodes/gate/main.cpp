@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 {
     return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext, GateNodeHooks>(
         GateNodeService,
-        Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService, FriendNodeService, GuildNodeService},
+        Node::CanConnectNodeTypeList{},  // empty = connect to all discovered node types
         [](Node &node, GateRuntimeContext &context)
         {
             // Override the default Kafka dispatch with GateCommand-specific routing
