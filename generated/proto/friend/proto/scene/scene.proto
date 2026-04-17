@@ -57,6 +57,9 @@ message CreateSceneRequest
 {
   uint32 config_id = 1;
   uint64 scene_id = 2;  // Go-allocated scene ID; C++ dedup by this when > 0.
+  uint32 mirror_config_id = 3;  // Mirror config ID (0 = not a mirror instance)
+  uint32 dungeon_config_id = 4; // Dungeon config ID (0 = not a dungeon instance)
+  repeated uint64 creator_ids = 5; // Creator player IDs (for instance access control)
 }
 
 message CreateSceneResponse

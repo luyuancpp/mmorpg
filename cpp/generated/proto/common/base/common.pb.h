@@ -690,10 +690,10 @@ class SceneInfoComp final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kCreatorsFieldNumber = 5,
-    kSceneConfidFieldNumber = 1,
+    kSceneConfigIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
-    kMirrorConfidFieldNumber = 3,
-    kDungenConfidFieldNumber = 4,
+    kMirrorConfigIdFieldNumber = 3,
+    kDungeonConfigIdFieldNumber = 4,
   };
   // map<uint64, bool> creators = 5;
   int creators_size() const;
@@ -710,14 +710,14 @@ class SceneInfoComp final : public ::google::protobuf::Message
   ::google::protobuf::Map<::uint64_t, bool>* PROTOBUF_NONNULL _internal_mutable_creators();
 
   public:
-  // uint32 scene_confid = 1;
-  void clear_scene_confid() ;
-  ::uint32_t scene_confid() const;
-  void set_scene_confid(::uint32_t value);
+  // uint32 scene_config_id = 1;
+  void clear_scene_config_id() ;
+  ::uint32_t scene_config_id() const;
+  void set_scene_config_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_scene_confid() const;
-  void _internal_set_scene_confid(::uint32_t value);
+  ::uint32_t _internal_scene_config_id() const;
+  void _internal_set_scene_config_id(::uint32_t value);
 
   public:
   // uint32 scene_id = 2;
@@ -730,24 +730,24 @@ class SceneInfoComp final : public ::google::protobuf::Message
   void _internal_set_scene_id(::uint32_t value);
 
   public:
-  // uint32 mirror_confid = 3;
-  void clear_mirror_confid() ;
-  ::uint32_t mirror_confid() const;
-  void set_mirror_confid(::uint32_t value);
+  // uint32 mirror_config_id = 3;
+  void clear_mirror_config_id() ;
+  ::uint32_t mirror_config_id() const;
+  void set_mirror_config_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_mirror_confid() const;
-  void _internal_set_mirror_confid(::uint32_t value);
+  ::uint32_t _internal_mirror_config_id() const;
+  void _internal_set_mirror_config_id(::uint32_t value);
 
   public:
-  // uint32 dungen_confid = 4;
-  void clear_dungen_confid() ;
-  ::uint32_t dungen_confid() const;
-  void set_dungen_confid(::uint32_t value);
+  // uint32 dungeon_config_id = 4;
+  void clear_dungeon_config_id() ;
+  ::uint32_t dungeon_config_id() const;
+  void set_dungeon_config_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_dungen_confid() const;
-  void _internal_set_dungen_confid(::uint32_t value);
+  ::uint32_t _internal_dungeon_config_id() const;
+  void _internal_set_dungeon_config_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:SceneInfoComp)
@@ -780,10 +780,10 @@ class SceneInfoComp final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         creators_;
-    ::uint32_t scene_confid_;
+    ::uint32_t scene_config_id_;
     ::uint32_t scene_id_;
-    ::uint32_t mirror_confid_;
-    ::uint32_t dungen_confid_;
+    ::uint32_t mirror_config_id_;
+    ::uint32_t dungeon_config_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1994,28 +1994,28 @@ inline void NetworkAddress::_internal_set_port(::uint32_t value) {
 
 // SceneInfoComp
 
-// uint32 scene_confid = 1;
-inline void SceneInfoComp::clear_scene_confid() {
+// uint32 scene_config_id = 1;
+inline void SceneInfoComp::clear_scene_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_confid_ = 0u;
+  _impl_.scene_config_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint32_t SceneInfoComp::scene_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoComp.scene_confid)
-  return _internal_scene_confid();
+inline ::uint32_t SceneInfoComp::scene_config_id() const {
+  // @@protoc_insertion_point(field_get:SceneInfoComp.scene_config_id)
+  return _internal_scene_config_id();
 }
-inline void SceneInfoComp::set_scene_confid(::uint32_t value) {
-  _internal_set_scene_confid(value);
+inline void SceneInfoComp::set_scene_config_id(::uint32_t value) {
+  _internal_set_scene_config_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:SceneInfoComp.scene_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoComp.scene_config_id)
 }
-inline ::uint32_t SceneInfoComp::_internal_scene_confid() const {
+inline ::uint32_t SceneInfoComp::_internal_scene_config_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.scene_confid_;
+  return _impl_.scene_config_id_;
 }
-inline void SceneInfoComp::_internal_set_scene_confid(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_scene_config_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_confid_ = value;
+  _impl_.scene_config_id_ = value;
 }
 
 // uint32 scene_id = 2;
@@ -2042,52 +2042,52 @@ inline void SceneInfoComp::_internal_set_scene_id(::uint32_t value) {
   _impl_.scene_id_ = value;
 }
 
-// uint32 mirror_confid = 3;
-inline void SceneInfoComp::clear_mirror_confid() {
+// uint32 mirror_config_id = 3;
+inline void SceneInfoComp::clear_mirror_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.mirror_confid_ = 0u;
+  _impl_.mirror_config_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint32_t SceneInfoComp::mirror_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoComp.mirror_confid)
-  return _internal_mirror_confid();
+inline ::uint32_t SceneInfoComp::mirror_config_id() const {
+  // @@protoc_insertion_point(field_get:SceneInfoComp.mirror_config_id)
+  return _internal_mirror_config_id();
 }
-inline void SceneInfoComp::set_mirror_confid(::uint32_t value) {
-  _internal_set_mirror_confid(value);
+inline void SceneInfoComp::set_mirror_config_id(::uint32_t value) {
+  _internal_set_mirror_config_id(value);
   _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:SceneInfoComp.mirror_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoComp.mirror_config_id)
 }
-inline ::uint32_t SceneInfoComp::_internal_mirror_confid() const {
+inline ::uint32_t SceneInfoComp::_internal_mirror_config_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.mirror_confid_;
+  return _impl_.mirror_config_id_;
 }
-inline void SceneInfoComp::_internal_set_mirror_confid(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_mirror_config_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.mirror_confid_ = value;
+  _impl_.mirror_config_id_ = value;
 }
 
-// uint32 dungen_confid = 4;
-inline void SceneInfoComp::clear_dungen_confid() {
+// uint32 dungeon_config_id = 4;
+inline void SceneInfoComp::clear_dungeon_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.dungen_confid_ = 0u;
+  _impl_.dungeon_config_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint32_t SceneInfoComp::dungen_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoComp.dungen_confid)
-  return _internal_dungen_confid();
+inline ::uint32_t SceneInfoComp::dungeon_config_id() const {
+  // @@protoc_insertion_point(field_get:SceneInfoComp.dungeon_config_id)
+  return _internal_dungeon_config_id();
 }
-inline void SceneInfoComp::set_dungen_confid(::uint32_t value) {
-  _internal_set_dungen_confid(value);
+inline void SceneInfoComp::set_dungeon_config_id(::uint32_t value) {
+  _internal_set_dungeon_config_id(value);
   _impl_._has_bits_[0] |= 0x00000008u;
-  // @@protoc_insertion_point(field_set:SceneInfoComp.dungen_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoComp.dungeon_config_id)
 }
-inline ::uint32_t SceneInfoComp::_internal_dungen_confid() const {
+inline ::uint32_t SceneInfoComp::_internal_dungeon_config_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.dungen_confid_;
+  return _impl_.dungeon_config_id_;
 }
-inline void SceneInfoComp::_internal_set_dungen_confid(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_dungeon_config_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.dungen_confid_ = value;
+  _impl_.dungeon_config_id_ = value;
 }
 
 // map<uint64, bool> creators = 5;

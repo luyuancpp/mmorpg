@@ -14,7 +14,7 @@
 class SceneNodeGrpcImpl final : public scene_node::SceneNodeGrpc::Service
 {
 public:
-    explicit SceneNodeGrpcImpl(muduo::net::EventLoop* loop);
+    explicit SceneNodeGrpcImpl(muduo::net::EventLoop& loop);
 
     grpc::Status CreateScene(grpc::ServerContext* context,
         const ::CreateSceneRequest* request,
@@ -30,5 +30,5 @@ private:
     static void HandleCreateScene(const ::CreateSceneRequest* request, ::CreateSceneResponse* response);
     static void HandleDestroyScene(const ::DestroySceneRequest* request);
 
-    muduo::net::EventLoop* loop_;
+    muduo::net::EventLoop& loop_;
 };

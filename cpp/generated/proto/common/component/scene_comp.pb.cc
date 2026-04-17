@@ -28,10 +28,10 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr ChangeSceneInfoComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        scene_confid_{0u},
+        scene_config_id_{0u},
         guid_{0u},
-        dungen_confid_{0u},
-        mirror_confid_{0u},
+        dungeon_config_id_{0u},
+        mirror_config_id_{0u},
         change_sequence_{0u},
         change_gs_type_{0u},
         change_time_{::uint64_t{0u}},
@@ -71,10 +71,10 @@ const ::uint32_t
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_._has_bits_),
         16, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.scene_confid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.scene_config_id_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.guid_),
-        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.dungen_confid_),
-        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.mirror_confid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.dungeon_config_id_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.mirror_config_id_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.change_sequence_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.change_gs_type_),
         PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoComp, _impl_.change_time_),
@@ -109,25 +109,25 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'proto/common/component/scene_comp.prot"
-    "o\"\324\003\n\023ChangeSceneInfoComp\022\024\n\014scene_confi"
-    "d\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rdungen_confid\030\003"
-    " \001(\r\022\025\n\rmirror_confid\030\004 \001(\r\022\027\n\017change_se"
-    "quence\030\005 \001(\r\022\026\n\016change_gs_type\030\006 \001(\r\022\023\n\013"
-    "change_time\030\007 \001(\004\022\023\n\013ignore_full\030\010 \001(\010\022\022"
-    "\n\nprocessing\030\t \001(\010\022\r\n\005state\030\n \001(\r\022\024\n\014fro"
-    "m_zone_id\030\013 \001(\r\022\022\n\nto_zone_id\030\014 \001(\r\022\025\n\ri"
-    "s_cross_zone\030\r \001(\010\".\n\reChangeGsType\022\013\n\007e"
-    "SameGs\020\000\022\020\n\014eDifferentGs\020\001\"|\n\021eChangeSce"
-    "neState\022\021\n\rePendingLeave\020\000\022\014\n\010eLeaving\020\001"
-    "\022\021\n\reWaitingEnter\020\002\022\021\n\reEnterSucceed\020\003\022\025"
-    "\n\021eGateEnterSucceed\020\004\022\t\n\005eDone\020\005B\022Z\020comm"
-    "on/componentb\006proto3"
+    "o\"\336\003\n\023ChangeSceneInfoComp\022\027\n\017scene_confi"
+    "g_id\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\031\n\021dungeon_conf"
+    "ig_id\030\003 \001(\r\022\030\n\020mirror_config_id\030\004 \001(\r\022\027\n"
+    "\017change_sequence\030\005 \001(\r\022\026\n\016change_gs_type"
+    "\030\006 \001(\r\022\023\n\013change_time\030\007 \001(\004\022\023\n\013ignore_fu"
+    "ll\030\010 \001(\010\022\022\n\nprocessing\030\t \001(\010\022\r\n\005state\030\n "
+    "\001(\r\022\024\n\014from_zone_id\030\013 \001(\r\022\022\n\nto_zone_id\030"
+    "\014 \001(\r\022\025\n\ris_cross_zone\030\r \001(\010\".\n\reChangeG"
+    "sType\022\013\n\007eSameGs\020\000\022\020\n\014eDifferentGs\020\001\"|\n\021"
+    "eChangeSceneState\022\021\n\rePendingLeave\020\000\022\014\n\010"
+    "eLeaving\020\001\022\021\n\reWaitingEnter\020\002\022\021\n\reEnterS"
+    "ucceed\020\003\022\025\n\021eGateEnterSucceed\020\004\022\t\n\005eDone"
+    "\020\005B\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto = {
     false,
     false,
-    540,
+    550,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto,
     "proto/common/component/scene_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fscene_5fcomp_2eproto_once,
@@ -190,10 +190,10 @@ PROTOBUF_NDEBUG_INLINE ChangeSceneInfoComp::Impl_::Impl_(
 inline void ChangeSceneInfoComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, scene_confid_),
+               offsetof(Impl_, scene_config_id_),
            0,
            offsetof(Impl_, to_zone_id_) -
-               offsetof(Impl_, scene_confid_) +
+               offsetof(Impl_, scene_config_id_) +
                sizeof(Impl_::to_zone_id_));
 }
 ChangeSceneInfoComp::~ChangeSceneInfoComp() {
@@ -270,18 +270,18 @@ ChangeSceneInfoComp::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // uint32 scene_confid = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoComp, _impl_.scene_confid_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.scene_confid_)}},
+    // uint32 scene_config_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoComp, _impl_.scene_config_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.scene_config_id_)}},
     // uint32 guid = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoComp, _impl_.guid_), 1>(),
      {16, 1, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.guid_)}},
-    // uint32 dungen_confid = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoComp, _impl_.dungen_confid_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.dungen_confid_)}},
-    // uint32 mirror_confid = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoComp, _impl_.mirror_confid_), 3>(),
-     {32, 3, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.mirror_confid_)}},
+    // uint32 dungeon_config_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoComp, _impl_.dungeon_config_id_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.dungeon_config_id_)}},
+    // uint32 mirror_config_id = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoComp, _impl_.mirror_config_id_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.mirror_config_id_)}},
     // uint32 change_sequence = 5;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoComp, _impl_.change_sequence_), 4>(),
      {40, 4, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.change_sequence_)}},
@@ -314,17 +314,17 @@ ChangeSceneInfoComp::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // uint32 scene_confid = 1;
-    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.scene_confid_), _Internal::kHasBitsOffset + 0, 0,
+    // uint32 scene_config_id = 1;
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.scene_config_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 guid = 2;
     {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.guid_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 dungen_confid = 3;
-    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.dungen_confid_), _Internal::kHasBitsOffset + 2, 0,
+    // uint32 dungeon_config_id = 3;
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.dungeon_config_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 mirror_confid = 4;
-    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.mirror_confid_), _Internal::kHasBitsOffset + 3, 0,
+    // uint32 mirror_config_id = 4;
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.mirror_config_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 change_sequence = 5;
     {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.change_sequence_), _Internal::kHasBitsOffset + 4, 0,
@@ -367,9 +367,9 @@ PROTOBUF_NOINLINE void ChangeSceneInfoComp::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x000000ffu) != 0) {
-    ::memset(&_impl_.scene_confid_, 0, static_cast<::size_t>(
+    ::memset(&_impl_.scene_config_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.state_) -
-        reinterpret_cast<char*>(&_impl_.scene_confid_)) + sizeof(_impl_.state_));
+        reinterpret_cast<char*>(&_impl_.scene_config_id_)) + sizeof(_impl_.state_));
   }
   if ((cached_has_bits & 0x00001f00u) != 0) {
     ::memset(&_impl_.ignore_full_, 0, static_cast<::size_t>(
@@ -395,12 +395,12 @@ PROTOBUF_NOINLINE void ChangeSceneInfoComp::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint32 scene_confid = 1;
+  // uint32 scene_config_id = 1;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
-    if (this_._internal_scene_confid() != 0) {
+    if (this_._internal_scene_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          1, this_._internal_scene_confid(), target);
+          1, this_._internal_scene_config_id(), target);
     }
   }
 
@@ -413,21 +413,21 @@ PROTOBUF_NOINLINE void ChangeSceneInfoComp::Clear() {
     }
   }
 
-  // uint32 dungen_confid = 3;
+  // uint32 dungeon_config_id = 3;
   if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
-    if (this_._internal_dungen_confid() != 0) {
+    if (this_._internal_dungeon_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          3, this_._internal_dungen_confid(), target);
+          3, this_._internal_dungeon_config_id(), target);
     }
   }
 
-  // uint32 mirror_confid = 4;
+  // uint32 mirror_config_id = 4;
   if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
-    if (this_._internal_mirror_confid() != 0) {
+    if (this_._internal_mirror_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          4, this_._internal_mirror_confid(), target);
+          4, this_._internal_mirror_config_id(), target);
     }
   }
 
@@ -538,11 +538,11 @@ PROTOBUF_NOINLINE void ChangeSceneInfoComp::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x000000ffu) != 0) {
-    // uint32 scene_confid = 1;
+    // uint32 scene_config_id = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (this_._internal_scene_confid() != 0) {
+      if (this_._internal_scene_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_scene_confid());
+            this_._internal_scene_config_id());
       }
     }
     // uint32 guid = 2;
@@ -552,18 +552,18 @@ PROTOBUF_NOINLINE void ChangeSceneInfoComp::Clear() {
             this_._internal_guid());
       }
     }
-    // uint32 dungen_confid = 3;
+    // uint32 dungeon_config_id = 3;
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (this_._internal_dungen_confid() != 0) {
+      if (this_._internal_dungeon_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_dungen_confid());
+            this_._internal_dungeon_config_id());
       }
     }
-    // uint32 mirror_confid = 4;
+    // uint32 mirror_config_id = 4;
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (this_._internal_mirror_confid() != 0) {
+      if (this_._internal_mirror_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_mirror_confid());
+            this_._internal_mirror_config_id());
       }
     }
     // uint32 change_sequence = 5;
@@ -644,8 +644,8 @@ void ChangeSceneInfoComp::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x000000ffu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (from._internal_scene_confid() != 0) {
-        _this->_impl_.scene_confid_ = from._impl_.scene_confid_;
+      if (from._internal_scene_config_id() != 0) {
+        _this->_impl_.scene_config_id_ = from._impl_.scene_config_id_;
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
@@ -654,13 +654,13 @@ void ChangeSceneInfoComp::MergeImpl(::google::protobuf::MessageLite& to_msg, con
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (from._internal_dungen_confid() != 0) {
-        _this->_impl_.dungen_confid_ = from._impl_.dungen_confid_;
+      if (from._internal_dungeon_config_id() != 0) {
+        _this->_impl_.dungeon_config_id_ = from._impl_.dungeon_config_id_;
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (from._internal_mirror_confid() != 0) {
-        _this->_impl_.mirror_confid_ = from._impl_.mirror_confid_;
+      if (from._internal_mirror_config_id() != 0) {
+        _this->_impl_.mirror_config_id_ = from._impl_.mirror_config_id_;
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
@@ -730,9 +730,9 @@ void ChangeSceneInfoComp::InternalSwap(ChangeSceneInfoComp* PROTOBUF_RESTRICT PR
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.to_zone_id_)
       + sizeof(ChangeSceneInfoComp::_impl_.to_zone_id_)
-      - PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.scene_confid_)>(
-          reinterpret_cast<char*>(&_impl_.scene_confid_),
-          reinterpret_cast<char*>(&other->_impl_.scene_confid_));
+      - PROTOBUF_FIELD_OFFSET(ChangeSceneInfoComp, _impl_.scene_config_id_)>(
+          reinterpret_cast<char*>(&_impl_.scene_config_id_),
+          reinterpret_cast<char*>(&other->_impl_.scene_config_id_));
 }
 
 ::google::protobuf::Metadata ChangeSceneInfoComp::GetMetadata() const {

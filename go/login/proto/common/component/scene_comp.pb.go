@@ -126,22 +126,22 @@ func (ChangeSceneInfoCompEChangeSceneState) EnumDescriptor() ([]byte, []int) {
 }
 
 type ChangeSceneInfoComp struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	SceneConfid    uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`
-	Guid           uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"` // Scene ID
-	DungenConfid   uint32                 `protobuf:"varint,3,opt,name=dungen_confid,json=dungenConfid,proto3" json:"dungen_confid,omitempty"`
-	MirrorConfid   uint32                 `protobuf:"varint,4,opt,name=mirror_confid,json=mirrorConfid,proto3" json:"mirror_confid,omitempty"`
-	ChangeSequence uint32                 `protobuf:"varint,5,opt,name=change_sequence,json=changeSequence,proto3" json:"change_sequence,omitempty"`
-	ChangeGsType   uint32                 `protobuf:"varint,6,opt,name=change_gs_type,json=changeGsType,proto3" json:"change_gs_type,omitempty"`
-	ChangeTime     uint64                 `protobuf:"varint,7,opt,name=change_time,json=changeTime,proto3" json:"change_time,omitempty"` // Timeout means server crash or network delay
-	IgnoreFull     bool                   `protobuf:"varint,8,opt,name=ignore_full,json=ignoreFull,proto3" json:"ignore_full,omitempty"` // Ignore capacity full
-	Processing     bool                   `protobuf:"varint,9,opt,name=processing,proto3" json:"processing,omitempty"`
-	State          uint32                 `protobuf:"varint,10,opt,name=state,proto3" json:"state,omitempty"`
-	FromZoneId     uint32                 `protobuf:"varint,11,opt,name=from_zone_id,json=fromZoneId,proto3" json:"from_zone_id,omitempty"`
-	ToZoneId       uint32                 `protobuf:"varint,12,opt,name=to_zone_id,json=toZoneId,proto3" json:"to_zone_id,omitempty"`
-	IsCrossZone    bool                   `protobuf:"varint,13,opt,name=is_cross_zone,json=isCrossZone,proto3" json:"is_cross_zone,omitempty"` // Whether cross-zone
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	SceneConfigId   uint32                 `protobuf:"varint,1,opt,name=scene_config_id,json=sceneConfigId,proto3" json:"scene_config_id,omitempty"`
+	Guid            uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"` // Scene ID
+	DungeonConfigId uint32                 `protobuf:"varint,3,opt,name=dungeon_config_id,json=dungeonConfigId,proto3" json:"dungeon_config_id,omitempty"`
+	MirrorConfigId  uint32                 `protobuf:"varint,4,opt,name=mirror_config_id,json=mirrorConfigId,proto3" json:"mirror_config_id,omitempty"`
+	ChangeSequence  uint32                 `protobuf:"varint,5,opt,name=change_sequence,json=changeSequence,proto3" json:"change_sequence,omitempty"`
+	ChangeGsType    uint32                 `protobuf:"varint,6,opt,name=change_gs_type,json=changeGsType,proto3" json:"change_gs_type,omitempty"`
+	ChangeTime      uint64                 `protobuf:"varint,7,opt,name=change_time,json=changeTime,proto3" json:"change_time,omitempty"` // Timeout means server crash or network delay
+	IgnoreFull      bool                   `protobuf:"varint,8,opt,name=ignore_full,json=ignoreFull,proto3" json:"ignore_full,omitempty"` // Ignore capacity full
+	Processing      bool                   `protobuf:"varint,9,opt,name=processing,proto3" json:"processing,omitempty"`
+	State           uint32                 `protobuf:"varint,10,opt,name=state,proto3" json:"state,omitempty"`
+	FromZoneId      uint32                 `protobuf:"varint,11,opt,name=from_zone_id,json=fromZoneId,proto3" json:"from_zone_id,omitempty"`
+	ToZoneId        uint32                 `protobuf:"varint,12,opt,name=to_zone_id,json=toZoneId,proto3" json:"to_zone_id,omitempty"`
+	IsCrossZone     bool                   `protobuf:"varint,13,opt,name=is_cross_zone,json=isCrossZone,proto3" json:"is_cross_zone,omitempty"` // Whether cross-zone
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ChangeSceneInfoComp) Reset() {
@@ -174,9 +174,9 @@ func (*ChangeSceneInfoComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_scene_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ChangeSceneInfoComp) GetSceneConfid() uint32 {
+func (x *ChangeSceneInfoComp) GetSceneConfigId() uint32 {
 	if x != nil {
-		return x.SceneConfid
+		return x.SceneConfigId
 	}
 	return 0
 }
@@ -188,16 +188,16 @@ func (x *ChangeSceneInfoComp) GetGuid() uint32 {
 	return 0
 }
 
-func (x *ChangeSceneInfoComp) GetDungenConfid() uint32 {
+func (x *ChangeSceneInfoComp) GetDungeonConfigId() uint32 {
 	if x != nil {
-		return x.DungenConfid
+		return x.DungeonConfigId
 	}
 	return 0
 }
 
-func (x *ChangeSceneInfoComp) GetMirrorConfid() uint32 {
+func (x *ChangeSceneInfoComp) GetMirrorConfigId() uint32 {
 	if x != nil {
-		return x.MirrorConfid
+		return x.MirrorConfigId
 	}
 	return 0
 }
@@ -269,12 +269,12 @@ var File_proto_common_component_scene_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_scene_comp_proto_rawDesc = "" +
 	"\n" +
-	"'proto/common/component/scene_comp.proto\"\xef\x04\n" +
-	"\x13ChangeSceneInfoComp\x12!\n" +
-	"\fscene_confid\x18\x01 \x01(\rR\vsceneConfid\x12\x12\n" +
-	"\x04guid\x18\x02 \x01(\rR\x04guid\x12#\n" +
-	"\rdungen_confid\x18\x03 \x01(\rR\fdungenConfid\x12#\n" +
-	"\rmirror_confid\x18\x04 \x01(\rR\fmirrorConfid\x12'\n" +
+	"'proto/common/component/scene_comp.proto\"\x80\x05\n" +
+	"\x13ChangeSceneInfoComp\x12&\n" +
+	"\x0fscene_config_id\x18\x01 \x01(\rR\rsceneConfigId\x12\x12\n" +
+	"\x04guid\x18\x02 \x01(\rR\x04guid\x12*\n" +
+	"\x11dungeon_config_id\x18\x03 \x01(\rR\x0fdungeonConfigId\x12(\n" +
+	"\x10mirror_config_id\x18\x04 \x01(\rR\x0emirrorConfigId\x12'\n" +
 	"\x0fchange_sequence\x18\x05 \x01(\rR\x0echangeSequence\x12$\n" +
 	"\x0echange_gs_type\x18\x06 \x01(\rR\fchangeGsType\x12\x1f\n" +
 	"\vchange_time\x18\a \x01(\x04R\n" +

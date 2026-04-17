@@ -54,7 +54,7 @@ func GetGrpcServiceHandlerHeadStr(methods RPCMethods) (string, error) {
 class {{.Service}}Impl final : public {{.Package}}{{.Service}}::Service
 {
 public:
-    explicit {{.Service}}Impl(muduo::net::EventLoop* loop);
+    explicit {{.Service}}Impl(muduo::net::EventLoop& loop);
 {{range .Methods}}
     grpc::Status {{.Method}}(grpc::ServerContext* context,
         const {{.CppRequest}}* request,
@@ -65,7 +65,7 @@ private:
     // WARNING: Must complete quickly. The gRPC thread is blocked waiting via promise/future.{{range .Methods}}
     static void Handle{{.Method}}(const {{.CppRequest}}* request{{handleResponseParam .}});{{end}}
 
-    muduo::net::EventLoop* loop_;
+    muduo::net::EventLoop& loop_;
 };
 `
 
@@ -102,7 +102,7 @@ func GetGrpcServiceHandlerCppStr(dst string, methods RPCMethods, className strin
 {{ .FirstCode }}
 {{- end }}
 
-{{ .Service }}Impl::{{ .Service }}Impl(muduo::net::EventLoop* loop)
+{{ .Service }}Impl::{{ .Service }}Impl(muduo::net::EventLoop& loop)
     : loop_(loop)
 {
 }
@@ -122,8 +122,8 @@ grpc::Status {{ $.Service }}Impl::{{ .HandlerName }}(grpc::ServerContext* /*cont
     std::promise<void> promise;
     auto future = promise.get_future();
 
-    loop_->runInLoop([request{{ if not .IsVoidResponse }}, response{{ end }}, &promise]
-                     {
+    loop_.runInLoop([request{{ if not .IsVoidResponse }}, response{{ end }}, &promise]
+                    {
         Handle{{ .HandlerName }}(request{{ if not .IsVoidResponse }}, response{{ end }});
         promise.set_value(); });
 

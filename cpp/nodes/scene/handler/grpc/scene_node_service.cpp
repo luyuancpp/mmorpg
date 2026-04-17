@@ -8,7 +8,7 @@
 #include "muduo/base/Logging.h"
 ///<<< END WRITING YOUR CODE
 
-SceneNodeGrpcImpl::SceneNodeGrpcImpl(muduo::net::EventLoop* loop)
+SceneNodeGrpcImpl::SceneNodeGrpcImpl(muduo::net::EventLoop& loop)
     : loop_(loop)
 {
 }
@@ -36,8 +36,15 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
     auto sceneEntity = tlsEcs.sceneRegistry.create();
 
     auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
-    sceneInfo.set_scene_confid(request->config_id());
-    sceneInfo.set_scene_id(request->scene_id());
+    sceneInfo.set_scene_config_id(request->config_id());
+    sceneInfo.set_mirror_config_id(request->mirror_config_id());
+    sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
+	sceneInfo.set_scene_id(request->scene_id());
+
+    for (const auto creator_id : request->creator_ids())
+    {
+        sceneInfo.mutable_creators()->insert({creator_id, true});
+    }
 
     tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
 
@@ -49,7 +56,9 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
 
     LOG_INFO << "[gRPC] CreateScene: created entity=" << entt::to_integral(sceneEntity)
              << " config_id=" << request->config_id()
-             << " scene_id=" << sceneInfo.scene_id();
+             << " scene_id=" << sceneInfo.scene_id()
+             << " mirror_config_id=" << sceneInfo.mirror_config_id()
+             << " dungeon_config_id=" << sceneInfo.dungeon_config_id();
     ///<<< END WRITING YOUR CODE
 }
 
@@ -93,8 +102,8 @@ grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext* /*context*/,
     std::promise<void> promise;
     auto future = promise.get_future();
 
-    loop_->runInLoop([request, response, &promise]
-                     {
+    loop_.runInLoop([request, response, &promise]
+                    {
         HandleCreateScene(request, response);
         promise.set_value(); });
 
@@ -109,8 +118,8 @@ grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext* /*context*/,
     std::promise<void> promise;
     auto future = promise.get_future();
 
-    loop_->runInLoop([request, &promise]
-                     {
+    loop_.runInLoop([request, &promise]
+                    {
         HandleDestroyScene(request);
         promise.set_value(); });
 

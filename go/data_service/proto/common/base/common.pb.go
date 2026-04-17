@@ -286,14 +286,14 @@ func (x *NetworkAddress) GetPort() uint32 {
 }
 
 type SceneInfoComp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneConfid   uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`                                                   // Scene config ID
-	SceneId       uint32                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                                                               // Scene unique ID
-	MirrorConfid  uint32                 `protobuf:"varint,3,opt,name=mirror_confid,json=mirrorConfid,proto3" json:"mirror_confid,omitempty"`                                                // Mirror ID
-	DungenConfid  uint32                 `protobuf:"varint,4,opt,name=dungen_confid,json=dungenConfid,proto3" json:"dungen_confid,omitempty"`                                                // Dungeon ID
-	Creators      map[uint64]bool        `protobuf:"bytes,5,rep,name=creators,proto3" json:"creators,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Creators
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	SceneConfigId   uint32                 `protobuf:"varint,1,opt,name=scene_config_id,json=sceneConfigId,proto3" json:"scene_config_id,omitempty"`                                           // Scene config ID
+	SceneId         uint32                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                                                               // Scene unique ID
+	MirrorConfigId  uint32                 `protobuf:"varint,3,opt,name=mirror_config_id,json=mirrorConfigId,proto3" json:"mirror_config_id,omitempty"`                                        // Mirror config ID
+	DungeonConfigId uint32                 `protobuf:"varint,4,opt,name=dungeon_config_id,json=dungeonConfigId,proto3" json:"dungeon_config_id,omitempty"`                                     // Dungeon config ID
+	Creators        map[uint64]bool        `protobuf:"bytes,5,rep,name=creators,proto3" json:"creators,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Creators
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *SceneInfoComp) Reset() {
@@ -326,9 +326,9 @@ func (*SceneInfoComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_base_common_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *SceneInfoComp) GetSceneConfid() uint32 {
+func (x *SceneInfoComp) GetSceneConfigId() uint32 {
 	if x != nil {
-		return x.SceneConfid
+		return x.SceneConfigId
 	}
 	return 0
 }
@@ -340,16 +340,16 @@ func (x *SceneInfoComp) GetSceneId() uint32 {
 	return 0
 }
 
-func (x *SceneInfoComp) GetMirrorConfid() uint32 {
+func (x *SceneInfoComp) GetMirrorConfigId() uint32 {
 	if x != nil {
-		return x.MirrorConfid
+		return x.MirrorConfigId
 	}
 	return 0
 }
 
-func (x *SceneInfoComp) GetDungenConfid() uint32 {
+func (x *SceneInfoComp) GetDungeonConfigId() uint32 {
 	if x != nil {
-		return x.DungenConfid
+		return x.DungeonConfigId
 	}
 	return 0
 }
@@ -386,12 +386,12 @@ const file_proto_common_base_common_proto_rawDesc = "" +
 	"\tnode_list\x18\x01 \x03(\v2\t.NodeInfoR\bnodeList\"4\n" +
 	"\x0eNetworkAddress\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x12\n" +
-	"\x04port\x18\x02 \x01(\rR\x04port\"\x8e\x02\n" +
-	"\rSceneInfoComp\x12!\n" +
-	"\fscene_confid\x18\x01 \x01(\rR\vsceneConfid\x12\x19\n" +
-	"\bscene_id\x18\x02 \x01(\rR\asceneId\x12#\n" +
-	"\rmirror_confid\x18\x03 \x01(\rR\fmirrorConfid\x12#\n" +
-	"\rdungen_confid\x18\x04 \x01(\rR\fdungenConfid\x128\n" +
+	"\x04port\x18\x02 \x01(\rR\x04port\"\x9f\x02\n" +
+	"\rSceneInfoComp\x12&\n" +
+	"\x0fscene_config_id\x18\x01 \x01(\rR\rsceneConfigId\x12\x19\n" +
+	"\bscene_id\x18\x02 \x01(\rR\asceneId\x12(\n" +
+	"\x10mirror_config_id\x18\x03 \x01(\rR\x0emirrorConfigId\x12*\n" +
+	"\x11dungeon_config_id\x18\x04 \x01(\rR\x0fdungeonConfigId\x128\n" +
 	"\bcreators\x18\x05 \x03(\v2\x1c.SceneInfoComp.CreatorsEntryR\bcreators\x1a;\n" +
 	"\rCreatorsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x14\n" +
