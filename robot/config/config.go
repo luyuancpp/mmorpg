@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	"robot/logic/ai"
+	"shared/generated/table"
 )
 
 // Config holds the robot load-test configuration.
@@ -16,9 +18,10 @@ type Config struct {
 	RobotCount     int      `yaml:"robot_count"`     // number of concurrent robots
 	AccountFmt     string   `yaml:"account_fmt"`     // printf pattern, e.g. "robot_%04d"
 	Password       string   `yaml:"password"`        // shared password for all robots
-	SkillIDs       []uint32 `yaml:"skill_ids"`       // skill_table IDs from Skill.xlsx to cycle
+	SkillIDs       []uint32 `yaml:"skill_ids"`       // skill_table IDs from Skill.xlsx to cycle (empty = auto-read from class table)
 	ActionInterval int      `yaml:"action_interval"` // seconds between AI actions
 	ReportInterval int      `yaml:"report_interval"` // seconds between stats reports
+	TableDir       string   `yaml:"table_dir"`       // path to generated/tables dir for reading Skill/Class tables
 
 	// Mode: "stress" (default) — mass concurrent bots; "login-test" — login scenario test suite
 	Mode string `yaml:"mode"`
@@ -50,9 +53,9 @@ func Load(path string) (*Config, error) {
 		RobotCount:     1,
 		AccountFmt:     "robot_%04d",
 		Password:       "123456",
-		SkillIDs:       []uint32{1, 2, 13},
 		ActionInterval: 3,
 		ReportInterval: 5,
+		TableDir:       "../generated/tables",
 	}
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, err
@@ -99,4 +102,40 @@ func (c *Config) validate() error {
 		return fmt.Errorf("unknown mode %q (expected stress or login-test)", c.Mode)
 	}
 	return nil
+}
+
+// LoadTables loads all config tables from TableDir and auto-resolves SkillIDs if empty.
+func (c *Config) LoadTables() {
+	if c.TableDir == "" {
+		zap.L().Info("table_dir not set, skipping table loading")
+		return
+	}
+
+	// Load all tables (same as other Go services).
+	table.LoadTables(c.TableDir, false)
+
+	zap.L().Info("loaded tables",
+		zap.String("table_dir", c.TableDir),
+		zap.Int("skill_count", table.SkillTableManagerInstance.Count()),
+		zap.Int("class_count", table.ClassTableManagerInstance.Count()),
+	)
+
+	// If skill_ids not configured, read all skill IDs from the skill table.
+	if len(c.SkillIDs) == 0 {
+		for _, row := range table.SkillTableManagerInstance.FindAll() {
+			c.SkillIDs = append(c.SkillIDs, row.Id)
+		}
+		zap.L().Info("auto-resolved skill_ids from skill table", zap.Uint32s("skill_ids", c.SkillIDs))
+	} else {
+		// Validate configured skill_ids exist in the table.
+		var valid []uint32
+		for _, id := range c.SkillIDs {
+			if table.SkillTableManagerInstance.Exists(id) {
+				valid = append(valid, id)
+			} else {
+				zap.L().Warn("configured skill_id not found in Skill table, skipping", zap.Uint32("skill_id", id))
+			}
+		}
+		c.SkillIDs = valid
+	}
 }

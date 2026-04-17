@@ -14,6 +14,7 @@ type Config struct {
 	Registry    RegistryConf `json:"Registry"`
 	Cache       CacheConf    `json:"Cache"`
 	Kafka       KafkaConf    `json:"Kafka"`
+	TableDir    string       `json:",default=../../generated/tables"`
 }
 
 type RedisConf struct {

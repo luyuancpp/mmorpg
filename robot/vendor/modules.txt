@@ -157,4 +157,9 @@ proto/common/rollback
 proto/db
 proto/login
 proto/scene
+# shared v0.0.0 => ../go/shared
+## explicit; go 1.24.5
+shared/generated/pb/table
+shared/generated/table
 # proto => ../go/proto
+# shared => ../go/shared

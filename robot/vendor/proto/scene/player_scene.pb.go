@@ -26,7 +26,7 @@ const (
 
 type EnterSceneC2SRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     *base.SceneInfoComp    `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     *SceneInfoComp         `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,7 +61,7 @@ func (*EnterSceneC2SRequest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EnterSceneC2SRequest) GetSceneInfo() *base.SceneInfoComp {
+func (x *EnterSceneC2SRequest) GetSceneInfo() *SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -114,7 +114,7 @@ func (x *EnterSceneC2SResponse) GetErrorMessage() *base.TipInfoMessage {
 
 type EnterSceneS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     *base.SceneInfoComp    `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     *SceneInfoComp         `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -149,7 +149,7 @@ func (*EnterSceneS2C) Descriptor() ([]byte, []int) {
 	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *EnterSceneS2C) GetSceneInfo() *base.SceneInfoComp {
+func (x *EnterSceneS2C) GetSceneInfo() *SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -158,7 +158,7 @@ func (x *EnterSceneS2C) GetSceneInfo() *base.SceneInfoComp {
 
 type SceneInfoS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     []*base.SceneInfoComp  `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     []*SceneInfoComp       `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -193,7 +193,7 @@ func (*SceneInfoS2C) Descriptor() ([]byte, []int) {
 	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SceneInfoS2C) GetSceneInfo() []*base.SceneInfoComp {
+func (x *SceneInfoS2C) GetSceneInfo() []*SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -238,7 +238,7 @@ func (*SceneInfoRequest) Descriptor() ([]byte, []int) {
 
 type SceneInfoResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneInfo     []*base.SceneInfoComp  `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
+	SceneInfo     []*SceneInfoComp       `protobuf:"bytes,1,rep,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -273,7 +273,7 @@ func (*SceneInfoResponse) Descriptor() ([]byte, []int) {
 	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *SceneInfoResponse) GetSceneInfo() []*base.SceneInfoComp {
+func (x *SceneInfoResponse) GetSceneInfo() []*SceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
 	}
@@ -492,7 +492,7 @@ var File_proto_scene_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_scene_player_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x1eproto/scene/player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1eproto/common/base/common.proto\x1a\x1dproto/common/base/empty.proto\x1a'proto/common/component/actor_comp.proto\"E\n" +
+	"\x1eproto/scene/player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1dproto/common/base/empty.proto\x1a'proto/common/component/actor_comp.proto\x1a\x1cproto/scene/scene_info.proto\"E\n" +
 	"\x14EnterSceneC2SRequest\x12-\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x0e.SceneInfoCompR\tsceneInfo\"M\n" +
@@ -559,7 +559,7 @@ var file_proto_scene_player_scene_proto_goTypes = []any{
 	(*ActorDestroyS2C)(nil),       // 7: ActorDestroyS2C
 	(*ActorListCreateS2C)(nil),    // 8: ActorListCreateS2C
 	(*ActorListDestroyS2C)(nil),   // 9: ActorListDestroyS2C
-	(*base.SceneInfoComp)(nil),    // 10: SceneInfoComp
+	(*SceneInfoComp)(nil),         // 10: SceneInfoComp
 	(*base.TipInfoMessage)(nil),   // 11: TipInfoMessage
 	(*component.Transform)(nil),   // 12: Transform
 	(*base.Empty)(nil),            // 13: Empty
@@ -600,6 +600,7 @@ func file_proto_scene_player_scene_proto_init() {
 	if File_proto_scene_player_scene_proto != nil {
 		return
 	}
+	file_proto_scene_scene_info_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
