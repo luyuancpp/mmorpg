@@ -15,6 +15,7 @@
 #include <thread_context/entity_manager.h>
 #include <thread_context/rpc_manager.h>
 #include "proto/common/base/message.pb.h"
+#include "proto/common/event/node_event.pb.h"
 
 static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 	0,
