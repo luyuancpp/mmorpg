@@ -1075,9 +1075,30 @@ class CreateSceneRequest final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
+    kCreatorIdsFieldNumber = 5,
     kSceneIdFieldNumber = 2,
     kConfigIdFieldNumber = 1,
+    kMirrorConfigIdFieldNumber = 3,
+    kDungeonConfigIdFieldNumber = 4,
   };
+  // repeated uint64 creator_ids = 5;
+  int creator_ids_size() const;
+  private:
+  int _internal_creator_ids_size() const;
+
+  public:
+  void clear_creator_ids() ;
+  ::uint64_t creator_ids(int index) const;
+  void set_creator_ids(int index, ::uint64_t value);
+  void add_creator_ids(::uint64_t value);
+  const ::google::protobuf::RepeatedField<::uint64_t>& creator_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_creator_ids();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_creator_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_creator_ids();
+
+  public:
   // uint64 scene_id = 2;
   void clear_scene_id() ;
   ::uint64_t scene_id() const;
@@ -1098,11 +1119,31 @@ class CreateSceneRequest final : public ::google::protobuf::Message
   void _internal_set_config_id(::uint32_t value);
 
   public:
+  // uint32 mirror_config_id = 3;
+  void clear_mirror_config_id() ;
+  ::uint32_t mirror_config_id() const;
+  void set_mirror_config_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_mirror_config_id() const;
+  void _internal_set_mirror_config_id(::uint32_t value);
+
+  public:
+  // uint32 dungeon_config_id = 4;
+  void clear_dungeon_config_id() ;
+  ::uint32_t dungeon_config_id() const;
+  void set_dungeon_config_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_dungeon_config_id() const;
+  void _internal_set_dungeon_config_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:CreateSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
                                    0, 0,
                                    2>
       _table_;
@@ -1124,8 +1165,12 @@ class CreateSceneRequest final : public ::google::protobuf::Message
         const CreateSceneRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<::uint64_t> creator_ids_;
+    ::google::protobuf::internal::CachedSize _creator_ids_cached_byte_size_;
     ::uint64_t scene_id_;
     ::uint32_t config_id_;
+    ::uint32_t mirror_config_id_;
+    ::uint32_t dungeon_config_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2989,6 +3034,100 @@ inline ::uint64_t CreateSceneRequest::_internal_scene_id() const {
 inline void CreateSceneRequest::_internal_set_scene_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = value;
+}
+
+// uint32 mirror_config_id = 3;
+inline void CreateSceneRequest::clear_mirror_config_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mirror_config_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint32_t CreateSceneRequest::mirror_config_id() const {
+  // @@protoc_insertion_point(field_get:CreateSceneRequest.mirror_config_id)
+  return _internal_mirror_config_id();
+}
+inline void CreateSceneRequest::set_mirror_config_id(::uint32_t value) {
+  _internal_set_mirror_config_id(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:CreateSceneRequest.mirror_config_id)
+}
+inline ::uint32_t CreateSceneRequest::_internal_mirror_config_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mirror_config_id_;
+}
+inline void CreateSceneRequest::_internal_set_mirror_config_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mirror_config_id_ = value;
+}
+
+// uint32 dungeon_config_id = 4;
+inline void CreateSceneRequest::clear_dungeon_config_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dungeon_config_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t CreateSceneRequest::dungeon_config_id() const {
+  // @@protoc_insertion_point(field_get:CreateSceneRequest.dungeon_config_id)
+  return _internal_dungeon_config_id();
+}
+inline void CreateSceneRequest::set_dungeon_config_id(::uint32_t value) {
+  _internal_set_dungeon_config_id(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:CreateSceneRequest.dungeon_config_id)
+}
+inline ::uint32_t CreateSceneRequest::_internal_dungeon_config_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.dungeon_config_id_;
+}
+inline void CreateSceneRequest::_internal_set_dungeon_config_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dungeon_config_id_ = value;
+}
+
+// repeated uint64 creator_ids = 5;
+inline int CreateSceneRequest::_internal_creator_ids_size() const {
+  return _internal_creator_ids().size();
+}
+inline int CreateSceneRequest::creator_ids_size() const {
+  return _internal_creator_ids_size();
+}
+inline void CreateSceneRequest::clear_creator_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.creator_ids_.Clear();
+}
+inline ::uint64_t CreateSceneRequest::creator_ids(int index) const {
+  // @@protoc_insertion_point(field_get:CreateSceneRequest.creator_ids)
+  return _internal_creator_ids().Get(index);
+}
+inline void CreateSceneRequest::set_creator_ids(int index, ::uint64_t value) {
+  _internal_mutable_creator_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:CreateSceneRequest.creator_ids)
+}
+inline void CreateSceneRequest::add_creator_ids(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_creator_ids()->Add(value);
+  // @@protoc_insertion_point(field_add:CreateSceneRequest.creator_ids)
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>& CreateSceneRequest::creator_ids() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:CreateSceneRequest.creator_ids)
+  return _internal_creator_ids();
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL CreateSceneRequest::mutable_creator_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:CreateSceneRequest.creator_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_creator_ids();
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>&
+CreateSceneRequest::_internal_creator_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.creator_ids_;
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+CreateSceneRequest::_internal_mutable_creator_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.creator_ids_;
 }
 
 // -------------------------------------------------------------------

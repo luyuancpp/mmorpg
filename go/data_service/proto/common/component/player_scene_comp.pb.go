@@ -23,7 +23,7 @@ const (
 
 type PlayerSceneInfoComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneConfid   uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`
+	SceneConfigId uint32                 `protobuf:"varint,1,opt,name=scene_config_id,json=sceneConfigId,proto3" json:"scene_config_id,omitempty"`
 	Guid          uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -59,9 +59,9 @@ func (*PlayerSceneInfoComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_scene_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerSceneInfoComp) GetSceneConfid() uint32 {
+func (x *PlayerSceneInfoComp) GetSceneConfigId() uint32 {
 	if x != nil {
-		return x.SceneConfid
+		return x.SceneConfigId
 	}
 	return 0
 }
@@ -129,9 +129,9 @@ var File_proto_common_component_player_scene_comp_proto protoreflect.FileDescrip
 
 const file_proto_common_component_player_scene_comp_proto_rawDesc = "" +
 	"\n" +
-	".proto/common/component/player_scene_comp.proto\"L\n" +
-	"\x13PlayerSceneInfoComp\x12!\n" +
-	"\fscene_confid\x18\x01 \x01(\rR\vsceneConfid\x12\x12\n" +
+	".proto/common/component/player_scene_comp.proto\"Q\n" +
+	"\x13PlayerSceneInfoComp\x12&\n" +
+	"\x0fscene_config_id\x18\x01 \x01(\rR\rsceneConfigId\x12\x12\n" +
 	"\x04guid\x18\x02 \x01(\rR\x04guid\"\x94\x01\n" +
 	"\x16PlayerSceneContextComp\x123\n" +
 	"\n" +

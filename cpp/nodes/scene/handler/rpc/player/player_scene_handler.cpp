@@ -27,7 +27,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	}
 
 	const auto& scene_info = request->scene_info();
-	if (scene_info.scene_confid() <= 0 && scene_info.scene_id() <= 0)
+	if (scene_info.scene_config_id() <= 0 && scene_info.scene_id() <= 0)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to invalid scene_info: " << scene_info.DebugString();
 		response->mutable_error_message()->set_id(kEnterSceneParamError);

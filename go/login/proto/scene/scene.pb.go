@@ -404,11 +404,14 @@ func (x *Centre2GsEnterSceneRequest) GetSceneId() uint64 {
 }
 
 type CreateSceneRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ConfigId      uint32                 `protobuf:"varint,1,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
-	SceneId       uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"` // Go-allocated scene ID; C++ dedup by this when > 0.
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ConfigId        uint32                 `protobuf:"varint,1,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
+	SceneId         uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                           // Go-allocated scene ID; C++ dedup by this when > 0.
+	MirrorConfigId  uint32                 `protobuf:"varint,3,opt,name=mirror_config_id,json=mirrorConfigId,proto3" json:"mirror_config_id,omitempty"`    // Mirror config ID (0 = not a mirror instance)
+	DungeonConfigId uint32                 `protobuf:"varint,4,opt,name=dungeon_config_id,json=dungeonConfigId,proto3" json:"dungeon_config_id,omitempty"` // Dungeon config ID (0 = not a dungeon instance)
+	CreatorIds      []uint64               `protobuf:"varint,5,rep,packed,name=creator_ids,json=creatorIds,proto3" json:"creator_ids,omitempty"`           // Creator player IDs (for instance access control)
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateSceneRequest) Reset() {
@@ -453,6 +456,27 @@ func (x *CreateSceneRequest) GetSceneId() uint64 {
 		return x.SceneId
 	}
 	return 0
+}
+
+func (x *CreateSceneRequest) GetMirrorConfigId() uint32 {
+	if x != nil {
+		return x.MirrorConfigId
+	}
+	return 0
+}
+
+func (x *CreateSceneRequest) GetDungeonConfigId() uint32 {
+	if x != nil {
+		return x.DungeonConfigId
+	}
+	return 0
+}
+
+func (x *CreateSceneRequest) GetCreatorIds() []uint64 {
+	if x != nil {
+		return x.CreatorIds
+	}
+	return nil
 }
 
 type CreateSceneResponse struct {
@@ -576,10 +600,14 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\"T\n" +
 	"\x1aCentre2GsEnterSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
-	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"L\n" +
+	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"\xc3\x01\n" +
 	"\x12CreateSceneRequest\x12\x1b\n" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x19\n" +
-	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"D\n" +
+	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12(\n" +
+	"\x10mirror_config_id\x18\x03 \x01(\rR\x0emirrorConfigId\x12*\n" +
+	"\x11dungeon_config_id\x18\x04 \x01(\rR\x0fdungeonConfigId\x12\x1f\n" +
+	"\vcreator_ids\x18\x05 \x03(\x04R\n" +
+	"creatorIds\"D\n" +
 	"\x13CreateSceneResponse\x12-\n" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x0e.SceneInfoCompR\tsceneInfo\"0\n" +

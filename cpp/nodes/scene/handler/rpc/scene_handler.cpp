@@ -623,7 +623,7 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 
 	// 2. Populate SceneInfoComp (proto component).
 	auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
-	sceneInfo.set_scene_confid(request->config_id());
+	sceneInfo.set_scene_config_id(request->config_id());
 	sceneInfo.set_scene_id(request->scene_id());
 
 	// 3. Add player tracking set (initially empty).

@@ -39,7 +39,7 @@ TEST(SceneSystemTests, CreateWorldScene)
 	createParams.node = serverEntity1;
 	for (uint32_t i = 0; i < kConfigSceneListSize; ++i)
 	{
-		createParams.sceneInfo.set_scene_confid(i);
+		createParams.sceneInfo.set_scene_config_id(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
 			SceneCommon::CreateSceneOnSceneNode(createParams);
@@ -58,10 +58,10 @@ TEST(SceneSystemTests, CreateScene2Server)
 	CreateSceneOnNodeSceneParam createParams1;
 	CreateSceneOnNodeSceneParam createParams2;
 
-	createParams1.sceneInfo.set_scene_confid(2);
+	createParams1.sceneInfo.set_scene_config_id(2);
 	createParams1.node = node1;
 
-	createParams2.sceneInfo.set_scene_confid(3);
+	createParams2.sceneInfo.set_scene_config_id(3);
 	createParams2.node = node2;
 
 	SceneCommon::CreateSceneOnSceneNode(createParams1);
@@ -79,8 +79,8 @@ TEST(SceneSystemTests, CreateScene2Server)
 		EXPECT_EQ(1, nodeComp2->GetTotalSceneCount());
 	}
 
-	EXPECT_EQ(1, SceneCommon::GetScenesSize(createParams1.sceneInfo.scene_confid()));
-	EXPECT_EQ(1, SceneCommon::GetScenesSize(createParams2.sceneInfo.scene_confid()));
+	EXPECT_EQ(1, SceneCommon::GetScenesSize(createParams1.sceneInfo.scene_config_id()));
+	EXPECT_EQ(1, SceneCommon::GetScenesSize(createParams2.sceneInfo.scene_config_id()));
 	EXPECT_EQ(2, SceneCommon::GetScenesSize());
 }
 
@@ -94,7 +94,7 @@ TEST(SceneSystemTests, DestroyScene)
 	const auto scene = SceneCommon::CreateSceneOnSceneNode(createParams1);
 
 	EXPECT_EQ(1, SceneCommon::GetScenesSize());
-	EXPECT_EQ(1, SceneCommon::GetScenesSize(createParams1.sceneInfo.scene_confid()));
+	EXPECT_EQ(1, SceneCommon::GetScenesSize(createParams1.sceneInfo.scene_config_id()));
 
 	auto serverComp1 = tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).try_get<SceneRegistryComp>(node1);
 	if (serverComp1)
@@ -105,7 +105,7 @@ TEST(SceneSystemTests, DestroyScene)
 	SceneCommon::DestroyScene({node1, scene});
 
 	EXPECT_TRUE(SceneCommon::IsSceneEmpty());
-	EXPECT_FALSE(SceneCommon::ConfigSceneListNotEmpty(createParams1.sceneInfo.scene_confid()));
+	EXPECT_FALSE(SceneCommon::ConfigSceneListNotEmpty(createParams1.sceneInfo.scene_config_id()));
 	EXPECT_TRUE(SceneCommon::IsSceneEmpty());
 	EXPECT_EQ(SceneCommon::GetScenesSize(), SceneCommon::GetScenesSize());
 	EXPECT_FALSE(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(scene));
@@ -121,10 +121,10 @@ TEST(SceneSystemTests, DestroyServer)
 	CreateSceneOnNodeSceneParam createParams1;
 	CreateSceneOnNodeSceneParam createParams2;
 
-	createParams1.sceneInfo.set_scene_confid(3);
+	createParams1.sceneInfo.set_scene_config_id(3);
 	createParams1.node = node1;
 
-	createParams2.sceneInfo.set_scene_confid(2);
+	createParams2.sceneInfo.set_scene_config_id(2);
 	createParams2.node = node2;
 
 	auto scene1 = SceneCommon::CreateSceneOnSceneNode(createParams1);
@@ -145,8 +145,8 @@ TEST(SceneSystemTests, DestroyServer)
 
 	EXPECT_EQ(1, tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).get<SceneRegistryComp>(node2).GetTotalSceneCount());
 	EXPECT_EQ(1, SceneCommon::GetScenesSize());
-	EXPECT_EQ(0, SceneCommon::GetScenesSize(createParams1.sceneInfo.scene_confid()));
-	EXPECT_EQ(1, SceneCommon::GetScenesSize(createParams2.sceneInfo.scene_confid()));
+	EXPECT_EQ(0, SceneCommon::GetScenesSize(createParams1.sceneInfo.scene_config_id()));
+	EXPECT_EQ(1, SceneCommon::GetScenesSize(createParams2.sceneInfo.scene_config_id()));
 
 	sceneSystem.HandleDestroySceneNode(node2);
 
@@ -156,8 +156,8 @@ TEST(SceneSystemTests, DestroyServer)
 	EXPECT_FALSE(tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(node2));
 	EXPECT_FALSE(tlsEcs.sceneRegistry.valid(scene2));
 
-	EXPECT_EQ(0, SceneCommon::GetScenesSize(createParams1.sceneInfo.scene_confid()));
-	EXPECT_EQ(0, SceneCommon::GetScenesSize(createParams2.sceneInfo.scene_confid()));
+	EXPECT_EQ(0, SceneCommon::GetScenesSize(createParams1.sceneInfo.scene_config_id()));
+	EXPECT_EQ(0, SceneCommon::GetScenesSize(createParams2.sceneInfo.scene_config_id()));
 	EXPECT_EQ(SceneCommon::GetScenesSize(), SceneCommon::GetScenesSize());
 }
 
@@ -175,10 +175,10 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	CreateSceneOnNodeSceneParam createParams1;
 	CreateSceneOnNodeSceneParam createParams2;
 
-	createParams1.sceneInfo.set_scene_confid(3);
+	createParams1.sceneInfo.set_scene_config_id(3);
 	createParams1.node = node1;
 
-	createParams2.sceneInfo.set_scene_confid(2);
+	createParams2.sceneInfo.set_scene_config_id(2);
 	createParams2.node = node2;
 
 	auto scene1 = SceneCommon::CreateSceneOnSceneNode(createParams1);
@@ -284,7 +284,7 @@ TEST(SceneNodeTest, MaintainModeWeightRoundRobinWorld)
 	CreateSceneOnNodeSceneParam createServerSceneParam;
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		createServerSceneParam.sceneInfo.set_scene_confid(i);
+		createServerSceneParam.sceneInfo.set_scene_config_id(i);
 		for (auto &it : serverEntities)
 		{
 			createServerSceneParam.node = it;
@@ -344,10 +344,10 @@ TEST(SceneNodeTest, CompelPlayerChangeScene)
 	CreateSceneOnNodeSceneParam server1Param;
 	CreateSceneOnNodeSceneParam server2Param;
 
-	server1Param.sceneInfo.set_scene_confid(2);
+	server1Param.sceneInfo.set_scene_config_id(2);
 	server1Param.node = node1;
 
-	server2Param.sceneInfo.set_scene_confid(2);
+	server2Param.sceneInfo.set_scene_config_id(2);
 	server2Param.node = node2;
 
 	const auto scene1 = SceneCommon::CreateSceneOnSceneNode(server1Param);
@@ -371,7 +371,7 @@ TEST(SceneNodeTest, CompelPlayerChangeScene)
 
 	CompelChangeSceneParam compelChangeParam1;
 	compelChangeParam1.destNode = node2;
-	compelChangeParam1.sceneConfId = server2Param.sceneInfo.scene_confid();
+	compelChangeParam1.sceneConfId = server2Param.sceneInfo.scene_config_id();
 	for (auto &it : playerList1)
 	{
 		compelChangeParam1.player = it;
@@ -407,7 +407,7 @@ TEST(SceneNodeTest, CrashModeWeightRoundRobinWorld)
 	CreateSceneOnNodeSceneParam createServerSceneParam;
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		createServerSceneParam.sceneInfo.set_scene_confid(i);
+		createServerSceneParam.sceneInfo.set_scene_config_id(i);
 		for (auto &it : serverEntities)
 		{
 			createServerSceneParam.node = it;
@@ -467,7 +467,7 @@ TEST(SceneNodeTest, CrashNodeReplaceMovePlayersToNewNode)
 	CreateSceneOnNodeSceneParam createNodeSceneParam;
 	for (uint32_t i = 0; i < perNodeScene; ++i)
 	{
-		createNodeSceneParam.sceneInfo.set_scene_confid(i);
+		createNodeSceneParam.sceneInfo.set_scene_config_id(i);
 		for (auto &it : nodeList)
 		{
 			createNodeSceneParam.node = it;
@@ -531,7 +531,7 @@ TEST(SceneNodeTest, WeightRoundRobinWorld)
 
 	for (uint32_t i = 0; i < per_server_scene; ++i)
 	{
-		create_server_scene_param.sceneInfo.set_scene_confid(i);
+		create_server_scene_param.sceneInfo.set_scene_config_id(i);
 		for (auto &it : node_list)
 		{
 			create_server_scene_param.node = it;
@@ -569,7 +569,7 @@ TEST(SceneNodeTest, WeightRoundRobinWorld)
 		{
 			auto &pse = tlsEcs.actorRegistry.get_or_emplace<SceneEntityComp>(it.first);
 			EXPECT_TRUE(pse.sceneEntity == it.second);
-			EXPECT_EQ(tlsEcs.sceneRegistry.get<SceneInfoComp>(pse.sceneEntity).scene_confid(), scene_config_id0);
+			EXPECT_EQ(tlsEcs.sceneRegistry.get<SceneInfoComp>(pse.sceneEntity).scene_config_id(), scene_config_id0);
 		}
 
 		std::unordered_map<entt::entity, entt::entity> player_scene2;
@@ -589,7 +589,7 @@ TEST(SceneNodeTest, WeightRoundRobinWorld)
 		{
 			auto &pse = tlsEcs.actorRegistry.get_or_emplace<SceneEntityComp>(it.first);
 			EXPECT_TRUE(pse.sceneEntity == it.second);
-			EXPECT_EQ(tlsEcs.sceneRegistry.get<SceneInfoComp>(pse.sceneEntity).scene_confid(), scene_config_id1);
+			EXPECT_EQ(tlsEcs.sceneRegistry.get<SceneInfoComp>(pse.sceneEntity).scene_config_id(), scene_config_id1);
 		}
 
 		std::size_t server_player_size = player_size * 2 / server_size;
@@ -657,7 +657,7 @@ TEST(SceneNodeTest, PressureModeEnterLeave)
 	CreateSceneOnNodeSceneParam createServerSceneParam;
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		createServerSceneParam.sceneInfo.set_scene_confid(i);
+		createServerSceneParam.sceneInfo.set_scene_config_id(i);
 		for (auto &it : serverEntities)
 		{
 			createServerSceneParam.node = it;
@@ -718,7 +718,7 @@ TEST(SceneNodeTest, EnterDefaultScene)
 	// Create multiple scenes for the game node
 	for (uint32_t i = 1; i < kConfigSceneListSize; ++i)
 	{
-		createGSSceneParam.sceneInfo.set_scene_confid(i);
+		createGSSceneParam.sceneInfo.set_scene_config_id(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
 			SceneCommon::CreateSceneOnSceneNode(createGSSceneParam);
@@ -735,7 +735,7 @@ TEST(SceneNodeTest, EnterDefaultScene)
 	// Verify the player is in the default scene
 	const auto [sceneEntity] = tlsEcs.actorRegistry.get_or_emplace<SceneEntityComp>(player);
 	const auto &sceneInfo = tlsEcs.sceneRegistry.get<SceneInfoComp>(sceneEntity);
-	EXPECT_EQ(sceneInfo.scene_confid(), kDefaultSceneId);
+	EXPECT_EQ(sceneInfo.scene_config_id(), kDefaultSceneId);
 }
 
 struct TestNodeId
@@ -769,7 +769,7 @@ TEST(SceneNodeTest, GetNotFullWorldWhenSceneFull)
 	// Create scenes for each server entity
 	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		createServerSceneParam.sceneInfo.set_scene_confid(i);
+		createServerSceneParam.sceneInfo.set_scene_config_id(i);
 		for (auto &it : serverEntities)
 		{
 			createServerSceneParam.node = it;
@@ -815,7 +815,7 @@ TEST(SceneNodeTest, GetNotFullWorldWhenSceneFull)
 		{
 			auto &pse = tlsEcs.actorRegistry.get_or_emplace<SceneEntityComp>(it.first);
 			EXPECT_TRUE(pse.sceneEntity == it.second);
-			EXPECT_EQ(tlsEcs.sceneRegistry.get<SceneInfoComp>(pse.sceneEntity).scene_confid(), sceneConfigId0);
+			EXPECT_EQ(tlsEcs.sceneRegistry.get<SceneInfoComp>(pse.sceneEntity).scene_config_id(), sceneConfigId0);
 		}
 
 		// Enter players into scenes with sceneConfigId1
@@ -841,7 +841,7 @@ TEST(SceneNodeTest, GetNotFullWorldWhenSceneFull)
 		{
 			auto &pse = tlsEcs.actorRegistry.get_or_emplace<SceneEntityComp>(it.first);
 			EXPECT_TRUE(pse.sceneEntity == it.second);
-			EXPECT_EQ(tlsEcs.sceneRegistry.get<SceneInfoComp>(pse.sceneEntity).scene_confid(), sceneConfigId1);
+			EXPECT_EQ(tlsEcs.sceneRegistry.get<SceneInfoComp>(pse.sceneEntity).scene_config_id(), sceneConfigId1);
 		}
 
 		// Calculate expected player distribution across servers

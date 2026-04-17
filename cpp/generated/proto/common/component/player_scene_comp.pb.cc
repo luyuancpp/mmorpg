@@ -28,7 +28,7 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr PlayerSceneInfoComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        scene_confid_{0u},
+        scene_config_id_{0u},
         guid_{0u} {}
 
 template <typename>
@@ -86,7 +86,7 @@ const ::uint32_t
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoComp, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoComp, _impl_.scene_confid_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoComp, _impl_.scene_config_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoComp, _impl_.guid_),
         0,
         1,
@@ -111,18 +111,18 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n.proto/common/component/player_scene_co"
-    "mp.proto\"9\n\023PlayerSceneInfoComp\022\024\n\014scene"
-    "_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\"v\n\026PlayerSce"
-    "neContextComp\022(\n\nscene_info\030\001 \001(\0132\024.Play"
-    "erSceneInfoComp\0222\n\024scene_info_last_time\030"
-    "\002 \001(\0132\024.PlayerSceneInfoCompB\022Z\020common/co"
-    "mponentb\006proto3"
+    "mp.proto\"<\n\023PlayerSceneInfoComp\022\027\n\017scene"
+    "_config_id\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\"v\n\026Player"
+    "SceneContextComp\022(\n\nscene_info\030\001 \001(\0132\024.P"
+    "layerSceneInfoComp\0222\n\024scene_info_last_ti"
+    "me\030\002 \001(\0132\024.PlayerSceneInfoCompB\022Z\020common"
+    "/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto = {
     false,
     false,
-    255,
+    258,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
     "proto/common/component/player_scene_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once,
@@ -173,10 +173,10 @@ PROTOBUF_NDEBUG_INLINE PlayerSceneInfoComp::Impl_::Impl_(
 inline void PlayerSceneInfoComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, scene_confid_),
+               offsetof(Impl_, scene_config_id_),
            0,
            offsetof(Impl_, guid_) -
-               offsetof(Impl_, scene_confid_) +
+               offsetof(Impl_, scene_config_id_) +
                sizeof(Impl_::guid_));
 }
 PlayerSceneInfoComp::~PlayerSceneInfoComp() {
@@ -255,14 +255,14 @@ PlayerSceneInfoComp::_table_ = {
     // uint32 guid = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSceneInfoComp, _impl_.guid_), 1>(),
      {16, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.guid_)}},
-    // uint32 scene_confid = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSceneInfoComp, _impl_.scene_confid_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.scene_confid_)}},
+    // uint32 scene_config_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSceneInfoComp, _impl_.scene_config_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.scene_config_id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint32 scene_confid = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.scene_confid_), _Internal::kHasBitsOffset + 0, 0,
+    // uint32 scene_config_id = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.scene_config_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 guid = 2;
     {PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.guid_), _Internal::kHasBitsOffset + 1, 0,
@@ -281,9 +281,9 @@ PROTOBUF_NOINLINE void PlayerSceneInfoComp::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
-    ::memset(&_impl_.scene_confid_, 0, static_cast<::size_t>(
+    ::memset(&_impl_.scene_config_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.guid_) -
-        reinterpret_cast<char*>(&_impl_.scene_confid_)) + sizeof(_impl_.guid_));
+        reinterpret_cast<char*>(&_impl_.scene_config_id_)) + sizeof(_impl_.guid_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -304,12 +304,12 @@ PROTOBUF_NOINLINE void PlayerSceneInfoComp::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint32 scene_confid = 1;
+  // uint32 scene_config_id = 1;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
-    if (this_._internal_scene_confid() != 0) {
+    if (this_._internal_scene_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          1, this_._internal_scene_confid(), target);
+          1, this_._internal_scene_config_id(), target);
     }
   }
 
@@ -348,11 +348,11 @@ PROTOBUF_NOINLINE void PlayerSceneInfoComp::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
-    // uint32 scene_confid = 1;
+    // uint32 scene_config_id = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (this_._internal_scene_confid() != 0) {
+      if (this_._internal_scene_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_scene_confid());
+            this_._internal_scene_config_id());
       }
     }
     // uint32 guid = 2;
@@ -378,8 +378,8 @@ void PlayerSceneInfoComp::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (from._internal_scene_confid() != 0) {
-        _this->_impl_.scene_confid_ = from._impl_.scene_confid_;
+      if (from._internal_scene_config_id() != 0) {
+        _this->_impl_.scene_config_id_ = from._impl_.scene_config_id_;
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
@@ -407,9 +407,9 @@ void PlayerSceneInfoComp::InternalSwap(PlayerSceneInfoComp* PROTOBUF_RESTRICT PR
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.guid_)
       + sizeof(PlayerSceneInfoComp::_impl_.guid_)
-      - PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.scene_confid_)>(
-          reinterpret_cast<char*>(&_impl_.scene_confid_),
-          reinterpret_cast<char*>(&other->_impl_.scene_confid_));
+      - PROTOBUF_FIELD_OFFSET(PlayerSceneInfoComp, _impl_.scene_config_id_)>(
+          reinterpret_cast<char*>(&_impl_.scene_config_id_),
+          reinterpret_cast<char*>(&other->_impl_.scene_config_id_));
 }
 
 ::google::protobuf::Metadata PlayerSceneInfoComp::GetMetadata() const {

@@ -214,17 +214,17 @@ class PlayerSceneInfoComp final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kSceneConfidFieldNumber = 1,
+    kSceneConfigIdFieldNumber = 1,
     kGuidFieldNumber = 2,
   };
-  // uint32 scene_confid = 1;
-  void clear_scene_confid() ;
-  ::uint32_t scene_confid() const;
-  void set_scene_confid(::uint32_t value);
+  // uint32 scene_config_id = 1;
+  void clear_scene_config_id() ;
+  ::uint32_t scene_config_id() const;
+  void set_scene_config_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_scene_confid() const;
-  void _internal_set_scene_confid(::uint32_t value);
+  ::uint32_t _internal_scene_config_id() const;
+  void _internal_set_scene_config_id(::uint32_t value);
 
   public:
   // uint32 guid = 2;
@@ -263,7 +263,7 @@ class PlayerSceneInfoComp final : public ::google::protobuf::Message
         const PlayerSceneInfoComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint32_t scene_confid_;
+    ::uint32_t scene_config_id_;
     ::uint32_t guid_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -502,28 +502,28 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerSceneContextComp_
 
 // PlayerSceneInfoComp
 
-// uint32 scene_confid = 1;
-inline void PlayerSceneInfoComp::clear_scene_confid() {
+// uint32 scene_config_id = 1;
+inline void PlayerSceneInfoComp::clear_scene_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_confid_ = 0u;
+  _impl_.scene_config_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint32_t PlayerSceneInfoComp::scene_confid() const {
-  // @@protoc_insertion_point(field_get:PlayerSceneInfoComp.scene_confid)
-  return _internal_scene_confid();
+inline ::uint32_t PlayerSceneInfoComp::scene_config_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSceneInfoComp.scene_config_id)
+  return _internal_scene_config_id();
 }
-inline void PlayerSceneInfoComp::set_scene_confid(::uint32_t value) {
-  _internal_set_scene_confid(value);
+inline void PlayerSceneInfoComp::set_scene_config_id(::uint32_t value) {
+  _internal_set_scene_config_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:PlayerSceneInfoComp.scene_confid)
+  // @@protoc_insertion_point(field_set:PlayerSceneInfoComp.scene_config_id)
 }
-inline ::uint32_t PlayerSceneInfoComp::_internal_scene_confid() const {
+inline ::uint32_t PlayerSceneInfoComp::_internal_scene_config_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.scene_confid_;
+  return _impl_.scene_config_id_;
 }
-inline void PlayerSceneInfoComp::_internal_set_scene_confid(::uint32_t value) {
+inline void PlayerSceneInfoComp::_internal_set_scene_config_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_confid_ = value;
+  _impl_.scene_config_id_ = value;
 }
 
 // uint32 guid = 2;
