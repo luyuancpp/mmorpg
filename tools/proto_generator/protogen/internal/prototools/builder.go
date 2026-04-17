@@ -26,11 +26,6 @@ func ResolveGameProtoPath() (string, error) {
 	return gameProtoPath, nil
 }
 
-func BuildGeneratorGoZeroProtoPath(dir string) string {
-	// dir is an absolute path; append the proto subdirectory name directly
-	return filepath.Join(dir, _config.Global.DirectoryNames.GoZeroProtoDirName)
-}
-
 func BuildGeneratorProtoPath(dir string) string {
 	// dir is an absolute path; append the proto subdirectory name directly
 	return filepath.Join(dir, filepath.ToSlash(_config.Global.DirectoryNames.NormalGoProto))
@@ -42,26 +37,16 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 
 	goProtoDirs := utils2.GetGoProtoDomainNames()
 
-	copyToDirs := []struct {
-		dirBuilder func(string) string
-		desc       string
-	}{
-		{BuildGeneratorProtoPath, "normal generation dir"},
-		{BuildGeneratorGoZeroProtoPath, "go-zero generation dir"},
-	}
-
 	go func() {
 		defer wg.Done()
-		for _, item := range copyToDirs {
-			for _, dir := range goProtoDirs {
-				destDir := _config.Global.Paths.GeneratorProtoDir + item.dirBuilder(dir)
-				if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
+		for _, dir := range goProtoDirs {
+			destDir := _config.Global.Paths.GeneratorProtoDir + BuildGeneratorProtoPath(dir)
+			if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
 				logger.Global.Warn("Failed to copy proto files",
-					zap.String("copy_type", item.desc),
+					zap.String("copy_type", "normal generation dir"),
 					zap.String("dir", dir),
-						zap.Error(err),
-					)
-				}
+					zap.Error(err),
+				)
 			}
 		}
 	}()
