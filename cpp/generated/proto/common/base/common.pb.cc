@@ -103,8 +103,8 @@ inline constexpr SceneInfoComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         creators_{},
+        scene_id_{::uint64_t{0u}},
         scene_config_id_{0u},
-        scene_id_{0u},
         mirror_config_id_{0u},
         dungeon_config_id_{0u} {}
 
@@ -249,8 +249,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.mirror_config_id_),
         PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.dungeon_config_id_),
         PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.creators_),
-        0,
         1,
+        0,
         2,
         3,
         ~0u,
@@ -286,7 +286,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto[] AB
     "p\"0\n\020NodeInfoListComp\022\034\n\tnode_list\030\001 \003(\013"
     "2\t.NodeInfo\"*\n\016NetworkAddress\022\n\n\002ip\030\001 \001("
     "\t\022\014\n\004port\030\002 \001(\r\"\320\001\n\rSceneInfoComp\022\027\n\017sce"
-    "ne_config_id\030\001 \001(\r\022\020\n\010scene_id\030\002 \001(\r\022\030\n\020"
+    "ne_config_id\030\001 \001(\r\022\020\n\010scene_id\030\002 \001(\004\022\030\n\020"
     "mirror_config_id\030\003 \001(\r\022\031\n\021dungeon_config"
     "_id\030\004 \001(\r\022.\n\010creators\030\005 \003(\0132\034.SceneInfoC"
     "omp.CreatorsEntry\032/\n\rCreatorsEntry\022\013\n\003ke"
@@ -1858,11 +1858,11 @@ SceneInfoComp::SceneInfoComp(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, scene_config_id_),
+               offsetof(Impl_, scene_id_),
            reinterpret_cast<const char *>(&from._impl_) +
-               offsetof(Impl_, scene_config_id_),
+               offsetof(Impl_, scene_id_),
            offsetof(Impl_, dungeon_config_id_) -
-               offsetof(Impl_, scene_config_id_) +
+               offsetof(Impl_, scene_id_) +
                sizeof(Impl_::dungeon_config_id_));
 
   // @@protoc_insertion_point(copy_constructor:SceneInfoComp)
@@ -1876,10 +1876,10 @@ PROTOBUF_NDEBUG_INLINE SceneInfoComp::Impl_::Impl_(
 inline void SceneInfoComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, scene_config_id_),
+               offsetof(Impl_, scene_id_),
            0,
            offsetof(Impl_, dungeon_config_id_) -
-               offsetof(Impl_, scene_config_id_) +
+               offsetof(Impl_, scene_id_) +
                sizeof(Impl_::dungeon_config_id_));
 }
 SceneInfoComp::~SceneInfoComp() {
@@ -1975,11 +1975,11 @@ SceneInfoComp::_table_ = {
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.dungeon_config_id_), 3>(),
      {32, 3, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.dungeon_config_id_)}},
     // uint32 scene_config_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.scene_config_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_config_id_)}},
-    // uint32 scene_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.scene_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.scene_config_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_config_id_)}},
+    // uint64 scene_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SceneInfoComp, _impl_.scene_id_), 0>(),
+     {16, 0, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_id_)}},
     // uint32 mirror_config_id = 3;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.mirror_config_id_), 2>(),
      {24, 2, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.mirror_config_id_)}},
@@ -1987,11 +1987,11 @@ SceneInfoComp::_table_ = {
     65535, 65535
   }}, {{
     // uint32 scene_config_id = 1;
-    {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_config_id_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_config_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 scene_id = 2;
-    {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_id_), _Internal::kHasBitsOffset + 1, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint64 scene_id = 2;
+    {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 mirror_config_id = 3;
     {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.mirror_config_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
@@ -2020,9 +2020,9 @@ PROTOBUF_NOINLINE void SceneInfoComp::Clear() {
   _impl_.creators_.Clear();
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x0000000fu) != 0) {
-    ::memset(&_impl_.scene_config_id_, 0, static_cast<::size_t>(
+    ::memset(&_impl_.scene_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.dungeon_config_id_) -
-        reinterpret_cast<char*>(&_impl_.scene_config_id_)) + sizeof(_impl_.dungeon_config_id_));
+        reinterpret_cast<char*>(&_impl_.scene_id_)) + sizeof(_impl_.dungeon_config_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -2044,7 +2044,7 @@ PROTOBUF_NOINLINE void SceneInfoComp::Clear() {
   (void)cached_has_bits;
 
   // uint32 scene_config_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_scene_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2052,11 +2052,11 @@ PROTOBUF_NOINLINE void SceneInfoComp::Clear() {
     }
   }
 
-  // uint32 scene_id = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  // uint64 scene_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_scene_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           2, this_._internal_scene_id(), target);
     }
   }
@@ -2138,18 +2138,18 @@ PROTOBUF_NOINLINE void SceneInfoComp::Clear() {
   }
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x0000000fu) != 0) {
-    // uint32 scene_config_id = 1;
+    // uint64 scene_id = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_scene_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_scene_id());
+      }
+    }
+    // uint32 scene_config_id = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
       if (this_._internal_scene_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_scene_config_id());
-      }
-    }
-    // uint32 scene_id = 2;
-    if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_scene_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_scene_id());
       }
     }
     // uint32 mirror_config_id = 3;
@@ -2183,13 +2183,13 @@ void SceneInfoComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (from._internal_scene_config_id() != 0) {
-        _this->_impl_.scene_config_id_ = from._impl_.scene_config_id_;
+      if (from._internal_scene_id() != 0) {
+        _this->_impl_.scene_id_ = from._impl_.scene_id_;
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_scene_id() != 0) {
-        _this->_impl_.scene_id_ = from._impl_.scene_id_;
+      if (from._internal_scene_config_id() != 0) {
+        _this->_impl_.scene_config_id_ = from._impl_.scene_config_id_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
@@ -2223,9 +2223,9 @@ void SceneInfoComp::InternalSwap(SceneInfoComp* PROTOBUF_RESTRICT PROTOBUF_NONNU
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.dungeon_config_id_)
       + sizeof(SceneInfoComp::_impl_.dungeon_config_id_)
-      - PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_config_id_)>(
-          reinterpret_cast<char*>(&_impl_.scene_config_id_),
-          reinterpret_cast<char*>(&other->_impl_.scene_config_id_));
+      - PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_id_)>(
+          reinterpret_cast<char*>(&_impl_.scene_id_),
+          reinterpret_cast<char*>(&other->_impl_.scene_id_));
 }
 
 ::google::protobuf::Metadata SceneInfoComp::GetMetadata() const {

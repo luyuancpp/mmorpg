@@ -229,28 +229,13 @@ void GateEventHandler::RedirectToGateEventHandler(const contracts::kafka::Redire
              << " target=" << event.target_gate_ip() << ":" << event.target_gate_port();
 ///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::PushToPlayerEventHandler(const contracts::kafka::PushToPlayerEvent &event)
+void GateEventHandler::PushToPlayerEventHandler(const contracts::kafka::PushToPlayerEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    auto it = tlsSessionManager.sessions().find(event.session_id());
-    if (it == tlsSessionManager.sessions().end())
-    {
-        return;
-    }
-    GetGateCodec().send(it->second.conn, event.message_content());
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::BroadcastToPlayersEventHandler(const contracts::kafka::BroadcastToPlayersEvent &event)
+void GateEventHandler::BroadcastToPlayersEventHandler(const contracts::kafka::BroadcastToPlayersEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    for (const auto sessionId : event.session_list())
-    {
-        auto it = tlsSessionManager.sessions().find(sessionId);
-        if (it == tlsSessionManager.sessions().end())
-        {
-            continue;
-        }
-        GetGateCodec().send(it->second.conn, event.message_content());
-    }
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
