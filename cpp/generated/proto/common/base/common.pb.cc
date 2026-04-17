@@ -104,7 +104,7 @@ inline constexpr SceneInfoComp::Impl_::Impl_(
       : _cached_size_{0},
         creators_{},
         scene_confid_{0u},
-        guid_{0u},
+        scene_id_{0u},
         mirror_confid_{0u},
         dungen_confid_{0u} {}
 
@@ -245,7 +245,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_._has_bits_),
         8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.scene_confid_),
-        PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.guid_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.scene_id_),
         PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.mirror_confid_),
         PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.dungen_confid_),
         PROTOBUF_FIELD_OFFSET(::SceneInfoComp, _impl_.creators_),
@@ -285,18 +285,18 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto[] AB
     "\001(\r\022$\n\rgrpc_endpoint\030\n \001(\0132\r.EndpointCom"
     "p\"0\n\020NodeInfoListComp\022\034\n\tnode_list\030\001 \003(\013"
     "2\t.NodeInfo\"*\n\016NetworkAddress\022\n\n\002ip\030\001 \001("
-    "\t\022\014\n\004port\030\002 \001(\r\"\302\001\n\rSceneInfoComp\022\024\n\014sce"
-    "ne_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirror_"
-    "confid\030\003 \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\022.\n\010c"
-    "reators\030\005 \003(\0132\034.SceneInfoComp.CreatorsEn"
-    "try\032/\n\rCreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005val"
-    "ue\030\002 \001(\010:\0028\001B\rZ\013common/baseb\006proto3"
+    "\t\022\014\n\004port\030\002 \001(\r\"\306\001\n\rSceneInfoComp\022\024\n\014sce"
+    "ne_confid\030\001 \001(\r\022\020\n\010scene_id\030\002 \001(\r\022\025\n\rmir"
+    "ror_confid\030\003 \001(\r\022\025\n\rdungen_confid\030\004 \001(\r\022"
+    ".\n\010creators\030\005 \003(\0132\034.SceneInfoComp.Creato"
+    "rsEntry\032/\n\rCreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n"
+    "\005value\030\002 \001(\010:\0028\001B\rZ\013common/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto = {
     false,
     false,
-    635,
+    639,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fcommon_2eproto,
     "proto/common/base/common.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto_once,
@@ -1976,9 +1976,9 @@ SceneInfoComp::_table_ = {
     // uint32 scene_confid = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.scene_confid_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_confid_)}},
-    // uint32 guid = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.guid_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.guid_)}},
+    // uint32 scene_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.scene_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_id_)}},
     // uint32 mirror_confid = 3;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoComp, _impl_.mirror_confid_), 2>(),
      {24, 2, 0, PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.mirror_confid_)}},
@@ -1988,8 +1988,8 @@ SceneInfoComp::_table_ = {
     // uint32 scene_confid = 1;
     {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_confid_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint32 guid = 2;
-    {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.guid_), _Internal::kHasBitsOffset + 1, 0,
+    // uint32 scene_id = 2;
+    {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.scene_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 mirror_confid = 3;
     {PROTOBUF_FIELD_OFFSET(SceneInfoComp, _impl_.mirror_confid_), _Internal::kHasBitsOffset + 2, 0,
@@ -2051,12 +2051,12 @@ PROTOBUF_NOINLINE void SceneInfoComp::Clear() {
     }
   }
 
-  // uint32 guid = 2;
+  // uint32 scene_id = 2;
   if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
-    if (this_._internal_guid() != 0) {
+    if (this_._internal_scene_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_guid(), target);
+          2, this_._internal_scene_id(), target);
     }
   }
 
@@ -2144,11 +2144,11 @@ PROTOBUF_NOINLINE void SceneInfoComp::Clear() {
             this_._internal_scene_confid());
       }
     }
-    // uint32 guid = 2;
+    // uint32 scene_id = 2;
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_guid() != 0) {
+      if (this_._internal_scene_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_guid());
+            this_._internal_scene_id());
       }
     }
     // uint32 mirror_confid = 3;
@@ -2187,8 +2187,8 @@ void SceneInfoComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_guid() != 0) {
-        _this->_impl_.guid_ = from._impl_.guid_;
+      if (from._internal_scene_id() != 0) {
+        _this->_impl_.scene_id_ = from._impl_.scene_id_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
