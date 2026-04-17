@@ -23,7 +23,7 @@ namespace
         DependencyGate dependencyGate;
         SceneNodeGrpcImpl grpcService;
 
-        explicit SceneRuntimeContext(EventLoop *loop) : grpcService(loop) {}
+        explicit SceneRuntimeContext(EventLoop& loop) : grpcService(loop) {}
     };
 
     struct SceneNodeHooks
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
                                     {
         node::entry::detail::ApplyPreConstructionHooks<SceneNodeHooks>();
 
-        auto context = std::make_unique<SceneRuntimeContext>(&loop);
+        auto context = std::make_unique<SceneRuntimeContext>(loop);
 
         SceneHandler handler;
         Node node(&loop, SceneNodeService,

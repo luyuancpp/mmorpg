@@ -8,8 +8,8 @@
 #include "muduo/base/Logging.h"
 ///<<< END WRITING YOUR CODE
 
-SceneNodeGrpcImpl::SceneNodeGrpcImpl(muduo::net::EventLoop* loop)
-    : loop_(*loop)
+SceneNodeGrpcImpl::SceneNodeGrpcImpl(muduo::net::EventLoop& loop)
+    : loop_(loop)
 {
 }
 
@@ -94,7 +94,7 @@ grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext* /*context*/,
     auto future = promise.get_future();
 
     loop_.runInLoop([request, response, &promise]
-                     {
+                    {
         HandleCreateScene(request, response);
         promise.set_value(); });
 
@@ -110,7 +110,7 @@ grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext* /*context*/,
     auto future = promise.get_future();
 
     loop_.runInLoop([request, &promise]
-                     {
+                    {
         HandleDestroyScene(request);
         promise.set_value(); });
 
