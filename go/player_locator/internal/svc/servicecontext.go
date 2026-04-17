@@ -9,6 +9,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 
 	"player_locator/internal/config"
+	"shared/generated/table"
 )
 
 type ServiceContext struct {
@@ -18,6 +19,8 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	table.LoadTables(c.TableDir, false)
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     c.RedisClient.Host,
 		Password: c.RedisClient.Password,

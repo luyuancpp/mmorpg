@@ -12,6 +12,7 @@ import (
 
 	"guild/internal/config"
 	guildkafka "guild/internal/kafka"
+	"shared/generated/table"
 	"shared/kafkautil"
 )
 
@@ -24,6 +25,8 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	table.LoadTables(c.TableDir, false)
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     c.RedisClient.Host,
 		Password: c.RedisClient.Password,
