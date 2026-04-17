@@ -89,9 +89,18 @@ func qualifyProtoType(packageName, typeName string) string {
 	return strings.Join(parts, "::") + "::" + typeName
 }
 
+// buildEventHandlerMethodName builds a safe event handler method name.
+func buildEventHandlerMethodName(className, eventName string) string {
+	methodName := eventName + "Handler"
+	if methodName == className {
+		return "Handle" + eventName
+	}
+	return methodName
+}
+
 // buildEventHandlerSignature builds the definition signature for an event handler function.
 func buildEventHandlerSignature(className, qualifiedTypeName, eventName string) string {
-	return fmt.Sprintf("void %s::%sHandler(const %s& event)\n", className, eventName, qualifiedTypeName)
+	return fmt.Sprintf("void %s::%s(const %s& event)\n", className, buildEventHandlerMethodName(className, eventName), qualifiedTypeName)
 }
 
 // extractUserCodeBlocks extracts user-written code blocks from each event handler function in a .cpp file.
@@ -183,6 +192,7 @@ type EventTemplateData struct {
 
 type EventHandlerMessage struct {
 	Name          string
+	HandlerName   string
 	QualifiedName string
 	Signature     string
 	IsLast        bool
@@ -237,6 +247,7 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 		qualifiedName := qualifyProtoType(packageName, eventName)
 		eventHandlers = append(eventHandlers, EventHandlerMessage{
 			Name:          eventName,
+			HandlerName:   buildEventHandlerMethodName(className, eventName),
 			QualifiedName: qualifiedName,
 			Signature:     buildEventHandlerSignature(className, qualifiedName, eventName),
 			IsLast:        index == len(eventMessages)-1,
