@@ -312,6 +312,9 @@
     <ClCompile Include="scene_manager\scene_node_service.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="scene\scene_info.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="etcd\etcd.pb.h">
@@ -609,6 +612,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="scene_manager\scene_node_service.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\scene_info.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
