@@ -147,6 +147,7 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 		req.set_gate_id(std::to_string(gateNodeId));
 		req.set_gate_instance_id(gateInstanceId);
 		req.set_gate_zone_id(GetZoneId());
+		req.set_zone_id(GetZoneId());
 
 		scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req);
 

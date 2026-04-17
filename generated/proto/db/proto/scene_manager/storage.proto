@@ -18,4 +18,7 @@ message PlayerLocation {
   uint64 scene_id = 1;
   string node_id = 2;
   uint64 update_time = 3;
+  // Zone where the player's current scene resides.
+  // Used on reconnect to determine cross-zone redirect need.
+  uint32 zone_id = 4;
 }

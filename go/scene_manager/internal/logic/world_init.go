@@ -79,6 +79,8 @@ func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zon
 				logx.Errorf("[World] Failed to store scene mapping for scene %d: %v", sceneId, err)
 				continue
 			}
+			// Store scene -> zone mapping for cross-zone lookups.
+			svcCtx.Redis.Set(fmt.Sprintf("scene:%d:zone", sceneId), fmt.Sprintf("%d", zoneId))
 
 			if _, err := svcCtx.Redis.Sadd(channelSetKey, fmt.Sprintf("%d", sceneId)); err != nil {
 				logx.Errorf("[World] Failed to add channel to set for conf %d: %v", confId, err)

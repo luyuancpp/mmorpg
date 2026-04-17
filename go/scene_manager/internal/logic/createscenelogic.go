@@ -105,7 +105,7 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 		targetNode = bestNode
 	}
 
-	sceneId, err := l.allocateScene(in.SceneConfId, targetNode)
+	sceneId, err := l.allocateScene(in.SceneConfId, targetNode, in.ZoneId)
 	if err != nil {
 		return &scene_manager.CreateSceneResponse{ErrorCode: constants.ErrRedis, ErrorMessage: err.Error()}, nil
 	}
@@ -131,13 +131,15 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 
 // allocateScene generates a scene ID and registers it in Redis.
 // Shared by both main-world and instance creation.
-func (l *CreateSceneLogic) allocateScene(confId uint64, targetNode string) (uint64, error) {
+func (l *CreateSceneLogic) allocateScene(confId uint64, targetNode string, zoneId uint32) (uint64, error) {
 	sceneId := l.svcCtx.SceneIDGen.Generate()
 
 	// scene -> node mapping.
 	if err := l.svcCtx.Redis.Set(fmt.Sprintf("scene:%d:node", sceneId), targetNode); err != nil {
 		return 0, fmt.Errorf("redis set scene node failed: %w", err)
 	}
+	// scene -> zone mapping for cross-zone lookups.
+	l.svcCtx.Redis.Set(fmt.Sprintf("scene:%d:zone", sceneId), fmt.Sprintf("%d", zoneId))
 
 	// Increment node scene count for load tracking.
 	sceneCountKey := fmt.Sprintf(NodeSceneCountKey, targetNode)
