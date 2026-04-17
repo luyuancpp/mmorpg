@@ -26,6 +26,8 @@
 #include "proto/db/db_task.pb.h"
 #include "modules/snapshot/snapshot_system.h"
 #include <proto/scene/scene_info.pb.h>
+#include "player/comp/afk_comp.h"
+#include "frame/manager/frame_time.h"
 
 struct PlayerSceneEnterContext
 {
@@ -322,6 +324,7 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 
 	tlsEcs.actorRegistry.emplace<Player>(player);
 	tlsEcs.actorRegistry.emplace<Guid>(player, playerId);
+	tlsEcs.actorRegistry.emplace<LastActiveFrameComp>(player, tlsFrameTimeManager.frameTime.current_frame());
 
 	PlayerAllDataMessageFieldsUnMarshal(player, playerAllData);
 

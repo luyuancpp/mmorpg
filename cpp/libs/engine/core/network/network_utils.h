@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <cstdint>
 #include <string>
 #include <vector>
 #include "type_define/type_define.h"

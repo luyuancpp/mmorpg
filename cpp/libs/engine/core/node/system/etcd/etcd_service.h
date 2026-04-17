@@ -1,13 +1,10 @@
 ﻿#pragma once
 
 #include <string>
-#include <deque>
 #include <unordered_map>
-#include <unordered_set>
 #include <chrono>
 
 #include "proto/etcd/etcd.pb.h"
-#include "proto/common/event/node_event.pb.h"
 #include "time/comp/timer_task_comp.h"
 
 class EtcdService {

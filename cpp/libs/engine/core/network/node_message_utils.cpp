@@ -1,5 +1,3 @@
-#include <cstdint>
-
 #include "node_message_utils.h"
 #include "network/rpc_session.h"
 #include <network/rpc_client.h>
@@ -8,7 +6,6 @@
 #include "proto/common/base/message.pb.h"
 #include "thread_context/node_context_manager.h"
 #include "thread_context/player_manager.h"
-#include <thread_context/registry_manager.h>
 
 template <typename SessionType>
 void SendMessageToNodeInternal(SessionType* session, uint32_t messageId, const google::protobuf::Message& message) {

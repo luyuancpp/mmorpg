@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <cstddef>
 
 inline static constexpr std::size_t kMaxServerPlayerSize = 2000;
 inline static constexpr std::size_t kMaxPlayersPerScene = 1000;

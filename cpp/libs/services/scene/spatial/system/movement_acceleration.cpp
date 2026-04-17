@@ -1,5 +1,6 @@
 #include "movement_acceleration.h"
 
+#include "player/comp/afk_comp.h"
 #include "proto/common/component/base_comp.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 
@@ -7,7 +8,7 @@
 
 void MovementAccelerationSystem::Update(const double delta)
 {
-	auto view = tlsEcs.actorRegistry.view<Transform, Velocity, Acceleration>();
+	auto view = tlsEcs.actorRegistry.view<Transform, Velocity, Acceleration>(entt::exclude<AfkComp>);
 	for (auto &&[entity, transform, velocity, acceleration] : view.each())
 	{
 		auto &location = *transform.mutable_location();

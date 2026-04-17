@@ -1,8 +1,6 @@
 #include "traffic_statistics.h"
 
 #include <algorithm>
-#include <cstdlib>
-#include <sstream>
 #include <vector>
 
 #include "muduo/base/Logging.h"
