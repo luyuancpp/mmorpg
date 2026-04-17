@@ -51,15 +51,15 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
 	{
 		if (NodeUtils::IsSameNode(nodeInfo.node_uuid(), existing.node_uuid()))
 		{
-			LOG_INFO << "GRPC node already registered, IP: " << nodeInfo.endpoint().ip()
-					 << ", Port: " << nodeInfo.endpoint().port();
+			LOG_INFO << "GRPC node already registered, IP: " << nodeInfo.grpc_endpoint().ip()
+					 << ", Port: " << nodeInfo.grpc_endpoint().port();
 			return;
 		}
 	}
 
 	auto createdId = targetRegistry.create();
 
-	const auto target = ::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
+	const auto target = ::FormatIpAndPort(nodeInfo.grpc_endpoint().ip(), nodeInfo.grpc_endpoint().port());
 	auto cachedChannel = gNode->GetGrpcChannelCache().GetOrCreateChannel(target);
 	const auto &grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(createdId, std::move(cachedChannel));
 
@@ -67,8 +67,8 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
 	targetRegistry.emplace<NodeInfo>(createdId, nodeInfo);
 
 	LOG_INFO << "Connecting to GRPC node, ID: " << nodeInfo.node_id()
-			 << ", IP: " << nodeInfo.endpoint().ip()
-			 << ", Port: " << nodeInfo.endpoint().port()
+			 << ", IP: " << nodeInfo.grpc_endpoint().ip()
+			 << ", Port: " << nodeInfo.grpc_endpoint().port()
 			 << ", NodeType: " << nodeInfo.node_type()
 			 << ", Entity: " << entt::to_integral(createdId);
 }
