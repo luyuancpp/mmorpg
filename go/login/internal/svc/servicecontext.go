@@ -19,6 +19,7 @@ import (
 	kafkapb "proto/contracts/kafka"
 	plpb "proto/player_locator"
 	smpb "proto/scene_manager"
+	"shared/generated/table"
 	"time"
 )
 
@@ -35,6 +36,8 @@ type ServiceContext struct {
 
 func NewServiceContext() *ServiceContext {
 	ctx := context.Background()
+
+	table.LoadTables(config.AppConfig.TableDir, false)
 
 	// Initialize Redis client
 	redisHost := config.AppConfig.Node.RedisClient.Host
