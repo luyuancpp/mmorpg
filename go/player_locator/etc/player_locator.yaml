@@ -31,3 +31,12 @@ Lease:
   DefaultTTLSeconds: 30
   PollInterval: 1s
   BatchSize: 100
+
+# SceneManager gRPC client (via etcd discovery).
+# Used to call LeaveScene when a player's disconnect lease expires.
+SceneManagerRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: scenemanagerservice.rpc
+  Timeout: 3000

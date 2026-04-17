@@ -14,7 +14,6 @@
 #include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
 #include "proto/common/event/player_migration_event.pb.h"
-#include "node/system/zone_utils.h"
 #include "table/proto/tip/cross_server_error_tip.pb.h"
 #include "player_tip.h"
 #include "modules/scene/comp/scene_comp.h"
@@ -22,7 +21,6 @@
 #include <engine/infra/messaging/kafka/kafka_producer.h>
 #include "thread_context/player_manager.h"
 #include "core/system/redis.h"
-#include "thread_context/dispatcher_manager.h"
 #include "player_scene.h"
 #include "player/constants/player.h"
 #include "proto/db/db_task.pb.h"

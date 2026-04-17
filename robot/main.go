@@ -22,16 +22,17 @@ import (
 
 	"proto/common/base"
 	"proto/login"
+	"proto/scene"
 	"robot/config"
 	"robot/generated/pb/game"
 	"robot/logic/ai"
+	"robot/logic/gameobject"
 	"robot/logic/handler"
 	"robot/metrics"
 	"robot/pkg"
 
 	// Blank-import proto packages so they register with protoregistry.
 	_ "proto/chat"
-	_ "proto/scene"
 )
 
 func main() {
@@ -171,7 +172,16 @@ func runRobotOnce(host string, port int, account string, cfg *config.Config, sta
 		zap.Uint64("player_id", gc.PlayerId),
 	)
 
+	// Register player in global list so message handlers can find it.
+	player := &gameobject.Player{ID: gc.PlayerId}
+	gameobject.PlayerList.Set(gc.PlayerId, player)
+	defer gameobject.PlayerList.Delete(gc.PlayerId)
+
+	// Request skill list from server (response handled by RecvLoop handler).
+	_ = gc.SendRequest(game.SceneSkillClientPlayerGetSkillListMessageId, &scene.GetSkillListRequest{})
+
 	robotAI := ai.NewRobotAI(gc, stats)
+	robotAI.SetPlayer(player)
 	if len(cfg.SkillIDs) > 0 {
 		robotAI.SetSkillIDs(cfg.SkillIDs)
 	}

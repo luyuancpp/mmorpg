@@ -6,4 +6,5 @@ import (
 )
 
 func SceneSceneClientPlayerNotifyActorCreateHandler(player *gameobject.Player, response *scene.ActorCreateS2C) {
+	player.AddEntity(response.Entity)
 }

@@ -72,7 +72,12 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string &nodeJson, uint32
 	if (!hasExistingSnapshot)
 	{
 		*cachedNodesOfType.Add() = discoveredNode;
-		LOG_INFO << "Node added, type: " << nodeType << ", info: " << discoveredNode.DebugString();
+		LOG_INFO << "Node added, type: " << nodeType
+				 << ", node_id: " << discoveredNode.node_id()
+				 << ", uuid: " << discoveredNode.node_uuid()
+				 << ", ip: " << discoveredNode.endpoint().ip()
+				 << ", port: " << discoveredNode.endpoint().port();
+		LOG_TRACE << "Node added detail: " << discoveredNode.DebugString();
 	}
 	else
 	{
@@ -97,11 +102,13 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string &nodeJson, uint32
 	if (gNode->IsServiceStarted())
 	{
 		NodeConnector::ConnectToNode(discoveredNode);
-		LOG_INFO << "Connected to node: " << discoveredNode.DebugString();
+		LOG_INFO << "Connected to node, type: " << nodeType
+				 << ", node_id: " << discoveredNode.node_id()
+				 << ", uuid: " << discoveredNode.node_uuid();
 	}
 	else
 	{
-		LOG_INFO << "Service not started or node already connected. Skipping connection for now: " << discoveredNode.DebugString();
+		LOG_TRACE << "Service not started or node already connected. Skipping connection for now, uuid=" << discoveredNode.node_uuid();
 	}
 }
 

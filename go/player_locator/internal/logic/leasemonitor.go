@@ -14,6 +14,7 @@ import (
 	"player_locator/internal/svc"
 	kafkapb "proto/contracts/kafka"
 	pb "proto/player_locator"
+	smpb "proto/scene_manager"
 )
 
 // popExpiredLeasesScript atomically fetches and removes expired leases.
@@ -76,6 +77,13 @@ func processExpiredLeases(ctx context.Context, svcCtx *svc.ServiceContext, batch
 }
 
 func handleLeaseExpiry(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64) {
+	// AFK pass check: if the player has an active AFK pass, extend the lease instead of expiring.
+	if hasActiveAfkPass(ctx, svcCtx, playerID) {
+		extendLeaseForAfkPass(ctx, svcCtx, playerID)
+		logx.Infof("LeaseMonitor: player %d has active AFK pass, lease extended", playerID)
+		return
+	}
+
 	key := sessionKey(playerID)
 
 	// Session may already be gone (Redis TTL expired), read what we can
@@ -108,6 +116,9 @@ func handleLeaseExpiry(ctx context.Context, svcCtx *svc.ServiceContext, playerID
 	}
 
 	sendLeaseExpiredToGate(ctx, svcCtx, session)
+
+	// Notify SceneManager to clean up player location + decrement instance player count.
+	notifySceneManagerLeave(ctx, svcCtx, session)
 
 	logx.Infof("LeaseMonitor: lease expired player=%d session=%d gate=%s scene=%s",
 		playerID, session.SessionId, session.GateId, session.SceneNodeId)
@@ -171,4 +182,65 @@ func parseGateID(gateID string) uint32 {
 		return 0
 	}
 	return uint32(id)
+}
+
+// notifySceneManagerLeave calls SceneManager.LeaveScene to clean up player location
+// and decrement the instance player count. Best-effort: failures are logged, not fatal.
+func notifySceneManagerLeave(ctx context.Context, svcCtx *svc.ServiceContext, session *pb.PlayerSession) {
+	if svcCtx.SceneManagerClient == nil {
+		return
+	}
+	if session.SceneId == 0 {
+		return
+	}
+
+	_, err := svcCtx.SceneManagerClient.LeaveScene(ctx, &smpb.LeaveSceneRequest{
+		PlayerId: session.PlayerId,
+		SceneId:  session.SceneId,
+	})
+	if err != nil {
+		logx.Errorf("LeaseMonitor: SceneManager.LeaveScene failed for player %d scene %d: %v",
+			session.PlayerId, session.SceneId, err)
+		return
+	}
+	logx.Infof("LeaseMonitor: notified SceneManager.LeaveScene player=%d scene=%d",
+		session.PlayerId, session.SceneId)
+}
+
+// --- AFK Pass (挂机月卡) ---
+
+const (
+	afkPassKeyPrefix  = "player:afk_pass:"
+	afkPassLeaseTTLSeconds = 300 // re-lease for 5 minutes when AFK pass is active
+)
+
+func afkPassKey(playerID uint64) string {
+	return fmt.Sprintf("%s%d", afkPassKeyPrefix, playerID)
+}
+
+// hasActiveAfkPass checks if the player has a valid AFK pass in Redis.
+// Key: player:afk_pass:{player_id} -> expiry unix timestamp (set by purchase/activation flow).
+func hasActiveAfkPass(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64) bool {
+	val, err := svcCtx.RedisClient.Get(ctx, afkPassKey(playerID)).Result()
+	if err != nil {
+		return false
+	}
+	expiry, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return false
+	}
+	return time.Now().Unix() < expiry
+}
+
+// extendLeaseForAfkPass re-adds the player to the lease ZSET so they stay
+// "disconnecting" but don't get cleaned up until the AFK pass expires.
+func extendLeaseForAfkPass(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64) {
+	newDeadline := time.Now().Add(time.Duration(afkPassLeaseTTLSeconds) * time.Second).Unix()
+
+	if err := svcCtx.RedisClient.ZAdd(ctx, LeaseZSetKey, redis.Z{
+		Score:  float64(newDeadline),
+		Member: fmt.Sprintf("%d", playerID),
+	}).Err(); err != nil {
+		logx.Errorf("LeaseMonitor: failed to extend lease for AFK player %d: %v", playerID, err)
+	}
 }

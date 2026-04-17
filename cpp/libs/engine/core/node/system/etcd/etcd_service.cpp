@@ -69,9 +69,10 @@ void EtcdService::InitKVHandlers() {
 		}
 		};
 
-	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext& context, const etcdserverpb::PutResponse& reply) {
-		LOG_INFO << "Put response: " << reply.DebugString();
-		};
+	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext &context, const etcdserverpb::PutResponse &reply)
+	{
+		LOG_TRACE << "Put response: " << reply.DebugString();
+	};
 
 	etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const etcdserverpb::DeleteRangeResponse& reply) {};
 
@@ -98,11 +99,13 @@ void EtcdService::InitLeaseHandlers() {
 }
 
 void EtcdService::InitTxnHandlers() {
-	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext& context, const etcdserverpb::TxnResponse& reply) {
-		LOG_INFO << "Txn response: " << reply.DebugString();
+	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext &context, const etcdserverpb::TxnResponse &reply)
+	{
+		LOG_TRACE << "Txn response: " << reply.DebugString();
 
 		auto& pendingKeys = gNode->GetEtcdManager().GetPendingKeys();
-		if (pendingKeys.empty()) {
+		if (pendingKeys.empty())
+		{
 			LOG_WARN << "Ignore txn response because pending key queue is empty.";
 			return;
 		}
@@ -110,14 +113,15 @@ void EtcdService::InitTxnHandlers() {
 		std::string key = std::move(pendingKeys.front());
 		pendingKeys.pop_front();
 
-		if (reply.succeeded()) {
+		if (reply.succeeded())
+		{
 			OnTxnSucceeded(key);
 		}
-		else {
+		else
+		{
 			OnTxnFailed(key);
 		}
-
-		};
+	};
 }
 
 const char* EtcdService::RegistrationModeName(RegistrationMode mode) const {
