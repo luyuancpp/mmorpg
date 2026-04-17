@@ -60,6 +60,9 @@
     <ClInclude Include="type_alias\actor.h" />
     <ClInclude Include="type_alias\player_redis.h" />
     <ClInclude Include="world\world.h" />
+    <ClInclude Include="player\comp\afk_comp.h" />
+    <ClInclude Include="player\system\afk.h" />
+    <ClInclude Include="spatial\constants\aoi_priority.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="actor\action_state\system\actor_action_state.cpp" />
@@ -98,5 +101,6 @@
     <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_database_loader.cpp" />
     <ClCompile Include="player\system\player_database_1_loader.cpp" />
+    <ClCompile Include="player\system\afk.cpp" />
   </ItemGroup>
 </Project>

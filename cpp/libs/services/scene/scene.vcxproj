@@ -52,7 +52,9 @@
     <ClInclude Include="generated\attribute\attributedelta60framess2c_attribute_sync.h" />
     <ClInclude Include="kafka\system\kafka.h" />
     <ClInclude Include="mount\system\mount.h" />
+    <ClInclude Include="player\comp\afk_comp.h" />
     <ClInclude Include="player\constants\player.h" />
+    <ClInclude Include="player\system\afk.h" />
     <ClInclude Include="player\system\player_data_loader.h" />
     <ClInclude Include="player\system\player_lifecycle.h" />
     <ClInclude Include="player\system\player_scene.h" />
@@ -62,6 +64,7 @@
     <ClInclude Include="spatial\comp\grid_comp.h" />
     <ClInclude Include="spatial\comp\nav_comp.h" />
     <ClInclude Include="spatial\comp\scene_node_scene_comp.h" />
+    <ClInclude Include="spatial\constants\aoi_priority.h" />
     <ClInclude Include="spatial\constants\dt_crowd.h" />
     <ClInclude Include="spatial\constants\nav.h" />
     <ClInclude Include="spatial\constants\view.h" />
@@ -100,6 +103,7 @@
     <ClCompile Include="generated\attribute\attributedelta5framess2c_attribute_sync.cpp" />
     <ClCompile Include="generated\attribute\attributedelta60framess2c_attribute_sync.cpp" />
     <ClCompile Include="kafka\system\kafka.cpp" />
+    <ClCompile Include="player\system\afk.cpp" />
     <ClCompile Include="player\system\player_database_loader.cpp" />
     <ClCompile Include="player\system\player_database_1_loader.cpp" />
     <ClCompile Include="player\system\player_lifecycle.cpp" />
