@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"data_service/cmd/debugutil"
-	database "data_service/proto/common/database"
+	database "proto/common/database"
 
 	"google.golang.org/protobuf/proto"
 )

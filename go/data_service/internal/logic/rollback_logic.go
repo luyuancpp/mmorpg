@@ -9,7 +9,7 @@ import (
 	"data_service/internal/constants"
 	"data_service/internal/store"
 	"data_service/internal/svc"
-	loginpb "data_service/proto/login"
+	loginpb "proto/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

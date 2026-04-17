@@ -32,7 +32,6 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 
 	runner.RunParallelGroup("CompilationAndUtilGeneration", []NamedTask{
 		{Name: "cppGen.BuildProtocCpp", Run: cppGen.BuildProtocCpp},
-		{Name: "goGen.BuildGrpcServiceProto", Run: goGen.BuildGrpcServiceProto},
 		{Name: "goGen.BuildUnifiedGoProto", Run: goGen.BuildUnifiedGoProto},
 		{Name: "cppGen.GenNodeUtil", Run: cppGen.GenNodeUtil},
 		{Name: "cppGen.GenerateAllEventHandlers", Run: cppGen.GenerateAllEventHandlers},

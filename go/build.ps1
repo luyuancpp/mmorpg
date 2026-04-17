@@ -77,6 +77,8 @@ try {
 
     # ----------------------------------------------------------------
     # 3. Delete per-service .pb.go duplicates (shared module has them)
+    #    goctl creates login/proto & db/proto; keep list defensive for
+    #    any stale copies left by older pipeline runs.
     # ----------------------------------------------------------------
     Write-Host '>>> Cleaning per-service proto duplicates' -ForegroundColor Cyan
     $dirsToClean = @(
@@ -87,6 +89,10 @@ try {
         'data_service/proto'
         'data_service/data_service'
         'player_locator/proto'
+        'player_locator/contracts'
+        'login/contracts'
+        'friend/proto'
+        'guild/proto'
     )
 
     foreach ($rel in $dirsToClean) {

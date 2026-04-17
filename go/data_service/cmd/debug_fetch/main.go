@@ -20,8 +20,8 @@ import (
 	"data_service/internal/config"
 	"data_service/internal/logic"
 
-	databasepb "data_service/proto/common/database"
-	rollbackpb "data_service/proto/common/rollback"
+	databasepb "proto/common/database"
+	rollbackpb "proto/common/rollback"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	gproto "google.golang.org/protobuf/proto"
