@@ -608,7 +608,7 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 		for (auto entity : view)
 		{
 			const auto &info = view.get<SceneInfoComp>(entity);
-			if (info.guid() == request->scene_id())
+			if (info.scene_id() == request->scene_id())
 			{
 				response->mutable_scene_info()->CopyFrom(info);
 				LOG_INFO << "CreateScene: scene_id=" << request->scene_id()
@@ -624,7 +624,7 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 	// 2. Populate SceneInfoComp (proto component).
 	auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
 	sceneInfo.set_scene_confid(request->config_id());
-	sceneInfo.set_guid(request->scene_id());
+	sceneInfo.set_scene_id(request->scene_id());
 
 	// 3. Add player tracking set (initially empty).
 	tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
@@ -639,7 +639,7 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 
 	LOG_INFO << "CreateScene: created scene entity=" << entt::to_integral(sceneEntity)
 			 << " config_id=" << request->config_id()
-			 << " guid=" << sceneInfo.guid();
+			 << " scene_id=" << sceneInfo.scene_id();
 	///<<< END WRITING YOUR CODE
 }
 
@@ -655,13 +655,13 @@ void SceneHandler::DestroyScene(::google::protobuf::RpcController* controller, c
 		return;
 	}
 
-	// Find the scene entity by guid.
+	// Find the scene entity by scene_id.
 	entt::entity targetEntity = entt::null;
 	auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
 	for (auto entity : view)
 	{
 		const auto &info = view.get<SceneInfoComp>(entity);
-		if (info.guid() == sceneId)
+		if (info.scene_id() == sceneId)
 		{
 			targetEntity = entity;
 			break;

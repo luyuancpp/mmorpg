@@ -691,7 +691,7 @@ class SceneInfoComp final : public ::google::protobuf::Message
   enum : int {
     kCreatorsFieldNumber = 5,
     kSceneConfidFieldNumber = 1,
-    kGuidFieldNumber = 2,
+    kSceneIdFieldNumber = 2,
     kMirrorConfidFieldNumber = 3,
     kDungenConfidFieldNumber = 4,
   };
@@ -720,14 +720,14 @@ class SceneInfoComp final : public ::google::protobuf::Message
   void _internal_set_scene_confid(::uint32_t value);
 
   public:
-  // uint32 guid = 2;
-  void clear_guid() ;
-  ::uint32_t guid() const;
-  void set_guid(::uint32_t value);
+  // uint32 scene_id = 2;
+  void clear_scene_id() ;
+  ::uint32_t scene_id() const;
+  void set_scene_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_guid() const;
-  void _internal_set_guid(::uint32_t value);
+  ::uint32_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint32_t value);
 
   public:
   // uint32 mirror_confid = 3;
@@ -781,7 +781,7 @@ class SceneInfoComp final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         creators_;
     ::uint32_t scene_confid_;
-    ::uint32_t guid_;
+    ::uint32_t scene_id_;
     ::uint32_t mirror_confid_;
     ::uint32_t dungen_confid_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -2018,28 +2018,28 @@ inline void SceneInfoComp::_internal_set_scene_confid(::uint32_t value) {
   _impl_.scene_confid_ = value;
 }
 
-// uint32 guid = 2;
-inline void SceneInfoComp::clear_guid() {
+// uint32 scene_id = 2;
+inline void SceneInfoComp::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.guid_ = 0u;
+  _impl_.scene_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint32_t SceneInfoComp::guid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoComp.guid)
-  return _internal_guid();
+inline ::uint32_t SceneInfoComp::scene_id() const {
+  // @@protoc_insertion_point(field_get:SceneInfoComp.scene_id)
+  return _internal_scene_id();
 }
-inline void SceneInfoComp::set_guid(::uint32_t value) {
-  _internal_set_guid(value);
+inline void SceneInfoComp::set_scene_id(::uint32_t value) {
+  _internal_set_scene_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:SceneInfoComp.guid)
+  // @@protoc_insertion_point(field_set:SceneInfoComp.scene_id)
 }
-inline ::uint32_t SceneInfoComp::_internal_guid() const {
+inline ::uint32_t SceneInfoComp::_internal_scene_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.guid_;
+  return _impl_.scene_id_;
 }
-inline void SceneInfoComp::_internal_set_guid(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_scene_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.guid_ = value;
+  _impl_.scene_id_ = value;
 }
 
 // uint32 mirror_confid = 3;

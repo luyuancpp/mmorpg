@@ -36,7 +36,7 @@ message NetworkAddress
 message SceneInfoComp
 {
   uint32 scene_confid = 1;// Scene config ID
-  uint32 guid = 2;// Scene unique ID
+  uint32 scene_id = 2;// Scene unique ID
   uint32 mirror_confid = 3;// Mirror ID
   uint32 dungen_confid = 4;// Dungeon ID
   map<uint64, bool> creators = 5;// Creators

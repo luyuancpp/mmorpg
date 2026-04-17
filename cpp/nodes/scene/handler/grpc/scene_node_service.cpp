@@ -23,7 +23,7 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
         for (auto entity : view)
         {
             const auto &info = view.get<SceneInfoComp>(entity);
-            if (info.guid() == request->scene_id())
+            if (info.scene_id() == request->scene_id())
             {
                 response->mutable_scene_info()->CopyFrom(info);
                 LOG_INFO << "[gRPC] CreateScene: scene_id=" << request->scene_id()
@@ -37,7 +37,7 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
 
     auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
     sceneInfo.set_scene_confid(request->config_id());
-    sceneInfo.set_guid(request->scene_id());
+    sceneInfo.set_scene_id(request->scene_id());
 
     tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
 
@@ -49,7 +49,7 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
 
     LOG_INFO << "[gRPC] CreateScene: created entity=" << entt::to_integral(sceneEntity)
              << " config_id=" << request->config_id()
-             << " guid=" << sceneInfo.guid();
+             << " scene_id=" << sceneInfo.scene_id();
     ///<<< END WRITING YOUR CODE
 }
 
@@ -63,7 +63,7 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
     for (auto entity : view)
     {
         const auto &info = view.get<SceneInfoComp>(entity);
-        if (info.guid() == sceneId)
+        if (info.scene_id() == sceneId)
         {
             targetEntity = entity;
             break;

@@ -112,7 +112,7 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 		snapshot.set_gate_session_id(enterInfo.session_id());
 	}
 
-	// 2. Find the target scene entity by GUID (allocated by SceneManager).
+	// 2. Find the target scene entity by scene_id (allocated by SceneManager).
 	entt::entity targetScene = entt::null;
 	if (enterInfo.scene_id() != 0)
 	{
@@ -120,7 +120,7 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 		for (auto entity : view)
 		{
 			const auto &info = view.get<SceneInfoComp>(entity);
-			if (info.guid() == enterInfo.scene_id())
+			if (info.scene_id() == enterInfo.scene_id())
 			{
 				targetScene = entity;
 				break;

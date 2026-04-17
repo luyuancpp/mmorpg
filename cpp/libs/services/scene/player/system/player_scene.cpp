@@ -103,7 +103,7 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 		return;
 	}
 
-	uint64_t currentSceneId = sceneInfo->guid(); // Assuming guid is scene_id (uint32 vs uint64 issue handled by cast)
+	uint64_t currentSceneId = sceneInfo->scene_id();
 	uint64_t leaderSceneId = loc.scene_id();
 
 	if (leaderSceneId != 0 && leaderSceneId != currentSceneId)
@@ -193,7 +193,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 
 	LOG_INFO << "HandleEnterScene: player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
-	         << " entered scene guid=" << sceneInfo->guid();
+			 << " entered scene_id=" << sceneInfo->scene_id();
 
 	// 5. Team Follow Logic: if player is in a team, check leader location.
 	const auto teamIdComp = tlsEcs.actorRegistry.try_get<TeamId>(player);

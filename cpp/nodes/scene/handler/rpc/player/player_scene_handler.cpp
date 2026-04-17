@@ -27,7 +27,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	}
 
 	const auto& scene_info = request->scene_info();
-	if (scene_info.scene_confid() <= 0 && scene_info.guid() <= 0)
+	if (scene_info.scene_confid() <= 0 && scene_info.scene_id() <= 0)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to invalid scene_info: " << scene_info.DebugString();
 		response->mutable_error_message()->set_id(kEnterSceneParamError);
@@ -37,9 +37,9 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	if (auto current_scene_comp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player))
 	{
 		const auto current_scene_info = tlsEcs.actorRegistry.try_get<SceneInfoComp>(current_scene_comp->sceneEntity);
-		if (current_scene_info && current_scene_info->guid() == scene_info.guid() && scene_info.guid() > 0)
+		if (current_scene_info && current_scene_info->scene_id() == scene_info.scene_id() && scene_info.scene_id() > 0)
 		{
-			LOG_WARN << "Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " is already in the requested scene: " << scene_info.guid();
+			LOG_WARN << "Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " is already in the requested scene: " << scene_info.scene_id();
 			response->mutable_error_message()->set_id(kEnterSceneYouInCurrentScene);
 			return;
 		}
