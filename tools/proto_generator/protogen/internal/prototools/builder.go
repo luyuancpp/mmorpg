@@ -31,15 +31,25 @@ func BuildGeneratorProtoPath(dir string) string {
 	return filepath.Join(dir, filepath.ToSlash(_config.Global.DirectoryNames.NormalGoProto))
 }
 
+// goctlServices lists services that need per-service proto staging directories
+// for goctl code generation (used by go/build.ps1).
+// All other Go services consume the unified go/proto module directly.
+var goctlServices = []string{"db", "login"}
+
+// GoctlServices returns the list of services that need per-service proto staging.
+func GoctlServices() []string {
+	return goctlServices
+}
+
 // CopyProtoToGenDir copies proto files to the generation output directories.
+// Only db and login need per-service copies (for goctl); all other Go services
+// use the unified go/proto module.
 func CopyProtoToGenDir(wg *sync.WaitGroup) {
 	wg.Add(1)
 
-	goProtoDirs := utils2.GetGoProtoDomainNames()
-
 	go func() {
 		defer wg.Done()
-		for _, dir := range goProtoDirs {
+		for _, dir := range goctlServices {
 			destDir := _config.Global.Paths.GeneratorProtoDir + BuildGeneratorProtoPath(dir)
 			if err := copyProtoToDir(_config.Global.Paths.ProtoDir, destDir); err != nil {
 				logger.Global.Warn("Failed to copy proto files",
@@ -50,8 +60,6 @@ func CopyProtoToGenDir(wg *sync.WaitGroup) {
 			}
 		}
 	}()
-
-	// Robot proto copy removed: robot now uses go/proto via replace directive.
 }
 
 // copyProtoToDir copies proto files from a single source directory to the destination.

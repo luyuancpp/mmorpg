@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	_config "protogen/internal/config"
+	"protogen/internal/prototools"
 	utils2 "protogen/internal/utils"
 	"protogen/logger"
 
@@ -148,13 +149,14 @@ func resolveProtocPath() (string, error) {
 }
 
 // AddGoPackageToProtoDir adds go_package declarations to proto files.
+// Only db and login need per-service go_package (for goctl); all other Go
+// services use the unified go/proto module.
 func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 	wg.Add(1) // Increment wg counter to ensure the main flow waits for this goroutine.
 	go func() {
 		defer wg.Done()
-		goProtoDirs := utils2.GetGoProtoDomainNames()
 
-		for _, dirName := range goProtoDirs {
+		for _, dirName := range prototools.GoctlServices() {
 			destDir := filepath.ToSlash(_config.Global.Paths.GeneratorProtoDir + dirName + "/" + _config.Global.DirectoryNames.ProtoDirName)
 			baseGoPackage := filepath.ToSlash(dirName)
 
