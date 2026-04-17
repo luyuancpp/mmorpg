@@ -136,6 +136,11 @@ Node::Node(muduo::net::EventLoop *loop, const std::string &logFilePath)
 	muduo::Logger::setOutput(AsyncOutput);
 	logSystem.start();
 
+	// Set timezone before any LOG_xxx call. Without a valid timezone, muduo appends 'Z'
+	// to the timestamp (9 bytes instead of 8), shifting the log-level character past
+	// kLoginInfoInex and causing LogToConsole to fall into the default (red) color.
+	SetupTimeZone();
+
 	LOG_INFO << "Node created, log file: " << logFilePath;
 	if (gNode != nullptr && gNode != this)
 	{
@@ -185,7 +190,6 @@ void Node::Initialize()
 {
 	eventLoop->assertInLoopThread();
 	LOG_DEBUG << "Node initializing...";
-	SetupTimeZone();
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();
