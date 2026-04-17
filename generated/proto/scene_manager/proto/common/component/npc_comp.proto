@@ -1,9 +1,0 @@
-syntax = "proto3";
-option go_package = "scene_manager/proto/common/component";
-
-
-
-message Npc
-{
-}
-

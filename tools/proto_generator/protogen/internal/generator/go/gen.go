@@ -3,7 +3,6 @@ package _go
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	_config "protogen/internal/config"
@@ -12,120 +11,6 @@ import (
 
 	"go.uber.org/zap"
 )
-
-func GenerateGoProto(rootDir string) error {
-	if utils2.HasEtcdService(rootDir) {
-		logger.Global.Debug("Skipping etcd service directory",
-			zap.String("root_dir", rootDir),
-		)
-		return nil
-	}
-
-	protoFiles, err := collectGoGrpcProtoFiles(rootDir)
-	if err != nil {
-		logger.Global.Fatal("Go gRPC generation: failed to collect proto files",
-			zap.String("root_dir", rootDir),
-			zap.Error(err),
-		)
-	}
-	if len(protoFiles) == 0 {
-		logger.Global.Info("Go gRPC generation: no proto files to process, skipping directory",
-			zap.String("root_dir", rootDir),
-		)
-		return nil
-	}
-
-	// Avoid cross-domain overwrite races: only generate files whose go_package belongs to this domain.
-	domainName := filepath.Base(filepath.Dir(filepath.Clean(rootDir)))
-	protoFiles = filterProtoFilesByDomainGoPackage(protoFiles, domainName)
-	if len(protoFiles) == 0 {
-		logger.Global.Info("Go gRPC generation: no proto files after filtering, skipping directory",
-			zap.String("root_dir", rootDir),
-			zap.String("domain", domainName),
-		)
-		return nil
-	}
-
-	nodeGoDir := _config.Global.Paths.NodeGoDir
-	if err := utils2.EnsureDir(nodeGoDir); err != nil {
-		logger.Global.Fatal("Go gRPC generation: failed to create output directory",
-			zap.String("output_dir", nodeGoDir),
-			zap.Error(err),
-		)
-	}
-
-	protoRootPath := filepath.Dir(filepath.Clean(rootDir))
-
-	if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
-		logger.Global.Fatal("Go gRPC generation: code generation failed",
-			zap.String("root_dir", rootDir),
-			zap.String("output_dir", nodeGoDir),
-			zap.Error(err),
-		)
-	}
-
-	logger.Global.Info("Go gRPC generation: directory processed",
-		zap.String("root_dir", rootDir),
-		zap.Int("proto_file_count", len(protoFiles)),
-	)
-	return nil
-}
-
-func filterProtoFilesByDomainGoPackage(protoFiles []string, domainName string) []string {
-	if domainName == "" {
-		return protoFiles
-	}
-
-	prefix := domainName + "/"
-	filtered := make([]string, 0, len(protoFiles))
-
-	for _, protoFile := range protoFiles {
-		content, err := os.ReadFile(protoFile)
-		if err != nil {
-			logger.Global.Warn("Go gRPC filter: failed to read proto file, keeping conservatively",
-				zap.String("file", protoFile),
-				zap.Error(err),
-			)
-			filtered = append(filtered, protoFile)
-			continue
-		}
-
-		goPackage := ""
-		for _, line := range strings.Split(string(content), "\n") {
-			trimmed := strings.TrimSpace(line)
-			if !strings.HasPrefix(trimmed, "option go_package =") {
-				continue
-			}
-			firstQuote := strings.Index(trimmed, "\"")
-			if firstQuote < 0 {
-				break
-			}
-			rest := trimmed[firstQuote+1:]
-			secondQuote := strings.Index(rest, "\"")
-			if secondQuote < 0 {
-				break
-			}
-			goPackage = rest[:secondQuote]
-			if semi := strings.Index(goPackage, ";"); semi >= 0 {
-				goPackage = goPackage[:semi]
-			}
-			break
-		}
-
-		if goPackage == "" || strings.HasPrefix(goPackage, prefix) {
-			filtered = append(filtered, protoFile)
-			continue
-		}
-
-		logger.Global.Debug("Go gRPC filter: skipping cross-domain go_package file",
-			zap.String("file", protoFile),
-			zap.String("domain", domainName),
-			zap.String("go_package", goPackage),
-		)
-	}
-
-	return filtered
-}
 
 // GenerateRobotGoProto recursively processes proto files in a directory to generate Go gRPC code.
 func GenerateRobotGoProto(rootDir string, protoRootPath string) error {
@@ -287,24 +172,6 @@ func AddGoPackageToProtoDir(wg *sync.WaitGroup) {
 			}
 		}
 
-		for _, dirName := range goProtoDirs {
-			destDir := filepath.ToSlash(_config.Global.Paths.GeneratorProtoDir + dirName + "/" + _config.Global.DirectoryNames.GoZeroProtoDirName)
-			baseGoPackage := filepath.ToSlash(dirName)
-
-			if err := AddGoZeroPackageToProtos(destDir, baseGoPackage, destDir, true); err != nil {
-				logger.Global.Warn("GoZero GoPackage setup: failed to process directory",
-					zap.String("dest_dir", destDir),
-					zap.String("base_go_package", baseGoPackage),
-					zap.Error(err),
-				)
-			} else {
-				logger.Global.Info("GoZero GoPackage setup: directory processed",
-					zap.String("dest_dir", destDir),
-					zap.String("base_go_package", baseGoPackage),
-				)
-			}
-		}
-
 		destDir := _config.Global.Paths.RobotGeneratedProto
 		baseGoPackage := filepath.ToSlash(_config.Global.Naming.GoRobotPackage)
 
@@ -349,39 +216,6 @@ func addDynamicGoPackage(rootDir, baseGoPackage, currentDir string, isMulti bool
 			}
 		} else if filepath.Ext(fullPath) == ".proto" {
 			if err := processProtoFileForGoPackage(rootDir, baseGoPackage, fullPath, isMulti, false); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// AddGoZeroPackageToProtos processes go_package for GoZero generated directories.
-func AddGoZeroPackageToProtos(rootDir, baseGoPackage, currentDir string, isMulti bool) error {
-	entries, err := os.ReadDir(currentDir)
-	if err != nil {
-		logger.Global.Fatal("GoZero GoPackage setup: failed to read directory",
-			zap.String("current_dir", currentDir),
-			zap.Error(err),
-		)
-	}
-
-	for _, entry := range entries {
-		fullPath := filepath.Join(currentDir, entry.Name())
-		info, err := entry.Info()
-		if err != nil {
-			logger.Global.Fatal("GoZero GoPackage setup: failed to get file info",
-				zap.String("file_path", fullPath),
-				zap.Error(err),
-			)
-		}
-
-		if info.IsDir() {
-			if err := AddGoZeroPackageToProtos(rootDir, baseGoPackage, fullPath, isMulti); err != nil {
-				return err
-			}
-		} else if filepath.Ext(fullPath) == ".proto" {
-			if err := processProtoFileForGoPackage(rootDir, baseGoPackage, fullPath, isMulti, true); err != nil {
 				return err
 			}
 		}
@@ -441,31 +275,4 @@ func processProtoFileForGoPackage(rootDir, baseGoPackage, filePath string, isMul
 		)
 	}
 	return nil
-}
-
-// BuildGrpcServiceProto concurrently processes all gRPC directories.
-func BuildGrpcServiceProto(wg *sync.WaitGroup) {
-	goProtoDirs := utils2.GetGoProtoDomainNames()
-	for _, dirName := range goProtoDirs {
-		wg.Add(1)
-
-		go func(currentDir string) {
-			defer wg.Done()
-			destDir := _config.Global.Paths.GeneratorProtoDir + currentDir + "/" + _config.Global.DirectoryNames.NormalGoProto
-			if err := GenerateGoProto(destDir); err != nil {
-				logger.Global.Warn("gRPC service build: failed to process directory",
-					zap.String("current_dir", currentDir),
-					zap.String("dest_dir", destDir),
-					zap.Error(err),
-				)
-			} else {
-				logger.Global.Info("gRPC service build: directory processed",
-					zap.String("current_dir", currentDir),
-					zap.String("dest_dir", destDir),
-				)
-			}
-		}(dirName)
-	}
-
-	// Robot gRPC generation removed: robot now uses go/proto via replace directive.
 }
