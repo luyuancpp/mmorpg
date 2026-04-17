@@ -7,12 +7,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"robot/generated/pb/game"
-	"robot/metrics"
-	"robot/pkg"
 	"proto/chat"
 	"proto/common/component"
 	"proto/scene"
+	"robot/generated/pb/game"
+	"robot/metrics"
+	"robot/pkg"
 )
 
 // RobotAI drives a single robot's in-game behavior after login+enter.
@@ -34,7 +34,7 @@ func NewRobotAI(client *pkg.GameClient, stats *metrics.Stats) *RobotAI {
 		client:   client,
 		stats:    stats,
 		profile:  &p,
-		skillIDs: []uint32{1001},
+		skillIDs: []uint32{1, 2, 13},
 		interval: 3 * time.Second,
 	}
 }

@@ -10,6 +10,7 @@
 #include "time/system/time_cooldown.h"
 #include "table/proto/tip/skill_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "player/system/player_skill.h"
 #include <thread_context/ecs_context.h>
 #include "../test_config_helper.h"
 
@@ -217,6 +218,23 @@ TEST_F(SkillUtilTest, SendSkillInterruptedMessage_SendsMessage) {
     uint32_t skillId = 1;
 
     EXPECT_NO_THROW(skillUtil->SendSkillInterruptedMessage(caster, skillId));
+}
+
+TEST(PlayerSkillSystemTest, SanitizeSkillListRemovesUnknownAndDuplicateSkills)
+{
+    entt::entity player = tlsEcs.actorRegistry.create();
+    auto &skillList = tlsEcs.actorRegistry.get_or_emplace<PlayerSkillListComp>(player);
+
+    skillList.add_skill_list()->set_skill_table_id(1);
+    skillList.add_skill_list()->set_skill_table_id(1001);
+    skillList.add_skill_list()->set_skill_table_id(1);
+
+    PlayerSkillSystem::SanitizeSkillList(player);
+
+    ASSERT_EQ(skillList.skill_list_size(), 1);
+    EXPECT_EQ(skillList.skill_list(0).skill_table_id(), 1);
+    EXPECT_TRUE(PlayerSkillSystem::HasSkill(player, 1));
+    EXPECT_FALSE(PlayerSkillSystem::HasSkill(player, 1001));
 }
 
 // Main function
