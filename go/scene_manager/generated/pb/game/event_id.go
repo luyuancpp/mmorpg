@@ -38,3 +38,5 @@ const ContractsKafkaPlayerLeaseExpiredEventEventId = 34
 const ContractsKafkaPlayerLifecycleCommandEventId = 35
 const PlayerLoginEventEventId = 36
 const ContractsKafkaRedirectToGateEventEventId = 37
+const ContractsKafkaBroadcastToPlayersEventEventId = 38
+const ContractsKafkaPushToPlayerEventEventId = 39

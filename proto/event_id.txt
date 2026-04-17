@@ -36,3 +36,5 @@
 35=ContractsKafkaPlayerLifecycleCommand
 36=PlayerLoginEvent
 37=ContractsKafkaRedirectToGateEvent
+38=ContractsKafkaBroadcastToPlayersEvent
+39=ContractsKafkaPushToPlayerEvent

@@ -60,6 +60,8 @@ void GateEventHandler::Register()
     tlsEcs.dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().connect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BindSessionEvent>().connect<&GateEventHandler::BindSessionEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::RedirectToGateEvent>().connect<&GateEventHandler::RedirectToGateEventHandler>();
+    tlsEcs.dispatcher.sink<contracts::kafka::PushToPlayerEvent>().connect<&GateEventHandler::PushToPlayerEventHandler>();
+    tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToPlayersEvent>().connect<&GateEventHandler::BroadcastToPlayersEventHandler>();
 }
 
 void GateEventHandler::UnRegister()
@@ -70,6 +72,8 @@ void GateEventHandler::UnRegister()
     tlsEcs.dispatcher.sink<contracts::kafka::PlayerLeaseExpiredEvent>().disconnect<&GateEventHandler::PlayerLeaseExpiredEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BindSessionEvent>().disconnect<&GateEventHandler::BindSessionEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::RedirectToGateEvent>().disconnect<&GateEventHandler::RedirectToGateEventHandler>();
+    tlsEcs.dispatcher.sink<contracts::kafka::PushToPlayerEvent>().disconnect<&GateEventHandler::PushToPlayerEventHandler>();
+    tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToPlayersEvent>().disconnect<&GateEventHandler::BroadcastToPlayersEventHandler>();
 }
 void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
 {
@@ -224,4 +228,29 @@ void GateEventHandler::RedirectToGateEventHandler(const contracts::kafka::Redire
              << " session_id=" << sessionId
              << " target=" << event.target_gate_ip() << ":" << event.target_gate_port();
 ///<<< END WRITING YOUR CODE
+}
+void GateEventHandler::PushToPlayerEventHandler(const contracts::kafka::PushToPlayerEvent &event)
+{
+    ///<<< BEGIN WRITING YOUR CODE
+    auto it = tlsSessionManager.sessions().find(event.session_id());
+    if (it == tlsSessionManager.sessions().end())
+    {
+        return;
+    }
+    GetGateCodec().send(it->second.conn, event.message_content());
+    ///<<< END WRITING YOUR CODE
+}
+void GateEventHandler::BroadcastToPlayersEventHandler(const contracts::kafka::BroadcastToPlayersEvent &event)
+{
+    ///<<< BEGIN WRITING YOUR CODE
+    for (const auto sessionId : event.session_list())
+    {
+        auto it = tlsSessionManager.sessions().find(sessionId);
+        if (it == tlsSessionManager.sessions().end())
+        {
+            continue;
+        }
+        GetGateCodec().send(it->second.conn, event.message_content());
+    }
+    ///<<< END WRITING YOUR CODE
 }

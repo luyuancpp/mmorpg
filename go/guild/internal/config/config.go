@@ -13,6 +13,7 @@ type Config struct {
 	Node        NodeConf     `json:"Node"`
 	Registry    RegistryConf `json:"Registry"`
 	Cache       CacheConf    `json:"Cache"`
+	Kafka       KafkaConf    `json:"Kafka"`
 }
 
 type RedisConf struct {
@@ -42,6 +43,10 @@ type EtcdConf struct {
 type CacheConf struct {
 	DefaultTTL time.Duration `json:"DefaultTTL"`
 	MaxMembers uint32        `json:"MaxMembers"`
+}
+
+type KafkaConf struct {
+	Brokers []string `json:"Brokers"`
 }
 
 var AppConfig Config
