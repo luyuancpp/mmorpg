@@ -5,7 +5,7 @@ import (
 	"data_service/internal/routing"
 	"data_service/internal/store"
 
-	loginpb "data_service/proto/login"
+	loginpb "proto/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/zrpc"
