@@ -33,12 +33,3 @@ message NetworkAddress
   uint32 port = 2;
 }
 
-message SceneInfoComp
-{
-  uint32 scene_config_id = 1;// Scene config ID
-  uint64 scene_id = 2;// Scene unique ID (snowflake)
-  uint32 mirror_config_id = 3;// Mirror config ID
-  uint32 dungeon_config_id = 4;// Dungeon config ID
-  map<uint64, bool> creators = 5;// Creators
-}
-

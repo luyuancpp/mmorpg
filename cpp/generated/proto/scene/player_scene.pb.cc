@@ -352,49 +352,49 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto[] AB
     protodesc_cold) = {
     "\n\036proto/scene/player_scene.proto\032\033proto/"
     "db/proto_option.proto\032\033proto/common/base"
-    "/tip.proto\032\036proto/common/base/common.pro"
-    "to\032\035proto/common/base/empty.proto\032\'proto"
-    "/common/component/actor_comp.proto\":\n\024En"
-    "terSceneC2SRequest\022\"\n\nscene_info\030\001 \001(\0132\016"
-    ".SceneInfoComp\"\?\n\025EnterSceneC2SResponse\022"
-    "&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage\""
-    "3\n\rEnterSceneS2C\022\"\n\nscene_info\030\001 \001(\0132\016.S"
-    "ceneInfoComp\"2\n\014SceneInfoS2C\022\"\n\nscene_in"
-    "fo\030\001 \003(\0132\016.SceneInfoComp\"\022\n\020SceneInfoReq"
-    "uest\"7\n\021SceneInfoResponse\022\"\n\nscene_info\030"
-    "\001 \003(\0132\016.SceneInfoComp\"u\n\016ActorCreateS2C\022"
-    "\016\n\006entity\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Tra"
-    "nsform\022\023\n\013entity_type\030\003 \001(\r\022\014\n\004guid\030\004 \001("
-    "\004\022\021\n\tconfig_id\030\005 \001(\004\"!\n\017ActorDestroyS2C\022"
-    "\016\n\006entity\030\001 \001(\004\"9\n\022ActorListCreateS2C\022#\n"
-    "\nactor_list\030\001 \003(\0132\017.ActorCreateS2C\"%\n\023Ac"
-    "torListDestroyS2C\022\016\n\006entity\030\001 \003(\0042\256\003\n\026Sc"
-    "eneSceneClientPlayer\022;\n\nEnterScene\022\025.Ent"
-    "erSceneC2SRequest\032\026.EnterSceneC2SRespons"
-    "e\022*\n\020NotifyEnterScene\022\016.EnterSceneS2C\032\006."
-    "Empty\022)\n\014SceneInfoC2S\022\021.SceneInfoRequest"
-    "\032\006.Empty\022(\n\017NotifySceneInfo\022\r.SceneInfoS"
-    "2C\032\006.Empty\022,\n\021NotifyActorCreate\022\017.ActorC"
-    "reateS2C\032\006.Empty\022.\n\022NotifyActorDestroy\022\020"
-    ".ActorDestroyS2C\032\006.Empty\0224\n\025NotifyActorL"
-    "istCreate\022\023.ActorListCreateS2C\032\006.Empty\0226"
-    "\n\026NotifyActorListDestroy\022\024.ActorListDest"
-    "royS2C\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324"
-    "a\003b\006proto3"
+    "/tip.proto\032\035proto/common/base/empty.prot"
+    "o\032\'proto/common/component/actor_comp.pro"
+    "to\032\034proto/scene/scene_info.proto\":\n\024Ente"
+    "rSceneC2SRequest\022\"\n\nscene_info\030\001 \001(\0132\016.S"
+    "ceneInfoComp\"\?\n\025EnterSceneC2SResponse\022&\n"
+    "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\"3\n"
+    "\rEnterSceneS2C\022\"\n\nscene_info\030\001 \001(\0132\016.Sce"
+    "neInfoComp\"2\n\014SceneInfoS2C\022\"\n\nscene_info"
+    "\030\001 \003(\0132\016.SceneInfoComp\"\022\n\020SceneInfoReque"
+    "st\"7\n\021SceneInfoResponse\022\"\n\nscene_info\030\001 "
+    "\003(\0132\016.SceneInfoComp\"u\n\016ActorCreateS2C\022\016\n"
+    "\006entity\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Trans"
+    "form\022\023\n\013entity_type\030\003 \001(\r\022\014\n\004guid\030\004 \001(\004\022"
+    "\021\n\tconfig_id\030\005 \001(\004\"!\n\017ActorDestroyS2C\022\016\n"
+    "\006entity\030\001 \001(\004\"9\n\022ActorListCreateS2C\022#\n\na"
+    "ctor_list\030\001 \003(\0132\017.ActorCreateS2C\"%\n\023Acto"
+    "rListDestroyS2C\022\016\n\006entity\030\001 \003(\0042\256\003\n\026Scen"
+    "eSceneClientPlayer\022;\n\nEnterScene\022\025.Enter"
+    "SceneC2SRequest\032\026.EnterSceneC2SResponse\022"
+    "*\n\020NotifyEnterScene\022\016.EnterSceneS2C\032\006.Em"
+    "pty\022)\n\014SceneInfoC2S\022\021.SceneInfoRequest\032\006"
+    ".Empty\022(\n\017NotifySceneInfo\022\r.SceneInfoS2C"
+    "\032\006.Empty\022,\n\021NotifyActorCreate\022\017.ActorCre"
+    "ateS2C\032\006.Empty\022.\n\022NotifyActorDestroy\022\020.A"
+    "ctorDestroyS2C\032\006.Empty\0224\n\025NotifyActorLis"
+    "tCreate\022\023.ActorListCreateS2C\032\006.Empty\0226\n\026"
+    "NotifyActorListDestroy\022\024.ActorListDestro"
+    "yS2C\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_deps[5] = {
-        &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2factor_5fcomp_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
+        &::descriptor_table_proto_2fscene_2fscene_5finfo_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    1210,
+    1208,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto,
     "proto/scene/player_scene.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_once,
