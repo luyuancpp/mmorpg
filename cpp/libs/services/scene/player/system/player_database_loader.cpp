@@ -1,11 +1,13 @@
 
 #include "thread_context/ecs_context.h"
 #include "proto/common/database/mysql_database_table.pb.h"
+#include "player_skill.h"
 
 void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message){
 	tlsEcs.actorRegistry.emplace<Transform>(player, message.transform());
 	tlsEcs.actorRegistry.emplace<PlayerUint64Comp>(player, message.uint64_pb_component());
 	tlsEcs.actorRegistry.emplace<PlayerSkillListComp>(player, message.skill_list());
+	PlayerSkillSystem::SanitizeSkillList(player);
 	tlsEcs.actorRegistry.emplace<PlayerUint32Comp>(player, message.uint32_pb_component());
 	tlsEcs.actorRegistry.emplace<BaseAttributesComp>(player, message.derived_attributes_component());
 	tlsEcs.actorRegistry.emplace<LevelComp>(player, message.level_component());
