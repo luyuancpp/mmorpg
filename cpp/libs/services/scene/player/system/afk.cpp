@@ -21,7 +21,7 @@ void AfkSystem::Update(double delta)
     //    Movement, AOI, and attribute sync systems use exclude<AfkComp>,
     //    so AFK players skip expensive per-tick processing automatically.
     auto activeView = registry.view<Player, LastActiveFrameComp>(entt::exclude<AfkComp>);
-    for (auto&& [entity, lastActive] : activeView.each())
+    for (auto &&[entity, player, lastActive] : activeView.each())
     {
         if (currentFrame - lastActive.frame >= kAfkInactivityFrames)
         {
@@ -33,7 +33,7 @@ void AfkSystem::Update(double delta)
 
     // 2. Check AFK players: if they received new input, remove AFK.
     auto afkView = registry.view<Player, AfkComp, LastActiveFrameComp>();
-    for (auto&& [entity, afkComp, lastActive] : afkView.each())
+    for (auto &&[entity, player, afkComp, lastActive] : afkView.each())
     {
         if (lastActive.frame > afkComp.afkStartFrame)
         {
