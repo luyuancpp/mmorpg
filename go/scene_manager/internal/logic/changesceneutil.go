@@ -3,10 +3,11 @@ package logic
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
-	"scene_manager/internal/svc"
 	smpb "proto/scene_manager"
+	"scene_manager/internal/svc"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -40,13 +41,14 @@ func GetPlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId
 }
 
 // UpdatePlayerLocation updates the player's location using protobuf
-func UpdatePlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, sceneId uint64, nodeId string) error {
+func UpdatePlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, sceneId uint64, nodeId string, zoneId uint32) error {
 	key := getPlayerLocationKey(playerId)
 	
 	loc := &smpb.PlayerLocation{
 		SceneId:    sceneId,
 		NodeId:     nodeId,
 		UpdateTime: uint64(time.Now().Unix()),
+		ZoneId:     zoneId,
 	}
 
 	data, err := proto.Marshal(loc)
@@ -62,4 +64,15 @@ func DeletePlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playe
 	key := getPlayerLocationKey(playerId)
 	_, err := svcCtx.Redis.Del(key)
 	return err
+}
+
+// GetSceneZone looks up the zone_id for a scene from Redis (scene:{id}:zone).
+// Returns 0 if not found.
+func GetSceneZone(svcCtx *svc.ServiceContext, sceneId uint64) uint32 {
+	val, err := svcCtx.Redis.Get(fmt.Sprintf("scene:%d:zone", sceneId))
+	if err != nil || val == "" {
+		return 0
+	}
+	z, _ := strconv.ParseUint(val, 10, 32)
+	return uint32(z)
 }

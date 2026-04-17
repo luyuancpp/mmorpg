@@ -101,10 +101,13 @@ func (x *SceneInfo) GetSceneType() uint32 {
 
 // Redis: player:{id}:location
 type PlayerLocation struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneId       uint64                 `protobuf:"varint,1,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
-	NodeId        string                 `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	UpdateTime    uint64                 `protobuf:"varint,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	SceneId    uint64                 `protobuf:"varint,1,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
+	NodeId     string                 `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	UpdateTime uint64                 `protobuf:"varint,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	// Zone where the player's current scene resides.
+	// Used on reconnect to determine cross-zone redirect need.
+	ZoneId        uint32 `protobuf:"varint,4,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -160,6 +163,13 @@ func (x *PlayerLocation) GetUpdateTime() uint64 {
 	return 0
 }
 
+func (x *PlayerLocation) GetZoneId() uint32 {
+	if x != nil {
+		return x.ZoneId
+	}
+	return 0
+}
+
 var File_proto_scene_manager_storage_proto protoreflect.FileDescriptor
 
 const file_proto_scene_manager_storage_proto_rawDesc = "" +
@@ -172,12 +182,13 @@ const file_proto_scene_manager_storage_proto_rawDesc = "" +
 	"\vcreate_time\x18\x04 \x01(\x03R\n" +
 	"createTime\x12\x1d\n" +
 	"\n" +
-	"scene_type\x18\x05 \x01(\rR\tsceneType\"e\n" +
+	"scene_type\x18\x05 \x01(\rR\tsceneType\"~\n" +
 	"\x0ePlayerLocation\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12\x1f\n" +
 	"\vupdate_time\x18\x03 \x01(\x04R\n" +
-	"updateTimeB\"Z data_service/proto/scene_managerb\x06proto3"
+	"updateTime\x12\x17\n" +
+	"\azone_id\x18\x04 \x01(\rR\x06zoneIdB\"Z data_service/proto/scene_managerb\x06proto3"
 
 var (
 	file_proto_scene_manager_storage_proto_rawDescOnce sync.Once

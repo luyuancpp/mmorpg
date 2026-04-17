@@ -36,18 +36,36 @@ func errResp(code uint32, msg string) *scene_manager.EnterSceneResponse {
 
 // EnterScene routes a player into a scene, managed by SceneManager.
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
-	// 1. Resolve the target scene (sceneId + nodeId).
-	sceneId, nodeId, err := l.resolveScene(in.SceneId, in.SceneConfId, in.ZoneId)
+	// 1. Determine the target zone.
+	//    - Caller provided zone_id: use it (explicit cross-zone teleport).
+	//    - sceneId != 0, no zone_id: look up scene:{id}:zone (reconnect / follow).
+	//    - sceneId == 0, no zone_id: fall back to existing PlayerLocation zone,
+	//      then to GateZoneId (first login — gate zone = home zone).
+	targetZoneId := in.ZoneId
+	if targetZoneId == 0 && in.SceneId != 0 {
+		targetZoneId = GetSceneZone(l.svcCtx, in.SceneId)
+	}
+	if targetZoneId == 0 {
+		if loc, _ := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId); loc != nil && loc.ZoneId != 0 {
+			targetZoneId = loc.ZoneId
+		}
+	}
+	if targetZoneId == 0 {
+		targetZoneId = in.GateZoneId
+	}
+
+	// 2. Resolve the target scene (sceneId + nodeId).
+	sceneId, nodeId, err := l.resolveScene(in.SceneId, in.SceneConfId, targetZoneId)
 	if err != nil {
 		return errResp(constants.ErrNoAvailableNode, err.Error()), nil
 	}
 
-	// 2. CROSS-ZONE CHECK: If gate is in a different zone, redirect the player.
-	if in.GateZoneId != 0 && in.ZoneId != 0 && in.GateZoneId != in.ZoneId {
-		return l.handleCrossZoneRedirect(in)
+	// 3. CROSS-ZONE CHECK: If gate is in a different zone, redirect the player.
+	if in.GateZoneId != 0 && targetZoneId != 0 && in.GateZoneId != targetZoneId {
+		return l.handleCrossZoneRedirect(in, targetZoneId)
 	}
 
-	// 3. IDEMPOTENCY CHECK: Is player already here?
+	// 4. IDEMPOTENCY CHECK: Is player already here?
 	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
 	if err == nil && currentLoc != nil {
 		if currentLoc.SceneId == sceneId && currentLoc.NodeId == nodeId {
@@ -56,15 +74,13 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		}
 	}
 
-	// 4. Update Player Location (Source of Truth)
-	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, sceneId, nodeId); err != nil {
+	// 5. Update Player Location (Source of Truth)
+	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, sceneId, nodeId, targetZoneId); err != nil {
 		l.Logger.Errorf("Failed to update player location: %v", err)
 		return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
 	}
 
-	// 5. Send Route Command to Gate (via Kafka) — best-effort notification.
-	// The gate Kafka consumer may not be implemented yet; location in Redis
-	// is the source of truth so we log but do not fail the request.
+	// 6. Send Route Command to Gate (via Kafka) — best-effort notification.
 	if in.GateId != "" {
 		if err := l.routePlayerToGate(in, nodeId, sceneId); err != nil {
 			l.Logger.Errorf("Failed to route player %d to gate (non-fatal): %v", in.PlayerId, err)
@@ -73,22 +89,21 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
 
-	// 6. Track instance player count.
-	// For main world scenes the key is unused by lifecycle cleanup (harmless).
+	// 7. Track instance player count.
 	IncrInstancePlayerCount(l.svcCtx, sceneId)
 
-	l.Logger.Infof("Player %d entered scene %d on node %s", in.PlayerId, sceneId, nodeId)
+	l.Logger.Infof("Player %d entered scene %d on node %s (zone %d)", in.PlayerId, sceneId, nodeId, targetZoneId)
 	return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
 }
 
 // handleCrossZoneRedirect assigns a Gate in the target zone and returns redirect info.
 // It also sends a RedirectToGateEvent to the current Gate via Kafka so the Gate can
 // push the redirect to the client immediately.
-func (l *EnterSceneLogic) handleCrossZoneRedirect(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
+func (l *EnterSceneLogic) handleCrossZoneRedirect(in *scene_manager.EnterSceneRequest, targetZoneId uint32) (*scene_manager.EnterSceneResponse, error) {
 	l.Logger.Infof("Cross-zone detected: player %d gate_zone=%d target_zone=%d, redirecting",
-		in.PlayerId, in.GateZoneId, in.ZoneId)
+		in.PlayerId, in.GateZoneId, targetZoneId)
 
-	redirect, err := AssignGateForZone(l.ctx, l.svcCtx, in.ZoneId)
+	redirect, err := AssignGateForZone(l.ctx, l.svcCtx, targetZoneId)
 	if err != nil {
 		l.Logger.Errorf("Cross-zone redirect failed for player %d: %v", in.PlayerId, err)
 		return errResp(constants.ErrNoAvailableNode, "no gate available in target zone"), nil

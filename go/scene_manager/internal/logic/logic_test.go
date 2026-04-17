@@ -55,7 +55,7 @@ func TestUpdateAndGetPlayerLocation(t *testing.T) {
 	sc, _ := newTestSvcCtx(t, "node-1")
 	ctx := context.Background()
 
-	err := UpdatePlayerLocation(ctx, sc, 1001, 42, "scene-node-1")
+	err := UpdatePlayerLocation(ctx, sc, 1001, 42, "scene-node-1", testZoneId)
 	require.NoError(t, err)
 
 	loc, err := GetPlayerLocation(ctx, sc, 1001)
@@ -65,6 +65,7 @@ func TestUpdateAndGetPlayerLocation(t *testing.T) {
 	assert.Equal(t, uint64(42), loc.SceneId)
 	assert.Equal(t, "scene-node-1", loc.NodeId)
 	assert.True(t, loc.UpdateTime > 0)
+	assert.Equal(t, testZoneId, loc.ZoneId)
 }
 
 func TestGetPlayerLocation_NotFound(t *testing.T) {
@@ -86,7 +87,7 @@ func TestDeletePlayerLocation(t *testing.T) {
 	ctx := context.Background()
 
 	// Create
-	err := UpdatePlayerLocation(ctx, sc, 2001, 100, "node-a")
+	err := UpdatePlayerLocation(ctx, sc, 2001, 100, "node-a", testZoneId)
 	require.NoError(t, err)
 
 	// Verify exists
@@ -110,10 +111,10 @@ func TestUpdatePlayerLocation_Overwrite(t *testing.T) {
 	ctx := context.Background()
 
 	// First location
-	require.NoError(t, UpdatePlayerLocation(ctx, sc, 3001, 10, "node-a"))
+	require.NoError(t, UpdatePlayerLocation(ctx, sc, 3001, 10, "node-a", testZoneId))
 
 	// Overwrite with new location (player changed scene)
-	require.NoError(t, UpdatePlayerLocation(ctx, sc, 3001, 20, "node-b"))
+	require.NoError(t, UpdatePlayerLocation(ctx, sc, 3001, 20, "node-b", testZoneId))
 
 	loc, err := GetPlayerLocation(ctx, sc, 3001)
 	require.NoError(t, err)
@@ -192,9 +193,9 @@ func TestMultiplePlayersLocation(t *testing.T) {
 	ctx := context.Background()
 
 	// Place multiple players
-	require.NoError(t, UpdatePlayerLocation(ctx, sc, 100, 1, "node-a"))
-	require.NoError(t, UpdatePlayerLocation(ctx, sc, 200, 2, "node-b"))
-	require.NoError(t, UpdatePlayerLocation(ctx, sc, 300, 1, "node-a"))
+	require.NoError(t, UpdatePlayerLocation(ctx, sc, 100, 1, "node-a", testZoneId))
+	require.NoError(t, UpdatePlayerLocation(ctx, sc, 200, 2, "node-b", testZoneId))
+	require.NoError(t, UpdatePlayerLocation(ctx, sc, 300, 1, "node-a", testZoneId))
 
 	// Each player has their own location
 	loc1, _ := GetPlayerLocation(ctx, sc, 100)

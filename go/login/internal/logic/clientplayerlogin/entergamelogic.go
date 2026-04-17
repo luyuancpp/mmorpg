@@ -193,6 +193,7 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 		GateId:         state.gateID,
 		GateInstanceId: state.gateInstanceID,
 		GateZoneId:     config.AppConfig.Node.ZoneId,
+		ZoneId:         config.AppConfig.Node.ZoneId,
 	}, zrpc.WithCallTimeout(smTimeout))
 	if err != nil {
 		logx.Errorf("SceneManager.EnterScene failed for player %d: %v", state.playerID, err)

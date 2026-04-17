@@ -464,6 +464,7 @@ class PlayerLocation final : public ::google::protobuf::Message
     kNodeIdFieldNumber = 2,
     kSceneIdFieldNumber = 1,
     kUpdateTimeFieldNumber = 3,
+    kZoneIdFieldNumber = 4,
   };
   // string node_id = 2;
   void clear_node_id() ;
@@ -500,11 +501,21 @@ class PlayerLocation final : public ::google::protobuf::Message
   void _internal_set_update_time(::uint64_t value);
 
   public:
+  // uint32 zone_id = 4;
+  void clear_zone_id() ;
+  ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:storage.PlayerLocation)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 38,
                                    2>
       _table_;
@@ -529,6 +540,7 @@ class PlayerLocation final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr node_id_;
     ::uint64_t scene_id_;
     ::uint64_t update_time_;
+    ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -829,6 +841,30 @@ inline ::uint64_t PlayerLocation::_internal_update_time() const {
 inline void PlayerLocation::_internal_set_update_time(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.update_time_ = value;
+}
+
+// uint32 zone_id = 4;
+inline void PlayerLocation::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t PlayerLocation::zone_id() const {
+  // @@protoc_insertion_point(field_get:storage.PlayerLocation.zone_id)
+  return _internal_zone_id();
+}
+inline void PlayerLocation::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:storage.PlayerLocation.zone_id)
+}
+inline ::uint32_t PlayerLocation::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void PlayerLocation::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
 }
 
 #ifdef __GNUC__
