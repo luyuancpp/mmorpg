@@ -99,6 +99,13 @@ The following were removed from git tracking:
 - SnowFlake: single production implementation at `utils/id/snow_flake.h` (kNodeBits=17, kStepBits=15, epoch=1773446400).
 - Disambiguate same-name types across services: prefix with service name (e.g. `CentrePlayerDataRedis` vs `PlayerDataRedis`, `GateSessionMap` vs `SessionList`).
 
+### Kafka zombie message protection (`target_instance_id`)
+- Topics use `{node_type}-{node_id}` naming (e.g. `gate-1001`, `scene-2001`). Node IDs can be reused after restart.
+- All `*_command.proto` contracts include a `target_instance_id` field. C++ consumer validates it in `node_kafka_command_handler.h` → `ValidateCommandTarget()` — messages with mismatched instance UUID are silently dropped.
+- **Code review rule**: Any Go/C++ producer sending to a `{type}-{id}` Kafka topic **MUST** populate `target_instance_id` with the target node's UUID. Omitting it disables zombie filtering and risks delivering stale commands to a restarted node.
+- **New node types**: If adding a new `*_command.proto`, it **MUST** include a `target_instance_id` string field. Consumer-side validation is automatic via shared `RegisterKafkaCommandHandler<T>`.
+- Three-layer defense: (1) `target_instance_id` validation, (2) 60s topic retention, (3) node ID reuse cooldown (etcd lease 60s + SnowFlake guard 600s).
+
 ### Go Kafka config standard
 - All services use `Brokers []string` (not comma-separated `string`).
 - login and db use IBM/sarama (ordered, transactional).
@@ -145,6 +152,7 @@ The following were removed from git tracking:
 - Defining the same type alias name in different services without disambiguation prefix.
 - Using `string` for Kafka Brokers config (use `[]string` consistently across all Go services).
 - Keeping dead SnowFlake implementations or duplicate `Guid` typedefs in headers (consolidate to `type_define.h`).
+- Sending Kafka messages to `{type}-{id}` topics without populating `target_instance_id` — risks delivering stale commands to a restarted node with a recycled node_id.
 
 ## UNIQUE STYLES
 - Repo keeps generated outputs checked in.

@@ -35,6 +35,13 @@
 - **NEVER** introduce a SnowFlake-generated ID that is produced by multiple node types — the 17-bit worker field will collide since different node types share the same `node_id` range.
 - If a globally-unique cross-node-type ID is ever needed, either encode `node_type` into the worker field (e.g. 5-bit type + 12-bit node) or switch node ID allocation to a single global namespace.
 
+## Kafka Zombie Message Protection
+- All C++ node types (Gate, Scene, Centre) subscribe to Kafka topics named `{type}-{node_id}`. Node IDs are recycled via etcd after restart.
+- Each `*_command.proto` (gate, scene, centre) includes a `target_instance_id` field. The shared C++ consumer in `node_kafka_command_handler.h` validates it: mismatched instance UUID -> message dropped.
+- **Rule**: Every Kafka producer (Go or C++) sending to `{type}-{id}` topics MUST fill `target_instance_id` with the target node's UUID. Empty value disables zombie filtering.
+- **Rule**: Any new `*_command.proto` MUST include a `target_instance_id` string field for the shared consumer validation to work.
+- Three-layer defense: (1) instance UUID validation, (2) 60s topic retention, (3) node ID reuse cooldown (etcd 60s + SnowFlake guard 600s).
+
 ## Traffic Statistics System
 - **C++**: `TrafficStatsCollector` singleton in `cpp/libs/engine/core/network/traffic_statistics.h/.cpp`. Per-message atomic counters (send/recv count, bytes, max size). Registered automatically in `Node` constructor via `RegisterTrafficStatsReporter()`. Old `LogMessageStatistics()` in `GameChannel` is legacy (per-message logging, not thread-safe); new system replaces it with periodic summary logging.
 - **Go**: `grpcstats.Collector` in `go/shared/grpcstats/collector.go`. gRPC `UnaryServerInterceptor` tracking per-method call count, request/response bytes, latency avg/max. Wired into all Go services.
