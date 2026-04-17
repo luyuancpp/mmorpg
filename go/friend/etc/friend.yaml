@@ -31,3 +31,7 @@ Cache:
   DefaultTTL: 30m
   MaxFriends: 200
   MaxPendingRequests: 50
+
+Kafka:
+  Brokers:
+    - "localhost:9092"

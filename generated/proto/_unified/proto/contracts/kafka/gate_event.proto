@@ -3,6 +3,8 @@ package contracts.kafka;
 
 option go_package = "proto/contracts/kafka";
 
+import "proto/common/base/message.proto";
+
 // In-process events decoded from Gate Kafka transport payloads.
 // These are intentionally modeled like node event protos so handlers can stay split by file/domain.
 message RoutePlayerEvent {
@@ -55,4 +57,19 @@ message RedirectToGateEvent {
   bytes  token_payload = 5;    // serialized GateTokenPayload for target gate
   bytes  token_signature = 6;  // HMAC-SHA256 signature
   int64  token_deadline = 7;   // unix seconds
+}
+
+// Go service pushes a single message to a player's client via Gate.
+// Flow: Go service -> Kafka gate-{gate_id} -> Gate -> client TCP
+message PushToPlayerEvent {
+  uint64 session_id = 1;
+  MessageContent message_content = 2;
+}
+
+// Go service broadcasts the same message to multiple players on the same Gate.
+// Sender groups players by gate_id and sends one Kafka message per Gate.
+// Flow: Go service -> Kafka gate-{gate_id} -> Gate -> N client TCP connections
+message BroadcastToPlayersEvent {
+  repeated uint64 session_list = 1;
+  MessageContent message_content = 2;
 }

@@ -30,3 +30,7 @@ Registry:
 Cache:
   DefaultTTL: 30m
   MaxMembers: 500
+
+Kafka:
+  Brokers:
+    - "localhost:9092"

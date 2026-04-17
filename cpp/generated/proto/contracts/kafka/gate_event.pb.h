@@ -29,6 +29,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
+#include "proto/common/base/message.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -58,6 +59,10 @@ class BindSessionEvent;
 struct BindSessionEventDefaultTypeInternal;
 extern BindSessionEventDefaultTypeInternal _BindSessionEvent_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull BindSessionEvent_class_data_;
+class BroadcastToPlayersEvent;
+struct BroadcastToPlayersEventDefaultTypeInternal;
+extern BroadcastToPlayersEventDefaultTypeInternal _BroadcastToPlayersEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull BroadcastToPlayersEvent_class_data_;
 class KickPlayerEvent;
 struct KickPlayerEventDefaultTypeInternal;
 extern KickPlayerEventDefaultTypeInternal _KickPlayerEvent_default_instance_;
@@ -70,6 +75,10 @@ class PlayerLeaseExpiredEvent;
 struct PlayerLeaseExpiredEventDefaultTypeInternal;
 extern PlayerLeaseExpiredEventDefaultTypeInternal _PlayerLeaseExpiredEvent_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull PlayerLeaseExpiredEvent_class_data_;
+class PushToPlayerEvent;
+struct PushToPlayerEventDefaultTypeInternal;
+extern PushToPlayerEventDefaultTypeInternal _PushToPlayerEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PushToPlayerEvent_class_data_;
 class RedirectToGateEvent;
 struct RedirectToGateEventDefaultTypeInternal;
 extern RedirectToGateEventDefaultTypeInternal _RedirectToGateEvent_default_instance_;
@@ -1517,6 +1526,431 @@ class BindSessionEvent final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull BindSessionEvent_class_data_;
+// -------------------------------------------------------------------
+
+class PushToPlayerEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:contracts.kafka.PushToPlayerEvent) */ {
+ public:
+  inline PushToPlayerEvent() : PushToPlayerEvent(nullptr) {}
+  ~PushToPlayerEvent() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PushToPlayerEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PushToPlayerEvent));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PushToPlayerEvent(::google::protobuf::internal::ConstantInitialized);
+
+  inline PushToPlayerEvent(const PushToPlayerEvent& from) : PushToPlayerEvent(nullptr, from) {}
+  inline PushToPlayerEvent(PushToPlayerEvent&& from) noexcept
+      : PushToPlayerEvent(nullptr, ::std::move(from)) {}
+  inline PushToPlayerEvent& operator=(const PushToPlayerEvent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PushToPlayerEvent& operator=(PushToPlayerEvent&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PushToPlayerEvent& default_instance() {
+    return *reinterpret_cast<const PushToPlayerEvent*>(
+        &_PushToPlayerEvent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 6;
+  friend void swap(PushToPlayerEvent& a, PushToPlayerEvent& b) { a.Swap(&b); }
+  inline void Swap(PushToPlayerEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PushToPlayerEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PushToPlayerEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PushToPlayerEvent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const PushToPlayerEvent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const PushToPlayerEvent& from) { PushToPlayerEvent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PushToPlayerEvent* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "contracts.kafka.PushToPlayerEvent"; }
+
+ protected:
+  explicit PushToPlayerEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PushToPlayerEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PushToPlayerEvent& from);
+  PushToPlayerEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PushToPlayerEvent&& from) noexcept
+      : PushToPlayerEvent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kMessageContentFieldNumber = 2,
+    kSessionIdFieldNumber = 1,
+  };
+  // .MessageContent message_content = 2;
+  bool has_message_content() const;
+  void clear_message_content() ;
+  const ::MessageContent& message_content() const;
+  [[nodiscard]] ::MessageContent* PROTOBUF_NULLABLE release_message_content();
+  ::MessageContent* PROTOBUF_NONNULL mutable_message_content();
+  void set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
+  ::MessageContent* PROTOBUF_NULLABLE unsafe_arena_release_message_content();
+
+  private:
+  const ::MessageContent& _internal_message_content() const;
+  ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
+
+  public:
+  // uint64 session_id = 1;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:contracts.kafka.PushToPlayerEvent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PushToPlayerEvent& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::MessageContent* PROTOBUF_NULLABLE message_content_;
+    ::uint64_t session_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull PushToPlayerEvent_class_data_;
+// -------------------------------------------------------------------
+
+class BroadcastToPlayersEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:contracts.kafka.BroadcastToPlayersEvent) */ {
+ public:
+  inline BroadcastToPlayersEvent() : BroadcastToPlayersEvent(nullptr) {}
+  ~BroadcastToPlayersEvent() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(BroadcastToPlayersEvent* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(BroadcastToPlayersEvent));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR BroadcastToPlayersEvent(::google::protobuf::internal::ConstantInitialized);
+
+  inline BroadcastToPlayersEvent(const BroadcastToPlayersEvent& from) : BroadcastToPlayersEvent(nullptr, from) {}
+  inline BroadcastToPlayersEvent(BroadcastToPlayersEvent&& from) noexcept
+      : BroadcastToPlayersEvent(nullptr, ::std::move(from)) {}
+  inline BroadcastToPlayersEvent& operator=(const BroadcastToPlayersEvent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BroadcastToPlayersEvent& operator=(BroadcastToPlayersEvent&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BroadcastToPlayersEvent& default_instance() {
+    return *reinterpret_cast<const BroadcastToPlayersEvent*>(
+        &_BroadcastToPlayersEvent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 7;
+  friend void swap(BroadcastToPlayersEvent& a, BroadcastToPlayersEvent& b) { a.Swap(&b); }
+  inline void Swap(BroadcastToPlayersEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BroadcastToPlayersEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BroadcastToPlayersEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<BroadcastToPlayersEvent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const BroadcastToPlayersEvent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const BroadcastToPlayersEvent& from) { BroadcastToPlayersEvent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(BroadcastToPlayersEvent* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "contracts.kafka.BroadcastToPlayersEvent"; }
+
+ protected:
+  explicit BroadcastToPlayersEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  BroadcastToPlayersEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BroadcastToPlayersEvent& from);
+  BroadcastToPlayersEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BroadcastToPlayersEvent&& from) noexcept
+      : BroadcastToPlayersEvent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSessionListFieldNumber = 1,
+    kMessageContentFieldNumber = 2,
+  };
+  // repeated uint64 session_list = 1;
+  int session_list_size() const;
+  private:
+  int _internal_session_list_size() const;
+
+  public:
+  void clear_session_list() ;
+  ::uint64_t session_list(int index) const;
+  void set_session_list(int index, ::uint64_t value);
+  void add_session_list(::uint64_t value);
+  const ::google::protobuf::RepeatedField<::uint64_t>& session_list() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_session_list();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_session_list() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_session_list();
+
+  public:
+  // .MessageContent message_content = 2;
+  bool has_message_content() const;
+  void clear_message_content() ;
+  const ::MessageContent& message_content() const;
+  [[nodiscard]] ::MessageContent* PROTOBUF_NULLABLE release_message_content();
+  ::MessageContent* PROTOBUF_NONNULL mutable_message_content();
+  void set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value);
+  ::MessageContent* PROTOBUF_NULLABLE unsafe_arena_release_message_content();
+
+  private:
+  const ::MessageContent& _internal_message_content() const;
+  ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
+
+  public:
+  // @@protoc_insertion_point(class_scope:contracts.kafka.BroadcastToPlayersEvent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const BroadcastToPlayersEvent& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<::uint64_t> session_list_;
+    ::google::protobuf::internal::CachedSize _session_list_cached_byte_size_;
+    ::MessageContent* PROTOBUF_NULLABLE message_content_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull BroadcastToPlayersEvent_class_data_;
 
 // ===================================================================
 
@@ -2504,6 +2938,270 @@ inline ::int64_t RedirectToGateEvent::_internal_token_deadline() const {
 inline void RedirectToGateEvent::_internal_set_token_deadline(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.token_deadline_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// PushToPlayerEvent
+
+// uint64 session_id = 1;
+inline void PushToPlayerEvent::clear_session_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint64_t PushToPlayerEvent::session_id() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.PushToPlayerEvent.session_id)
+  return _internal_session_id();
+}
+inline void PushToPlayerEvent::set_session_id(::uint64_t value) {
+  _internal_set_session_id(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:contracts.kafka.PushToPlayerEvent.session_id)
+}
+inline ::uint64_t PushToPlayerEvent::_internal_session_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.session_id_;
+}
+inline void PushToPlayerEvent::_internal_set_session_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_ = value;
+}
+
+// .MessageContent message_content = 2;
+inline bool PushToPlayerEvent::has_message_content() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.message_content_ != nullptr);
+  return value;
+}
+inline const ::MessageContent& PushToPlayerEvent::_internal_message_content() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::MessageContent* p = _impl_.message_content_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
+}
+inline const ::MessageContent& PushToPlayerEvent::message_content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:contracts.kafka.PushToPlayerEvent.message_content)
+  return _internal_message_content();
+}
+inline void PushToPlayerEvent::unsafe_arena_set_allocated_message_content(
+    ::MessageContent* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_content_);
+  }
+  _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:contracts.kafka.PushToPlayerEvent.message_content)
+}
+inline ::MessageContent* PROTOBUF_NULLABLE PushToPlayerEvent::release_message_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MessageContent* released = _impl_.message_content_;
+  _impl_.message_content_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::MessageContent* PROTOBUF_NULLABLE PushToPlayerEvent::unsafe_arena_release_message_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:contracts.kafka.PushToPlayerEvent.message_content)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MessageContent* temp = _impl_.message_content_;
+  _impl_.message_content_ = nullptr;
+  return temp;
+}
+inline ::MessageContent* PROTOBUF_NONNULL PushToPlayerEvent::_internal_mutable_message_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.message_content_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageContent>(GetArena());
+    _impl_.message_content_ = reinterpret_cast<::MessageContent*>(p);
+  }
+  return _impl_.message_content_;
+}
+inline ::MessageContent* PROTOBUF_NONNULL PushToPlayerEvent::mutable_message_content()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::MessageContent* _msg = _internal_mutable_message_content();
+  // @@protoc_insertion_point(field_mutable:contracts.kafka.PushToPlayerEvent.message_content)
+  return _msg;
+}
+inline void PushToPlayerEvent::set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_content_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:contracts.kafka.PushToPlayerEvent.message_content)
+}
+
+// -------------------------------------------------------------------
+
+// BroadcastToPlayersEvent
+
+// repeated uint64 session_list = 1;
+inline int BroadcastToPlayersEvent::_internal_session_list_size() const {
+  return _internal_session_list().size();
+}
+inline int BroadcastToPlayersEvent::session_list_size() const {
+  return _internal_session_list_size();
+}
+inline void BroadcastToPlayersEvent::clear_session_list() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_list_.Clear();
+}
+inline ::uint64_t BroadcastToPlayersEvent::session_list(int index) const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.BroadcastToPlayersEvent.session_list)
+  return _internal_session_list().Get(index);
+}
+inline void BroadcastToPlayersEvent::set_session_list(int index, ::uint64_t value) {
+  _internal_mutable_session_list()->Set(index, value);
+  // @@protoc_insertion_point(field_set:contracts.kafka.BroadcastToPlayersEvent.session_list)
+}
+inline void BroadcastToPlayersEvent::add_session_list(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_session_list()->Add(value);
+  // @@protoc_insertion_point(field_add:contracts.kafka.BroadcastToPlayersEvent.session_list)
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>& BroadcastToPlayersEvent::session_list() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:contracts.kafka.BroadcastToPlayersEvent.session_list)
+  return _internal_session_list();
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL BroadcastToPlayersEvent::mutable_session_list()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:contracts.kafka.BroadcastToPlayersEvent.session_list)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_session_list();
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>&
+BroadcastToPlayersEvent::_internal_session_list() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.session_list_;
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+BroadcastToPlayersEvent::_internal_mutable_session_list() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.session_list_;
+}
+
+// .MessageContent message_content = 2;
+inline bool BroadcastToPlayersEvent::has_message_content() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.message_content_ != nullptr);
+  return value;
+}
+inline const ::MessageContent& BroadcastToPlayersEvent::_internal_message_content() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::MessageContent* p = _impl_.message_content_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
+}
+inline const ::MessageContent& BroadcastToPlayersEvent::message_content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:contracts.kafka.BroadcastToPlayersEvent.message_content)
+  return _internal_message_content();
+}
+inline void BroadcastToPlayersEvent::unsafe_arena_set_allocated_message_content(
+    ::MessageContent* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_content_);
+  }
+  _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:contracts.kafka.BroadcastToPlayersEvent.message_content)
+}
+inline ::MessageContent* PROTOBUF_NULLABLE BroadcastToPlayersEvent::release_message_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MessageContent* released = _impl_.message_content_;
+  _impl_.message_content_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::MessageContent* PROTOBUF_NULLABLE BroadcastToPlayersEvent::unsafe_arena_release_message_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:contracts.kafka.BroadcastToPlayersEvent.message_content)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MessageContent* temp = _impl_.message_content_;
+  _impl_.message_content_ = nullptr;
+  return temp;
+}
+inline ::MessageContent* PROTOBUF_NONNULL BroadcastToPlayersEvent::_internal_mutable_message_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.message_content_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageContent>(GetArena());
+    _impl_.message_content_ = reinterpret_cast<::MessageContent*>(p);
+  }
+  return _impl_.message_content_;
+}
+inline ::MessageContent* PROTOBUF_NONNULL BroadcastToPlayersEvent::mutable_message_content()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::MessageContent* _msg = _internal_mutable_message_content();
+  // @@protoc_insertion_point(field_mutable:contracts.kafka.BroadcastToPlayersEvent.message_content)
+  return _msg;
+}
+inline void BroadcastToPlayersEvent::set_allocated_message_content(::MessageContent* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_content_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:contracts.kafka.BroadcastToPlayersEvent.message_content)
 }
 
 #ifdef __GNUC__

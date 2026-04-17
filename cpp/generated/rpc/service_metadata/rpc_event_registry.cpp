@@ -962,6 +962,14 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
+	case ContractsKafkaBroadcastToPlayersEventEventId: {
+		contracts::kafka::BroadcastToPlayersEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return true;
+	}
 	case ContractsKafkaKickPlayerEventEventId: {
 		contracts::kafka::KickPlayerEvent event;
 		if (!event.ParseFromString(payload)) {
@@ -988,6 +996,14 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 	}
 	case ContractsKafkaPlayerLifecycleCommandEventId: {
 		contracts::kafka::PlayerLifecycleCommand event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return true;
+	}
+	case ContractsKafkaPushToPlayerEventEventId: {
+		contracts::kafka::PushToPlayerEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}

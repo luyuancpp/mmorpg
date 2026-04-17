@@ -7,15 +7,20 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"
+	kafkago "github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/logx"
 
 	"guild/internal/config"
+	guildkafka "guild/internal/kafka"
+	"shared/kafkautil"
 )
 
 type ServiceContext struct {
-	Config      config.Config
-	RedisClient *redis.Client
-	DB          *sql.DB
+	Config              config.Config
+	RedisClient         *redis.Client
+	DB                  *sql.DB
+	KafkaWriter         *kafkago.Writer
+	GateCommandBuilder  kafkautil.GateCommandBuilder
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -37,14 +42,29 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(fmt.Errorf("failed to ping MySQL: %w", err))
 	}
 
+	var w *kafkago.Writer
+	if len(c.Kafka.Brokers) > 0 {
+		w = &kafkago.Writer{
+			Addr:     kafkago.TCP(c.Kafka.Brokers...),
+			Balancer: &kafkago.LeastBytes{},
+		}
+	}
+
 	return &ServiceContext{
-		Config:      c,
-		RedisClient: rdb,
-		DB:          db,
+		Config:             c,
+		RedisClient:        rdb,
+		DB:                 db,
+		KafkaWriter:        w,
+		GateCommandBuilder: guildkafka.NewGateCommandBuilder(),
 	}
 }
 
 func (s *ServiceContext) Stop() {
+	if s.KafkaWriter != nil {
+		if err := s.KafkaWriter.Close(); err != nil {
+			logx.Errorf("Failed to close Kafka writer: %v", err)
+		}
+	}
 	if s.RedisClient != nil {
 		if err := s.RedisClient.Close(); err != nil {
 			logx.Errorf("Failed to close Redis client: %v", err)
