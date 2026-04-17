@@ -166,8 +166,16 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 		return;
 	}
 
-	// 1. Leave old scene if player is already in one.
+	// 0. Idempotency: if player is already in the target scene, skip.
 	auto *oldSceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
+	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity == scene)
+	{
+		LOG_INFO << "HandleEnterScene: player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
+		         << " already in scene_id=" << sceneInfo->scene_id() << ", skipping";
+		return;
+	}
+
+	// 1. Leave old scene if player is already in one.
 	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity != entt::null
 	    && oldSceneComp->sceneEntity != scene)
 	{
