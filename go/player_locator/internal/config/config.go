@@ -8,12 +8,13 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	RedisClient RedisConf    `json:"RedisClient"`
-	Kafka       KafkaConf    `json:"Kafka"`
-	Node        NodeConf     `json:"Node"`
-	Registry    RegistryConf `json:"Registry"`
-	Lease       LeaseConf    `json:"Lease"`
-	TableDir    string       `json:",default=../../generated/tables"`
+	RedisClient     RedisConf          `json:"RedisClient"`
+	Kafka           KafkaConf          `json:"Kafka"`
+	Node            NodeConf           `json:"Node"`
+	Registry        RegistryConf       `json:"Registry"`
+	Lease           LeaseConf          `json:"Lease"`
+	TableDir        string             `json:",default=../../generated/tables"`
+	SceneManagerRpc zrpc.RpcClientConf `json:"SceneManagerRpc"` // SceneManager gRPC client (via etcd)
 }
 
 type RedisConf struct {

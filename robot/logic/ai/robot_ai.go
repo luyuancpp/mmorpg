@@ -11,6 +11,7 @@ import (
 	"proto/common/component"
 	"proto/scene"
 	"robot/generated/pb/game"
+	"robot/logic/gameobject"
 	"robot/metrics"
 	"robot/pkg"
 )
@@ -21,7 +22,8 @@ type RobotAI struct {
 	stats    *metrics.Stats
 	profile  *Profile
 	llm      *LLMAdvisor // nil = use profile weights only
-	skillIDs []uint32
+	player   *gameobject.Player
+	skillIDs []uint32 // fallback from config if GetSkillList not yet received
 	interval time.Duration
 	tick     int
 	posX     float64
@@ -42,6 +44,7 @@ func (ai *RobotAI) SetSkillIDs(ids []uint32)    { ai.skillIDs = ids }
 func (ai *RobotAI) SetInterval(d time.Duration)  { ai.interval = d }
 func (ai *RobotAI) SetProfile(p *Profile)         { ai.profile = p }
 func (ai *RobotAI) SetLLM(llm *LLMAdvisor)        { ai.llm = llm }
+func (ai *RobotAI) SetPlayer(p *gameobject.Player) { ai.player = p }
 
 // RunLoop is a blocking loop that periodically performs actions.
 func (ai *RobotAI) RunLoop(stop <-chan struct{}) {
@@ -100,15 +103,33 @@ func (ai *RobotAI) pickAction() Action {
 // --- Action implementations (flat, no deep call chain) ---
 
 func (ai *RobotAI) castSkill() {
-	if len(ai.skillIDs) == 0 {
+	// Prefer server-reported owned skills, fall back to config/table skills.
+	skillIDs := ai.skillIDs
+	if ai.player != nil {
+		if owned := ai.player.GetOwnedSkillIDs(); len(owned) > 0 {
+			skillIDs = owned
+		}
+	}
+	if len(skillIDs) == 0 {
 		return
 	}
-	skillID := ai.skillIDs[rand.Intn(len(ai.skillIDs))]
+
+	skillID := skillIDs[rand.Intn(len(skillIDs))]
 	x := ai.posX + rand.Float64()*20 - 10
 	z := ai.posZ + rand.Float64()*20 - 10
 
+	// Pick a target entity (self or nearby). Server requires target_id > 0.
+	var targetID uint64
+	if ai.player != nil {
+		targetID = ai.player.GetRandomEntity()
+	}
+	if targetID == 0 {
+		return // no known entities yet, skip this tick
+	}
+
 	err := ai.client.SendRequest(game.SceneSkillClientPlayerReleaseSkillMessageId, &scene.ReleaseSkillRequest{
 		SkillTableId: skillID,
+		TargetId:     targetID,
 		Position:     &component.Vector3{X: x, Y: 0, Z: z},
 	})
 	if err != nil {

@@ -18,7 +18,7 @@ void NodeConnector::ConnectToNode(const NodeInfo &nodeInfo)
 {
 	if (gNode->IsCurrentNode(nodeInfo))
 	{
-		LOG_INFO << "Skipping connection to self node: " << nodeInfo.DebugString();
+		LOG_TRACE << "Skipping connection to self node, uuid=" << nodeInfo.node_uuid();
 		return;
 	}
 	switch (nodeInfo.protocol_type())
@@ -160,7 +160,9 @@ void NodeConnector::ConnectAllNodes()
 				continue;
 
 			ConnectToNode(serviceNode);
-			LOG_INFO << "Connected to node from ConnectAllNodes: " << serviceNode.DebugString();
+			LOG_TRACE << "Connected to node from ConnectAllNodes, type: " << nodeType
+					  << ", node_id: " << serviceNode.node_id()
+					  << ", uuid: " << serviceNode.node_uuid();
 		}
 	}
 }

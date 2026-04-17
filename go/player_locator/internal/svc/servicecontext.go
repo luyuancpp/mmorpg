@@ -7,15 +7,18 @@ import (
 	"github.com/redis/go-redis/v9"
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/zrpc"
 
 	"player_locator/internal/config"
+	smpb "proto/scene_manager"
 	"shared/generated/table"
 )
 
 type ServiceContext struct {
-	Config      config.Config
-	RedisClient *redis.Client
-	KafkaWriter *kafkago.Writer
+	Config             config.Config
+	RedisClient        *redis.Client
+	KafkaWriter        *kafkago.Writer
+	SceneManagerClient smpb.SceneManagerClient
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -36,10 +39,18 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Balancer: &kafkago.LeastBytes{},
 	}
 
+	// SceneManager zrpc client (via etcd discovery).
+	var smClient smpb.SceneManagerClient
+	if len(c.SceneManagerRpc.Etcd.Hosts) > 0 {
+		cli := zrpc.MustNewClient(c.SceneManagerRpc)
+		smClient = smpb.NewSceneManagerClient(cli.Conn())
+	}
+
 	return &ServiceContext{
-		Config:      c,
-		RedisClient: rdb,
-		KafkaWriter: w,
+		Config:             c,
+		RedisClient:        rdb,
+		KafkaWriter:        w,
+		SceneManagerClient: smClient,
 	}
 }
 

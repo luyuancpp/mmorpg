@@ -6,4 +6,5 @@ import (
 )
 
 func SceneSceneClientPlayerNotifyActorListDestroyHandler(player *gameobject.Player, response *scene.ActorListDestroyS2C) {
+	player.RemoveEntities(response.Entity)
 }

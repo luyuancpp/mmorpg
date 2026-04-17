@@ -91,7 +91,7 @@ void NodeHandshakeManager::OnNodeHandshake(
 }
 
 void NodeHandshakeManager::OnHandshakeReplied(const NodeHandshakeResponse& response) const {
-	LOG_INFO << "Node registration response: " << response.DebugString();
+	LOG_TRACE << "Node registration response: " << response.DebugString();
 	uint32_t nodeType = response.peer_node().node_type();
 	entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	if (response.error_message().id() != kCommon_errorOK) {
