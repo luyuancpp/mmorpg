@@ -37,6 +37,19 @@ func errResp(code uint32, msg string) *scene_manager.EnterSceneResponse {
 
 // EnterScene routes a player into a scene, managed by SceneManager.
 func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scene_manager.EnterSceneResponse, error) {
+	// 0. REQUEST-LEVEL DEDUPLICATION: If caller provided a request_id,
+	//    use Redis SET NX to guarantee at-most-once processing.
+	if in.RequestId != "" {
+		dedupeKey := fmt.Sprintf("enter_scene:dedup:%s", in.RequestId)
+		ok, err := l.svcCtx.Redis.SetnxEx(dedupeKey, "1", 60)
+		if err != nil {
+			l.Logger.Errorf("Dedup Redis error (non-fatal, proceeding): %v", err)
+		} else if !ok {
+			l.Logger.Infof("Duplicate request_id %s for player %d, skipping", in.RequestId, in.PlayerId)
+			return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
+		}
+	}
+
 	// 1. Determine the target zone.
 	//    - Caller provided zone_id: use it (explicit cross-zone teleport).
 	//    - sceneId != 0, no zone_id: look up scene:{id}:zone (reconnect / follow).
