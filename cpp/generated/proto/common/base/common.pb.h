@@ -690,8 +690,8 @@ class SceneInfoComp final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kCreatorsFieldNumber = 5,
-    kSceneConfigIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
+    kSceneConfigIdFieldNumber = 1,
     kMirrorConfigIdFieldNumber = 3,
     kDungeonConfigIdFieldNumber = 4,
   };
@@ -710,6 +710,16 @@ class SceneInfoComp final : public ::google::protobuf::Message
   ::google::protobuf::Map<::uint64_t, bool>* PROTOBUF_NONNULL _internal_mutable_creators();
 
   public:
+  // uint64 scene_id = 2;
+  void clear_scene_id() ;
+  ::uint64_t scene_id() const;
+  void set_scene_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint64_t value);
+
+  public:
   // uint32 scene_config_id = 1;
   void clear_scene_config_id() ;
   ::uint32_t scene_config_id() const;
@@ -718,16 +728,6 @@ class SceneInfoComp final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_scene_config_id() const;
   void _internal_set_scene_config_id(::uint32_t value);
-
-  public:
-  // uint32 scene_id = 2;
-  void clear_scene_id() ;
-  ::uint32_t scene_id() const;
-  void set_scene_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_scene_id() const;
-  void _internal_set_scene_id(::uint32_t value);
 
   public:
   // uint32 mirror_config_id = 3;
@@ -780,8 +780,8 @@ class SceneInfoComp final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         creators_;
+    ::uint64_t scene_id_;
     ::uint32_t scene_config_id_;
-    ::uint32_t scene_id_;
     ::uint32_t mirror_config_id_;
     ::uint32_t dungeon_config_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1998,7 +1998,7 @@ inline void NetworkAddress::_internal_set_port(::uint32_t value) {
 inline void SceneInfoComp::clear_scene_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_config_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline ::uint32_t SceneInfoComp::scene_config_id() const {
   // @@protoc_insertion_point(field_get:SceneInfoComp.scene_config_id)
@@ -2006,7 +2006,7 @@ inline ::uint32_t SceneInfoComp::scene_config_id() const {
 }
 inline void SceneInfoComp::set_scene_config_id(::uint32_t value) {
   _internal_set_scene_config_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:SceneInfoComp.scene_config_id)
 }
 inline ::uint32_t SceneInfoComp::_internal_scene_config_id() const {
@@ -2018,26 +2018,26 @@ inline void SceneInfoComp::_internal_set_scene_config_id(::uint32_t value) {
   _impl_.scene_config_id_ = value;
 }
 
-// uint32 scene_id = 2;
+// uint64 scene_id = 2;
 inline void SceneInfoComp::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_.scene_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint32_t SceneInfoComp::scene_id() const {
+inline ::uint64_t SceneInfoComp::scene_id() const {
   // @@protoc_insertion_point(field_get:SceneInfoComp.scene_id)
   return _internal_scene_id();
 }
-inline void SceneInfoComp::set_scene_id(::uint32_t value) {
+inline void SceneInfoComp::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:SceneInfoComp.scene_id)
 }
-inline ::uint32_t SceneInfoComp::_internal_scene_id() const {
+inline ::uint64_t SceneInfoComp::_internal_scene_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.scene_id_;
 }
-inline void SceneInfoComp::_internal_set_scene_id(::uint32_t value) {
+inline void SceneInfoComp::_internal_set_scene_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = value;
 }
