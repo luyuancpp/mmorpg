@@ -35,6 +35,11 @@ type Config struct {
 	// for idle instances. Default 30s.
 	InstanceCheckIntervalSeconds int64 `json:",default=30"`
 
+	// KafkaWriteTimeoutSeconds: timeout for best-effort Kafka pushes to Gate.
+	// These writes use a detached context (not tied to the gRPC request).
+	// Default 5 seconds.
+	KafkaWriteTimeoutSeconds int64 `json:",default=5"`
+
 	// GateTokenSecret: HMAC-SHA256 secret shared with Gate nodes for signing
 	// connection tokens during cross-zone redirect.
 	GateTokenSecret string `json:",optional"`

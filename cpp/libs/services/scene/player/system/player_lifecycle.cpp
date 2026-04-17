@@ -144,14 +144,18 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 	if (enterInfo.enter_gs_type() != 0)
 	{
 		auto &enterState = tlsEcs.actorRegistry.get_or_emplace<PlayerEnterGameStateComp>(player);
+		const bool alreadyLoggedIn = (enterState.enter_gs_type() != 0);
 		enterState.set_enter_gs_type(enterInfo.enter_gs_type());
 
-		// 5. Fire login event so business systems can react per login type.
-		//    At this point: session is bound, scene is entered, player entity is ready.
-		PlayerLoginEvent loginEvent;
-		loginEvent.set_actor_entity(entt::to_integral(player));
-		loginEvent.set_enter_gs_type(enterInfo.enter_gs_type());
-		tlsEcs.dispatcher.trigger(loginEvent);
+		// 5. Fire login event only on first entry — skip on duplicate/reconnect
+		//    to avoid business systems (quests, daily rewards, etc.) reacting twice.
+		if (!alreadyLoggedIn)
+		{
+			PlayerLoginEvent loginEvent;
+			loginEvent.set_actor_entity(entt::to_integral(player));
+			loginEvent.set_enter_gs_type(enterInfo.enter_gs_type());
+			tlsEcs.dispatcher.trigger(loginEvent);
+		}
 	}
 }
 

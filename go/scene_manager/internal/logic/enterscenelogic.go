@@ -7,6 +7,7 @@ import (
 	game "scene_manager/generated/pb/game"
 	"scene_manager/internal/constants"
 	"strconv"
+	"time"
 
 	"proto/scene_manager"
 	"scene_manager/internal/svc"
@@ -65,22 +66,34 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		return l.handleCrossZoneRedirect(in, targetZoneId)
 	}
 
-	// 4. IDEMPOTENCY CHECK: Is player already here?
+	// 4. IDEMPOTENCY CHECK: Is player already in the same scene on the same node?
+	//    Location is unchanged, but we must still route the gate so the new
+	//    session/connection is wired to the correct scene node.
 	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
 	if err == nil && currentLoc != nil {
 		if currentLoc.SceneId == sceneId && currentLoc.NodeId == nodeId {
-			l.Logger.Infof("Player %d already in scene %d, idempotent success", in.PlayerId, sceneId)
+			l.Logger.Infof("Player %d already in scene %d, sending route to gate (reconnect)", in.PlayerId, sceneId)
+			if in.GateId != "" {
+				if err := l.routePlayerToGate(in, nodeId, sceneId); err != nil {
+					l.Logger.Errorf("Failed to route player %d to gate (non-fatal): %v", in.PlayerId, err)
+				}
+			}
 			return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
 		}
 	}
 
-	// 5. Update Player Location (Source of Truth)
+	// 5. Decrement old scene instance count if player is switching scenes.
+	if currentLoc != nil && currentLoc.SceneId != 0 && currentLoc.SceneId != sceneId {
+		DecrInstancePlayerCount(l.svcCtx, currentLoc.SceneId)
+	}
+
+	// 6. Update Player Location (Source of Truth)
 	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, sceneId, nodeId, targetZoneId); err != nil {
 		l.Logger.Errorf("Failed to update player location: %v", err)
 		return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
 	}
 
-	// 6. Send Route Command to Gate (via Kafka) — best-effort notification.
+	// 7. Send Route Command to Gate (via Kafka) — best-effort notification.
 	if in.GateId != "" {
 		if err := l.routePlayerToGate(in, nodeId, sceneId); err != nil {
 			l.Logger.Errorf("Failed to route player %d to gate (non-fatal): %v", in.PlayerId, err)
@@ -89,7 +102,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
 
-	// 7. Track instance player count.
+	// 8. Track instance player count.
 	IncrInstancePlayerCount(l.svcCtx, sceneId)
 
 	l.Logger.Infof("Player %d entered scene %d on node %s (zone %d)", in.PlayerId, sceneId, nodeId, targetZoneId)
@@ -157,7 +170,9 @@ func (l *EnterSceneLogic) sendRedirectToGate(in *scene_manager.EnterSceneRequest
 	}
 
 	topic := GateTopicName(in.GateId)
-	if err := l.svcCtx.Kafka.WriteMessages(l.ctx, kafkago.Message{
+	writeCtx, cancel := context.WithTimeout(context.Background(), time.Duration(l.svcCtx.Config.KafkaWriteTimeoutSeconds)*time.Second)
+	defer cancel()
+	if err := l.svcCtx.Kafka.WriteMessages(writeCtx, kafkago.Message{
 		Topic: topic,
 		Key:   []byte(fmt.Sprintf("%d", in.PlayerId)),
 		Value: bytes,
@@ -238,7 +253,9 @@ func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest,
 	}
 
 	topic := GateTopicName(in.GateId)
-	if err := l.svcCtx.Kafka.WriteMessages(l.ctx, kafkago.Message{
+	writeCtx, cancel := context.WithTimeout(context.Background(), time.Duration(l.svcCtx.Config.KafkaWriteTimeoutSeconds)*time.Second)
+	defer cancel()
+	if err := l.svcCtx.Kafka.WriteMessages(writeCtx, kafkago.Message{
 		Topic: topic,
 		Key:   []byte(fmt.Sprintf("%d", in.PlayerId)),
 		Value: bytes,

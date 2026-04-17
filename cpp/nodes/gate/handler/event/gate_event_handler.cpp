@@ -12,7 +12,7 @@
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "table/proto/tip/login_error_tip.pb.h"
 #include "thread_context/node_context_manager.h"
-#include "network/rpc_session.h"
+#include "network/rpc_client.h"
 #include "node/system/node/node_util.h"
 
 // Forward player entry from Gate to Scene via gRPC PlayerEnterGameNode.
@@ -32,10 +32,10 @@ static void ForwardPlayerToScene(uint64_t sessionId, uint32_t enterGsType,
         return;
     }
 
-    const auto *rpcSession = sceneRegistry.try_get<RpcSession>(sceneEntity);
-    if (!rpcSession)
+    const auto *rpcClient = sceneRegistry.try_get<RpcClientPtr>(sceneEntity);
+    if (!rpcClient || !*rpcClient)
     {
-        LOG_ERROR << "ForwardPlayerToScene: RpcSession not found for scene_node_id=" << sceneNodeId;
+        LOG_ERROR << "ForwardPlayerToScene: RpcClient not found for scene_node_id=" << sceneNodeId;
         return;
     }
 
@@ -45,7 +45,7 @@ static void ForwardPlayerToScene(uint64_t sessionId, uint32_t enterGsType,
     req.set_enter_gs_type(enterGsType);
     req.set_scene_id(sceneId);
 
-    rpcSession->SendRequest(ScenePlayerEnterGameNodeMessageId, req);
+    (*rpcClient)->CallRemoteMethod(ScenePlayerEnterGameNodeMessageId, req);
 
     LOG_INFO << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node=" << sceneNodeId
              << " player=" << playerId << " session=" << sessionId

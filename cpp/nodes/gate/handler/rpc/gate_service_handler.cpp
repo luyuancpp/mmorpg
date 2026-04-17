@@ -7,7 +7,7 @@
 #include "gate_codec.h"
 #include "node/system/node/node.h"
 #include "network/network_constants.h"
-#include "network/rpc_session.h"
+#include "network/rpc_client.h"
 #include "thread_context/node_context_manager.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
@@ -123,19 +123,19 @@ void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controll
 		return;
 	}
 
-	const auto nextSession = nextRegistry.try_get<RpcSession>(nextNodeEntity);
-	if (!nextSession) {
-		LOG_ERROR << "RoutePlayerMessage: next node session missing, node_type=" << nextNode.node_type()
+	const auto *nextClient = nextRegistry.try_get<RpcClientPtr>(nextNodeEntity);
+	if (!nextClient || !*nextClient) {
+		LOG_ERROR << "RoutePlayerMessage: next node RpcClient missing, node_type=" << nextNode.node_type()
 				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
 		return;
 	}
 
 	switch (nextNode.node_type()) {
 	case eNodeType::SceneNodeService:
-		nextSession->SendRequest(SceneRoutePlayerStringMsgMessageId, nextRequest);
+		(*nextClient)->CallRemoteMethod(SceneRoutePlayerStringMsgMessageId, nextRequest);
 		return;
 	case eNodeType::GateNodeService:
-		nextSession->SendRequest(GateRoutePlayerMessageMessageId, nextRequest);
+		(*nextClient)->CallRemoteMethod(GateRoutePlayerMessageMessageId, nextRequest);
 		return;
 	default:
 		LOG_ERROR << "RoutePlayerMessage: unsupported next node_type=" << nextNode.node_type()

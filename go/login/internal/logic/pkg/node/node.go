@@ -60,6 +60,10 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 			Ip:   ip,
 			Port: port,
 		},
+		GrpcEndpoint: &login_proto.EndpointComp{
+			Ip:   ip,
+			Port: port,
+		},
 		ZoneId:       config.AppConfig.Node.ZoneId,
 		LaunchTime:   uint64(time.Now().Unix()),
 		ProtocolType: uint32(login_proto.ENodeProtocolType_PROTOCOL_GRPC),

@@ -59,7 +59,18 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
 
 	auto createdId = targetRegistry.create();
 
-	const auto target = ::FormatIpAndPort(nodeInfo.grpc_endpoint().ip(), nodeInfo.grpc_endpoint().port());
+	// Prefer grpc_endpoint; fall back to endpoint if grpc_endpoint is empty
+	const auto &ep = (!nodeInfo.grpc_endpoint().ip().empty() && nodeInfo.grpc_endpoint().port() > 0)
+		? nodeInfo.grpc_endpoint()
+		: nodeInfo.endpoint();
+	if (ep.ip().empty() || ep.port() == 0)
+	{
+		LOG_ERROR << "Cannot connect to GRPC node with empty endpoint, ID: " << nodeInfo.node_id()
+				  << ", NodeType: " << nodeInfo.node_type();
+		targetRegistry.destroy(createdId);
+		return;
+	}
+	const auto target = ::FormatIpAndPort(ep.ip(), ep.port());
 	auto cachedChannel = gNode->GetGrpcChannelCache().GetOrCreateChannel(target);
 	const auto &grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(createdId, std::move(cachedChannel));
 
@@ -67,8 +78,8 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
 	targetRegistry.emplace<NodeInfo>(createdId, nodeInfo);
 
 	LOG_INFO << "Connecting to GRPC node, ID: " << nodeInfo.node_id()
-			 << ", IP: " << nodeInfo.grpc_endpoint().ip()
-			 << ", Port: " << nodeInfo.grpc_endpoint().port()
+			 << ", IP: " << ep.ip()
+			 << ", Port: " << ep.port()
 			 << ", NodeType: " << nodeInfo.node_type()
 			 << ", Entity: " << entt::to_integral(createdId);
 }
