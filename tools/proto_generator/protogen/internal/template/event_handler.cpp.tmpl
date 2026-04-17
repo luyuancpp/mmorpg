@@ -5,19 +5,19 @@
 void {{ .ClassName }}::Register()
 {
 {{- range .EventMessages }}
-    tlsEcs.dispatcher.sink<{{ .QualifiedName }}>().connect<&{{ $.ClassName }}::{{ .Name }}Handler>();
+    tlsEcs.dispatcher.sink<{{ .QualifiedName }}>().connect<&{{ $.ClassName }}::{{ .HandlerName }}>();
 {{- end }}
 }
 
 void {{ .ClassName }}::UnRegister()
 {
 {{- range .EventMessages }}
-    tlsEcs.dispatcher.sink<{{ .QualifiedName }}>().disconnect<&{{ $.ClassName }}::{{ .Name }}Handler>();
+    tlsEcs.dispatcher.sink<{{ .QualifiedName }}>().disconnect<&{{ $.ClassName }}::{{ .HandlerName }}>();
 {{- end }}
 }
 
 {{- range .EventMessages }}
-void {{ $.ClassName }}::{{ .Name }}Handler(const {{ .QualifiedName }}& event)
+void {{ $.ClassName }}::{{ .HandlerName }}(const {{ .QualifiedName }}& event)
 {
 {{ index $.UserCodeBlocks .Signature }}
 }

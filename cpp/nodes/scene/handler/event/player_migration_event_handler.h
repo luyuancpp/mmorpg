@@ -8,5 +8,5 @@ public:
     static void Register();
 
     static void UnRegister();
-    static void OnPlayerMigrationEvent(const PlayerMigrationEvent& event);
+    static void HandlePlayerMigrationEvent(const PlayerMigrationEvent &event);
 };
