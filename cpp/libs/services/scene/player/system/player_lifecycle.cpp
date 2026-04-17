@@ -27,6 +27,7 @@
 #include "player/constants/player.h"
 #include "proto/db/db_task.pb.h"
 #include "modules/snapshot/snapshot_system.h"
+#include <proto/scene/scene_info.pb.h>
 
 struct PlayerSceneEnterContext
 {
