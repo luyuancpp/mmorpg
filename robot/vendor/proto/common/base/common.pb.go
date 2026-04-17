@@ -285,82 +285,6 @@ func (x *NetworkAddress) GetPort() uint32 {
 	return 0
 }
 
-type SceneInfoComp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneConfid   uint32                 `protobuf:"varint,1,opt,name=scene_confid,json=sceneConfid,proto3" json:"scene_confid,omitempty"`                                                   // Scene config ID
-	Guid          uint32                 `protobuf:"varint,2,opt,name=guid,proto3" json:"guid,omitempty"`                                                                                    // Scene unique ID
-	MirrorConfid  uint32                 `protobuf:"varint,3,opt,name=mirror_confid,json=mirrorConfid,proto3" json:"mirror_confid,omitempty"`                                                // Mirror ID
-	DungenConfid  uint32                 `protobuf:"varint,4,opt,name=dungen_confid,json=dungenConfid,proto3" json:"dungen_confid,omitempty"`                                                // Dungeon ID
-	Creators      map[uint64]bool        `protobuf:"bytes,5,rep,name=creators,proto3" json:"creators,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Creators
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SceneInfoComp) Reset() {
-	*x = SceneInfoComp{}
-	mi := &file_proto_common_base_common_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SceneInfoComp) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SceneInfoComp) ProtoMessage() {}
-
-func (x *SceneInfoComp) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_common_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SceneInfoComp.ProtoReflect.Descriptor instead.
-func (*SceneInfoComp) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_common_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *SceneInfoComp) GetSceneConfid() uint32 {
-	if x != nil {
-		return x.SceneConfid
-	}
-	return 0
-}
-
-func (x *SceneInfoComp) GetGuid() uint32 {
-	if x != nil {
-		return x.Guid
-	}
-	return 0
-}
-
-func (x *SceneInfoComp) GetMirrorConfid() uint32 {
-	if x != nil {
-		return x.MirrorConfid
-	}
-	return 0
-}
-
-func (x *SceneInfoComp) GetDungenConfid() uint32 {
-	if x != nil {
-		return x.DungenConfid
-	}
-	return 0
-}
-
-func (x *SceneInfoComp) GetCreators() map[uint64]bool {
-	if x != nil {
-		return x.Creators
-	}
-	return nil
-}
-
 var File_proto_common_base_common_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_common_proto_rawDesc = "" +
@@ -386,16 +310,7 @@ const file_proto_common_base_common_proto_rawDesc = "" +
 	"\tnode_list\x18\x01 \x03(\v2\t.NodeInfoR\bnodeList\"4\n" +
 	"\x0eNetworkAddress\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x12\n" +
-	"\x04port\x18\x02 \x01(\rR\x04port\"\x87\x02\n" +
-	"\rSceneInfoComp\x12!\n" +
-	"\fscene_confid\x18\x01 \x01(\rR\vsceneConfid\x12\x12\n" +
-	"\x04guid\x18\x02 \x01(\rR\x04guid\x12#\n" +
-	"\rmirror_confid\x18\x03 \x01(\rR\fmirrorConfid\x12#\n" +
-	"\rdungen_confid\x18\x04 \x01(\rR\fdungenConfid\x128\n" +
-	"\bcreators\x18\x05 \x03(\v2\x1c.SceneInfoComp.CreatorsEntryR\bcreators\x1a;\n" +
-	"\rCreatorsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01B\x13Z\x11proto/common/baseb\x06proto3"
+	"\x04port\x18\x02 \x01(\rR\x04portB\x13Z\x11proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_common_proto_rawDescOnce sync.Once
@@ -409,25 +324,22 @@ func file_proto_common_base_common_proto_rawDescGZIP() []byte {
 	return file_proto_common_base_common_proto_rawDescData
 }
 
-var file_proto_common_base_common_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_common_base_common_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_common_base_common_proto_goTypes = []any{
 	(*EndpointComp)(nil),     // 0: EndpointComp
 	(*NodeInfo)(nil),         // 1: NodeInfo
 	(*NodeInfoListComp)(nil), // 2: NodeInfoListComp
 	(*NetworkAddress)(nil),   // 3: NetworkAddress
-	(*SceneInfoComp)(nil),    // 4: SceneInfoComp
-	nil,                      // 5: SceneInfoComp.CreatorsEntry
 }
 var file_proto_common_base_common_proto_depIdxs = []int32{
 	0, // 0: NodeInfo.endpoint:type_name -> EndpointComp
 	0, // 1: NodeInfo.grpc_endpoint:type_name -> EndpointComp
 	1, // 2: NodeInfoListComp.node_list:type_name -> NodeInfo
-	5, // 3: SceneInfoComp.creators:type_name -> SceneInfoComp.CreatorsEntry
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_base_common_proto_init() }
@@ -441,7 +353,7 @@ func file_proto_common_base_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_base_common_proto_rawDesc), len(file_proto_common_base_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

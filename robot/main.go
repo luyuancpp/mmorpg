@@ -45,6 +45,9 @@ func main() {
 		zap.L().Fatal("load config", zap.Error(err))
 	}
 
+	// Load tables (Skill, Class) and auto-resolve skill_ids if not configured.
+	cfg.LoadTables()
+
 	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
 	if err != nil {
 		zap.L().Fatal("resolve gate address", zap.Error(err))

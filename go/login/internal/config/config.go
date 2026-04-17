@@ -21,6 +21,7 @@ type Config struct {
 	PlayerLocatorRpc   zrpc.RpcClientConf `json:"PlayerLocatorRpc"`   // player_locator gRPC client
 	SceneManagerRpc    zrpc.RpcClientConf `json:"SceneManagerRpc"`    // scene_manager gRPC client
 	GateTokenSecret    string             `json:"GateTokenSecret"`    // HMAC secret for gate connection tokens
+	TableDir           string             `json:",default=../../generated/tables"`
 }
 
 // NodeConfig holds node-level settings including login duration limits.

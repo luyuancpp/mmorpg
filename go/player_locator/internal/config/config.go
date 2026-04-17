@@ -13,6 +13,7 @@ type Config struct {
 	Node        NodeConf     `json:"Node"`
 	Registry    RegistryConf `json:"Registry"`
 	Lease       LeaseConf    `json:"Lease"`
+	TableDir    string       `json:",default=../../generated/tables"`
 }
 
 type RedisConf struct {
