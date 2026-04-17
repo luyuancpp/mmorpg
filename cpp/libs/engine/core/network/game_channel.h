@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "muduo/base/Atomic.h"
 #include "muduo/base/Mutex.h"
 #include "muduo/net/protobuf/ProtobufCodecLite.h"
 #include "network/codec/dispatcher.h"

@@ -1,7 +1,6 @@
 ﻿#pragma once
 #pragma once
 
-#include <google/protobuf/message.h>
 #include "type_define/type_define.h"
 #include "network/rpc_session.h"
 

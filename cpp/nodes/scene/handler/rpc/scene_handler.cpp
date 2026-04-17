@@ -28,6 +28,8 @@
 #include "thread_context/player_manager.h"
 #include "core/system/redis.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
+#include "player/comp/afk_comp.h"
+#include "frame/manager/frame_time.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "proto/db/proto_option.pb.h"
 #include "network/node_utils.h"
@@ -267,6 +269,10 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 				  << " message_id=" << msg.message_id();
 		return;
 	}
+
+	// Update last-active frame for AFK detection.
+	tlsEcs.actorRegistry.get_or_emplace<LastActiveFrameComp>(player).frame =
+		tlsFrameTimeManager.frameTime.current_frame();
 
 	// Parse request and validate field constraints
 	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());

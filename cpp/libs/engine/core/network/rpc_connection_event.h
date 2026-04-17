@@ -2,8 +2,6 @@
 
 #include "muduo/net/TcpConnection.h"
 
-#include "network/game_channel.h"
-
 struct OnConnected2TcpServerEvent
 {
     OnConnected2TcpServerEvent(const muduo::net::TcpConnectionPtr& conn)

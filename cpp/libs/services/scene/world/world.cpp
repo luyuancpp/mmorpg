@@ -10,6 +10,7 @@
 #include "spatial/system/movement_acceleration.h"
 #include "spatial/system/movement.h"
 #include "frame/manager/frame_time.h"
+#include "player/system/afk.h"
 #include "proto/common/component/frame_comp.pb.h"
 #include "core/system/id_generator.h"
 #include "node/system/node/node.h"
@@ -48,6 +49,10 @@ void World::Update()
         accumulatedTime -= fixedDeltaTime;
         if (simulationIterations < kMaxSimulationIterationsPerFrame)
         {
+            // AFK detection must run first: it adds/removes AfkComp tags
+            // that Movement, AOI, and sync systems use for exclusion.
+            AfkSystem::Update(fixedDeltaTime);
+
             AoiSystem::Update(fixedDeltaTime);
             MovementSystem::Update(fixedDeltaTime);
             MovementAccelerationSystem::Update(fixedDeltaTime);

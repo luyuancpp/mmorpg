@@ -9,7 +9,6 @@
 #include <network/node_utils.h>
 #include <node_config_manager.h>
 #include <thread_context/registry_manager.h>
-#include <thread_context/entity_manager.h>
 
 void ServiceDiscoveryManager::Init()
 {

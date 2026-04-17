@@ -3,7 +3,6 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/resource_quota.h>
 
-#include <cstdlib>
 #include <memory>
 #include <string>
 #include <unordered_map>

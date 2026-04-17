@@ -5,8 +5,6 @@
 #include "node/system/etcd/etcd_helper.h"
 #include <network/node_utils.h>
 #include <thread_context/redis_manager.h>
-#include <node_config_manager.h>
-#include <thread_context/registry_manager.h>
 #include <core/utils/id/snow_flake.h>
 #include <thread_context/entity_manager.h>
 

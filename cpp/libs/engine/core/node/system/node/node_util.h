@@ -3,7 +3,6 @@
 #include "proto/common/base/common.pb.h"
 #include "entt/src/entt/entt.hpp"
 #include <algorithm>
-#include <cstdint>
 #include <string>
 
 // Re-export common::base types at global scope for backward compatibility.

@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <cstdint>
 #include <unordered_map>
 #include <boost/circular_buffer.hpp>
 

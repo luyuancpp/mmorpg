@@ -1,6 +1,5 @@
 #include "node_utils.h"
 
-#include "thread_context/registry_manager.h"
 #include <thread_context/entity_manager.h>
 
 NodeInfo &GetNodeInfo()

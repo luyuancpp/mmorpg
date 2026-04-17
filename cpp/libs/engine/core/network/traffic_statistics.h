@@ -3,8 +3,6 @@
 #include <atomic>
 #include <array>
 #include <chrono>
-#include <cstdint>
-#include <string>
 #include <vector>
 
 #include "rpc/service_metadata/rpc_event_registry.h"
