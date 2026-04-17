@@ -403,67 +403,69 @@ const char descriptor_table_protodef_proto_2fscene_2fscene_2eproto[] ABSL_ATTRIB
     "\n\027proto/scene/scene.proto\032\033proto/db/prot"
     "o_option.proto\032\035proto/common/base/empty."
     "proto\032\036proto/common/base/common.proto\032\037p"
-    "roto/common/base/message.proto\"\204\001\n\032Playe"
-    "rEnterGameNodeRequest\022\021\n\tplayer_id\030\001 \001(\004"
-    "\022\022\n\nsession_id\030\002 \001(\004\022\026\n\016centre_node_id\030\003"
-    " \001(\r\022\025\n\renter_gs_type\030\004 \001(\r\022\020\n\010scene_id\030"
-    "\005 \001(\004\"a\n!ProcessClientPlayerMessageReque"
-    "st\022(\n\017message_content\030\001 \001(\0132\017.MessageCon"
-    "tent\022\022\n\nsession_id\030\002 \001(\004\"b\n\"ProcessClien"
-    "tPlayerMessageResponse\022(\n\017message_conten"
-    "t\030\001 \001(\0132\017.MessageContent\022\022\n\nsession_id\030\002"
-    " \001(\004\"-\n\030SessionDisconnectRequest\022\021\n\tplay"
-    "er_id\030\001 \001(\004\"S\n\026GameNodeConnectRequest\022#\n"
-    "\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022\024\n\014ga"
-    "te_node_id\030\002 \001(\r\"E\n\034RegisterPlayerSessio"
-    "nRequest\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_i"
-    "d\030\002 \001(\004\"A\n\032Centre2GsEnterSceneRequest\022\021\n"
-    "\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"\203\001\n\022C"
-    "reateSceneRequest\022\021\n\tconfig_id\030\001 \001(\r\022\020\n\010"
-    "scene_id\030\002 \001(\004\022\030\n\020mirror_config_id\030\003 \001(\r"
-    "\022\031\n\021dungeon_config_id\030\004 \001(\r\022\023\n\013creator_i"
-    "ds\030\005 \003(\004\"9\n\023CreateSceneResponse\022\"\n\nscene"
-    "_info\030\001 \001(\0132\016.SceneInfoComp\"\'\n\023DestroySc"
-    "eneRequest\022\020\n\010scene_id\030\001 \001(\0042\271\006\n\005Scene\022:"
-    "\n\023PlayerEnterGameNode\022\033.PlayerEnterGameN"
-    "odeRequest\032\006.Empty\022J\n\023SendMessageToPlaye"
-    "r\022\030.NodeRouteMessageRequest\032\031.NodeRouteM"
-    "essageResponse\022e\n\032ProcessClientPlayerMes"
-    "sage\022\".ProcessClientPlayerMessageRequest"
-    "\032#.ProcessClientPlayerMessageResponse\022A\n"
-    "\035CentreSendToPlayerViaGameNode\022\030.NodeRou"
-    "teMessageRequest\032\006.Empty\022J\n\023InvokePlayer"
-    "Service\022\030.NodeRouteMessageRequest\032\031.Node"
-    "RouteMessageResponse\022A\n\022RouteNodeStringM"
-    "sg\022\024.RouteMessageRequest\032\025.RouteMessageR"
-    "esponse\022V\n\024RoutePlayerStringMsg\022\032.RouteP"
-    "layerMessageRequest\032\033.RoutePlayerMessage"
-    "Response\"\005\200\231\310\001\001\022<\n\023UpdateSessionDetail\022\035"
-    ".RegisterPlayerSessionRequest\032\006.Empty\0221\n"
-    "\nEnterScene\022\033.Centre2GsEnterSceneRequest"
-    "\032\006.Empty\0228\n\013CreateScene\022\023.CreateSceneReq"
-    "uest\032\024.CreateSceneResponse\022,\n\014DestroySce"
-    "ne\022\024.DestroySceneRequest\032\006.Empty\022>\n\rNode"
-    "Handshake\022\025.NodeHandshakeRequest\032\026.NodeH"
-    "andshakeResponseB\016Z\005scene\200\001\001\230\324a\003b\006proto3"
+    "roto/common/base/message.proto\032\034proto/sc"
+    "ene/scene_info.proto\"\204\001\n\032PlayerEnterGame"
+    "NodeRequest\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\nsessio"
+    "n_id\030\002 \001(\004\022\026\n\016centre_node_id\030\003 \001(\r\022\025\n\ren"
+    "ter_gs_type\030\004 \001(\r\022\020\n\010scene_id\030\005 \001(\004\"a\n!P"
+    "rocessClientPlayerMessageRequest\022(\n\017mess"
+    "age_content\030\001 \001(\0132\017.MessageContent\022\022\n\nse"
+    "ssion_id\030\002 \001(\004\"b\n\"ProcessClientPlayerMes"
+    "sageResponse\022(\n\017message_content\030\001 \001(\0132\017."
+    "MessageContent\022\022\n\nsession_id\030\002 \001(\004\"-\n\030Se"
+    "ssionDisconnectRequest\022\021\n\tplayer_id\030\001 \001("
+    "\004\"S\n\026GameNodeConnectRequest\022#\n\nrpc_clien"
+    "t\030\001 \001(\0132\017.NetworkAddress\022\024\n\014gate_node_id"
+    "\030\002 \001(\r\"E\n\034RegisterPlayerSessionRequest\022\022"
+    "\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\"A\n"
+    "\032Centre2GsEnterSceneRequest\022\021\n\tplayer_id"
+    "\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"\203\001\n\022CreateScene"
+    "Request\022\021\n\tconfig_id\030\001 \001(\r\022\020\n\010scene_id\030\002"
+    " \001(\004\022\030\n\020mirror_config_id\030\003 \001(\r\022\031\n\021dungeo"
+    "n_config_id\030\004 \001(\r\022\023\n\013creator_ids\030\005 \003(\004\"9"
+    "\n\023CreateSceneResponse\022\"\n\nscene_info\030\001 \001("
+    "\0132\016.SceneInfoComp\"\'\n\023DestroySceneRequest"
+    "\022\020\n\010scene_id\030\001 \001(\0042\271\006\n\005Scene\022:\n\023PlayerEn"
+    "terGameNode\022\033.PlayerEnterGameNodeRequest"
+    "\032\006.Empty\022J\n\023SendMessageToPlayer\022\030.NodeRo"
+    "uteMessageRequest\032\031.NodeRouteMessageResp"
+    "onse\022e\n\032ProcessClientPlayerMessage\022\".Pro"
+    "cessClientPlayerMessageRequest\032#.Process"
+    "ClientPlayerMessageResponse\022A\n\035CentreSen"
+    "dToPlayerViaGameNode\022\030.NodeRouteMessageR"
+    "equest\032\006.Empty\022J\n\023InvokePlayerService\022\030."
+    "NodeRouteMessageRequest\032\031.NodeRouteMessa"
+    "geResponse\022A\n\022RouteNodeStringMsg\022\024.Route"
+    "MessageRequest\032\025.RouteMessageResponse\022V\n"
+    "\024RoutePlayerStringMsg\022\032.RoutePlayerMessa"
+    "geRequest\032\033.RoutePlayerMessageResponse\"\005"
+    "\200\231\310\001\001\022<\n\023UpdateSessionDetail\022\035.RegisterP"
+    "layerSessionRequest\032\006.Empty\0221\n\nEnterScen"
+    "e\022\033.Centre2GsEnterSceneRequest\032\006.Empty\0228"
+    "\n\013CreateScene\022\023.CreateSceneRequest\032\024.Cre"
+    "ateSceneResponse\022,\n\014DestroyScene\022\024.Destr"
+    "oySceneRequest\032\006.Empty\022>\n\rNodeHandshake\022"
+    "\025.NodeHandshakeRequest\032\026.NodeHandshakeRe"
+    "sponseB\016Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fscene_2fscene_2eproto_deps[4] = {
+    descriptor_table_proto_2fscene_2fscene_2eproto_deps[5] = {
         &::descriptor_table_proto_2fcommon_2fbase_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
+        &::descriptor_table_proto_2fscene_2fscene_5finfo_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fscene_2fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fscene_2eproto = {
     false,
     false,
-    1840,
+    1870,
     descriptor_table_protodef_proto_2fscene_2fscene_2eproto,
     "proto/scene/scene.proto",
     &descriptor_table_proto_2fscene_2fscene_2eproto_once,
     descriptor_table_proto_2fscene_2fscene_2eproto_deps,
-    4,
+    5,
     10,
     schemas,
     file_default_instances,

@@ -34,6 +34,7 @@
 #include "proto/common/base/empty.pb.h"
 #include "proto/common/base/common.pb.h"
 #include "proto/common/base/message.pb.h"
+#include "proto/scene/scene_info.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
