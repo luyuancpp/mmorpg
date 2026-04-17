@@ -12,7 +12,7 @@ void PlayerMigrationEventHandler::UnRegister()
 {
     tlsEcs.dispatcher.sink<PlayerMigrationEvent>().disconnect<&PlayerMigrationEventHandler::HandlePlayerMigrationEvent>();
 }
-void PlayerMigrationEventHandler::HandlePlayerMigrationEvent(const PlayerMigrationEvent &event)
+void PlayerMigrationEventHandler::HandlePlayerMigrationEvent(const PlayerMigrationEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
