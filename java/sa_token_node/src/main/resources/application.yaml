@@ -1,19 +1,23 @@
 server:
-  port: 5555
+  port: ${SA_TOKEN_HTTP_PORT:5555}
 spring:
   application:
-    name: test-server
+    name: sa-token-node
   cloud:
     nacos:
-      server-addr: localhost:8848
+      server-addr: ${NACOS_ADDR:localhost:8848}
+      discovery:
+        enabled: ${NACOS_ENABLED:true}
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
 sa-token:
   is-read-cookie: false
-  token-name: satoken
+  token-name: ${SA_TOKEN_NAME:satoken}
 
 grpc:
   server:
-    port: 5556
+    port: ${SA_TOKEN_GRPC_PORT:5556}
