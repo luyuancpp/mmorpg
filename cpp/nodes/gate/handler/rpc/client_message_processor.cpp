@@ -93,7 +93,28 @@ static inline uint64_t GetEffectiveNodeId(
 	const SessionInfo &session,
 	uint32_t nodeType)
 {
-	return session.GetNodeId(nodeType);
+	const auto storedNodeId = session.GetNodeId(nodeType);
+	if (storedNodeId == SessionInfo::kInvalidEntityId)
+	{
+		return storedNodeId;
+	}
+
+	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
+	const entt::entity storedEntity{storedNodeId};
+	if (registry.valid(storedEntity))
+	{
+		return storedNodeId;
+	}
+
+	if (storedNodeId <= 0xFFFFFFFFULL)
+	{
+		if (const auto resolvedEntity = NodeUtils::FindNodeEntityByNodeId(nodeType, static_cast<uint32_t>(storedNodeId)); resolvedEntity)
+		{
+			return entt::to_integral(*resolvedEntity);
+		}
+	}
+
+	return storedNodeId;
 }
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
@@ -130,12 +151,20 @@ std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_
 	}
 
 	const auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-	entt::entity nodeEntity = entt::entity{GetEffectiveNodeId(session, nodeType)};
+	const auto effectiveNodeId = GetEffectiveNodeId(session, nodeType);
+	entt::entity nodeEntity = entt::entity{effectiveNodeId};
 	if (!registry.valid(nodeEntity))
 	{
-		LOG_ERROR << "Bound node is invalid. nodeType: " << nodeType << ", session id: " << sessionId;
+		LOG_ERROR << "Bound node is invalid. nodeType: " << nodeType
+				  << ", session id: " << sessionId
+				  << ", stored_node_id=" << session.GetNodeId(nodeType);
 		session.SetNodeId(nodeType, SessionInfo::kInvalidEntityId);
 		return std::nullopt;
+	}
+
+	if (effectiveNodeId != session.GetNodeId(nodeType))
+	{
+		session.SetNodeId(nodeType, effectiveNodeId);
 	}
 
 	return nodeEntity;
@@ -308,7 +337,7 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 	auto &registry = tlsNodeContextManager.GetRegistry(handlerMeta.targetNodeType);
 	if (!registry.valid(targetNodeEntity))
 	{
-		LOG_ERROR << "[TCP Node Error] Invalid target node entity: " << static_cast<uint32_t>(targetNodeEntity)
+		LOG_ERROR << "[TCP Node Error] Invalid target node entity: " << entt::to_integral(targetNodeEntity)
 				  << ", message_id: " << request->message_id()
 				  << ", session_id: " << sessionId
 				  << ", node_type: " << handlerMeta.targetNodeType
