@@ -8,6 +8,14 @@
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "proto/common/base/node.pb.h"
+#include "proto/common/component/player_network_comp.pb.h"
+#include "proto/scene_manager/scene_manager_service.pb.h"
+#include "grpc_client/scene_manager/scene_manager_service_grpc_client.h"
+#include "engine/thread_context/node_context_manager.h"
+#include "network/network_utils.h"
+#include "network/node_utils.h"
+#include "network/player_message_utils.h"
+#include "rpc/service_metadata/player_scene_service_metadata.h"
 ///<<< END WRITING YOUR CODE
 
 void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,
@@ -36,7 +44,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 
 	if (auto current_scene_comp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player))
 	{
-		const auto current_scene_info = tlsEcs.actorRegistry.try_get<SceneInfoComp>(current_scene_comp->sceneEntity);
+		const auto current_scene_info = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(current_scene_comp->sceneEntity);
 		if (current_scene_info && current_scene_info->scene_id() == scene_info.scene_id() && scene_info.scene_id() > 0)
 		{
 			LOG_WARN << "Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " is already in the requested scene: " << scene_info.scene_id();
@@ -45,12 +53,54 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		}
 	}
 
-	// TODO(centre-decommission): Route scene change request via Kafka to SceneManager
-	// instead of SendToCentrePlayerByClientNode.
-	LOG_WARN << "EnterSceneC2S: Centre decommissioned, scene change via SceneManager not yet wired. player="
-			 << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+	const auto* playerSessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	if (!playerSessionPB)
+	{
+		LOG_ERROR << "EnterSceneC2S: PlayerSessionSnapshotComp missing for player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+		response->mutable_error_message()->set_id(kEnterSceneParamError);
+		return;
+	}
 
-	LOG_TRACE << "EnterSceneC2S request processed successfully for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+	// Resolve gate info
+	NodeId gateNodeId = GetGateNodeId(playerSessionPB->gate_session_id());
+	std::string gateInstanceId;
+	auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+	if (const auto* gateNodeInfo = gateRegistry.try_get<NodeInfo>(entt::entity{gateNodeId}))
+	{
+		gateInstanceId = gateNodeInfo->node_uuid();
+	}
+
+	// Find a SceneManager gRPC node
+	auto& smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
+	entt::entity smEntity = entt::null;
+	for (const auto& [e, info] : smRegistry.view<NodeInfo>().each())
+	{
+		smEntity = e;
+		break;
+	}
+	if (smEntity == entt::null)
+	{
+		LOG_ERROR << "EnterSceneC2S: No SceneManager node available for player " << playerSessionPB->player_id();
+		response->mutable_error_message()->set_id(kEnterSceneParamError);
+		return;
+	}
+
+	// Build EnterSceneRequest for SceneManager
+	::scene_manager::EnterSceneRequest req;
+	req.set_player_id(playerSessionPB->player_id());
+	req.set_scene_id(scene_info.scene_id());
+	req.set_scene_conf_id(scene_info.scene_config_id());
+	req.set_session_id(playerSessionPB->gate_session_id());
+	req.set_gate_id(std::to_string(gateNodeId));
+	req.set_gate_instance_id(gateInstanceId);
+	req.set_gate_zone_id(GetZoneId());
+	req.set_zone_id(GetZoneId());
+
+	scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req);
+
+	LOG_INFO << "EnterSceneC2S: Sent EnterScene to SceneManager for player " << playerSessionPB->player_id()
+			 << ", scene_config_id=" << scene_info.scene_config_id()
+			 << ", scene_id=" << scene_info.scene_id();
 ///<<< END WRITING YOUR CODE
 
 }
@@ -67,8 +117,23 @@ void SceneSceneClientPlayerHandler::SceneInfoC2S(entt::entity player,const ::Sce
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	// TODO(centre-decommission): Route scene info request via SceneManager or local lookup.
-	LOG_WARN << "SceneInfoC2S: Centre decommissioned, scene info via SceneManager not yet wired.";
+	auto* sceneEntityComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
+	if (!sceneEntityComp || sceneEntityComp->sceneEntity == entt::null)
+	{
+		LOG_WARN << "SceneInfoC2S: Player not in any scene";
+		return;
+	}
+
+	const auto* sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntityComp->sceneEntity);
+	if (!sceneInfo)
+	{
+		LOG_WARN << "SceneInfoC2S: Scene info not found for player's scene entity";
+		return;
+	}
+
+	SceneInfoS2C message;
+	message.add_scene_info()->CopyFrom(*sceneInfo);
+	SendMessageToClientViaGate(SceneSceneClientPlayerNotifySceneInfoMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 
 }

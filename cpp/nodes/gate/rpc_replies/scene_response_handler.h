@@ -4,8 +4,7 @@
 
 void OnScenePlayerEnterGameNodeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp);
 void OnSceneSendMessageToPlayerReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeRouteMessageResponse>& replied, muduo::Timestamp timestamp);
-void OnSceneProcessClientPlayerMessageReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::ProcessClientPlayerMessageResponse>& replied, muduo::Timestamp timestamp);
-void OnSceneCentreSendToPlayerViaGameNodeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp);
+void OnSceneProcessClientPlayerMessageReply(const muduo::net::TcpConnectionPtr &conn, const std::shared_ptr<::ProcessClientPlayerMessageResponse> &replied, muduo::Timestamp timestamp);
 void OnSceneInvokePlayerServiceReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeRouteMessageResponse>& replied, muduo::Timestamp timestamp);
 void OnSceneRouteNodeStringMsgReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::RouteMessageResponse>& replied, muduo::Timestamp timestamp);
 void OnSceneRoutePlayerStringMsgReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::RoutePlayerMessageResponse>& replied, muduo::Timestamp timestamp);

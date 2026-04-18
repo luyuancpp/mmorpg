@@ -5,9 +5,9 @@
 #include "proto/db/mysql_database_table.pb.h"
 #include "core/utils/registry/game_registry.h"
 
+using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
 
-using CentrePlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
-
-inline CentrePlayerDataRedis& GetGlobalPlayerRedis() {
-	return tlsEcs.globalRegistry.get<CentrePlayerDataRedis>(tlsEcs.GlobalEntity());
+inline PlayerDataRedis &GetGlobalPlayerRedis()
+{
+	return tlsEcs.globalRegistry.get<PlayerDataRedis>(tlsEcs.GlobalEntity());
 }

@@ -89,19 +89,6 @@ message RegisterGateNodeSessionResponse
   SessionDetails session_info = 1;  // Session details
 }
 
-// Register centre node session request
-message RegisterCentreSessionNodeRequest
-{
-  SessionDetails session_info = 1;  // Session details
-  uint32 centre_node_id = 2;        // Centre node ID
-}
-
-// Register centre node session response
-message RegisterSessionCentreNodeResponse
-{
-  SessionDetails session_info = 1;  // Session details
-}
-
 // Gate session disconnect request
 message GateSessionDisconnectRequest
 {

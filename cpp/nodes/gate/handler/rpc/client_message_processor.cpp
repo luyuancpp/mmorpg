@@ -264,7 +264,6 @@ void ParseMessageFromRequestBody(Message &message, const Request &request, const
 void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn)
 {
 	// Disconnect notification goes to Login; its session manager owns the disconnect lease.
-	// Gate no longer notifies Centre (decommissioned).
 
 	const auto sessionId = entt::to_integral(GetSessionId(conn));
 
