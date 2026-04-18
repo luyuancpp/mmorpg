@@ -96,10 +96,10 @@
 - **Run a single Go test**: `cd go\login && go test ./data -run TestPlayerFSM_InitialState`
 - **Dependencies**: `cd go\login && go mod tidy`
 
-### Java (Auth/Web)
-- **Build**: `cd java\sa_token_node && mvn clean install`
-- **Run tests**: `cd java\sa_token_node && mvn test`
-- **Run a single Java test**: `cd java\sa_token_node && mvn -Dtest=GrpcServerApplicationTests#contextLoads test`
+### Java (Gateway/Web)
+- **Build**: `cd java\gateway_node && mvn clean install`
+- **Run tests**: `cd java\gateway_node && mvn test`
+- **Run a single Java test**: `cd java\gateway_node && mvn -Dtest=GatewayNodeApplicationTests#contextLoads test`
 
 ### Go Services (Local Dev)
 - **Build all binaries**: `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build`
@@ -130,7 +130,7 @@
   - **C++ nodes** (`cpp/nodes/*`): runtime node processes (scene/gate/centre) and RPC handlers.
   - **C++ shared game logic** (`cpp/libs/services/scene/*`): ECS-heavy domain logic, with `system` and `comp` subtrees.
   - **Go services** (`go/login` and peers): go-zero based microservices and grpc servers.
-  - **Java auth/web** (`java/sa_token_node`): Spring Boot + sa-token + grpc auth service.
+  - **Java gateway/web** (`java/gateway_node`): Spring Boot gateway service (zone directory, gate assignment, admin APIs).
 - **Proto-first contract flow**:
   - Source contracts live in `proto/`.
   - Generated protocol outputs are checked into `generated/proto/` and language-specific trees (e.g., `go/login/proto/...`).

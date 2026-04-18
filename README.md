@@ -47,8 +47,8 @@ mmorpg/
 │   ├── data_service/   #   Data layer RPC service
 │   ├── db/             #   Kafka consumer + MySQL persistence
 │   └── player_locator/ #   Player location lookup service
-├── java/               # Java auth services
-│   └── sa_token_node/  #   Spring Boot + sa-token + gRPC
+├── java/               # Java gateway services
+│   └── gateway_node/   #   Spring Boot gateway (zone directory)
 ├── proto/              # Authoritative service contract definitions
 ├── generated/          # Checked-in generated proto/table outputs
 ├── deploy/             # Docker Compose (dev) + Kubernetes (prod) manifests
@@ -79,8 +79,8 @@ msbuild game.sln /m /p:Configuration=Debug /p:Platform=x64
 # Go — regenerate proto stubs and build
 cd go && build.bat
 
-# Java — build auth service
-cd java/sa_token_node && mvn clean install
+# Java — build gateway service
+cd java/gateway_node && mvn clean install
 ```
 
 ### Run (Local Dev)
@@ -144,7 +144,7 @@ cpp\tests\bag_test\x64\Debug\bag_test.exe --gtest_filter=BagTest.AddNewGridItem
 cd go\login && go test ./...
 
 # Java tests
-cd java\sa_token_node && mvn test
+cd java\gateway_node && mvn test
 ```
 
 ---
