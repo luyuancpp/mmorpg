@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	loginadminlogic "login/internal/logic/loginadmin"
+	"login/internal/logic/loginadmin"
 	"login/internal/svc"
 	"proto/login"
 )

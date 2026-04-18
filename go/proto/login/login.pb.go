@@ -163,6 +163,7 @@ type LoginRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Account       string                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	SaToken       string                 `protobuf:"bytes,3,opt,name=sa_token,json=saToken,proto3" json:"sa_token,omitempty"` // SA-Token value; if set, validate via SA-Token Redis instead of password
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,6 +208,13 @@ func (x *LoginRequest) GetAccount() string {
 func (x *LoginRequest) GetPassword() string {
 	if x != nil {
 		return x.Password
+	}
+	return ""
+}
+
+func (x *LoginRequest) GetSaToken() string {
+	if x != nil {
+		return x.SaToken
 	}
 	return ""
 }
@@ -888,10 +896,11 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"login_time\x18\x06 \x01(\x03R\tloginTime\x12\x10\n" +
 	"\x03fsm\x18\a \x01(\tR\x03fsm\"J\n" +
 	"\x1aAccountSimplePlayerWrapper\x12,\n" +
-	"\x06player\x18\x01 \x01(\v2\x14.AccountSimplePlayerR\x06player\"D\n" +
+	"\x06player\x18\x01 \x01(\v2\x14.AccountSimplePlayerR\x06player\"_\n" +
 	"\fLoginRequest\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x84\x01\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x19\n" +
+	"\bsa_token\x18\x03 \x01(\tR\asaToken\"\x84\x01\n" +
 	"\rLoginResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12=\n" +
 	"\aplayers\x18\x02 \x03(\v2#.loginpb.AccountSimplePlayerWrapperR\aplayers\"\xbd\x01\n" +

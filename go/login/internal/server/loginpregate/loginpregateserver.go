@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	loginpregatelogic "login/internal/logic/loginpregate"
+	"login/internal/logic/loginpregate"
 	"login/internal/svc"
 	"proto/login"
 )
