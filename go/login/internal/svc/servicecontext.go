@@ -25,7 +25,6 @@ import (
 
 type ServiceContext struct {
 	RedisClient         *redis.Client
-	SaTokenRedisClient  *redis.Client // SA-Token Redis (nil if SA-Token disabled)
 	SnowFlake           *snowflake.Node
 	NodeInfo            login_proto.NodeInfo
 	KafkaClient         *kafka.KeyOrderedKafkaProducer
@@ -39,6 +38,9 @@ func NewServiceContext() *ServiceContext {
 	ctx := context.Background()
 
 	table.LoadTables(config.AppConfig.TableDir, false)
+
+	// Register auth providers based on config
+	InitAuthProviders()
 
 	// Initialize Redis client
 	redisHost := config.AppConfig.Node.RedisClient.Host
@@ -54,22 +56,6 @@ func NewServiceContext() *ServiceContext {
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))
-	}
-
-	// Initialize SA-Token Redis client (optional, separate Redis instance)
-	var saTokenRedisClient *redis.Client
-	if config.AppConfig.SaToken.Enabled {
-		saCfg := config.AppConfig.SaToken.Redis
-		saTokenRedisClient = redis.NewClient(&redis.Options{
-			Addr:            saCfg.Host,
-			Password:        saCfg.Password,
-			DB:              int(saCfg.DB),
-			DisableIndentity: true,
-		})
-		if err := saTokenRedisClient.Ping(ctx).Err(); err != nil {
-			panic(fmt.Errorf("failed to connect SA-Token Redis: %w", err))
-		}
-		logx.Infof("SA-Token Redis connected: %s db=%d", saCfg.Host, saCfg.DB)
 	}
 
 	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(config.AppConfig.Kafka)
@@ -117,7 +103,6 @@ func NewServiceContext() *ServiceContext {
 
 	return &ServiceContext{
 		RedisClient:         redisClient,
-		SaTokenRedisClient:  saTokenRedisClient,
 		KafkaClient:         kafkaClient,
 		ExpandMonitor:       monitor,
 		PlayerLocatorClient: plClient,
