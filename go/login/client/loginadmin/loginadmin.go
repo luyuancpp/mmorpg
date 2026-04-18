@@ -7,7 +7,7 @@ package loginadmin
 import (
 	"context"
 
-	"login/proto/login/proto/login"
+	"proto/login"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"

@@ -7,9 +7,9 @@ package server
 import (
 	"context"
 
-	"login/internal/logic/loginpregate"
+	loginpregatelogic "login/internal/logic/loginpregate"
 	"login/internal/svc"
-	"login/proto/login/proto/login"
+	"proto/login"
 )
 
 type LoginPreGateServer struct {

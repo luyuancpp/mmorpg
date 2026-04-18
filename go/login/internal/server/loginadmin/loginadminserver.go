@@ -7,9 +7,9 @@ package server
 import (
 	"context"
 
-	"login/internal/logic/loginadmin"
+	loginadminlogic "login/internal/logic/loginadmin"
 	"login/internal/svc"
-	"login/proto/login/proto/login"
+	"proto/login"
 )
 
 type LoginAdminServer struct {

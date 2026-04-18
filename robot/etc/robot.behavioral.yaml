@@ -1,0 +1,28 @@
+# Mixed-behavior robot pressure test
+# Use for smaller realistic behavior simulations or medium-sized mixed-action load.
+
+gateway_addr: "http://127.0.0.1:8081"
+zone_id: 1
+robot_count: 20
+account_fmt: "robot_behavior_%04d"
+password: "123456"
+skill_ids: []
+table_dir: "../generated/tables"
+action_interval: 1
+report_interval: 5
+mode: "stress"
+profile: "behavioral"
+
+# Optional manual override
+# custom_weights:
+#   cast_skill: 45
+#   move: 20
+#   switch_scene: 25
+#   idle: 5
+#   chat: 5
+
+llm:
+  enabled: false
+  endpoint: "http://localhost:11434/v1/chat/completions"
+  api_key: ""
+  model: "qwen2"

@@ -7,9 +7,9 @@ package server
 import (
 	"context"
 
-	"db/internal/logic/db"
+	dblogic "db/internal/logic/db"
 	"db/internal/svc"
-	"db/proto/db/proto/db"
+	"proto/db"
 )
 
 type DbServer struct {

@@ -33,6 +33,14 @@ func NewPlayer(id uint64) *Player {
 	}
 }
 
+func (p *Player) ensureSceneReadyChannel() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.sceneReady == nil {
+		p.sceneReady = make(chan struct{})
+	}
+}
+
 // SetEntityID sets the player's own entity ID.
 func (p *Player) SetEntityID(id uint64) {
 	p.mu.Lock()
@@ -68,11 +76,13 @@ func (p *Player) SetSceneInfo(sceneID uint64, sceneConfigID uint32) {
 
 // SignalSceneReady marks the player as having entered a scene.
 func (p *Player) SignalSceneReady() {
+	p.ensureSceneReadyChannel()
 	p.sceneReadyOnce.Do(func() { close(p.sceneReady) })
 }
 
 // WaitSceneReady blocks until the scene is ready or the context is cancelled.
 func (p *Player) WaitSceneReady(ctx context.Context) error {
+	p.ensureSceneReadyChannel()
 	select {
 	case <-p.sceneReady:
 		return nil
