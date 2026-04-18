@@ -4,10 +4,8 @@
 #include "type_define/type_define.h"
 #include "network/rpc_session.h"
 
-/* Messages from centre and scene to a player are asynchronous — delivery order is NOT guaranteed.
+/* Messages from scene to a player are asynchronous -- delivery order is NOT guaranteed.
  * To guarantee order, wait for the node's reply before forwarding to the player.
- * If scene messages must reach the client in order, do NOT call this from a scene-to-centre RPC;
- * instead, reply to the scene first and let the scene forward to the client.
  */
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);

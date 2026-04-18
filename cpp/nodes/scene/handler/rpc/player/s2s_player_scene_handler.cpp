@@ -37,7 +37,7 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	///<<< BEGIN WRITING YOUR CODE
 	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
 
-	// Save player data to Redis and handle exit logic (cleanup, notify Centre)
+	// Save player data to Redis and handle exit logic.
 	// This replaces the legacy ChangeSceneInfo state machine checks with a direct save-and-exit flow.
 	PlayerLifecycleSystem::HandleExitGameNode(player);
 

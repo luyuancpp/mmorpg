@@ -90,7 +90,6 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 		DestroyPlayer(playerId);
 	}
 
-	// Centre decommissioned: save-complete notification no longer needed.
 	// player_locator lease handles reconnect gating via Redis TTL.
 }
 
@@ -274,7 +273,6 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	request.set_to_zone(changeInfo->to_zone_id());
 	request.mutable_scene_info()->CopyFrom(*changeInfo);
 	request.set_serialized_player_data(std::move(playerAllDataMessage.SerializeAsString()));
-	// Centre decommissioned: centre_node_id no longer carried in migration messages.
 
 	KafkaProducer::Instance().send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo->to_zone_id());
 
@@ -295,7 +293,6 @@ void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationEvent &ms
 	}
 
 	PlayerGameNodeEntryInfoComp enterInfo;
-	// Centre decommissioned: centre_node_id no longer piggybacked in migration.
 
 	auto player = InitPlayerFromAllData(playerAllDataMessage, enterInfo);
 	SavePlayerToRedis(player);
@@ -341,7 +338,6 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 
 	tlsEcs.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
 
-	// Centre decommissioned: centre_node_id no longer tracked in session snapshot.
 	// player_locator (Go) owns the canonical session/location record.
 
 	// Fire component initialization events

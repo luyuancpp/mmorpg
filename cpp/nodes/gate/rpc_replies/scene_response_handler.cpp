@@ -19,9 +19,7 @@ void InitSceneReply()
     gRpcResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(SceneSendMessageToPlayerMessageId,
         std::bind(&OnSceneSendMessageToPlayerReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::ProcessClientPlayerMessageResponse>(SceneProcessClientPlayerMessageMessageId,
-        std::bind(&OnSceneProcessClientPlayerMessageReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gRpcResponseDispatcher.registerMessageCallback<::Empty>(SceneCentreSendToPlayerViaGameNodeMessageId,
-        std::bind(&OnSceneCentreSendToPlayerViaGameNodeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+                                                                                         std::bind(&OnSceneProcessClientPlayerMessageReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(SceneInvokePlayerServiceMessageId,
         std::bind(&OnSceneInvokePlayerServiceReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(SceneRouteNodeStringMsgMessageId,
@@ -55,13 +53,6 @@ void OnSceneSendMessageToPlayerReply(const muduo::net::TcpConnectionPtr& conn, c
 void OnSceneProcessClientPlayerMessageReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::ProcessClientPlayerMessageResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
-void OnSceneCentreSendToPlayerViaGameNodeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
-
 ///<<< END WRITING YOUR CODE
 }
 

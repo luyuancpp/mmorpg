@@ -323,30 +323,6 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	///<<< END WRITING YOUR CODE
 }
 
-void SceneHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	const auto it = SessionMap().find(request->header().session_id());
-	if (it == SessionMap().end())
-	{
-		LOG_ERROR << "session id not found " << request->header().session_id() << ","
-				  << " message id " << request->message_content().message_id();
-		return;
-	}
-
-	const auto player = tlsEcs.GetPlayer(it->second);
-	if (player == entt::null)
-	{
-		LOG_ERROR << "GatePlayerService player not loading";
-		return;
-	}
-
-	::SendMessageToClientViaGate(request->message_content().message_id(), request->message_content(), player);
-	///<<< END WRITING YOUR CODE
-}
-
 void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
 	::google::protobuf::Closure* done)
@@ -492,7 +468,6 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 		if (importantRoute)
 		{
 			LOG_ERROR << "RoutePlayerStringMsg IMPORTANT route dropped: no next node, player_id=" << playerId;
-			// Centre decommissioned: no fallback relay. TODO: query player_locator and re-route via Kafka.
 		}
 		else
 		{
@@ -566,33 +541,6 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
 
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
-	///<<< END WRITING YOUR CODE
-}
-
-void SceneHandler::EnterScene(::google::protobuf::RpcController* controller, const ::Centre2GsEnterSceneRequest* request,
-	::Empty* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-
-	auto player = tlsEcs.GetPlayer(request->player_id());
-	if (player == entt::null)
-	{
-		LOG_ERROR << "EnterScene: Player entity not found for player_id " << request->player_id();
-		return;
-	}
-
-	LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
-
-	entt::entity sceneEntity{request->scene_id()};
-	// Optional: validate scene entity (SceneCommon usually also checks internally)
-	if (!tlsEcs.actorRegistry.valid(sceneEntity) && !tlsNodeContextManager.GetRegistry(eNodeType::SceneNodeService).valid(sceneEntity))
-	{
-		LOG_ERROR << "EnterScene: invalid scene entity " << request->scene_id();
-		return;
-	}
-
-	PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
 	///<<< END WRITING YOUR CODE
 }
 

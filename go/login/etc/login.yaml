@@ -90,7 +90,7 @@ GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 # SA-Token integration: validate SA-Token via Redis directly (bypass Java sa_token_node).
 # Key format: {TokenName}:{LoginType}:token:{tokenValue} -> loginId
 SaToken:
-  Enabled: false  # Set to true to enable SA-Token validation
+  Enabled: true   # Enable SA-Token validation (reads SA-Token Redis directly)
   TokenName: satoken  # SA-Token key prefix (default: satoken)
   LoginType: login    # SA-Token account type (default: login)
   Redis:
