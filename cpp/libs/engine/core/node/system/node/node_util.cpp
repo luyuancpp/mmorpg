@@ -32,6 +32,20 @@ entt::registry &NodeUtils::GetRegistryForNodeType(uint32_t nodeType)
 	return tlsNodeContextManager.GetRegistry(nodeType);
 }
 
+std::optional<entt::entity> NodeUtils::FindNodeEntityByNodeId(uint32_t nodeType, uint32_t nodeId)
+{
+	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
+	for (const auto &[entity, nodeInfo] : registry.view<NodeInfo>().each())
+	{
+		if (nodeInfo.node_id() == nodeId)
+		{
+			return entity;
+		}
+	}
+
+	return std::nullopt;
+}
+
 std::string NodeUtils::GetRegistryName(const entt::registry &registry)
 {
 	const auto type = GetRegistryType(registry);

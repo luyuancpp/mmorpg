@@ -34,8 +34,17 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 		LOG_ERROR << "Session ID not found for PlayerEnterGs, session ID: " << request->session_info().session_id();
 		return;
 	}
-	// Handle potential asynchronous issue if the GS sends while Gate is updating GS
-	sessionIt->second.SetNodeId(SceneNodeService, request->scene_node_id());
+	// Resolve protocol node_id -> local registry entity before binding the session.
+	if (const auto sceneNodeEntity = NodeUtils::FindNodeEntityByNodeId(SceneNodeService, request->scene_node_id()); sceneNodeEntity)
+	{
+		sessionIt->second.SetNodeId(SceneNodeService, entt::to_integral(*sceneNodeEntity));
+	}
+	else
+	{
+		LOG_ERROR << "PlayerEnterGs: scene node not found in registry, session_id="
+				  << request->session_info().session_id()
+				  << ", scene_node_id=" << request->scene_node_id();
+	}
 	response->mutable_session_info()->CopyFrom(request->session_info());
 	LOG_INFO << "Player entered GS, session ID: " << request->session_info().session_id()
 		<< ", game node ID: " << request->scene_node_id();

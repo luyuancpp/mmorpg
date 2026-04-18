@@ -89,7 +89,15 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
         return;
     }
 
-    it->second.SetNodeId(SceneNodeService, targetNodeId);
+    const auto targetNodeEntity = NodeUtils::FindNodeEntityByNodeId(SceneNodeService, targetNodeId);
+    if (!targetNodeEntity)
+    {
+        LOG_ERROR << "RoutePlayer: scene node not found in registry, session_id=" << sessionId
+                  << " scene_node_id=" << targetNodeId;
+        return;
+    }
+
+    it->second.SetNodeId(SceneNodeService, entt::to_integral(*targetNodeEntity));
     it->second.sceneId = event.scene_id();
 
     // Use player_id from the event if session doesn't have it yet (BindSession may not have arrived).
@@ -100,6 +108,7 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
 
     LOG_INFO << "RoutePlayer: assigned scene node, session_id=" << sessionId
              << " scene_node_id=" << targetNodeId
+             << " scene_entity=" << entt::to_integral(*targetNodeEntity)
              << " scene_id=" << event.scene_id();
 
     // Consume pending login type if BindSession arrived before RoutePlayer.
@@ -107,7 +116,7 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
     if (pendingType != 0)
     {
         it->second.pendingEnterGsType = 0;
-        ForwardPlayerToScene(sessionId, pendingType, targetNodeId,
+        ForwardPlayerToScene(sessionId, pendingType, entt::to_integral(*targetNodeEntity),
                              it->second.playerId, it->second.sceneId);
     }
 ///<<< END WRITING YOUR CODE

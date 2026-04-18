@@ -3,6 +3,7 @@
 #include "proto/common/base/common.pb.h"
 #include "entt/src/entt/entt.hpp"
 #include <algorithm>
+#include <optional>
 #include <string>
 
 // Re-export common::base types at global scope for backward compatibility.
@@ -75,6 +76,7 @@ namespace NodeUtils
 
 	eNodeType GetServiceTypeFromPrefix(const std::string &prefix);
 	entt::registry &GetRegistryForNodeType(uint32_t nodeType);
+	std::optional<entt::entity> FindNodeEntityByNodeId(uint32_t nodeType, uint32_t nodeId);
 	std::string GetRegistryName(const entt::registry &registry);
 	eNodeType GetRegistryType(const entt::registry &registry);
 	bool IsSameNode(const std::string &uuid1, const std::string &uuid2);
