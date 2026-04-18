@@ -163,6 +163,8 @@ type LoginRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Account       string                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	AuthType      string                 `protobuf:"bytes,3,opt,name=auth_type,json=authType,proto3" json:"auth_type,omitempty"`    // Auth provider type: "password" (default), "wechat", "qq", "netease", "satoken"
+	AuthToken     string                 `protobuf:"bytes,4,opt,name=auth_token,json=authToken,proto3" json:"auth_token,omitempty"` // Third-party auth code/token (used when auth_type is not "password")
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,6 +209,20 @@ func (x *LoginRequest) GetAccount() string {
 func (x *LoginRequest) GetPassword() string {
 	if x != nil {
 		return x.Password
+	}
+	return ""
+}
+
+func (x *LoginRequest) GetAuthType() string {
+	if x != nil {
+		return x.AuthType
+	}
+	return ""
+}
+
+func (x *LoginRequest) GetAuthToken() string {
+	if x != nil {
+		return x.AuthToken
 	}
 	return ""
 }
@@ -888,10 +904,13 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"login_time\x18\x06 \x01(\x03R\tloginTime\x12\x10\n" +
 	"\x03fsm\x18\a \x01(\tR\x03fsm\"J\n" +
 	"\x1aAccountSimplePlayerWrapper\x12,\n" +
-	"\x06player\x18\x01 \x01(\v2\x14.AccountSimplePlayerR\x06player\"D\n" +
+	"\x06player\x18\x01 \x01(\v2\x14.AccountSimplePlayerR\x06player\"\x80\x01\n" +
 	"\fLoginRequest\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x84\x01\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x1b\n" +
+	"\tauth_type\x18\x03 \x01(\tR\bauthType\x12\x1d\n" +
+	"\n" +
+	"auth_token\x18\x04 \x01(\tR\tauthToken\"\x84\x01\n" +
 	"\rLoginResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12=\n" +
 	"\aplayers\x18\x02 \x03(\v2#.loginpb.AccountSimplePlayerWrapperR\aplayers\"\xbd\x01\n" +
