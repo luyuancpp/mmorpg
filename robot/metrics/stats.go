@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -261,5 +262,33 @@ func (s *Stats) ExportBehaviorCSV(path string) error {
 	}
 
 	zap.L().Info("exported behavior records", zap.String("path", path), zap.Int("count", len(records)))
+	return nil
+}
+
+func (s *Stats) ExportBehaviorJSONL(path string) error {
+	s.mu.Lock()
+	records := make([]BehaviorRecord, len(s.behaviorRecords))
+	copy(records, s.behaviorRecords)
+	s.mu.Unlock()
+
+	if len(records) == 0 {
+		zap.L().Info("no behavior records to export as jsonl")
+		return nil
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("create behavior jsonl: %w", err)
+	}
+	defer f.Close()
+
+	enc := json.NewEncoder(f)
+	for _, r := range records {
+		if err := enc.Encode(r); err != nil {
+			return fmt.Errorf("encode behavior jsonl: %w", err)
+		}
+	}
+
+	zap.L().Info("exported behavior jsonl", zap.String("path", path), zap.Int("count", len(records)))
 	return nil
 }

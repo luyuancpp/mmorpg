@@ -61,6 +61,7 @@ func main() {
 	if cfg.Mode == "login-test" {
 		runLoginTests(host, port, cfg, stats, tokenPayload, tokenSig)
 		_ = stats.ExportBehaviorCSV("behavior_test_results.csv")
+		_ = stats.ExportBehaviorJSONL("behavior_test_results.jsonl")
 		return
 	}
 
@@ -103,6 +104,7 @@ func main() {
 	close(stopReport)
 	wg.Wait()
 	_ = stats.ExportBehaviorCSV("behavior_test_results.csv")
+	_ = stats.ExportBehaviorJSONL("behavior_test_results.jsonl")
 	zap.L().Info("all robots stopped")
 }
 

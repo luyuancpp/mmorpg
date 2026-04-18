@@ -51,14 +51,36 @@ try {
     # 2. Fix imports: per-service → shared proto module
     # ----------------------------------------------------------------
     $importFixes = @{
-        'login'         = @{ Old = '"login/proto/login"';               New = '"proto/login"' }
-        'db'            = @{ Old = '"db/proto/db"';                     New = '"proto/db"' }
-        'scene_manager' = @{ Old = '"scene_manager/scene_manager"';     New = '"proto/scene_manager"' }
-        'data_service'  = @{ Old = '"data_service/data_service"';       New = '"proto/data_service"' }
+        'login' = @{
+            OldList = @(
+                '"login/proto/login/proto/login"',
+                '"login/proto/login"'
+            )
+            New = '"proto/login"'
+        }
+        'db' = @{
+            OldList = @(
+                '"db/proto/db/proto/db"',
+                '"db/proto/db"'
+            )
+            New = '"proto/db"'
+        }
+        'scene_manager' = @{
+            OldList = @(
+                '"scene_manager/scene_manager"'
+            )
+            New = '"proto/scene_manager"'
+        }
+        'data_service' = @{
+            OldList = @(
+                '"data_service/data_service"'
+            )
+            New = '"proto/data_service"'
+        }
     }
 
     foreach ($svc in $importFixes.Keys) {
-        $old = $importFixes[$svc].Old
+        $oldList = $importFixes[$svc].OldList
         $new = $importFixes[$svc].New
         $svcDir = Join-Path $goRoot $svc
 
@@ -67,8 +89,14 @@ try {
             Where-Object { $_.FullName -notmatch '\\proto\\' } |
             ForEach-Object {
                 $content = Get-Content $_.FullName -Raw
-                if ($content -match [regex]::Escape($old)) {
-                    $content = $content.Replace($old, $new)
+                $changed = $false
+                foreach ($old in $oldList) {
+                    if ($content -match [regex]::Escape($old)) {
+                        $content = $content.Replace($old, $new)
+                        $changed = $true
+                    }
+                }
+                if ($changed) {
                     Set-Content $_.FullName $content -NoNewline
                     Write-Host "  fixed: $($_.FullName.Replace($goRoot + '\', ''))" -ForegroundColor Green
                 }

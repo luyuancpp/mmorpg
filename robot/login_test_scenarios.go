@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -192,6 +193,9 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 	}
 	if err := stats.ExportBehaviorCSV("behavior_test_results.csv"); err != nil {
 		zap.L().Error("failed to export behavior CSV", zap.Error(err))
+	}
+	if err := stats.ExportBehaviorJSONL("behavior_test_results.jsonl"); err != nil {
+		zap.L().Error("failed to export behavior JSONL", zap.Error(err))
 	}
 }
 
@@ -945,7 +949,7 @@ func prepareBehaviorClient(host string, port int, account, password string, stat
 		return nil, nil, err
 	}
 
-	player := &gameobject.Player{ID: gc.PlayerId}
+	player := gameobject.NewPlayer(gc.PlayerId)
 	gameobject.PlayerList.Set(gc.PlayerId, player)
 
 	go gc.RecvLoop(func(client *pkg.GameClient, msg *base.MessageContent) {
@@ -953,7 +957,15 @@ func prepareBehaviorClient(host string, port int, account, password string, stat
 		handler.MessageBodyHandler(client, msg)
 	})
 
-	_ = gc.SendRequest(game.SceneSkillClientPlayerGetSkillListMessageId, &scene.GetSkillListRequest{})
+	waitCtx, waitCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer waitCancel()
+	if err := player.WaitSceneReady(waitCtx); err != nil {
+		gameobject.PlayerList.Delete(gc.PlayerId)
+		gc.Close()
+		return nil, nil, fmt.Errorf("wait scene ready: %w", err)
+	}
+
+	_ = gc.SendRequest(game.SceneSkillClientPlayerListSkillsMessageId, &scene.ListSkillsRequest{})
 	stats.MsgSent()
 	time.Sleep(1500 * time.Millisecond)
 	return gc, player, nil

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"login/internal/svc"
-	"login/proto/login/proto/login"
+	"proto/login"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

@@ -4,7 +4,7 @@
 
 Location: `robot/login_test_scenarios.go`
 Activation: Set `mode: "login-test"` in `robot/etc/robot.yaml`, then run the robot binary.
-Runs 10 scenarios sequentially, prints a PASS/FAIL summary, then exits.
+Runs login, gameplay, and multi-robot scenarios sequentially, prints a PASS/FAIL summary, then exports CSV/JSONL traces for later analysis.
 
 ## Scenario Catalog
 
@@ -38,6 +38,24 @@ Runs 10 scenarios sequentially, prints a PASS/FAIL summary, then exits.
 mode: "login-test"       # Runs test suite then exits
 # mode: "stress"         # Default: mass concurrent bots with AI actions
 ```
+
+## Added Gameplay Scenarios
+
+| Scenario | Description | Output |
+|----------|-------------|--------|
+| SkillCast | Login then explicitly release a real skill against a visible/self entity | PASS/FAIL + behavior trace |
+| SceneSwitch | Request a same-scene/channel switch and verify a fresh enter-scene notification | PASS/FAIL + behavior trace |
+| MultiRobotBehavior | Start multiple robots with mixed AI actions for behavior-pressure testing | CSV/JSONL trace set |
+
+## Exports
+
+After running, the robot now writes:
+
+- login_test_results.csv
+- behavior_test_results.csv
+- behavior_test_results.jsonl
+
+The JSONL file is intended for later LLM/behavior-learning or replay analysis.
 
 ## Future Scenarios (Not Yet Implemented)
 
