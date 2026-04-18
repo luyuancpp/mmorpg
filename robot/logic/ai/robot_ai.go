@@ -23,7 +23,7 @@ type RobotAI struct {
 	profile  *Profile
 	llm      *LLMAdvisor // nil = use profile weights only
 	player   *gameobject.Player
-	skillIDs []uint32 // fallback from config if ListSkills not yet received
+	skillIDs []uint32 // fallback from config if GetSkillList not yet received
 	interval time.Duration
 	tick     int
 	posX     float64

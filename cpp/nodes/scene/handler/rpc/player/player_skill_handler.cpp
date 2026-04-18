@@ -59,4 +59,5 @@ void SceneSkillClientPlayerHandler::ListSkills(entt::entity player,const ::ListS
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 }
