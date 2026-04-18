@@ -22,15 +22,40 @@ type Config struct {
 	SceneManagerRpc    zrpc.RpcClientConf `json:"SceneManagerRpc"`    // scene_manager gRPC client
 	GateTokenSecret    string             `json:"GateTokenSecret"`    // HMAC secret for gate connection tokens
 	TableDir           string             `json:",default=../../generated/tables"`
-	SaToken            SaTokenConf        `json:"SaToken,optional"`   // SA-Token Redis validation config
+	Auth               AuthConfig         `json:"Auth,optional"`      // Third-party auth provider config
 }
 
-// SaTokenConf holds SA-Token Redis lookup settings.
-type SaTokenConf struct {
-	Enabled    bool     `json:"Enabled,default=false"` // Enable SA-Token validation
-	Redis      RedisConf `json:"Redis"`                // Redis instance where SA-Token stores sessions
-	TokenName  string   `json:"TokenName,default=satoken"` // SA-Token token-name (key prefix)
-	LoginType  string   `json:"LoginType,default=login"`   // SA-Token login-type (account type)
+// AuthConfig holds third-party auth provider settings.
+type AuthConfig struct {
+	SaToken  *SaTokenAuthConf  `json:"SaToken,optional"`
+	WeChat   *WeChatAuthConf   `json:"WeChat,optional"`
+	QQ       *QQAuthConf       `json:"QQ,optional"`
+	NetEase  *NeteaseAuthConf  `json:"NetEase,optional"`
+}
+
+// SaTokenAuthConf holds SA-Token Redis lookup settings.
+type SaTokenAuthConf struct {
+	Redis     RedisConf `json:"Redis"`
+	TokenName string    `json:"TokenName,default=satoken"`
+	LoginType string    `json:"LoginType,default=login"`
+}
+
+// WeChatAuthConf holds WeChat OAuth settings.
+type WeChatAuthConf struct {
+	AppId     string `json:"AppId"`
+	AppSecret string `json:"AppSecret"`
+}
+
+// QQAuthConf holds QQ OAuth settings.
+type QQAuthConf struct {
+	AppId  string `json:"AppId"`
+	AppKey string `json:"AppKey"`
+}
+
+// NeteaseAuthConf holds NetEase auth settings.
+type NeteaseAuthConf struct {
+	AppKey    string `json:"AppKey"`
+	AppSecret string `json:"AppSecret"`
 }
 
 // NodeConfig holds node-level settings including login duration limits.

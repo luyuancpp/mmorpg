@@ -28,7 +28,8 @@ message LoginRequest
 {
   string account = 1;
   string password = 2;
-  string sa_token = 3;  // SA-Token value; if set, validate via SA-Token Redis instead of password
+  string auth_type = 3;   // Auth provider type: "password" (default), "wechat", "qq", "netease", "satoken"
+  string auth_token = 4;  // Third-party auth code/token (used when auth_type is not "password")
 }
 
 message LoginResponse

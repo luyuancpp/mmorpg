@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"login/internal/config"
 	"login/internal/constants"
+	"login/internal/logic/pkg/auth"
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsession"
@@ -39,19 +40,12 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResponse, error) {
 	resp := &login_proto.LoginResponse{}
 
-	account := in.Account
-
-	// SA-Token validation: if sa_token is provided and SA-Token is enabled,
-	// validate the token against SA-Token's Redis and use the loginId as account.
-	if in.SaToken != "" {
-		resolvedAccount, err := l.validateSaToken(in.SaToken)
-		if err != nil {
-			logx.Errorf("SA-Token validation failed: token=%s err=%v", in.SaToken, err)
-			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountNotFound)}
-			return resp, nil
-		}
-		account = resolvedAccount
-		logx.Infof("SA-Token validated: token=%s -> account=%s", in.SaToken, account)
+	// Resolve account via auth provider
+	account, err := l.resolveAccount(in)
+	if err != nil {
+		logx.Errorf("Auth failed: type=%s err=%v", in.AuthType, err)
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountNotFound)}
+		return resp, nil
 	}
 
 	// 1. Distributed lock (UUID + Lua safe release)
@@ -173,31 +167,23 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 	return userAccount, nil
 }
 
-// validateSaToken looks up the SA-Token value in the SA-Token Redis instance
-// and returns the associated loginId (used as the account name).
-// SA-Token Redis key format: {tokenName}:{loginType}:token:{tokenValue} -> loginId
-func (l *LoginLogic) validateSaToken(tokenValue string) (string, error) {
-	if !config.AppConfig.SaToken.Enabled {
-		return "", fmt.Errorf("SA-Token validation is not enabled")
-	}
-	if l.svcCtx.SaTokenRedisClient == nil {
-		return "", fmt.Errorf("SA-Token Redis client is not initialized")
+// resolveAccount determines the account identifier based on the auth type.
+// For "password" (or empty), the account comes directly from the request.
+// For third-party providers, the auth_token is validated via the registered provider.
+func (l *LoginLogic) resolveAccount(in *login_proto.LoginRequest) (string, error) {
+	authType := in.AuthType
+	if authType == "" || authType == "password" {
+		return in.Account, nil
 	}
 
-	tokenName := config.AppConfig.SaToken.TokenName
-	loginType := config.AppConfig.SaToken.LoginType
-	key := fmt.Sprintf("%s:%s:token:%s", tokenName, loginType, tokenValue)
-
-	loginId, err := l.svcCtx.SaTokenRedisClient.Get(l.ctx, key).Result()
-	if errors.Is(err, redis.Nil) {
-		return "", fmt.Errorf("sa-token not found or expired: %s", tokenValue)
+	provider := auth.Get(authType)
+	if provider == nil {
+		return "", fmt.Errorf("unknown auth type: %s", authType)
 	}
+
+	result, err := provider.Validate(l.ctx, in.AuthToken)
 	if err != nil {
-		return "", fmt.Errorf("sa-token Redis lookup failed: %w", err)
+		return "", err
 	}
-	if loginId == "" {
-		return "", fmt.Errorf("sa-token maps to empty loginId")
-	}
-
-	return loginId, nil
+	return result.Account, nil
 }

@@ -143,26 +143,6 @@ services:
       - etcd-data:/bitnami/etcd/data  # Persistent data volume
     restart: unless-stopped
 
-  # SA-Token auth node (Java Spring Boot + SA-Token + gRPC)
-  # Not started by default. Use: docker compose --profile java up -d
-  sa-token-node:
-    profiles: [java]
-    build:
-      context: ../java/sa_token_node
-      dockerfile: Dockerfile
-    container_name: sa-token-node
-    ports:
-      - "5555:5555"  # HTTP API
-      - "5556:5556"  # gRPC
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - NACOS_ADDR=nacos:8848
-      - NACOS_ENABLED=false  # Disable Nacos for local dev (Go Login reads Redis directly)
-    depends_on:
-      - redis
-    restart: unless-stopped
-
 volumes:
   kafka-data:
   redis-data:

@@ -972,7 +972,8 @@ class LoginRequest final : public ::google::protobuf::Message
   enum : int {
     kAccountFieldNumber = 1,
     kPasswordFieldNumber = 2,
-    kSaTokenFieldNumber = 3,
+    kAuthTypeFieldNumber = 3,
+    kAuthTokenFieldNumber = 4,
   };
   // string account = 1;
   void clear_account() ;
@@ -1004,27 +1005,42 @@ class LoginRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_password();
 
   public:
-  // string sa_token = 3;
-  void clear_sa_token() ;
-  const ::std::string& sa_token() const;
+  // string auth_type = 3;
+  void clear_auth_type() ;
+  const ::std::string& auth_type() const;
   template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_sa_token(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_sa_token();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_sa_token();
-  void set_allocated_sa_token(::std::string* PROTOBUF_NULLABLE value);
+  void set_auth_type(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_auth_type();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_auth_type();
+  void set_allocated_auth_type(::std::string* PROTOBUF_NULLABLE value);
 
   private:
-  const ::std::string& _internal_sa_token() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_sa_token(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_sa_token();
+  const ::std::string& _internal_auth_type() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_auth_type(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_auth_type();
+
+  public:
+  // string auth_token = 4;
+  void clear_auth_token() ;
+  const ::std::string& auth_token() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_auth_token(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_auth_token();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_auth_token();
+  void set_allocated_auth_token(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_auth_token() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_auth_token(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_auth_token();
 
   public:
   // @@protoc_insertion_point(class_scope:loginpb.LoginRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
-                                   0, 52,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 63,
                                    2>
       _table_;
 
@@ -1047,7 +1063,8 @@ class LoginRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr account_;
     ::google::protobuf::internal::ArenaStringPtr password_;
-    ::google::protobuf::internal::ArenaStringPtr sa_token_;
+    ::google::protobuf::internal::ArenaStringPtr auth_type_;
+    ::google::protobuf::internal::ArenaStringPtr auth_token_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3987,69 +4004,134 @@ inline void LoginRequest::set_allocated_password(::std::string* PROTOBUF_NULLABL
   // @@protoc_insertion_point(field_set_allocated:loginpb.LoginRequest.password)
 }
 
-// string sa_token = 3;
-inline void LoginRequest::clear_sa_token() {
+// string auth_type = 3;
+inline void LoginRequest::clear_auth_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.sa_token_.ClearToEmpty();
+  _impl_.auth_type_.ClearToEmpty();
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline const ::std::string& LoginRequest::sa_token() const
+inline const ::std::string& LoginRequest::auth_type() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:loginpb.LoginRequest.sa_token)
-  return _internal_sa_token();
+  // @@protoc_insertion_point(field_get:loginpb.LoginRequest.auth_type)
+  return _internal_auth_type();
 }
 template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void LoginRequest::set_sa_token(Arg_&& arg, Args_... args) {
+PROTOBUF_ALWAYS_INLINE void LoginRequest::set_auth_type(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
-  _impl_.sa_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:loginpb.LoginRequest.sa_token)
+  _impl_.auth_type_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:loginpb.LoginRequest.auth_type)
 }
-inline ::std::string* PROTOBUF_NONNULL LoginRequest::mutable_sa_token()
+inline ::std::string* PROTOBUF_NONNULL LoginRequest::mutable_auth_type()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_sa_token();
-  // @@protoc_insertion_point(field_mutable:loginpb.LoginRequest.sa_token)
+  ::std::string* _s = _internal_mutable_auth_type();
+  // @@protoc_insertion_point(field_mutable:loginpb.LoginRequest.auth_type)
   return _s;
 }
-inline const ::std::string& LoginRequest::_internal_sa_token() const {
+inline const ::std::string& LoginRequest::_internal_auth_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.sa_token_.Get();
+  return _impl_.auth_type_.Get();
 }
-inline void LoginRequest::_internal_set_sa_token(const ::std::string& value) {
+inline void LoginRequest::_internal_set_auth_type(const ::std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
-  _impl_.sa_token_.Set(value, GetArena());
+  _impl_.auth_type_.Set(value, GetArena());
 }
-inline ::std::string* PROTOBUF_NONNULL LoginRequest::_internal_mutable_sa_token() {
+inline ::std::string* PROTOBUF_NONNULL LoginRequest::_internal_mutable_auth_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004u;
-  return _impl_.sa_token_.Mutable( GetArena());
+  return _impl_.auth_type_.Mutable( GetArena());
 }
-inline ::std::string* PROTOBUF_NULLABLE LoginRequest::release_sa_token() {
+inline ::std::string* PROTOBUF_NULLABLE LoginRequest::release_auth_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:loginpb.LoginRequest.sa_token)
+  // @@protoc_insertion_point(field_release:loginpb.LoginRequest.auth_type)
   if ((_impl_._has_bits_[0] & 0x00000004u) == 0) {
     return nullptr;
   }
   _impl_._has_bits_[0] &= ~0x00000004u;
-  auto* released = _impl_.sa_token_.Release();
+  auto* released = _impl_.auth_type_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.sa_token_.Set("", GetArena());
+    _impl_.auth_type_.Set("", GetArena());
   }
   return released;
 }
-inline void LoginRequest::set_allocated_sa_token(::std::string* PROTOBUF_NULLABLE value) {
+inline void LoginRequest::set_allocated_auth_type(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000004u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000004u;
   }
-  _impl_.sa_token_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.sa_token_.IsDefault()) {
-    _impl_.sa_token_.Set("", GetArena());
+  _impl_.auth_type_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.auth_type_.IsDefault()) {
+    _impl_.auth_type_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginRequest.sa_token)
+  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginRequest.auth_type)
+}
+
+// string auth_token = 4;
+inline void LoginRequest::clear_auth_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.auth_token_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline const ::std::string& LoginRequest::auth_token() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.LoginRequest.auth_token)
+  return _internal_auth_token();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void LoginRequest::set_auth_token(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_.auth_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:loginpb.LoginRequest.auth_token)
+}
+inline ::std::string* PROTOBUF_NONNULL LoginRequest::mutable_auth_token()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_auth_token();
+  // @@protoc_insertion_point(field_mutable:loginpb.LoginRequest.auth_token)
+  return _s;
+}
+inline const ::std::string& LoginRequest::_internal_auth_token() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.auth_token_.Get();
+}
+inline void LoginRequest::_internal_set_auth_token(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_.auth_token_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL LoginRequest::_internal_mutable_auth_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  return _impl_.auth_token_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE LoginRequest::release_auth_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:loginpb.LoginRequest.auth_token)
+  if ((_impl_._has_bits_[0] & 0x00000008u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000008u;
+  auto* released = _impl_.auth_token_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.auth_token_.Set("", GetArena());
+  }
+  return released;
+}
+inline void LoginRequest::set_allocated_auth_token(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000008u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000008u;
+  }
+  _impl_.auth_token_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.auth_token_.IsDefault()) {
+    _impl_.auth_token_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginRequest.auth_token)
 }
 
 // -------------------------------------------------------------------
