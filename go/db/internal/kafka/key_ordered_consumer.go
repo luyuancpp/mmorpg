@@ -326,8 +326,98 @@ func (w *worker) start(isOfflineExpand bool) {
 				logx.Infof("worker task channel closed: partition=%d", w.partition)
 				return
 			}
-			w.handleTask(task, isOfflineExpand)
+
+			// Drain all immediately available tasks from the channel
+			batch := []*workerTask{task}
+		drainLoop:
+			for {
+				select {
+				case t, ok := <-w.taskCh:
+					if !ok {
+						break drainLoop
+					}
+					batch = append(batch, t)
+				default:
+					break drainLoop
+				}
+			}
+
+			w.processTaskBatch(batch, isOfflineExpand)
 		}
+	}
+}
+
+// writeCoalesceKey identifies a write that can be coalesced: same player + same table.
+type writeCoalesceKey struct {
+	key     uint64
+	msgType string
+}
+
+// processTaskBatch coalesces consecutive writes for the same (key, msg_type),
+// keeping only the latest body. Read tasks are never coalesced.
+// All Kafka messages (including skipped ones) are MarkMessage'd for offset tracking.
+func (w *worker) processTaskBatch(batch []*workerTask, isOfflineExpand bool) {
+	if len(batch) == 1 {
+		w.handleTask(batch[0], isOfflineExpand)
+		return
+	}
+
+	// Parse all tasks and find the last write per (key, msgType)
+	type parsedTask struct {
+		wt     *workerTask
+		dbTask *db_proto.DBTask
+	}
+	parsed := make([]parsedTask, 0, len(batch))
+	lastWriteIdx := make(map[writeCoalesceKey]int) // coalesce key -> index in parsed
+
+	for _, wt := range batch {
+		var task *db_proto.DBTask
+		if wt.dbTask != nil {
+			task = wt.dbTask
+		} else if wt.kafkaMsg != nil {
+			var t db_proto.DBTask
+			if err := proto.Unmarshal(wt.kafkaMsg.Value, &t); err != nil {
+				logx.Errorf("coalesce: unmarshal failed, partition=%d, offset=%d, err=%v",
+					w.partition, wt.kafkaMsg.Offset, err)
+				// Still mark offset to avoid blocking
+				if wt.session != nil {
+					wt.session.MarkMessage(wt.kafkaMsg, "")
+				}
+				continue
+			}
+			task = &t
+		}
+		idx := len(parsed)
+		parsed = append(parsed, parsedTask{wt: wt, dbTask: task})
+
+		if task != nil && task.Op == "write" {
+			ck := writeCoalesceKey{key: task.Key, msgType: task.MsgType}
+			lastWriteIdx[ck] = idx
+		}
+	}
+
+	// Process tasks: skip writes that have a newer write in the same batch
+	skipped := 0
+	for i, pt := range parsed {
+		if pt.dbTask != nil && pt.dbTask.Op == "write" {
+			ck := writeCoalesceKey{key: pt.dbTask.Key, msgType: pt.dbTask.MsgType}
+			if lastIdx, ok := lastWriteIdx[ck]; ok && lastIdx > i {
+				// A newer write exists later in the batch — skip this one
+				skipped++
+				logx.Debugf("coalesce: skipping superseded write: partition=%d, key=%d, msgType=%s, taskID=%s",
+					w.partition, pt.dbTask.Key, pt.dbTask.MsgType, pt.dbTask.TaskId)
+				// Still mark Kafka offset
+				if pt.wt.session != nil && pt.wt.kafkaMsg != nil {
+					pt.wt.session.MarkMessage(pt.wt.kafkaMsg, "")
+				}
+				continue
+			}
+		}
+		w.handleTask(pt.wt, isOfflineExpand)
+	}
+
+	if skipped > 0 {
+		logx.Infof("coalesce: partition=%d, batch=%d, skipped=%d writes", w.partition, len(batch), skipped)
 	}
 }
 
