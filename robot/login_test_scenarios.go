@@ -10,9 +10,15 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
+	"proto/common/base"
+	"proto/common/component"
 	"proto/login"
+	"proto/scene"
 	"robot/config"
 	"robot/generated/pb/game"
+	"robot/logic/ai"
+	"robot/logic/gameobject"
+	"robot/logic/handler"
 	"robot/metrics"
 	"robot/pkg"
 )
@@ -106,6 +112,24 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 			}
 			return testBatchConcurrentLogin(host, port, cfg.AccountFmt, cfg.Password, stats, tokenPayload, tokenSig, n)
 		}},
+
+		// --- Gameplay behavior ---
+		{"SkillCast", func() testResult {
+			return testSkillCast(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+		{"SceneSwitch", func() testResult {
+			return testSceneSwitch(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
+		{"MultiRobotBehavior", func() testResult {
+			n := cfg.RobotCount
+			if n < 3 {
+				n = 3
+			}
+			if n > 20 {
+				n = 20 // keep the scenario quick; large-scale load still uses stress mode
+			}
+			return testMultiRobotBehavior(host, port, cfg.AccountFmt, cfg.Password, stats, tokenPayload, tokenSig, n)
+		}},
 	}
 
 	zap.L().Info("======== Login Test Suite ========", zap.Int("scenarios", len(scenarios)))
@@ -137,6 +161,15 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 			Stuck:     strings.Contains(r.Detail, "STUCK"),
 			ErrorMsg:  condStr(!r.Passed, r.Detail, ""),
 		})
+		stats.RecordBehavior(metrics.BehaviorRecord{
+			Timestamp: time.Now(),
+			Account:   account,
+			Scenario:  s.name,
+			Action:    "scenario_result",
+			Success:   r.Passed,
+			LatencyMs: r.Elapsed.Milliseconds(),
+			Detail:    r.Detail,
+		})
 
 		// Brief pause between scenarios so server-side sessions settle.
 		time.Sleep(500 * time.Millisecond)
@@ -152,10 +185,13 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 		zap.L().Info(fmt.Sprintf("  [%s] %s  %s  %s", mark, r.Name, r.Elapsed.Truncate(time.Millisecond), r.Detail))
 	}
 
-	// Export login records for ML / anomaly detection.
+	// Export scenario records for ML / anomaly detection.
 	csvPath := "login_test_results.csv"
 	if err := stats.ExportLoginCSV(csvPath); err != nil {
 		zap.L().Error("failed to export login CSV", zap.Error(err))
+	}
+	if err := stats.ExportBehaviorCSV("behavior_test_results.csv"); err != nil {
+		zap.L().Error("failed to export behavior CSV", zap.Error(err))
 	}
 }
 
@@ -886,4 +922,194 @@ func testBatchConcurrentLogin(host string, port int, accountFmt, password string
 		return testResult{Passed: true, Elapsed: time.Since(start), Detail: detail}
 	}
 	return testResult{Passed: false, Elapsed: time.Since(start), Detail: "too many failures: " + detail}
+}
+
+func waitUntil(timeout time.Duration, cond func() bool) bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if cond() {
+			return true
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return cond()
+}
+
+func prepareBehaviorClient(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) (*pkg.GameClient, *gameobject.Player, error) {
+	gc, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := loginAndEnter(gc, password, stats); err != nil {
+		gc.Close()
+		return nil, nil, err
+	}
+
+	player := &gameobject.Player{ID: gc.PlayerId}
+	gameobject.PlayerList.Set(gc.PlayerId, player)
+
+	go gc.RecvLoop(func(client *pkg.GameClient, msg *base.MessageContent) {
+		stats.MsgRecv()
+		handler.MessageBodyHandler(client, msg)
+	})
+
+	_ = gc.SendRequest(game.SceneSkillClientPlayerGetSkillListMessageId, &scene.GetSkillListRequest{})
+	stats.MsgSent()
+	time.Sleep(1500 * time.Millisecond)
+	return gc, player, nil
+}
+
+func testSkillCast(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+	gc, player, err := prepareBehaviorClient(host, port, account, password, stats, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("prepare behavior client: %v", err)}
+	}
+	defer func() {
+		gameobject.PlayerList.Delete(gc.PlayerId)
+		gc.Close()
+	}()
+
+	_ = waitUntil(3*time.Second, func() bool {
+		return len(player.GetOwnedSkillIDs()) > 0 && player.GetRandomEntity() != 0
+	})
+
+	skills := player.GetOwnedSkillIDs()
+	targetID := player.GetRandomEntity()
+	if len(skills) == 0 {
+		return testResult{Elapsed: time.Since(start), Detail: "skill list is empty after entering scene"}
+	}
+	if targetID == 0 {
+		return testResult{Elapsed: time.Since(start), Detail: "no visible/self entity found for skill cast"}
+	}
+
+	ackBefore, usedBefore, _ := player.GetSkillStats()
+	if err := gc.SendRequest(game.SceneSkillClientPlayerReleaseSkillMessageId, &scene.ReleaseSkillRequest{
+		SkillTableId: skills[0],
+		TargetId:     targetID,
+		Position:     &component.Vector3{X: 0, Y: 0, Z: 0},
+	}); err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("release skill send failed: %v", err)}
+	}
+	stats.MsgSent()
+	stats.SkillSent()
+
+	ok := waitUntil(3*time.Second, func() bool {
+		ack, used, lastErr := player.GetSkillStats()
+		return lastErr != "" || ack > ackBefore || used > usedBefore
+	})
+	ackAfter, usedAfter, lastErr := player.GetSkillStats()
+	if !ok {
+		return testResult{Elapsed: time.Since(start), Detail: "no skill response/usage notification received"}
+	}
+	if lastErr != "" {
+		return testResult{Elapsed: time.Since(start), Detail: "skill rejected: " + lastErr}
+	}
+
+	return testResult{Passed: true, Elapsed: time.Since(start), Detail: fmt.Sprintf("skill=%d target=%d ack=%d used=%d", skills[0], targetID, ackAfter-ackBefore, usedAfter-usedBefore)}
+}
+
+func testSceneSwitch(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+	gc, player, err := prepareBehaviorClient(host, port, account, password, stats, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("prepare behavior client: %v", err)}
+	}
+	defer func() {
+		gameobject.PlayerList.Delete(gc.PlayerId)
+		gc.Close()
+	}()
+
+	if !waitUntil(3*time.Second, func() bool { return player.GetSceneConfigID() != 0 }) {
+		return testResult{Elapsed: time.Since(start), Detail: "scene info not received from server"}
+	}
+
+	beforeCount := player.GetSceneEnterCount()
+	beforeScene := player.GetSceneID()
+	sceneConfID := player.GetSceneConfigID()
+	if err := gc.SendRequest(game.SceneSceneClientPlayerEnterSceneMessageId, &scene.EnterSceneC2SRequest{
+		SceneInfo: &scene.SceneInfoComp{SceneConfigId: sceneConfID},
+	}); err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("scene switch send failed: %v", err)}
+	}
+	stats.MsgSent()
+	stats.SceneSwitchSent()
+
+	if !waitUntil(5*time.Second, func() bool { return player.GetSceneEnterCount() > beforeCount }) {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("no enter-scene notification after switch request (scene=%d conf=%d)", beforeScene, sceneConfID)}
+	}
+
+	return testResult{Passed: true, Elapsed: time.Since(start), Detail: fmt.Sprintf("scene notifications %d->%d current_scene=%d", beforeCount, player.GetSceneEnterCount(), player.GetSceneID())}
+}
+
+func testMultiRobotBehavior(host string, port int, accountFmt, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte, n int) testResult {
+	start := time.Now()
+	if n < 3 {
+		n = 3
+	}
+
+	type robotSession struct {
+		gc     *pkg.GameClient
+		player *gameobject.Player
+	}
+
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		success  int
+		sessions []robotSession
+	)
+	beforeBehavior := stats.BehaviorRecordCount()
+	stop := make(chan struct{})
+	profile := ai.BuiltinProfiles["behavioral"]
+
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			acc := fmt.Sprintf(accountFmt, idx+5000)
+			gc, player, err := prepareBehaviorClient(host, port, acc, password, stats, tokenPayload, tokenSig)
+			if err != nil {
+				zap.L().Warn("multi-robot prepare failed", zap.String("account", acc), zap.Error(err))
+				return
+			}
+
+			robotAI := ai.NewRobotAI(gc, stats)
+			robotAI.SetPlayer(player)
+			robotAI.SetProfile(&profile)
+			robotAI.SetInterval(1 * time.Second)
+			if skills := player.GetOwnedSkillIDs(); len(skills) > 0 {
+				robotAI.SetSkillIDs(skills)
+			}
+			go robotAI.RunLoop(stop)
+
+			mu.Lock()
+			success++
+			sessions = append(sessions, robotSession{gc: gc, player: player})
+			mu.Unlock()
+		}(i)
+		time.Sleep(50 * time.Millisecond)
+	}
+	wg.Wait()
+
+	if success == 0 {
+		close(stop)
+		return testResult{Elapsed: time.Since(start), Detail: "no robot entered the behavior scenario"}
+	}
+
+	time.Sleep(6 * time.Second)
+	close(stop)
+
+	for _, s := range sessions {
+		gameobject.PlayerList.Delete(s.gc.PlayerId)
+		_ = s.gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
+		s.gc.Close()
+	}
+
+	afterBehavior := stats.BehaviorRecordCount()
+	detail := fmt.Sprintf("%d/%d robots active, behavior_records=%d", success, n, afterBehavior-beforeBehavior)
+	if success >= n*7/10 && afterBehavior > beforeBehavior {
+		return testResult{Passed: true, Elapsed: time.Since(start), Detail: detail}
+	}
+	return testResult{Passed: false, Elapsed: time.Since(start), Detail: "insufficient multi-robot coverage: " + detail}
 }

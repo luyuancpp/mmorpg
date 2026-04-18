@@ -23,6 +23,7 @@ if /I "%CMD%"=="build"      goto :build
 if /I "%CMD%"=="proto"      goto :proto
 if /I "%CMD%"=="export"     goto :export
 if /I "%CMD%"=="gen"        goto :gen
+if /I "%CMD%"=="clean-logs" goto :clean_logs
 if /I "%CMD%"=="ui"         goto :ui
 if /I "%CMD%"=="ui-cpp"     goto :ui_cpp
 if /I "%CMD%"=="ui-go"      goto :ui_go
@@ -56,11 +57,12 @@ echo     12. Build       (compile C++ + Go, no launch)
 echo     13. Proto       (regenerate proto code)
 echo     14. Export      (Excel data table export)
 echo     15. Gen         (Export tables + regenerate proto)
-echo     16. UI          (mprocs TUI dashboard)
+echo     16. Clean logs  (delete all log files)
+echo     17. UI          (mprocs TUI dashboard)
 echo.
 echo     0.  Exit
 echo.
-set /p "CHOICE=  Pick [0-16]: "
+set /p "CHOICE=  Pick [0-17]: "
 
 if "%CHOICE%"=="0" exit /b 0
 
@@ -79,7 +81,8 @@ if "%CHOICE%"=="12" call :build      & goto :menu_return
 if "%CHOICE%"=="13" call :proto      & goto :menu_return
 if "%CHOICE%"=="14" call :export     & goto :menu_return
 if "%CHOICE%"=="15" call :gen        & goto :menu_return
-if "%CHOICE%"=="16" call :ui         & goto :menu_return
+if "%CHOICE%"=="16" call :clean_logs & goto :menu_return
+if "%CHOICE%"=="17" call :ui         & goto :menu_return
 
 echo   Invalid choice.
 goto :menu
@@ -366,6 +369,20 @@ echo Data table export complete.
 exit /b 0
 
 :: ================================================================
+:clean_logs
+echo Cleaning log files...
+if exist "%GO_LOG%" (
+    del /q "%GO_LOG%\*" 2>nul
+    echo   Cleared: %GO_LOG%
+) else ( echo   No Go logs to clean. )
+if exist "%CPP_LOG%" (
+    del /q "%CPP_LOG%\*" 2>nul
+    echo   Cleared: %CPP_LOG%
+) else ( echo   No C++ logs to clean. )
+echo Done.
+exit /b 0
+
+:: ================================================================
 ::  mprocs TUI dashboard — all processes in one terminal with UI
 :: ================================================================
 :ui
@@ -419,6 +436,7 @@ echo     proto          Regenerate proto code
 echo     export         Run Excel data table exporter (Python)
 echo     export ^<cfg^>   Use custom config (default: exporter_config.yaml)
 echo     gen            Export tables + regenerate proto (both)
+echo     clean-logs     Delete all log files under bin\logs
 echo     ui             mprocs TUI dashboard (all processes)
 echo     ui-cpp         mprocs TUI (C++ nodes only)
 echo     ui-go          mprocs TUI (Go services only)

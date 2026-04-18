@@ -23,10 +23,10 @@ type Config struct {
 	ReportInterval int      `yaml:"report_interval"` // seconds between stats reports
 	TableDir       string   `yaml:"table_dir"`       // path to generated/tables dir for reading Skill/Class tables
 
-	// Mode: "stress" (default) — mass concurrent bots; "login-test" — login scenario test suite
+	// Mode: "stress" (default) — mass concurrent bots; "login-test" — scenario suite with login/skill/scene tests
 	Mode string `yaml:"mode"`
 
-	// AI behavior profile: "stress" (default, pure skill spam), "fighter", "explorer", "chatter"
+	// AI behavior profile: "stress", "behavioral", "fighter", "explorer", "chatter"
 	// Or set custom_weights to define your own action distribution.
 	Profile       string         `yaml:"profile"`
 	CustomWeights map[string]int `yaml:"custom_weights"` // e.g. {cast_skill: 50, move: 30, idle: 15, chat: 5}

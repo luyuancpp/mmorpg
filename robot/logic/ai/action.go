@@ -6,17 +6,19 @@ import "math/rand"
 type Action int
 
 const (
-	ActionIdle       Action = iota // do nothing this tick
-	ActionMove                     // walk to a random nearby position
-	ActionCastSkill                // release a skill at a random target/position
-	ActionChat                     // send a chat message
+	ActionIdle        Action = iota // do nothing this tick
+	ActionMove                      // walk to a random nearby position
+	ActionCastSkill                 // release a skill at a random target/position
+	ActionSwitchScene               // request a scene/channel switch
+	ActionChat                      // send a chat message
 )
 
 var actionNames = map[Action]string{
-	ActionIdle:      "idle",
-	ActionMove:      "move",
-	ActionCastSkill: "cast_skill",
-	ActionChat:      "chat",
+	ActionIdle:        "idle",
+	ActionMove:        "move",
+	ActionCastSkill:   "cast_skill",
+	ActionSwitchScene: "switch_scene",
+	ActionChat:        "chat",
 }
 
 func (a Action) String() string {
@@ -68,35 +70,49 @@ var BuiltinProfiles = map[string]Profile{
 	"fighter": {
 		Name: "fighter",
 		Weights: map[Action]int{
-			ActionCastSkill: 60,
-			ActionMove:      25,
-			ActionIdle:      10,
-			ActionChat:      5,
+			ActionCastSkill:   60,
+			ActionMove:        20,
+			ActionSwitchScene: 10,
+			ActionIdle:        5,
+			ActionChat:        5,
 		},
 	},
 	"explorer": {
 		Name: "explorer",
 		Weights: map[Action]int{
-			ActionMove:      50,
-			ActionIdle:      20,
-			ActionCastSkill: 20,
-			ActionChat:      10,
+			ActionMove:        40,
+			ActionSwitchScene: 25,
+			ActionIdle:        15,
+			ActionCastSkill:   15,
+			ActionChat:        5,
 		},
 	},
 	"chatter": {
 		Name: "chatter",
 		Weights: map[Action]int{
-			ActionChat:      40,
-			ActionIdle:      30,
-			ActionMove:      20,
-			ActionCastSkill: 10,
+			ActionChat:        35,
+			ActionIdle:        25,
+			ActionMove:        20,
+			ActionCastSkill:   10,
+			ActionSwitchScene: 10,
 		},
 	},
-	// stress: pure skill spam, same as old behavior
+	"behavioral": {
+		Name: "behavioral",
+		Weights: map[Action]int{
+			ActionCastSkill:   45,
+			ActionMove:        25,
+			ActionSwitchScene: 20,
+			ActionIdle:        5,
+			ActionChat:        5,
+		},
+	},
+	// stress: combat-heavy spam with occasional scene switching for pressure tests.
 	"stress": {
 		Name: "stress",
 		Weights: map[Action]int{
-			ActionCastSkill: 100,
+			ActionCastSkill:   85,
+			ActionSwitchScene: 15,
 		},
 	},
 }
